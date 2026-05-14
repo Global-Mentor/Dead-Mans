@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Infrastructure.Auth;
+namespace backend.Application.Abstractions.Auth;
 
 public class TwitchAuthOptions
 {

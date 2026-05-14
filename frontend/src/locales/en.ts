@@ -61,6 +61,14 @@ const en = {
       openNotFound: 'The selected card was not found.',
       openFailed: 'Failed to open card.',
     },
+    languageSwitcher: {
+      languages: {
+        ru: 'RU',
+        en: 'EN',
+        uk: 'UA',
+        pl: 'PL',
+      },
+    },
   },
 }
 

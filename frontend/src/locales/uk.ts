@@ -61,6 +61,14 @@ const uk = {
       openNotFound: 'Вибрану картку не знайдено.',
       openFailed: 'Не вдалося відкрити картку.',
     },
+    languageSwitcher: {
+      languages: {
+        ru: 'RU',
+        en: 'EN',
+        uk: 'UA',
+        pl: 'PL',
+      },
+    },
   },
 }
 

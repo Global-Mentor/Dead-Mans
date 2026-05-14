@@ -1,5 +1,5 @@
-import { httpClient } from './client/httpClient.ts'
-import type { GameBoardCellId, GameBoardSnapshot } from './contracts/index.ts'
+import { httpClient } from '../../../shared/api/client/httpClient.ts'
+import type { GameBoardCellId, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 
 export const gameBoardApi = {
   getCurrentSnapshot: () => httpClient.get<GameBoardSnapshot>('/game'),

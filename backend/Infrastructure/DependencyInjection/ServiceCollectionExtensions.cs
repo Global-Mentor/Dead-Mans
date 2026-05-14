@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameBoardRepository, DbGameBoardRepository>();
         services.AddScoped<IGameBoardService, GameBoardService>();
         services.AddScoped<IAuthSessionService, AuthSessionService>();
+        services.AddScoped<ITwitchAuthFlowService, TwitchAuthFlowService>();
         services.AddScoped<IAuthUserReader, DbAuthUserReader>();
         services.AddScoped<IUserRoleService, UserRoleService>();
         services.AddScoped<IClaimsTransformation, CurrentUserRoleClaimsTransformation>();

@@ -16,7 +16,7 @@ public sealed class DbGameBoardRepositoryTests
     private static readonly StorageOptions Storage = new() { PublicBaseUrl = "https://cdn.example" };
 
     [Fact]
-    public async Task GetCurrentBoardAsync_PrefersLatestActiveGameThatHasBoard()
+    public async Task GetLatestBoardByStatusAsync_ForActive_ReturnsLatestActiveGameThatHasBoard()
     {
         await using var db = CreateContext();
         var t0 = DateTime.UtcNow.AddHours(-3);
@@ -111,7 +111,7 @@ public sealed class DbGameBoardRepositoryTests
             NullLogger<DbGameBoardRepository>.Instance
         );
 
-        var snapshot = await repo.GetCurrentBoardAsync();
+        var snapshot = await repo.GetLatestBoardByStatusAsync(GameStatusValue.Active);
 
         Assert.NotNull(snapshot);
         Assert.Equal(newerActiveId.ToString(), snapshot.GameId);
@@ -119,27 +119,18 @@ public sealed class DbGameBoardRepositoryTests
     }
 
     [Fact]
-    public async Task GetCurrentBoardAsync_WhenNoActiveWithBoard_FallsBackToLatestFinishedWithBoard()
+    public async Task GetLatestBoardByStatusAsync_ForFinished_ReturnsLatestFinishedGameThatHasBoard()
     {
         await using var db = CreateContext();
         var t0 = DateTime.UtcNow.AddHours(-2);
         var t1 = DateTime.UtcNow.AddHours(-1);
 
-        var activeNoBoardId = Guid.NewGuid();
         var finishedOlderId = Guid.NewGuid();
         var finishedNewerId = Guid.NewGuid();
         var finishedOlderBoardId = Guid.NewGuid();
         var finishedNewerBoardId = Guid.NewGuid();
 
         db.Games.AddRange(
-            new Game
-            {
-                Id = activeNoBoardId,
-                Title = "Active",
-                Status = GameStatusValue.Active,
-                CreatedAtUtc = t1,
-                StartedAtUtc = t1
-            },
             new Game
             {
                 Id = finishedOlderId,
@@ -202,7 +193,7 @@ public sealed class DbGameBoardRepositoryTests
             NullLogger<DbGameBoardRepository>.Instance
         );
 
-        var snapshot = await repo.GetCurrentBoardAsync();
+        var snapshot = await repo.GetLatestBoardByStatusAsync(GameStatusValue.Finished);
 
         Assert.NotNull(snapshot);
         Assert.Equal(finishedNewerId.ToString(), snapshot.GameId);

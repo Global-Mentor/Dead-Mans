@@ -1,4 +1,4 @@
-namespace backend.Infrastructure.Auth;
+namespace backend.Application.Abstractions.Auth;
 
 public sealed class InactiveUserLoginException : Exception
 {
