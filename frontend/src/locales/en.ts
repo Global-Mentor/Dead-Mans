@@ -23,6 +23,24 @@ const en = {
         unknown: 'An unknown error occurred during sign-in.',
       },
     },
+    navigation: {
+      title: 'Navigation',
+      thumbnail: 'MENU',
+      open: 'Open navigation',
+      close: 'Close',
+      availableSections: 'Available sections',
+      roles: {
+        admin: 'Administrator',
+        moderator: 'Moderator',
+        viewer: 'Viewer',
+      },
+      items: {
+        gameBoard: {
+          label: 'Game board',
+          description: 'Current game board and card state.',
+        },
+      },
+    },
     gameBoard: {
       title: 'Game board',
       loading: 'Loading game board...',

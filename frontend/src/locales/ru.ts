@@ -23,6 +23,24 @@ const ru = {
         unknown: 'Во время входа произошла неизвестная ошибка.',
       },
     },
+    navigation: {
+      title: 'Навигация',
+      thumbnail: 'МЕНЮ',
+      open: 'Открыть навигацию',
+      close: 'Закрыть',
+      availableSections: 'Доступные разделы',
+      roles: {
+        admin: 'Администратор',
+        moderator: 'Модератор',
+        viewer: 'Зритель',
+      },
+      items: {
+        gameBoard: {
+          label: 'Игровая доска',
+          description: 'Текущее игровое поле и состояние карточек.',
+        },
+      },
+    },
     gameBoard: {
       title: 'Игровое поле',
       loading: 'Загрузка игрового поля...',
