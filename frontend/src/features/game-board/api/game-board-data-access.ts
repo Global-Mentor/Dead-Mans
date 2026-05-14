@@ -1,6 +1,6 @@
-import { gameBoardApi } from '../../../shared/api/game-board.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import type { GameBoardCellId, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
+import { gameBoardApi } from './game-board-api.ts'
 
 /**
  * Loads the current DB-backed board. `404` means no active or finished game — not a transport error.

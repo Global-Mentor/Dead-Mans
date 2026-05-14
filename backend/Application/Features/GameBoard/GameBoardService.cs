@@ -2,6 +2,7 @@ using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
+using backend.Domain.Persistence;
 
 namespace backend.Application.Features.GameBoard;
 
@@ -22,9 +23,21 @@ public sealed class GameBoardService : IGameBoardService
         _logger = logger;
     }
 
-    public Task<GameBoardSnapshot?> GetCurrentBoardAsync(CancellationToken cancellationToken = default)
+    public async Task<GameBoardSnapshot?> GetCurrentBoardAsync(CancellationToken cancellationToken = default)
     {
-        return _repository.GetCurrentBoardAsync(cancellationToken);
+        var activeBoard = await _repository.GetLatestBoardByStatusAsync(
+            GameStatusValue.Active,
+            cancellationToken
+        );
+        if (activeBoard is not null)
+        {
+            return activeBoard;
+        }
+
+        return await _repository.GetLatestBoardByStatusAsync(
+            GameStatusValue.Finished,
+            cancellationToken
+        );
     }
 
     public async Task<OpenGameCellResult?> TryOpenCellAsync(

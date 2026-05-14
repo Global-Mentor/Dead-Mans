@@ -2,11 +2,6 @@ using backend.Application.Abstractions.Auth;
 
 namespace backend.Application.Features.Auth;
 
-public interface IAuthSessionService
-{
-    Task<AuthSession?> GetSessionAsync(Guid userId, CancellationToken cancellationToken);
-}
-
 public sealed class AuthSessionService : IAuthSessionService
 {
     private readonly IAuthUserReader _authUserReader;

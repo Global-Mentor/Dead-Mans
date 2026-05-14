@@ -1,12 +1,9 @@
 using backend.Application.Abstractions.Auth;
-using backend.Infrastructure.Auth;
 using backend.Messaging;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Options;
 
 namespace backend.Controllers;
 
@@ -14,20 +11,19 @@ namespace backend.Controllers;
 [Route("auth/twitch")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly ITwitchLoginService _twitchLoginService;
-    private readonly TwitchAuthOptions _twitchAuthOptions;
+    private const string TwitchOAuthStateCookieName = "dm_twitch_oauth_state";
+
+    private readonly ITwitchAuthFlowService _twitchAuthFlowService;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
-        ITwitchLoginService twitchLoginService,
-        IOptions<TwitchAuthOptions> twitchAuthOptions,
+        ITwitchAuthFlowService twitchAuthFlowService,
         IWebHostEnvironment environment,
         ILogger<AuthController> logger
     )
     {
-        _twitchLoginService = twitchLoginService;
-        _twitchAuthOptions = twitchAuthOptions.Value;
+        _twitchAuthFlowService = twitchAuthFlowService;
         _environment = environment;
         _logger = logger;
     }
@@ -36,16 +32,15 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     public IActionResult Login()
     {
-        var state = TwitchStateGenerator.Create();
-        Response.Cookies.Delete(AuthCookieNames.TwitchOAuthState, BuildOAuthStateCookieOptions());
+        var challenge = _twitchAuthFlowService.BeginLogin();
+        Response.Cookies.Delete(TwitchOAuthStateCookieName, BuildOAuthStateCookieOptions());
         Response.Cookies.Append(
-            AuthCookieNames.TwitchOAuthState,
-            state,
+            TwitchOAuthStateCookieName,
+            challenge.State,
             BuildOAuthStateCookieOptions()
         );
 
-        var twitchAuthorizeUrl = _twitchLoginService.BuildAuthorizeUrl(state);
-        return Redirect(twitchAuthorizeUrl);
+        return Redirect(challenge.AuthorizeUrl);
     }
 
     [HttpGet("callback")]
@@ -60,79 +55,71 @@ public sealed class AuthController : ControllerBase
         if (!string.IsNullOrWhiteSpace(error))
         {
             _logger.LogWarning(AppMessages.Logs.TwitchOAuthErrorQuery, error);
-            return Redirect(BuildFrontendRedirect("error", NormalizeFrontendReason(error)));
+            return Redirect(_twitchAuthFlowService.BuildFrontendRedirect("error", NormalizeFrontendReason(error)));
         }
 
         if (string.IsNullOrWhiteSpace(code))
         {
             _logger.LogWarning(AppMessages.Logs.TwitchOAuthMissingCode);
-            return Redirect(BuildFrontendRedirect("error", "missing_code"));
+            return Redirect(_twitchAuthFlowService.BuildFrontendRedirect("error", "missing_code"));
         }
 
         if (string.IsNullOrWhiteSpace(state))
         {
             _logger.LogWarning(AppMessages.Logs.TwitchOAuthMissingState);
-            return Redirect(BuildFrontendRedirect("error", "missing_state"));
+            return Redirect(_twitchAuthFlowService.BuildFrontendRedirect("error", "missing_state"));
         }
 
-        if (!Request.Cookies.TryGetValue(AuthCookieNames.TwitchOAuthState, out var stateCookie))
+        if (!Request.Cookies.TryGetValue(TwitchOAuthStateCookieName, out var stateCookie))
         {
             _logger.LogWarning(AppMessages.Logs.TwitchOAuthStateCookieMissing);
-            return Redirect(BuildFrontendRedirect("error", "state_cookie_missing"));
+            return Redirect(_twitchAuthFlowService.BuildFrontendRedirect("error", "state_cookie_missing"));
         }
 
-        Response.Cookies.Delete(AuthCookieNames.TwitchOAuthState, BuildOAuthStateCookieOptions());
+        Response.Cookies.Delete(TwitchOAuthStateCookieName, BuildOAuthStateCookieOptions());
 
         if (!string.Equals(state, stateCookie, StringComparison.Ordinal))
         {
             _logger.LogWarning(AppMessages.Logs.TwitchOAuthStateMismatch);
-            return Redirect(BuildFrontendRedirect("error", "state_mismatch"));
+            return Redirect(_twitchAuthFlowService.BuildFrontendRedirect("error", "state_mismatch"));
         }
 
-        try
+        var completion = await _twitchAuthFlowService.CompleteLoginAsync(code, cancellationToken);
+        if (completion.AuthenticatedUser is null)
         {
-            var authUser = await _twitchLoginService.AuthenticateAsync(code, cancellationToken);
+            return Redirect(completion.FrontendRedirectUrl);
+        }
 
-            var claims = new List<Claim>
+        var authUser = completion.AuthenticatedUser;
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, authUser.UserId.ToString()),
+            new("twitch_user_id", authUser.TwitchUserId),
+            new(ClaimTypes.Name, authUser.DisplayName)
+        };
+
+        var claimsIdentity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+        var principal = new ClaimsPrincipal(claimsIdentity);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties
             {
-                new(ClaimTypes.NameIdentifier, authUser.UserId.ToString()),
-                new("twitch_user_id", authUser.TwitchUserId),
-                new(ClaimTypes.Name, authUser.DisplayName)
-            };
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            }
+        );
 
-            var claimsIdentity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme
-            );
-            var principal = new ClaimsPrincipal(claimsIdentity);
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
-                }
-            );
+        _logger.LogInformation(
+            AppMessages.Logs.TwitchUserSignedIn,
+            authUser.UserId,
+            authUser.IsNewUser
+        );
 
-            _logger.LogInformation(
-                AppMessages.Logs.TwitchUserSignedIn,
-                authUser.UserId,
-                authUser.IsNewUser
-            );
-        }
-        catch (InactiveUserLoginException ex)
-        {
-            _logger.LogWarning(ex, AppMessages.Logs.TwitchInactiveUserSignIn, ex.UserId);
-            return Redirect(BuildFrontendRedirect("error", "account_inactive"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.TwitchAuthCallbackFailed);
-            return Redirect(BuildFrontendRedirect("error", "authentication_failed"));
-        }
-
-        return Redirect(BuildFrontendRedirect("authenticated"));
+        return Redirect(completion.FrontendRedirectUrl);
     }
 
     private CookieOptions BuildOAuthStateCookieOptions()
@@ -145,17 +132,6 @@ public sealed class AuthController : ControllerBase
             Expires = DateTimeOffset.UtcNow.AddMinutes(10),
             Path = "/"
         };
-    }
-
-    private string BuildFrontendRedirect(string status, string? reason = null)
-    {
-        var query = new Dictionary<string, string?> { ["status"] = status };
-        if (!string.IsNullOrWhiteSpace(reason))
-        {
-            query["reason"] = reason;
-        }
-
-        return QueryHelpers.AddQueryString(_twitchAuthOptions.FrontendRedirectUri, query);
     }
 
     private static string NormalizeFrontendReason(string reason)

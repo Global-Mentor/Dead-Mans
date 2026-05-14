@@ -62,6 +62,14 @@ const pl = {
       openNotFound: 'Wybrana karta nie została znaleziona.',
       openFailed: 'Nie udało się otworzyć karty.',
     },
+    languageSwitcher: {
+      languages: {
+        ru: 'RU',
+        en: 'EN',
+        uk: 'UA',
+        pl: 'PL',
+      },
+    },
   },
 }
 

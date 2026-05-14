@@ -5,7 +5,8 @@ namespace backend.Application.Abstractions.Repositories;
 
 public interface IGameBoardRepository
 {
-    Task<backend.Application.Contracts.GameBoardSnapshot?> GetCurrentBoardAsync(
+    Task<backend.Application.Contracts.GameBoardSnapshot?> GetLatestBoardByStatusAsync(
+        string status,
         CancellationToken cancellationToken = default
     );
 

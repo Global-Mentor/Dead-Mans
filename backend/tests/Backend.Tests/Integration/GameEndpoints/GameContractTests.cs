@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using backend.Api.Contracts;
+using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
@@ -76,14 +77,14 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var repository = scope.ServiceProvider.GetRequiredService<IGameBoardRepository>();
+        var gameBoardService = scope.ServiceProvider.GetRequiredService<IGameBoardService>();
 
         dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
         dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
         dbContext.Games.RemoveRange(dbContext.Games);
         await dbContext.SaveChangesAsync();
 
-        var snapshot = await repository.GetCurrentBoardAsync();
+        var snapshot = await gameBoardService.GetCurrentBoardAsync();
         Assert.Null(snapshot);
     }
 
@@ -165,9 +166,9 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     private async Task AssertRepositoryFallbackAsync(Guid finishedGameId)
     {
         using var scope = _factory.Services.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<IGameBoardRepository>();
+        var gameBoardService = scope.ServiceProvider.GetRequiredService<IGameBoardService>();
 
-        var snapshot = await repository.GetCurrentBoardAsync();
+        var snapshot = await gameBoardService.GetCurrentBoardAsync();
 
         Assert.NotNull(snapshot);
         Assert.Equal(finishedGameId.ToString(), snapshot.GameId);

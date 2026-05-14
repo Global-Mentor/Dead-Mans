@@ -1,4 +1,5 @@
 using backend.Api.Contracts;
+using backend.Application.Abstractions.Auth;
 using backend.Infrastructure.Auth;
 using backend.Messaging;
 using backend.Infrastructure.Configuration;

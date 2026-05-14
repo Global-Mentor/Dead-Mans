@@ -12,9 +12,18 @@ public sealed record TwitchAuthenticatedUser(
     bool IsNewUser
 );
 
+public sealed record TwitchLoginChallenge(string State, string AuthorizeUrl);
+
+public sealed record TwitchLoginCompletion(TwitchAuthenticatedUser? AuthenticatedUser, string FrontendRedirectUrl);
+
 public interface IAuthUserReader
 {
     Task<AuthUserSummary?> FindByIdAsync(Guid userId, CancellationToken cancellationToken);
+}
+
+public interface IAuthSessionService
+{
+    Task<AuthSession?> GetSessionAsync(Guid userId, CancellationToken cancellationToken);
 }
 
 public interface IUserRoleService
@@ -29,4 +38,13 @@ public interface ITwitchLoginService
     string BuildAuthorizeUrl(string state);
 
     Task<TwitchAuthenticatedUser> AuthenticateAsync(string code, CancellationToken cancellationToken);
+}
+
+public interface ITwitchAuthFlowService
+{
+    TwitchLoginChallenge BeginLogin();
+
+    Task<TwitchLoginCompletion> CompleteLoginAsync(string code, CancellationToken cancellationToken);
+
+    string BuildFrontendRedirect(string status, string? reason = null);
 }

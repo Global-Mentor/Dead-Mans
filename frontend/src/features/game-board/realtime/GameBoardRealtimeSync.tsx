@@ -3,59 +3,13 @@ import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../../shared/api/query-keys.ts'
 import { getBackendOrigin } from '../../../shared/api/config.ts'
-import type { GameBoardCell, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
+import type { GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { logger } from '../../../shared/lib/logger.ts'
 import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
+import { applyCellOpenedEvent, type CellOpenedEvent } from './game-board-realtime-model.ts'
 
 const GAME_BOARD_HUB_URL = `${getBackendOrigin()}/hubs/game-board`
 const CELL_OPENED_EVENT = 'cellOpened'
-
-interface CellOpenedEvent {
-  gameId: string
-  version: number
-  cell: GameBoardCell
-}
-
-interface CellOpenedPatchResult {
-  nextSnapshot: GameBoardSnapshot | null
-  requiresResync: boolean
-}
-
-function applyCellOpenedEvent(
-  current: GameBoardSnapshot | null | undefined,
-  event: CellOpenedEvent,
-): CellOpenedPatchResult {
-  if (!current) {
-    return { nextSnapshot: null, requiresResync: true }
-  }
-
-  if (current.gameId !== event.gameId || event.version <= current.version) {
-    return { nextSnapshot: current, requiresResync: false }
-  }
-
-  let updated = false
-  const cells = current.cells.map((cell) => {
-    if (cell.id !== event.cell.id) {
-      return cell
-    }
-
-    updated = true
-    return event.cell
-  })
-
-  if (!updated) {
-    return { nextSnapshot: current, requiresResync: true }
-  }
-
-  return {
-    nextSnapshot: {
-      ...current,
-      version: event.version,
-      cells,
-    },
-    requiresResync: false,
-  }
-}
 
 export function GameBoardRealtimeSync() {
   const queryClient = useQueryClient()

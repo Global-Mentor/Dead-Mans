@@ -2,19 +2,14 @@ import { FormControl, MenuItem, Select } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 
-const languages = [
-  { code: 'ru', label: 'RU' },
-  { code: 'en', label: 'EN' },
-  { code: 'uk', label: 'UA' },
-  { code: 'pl', label: 'PL' },
-] as const
+const languageCodes = ['ru', 'en', 'uk', 'pl'] as const
 
 export function LanguageSwitcher() {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
 
   const current =
     (i18n.resolvedLanguage || i18n.language || 'ru').split('-')[0] ?? 'ru'
-  const value = languages.some((l) => l.code === current) ? current : 'ru'
+  const value = languageCodes.includes(current as (typeof languageCodes)[number]) ? current : 'ru'
 
   const handleChange = (event: SelectChangeEvent<string>) => {
     const next = event.target.value
@@ -40,14 +35,12 @@ export function LanguageSwitcher() {
           py: 0.3,
         }}
       >
-        {languages.map((lang) => (
-          <MenuItem key={lang.code} value={lang.code}>
-            {lang.label}
+        {languageCodes.map((languageCode) => (
+          <MenuItem key={languageCode} value={languageCode}>
+            {t(`languageSwitcher.languages.${languageCode}`)}
           </MenuItem>
         ))}
       </Select>
     </FormControl>
   )
 }
-
-

@@ -61,6 +61,14 @@ const ru = {
       openNotFound: 'Выбранная карточка не найдена.',
       openFailed: 'Не удалось открыть карточку.',
     },
+    languageSwitcher: {
+      languages: {
+        ru: 'RU',
+        en: 'EN',
+        uk: 'UA',
+        pl: 'PL',
+      },
+    },
   },
 }
 

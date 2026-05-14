@@ -28,14 +28,22 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
         _logger = logger;
     }
 
-    public async Task<GameBoardSnapshot?> GetCurrentBoardAsync(CancellationToken cancellationToken = default)
+    public async Task<GameBoardSnapshot?> GetLatestBoardByStatusAsync(
+        string status,
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var selectedBoard = await SelectCurrentBoardAsync(cancellationToken);
+            var selectedBoard = await QueryBoardsByStatus(
+                    status,
+                    useFinishedSort: status == GameStatusValue.Finished
+                )
+                .Select(x => x.Board)
+                .FirstOrDefaultAsync(cancellationToken);
             if (selectedBoard is null)
             {
-                _logger.LogDebug(AppMessages.Logs.NoActiveOrFinishedGameRow);
+                _logger.LogDebug("No game board found for status {Status}.", status);
                 return null;
             }
 
@@ -240,22 +248,6 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             mappedCell,
             stateChanged
         );
-    }
-
-    private async Task<SelectedBoard?> SelectCurrentBoardAsync(CancellationToken cancellationToken)
-    {
-        var activeBoard = await QueryBoardsByStatus(GameStatusValue.Active, useFinishedSort: false)
-            .Select(x => x.Board)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (activeBoard is not null)
-        {
-            return activeBoard;
-        }
-
-        return await QueryBoardsByStatus(GameStatusValue.Finished, useFinishedSort: true)
-            .Select(x => x.Board)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private async Task<Dictionary<Guid, List<GameBoardCellMedia>>> LoadMediaByCellIdAsync(
