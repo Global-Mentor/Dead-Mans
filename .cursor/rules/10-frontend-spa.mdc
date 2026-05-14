@@ -12,8 +12,10 @@ alwaysApply: false
   - `layouts/`: shells
   - `features/`: feature UI, hooks, and data access
   - `shared/`: cross-feature primitives only
+- Keep app composition in `app/`. Route trees, lazy page wiring, and other app-wide composition should not drift into parallel root-level entry modules.
 - Keep pages and layouts thin. Data loading, orchestration, permissions, route access rules, and non-trivial state transitions belong in hooks, route helpers, or feature modules.
 - Use shared HTTP infrastructure and feature-facing data access. Do not scatter raw `fetch`, ad-hoc transport code, or local API shapes across components.
+- Keep feature-specific transports, realtime sync helpers, and mutation orchestration inside the owning feature unless they are truly cross-feature primitives.
 - Use TanStack Query for server state and centralized query-key helpers for cache identity.
 - Keep navigation and access control declarative. Route definitions, redirects, default panel routes, and role-aware UI visibility should come from shared route/auth helpers, not duplicated inline checks.
 - Treat frontend role gating as UX only; backend remains authoritative.

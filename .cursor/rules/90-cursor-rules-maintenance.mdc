@@ -8,6 +8,7 @@ alwaysApply: false
 
 - `.cursor/rules/` is the only project-level Cursor rule system in this repo. Do not reintroduce legacy `.cursorrules`.
 - Keep rules small, focused, and non-overlapping. Prefer one concern per rule and use file scoping instead of growing always-apply files.
+- Prefer clarifying an existing rule over adding a new overlapping rule when the concern already has a natural home.
 - Keep always-apply rules for durable invariants and decision hierarchy only.
 - Use file-scoped rules for local constraints.
 - When architecture changes, update or delete outdated rules in the same task.

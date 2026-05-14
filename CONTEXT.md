@@ -21,7 +21,7 @@
 - Проект на ранней стадии, критичных данных в БД нет, поэтому смена технологического baseline выполняется сейчас.
 - Целевой курс: **DigitalOcean-first** окружение с максимально близкой локалкой.
 - Зафиксированный стек и инфраструктурные правила: `STACK.md`.
-- Базовый принцип: локальная разработка с инфраструктурой в контейнерах (`postgres + minio`), приложение запускается из исходников; прод в DO App Platform через Dockerfile.
+- Базовый принцип: локальная разработка с инфраструктурой в контейнерах (`postgres + minio`), приложение запускается из исходников; production-путь остаётся DigitalOcean-first и env-driven.
 
 ---
 
@@ -46,7 +46,8 @@
 
 Основные сценарии:
 - авторизация через Twitch.
-- read-only просмотр игрового поля из БД.
+- просмотр игрового поля из БД.
+- открытие ячеек администраторами с realtime-синхронизацией для подключённых клиентов.
 
 ---
 
@@ -82,7 +83,7 @@
 
 - `AuthLandingPage` - вход через Twitch.
 - `TwitchAuthCallbackPage` - завершение OAuth flow и восстановление сессии.
-- `GameBoardPage` - игровое поле из БД (read-only).
+- `GameBoardPage` - игровое поле из БД с admin-only открытием ячеек.
 
 ### Актуальный shell панели
 
@@ -111,9 +112,10 @@ Backend живет в `backend/` и представляет собой layered 
 
 ### Важный текущий split
 
-- игровое поле (`IGameBoardRepository` / `GET /api/game`) работает через persistence-backed adapter (EF Core/PostgreSQL);
+- игровое поле (`IGameBoardRepository`, `GET /api/game`, `POST /api/game/cells/{cellId}/open`) работает через persistence-backed adapter (EF Core/PostgreSQL);
 - auth, users и roles уже DB-backed через `ApplicationDbContext` и EF Core;
-- медиа ячеек отдаются как публичные URL, собранные backend из storage metadata.
+- медиа ячеек отдаются как публичные URL, собранные backend из storage metadata;
+- изменения состояния ячеек рассылаются подключённым клиентам через SignalR hub.
 
 ### Auth flow
 
@@ -156,7 +158,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - backend остаётся layered: controllers не ходят напрямую в EF/infrastructure;
 - transport DTO, application-модели и domain-модели не смешиваются;
 - OpenAPI сначала обновляется как контракт, затем синхронизируются backend mapping/endpoint'ы и frontend generated types;
-- frontend role gating - это UX, а не security boundary; реальные права проверяются на backend;
+- frontend role gating - это UX, а не security boundary; реальные права проверяются на backend, включая admin-only открытие ячеек;
 - конфигурационные и persistence-проблемы должны проявляться явно на старте, а не оставлять приложение в полу-рабочем состоянии;
 - новые решения должны расширять уже выбранный паттерн, а не создавать второй конкурирующий способ делать то же самое.
 
@@ -181,7 +183,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - feature-first фронтенд с `app/`, `routes/`, `features/`, `shared/`, `locales/`;
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
-- game API на панели: `GET /api/game`;
+- game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;

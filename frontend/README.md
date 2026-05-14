@@ -15,7 +15,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 - вход через Twitch;
 - восстановление сессии через `/auth/me`;
-- одна защищенная страница `game-board`, которая читает данные из `GET /api/game`.
+- защищённая панель под `/panel` с role-aware navigation;
+- страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR.
 
 ## Источник контрактов
 
@@ -32,7 +33,9 @@ npm run generate:contracts
 Frontend использует общий `httpClient`.
 
 - `GET /api/game` идёт через относительный `/api` base URL;
+- `POST /api/game/cells/{cellId}/open` идёт через тот же API transport;
 - auth-запросы идут на backend origin для `/auth/*`;
+- realtime hub подключается к `VITE_BACKEND_ORIGIN` по `/hubs/game-board`;
 - все запросы отправляют `credentials: 'include'`.
 
 `VITE_BACKEND_ORIGIN`:
@@ -63,4 +66,4 @@ npm run build
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend должен содержать только Twitch auth и read-only экран игрового поля. Любые дополнительные панели и моковые игровые срезы считаются вне скоупа.
+На текущем этапе frontend должен содержать Twitch auth, panel shell, role-aware routing и игровой экран. Дополнительные игровые режимы, альтернативные панели и моковые игровые срезы считаются вне скоупа.

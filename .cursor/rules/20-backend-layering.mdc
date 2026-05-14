@@ -12,8 +12,10 @@ alwaysApply: false
   - Domain: business rules and domain concepts
   - Infrastructure: adapters and DI wiring
   - Data: EF entities, configurations, migrations
+- Keep controller-facing auth flow models, option classes, and boundary exceptions above infrastructure when controllers or startup need to reference them.
 - Keep mapping boundaries explicit. Do not leak transport DTOs into Application/Domain or EF entities into API contracts.
 - Keep repository ports above infrastructure. Adapters must not decide business flow or become hidden orchestration layers.
+- If a repository needs explicit selection criteria or fallback policy, pass that policy in from Application instead of hardcoding the product decision inside the adapter.
 - Make authorization and role checks explicit and consistent. Frontend visibility is not protection.
 - Fail fast on invalid configuration or broken persistence wiring.
 - Keep Postgres-first assumptions intact. Avoid SQL Server-specific design choices or provider shortcuts that fight the chosen deployment path.

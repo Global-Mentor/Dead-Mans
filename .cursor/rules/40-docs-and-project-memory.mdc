@@ -8,6 +8,7 @@ alwaysApply: false
 
 - Treat `CONTEXT.md` as the short re-entry map and `README.md`, `STACK.md`, `docs/architecture/overview.md`, `backend/README.md`, and `frontend/README.md` as the durable project memory around it.
 - When architecture, workflow, setup, contracts, auth flow, route model, scope, or folder responsibilities change, update the relevant docs in the same task.
+- When shipped runtime behavior outgrows the docs (for example a read-only flow gains mutations, auth semantics, or realtime), update the docs immediately instead of leaving the old narrower story behind.
 - When a file, workflow, or pattern is replaced, remove or rewrite stale docs that still describe the old path.
 - Keep docs opinionated and current: document the chosen path and current invariants, not speculative alternatives.
 - Prefer documenting sources of truth, boundaries, startup flow, security assumptions, ports, and developer workflow over low-signal file inventories.

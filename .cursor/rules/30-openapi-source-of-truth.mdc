@@ -7,6 +7,7 @@ alwaysApply: false
 # OpenAPI Source of Truth
 
 - `backend/openapi/deadmans.v1.yaml` is the canonical transport contract for frontend/backend integration.
+- Treat this rule as HTTP-specific. If non-HTTP transports such as SignalR change, update the architecture/docs memory and keep their payloads aligned with the owning application models instead of creating shadow HTTP contracts.
 - Change the contract first, then bring backend controllers/mappings and frontend usage in sync.
 - Keep schemas, names, status codes, auth expectations, and examples aligned with actual behavior. Do not patch implementation only and leave the contract behind.
 - After contract changes, regenerate frontend contracts with `npm --prefix frontend run generate:contracts`, commit the generated files, and keep CI clean.

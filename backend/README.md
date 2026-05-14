@@ -3,7 +3,7 @@
 Backend сейчас поддерживает только два прикладных сценария:
 
 - Twitch authentication и cookie session;
-- read-only `GET /api/game`, который отдает игровое поле из БД.
+- game board API: чтение текущего снимка, admin-only открытие ячеек и realtime-синхронизация состояния.
 
 ## Что есть в коде
 
@@ -16,6 +16,7 @@ Backend сейчас поддерживает только два приклад
 ## Актуальные endpoint'ы
 
 - `GET /api/game`
+- `POST /api/game/cells/{cellId}/open`
 - `GET /auth/me`
 - `POST /auth/logout`
 - `GET /auth/twitch/login`
@@ -35,7 +36,7 @@ dotnet run --project backend.csproj
 
 ## База данных и storage
 
-Игровое поле читается из PostgreSQL через EF Core. Медиа-URL для ячеек строятся на основе `Storage:PublicBaseUrl`.
+Игровое поле читается из PostgreSQL через EF Core. Открытие ячеек выполняется на backend с role-check по admin и публикует realtime-события через SignalR. Медиа-URL для ячеек строятся на основе `Storage:PublicBaseUrl`.
 
 Каноничный источник тестовых картинок:
 
