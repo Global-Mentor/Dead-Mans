@@ -5,9 +5,12 @@ alwaysApply: true
 
 # Git Commit Discipline
 
+- Create commits only when the user explicitly asks for a commit.
 - When the user asks for commits, make them atomic: one logical change per commit, with no unrelated files mixed in.
 - Stage only files that belong to the same change. Do not bundle cleanup, refactors, generated files, and feature work together unless they are inseparable parts of one logical change.
 - Prefer small, reviewable commits with clear intent and commit messages in English that explain the purpose of the change.
-- Do not add `Co-authored-by: Cursor <cursoragent@cursor.com>` or any other Cursor mention to commit messages.
+- Follow the repository's existing commit message style unless the user asks for a different one.
+- Do not mention Cursor in commit history. Do not add `Co-authored-by: Cursor <cursoragent@cursor.com>`, any other Cursor trailer, or any Cursor mention in the subject, body, or trailers of a commit message.
+- After creating a commit, verify the final stored commit message. If the local environment injected a forbidden Cursor mention into an unpushed commit, rewrite that local commit before considering the task complete.
 - Follow normal safe git workflow: inspect status/diff before committing, avoid destructive git operations, and do not rewrite published history unless the user explicitly asks.
 - Do not push, force-push, or create remote side effects unless the user explicitly asks for that step.
