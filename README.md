@@ -1,6 +1,6 @@
 # Dead-Mans
 
-Веб-приложение: авторизация через Twitch, защищённая страница игрового поля (`game-board`), данные поля отдаются read-only из PostgreSQL (`GET /api/game`). Медиа для ячеек — через S3-совместимое хранилище (локально MinIO).
+Веб-приложение: авторизация через Twitch, защищённая панель с игровым полем (`game-board`) и админским открытием ячеек. Снимок поля читается из PostgreSQL (`GET /api/game`), открытие ячейки выполняется через `POST /api/game/cells/{cellId}/open`, а realtime-обновления приходят через SignalR. Медиа для ячеек — через S3-совместимое хранилище (локально MinIO).
 
 **Стек:** React + TypeScript (Vite) · ASP.NET Core 8 · PostgreSQL · MinIO. Контракт HTTP API: [`backend/openapi/deadmans.v1.yaml`](backend/openapi/deadmans.v1.yaml).
 
