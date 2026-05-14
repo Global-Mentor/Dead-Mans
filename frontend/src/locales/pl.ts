@@ -24,6 +24,24 @@ const pl = {
         unknown: 'Wystąpił nieznany błąd podczas logowania.',
       },
     },
+    navigation: {
+      title: 'Nawigacja',
+      thumbnail: 'MENU',
+      open: 'Otwórz nawigację',
+      close: 'Zamknij',
+      availableSections: 'Dostępne sekcje',
+      roles: {
+        admin: 'Administrator',
+        moderator: 'Moderator',
+        viewer: 'Widz',
+      },
+      items: {
+        gameBoard: {
+          label: 'Plansza gry',
+          description: 'Aktualna plansza gry i stan kart.',
+        },
+      },
+    },
     gameBoard: {
       title: 'Plansza gry',
       loading: 'Ładowanie planszy gry...',

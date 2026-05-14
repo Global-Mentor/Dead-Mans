@@ -23,6 +23,24 @@ const uk = {
         unknown: 'Під час входу сталася невідома помилка.',
       },
     },
+    navigation: {
+      title: 'Навігація',
+      thumbnail: 'МЕНЮ',
+      open: 'Відкрити навігацію',
+      close: 'Закрити',
+      availableSections: 'Доступні розділи',
+      roles: {
+        admin: 'Адміністратор',
+        moderator: 'Модератор',
+        viewer: 'Глядач',
+      },
+      items: {
+        gameBoard: {
+          label: 'Ігрова дошка',
+          description: 'Поточне ігрове поле та стан карток.',
+        },
+      },
+    },
     gameBoard: {
       title: 'Ігрове поле',
       loading: 'Завантаження ігрового поля...',

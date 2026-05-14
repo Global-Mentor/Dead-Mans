@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { defaultRoute } from '../../routes/app-routes.ts'
+import { panelRootPath } from '../../routes/app-routes.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 
 export function useTwitchAuthCallback() {
@@ -24,7 +24,7 @@ export function useTwitchAuthCallback() {
       if (isCancelled) return
 
       if (isSessionReady) {
-        navigate(defaultRoute.fullPath, { replace: true })
+        navigate(panelRootPath, { replace: true })
         return
       }
 

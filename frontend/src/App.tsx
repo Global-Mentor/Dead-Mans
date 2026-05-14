@@ -2,7 +2,9 @@ import { Suspense, lazy } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout.tsx'
-import { defaultRoute, gameBoardRoute, panelRootPath } from './routes/app-routes.ts'
+import { gameBoardRoute, panelRootPath } from './routes/app-routes.ts'
+import { PanelIndexRedirect } from './routes/PanelIndexRedirect.tsx'
+import { RequirePanelRouteAccess } from './routes/RequirePanelRouteAccess.tsx'
 import { RequireAuth } from './shared/auth/RequireAuth.tsx'
 import { GameBoardRealtimeSync } from './features/game-board/realtime/GameBoardRealtimeSync.tsx'
 
@@ -71,17 +73,24 @@ function App() {
           </Suspense>
         }
       />
-      <Route path={panelRootPath} element={<MainLayout />}>
-        <Route index element={<Navigate to={defaultRoute.fullPath} replace />} />
+      <Route
+        path={panelRootPath}
+        element={
+          <RequireAuth>
+            <MainLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<PanelIndexRedirect />} />
         <Route
           path={gameBoardRoute.path}
           element={
-            <RequireAuth>
+            <RequirePanelRouteAccess route={gameBoardRoute}>
               <GameBoardRealtimeSync />
               <Suspense fallback={<PanelRouteFallback />}>
                 <GameBoardPage />
               </Suspense>
-            </RequireAuth>
+            </RequirePanelRouteAccess>
           }
         />
       </Route>

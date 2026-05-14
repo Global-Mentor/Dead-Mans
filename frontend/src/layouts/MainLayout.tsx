@@ -2,6 +2,7 @@ import { Box, Container, Typography } from '@mui/material'
 import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
+import { PanelNavigationDrawer } from './PanelNavigationDrawer.tsx'
 
 export function MainLayout() {
   const { t } = useTranslation()
@@ -33,6 +34,8 @@ export function MainLayout() {
       >
         <Outlet />
       </Container>
+
+      <PanelNavigationDrawer />
     </Box>
   )
 }
