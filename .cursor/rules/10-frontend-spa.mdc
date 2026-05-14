@@ -1,0 +1,23 @@
+---
+description: Frontend SPA rules for feature-first React code
+globs: frontend/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend SPA Rules
+
+- Keep the feature-first split intact:
+  - `app/`: composition root and providers
+  - `routes/`: route metadata and helpers
+  - `layouts/`: shells
+  - `features/`: feature UI, hooks, and data access
+  - `shared/`: cross-feature primitives only
+- Keep pages and layouts thin. Data loading, orchestration, permissions, route access rules, and non-trivial state transitions belong in hooks, route helpers, or feature modules.
+- Use shared HTTP infrastructure and feature-facing data access. Do not scatter raw `fetch`, ad-hoc transport code, or local API shapes across components.
+- Use TanStack Query for server state and centralized query-key helpers for cache identity.
+- Keep navigation and access control declarative. Route definitions, redirects, default panel routes, and role-aware UI visibility should come from shared route/auth helpers, not duplicated inline checks.
+- Treat frontend role gating as UX only; backend remains authoritative.
+- Put all user-facing text in i18n resources. Do not hardcode labels, empty states, errors, or button copy in components.
+- Keep feature-specific code out of `shared/`.
+- Prefer env/config switches over rewriting feature code when transport or runtime behavior changes. Keep mock-friendly seams, but treat real HTTP flow as the target path.
+- Add or update tests only when they meaningfully protect behavior; prefer focused behavioral coverage over broad snapshot-style tests.

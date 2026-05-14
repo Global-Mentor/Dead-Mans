@@ -1,0 +1,14 @@
+---
+description: Keep project docs aligned with architecture and workflow changes
+globs: **/*.md
+alwaysApply: false
+---
+
+# Docs And Project Memory
+
+- Treat `CONTEXT.md` as the short re-entry map and `README.md`, `STACK.md`, `docs/architecture/overview.md`, `backend/README.md`, and `frontend/README.md` as the durable project memory around it.
+- When architecture, workflow, setup, contracts, auth flow, route model, scope, or folder responsibilities change, update the relevant docs in the same task.
+- When a file, workflow, or pattern is replaced, remove or rewrite stale docs that still describe the old path.
+- Keep docs opinionated and current: document the chosen path and current invariants, not speculative alternatives.
+- Prefer documenting sources of truth, boundaries, startup flow, security assumptions, ports, and developer workflow over low-signal file inventories.
+- If repo reality and docs diverge, align them instead of leaving silent drift behind.
