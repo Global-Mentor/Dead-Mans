@@ -4,12 +4,39 @@
 
 ---
 
+## Как использовать этот файл
+
+Если возвращаешься в проект после паузы, этот файл должен быть первой точкой входа. Он не заменяет `README.md`, `STACK.md` и архитектурные доки, а сжимает их в рабочую карту:
+
+- что является активным контуром;
+- какие части приложения уже живы;
+- где проходят архитектурные границы;
+- какие инварианты нельзя ломать при дальнейшей разработке;
+- в каком порядке заново входить в проект.
+
+---
+
 ## Принятый курс
 
 - Проект на ранней стадии, критичных данных в БД нет, поэтому смена технологического baseline выполняется сейчас.
 - Целевой курс: **DigitalOcean-first** окружение с максимально близкой локалкой.
 - Зафиксированный стек и инфраструктурные правила: `STACK.md`.
 - Базовый принцип: локальная разработка с инфраструктурой в контейнерах (`postgres + minio`), приложение запускается из исходников; прод в DO App Platform через Dockerfile.
+
+---
+
+## Источники правды
+
+Чтобы проект не "расползался" по нескольким конкурирующим описаниям, держим явные источники правды:
+
+- архитектурный и продуктовый контекст: `CONTEXT.md`;
+- инфраструктурный и технологический курс: `STACK.md`;
+- общий локальный запуск и обзор репозитория: `README.md`;
+- обзор потоков и границ: `docs/architecture/overview.md`;
+- transport-контракт: `backend/openapi/deadmans.v1.yaml`;
+- frontend transport types: generated из OpenAPI в `frontend/src/shared/api/contracts/`.
+
+Если меняется один из этих слоёв, изменения должны пройти по всей цепочке зависимых файлов и документации, а не остаться локальным исключением.
 
 ---
 
@@ -56,6 +83,14 @@
 - `AuthLandingPage` - вход через Twitch.
 - `TwitchAuthCallbackPage` - завершение OAuth flow и восстановление сессии.
 - `GameBoardPage` - игровое поле из БД (read-only).
+
+### Актуальный shell панели
+
+- Внутренний раздел приложения живёт под `panelRootPath` (`/panel`).
+- Панель использует общий `MainLayout`.
+- Навигация по внутренним разделам строится декларативно через `src/routes/app-routes.ts`.
+- Правая панель навигации показывает только те разделы, которые доступны текущему пользователю по ролям.
+- Даже если frontend скрывает пункт навигации, доступ к маршруту всё равно должен проверяться через общие route/access helpers, а не только через UI.
 
 Фронтенд работает через backend HTTP API.
 
@@ -110,7 +145,38 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 
 ---
 
-## 6. Что уже реализовано
+## 6. Архитектурные инварианты
+
+Это те правила, которые должны переживать отдельные задачи и чаты:
+
+- активный код живёт только в `frontend/` и `backend/`;
+- `legacy-v1/` можно читать, но нельзя использовать как место для нового кода;
+- frontend остаётся feature-first, а не превращается в слой случайных util-файлов;
+- page/layout-компоненты остаются тонкими, а orchestration/data access/role logic уходит в hooks, route helpers и feature modules;
+- backend остаётся layered: controllers не ходят напрямую в EF/infrastructure;
+- transport DTO, application-модели и domain-модели не смешиваются;
+- OpenAPI сначала обновляется как контракт, затем синхронизируются backend mapping/endpoint'ы и frontend generated types;
+- frontend role gating - это UX, а не security boundary; реальные права проверяются на backend;
+- конфигурационные и persistence-проблемы должны проявляться явно на старте, а не оставлять приложение в полу-рабочем состоянии;
+- новые решения должны расширять уже выбранный паттерн, а не создавать второй конкурирующий способ делать то же самое.
+
+---
+
+## 7. Качество решений
+
+При следующих изменениях ориентир такой:
+
+- одинаковые задачи должны решаться одинаковыми по стилю способами;
+- новые абстракции вводятся только если они реально очищают границу или убирают повтор;
+- `shared/` не должен становиться свалкой feature-логики;
+- user-facing текст проходит через i18n;
+- security и role checks не размазываются между несколькими слоями без необходимости;
+- при структурных изменениях обновляются docs, а не только код;
+- если уже есть хороший паттерн в проекте, его лучше продолжить, чем изобретать новый "чуть удобнее" локально.
+
+---
+
+## 8. Что уже реализовано
 
 - feature-first фронтенд с `app/`, `routes/`, `features/`, `shared/`, `locales/`;
 - auth context и protected route для панели;
@@ -119,6 +185,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;
+- role-aware panel routing и правая navigation drawer для внутренних разделов панели;
 - безопасный локальный backend bootstrap через `backend/scripts/setup-local.ps1` без удаления БД и storage;
 - отдельный destructive reset через `backend/scripts/reset-local.ps1` с подтверждением;
 - backend tests для auth transport-контрактов;
@@ -126,7 +193,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 
 ---
 
-## 7. Что важно не забыть
+## 9. Что важно не забыть
 
 - активный код живёт только в `frontend/` и `backend/`;
 - `legacy-v1/` можно читать, но нельзя использовать как источник прямого копирования;
@@ -137,15 +204,16 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 
 ---
 
-## 8. Быстрый возврат в проект
+## 10. Быстрый возврат в проект
 
 Если открываешь репозиторий после паузы:
 
 1. Прочитай `README.md`.
 2. Посмотри `docs/architecture/overview.md`.
-3. Проверь `frontend/src/features/*` и `backend/Application/`.
-4. Убедись, что OpenAPI и generated contracts синхронизированы.
-5. Локальный bootstrap: `backend/scripts/setup-local.ps1` (см. README; Windows — `setup-local.bat` при необходимости).
-6. Разработка: из корня `npm install`, `npm run dev` (или `dev-full.bat` на Windows).
-7. Сброс данных: `backend/scripts/reset-local.ps1` или `reset-local.bat`.
-8. Для auth-проверок не забывай, что backend требует настроенный DB-backed `ApplicationDbContext`.
+3. Прочитай этот `CONTEXT.md` целиком и восстанови в голове инварианты.
+4. Проверь `frontend/src/features/*`, `frontend/src/routes/` и `backend/Application/`.
+5. Убедись, что OpenAPI и generated contracts синхронизированы.
+6. Локальный bootstrap: `backend/scripts/setup-local.ps1` (см. README; Windows — `setup-local.bat` при необходимости).
+7. Разработка: из корня `npm install`, `npm run dev` (или `dev-full.bat` на Windows).
+8. Сброс данных: `backend/scripts/reset-local.ps1` или `reset-local.bat`.
+9. Для auth-проверок не забывай, что backend требует настроенный DB-backed `ApplicationDbContext`.
