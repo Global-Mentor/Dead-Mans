@@ -1,0 +1,22 @@
+---
+description: Backend layering, domain boundaries, and security posture
+globs: backend/**/*.cs
+alwaysApply: false
+---
+
+# Backend Layering Rules
+
+- Keep controllers thin. Controllers translate HTTP concerns only and depend on application services or ports, never directly on `ApplicationDbContext`, repositories, or infrastructure adapters.
+- Keep layer ownership explicit:
+  - Application: use cases, orchestration, service contracts
+  - Domain: business rules and domain concepts
+  - Infrastructure: adapters and DI wiring
+  - Data: EF entities, configurations, migrations
+- Keep mapping boundaries explicit. Do not leak transport DTOs into Application/Domain or EF entities into API contracts.
+- Keep repository ports above infrastructure. Adapters must not decide business flow or become hidden orchestration layers.
+- Make authorization and role checks explicit and consistent. Frontend visibility is not protection.
+- Fail fast on invalid configuration or broken persistence wiring.
+- Keep Postgres-first assumptions intact. Avoid SQL Server-specific design choices or provider shortcuts that fight the chosen deployment path.
+- Treat object storage as S3-compatible and key-based. Do not build new flows around local disk as the primary storage path.
+- Prefer clear, composable services over god classes. If a service mixes transport, orchestration, persistence, domain rules, and formatting, split it by responsibility.
+- Add backend tests for regressions that matter: transport contracts, authorization, mapping boundaries, startup invariants, and critical use cases.

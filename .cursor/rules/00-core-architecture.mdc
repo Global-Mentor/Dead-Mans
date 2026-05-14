@@ -1,0 +1,26 @@
+---
+description: Core project architecture and persistent repo memory
+alwaysApply: true
+---
+
+# Dead-Mans Core Architecture
+
+- Use repo docs as memory. After a long pause, ambiguous task, or structural change, refresh from `CONTEXT.md` first, then `README.md`, `STACK.md`, `docs/architecture/overview.md`, `backend/README.md`, and `frontend/README.md`.
+- Work only in `frontend/` and `backend/`. `legacy-v1/` is reference-only: read it if needed, but do not add code there and do not copy implementations from it.
+- Preserve the chosen shape of the system:
+  - frontend: feature-first SPA
+  - backend: `Controllers -> Application -> Domain/ports -> Infrastructure/Data`
+  - transport: contract-first through OpenAPI
+  - persistence: Postgres-first
+  - storage: S3-compatible
+  - config: env-driven
+  - deployment: DigitalOcean-first
+- Extend the current pattern; do not introduce a second competing pattern for the same problem.
+- Keep sources of truth singular:
+  - transport contract: `backend/openapi/deadmans.v1.yaml`
+  - generated frontend transport types: `frontend/src/shared/api/contracts/`
+  - architecture and workflow memory: repo docs
+  - runtime config: shared config/options modules
+- Prefer explicit boundaries over convenience shortcuts. If a change blurs a boundary, move it to the correct layer instead.
+- When structure, architecture, auth, transport, workflow, or a source of truth changes, update dependent code and docs in the same task.
+- If a request conflicts with repo invariants, say so explicitly and choose the path that keeps the codebase coherent long-term.

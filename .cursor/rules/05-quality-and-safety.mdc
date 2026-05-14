@@ -1,0 +1,17 @@
+---
+description: Global quality bar, consistency, and security defaults
+alwaysApply: true
+---
+
+# Quality And Safety
+
+- Prefer small, composable changes over rewrites, shortcuts, or local cleverness.
+- Solve similar problems in similar ways. Reuse existing naming, module shapes, and data flow unless there is a strong architectural reason not to.
+- Keep security backend-enforced. Frontend gating is UX only; authorization and sensitive decisions remain authoritative on the server.
+- Fail fast when config, auth, contracts, persistence, or startup invariants are broken.
+- Do not hide important failures with empty catches, guesswork, or partial half-working states on critical paths.
+- Add abstractions only when they clarify a real boundary, remove meaningful duplication, or protect an intentional extension point.
+- When replacing an approach, remove or update obsolete code paths, duplicate configs, stale docs, dead flags, and superseded helpers in the same task unless there is a documented transition reason to keep them.
+- When a source of truth changes, update dependent mappings, generated artifacts, docs, and verification steps in the same task.
+- Verify changes with the repo-standard checks that actually matter for the task; prefer focused tests/checks over low-signal coverage.
+- Leave the codebase cleaner than you found it, but do not churn unrelated files for style alone.

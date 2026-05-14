@@ -1,0 +1,15 @@
+---
+description: Keep Cursor rules small, current, and non-conflicting
+globs: .cursor/rules/*.mdc
+alwaysApply: false
+---
+
+# Cursor Rules Maintenance
+
+- `.cursor/rules/` is the only project-level Cursor rule system in this repo. Do not reintroduce legacy `.cursorrules`.
+- Keep rules small, focused, and non-overlapping. Prefer one concern per rule and use file scoping instead of growing always-apply files.
+- Keep always-apply rules for durable invariants and decision hierarchy only.
+- Use file-scoped rules for local constraints.
+- When architecture changes, update or delete outdated rules in the same task.
+- If two rules say the same thing, merge or simplify them.
+- Do not keep stale Cursor guidance as historical baggage. Rules should describe the current preferred path only.
