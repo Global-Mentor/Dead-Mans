@@ -39,6 +39,10 @@ const en = {
           label: 'Game board',
           description: 'Current game board and card state.',
         },
+        gameSetup: {
+          label: 'Game setup',
+          description: 'Draft table for configuring game cards.',
+        },
       },
     },
     gameBoard: {
@@ -60,6 +64,30 @@ const en = {
       openForbidden: 'Only administrators can open cards.',
       openNotFound: 'The selected card was not found.',
       openFailed: 'Failed to open card.',
+    },
+    gameSetup: {
+      title: 'Game setup',
+      description:
+        'Draft game for configuring the title, columns, prices, and future card images.',
+      loading: 'Loading game setup...',
+      errorLoading: 'Failed to load game setup.',
+      empty: 'There is no draft game yet. Create a new one to start setup.',
+      draftBadge: 'Draft',
+      gameNameLabel: 'Game name',
+      columnLabel: 'Column {{column}}',
+      imagePlaceholder: 'Image upload placeholder',
+      cellTitleLabel: 'Card name',
+      cellPriceLabel: 'Price',
+      createDialog: {
+        title: 'Create a new game',
+        description:
+          'There is no game in setup right now. Enter a title to create a draft with a starter board.',
+        nameLabel: 'Game name',
+        confirm: 'Create',
+        validationRequired: 'Enter a game title.',
+        alreadyExists: 'A draft game already exists. Refresh the page.',
+        error: 'Failed to create the draft game. Please try again.',
+      },
     },
     languageSwitcher: {
       languages: {

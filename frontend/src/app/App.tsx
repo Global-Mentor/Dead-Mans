@@ -3,7 +3,7 @@ import { Box, CircularProgress } from '@mui/material'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
-import { gameBoardRoute, panelRootPath } from '../routes/app-routes.ts'
+import { gameBoardRoute, gameSetupRoute, panelRootPath } from '../routes/app-routes.ts'
 import { PanelIndexRedirect } from '../routes/PanelIndexRedirect.tsx'
 import { RequirePanelRouteAccess } from '../routes/RequirePanelRouteAccess.tsx'
 import { RequireAuth } from '../shared/auth/RequireAuth.tsx'
@@ -21,6 +21,11 @@ const TwitchAuthCallbackPage = lazy(() =>
 const GameBoardPage = lazy(() =>
   import('../features/game-board/GameBoardPage.tsx').then((module) => ({
     default: module.GameBoardPage,
+  })),
+)
+const GameSetupPage = lazy(() =>
+  import('../features/game-setup/GameSetupPage.tsx').then((module) => ({
+    default: module.GameSetupPage,
   })),
 )
 
@@ -89,6 +94,16 @@ export default function App() {
               <GameBoardRealtimeSync />
               <Suspense fallback={<PanelRouteFallback />}>
                 <GameBoardPage />
+              </Suspense>
+            </RequirePanelRouteAccess>
+          }
+        />
+        <Route
+          path={gameSetupRoute.path}
+          element={
+            <RequirePanelRouteAccess route={gameSetupRoute}>
+              <Suspense fallback={<PanelRouteFallback />}>
+                <GameSetupPage />
               </Suspense>
             </RequirePanelRouteAccess>
           }
