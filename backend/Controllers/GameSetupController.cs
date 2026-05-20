@@ -74,7 +74,10 @@ public sealed class GameSetupController : ControllerBase
                     new ErrorResponse(AppMessages.Client.DraftGameAlreadyExists)
                 ),
                 CreateDraftGameSetupOutcome.InvalidTitle => BadRequest(
-                    new ErrorResponse(AppMessages.Client.InvalidGameSetupTitle)
+                    new ErrorResponse(
+                        AppMessages.Client.InvalidGameSetupTitle,
+                        AppMessages.ErrorCodes.InvalidGameSetupTitle
+                    )
                 ),
                 _ => StatusCode(
                     StatusCodes.Status500InternalServerError,
@@ -88,6 +91,96 @@ public sealed class GameSetupController : ControllerBase
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 new ErrorResponse(AppMessages.Client.UnableToCreateGameSetup)
+            );
+        }
+    }
+
+    [HttpPut]
+    [ProducesResponseType(typeof(GameSetupSnapshotDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Update(
+        [FromBody] UpdateGameSetupRequestDto? request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request is null)
+        {
+            return BadRequest(new ErrorResponse(AppMessages.Client.InvalidGameSetupSaveRequest));
+        }
+
+        try
+        {
+            var result = await _gameSetupService.UpdateDraftSetupAsync(
+                request.ToUpdateModel(),
+                cancellationToken
+            );
+
+            return result.Outcome switch
+            {
+                UpdateDraftGameSetupOutcome.Updated when result.Snapshot is not null =>
+                    Ok(result.Snapshot.ToSetupDto()),
+                UpdateDraftGameSetupOutcome.NoDraftFound => NotFound(
+                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
+                ),
+                UpdateDraftGameSetupOutcome.InvalidTitle => BadRequest(
+                    new ErrorResponse(
+                        AppMessages.Client.InvalidGameSetupTitle,
+                        AppMessages.ErrorCodes.InvalidGameSetupTitle
+                    )
+                ),
+                UpdateDraftGameSetupOutcome.InvalidRowLabels
+                or UpdateDraftGameSetupOutcome.InvalidColumnLabels
+                or UpdateDraftGameSetupOutcome.InvalidCells =>
+                    BadRequest(new ErrorResponse(AppMessages.Client.InvalidGameSetupSaveRequest)),
+                _ => StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new ErrorResponse(AppMessages.Client.UnableToSaveGameSetup)
+                )
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftSaveFailed);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new ErrorResponse(AppMessages.Client.UnableToSaveGameSetup)
+            );
+        }
+    }
+
+    [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Delete(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _gameSetupService.DeleteDraftSetupAsync(cancellationToken);
+            return result.Outcome switch
+            {
+                DeleteDraftGameSetupOutcome.Deleted => NoContent(),
+                DeleteDraftGameSetupOutcome.NoDraftFound => NotFound(
+                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
+                ),
+                _ => StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetup)
+                )
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftDeleteFailed);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetup)
             );
         }
     }

@@ -19,6 +19,18 @@ public static class ApiContractMapper
         );
     }
 
+    public static GameSetupDraftUpdate ToUpdateModel(this UpdateGameSetupRequestDto request)
+    {
+        return new GameSetupDraftUpdate(
+            request.Title,
+            request.RowLabels,
+            request.ColLabels,
+            request.Cells
+                .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
+                .ToArray()
+        );
+    }
+
     public static GameSetupSnapshotDto ToSetupDto(this GameBoardSnapshot snapshot)
     {
         return new GameSetupSnapshotDto(

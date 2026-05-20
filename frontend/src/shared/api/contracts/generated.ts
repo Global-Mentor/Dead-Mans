@@ -28,9 +28,9 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getDraftGameSetup"];
-        put?: never;
+        put: operations["updateDraftGameSetup"];
         post: operations["createDraftGameSetup"];
-        delete?: never;
+        delete: operations["deleteDraftGameSetup"];
         options?: never;
         head?: never;
         patch?: never;
@@ -138,6 +138,23 @@ export interface components {
         CreateGameSetupRequestDto: {
             title: string;
         };
+        UpdateGameSetupCellDto: {
+            /**
+             * Format: uuid
+             * @description Existing cell id. Omit for newly added board positions.
+             */
+            id?: string | null;
+            row: number;
+            col: number;
+            title?: string | null;
+            cost: number;
+        };
+        UpdateGameSetupRequestDto: {
+            title: string;
+            rowLabels: string[];
+            colLabels: string[];
+            cells: components["schemas"]["UpdateGameSetupCellDto"][];
+        };
         GameSetupSnapshotDto: {
             gameId: string;
             title: string;
@@ -174,6 +191,8 @@ export interface components {
         };
         ErrorResponse: {
             error: string;
+            /** @description Stable machine-readable error code. */
+            code?: string | null;
         };
     };
     responses: never;
@@ -269,6 +288,75 @@ export interface operations {
             };
         };
     };
+    updateDraftGameSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGameSetupRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Draft game setup saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameSetupSnapshotDto"];
+                };
+            };
+            /** @description Invalid game setup save request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No draft game available for setup */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     createDraftGameSetup: {
         parameters: {
             query?: never;
@@ -320,6 +408,60 @@ export interface operations {
             };
             /** @description A draft game already exists */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteDraftGameSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Draft game setup deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No draft game available for setup */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

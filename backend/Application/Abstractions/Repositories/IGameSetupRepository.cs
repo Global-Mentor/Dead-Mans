@@ -14,4 +14,11 @@ public interface IGameSetupRepository
         string title,
         CancellationToken cancellationToken = default
     );
+
+    Task<GameBoardSnapshot?> UpdateDraftSetupAsync(
+        GameSetupDraftUpdate update,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> DeleteDraftSetupAsync(CancellationToken cancellationToken = default);
 }
