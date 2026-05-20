@@ -15,6 +15,11 @@ public static class AppMessages
         public const string UnableToLoadCurrentGame = "Unable to load the current game.";
         public const string GameCellNotFound = "Requested game cell was not found.";
         public const string UnableToOpenGameCell = "Unable to open the requested game cell.";
+        public const string NoDraftGameForSetup = "No draft game is available for setup.";
+        public const string DraftGameAlreadyExists = "A draft game is already being configured.";
+        public const string InvalidGameSetupTitle = "Game title must be between 1 and 200 characters.";
+        public const string UnableToLoadGameSetup = "Unable to load the game setup.";
+        public const string UnableToCreateGameSetup = "Unable to create the game setup.";
     }
 
     public static class Exceptions
@@ -118,5 +123,12 @@ public static class AppMessages
             "Auth session not found or user inactive; signing out. UserId: {UserId}.";
 
         public const string UserSignedOut = "User signed out.";
+
+        public const string GameSetupDraftNotFound = "No draft game with a board was found for setup.";
+        public const string GameSetupDraftLoadFailed = "Failed to load draft game setup.";
+        public const string GameSetupDraftCreateFailed = "Failed to create draft game setup.";
+        public const string GameSetupDraftAlreadyExists = "Draft game setup already exists.";
+        public const string GameSetupDraftCreated =
+            "Draft game setup created. GameId: {GameId}, CellCount: {CellCount}.";
     }
 }

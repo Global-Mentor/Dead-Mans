@@ -31,7 +31,11 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
 
-        builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+        builder.HasIndex(x => x.Status)
+            .HasDatabaseName("UX_games_single_draft")
+            .IsUnique()
+            .HasFilter("\"Status\" = 'draft'");
         builder.HasIndex(x => x.CreatedAtUtc);
     }
 }

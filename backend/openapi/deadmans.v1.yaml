@@ -30,6 +30,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/setup:
+    get:
+      operationId: getDraftGameSetup
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Draft game setup snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSetupSnapshotDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No draft game available for setup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: createDraftGameSetup
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGameSetupRequestDto'
+      responses:
+        '201':
+          description: Draft game created for setup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSetupSnapshotDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid game setup request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: A draft game already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/cells/{cellId}/open:
     post:
       operationId: openGameCell
@@ -175,6 +246,46 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameBoardCellMediaDto'
+    CreateGameSetupRequestDto:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+    GameSetupSnapshotDto:
+      type: object
+      required: [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells]
+      properties:
+        gameId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft]
+        version:
+          type: integer
+        rows:
+          type: integer
+        cols:
+          type: integer
+        rowLabels:
+          type: array
+          items:
+            type: string
+        colLabels:
+          type: array
+          items:
+            type: string
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameBoardCellDto'
     GameBoardSnapshotDto:
       type: object
       required: [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells]
