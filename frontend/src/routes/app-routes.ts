@@ -22,7 +22,19 @@ export const gameBoardRoute = {
   allowedRoles: authenticatedPanelRoles,
 } as const satisfies PanelRouteDefinition
 
-export const panelRoutes = [gameBoardRoute] as const satisfies readonly PanelRouteDefinition[]
+export const gameSetupRoute = {
+  id: 'game-setup',
+  path: 'game-setup',
+  fullPath: `${panelRootPath}/game-setup`,
+  labelKey: 'navigation.items.gameSetup.label',
+  descriptionKey: 'navigation.items.gameSetup.description',
+  allowedRoles: ['admin'],
+} as const satisfies PanelRouteDefinition
+
+export const panelRoutes = [
+  gameBoardRoute,
+  gameSetupRoute,
+] as const satisfies readonly PanelRouteDefinition[]
 
 export const defaultRoute = panelRoutes[0]
 

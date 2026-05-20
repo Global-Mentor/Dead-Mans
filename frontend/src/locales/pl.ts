@@ -40,6 +40,10 @@ const pl = {
           label: 'Plansza gry',
           description: 'Aktualna plansza gry i stan kart.',
         },
+        gameSetup: {
+          label: 'Konfiguracja gry',
+          description: 'Robocza tabela do konfiguracji kart gry.',
+        },
       },
     },
     gameBoard: {
@@ -61,6 +65,30 @@ const pl = {
       openForbidden: 'Tylko administrator może otwierać karty.',
       openNotFound: 'Wybrana karta nie została znaleziona.',
       openFailed: 'Nie udało się otworzyć karty.',
+    },
+    gameSetup: {
+      title: 'Konfiguracja gry',
+      description:
+        'Szkic gry do konfiguracji nazwy, kolumn, cen i przyszłych obrazów kart.',
+      loading: 'Ładowanie konfiguracji gry...',
+      errorLoading: 'Nie udało się załadować konfiguracji gry.',
+      empty: 'Nie ma jeszcze gry w statusie szkicu. Utwórz nową, aby rozpocząć konfigurację.',
+      draftBadge: 'Szkic',
+      gameNameLabel: 'Nazwa gry',
+      columnLabel: 'Kolumna {{column}}',
+      imagePlaceholder: 'Miejsce na przesłanie obrazu',
+      cellTitleLabel: 'Nazwa karty',
+      cellPriceLabel: 'Cena',
+      createDialog: {
+        title: 'Utwórz nową grę',
+        description:
+          'Obecnie nie ma gry w trakcie konfiguracji. Wpisz nazwę, aby utworzyć szkic z tabelą startową.',
+        nameLabel: 'Nazwa gry',
+        confirm: 'Utwórz',
+        validationRequired: 'Wpisz nazwę gry.',
+        alreadyExists: 'Szkic gry już istnieje. Odśwież stronę.',
+        error: 'Nie udało się utworzyć szkicu gry. Spróbuj ponownie.',
+      },
     },
     languageSwitcher: {
       languages: {
