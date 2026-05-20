@@ -7,6 +7,8 @@ alwaysApply: true
 
 - Create commits only when the user explicitly asks for a commit.
 - When the user asks for commits, make them atomic: one logical change per commit, with no unrelated files mixed in.
+- "Atomic" means split by reviewable intent, not by the user's broad task. If one task contains separable concerns such as rule/doc updates, backend/API work, frontend UI, migrations, generated contracts, cleanup, or tests, create separate commits for the concerns that can stand alone.
+- Do not bundle a full-stack feature into one commit just because it was implemented in one work session. Keep dependent generated artifacts with the source-of-truth change that produced them, and keep UI wiring separate when it can be reviewed independently.
 - Stage only files that belong to the same change. Do not bundle cleanup, refactors, generated files, and feature work together unless they are inseparable parts of one logical change.
 - Prefer small, reviewable commits with clear intent and commit messages in English that explain the purpose of the change.
 - Follow the repository's existing commit message style unless the user asks for a different one.
