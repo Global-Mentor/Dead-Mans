@@ -79,4 +79,31 @@ export const httpClient = {
     })
     return handleResponse<T>(response)
   },
+
+  async put<T>(path: string, body?: unknown, options: HttpRequestOptions = {}): Promise<T> {
+    const url = buildUrl(path, options)
+    logger.debug('HTTP PUT', { url, body, options })
+    const requestInit = toRequestInit(options)
+    const response = await fetch(url, {
+      ...requestInit,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(requestInit.headers ?? {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+    return handleResponse<T>(response)
+  },
+
+  async delete<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
+    const url = buildUrl(path, options)
+    logger.debug('HTTP DELETE', { url, options })
+    const requestInit = toRequestInit(options)
+    const response = await fetch(url, {
+      ...requestInit,
+      method: 'DELETE',
+    })
+    return handleResponse<T>(response)
+  },
 }

@@ -2,36 +2,56 @@ import { Box, Paper, TextField, Typography } from '@mui/material'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
+import {
+  getGameSetupCellAt,
+  upsertGameSetupCellDraft,
+  type GameSetupDraftState,
+} from '../model/game-setup-draft.ts'
 
 interface GameSetupGridProps {
   snapshot: GameSetupSnapshot
+  draft: GameSetupDraftState
+  onDraftChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
 }
 
-export function GameSetupGrid({ snapshot }: GameSetupGridProps) {
+export function GameSetupGrid({ snapshot, draft, onDraftChange }: GameSetupGridProps) {
   const { t } = useTranslation()
-  const cellMap = useMemo(() => {
-    return new Map(snapshot.cells.map((cell) => [`${cell.row}:${cell.col}`, cell] as const))
+  const mediaUrlByCellId = useMemo(() => {
+    return new Map(
+      snapshot.cells
+        .filter((cell) => cell.media[0]?.url)
+        .map((cell) => [cell.id, cell.media[0]!.url] as const),
+    )
   }, [snapshot.cells])
 
   return (
-    <Box sx={{ mt: 3, overflow: 'auto' }}>
+    <Box sx={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
       <Box sx={{ minWidth: { xs: 680, sm: 'auto' } }}>
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: `auto repeat(${snapshot.colLabels.length}, 1fr)`,
+            gridTemplateColumns: `auto repeat(${draft.colLabels.length}, 1fr)`,
             columnGap: 0.75,
             rowGap: 0.75,
             mb: 1,
             alignItems: 'center',
           }}
         >
-          <Box sx={{ width: 36 }} />
-          {snapshot.colLabels.map((columnLabel, columnIndex) => (
+          <Box sx={{ minWidth: 72 }} />
+          {draft.colLabels.map((columnLabel, columnIndex) => (
             <TextField
-              key={`${columnIndex}-${columnLabel}`}
+              key={`column-${columnIndex}`}
               label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
-              defaultValue={columnLabel}
+              value={columnLabel}
+              onChange={(event) => {
+                const nextValue = event.target.value
+                onDraftChange((current) => ({
+                  ...current,
+                  colLabels: current.colLabels.map((label, index) =>
+                    index === columnIndex ? nextValue : label,
+                  ),
+                }))
+              }}
               size="small"
               inputProps={{ sx: { textAlign: 'center', fontWeight: 600 } }}
             />
@@ -41,34 +61,36 @@ export function GameSetupGrid({ snapshot }: GameSetupGridProps) {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: `auto repeat(${snapshot.colLabels.length}, 1fr)`,
+            gridTemplateColumns: `auto repeat(${draft.colLabels.length}, 1fr)`,
             columnGap: 0.75,
             rowGap: 0.75,
             alignItems: 'stretch',
           }}
         >
-          {snapshot.rowLabels.map((rowLabel, rowIndex) => (
-            <Fragment key={rowLabel}>
-              <Box
-                sx={{
-                  width: 36,
-                  textAlign: 'center',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'text.secondary',
+          {draft.rowLabels.map((rowLabel, rowIndex) => (
+            <Fragment key={`row-${rowIndex}`}>
+              <TextField
+                label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
+                value={rowLabel}
+                onChange={(event) => {
+                  const nextValue = event.target.value
+                  onDraftChange((current) => ({
+                    ...current,
+                    rowLabels: current.rowLabels.map((label, index) =>
+                      index === rowIndex ? nextValue : label,
+                    ),
+                  }))
                 }}
-              >
-                {rowLabel}
-              </Box>
-              {snapshot.colLabels.map((_, colIndex) => {
-                const cell = cellMap.get(`${rowIndex}:${colIndex}`)
-                const imageUrl = cell?.media[0]?.url
+                size="small"
+                inputProps={{ sx: { textAlign: 'center', fontWeight: 600 } }}
+              />
+              {draft.colLabels.map((_, colIndex) => {
+                const cellDraft = getGameSetupCellAt(draft, rowIndex, colIndex)
+                const imageUrl = cellDraft?.id ? mediaUrlByCellId.get(cellDraft.id) : undefined
 
                 return (
                   <Paper
-                    key={`${rowLabel}-${colIndex}`}
+                    key={`${rowIndex}-${colIndex}`}
                     variant="outlined"
                     sx={{
                       p: 1,
@@ -100,7 +122,7 @@ export function GameSetupGrid({ snapshot }: GameSetupGridProps) {
                         <Box
                           component="img"
                           src={imageUrl}
-                          alt={cell?.title ?? rowLabel}
+                          alt={cellDraft?.title ?? rowLabel}
                           sx={{
                             position: 'absolute',
                             inset: 0,
@@ -115,14 +137,32 @@ export function GameSetupGrid({ snapshot }: GameSetupGridProps) {
                     </Box>
                     <TextField
                       label={t('gameSetup.cellTitleLabel')}
-                      defaultValue={cell?.title ?? ''}
+                      value={cellDraft?.title ?? ''}
+                      onChange={(event) => {
+                        const nextValue = event.target.value
+                        onDraftChange((current) =>
+                          upsertGameSetupCellDraft(current, rowIndex, colIndex, {
+                            title: nextValue,
+                          }),
+                        )
+                      }}
                       size="small"
                     />
                     <TextField
                       label={t('gameSetup.cellPriceLabel')}
-                      defaultValue={cell?.cost ?? 0}
+                      value={cellDraft?.cost ?? 0}
+                      onChange={(event) => {
+                        const parsed = Number.parseInt(event.target.value, 10)
+                        const nextCost = Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
+                        onDraftChange((current) =>
+                          upsertGameSetupCellDraft(current, rowIndex, colIndex, {
+                            cost: nextCost,
+                          }),
+                        )
+                      }}
                       size="small"
                       type="number"
+                      inputProps={{ min: 0 }}
                     />
                   </Paper>
                 )
