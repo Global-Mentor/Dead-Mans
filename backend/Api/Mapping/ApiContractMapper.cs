@@ -19,6 +19,22 @@ public static class ApiContractMapper
         );
     }
 
+    public static GameSetupSnapshotDto ToSetupDto(this GameBoardSnapshot snapshot)
+    {
+        return new GameSetupSnapshotDto(
+            snapshot.GameId,
+            snapshot.Title,
+            snapshot.Description,
+            snapshot.Status,
+            snapshot.Version,
+            snapshot.Rows,
+            snapshot.Cols,
+            snapshot.RowLabels.ToArray(),
+            snapshot.ColLabels.ToArray(),
+            snapshot.Cells.Select(ToDto).ToArray()
+        );
+    }
+
     public static GameBoardSnapshotDto ToDto(this GameBoardSnapshot snapshot)
     {
         return new GameBoardSnapshotDto(
@@ -31,19 +47,22 @@ public static class ApiContractMapper
             snapshot.Cols,
             snapshot.RowLabels.ToArray(),
             snapshot.ColLabels.ToArray(),
-            snapshot.Cells
-                .Select(cell => new GameBoardCellDto(
-                    cell.Id,
-                    cell.Row,
-                    cell.Col,
-                    cell.CellType,
-                    cell.Title,
-                    cell.Description,
-                    cell.Cost,
-                    cell.State.ToString().ToLowerInvariant(),
-                    cell.Media.Select(media => new GameBoardCellMediaDto(media.Url)).ToArray()
-                ))
-                .ToArray()
+            snapshot.Cells.Select(ToDto).ToArray()
+        );
+    }
+
+    private static GameBoardCellDto ToDto(GameBoardCell cell)
+    {
+        return new GameBoardCellDto(
+            cell.Id,
+            cell.Row,
+            cell.Col,
+            cell.CellType,
+            cell.Title,
+            cell.Description,
+            cell.Cost,
+            cell.State.ToString().ToLowerInvariant(),
+            cell.Media.Select(media => new GameBoardCellMediaDto(media.Url)).ToArray()
         );
     }
 

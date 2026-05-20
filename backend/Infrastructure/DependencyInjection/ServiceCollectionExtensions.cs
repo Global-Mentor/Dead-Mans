@@ -4,6 +4,7 @@ using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Features.Auth;
 using backend.Application.Features.GameBoard;
+using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Infrastructure.Auth;
 using backend.Infrastructure.Configuration;
@@ -48,6 +49,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IGameBoardRepository, DbGameBoardRepository>();
         services.AddScoped<IGameBoardService, GameBoardService>();
+        services.AddScoped<IGameSetupRepository, DbGameSetupRepository>();
+        services.AddScoped<IGameSetupService, GameSetupService>();
         services.AddScoped<IAuthSessionService, AuthSessionService>();
         services.AddScoped<ITwitchAuthFlowService, TwitchAuthFlowService>();
         services.AddScoped<IAuthUserReader, DbAuthUserReader>();
