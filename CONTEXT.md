@@ -184,6 +184,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR;
+- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — черновик, пакетное сохранение названия, строк-ценовых линий, колонок и полей карточек (без медиа); несохранённые правки дублируются в `localStorage` браузера до успешного save/reset;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;
