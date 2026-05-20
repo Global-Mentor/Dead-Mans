@@ -64,6 +64,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             var utcNow = DateTime.UtcNow;
             var gameId = Guid.NewGuid();
             var boardId = Guid.NewGuid();
+            var rowLabels = GameSetupStubDefaults.BuildRowLabels();
             var columnLabels = GameSetupStubDefaults.BuildColumnLabels();
 
             var game = new Game
@@ -84,7 +85,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 Version = 1,
                 Rows = GameSetupStubDefaults.Rows,
                 Cols = GameSetupStubDefaults.Cols,
-                RowLabels = GameSetupStubDefaults.RowLabels,
+                RowLabels = rowLabels,
                 ColLabels = columnLabels,
                 CreatedAtUtc = utcNow
             };
@@ -103,8 +104,8 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                             ColIndex = col,
                             State = BoardCellState.Closed,
                             CellType = BoardCellPersistence.DefaultCellType,
-                            Title = GameSetupStubDefaults.GetCellTitle(row, col),
-                            Cost = GameSetupStubDefaults.GetCellCost(col),
+                            Title = null,
+                            Cost = GameSetupStubDefaults.GetRowCost(row),
                             Description = null
                         }
                     );
@@ -146,6 +147,182 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, AppMessages.Logs.GameSetupDraftCreateFailed);
+            throw;
+        }
+    }
+
+    public async Task<GameBoardSnapshot?> UpdateDraftSetupAsync(
+        GameSetupDraftUpdate update,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var draftGame = await _dbContext.Games
+                .Include(game => game.Board!)
+                .ThenInclude(board => board.Cells)
+                .Where(game => game.Status == GameStatusValue.Draft)
+                .OrderByDescending(game => game.CreatedAtUtc)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (draftGame?.Board is not { } board)
+            {
+                return null;
+            }
+
+            await _dbContext.Entry(board)
+                .Collection(existingBoard => existingBoard.Cells)
+                .LoadAsync(cancellationToken);
+
+            var rowCount = update.RowLabels.Count;
+            var colCount = update.ColLabels.Count;
+            var existingCells = board.Cells.ToList();
+            var existingById = existingCells.ToDictionary(cell => cell.Id);
+            var retainedUpdates = update.Cells
+                .Select(cellUpdate => (
+                    Update: cellUpdate,
+                    CellId: Guid.TryParse(cellUpdate.CellId, out var parsedId) ? parsedId : (Guid?)null
+                ))
+                .Where(item => item.CellId.HasValue && existingById.ContainsKey(item.CellId.Value))
+                .ToDictionary(item => item.CellId!.Value, item => item.Update);
+
+            var cellsToRemove = existingCells
+                .Where(cell => !retainedUpdates.ContainsKey(cell.Id))
+                .ToList();
+
+            var shouldVacatePositions = _dbContext.Database.IsRelational();
+            await using var transaction = shouldVacatePositions
+                ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+
+            var retainedCells = existingCells
+                .Where(cell => retainedUpdates.ContainsKey(cell.Id))
+                .ToArray();
+
+            if (shouldVacatePositions)
+            {
+                for (var index = 0; index < retainedCells.Length; index += 1)
+                {
+                    retainedCells[index].RowIndex = -1;
+                    retainedCells[index].ColIndex = index;
+                }
+            }
+
+            if (cellsToRemove.Count > 0)
+            {
+                _dbContext.BoardCells.RemoveRange(cellsToRemove);
+            }
+
+            if (shouldVacatePositions && (retainedCells.Length > 0 || cellsToRemove.Count > 0))
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            else if (!shouldVacatePositions && existingCells.Count > 0)
+            {
+                // EF InMemory does not exercise relational unique-index moves; rebuild cells there for test parity.
+                _dbContext.BoardCells.RemoveRange(existingCells);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            foreach (var cellUpdate in update.Cells)
+            {
+                if (shouldVacatePositions
+                    && !string.IsNullOrWhiteSpace(cellUpdate.CellId)
+                    && Guid.TryParse(cellUpdate.CellId, out var cellId)
+                    && retainedUpdates.ContainsKey(cellId)
+                    && existingById.TryGetValue(cellId, out var existingByIncomingId))
+                {
+                    existingByIncomingId.RowIndex = cellUpdate.Row;
+                    existingByIncomingId.ColIndex = cellUpdate.Col;
+                    existingByIncomingId.Title = cellUpdate.Title;
+                    existingByIncomingId.Cost = cellUpdate.Cost;
+                    continue;
+                }
+
+                var newCellId = Guid.TryParse(cellUpdate.CellId, out var incomingCellId)
+                    && existingById.ContainsKey(incomingCellId)
+                        ? incomingCellId
+                        : Guid.NewGuid();
+
+                _dbContext.BoardCells.Add(
+                    new BoardCell
+                    {
+                        Id = newCellId,
+                        BoardId = board.Id,
+                        RowIndex = cellUpdate.Row,
+                        ColIndex = cellUpdate.Col,
+                        State = BoardCellState.Closed,
+                        CellType = BoardCellPersistence.DefaultCellType,
+                        Title = cellUpdate.Title,
+                        Cost = cellUpdate.Cost,
+                        Description = null
+                    }
+                );
+            }
+
+            draftGame.Title = update.Title;
+            board.Rows = rowCount;
+            board.Cols = colCount;
+            board.RowLabels = update.RowLabels.ToArray();
+            board.ColLabels = update.ColLabels.ToArray();
+            board.Version += 1;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            _logger.LogInformation(
+                AppMessages.Logs.GameSetupDraftSaved,
+                draftGame.Id,
+                board.Version
+            );
+
+            return await BuildSnapshotAsync(
+                new SelectedBoard(
+                    board.Id,
+                    draftGame.Id,
+                    draftGame.Title,
+                    draftGame.Description,
+                    GameStatusValue.Draft,
+                    board.Version,
+                    board.Rows,
+                    board.Cols,
+                    board.RowLabels,
+                    board.ColLabels
+                ),
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftSaveFailed);
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteDraftSetupAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var draftGame = await _dbContext.Games
+                .Where(game => game.Status == GameStatusValue.Draft)
+                .OrderByDescending(game => game.CreatedAtUtc)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (draftGame is null)
+            {
+                return false;
+            }
+
+            _dbContext.Games.Remove(draftGame);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(AppMessages.Logs.GameSetupDraftDeleted, draftGame.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftDeleteFailed);
             throw;
         }
     }

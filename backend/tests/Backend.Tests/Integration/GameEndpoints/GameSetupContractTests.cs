@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
+using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Domain.Persistence;
 using backend.Messaging;
@@ -66,7 +67,59 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         Assert.NotNull(payload);
         Assert.Equal("Stream setup", payload.Title);
         Assert.Equal(GameStatusValue.Draft, payload.Status);
-        Assert.Equal(30, payload.Cells.Count);
+        Assert.Equal(25, payload.Cells.Count);
+        Assert.Equal(5, payload.Rows);
+        Assert.Equal(["100", "125", "150", "175", "200"], payload.RowLabels);
+        Assert.All(payload.Cells, cell => Assert.Null(cell.Title));
+        Assert.Equal(
+            GameSetupStubDefaults.DefaultRowCosts,
+            payload.Cells.GroupBy(cell => cell.Row).OrderBy(group => group.Key).Select(group => group.First().Cost).ToArray()
+        );
+    }
+
+    [Fact]
+    public async Task DeleteSetup_WhenAdmin_DeletesDraft()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var createResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Draft to delete")
+        );
+        var created = await createResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(created);
+
+        var customizedRowLabels = created.RowLabels.ToArray();
+        customizedRowLabels[0] = "Custom row";
+
+        var updateResponse = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                "Draft to delete",
+                customizedRowLabels,
+                created.ColLabels.ToArray(),
+                created.Cells
+                    .Select(
+                        cell =>
+                            new UpdateGameSetupCellDto(
+                                cell.Id,
+                                cell.Row,
+                                cell.Col,
+                                "Custom title",
+                                cell.Cost + 99
+                            )
+                    )
+                    .ToArray()
+            )
+        );
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        var deleteResponse = await adminClient.DeleteAsync("/api/game/setup");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        var getResponse = await adminClient.GetAsync("/api/game/setup");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
     [Fact]
@@ -138,6 +191,138 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var response = await viewerClient.GetAsync("/api/game/setup");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateSetup_WhenAdmin_SavesDraftChanges()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var createResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Before save")
+        );
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(created);
+
+        var updateResponse = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                "After save",
+                ["100", "125", "150", "175", "200"],
+                ["Col A", "Col B", "Col C", "Col D", "Col E"],
+                created.Cells
+                    .Select(
+                        cell =>
+                            new UpdateGameSetupCellDto(
+                                cell.Id,
+                                cell.Row,
+                                cell.Col,
+                                $"Saved {cell.Row}-{cell.Col}",
+                                cell.Cost + 10
+                            )
+                    )
+                    .ToArray()
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+        var saved = await updateResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(saved);
+        Assert.Equal("After save", saved.Title);
+        Assert.Equal(["Col A", "Col B", "Col C", "Col D", "Col E"], saved.ColLabels);
+        Assert.All(saved.Cells, cell => Assert.Equal(cell.Cost - 10, created.Cells.Single(c => c.Id == cell.Id).Cost));
+        Assert.Equal(2, saved.Version);
+
+        var getResponse = await adminClient.GetAsync("/api/game/setup");
+        var loaded = await getResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(loaded);
+        Assert.Equal("After save", loaded.Title);
+        Assert.Equal("Saved 0-0", loaded.Cells[0].Title);
+    }
+
+    [Fact]
+    public async Task UpdateSetup_WhenNoDraft_ReturnsNotFound()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var response = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                "Missing draft",
+                ["1"],
+                ["Col 1"],
+                [new UpdateGameSetupCellDto(Guid.NewGuid().ToString(), 0, 0, "Card", 0)]
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateSetup_WhenTitleIsEmpty_ReturnsBadRequest()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        var created = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Draft")
+        );
+        var snapshot = await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(snapshot);
+
+        var response = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                " ",
+                snapshot.RowLabels.ToArray(),
+                snapshot.ColLabels.ToArray(),
+                snapshot.Cells
+                    .Select(cell => new UpdateGameSetupCellDto(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
+                    .ToArray()
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.InvalidGameSetupTitle, payload.Error);
+    }
+
+    [Fact]
+    public async Task UpdateSetup_WhenAdmin_RemovesLastRowAndDeletesCells()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var createResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Resize draft")
+        );
+        var created = await createResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(created);
+        Assert.Equal(25, created.Cells.Count);
+
+        var rowLabels = created.RowLabels.Take(4).ToArray();
+        var cells = created.Cells
+            .Where(cell => cell.Row < 4)
+            .Select(cell => new UpdateGameSetupCellDto(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
+            .ToArray();
+
+        var updateResponse = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto("Resize draft", rowLabels, created.ColLabels.ToArray(), cells)
+        );
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+        var saved = await updateResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(saved);
+        Assert.Equal(4, saved.Rows);
+        Assert.Equal(20, saved.Cells.Count);
+        Assert.DoesNotContain(saved.Cells, cell => cell.Row == 4);
     }
 
     private async Task ClearGamesAsync()

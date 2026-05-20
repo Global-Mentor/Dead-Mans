@@ -20,6 +20,15 @@ public static class AppMessages
         public const string InvalidGameSetupTitle = "Game title must be between 1 and 200 characters.";
         public const string UnableToLoadGameSetup = "Unable to load the game setup.";
         public const string UnableToCreateGameSetup = "Unable to create the game setup.";
+        public const string UnableToSaveGameSetup = "Unable to save the game setup.";
+        public const string UnableToDeleteGameSetup = "Unable to delete the game setup.";
+        public const string InvalidGameSetupSaveRequest =
+            "Game setup could not be saved. Check the title, rows, columns, and card fields.";
+    }
+
+    public static class ErrorCodes
+    {
+        public const string InvalidGameSetupTitle = "game_setup.invalid_title";
     }
 
     public static class Exceptions
@@ -130,5 +139,10 @@ public static class AppMessages
         public const string GameSetupDraftAlreadyExists = "Draft game setup already exists.";
         public const string GameSetupDraftCreated =
             "Draft game setup created. GameId: {GameId}, CellCount: {CellCount}.";
+        public const string GameSetupDraftSaved =
+            "Draft game setup saved. GameId: {GameId}, BoardVersion: {BoardVersion}.";
+        public const string GameSetupDraftSaveFailed = "Failed to save draft game setup.";
+        public const string GameSetupDraftDeleted = "Draft game setup deleted. GameId: {GameId}.";
+        public const string GameSetupDraftDeleteFailed = "Failed to delete draft game setup.";
     }
 }

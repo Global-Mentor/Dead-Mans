@@ -14,6 +14,29 @@ public sealed record CreateDraftGameSetupResult(
     GameBoardSnapshot? Snapshot = null
 );
 
+public enum UpdateDraftGameSetupOutcome
+{
+    Updated,
+    NoDraftFound,
+    InvalidTitle,
+    InvalidRowLabels,
+    InvalidColumnLabels,
+    InvalidCells
+}
+
+public sealed record UpdateDraftGameSetupResult(
+    UpdateDraftGameSetupOutcome Outcome,
+    GameBoardSnapshot? Snapshot = null
+);
+
+public enum DeleteDraftGameSetupOutcome
+{
+    Deleted,
+    NoDraftFound
+}
+
+public sealed record DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome Outcome);
+
 public interface IGameSetupService
 {
     Task<GameBoardSnapshot?> GetDraftSetupAsync(CancellationToken cancellationToken = default);
@@ -22,4 +45,11 @@ public interface IGameSetupService
         string title,
         CancellationToken cancellationToken = default
     );
+
+    Task<UpdateDraftGameSetupResult> UpdateDraftSetupAsync(
+        GameSetupDraftUpdate update,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<DeleteDraftGameSetupResult> DeleteDraftSetupAsync(CancellationToken cancellationToken = default);
 }

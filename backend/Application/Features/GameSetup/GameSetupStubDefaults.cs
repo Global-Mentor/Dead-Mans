@@ -3,10 +3,17 @@ namespace backend.Application.Features.GameSetup;
 /// <summary>Default board shape and stub field values for a newly created draft game.</summary>
 public static class GameSetupStubDefaults
 {
-    public const int Rows = 6;
+    public const int Rows = 5;
     public const int Cols = 5;
 
-    public static readonly string[] RowLabels = ["A", "B", "C", "D", "E", "F"];
+    private static readonly int[] RowCosts = [100, 125, 150, 175, 200];
+
+    public static IReadOnlyList<int> DefaultRowCosts => RowCosts;
+
+    public static string[] BuildRowLabels()
+    {
+        return Enumerable.Range(0, Rows).Select(row => GetRowCost(row).ToString()).ToArray();
+    }
 
     public static string[] BuildColumnLabels()
     {
@@ -15,8 +22,15 @@ public static class GameSetupStubDefaults
 
     public static string GetColumnLabel(int columnIndex) => $"Column {columnIndex + 1}";
 
-    public static string GetCellTitle(int rowIndex, int columnIndex) =>
-        $"Card {rowIndex + 1}-{columnIndex + 1}";
+    public static int GetRowCost(int rowIndex)
+    {
+        if (rowIndex < RowCosts.Length)
+        {
+            return RowCosts[rowIndex];
+        }
 
-    public static int GetCellCost(int columnIndex) => (columnIndex + 1) * 100;
+        var lastCost = RowCosts[^1];
+        var extraRows = rowIndex - RowCosts.Length + 1;
+        return lastCost + extraRows * 25;
+    }
 }

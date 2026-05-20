@@ -6,8 +6,6 @@ namespace backend.Application.Features.GameSetup;
 
 public sealed class GameSetupService : IGameSetupService
 {
-    private const int MaxTitleLength = 200;
-
     private readonly IGameSetupRepository _repository;
 
     public GameSetupService(IGameSetupRepository repository)
@@ -25,8 +23,7 @@ public sealed class GameSetupService : IGameSetupService
         CancellationToken cancellationToken = default
     )
     {
-        var normalizedTitle = title.Trim();
-        if (string.IsNullOrWhiteSpace(normalizedTitle) || normalizedTitle.Length > MaxTitleLength)
+        if (!GameSetupDraftValidator.TryNormalizeTitle(title, out var normalizedTitle))
         {
             return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.InvalidTitle);
         }
@@ -43,5 +40,61 @@ public sealed class GameSetupService : IGameSetupService
         }
 
         return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.Created, snapshot);
+    }
+
+    public async Task<UpdateDraftGameSetupResult> UpdateDraftSetupAsync(
+        GameSetupDraftUpdate update,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!GameSetupDraftValidator.TryNormalizeTitle(update.Title, out var normalizedTitle))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidTitle);
+        }
+
+        if (!GameSetupDraftValidator.TryNormalizeRowLabels(update.RowLabels, out var normalizedRowLabels))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidRowLabels);
+        }
+
+        if (!GameSetupDraftValidator.TryNormalizeColumnLabels(update.ColLabels, out var normalizedColumnLabels))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidColumnLabels);
+        }
+
+        if (!GameSetupDraftValidator.TryNormalizeCellUpdates(
+                normalizedRowLabels.Length,
+                normalizedColumnLabels.Length,
+                update.Cells,
+                out var normalizedCells
+            ))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidCells);
+        }
+
+        var normalizedUpdate = new GameSetupDraftUpdate(
+            normalizedTitle,
+            normalizedRowLabels,
+            normalizedColumnLabels,
+            normalizedCells
+        );
+
+        var savedSnapshot = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);
+        if (savedSnapshot is null)
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.NoDraftFound);
+        }
+
+        return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.Updated, savedSnapshot);
+    }
+
+    public async Task<DeleteDraftGameSetupResult> DeleteDraftSetupAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var deleted = await _repository.DeleteDraftSetupAsync(cancellationToken);
+        return deleted
+            ? new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.Deleted)
+            : new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.NoDraftFound);
     }
 }
