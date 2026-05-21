@@ -28,12 +28,39 @@ public sealed class StorageOptionsValidationTests
     }
 
     [Fact]
+    public void StorageOptions_Rejects_missing_bucket_name()
+    {
+        var services = new ServiceCollection();
+        services
+            .AddOptions<StorageOptions>()
+            .Configure(o =>
+            {
+                o.PublicBaseUrl = "https://minio.test.example";
+                o.BucketName = string.Empty;
+            })
+            .ValidateDataAnnotations()
+            .Validate(
+                static o => Uri.TryCreate(o.PublicBaseUrl, UriKind.Absolute, out _),
+                $"{StorageOptions.SectionName}:{nameof(StorageOptions.PublicBaseUrl)} must be an absolute URL."
+            )
+            .ValidateOnStart();
+
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => _ = provider.GetRequiredService<IOptions<StorageOptions>>().Value);
+    }
+
+    [Fact]
     public void StorageOptions_Accepts_https_public_base_url()
     {
         var services = new ServiceCollection();
         services
             .AddOptions<StorageOptions>()
-            .Configure(o => o.PublicBaseUrl = "https://minio.test.example")
+            .Configure(o =>
+            {
+                o.PublicBaseUrl = "https://minio.test.example";
+                o.BucketName = "deadman-test";
+            })
             .ValidateDataAnnotations()
             .Validate(
                 static o => Uri.TryCreate(o.PublicBaseUrl, UriKind.Absolute, out _),

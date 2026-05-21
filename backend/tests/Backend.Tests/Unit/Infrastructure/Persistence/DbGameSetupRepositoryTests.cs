@@ -4,8 +4,10 @@ using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
+using backend.Infrastructure.Configuration;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -44,7 +46,7 @@ public sealed class DbGameSetupRepositoryTests
         );
         await db.SaveChangesAsync();
 
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         var snapshot = await repo.GetLatestDraftSetupSnapshotAsync();
 
@@ -57,7 +59,7 @@ public sealed class DbGameSetupRepositoryTests
     public async Task CreateDraftSetupAsync_CreatesGameBoardAndCellsWithoutMedia()
     {
         await using var db = CreateContext();
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         var snapshot = await repo.CreateDraftSetupAsync("My setup game");
 
@@ -88,7 +90,7 @@ public sealed class DbGameSetupRepositoryTests
     public async Task DeleteDraftSetupAsync_WhenDraftExists_RemovesDraftGame()
     {
         await using var db = CreateContext();
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         await repo.CreateDraftSetupAsync("Draft to delete");
         var deleted = await repo.DeleteDraftSetupAsync();
@@ -103,7 +105,7 @@ public sealed class DbGameSetupRepositoryTests
     public async Task DeleteDraftSetupAsync_WhenNoDraft_ReturnsFalse()
     {
         await using var db = CreateContext();
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         var deleted = await repo.DeleteDraftSetupAsync();
 
@@ -114,7 +116,7 @@ public sealed class DbGameSetupRepositoryTests
     public async Task UpdateDraftSetupAsync_PersistsTitleColumnsAndCellFields()
     {
         await using var db = CreateContext();
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         var created = await repo.CreateDraftSetupAsync("Initial title");
         Assert.NotNull(created);
@@ -145,7 +147,7 @@ public sealed class DbGameSetupRepositoryTests
     public async Task UpdateDraftSetupAsync_WhenRowsShift_PreservesCellsById()
     {
         await using var db = CreateContext();
-        IGameSetupRepository repo = new DbGameSetupRepository(db, NullLogger<DbGameSetupRepository>.Instance);
+        IGameSetupRepository repo = CreateRepository(db);
 
         var created = await repo.CreateDraftSetupAsync("Initial title");
         Assert.NotNull(created);
@@ -173,6 +175,18 @@ public sealed class DbGameSetupRepositoryTests
         Assert.Equal(originalTopLeft.Id, saved.Cells.Single(cell => cell.Row == 1 && cell.Col == 0).Id);
         Assert.Equal(originalSecondRowLeft.Id, saved.Cells.Single(cell => cell.Row == 2 && cell.Col == 0).Id);
         Assert.NotEqual(originalTopLeft.Id, saved.Cells.Single(cell => cell.Row == 0 && cell.Col == 0).Id);
+    }
+
+    private static DbGameSetupRepository CreateRepository(ApplicationDbContext db)
+    {
+        var storageOptions = Options.Create(
+            new StorageOptions
+            {
+                PublicBaseUrl = "http://localhost:9000",
+                BucketName = "deadman-test",
+            }
+        );
+        return new DbGameSetupRepository(db, storageOptions, NullLogger<DbGameSetupRepository>.Instance);
     }
 
     private static ApplicationDbContext CreateContext()

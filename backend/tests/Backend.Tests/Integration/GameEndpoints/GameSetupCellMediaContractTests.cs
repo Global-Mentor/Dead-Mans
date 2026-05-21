@@ -1,0 +1,221 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using backend.Api.Contracts;
+using backend.Application.Abstractions.Auth;
+using backend.Data;
+using backend.Data.Entities;
+using backend.Domain.Models;
+using backend.Domain.Persistence;
+using Backend.Tests.Support;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Backend.Tests.Integration.GameEndpoints;
+
+public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebApplicationFactory>
+{
+    private readonly TestWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public GameSetupCellMediaContractTests(TestWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task UploadCellMedia_WhenAdminAndDraftExists_ReturnsMediaUrl()
+    {
+        await ClearGamesAsync();
+        var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        using var content = CreatePngUploadContent();
+
+        var response = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<GameBoardCellMediaDto>();
+        Assert.NotNull(payload);
+        var expectedObjectKey = GameMediaObjectKeyFormat.BuildCardImageKey(
+            "games",
+            gameId,
+            "cards",
+            rowIndex: 0,
+            colIndex: 0,
+            ".png"
+        );
+        Assert.Contains(expectedObjectKey, payload!.Url, StringComparison.OrdinalIgnoreCase);
+
+        var setupResponse = await adminClient.GetAsync("/api/game/setup");
+        var setup = await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(setup);
+        Assert.Contains(setup!.Cells, cell => cell.Id == cellId.ToString() && cell.Media.Count == 1);
+    }
+
+    [Fact]
+    public async Task DeleteCellMedia_WhenAdminAndMediaExists_ReturnsNoContent()
+    {
+        await ClearGamesAsync();
+        var (_, cellId) = await SeedDraftWithSingleCellAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        using var uploadContent = CreatePngUploadContent();
+        var uploadResponse = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", uploadContent);
+        Assert.Equal(HttpStatusCode.OK, uploadResponse.StatusCode);
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/game/setup/cells/{cellId}/media");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var setupResponse = await adminClient.GetAsync("/api/game/setup");
+        var setup = await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(setup);
+        Assert.Contains(setup!.Cells, cell => cell.Id == cellId.ToString() && cell.Media.Count == 0);
+    }
+
+    [Fact]
+    public async Task UploadCellMedia_WhenAnonymous_ReturnsUnauthorized()
+    {
+        using var content = CreatePngUploadContent();
+        var response = await _client.PostAsync(
+            $"/api/game/setup/cells/{Guid.NewGuid()}/media",
+            content
+        );
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<(Guid GameId, Guid CellId)> SeedDraftWithSingleCellAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var gameId = Guid.NewGuid();
+        var boardId = Guid.NewGuid();
+        var cellId = Guid.NewGuid();
+        var createdAt = DateTime.UtcNow;
+
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Draft",
+                Status = GameStatusValue.Draft,
+                CreatedAtUtc = createdAt,
+            }
+        );
+        db.GameBoards.Add(
+            new GameBoard
+            {
+                Id = boardId,
+                GameId = gameId,
+                Version = 1,
+                Rows = 1,
+                Cols = 1,
+                RowLabels = ["100"],
+                ColLabels = ["Column 1"],
+                CreatedAtUtc = createdAt,
+            }
+        );
+        db.BoardCells.Add(
+            new BoardCell
+            {
+                Id = cellId,
+                BoardId = boardId,
+                RowIndex = 0,
+                ColIndex = 0,
+                State = BoardCellState.Closed,
+                CellType = BoardCellPersistence.DefaultCellType,
+                Cost = 100,
+            }
+        );
+        await db.SaveChangesAsync();
+        return (gameId, cellId);
+    }
+
+    private static MultipartFormDataContent CreatePngUploadContent()
+    {
+        var bytes = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        );
+        var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(bytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        content.Add(fileContent, "file", "cell.png");
+        return content;
+    }
+
+    private async Task ClearGamesAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.BoardCellMedia.RemoveRange(db.BoardCellMedia);
+        db.MediaAssets.RemoveRange(db.MediaAssets);
+        db.BoardCells.RemoveRange(db.BoardCells);
+        db.GameBoards.RemoveRange(db.GameBoards);
+        db.Games.RemoveRange(db.Games);
+        await db.SaveChangesAsync();
+    }
+
+    private HttpClient CreateAuthenticatedClient(string[] roles)
+    {
+        var authenticatedFactory = _factory.WithWebHostBuilder(
+            builder =>
+                builder.ConfigureServices(
+                    services =>
+                    {
+                        services.RemoveAll<IClaimsTransformation>();
+                        services.AddSingleton<IClaimsTransformation, PassthroughClaimsTransformation>();
+                        services
+                            .AddAuthentication(options =>
+                            {
+                                options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;
+                                options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
+                                options.DefaultScheme = TestAuthenticationHandler.SchemeName;
+                            })
+                            .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                                TestAuthenticationHandler.SchemeName,
+                                options => options.ClaimsIssuer = string.Join(',', roles)
+                            );
+                    }
+                )
+        );
+
+        return authenticatedFactory.CreateClient();
+    }
+
+    private sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    {
+        public const string SchemeName = "TestAuth";
+
+        public TestAuthenticationHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder
+        )
+            : base(options, logger, encoder) { }
+
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            var roles = (Options.ClaimsIssuer ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()) };
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            var identity = new ClaimsIdentity(claims, SchemeName);
+            var principal = new ClaimsPrincipal(identity);
+            var ticket = new AuthenticationTicket(principal, SchemeName);
+            return Task.FromResult(AuthenticateResult.Success(ticket));
+        }
+    }
+
+    private sealed class PassthroughClaimsTransformation : IClaimsTransformation
+    {
+        public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal) => Task.FromResult(principal);
+    }
+}
