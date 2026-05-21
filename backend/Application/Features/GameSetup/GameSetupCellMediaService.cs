@@ -145,36 +145,39 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         return new DeleteDraftGameSetupCellMediaResult(DeleteDraftGameSetupCellMediaOutcome.Deleted);
     }
 
-    private async Task TryDeleteDetachedObjectAsync(
+    private Task TryDeleteDetachedObjectAsync(
         StoredCellMedia media,
         Guid cellId,
         CancellationToken cancellationToken
     )
     {
-        await TryDeleteStorageObjectAsync(media.Bucket, media.ObjectKey, cellId, null, cancellationToken);
+        return GameSetupMediaStorageDeletion.TryDeleteObjectAsync(
+            _objectStorage,
+            _logger,
+            cellId,
+            media.Bucket,
+            media.ObjectKey,
+            failureCause: null,
+            cancellationToken
+        );
     }
 
-    private async Task TryDeleteStorageObjectAsync(
+    private Task TryDeleteStorageObjectAsync(
         string bucket,
         string objectKey,
         Guid cellId,
-        Exception? failureCause,
+        Exception failureCause,
         CancellationToken cancellationToken
     )
     {
-        try
-        {
-            await _objectStorage.DeleteObjectAsync(bucket, objectKey, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                failureCause ?? ex,
-                AppMessages.Logs.GameSetupCellMediaObjectCleanupFailed,
-                cellId,
-                bucket,
-                objectKey
-            );
-        }
+        return GameSetupMediaStorageDeletion.TryDeleteObjectAsync(
+            _objectStorage,
+            _logger,
+            cellId,
+            bucket,
+            objectKey,
+            failureCause,
+            cancellationToken
+        );
     }
 }

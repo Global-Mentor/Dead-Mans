@@ -15,4 +15,10 @@ public interface IObjectStorage
         string objectKey,
         CancellationToken cancellationToken = default
     );
+
+    Task DeleteObjectsByPrefixAsync(
+        string bucketName,
+        string keyPrefix,
+        CancellationToken cancellationToken = default
+    );
 }

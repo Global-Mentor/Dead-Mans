@@ -48,6 +48,52 @@ public sealed class S3ObjectStorage : IObjectStorage
         await client.DeleteObjectAsync(bucketName, objectKey, cancellationToken);
     }
 
+    public async Task DeleteObjectsByPrefixAsync(
+        string bucketName,
+        string keyPrefix,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (string.IsNullOrWhiteSpace(keyPrefix))
+        {
+            throw new ArgumentException("Object key prefix is required.", nameof(keyPrefix));
+        }
+
+        using var client = CreateClient();
+        var listRequest = new ListObjectsV2Request
+        {
+            BucketName = bucketName,
+            Prefix = keyPrefix.TrimStart('/'),
+        };
+
+        while (true)
+        {
+            var listed = await client.ListObjectsV2Async(listRequest, cancellationToken);
+            if (listed.S3Objects.Count == 0)
+            {
+                return;
+            }
+
+            await client.DeleteObjectsAsync(
+                new DeleteObjectsRequest
+                {
+                    BucketName = bucketName,
+                    Objects = listed.S3Objects
+                        .Select(item => new KeyVersion { Key = item.Key })
+                        .ToList(),
+                },
+                cancellationToken
+            );
+
+            if (!listed.IsTruncated)
+            {
+                return;
+            }
+
+            listRequest.ContinuationToken = listed.NextContinuationToken;
+        }
+    }
+
     private IAmazonS3 CreateClient()
     {
         if (string.IsNullOrWhiteSpace(_options.AccessKey) || string.IsNullOrWhiteSpace(_options.SecretKey))

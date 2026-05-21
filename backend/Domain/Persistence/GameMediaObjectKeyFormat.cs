@@ -5,6 +5,11 @@ namespace backend.Domain.Persistence;
 /// </summary>
 public static class GameMediaObjectKeyFormat
 {
+    public static string BuildGameMediaPrefix(string gamesPrefix, Guid gameId)
+    {
+        return $"{gamesPrefix.Trim('/')}/{gameId}/";
+    }
+
     public static string BuildCardImageKey(
         string gamesPrefix,
         Guid gameId,
@@ -15,6 +20,6 @@ public static class GameMediaObjectKeyFormat
     )
     {
         var extension = fileExtension.StartsWith('.') ? fileExtension : $".{fileExtension}";
-        return $"{gamesPrefix.Trim('/')}/{gameId}/{cardsGroup.Trim('/')}/{colIndex + 1}-{rowIndex + 1}{extension}";
+        return $"{BuildGameMediaPrefix(gamesPrefix, gameId)}{cardsGroup.Trim('/')}/{colIndex + 1}-{rowIndex + 1}{extension}";
     }
 }
