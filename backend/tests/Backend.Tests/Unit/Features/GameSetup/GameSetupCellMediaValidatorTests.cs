@@ -1,11 +1,22 @@
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Configuration;
 using backend.Application.Features.GameSetup;
+using backend.Domain.Persistence;
 
 namespace Backend.Tests.Unit.Features.GameSetup;
 
 public sealed class GameSetupCellMediaValidatorTests
 {
+    [Fact]
+    public void BuildGameMediaPrefix_UsesConfiguredGamesPrefix()
+    {
+        var gameId = Guid.Parse("c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a");
+
+        var prefix = GameMediaObjectKeyFormat.BuildGameMediaPrefix("games", gameId);
+
+        Assert.Equal($"games/{gameId}/", prefix);
+    }
+
     [Fact]
     public void BuildObjectKey_UsesConfiguredLayoutMatchingSeedMigration()
     {
