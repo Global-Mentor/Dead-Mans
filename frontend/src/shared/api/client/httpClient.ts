@@ -80,6 +80,18 @@ export const httpClient = {
     return handleResponse<T>(response)
   },
 
+  async postForm<T>(path: string, body: FormData, options: HttpRequestOptions = {}): Promise<T> {
+    const url = buildUrl(path, options)
+    logger.debug('HTTP POST (multipart)', { url, options })
+    const requestInit = toRequestInit(options)
+    const response = await fetch(url, {
+      ...requestInit,
+      method: 'POST',
+      body,
+    })
+    return handleResponse<T>(response)
+  },
+
   async put<T>(path: string, body?: unknown, options: HttpRequestOptions = {}): Promise<T> {
     const url = buildUrl(path, options)
     logger.debug('HTTP PUT', { url, body, options })

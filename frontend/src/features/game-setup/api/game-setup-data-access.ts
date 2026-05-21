@@ -35,3 +35,11 @@ export async function saveDraftGameSetup(
 export async function deleteDraftGameSetup(): Promise<void> {
   return gameSetupApi.deleteDraft()
 }
+
+export async function uploadDraftGameSetupCellMedia(cellId: string, file: File) {
+  return gameSetupApi.uploadCellMedia(cellId, file)
+}
+
+export async function deleteDraftGameSetupCellMedia(cellId: string): Promise<void> {
+  return gameSetupApi.deleteCellMedia(cellId)
+}
