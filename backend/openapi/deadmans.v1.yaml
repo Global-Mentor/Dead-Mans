@@ -154,7 +154,7 @@ paths:
         - cookieAuth: []
       responses:
         '204':
-          description: Draft game setup deleted
+          description: Draft game setup deleted from the database; uploaded cell images under the draft game media prefix are removed from object storage when possible
         '401':
           description: Not authenticated
           content:

@@ -6,6 +6,7 @@
 
 - Twitch auth
 - game board с чтением снимка, admin-only открытием ячеек и realtime-синхронизацией
+- game setup: admin draft board, cell image upload/delete, draft reset with DB + object-storage cleanup
 
 ## Поток данных
 
@@ -40,11 +41,14 @@ flowchart LR
 
 ## Backend
 
-- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`
+- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`, `GameSetupController`, `GameSetupCellMediaController`
 - `Api/Contracts/` + `Api/Mapping/` - transport DTO и явный mapping из application-моделей
 - `Application/Features/Auth/` - auth session service
 - `Application/Features/GameBoard/` - game-board service
+- `Application/Features/GameSetup/` - draft setup, cell media, storage cleanup on reset
+- `Application/Abstractions/IObjectStorage.cs` + `Infrastructure/Storage/` - S3-compatible object storage port
 - `Infrastructure/Persistence/DbGameBoardRepository.cs` - чтение игрового поля из БД
+- `Infrastructure/Persistence/DbGameSetupRepository.cs` - draft setup persistence
 - `Infrastructure/Auth/` - Twitch auth, роли, claims transformation
 - `Infrastructure/Realtime/` - SignalR hub и publisher игровых событий
 - `Data/` - EF Core context, entities, migrations
