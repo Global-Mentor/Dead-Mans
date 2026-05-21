@@ -184,7 +184,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR;
-- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — черновик, пакетное сохранение названия, строк-ценовых линий, колонок и полей карточек; отдельные `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка и удаление изображения ячейки в существующий bucket (`Storage:BucketName`), object key `{GamesPrefix}/{gameId}/{CardsGroup}/{col}-{row}.ext` (как в seed migration, папка `cards`); несохранённые правки текстовых полей дублируются в `localStorage` браузера до успешного save/reset;
+- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — черновик, пакетное сохранение названия, строк-ценовых линий, колонок и полей карточек; `DELETE /api/game/setup` (reset draft) сначала удаляет черновик из БД, затем best-effort чистит объекты под префиксом `GameMediaObjectKeyFormat.BuildGameMediaPrefix` в `Storage:BucketName`; отдельные `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка и удаление изображения ячейки в существующий bucket (`Storage:BucketName`), object key `{GamesPrefix}/{gameId}/{CardsGroup}/{col}-{row}.ext` (как в seed migration, папка `cards`); несохранённые правки текстовых полей дублируются в `localStorage` браузера до успешного save/reset;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;

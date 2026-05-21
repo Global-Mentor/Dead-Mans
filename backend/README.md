@@ -38,6 +38,15 @@ dotnet run --project backend.csproj
 
 Игровое поле читается из PostgreSQL через EF Core. Открытие ячеек выполняется на backend с role-check по admin и публикует realtime-события через SignalR. Медиа-URL для ячеек строятся на основе `Storage:PublicBaseUrl`.
 
+Game setup (admin draft):
+
+- `GET/POST/PUT/DELETE /api/game/setup` — черновик и пакетное сохранение текстовых полей.
+- `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка/удаление изображения ячейки (multipart, admin only).
+- Object key: `{Storage:GamesPrefix}/{gameId}/{Storage:CardsGroup}/{col}-{row}.{ext}` (см. `GameMediaObjectKeyFormat`).
+- `DELETE /api/game/setup` удаляет черновик в Postgres, затем best-effort удаляет все объекты с префиксом `{GamesPrefix}/{gameId}/` в `Storage:BucketName`.
+
+Обязательные ключи `Storage` для media: `PublicBaseUrl`, `BucketName`, `GamesPrefix`, `CardsGroup`. Для записи в MinIO в dev также `AccessKey` / `SecretKey` (или `MINIO_ROOT_*`).
+
 Каноничный источник тестовых картинок:
 
 - `backend/assets/test-game-board/cards/`
