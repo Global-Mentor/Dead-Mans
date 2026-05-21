@@ -48,7 +48,7 @@ flowchart LR
 - `Infrastructure/Auth/` - Twitch auth, роли, claims transformation
 - `Infrastructure/Realtime/` - SignalR hub и publisher игровых событий
 - `Data/` - EF Core context, entities, migrations
-- `assets/test-game-board/elements/` - source-controlled тестовые PNG для локального bootstrap
+- `assets/test-game-board/cards/` - source-controlled тестовые PNG для локального bootstrap
 - `tools/SeedTestGameBoardMedia/` - uploader этих PNG в MinIO
 
 ## Локальное развертывание
