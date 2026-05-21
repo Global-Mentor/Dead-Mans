@@ -40,14 +40,14 @@ dotnet run --project backend.csproj
 
 Каноничный источник тестовых картинок:
 
-- `backend/assets/test-game-board/elements/`
+- `backend/assets/test-game-board/cards/`
 
 Uploader:
 
 - `tools/SeedTestGameBoardMedia/`
 - `scripts/upload-test-game-board-media.ps1`
 
-Migration создает тестовую игру и записи `media_assets` / `board_cell_media`, а uploader заливает в bucket `deadman` реальные PNG-файлы с теми же object key.
+Migration создает тестовую игру и записи `media_assets` / `board_cell_media`, а uploader заливает в bucket `deadman` реальные PNG-файлы с теми же object key (`games/{gameId}/cards/{col}-{row}.png`).
 
 ## Twitch auth
 

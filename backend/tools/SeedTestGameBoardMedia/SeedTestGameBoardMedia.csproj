@@ -9,8 +9,8 @@
     <PackageReference Include="AWSSDK.S3" Version="4.0.20.1" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\assets\test-game-board\elements\**\*.*">
-      <Link>assets\test-game-board\elements\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    <Content Include="..\..\assets\test-game-board\cards\**\*.*">
+      <Link>assets\test-game-board\cards\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
