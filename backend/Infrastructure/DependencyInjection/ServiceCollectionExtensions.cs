@@ -8,9 +8,12 @@ using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Infrastructure.Auth;
 using backend.Infrastructure.Configuration;
+using backend.Application.Configuration;
 using backend.Infrastructure.Persistence;
 using backend.Infrastructure.Realtime;
+using backend.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -24,7 +27,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDeadMansInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration
+        IConfiguration configuration,
+        IHostEnvironment environment
     )
     {
         services
@@ -36,6 +40,20 @@ public static class ServiceCollectionExtensions
                 $"{StorageOptions.SectionName}:{nameof(StorageOptions.PublicBaseUrl)} must be an absolute URL."
             )
             .ValidateOnStart();
+        services
+            .AddOptions<MediaStorageSettings>()
+            .Bind(configuration.GetSection(MediaStorageSettings.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        if (environment.IsEnvironment("Testing"))
+        {
+            services.AddSingleton<IObjectStorage, InMemoryObjectStorage>();
+        }
+        else
+        {
+            services.AddSingleton<IObjectStorage, S3ObjectStorage>();
+        }
 
         var connectionString = ResolveConnectionString(configuration);
         if (!string.IsNullOrWhiteSpace(connectionString))
@@ -51,6 +69,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameBoardService, GameBoardService>();
         services.AddScoped<IGameSetupRepository, DbGameSetupRepository>();
         services.AddScoped<IGameSetupService, GameSetupService>();
+        services.AddScoped<IGameSetupCellMediaRepository, DbGameSetupCellMediaRepository>();
+        services.AddScoped<IGameSetupCellMediaService, GameSetupCellMediaService>();
         services.AddScoped<IAuthSessionService, AuthSessionService>();
         services.AddScoped<ITwitchAuthFlowService, TwitchAuthFlowService>();
         services.AddScoped<IAuthUserReader, DbAuthUserReader>();

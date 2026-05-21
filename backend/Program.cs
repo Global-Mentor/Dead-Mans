@@ -84,7 +84,7 @@ try
             };
         });
     builder.Services.AddAuthorization();
-    builder.Services.AddDeadMansInfrastructure(builder.Configuration);
+    builder.Services.AddDeadMansInfrastructure(builder.Configuration, builder.Environment);
     builder.Services.AddDeadMansCors(builder.Configuration);
     builder.Services
         .AddOptions<ForwardedHeadersSecurityOptions>()

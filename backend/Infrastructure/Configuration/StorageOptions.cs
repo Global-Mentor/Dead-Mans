@@ -12,4 +12,11 @@ public sealed class StorageOptions
     /// </summary>
     [Required]
     public string PublicBaseUrl { get; set; } = string.Empty;
+
+    [Required]
+    public string BucketName { get; set; } = string.Empty;
+
+    public string? AccessKey { get; set; }
+
+    public string? SecretKey { get; set; }
 }
