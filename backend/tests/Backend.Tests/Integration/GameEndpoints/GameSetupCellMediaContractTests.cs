@@ -4,8 +4,11 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using backend.Api.Contracts;
+using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Data;
+using backend.Infrastructure.Storage;
+using Microsoft.EntityFrameworkCore;
 using backend.Data.Entities;
 using backend.Domain.Models;
 using backend.Domain.Persistence;
@@ -77,6 +80,43 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         var setup = await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
         Assert.NotNull(setup);
         Assert.Contains(setup!.Cells, cell => cell.Id == cellId.ToString() && cell.Media.Count == 0);
+    }
+
+    [Fact]
+    public async Task DeleteSetup_WhenDraftHasUploadedMedia_RemovesStoredObjects()
+    {
+        await ClearGamesAsync();
+        var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
+        using var authenticatedFactory = CreateAuthenticatedFactory([AuthRoleCodes.Admin]);
+        using var adminClient = authenticatedFactory.CreateClient();
+        using var uploadContent = CreatePngUploadContent();
+        var uploadResponse = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", uploadContent);
+        Assert.Equal(HttpStatusCode.OK, uploadResponse.StatusCode);
+
+        using (var scope = authenticatedFactory.Services.CreateScope())
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
+            var inMemory = Assert.IsType<InMemoryObjectStorage>(storage);
+            Assert.NotEmpty(inMemory.ListObjectKeys("deadman-test", $"games/{gameId}/"));
+        }
+
+        var deleteResponse = await adminClient.DeleteAsync("/api/game/setup");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        using (var scope = authenticatedFactory.Services.CreateScope())
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
+            var inMemory = Assert.IsType<InMemoryObjectStorage>(storage);
+            Assert.Empty(inMemory.ListObjectKeys("deadman-test", $"games/{gameId}/"));
+
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.Equal(0, await db.Games.CountAsync());
+            Assert.Equal(0, await db.MediaAssets.CountAsync());
+        }
+
+        var getSetupResponse = await adminClient.GetAsync("/api/game/setup");
+        Assert.Equal(HttpStatusCode.NotFound, getSetupResponse.StatusCode);
     }
 
     [Fact]
@@ -162,9 +202,9 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         await db.SaveChangesAsync();
     }
 
-    private HttpClient CreateAuthenticatedClient(string[] roles)
+    private WebApplicationFactory<Program> CreateAuthenticatedFactory(string[] roles)
     {
-        var authenticatedFactory = _factory.WithWebHostBuilder(
+        return _factory.WithWebHostBuilder(
             builder =>
                 builder.ConfigureServices(
                     services =>
@@ -185,8 +225,11 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
                     }
                 )
         );
+    }
 
-        return authenticatedFactory.CreateClient();
+    private HttpClient CreateAuthenticatedClient(string[] roles)
+    {
+        return CreateAuthenticatedFactory(roles).CreateClient();
     }
 
     private sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>

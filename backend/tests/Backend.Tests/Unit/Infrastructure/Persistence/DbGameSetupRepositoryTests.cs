@@ -87,29 +87,30 @@ public sealed class DbGameSetupRepositoryTests
     }
 
     [Fact]
-    public async Task DeleteDraftSetupAsync_WhenDraftExists_RemovesDraftGame()
+    public async Task DeleteDraftSetupAsync_WhenDraftExists_RemovesDraftGameAndReturnsGameId()
     {
         await using var db = CreateContext();
         IGameSetupRepository repo = CreateRepository(db);
 
-        await repo.CreateDraftSetupAsync("Draft to delete");
-        var deleted = await repo.DeleteDraftSetupAsync();
+        var created = await repo.CreateDraftSetupAsync("Draft to delete");
+        var deletedGameId = await repo.DeleteDraftSetupAsync();
 
-        Assert.True(deleted);
+        Assert.NotNull(deletedGameId);
+        Assert.Equal(Guid.Parse(created!.GameId), deletedGameId);
         Assert.Equal(0, await db.Games.CountAsync());
         Assert.Equal(0, await db.GameBoards.CountAsync());
         Assert.Equal(0, await db.BoardCells.CountAsync());
     }
 
     [Fact]
-    public async Task DeleteDraftSetupAsync_WhenNoDraft_ReturnsFalse()
+    public async Task DeleteDraftSetupAsync_WhenNoDraft_ReturnsNull()
     {
         await using var db = CreateContext();
         IGameSetupRepository repo = CreateRepository(db);
 
-        var deleted = await repo.DeleteDraftSetupAsync();
+        var deletedGameId = await repo.DeleteDraftSetupAsync();
 
-        Assert.False(deleted);
+        Assert.Null(deletedGameId);
     }
 
     [Fact]
