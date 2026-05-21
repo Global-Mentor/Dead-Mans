@@ -2,7 +2,7 @@ param(
   [string]$Endpoint = "http://localhost:9000",
   [string]$Bucket = "deadman",
   [string]$GameId = "c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a",
-  [string]$Group = "elements",
+  [string]$CardsGroup = "cards",
   [string]$SourceDir = ""
 )
 
@@ -50,7 +50,7 @@ if (Test-Path $envFile) {
 
 $projectPath = Join-Path $backendRoot "tools\SeedTestGameBoardMedia\SeedTestGameBoardMedia.csproj"
 $resolvedSourceDir = if ([string]::IsNullOrWhiteSpace($SourceDir)) {
-  Join-Path $backendRoot "assets\test-game-board\elements"
+  Join-Path $backendRoot "assets\test-game-board\cards"
 } else {
   $SourceDir
 }
@@ -61,7 +61,7 @@ try {
     --endpoint=$Endpoint `
     --bucket=$Bucket `
     --gameId=$GameId `
-    --group=$Group `
+    --cardsGroup=$CardsGroup `
     --sourceDir=$resolvedSourceDir
   Assert-LastExitCode -Step "upload-test-game-board-media"
 }

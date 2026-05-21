@@ -15,7 +15,7 @@ namespace backend.Data.Migrations
     public partial class SeedTestGameBoardMedia : Migration
     {
         private const string Bucket = "deadman";
-        private const string Group = "elements";
+        private const string CardsGroup = "cards";
 
         // Must stay in sync with the test media seeder tool.
         private static readonly Guid TestGameId = Guid.Parse("c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a");
@@ -105,7 +105,7 @@ VALUES (
                 for (var col = 0; col < colLabels.Length; col += 1)
                 {
                     var filename = $"{col + 1}-{row + 1}.png";
-                    var objectKey = $"games/{TestGameId}/{Group}/{filename}";
+                    var objectKey = $"games/{TestGameId}/{CardsGroup}/{filename}";
 
                     var cellId = DeterministicGuid($"deadmans-test-cell-{TestGameId}-{filename}");
                     var mediaAssetId = DeterministicGuid($"deadmans-test-media-{TestGameId}-{filename}");
@@ -162,7 +162,7 @@ VALUES (
             migrationBuilder.Sql($@"
 DELETE FROM media_assets
 WHERE ""Bucket"" = '{Bucket}'
-  AND ""ObjectKey"" LIKE 'games/{TestGameId}/{Group}/%';
+  AND ""ObjectKey"" LIKE 'games/{TestGameId}/{CardsGroup}/%';
 ");
 
             migrationBuilder.Sql($@"

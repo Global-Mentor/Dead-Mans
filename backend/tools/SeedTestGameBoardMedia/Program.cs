@@ -25,7 +25,7 @@ await EnsurePublicReadPolicyAsync(client, options.Bucket);
 
 foreach (var sourceFile in sourceFiles)
 {
-    var objectKey = $"games/{options.GameId}/{options.Group}/{sourceFile.Name}";
+    var objectKey = $"games/{options.GameId}/{options.CardsGroup}/{sourceFile.Name}";
     await using var input = sourceFile.OpenRead();
     await client.PutObjectAsync(
         new PutObjectRequest
@@ -114,7 +114,7 @@ file sealed class SeederOptions
     public required string Endpoint { get; init; }
     public required string Bucket { get; init; }
     public required Guid GameId { get; init; }
-    public required string Group { get; init; }
+    public required string CardsGroup { get; init; }
     public required string SourceDirectory { get; init; }
 
     public static SeederOptions From(string[] args)
@@ -128,9 +128,9 @@ file sealed class SeederOptions
             GameId = Guid.TryParse(GetArg(args, "gameId"), out var gameId)
                 ? gameId
                 : Guid.Parse("c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a"),
-            Group = GetArg(args, "group") ?? "elements",
+            CardsGroup = GetArg(args, "cardsGroup") ?? "cards",
             SourceDirectory = GetArg(args, "sourceDir")
-                ?? Path.Combine(AppContext.BaseDirectory, "assets", "test-game-board", "elements")
+                ?? Path.Combine(AppContext.BaseDirectory, "assets", "test-game-board", "cards")
         };
     }
 
