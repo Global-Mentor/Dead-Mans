@@ -1,0 +1,45 @@
+using backend.Application.Abstractions.Repositories;
+using backend.Application.Configuration;
+using backend.Application.Features.GameSetup;
+
+namespace Backend.Tests.Unit.Features.GameSetup;
+
+public sealed class GameSetupCellMediaValidatorTests
+{
+    [Fact]
+    public void BuildObjectKey_UsesConfiguredLayoutMatchingSeedMigration()
+    {
+        var settings = new MediaStorageSettings
+        {
+            PublicBaseUrl = "http://localhost:9000",
+            BucketName = "project-bucket",
+            GamesPrefix = "games",
+            CardsGroup = "cards",
+        };
+        var gameId = Guid.Parse("c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a");
+        var draftCell = new GameSetupDraftCellRef(gameId, Guid.NewGuid(), Guid.NewGuid(), 0, 0);
+
+        var objectKey = GameSetupCellMediaValidator.BuildObjectKey(settings, draftCell, ".png");
+
+        Assert.Equal($"games/{gameId}/cards/1-1.png", objectKey);
+    }
+
+    [Theory]
+    [InlineData("image/png", 1024, true)]
+    [InlineData("image/jpeg", 1024, true)]
+    [InlineData("image/webp", 1024, true)]
+    [InlineData("image/gif", 1024, true)]
+    [InlineData("application/pdf", 1024, false)]
+    [InlineData("image/png", 0, false)]
+    [InlineData("image/png", GameSetupCellMediaLimits.MaxUploadBytes + 1, false)]
+    public void IsAllowedUpload_EnforcesMimeAndSize(string mimeType, long length, bool expected)
+    {
+        var allowed = GameSetupCellMediaValidator.IsAllowedUpload(mimeType, length, out var normalized);
+
+        Assert.Equal(expected, allowed);
+        if (expected)
+        {
+            Assert.Equal(mimeType, normalized);
+        }
+    }
+}
