@@ -5,8 +5,10 @@ using backend.Data;
 using backend.Data.Entities;
 using backend.Domain.Models;
 using backend.Domain.Persistence;
+using backend.Infrastructure.Configuration;
 using backend.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace backend.Infrastructure.Persistence;
@@ -16,11 +18,17 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
     private const string SingleDraftConstraintName = "UX_games_single_draft";
 
     private readonly ApplicationDbContext _dbContext;
+    private readonly string _storagePublicBaseUrl;
     private readonly ILogger<DbGameSetupRepository> _logger;
 
-    public DbGameSetupRepository(ApplicationDbContext dbContext, ILogger<DbGameSetupRepository> logger)
+    public DbGameSetupRepository(
+        ApplicationDbContext dbContext,
+        IOptions<StorageOptions> storageOptions,
+        ILogger<DbGameSetupRepository> logger
+    )
     {
         _dbContext = dbContext;
+        _storagePublicBaseUrl = storageOptions.Value.PublicBaseUrl.TrimEnd('/');
         _logger = logger;
     }
 
@@ -349,8 +357,12 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             ))
             .ToListAsync(cancellationToken);
 
+        var mediaByCellId = await LoadMediaByCellIdAsync(
+            rawCells.Select(cell => cell.Id).ToArray(),
+            cancellationToken
+        );
         var resultCells = rawCells
-            .Select(cell => MapCell(cell))
+            .Select(cell => MapCell(cell, mediaByCellId))
             .ToArray();
 
         return new GameBoardSnapshot(
@@ -367,9 +379,42 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
         );
     }
 
-    private static GameBoardCell MapCell(RawCell cell)
+    private async Task<Dictionary<Guid, List<GameBoardCellMedia>>> LoadMediaByCellIdAsync(
+        Guid[] cellIds,
+        CancellationToken cancellationToken
+    )
+    {
+        if (cellIds.Length == 0)
+        {
+            return [];
+        }
+
+        var mediaRows = await _dbContext.BoardCellMedia
+            .AsNoTracking()
+            .Where(link => cellIds.Contains(link.CellId))
+            .OrderBy(link => link.SortOrder)
+            .Select(link => new { link.CellId, link.MediaAsset.Bucket, link.MediaAsset.ObjectKey })
+            .ToListAsync(cancellationToken);
+
+        return mediaRows
+            .GroupBy(row => row.CellId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Select(item => new GameBoardCellMedia(
+                        GameBoardMediaUrlBuilder.Build(_storagePublicBaseUrl, item.Bucket, item.ObjectKey)
+                    ))
+                    .ToList()
+            );
+    }
+
+    private static GameBoardCell MapCell(
+        RawCell cell,
+        IReadOnlyDictionary<Guid, List<GameBoardCellMedia>> mediaByCellId
+    )
     {
         var state = cell.State == BoardCellState.Open ? GameBoardCellState.Open : GameBoardCellState.Closed;
+        var media = mediaByCellId.TryGetValue(cell.Id, out var cellMedia) ? cellMedia : [];
 
         return new GameBoardCell(
             cell.Id.ToString(),
@@ -380,7 +425,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             cell.Description,
             cell.Cost,
             state,
-            []
+            media
         );
     }
 

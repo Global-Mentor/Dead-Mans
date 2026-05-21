@@ -272,7 +272,9 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             .ToDictionary(
                 group => group.Key,
                 group => group
-                    .Select(item => new GameBoardCellMedia(BuildPublicMediaUrl(item.Bucket, item.ObjectKey)))
+                    .Select(item => new GameBoardCellMedia(
+                        GameBoardMediaUrlBuilder.Build(_storagePublicBaseUrl, item.Bucket, item.ObjectKey)
+                    ))
                     .ToList()
             );
     }
@@ -308,11 +310,6 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             state,
             media
         );
-    }
-
-    private string BuildPublicMediaUrl(string bucket, string objectKey)
-    {
-        return $"{_storagePublicBaseUrl}/{bucket}/{objectKey}";
     }
 
     private IQueryable<BoardSelectionRow> QueryBoardsByStatus(string status, bool useFinishedSort)

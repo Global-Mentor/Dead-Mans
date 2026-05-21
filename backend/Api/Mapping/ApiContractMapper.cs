@@ -47,6 +47,11 @@ public static class ApiContractMapper
         );
     }
 
+    public static GameBoardCellMediaDto ToDto(this GameBoardCellMedia media)
+    {
+        return new GameBoardCellMediaDto(media.Url);
+    }
+
     public static GameBoardSnapshotDto ToDto(this GameBoardSnapshot snapshot)
     {
         return new GameBoardSnapshotDto(
