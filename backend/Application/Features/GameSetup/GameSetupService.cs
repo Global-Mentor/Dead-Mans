@@ -1,16 +1,29 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
+using backend.Application.Configuration;
 using backend.Application.Contracts;
+using Microsoft.Extensions.Options;
 
 namespace backend.Application.Features.GameSetup;
 
 public sealed class GameSetupService : IGameSetupService
 {
     private readonly IGameSetupRepository _repository;
+    private readonly IObjectStorage _objectStorage;
+    private readonly MediaStorageSettings _storageSettings;
+    private readonly ILogger<GameSetupService> _logger;
 
-    public GameSetupService(IGameSetupRepository repository)
+    public GameSetupService(
+        IGameSetupRepository repository,
+        IObjectStorage objectStorage,
+        IOptions<MediaStorageSettings> storageSettings,
+        ILogger<GameSetupService> logger
+    )
     {
         _repository = repository;
+        _objectStorage = objectStorage;
+        _storageSettings = storageSettings.Value;
+        _logger = logger;
     }
 
     public Task<GameBoardSnapshot?> GetDraftSetupAsync(CancellationToken cancellationToken = default)
@@ -92,9 +105,20 @@ public sealed class GameSetupService : IGameSetupService
         CancellationToken cancellationToken = default
     )
     {
-        var deleted = await _repository.DeleteDraftSetupAsync(cancellationToken);
-        return deleted
-            ? new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.Deleted)
-            : new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.NoDraftFound);
+        var deletedGameId = await _repository.DeleteDraftSetupAsync(cancellationToken);
+        if (deletedGameId is null)
+        {
+            return new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.NoDraftFound);
+        }
+
+        await GameSetupMediaStorageDeletion.TryDeleteGameMediaPrefixAsync(
+            _objectStorage,
+            _storageSettings,
+            _logger,
+            deletedGameId.Value,
+            cancellationToken
+        );
+
+        return new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.Deleted);
     }
 }

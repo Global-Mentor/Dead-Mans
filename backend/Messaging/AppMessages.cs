@@ -150,6 +150,8 @@ public static class AppMessages
         public const string GameSetupDraftSaveFailed = "Failed to save draft game setup.";
         public const string GameSetupDraftDeleted = "Draft game setup deleted. GameId: {GameId}.";
         public const string GameSetupDraftDeleteFailed = "Failed to delete draft game setup.";
+        public const string GameSetupDraftMediaStorageCleanupFailed =
+            "Failed to clean up draft game setup media in object storage. GameId: {GameId}, Prefix: {Prefix}.";
         public const string GameSetupCellMediaUploadFailed =
             "Failed to upload draft game setup cell media. CellId: {CellId}.";
         public const string GameSetupCellMediaStorageUploadFailed =
