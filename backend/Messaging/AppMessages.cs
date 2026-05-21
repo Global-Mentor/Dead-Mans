@@ -24,6 +24,12 @@ public static class AppMessages
         public const string UnableToDeleteGameSetup = "Unable to delete the game setup.";
         public const string InvalidGameSetupSaveRequest =
             "Game setup could not be saved. Check the title, rows, columns, and card fields.";
+        public const string GameSetupCellNotFound = "Requested game setup cell was not found.";
+        public const string GameSetupCellMediaNotFound = "Requested game setup cell media was not found.";
+        public const string InvalidGameSetupCellMediaUpload =
+            "Cell image must be a supported image file up to 5 MB.";
+        public const string UnableToUploadGameSetupCellMedia = "Unable to upload the game setup cell image.";
+        public const string UnableToDeleteGameSetupCellMedia = "Unable to delete the game setup cell image.";
     }
 
     public static class ErrorCodes
@@ -144,5 +150,13 @@ public static class AppMessages
         public const string GameSetupDraftSaveFailed = "Failed to save draft game setup.";
         public const string GameSetupDraftDeleted = "Draft game setup deleted. GameId: {GameId}.";
         public const string GameSetupDraftDeleteFailed = "Failed to delete draft game setup.";
+        public const string GameSetupCellMediaUploadFailed =
+            "Failed to upload draft game setup cell media. CellId: {CellId}.";
+        public const string GameSetupCellMediaStorageUploadFailed =
+            "Failed to upload draft game setup cell media to storage. CellId: {CellId}, GameId: {GameId}.";
+        public const string GameSetupCellMediaDeleteFailed =
+            "Failed to delete draft game setup cell media. CellId: {CellId}.";
+        public const string GameSetupCellMediaObjectCleanupFailed =
+            "Failed to clean up draft game setup cell media object. CellId: {CellId}, Bucket: {Bucket}, ObjectKey: {ObjectKey}.";
     }
 }
