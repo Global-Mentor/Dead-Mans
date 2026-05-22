@@ -20,7 +20,7 @@ public static class GameSetupStubDefaults
         return Enumerable.Range(0, Cols).Select(GetColumnLabel).ToArray();
     }
 
-    public static string GetColumnLabel(int columnIndex) => $"Column {columnIndex + 1}";
+    public static string GetColumnLabel(int columnIndex) => (columnIndex + 1).ToString();
 
     public static int GetRowCost(int rowIndex)
     {

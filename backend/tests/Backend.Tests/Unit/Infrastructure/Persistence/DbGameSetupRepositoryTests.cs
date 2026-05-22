@@ -123,6 +123,7 @@ public sealed class DbGameSetupRepositoryTests
         Assert.NotNull(created);
 
         var update = new GameSetupDraftUpdate(
+            created.Version,
             "Updated title",
             ["100", "125", "150", "175", "200"],
             ["One", "Two", "Three", "Four", "Five"],
@@ -133,15 +134,41 @@ public sealed class DbGameSetupRepositoryTests
 
         var saved = await repo.UpdateDraftSetupAsync(update);
 
-        Assert.NotNull(saved);
-        Assert.Equal("Updated title", saved!.Title);
-        Assert.Equal(["One", "Two", "Three", "Four", "Five"], saved.ColLabels);
-        Assert.Equal(2, saved.Version);
-        Assert.Equal("Title 0-0", saved.Cells[0].Title);
-        Assert.Equal(created.Cells[0].Cost + 5, saved.Cells[0].Cost);
+        Assert.Equal(UpdateDraftSetupRepositoryStatus.Updated, saved.Status);
+        Assert.NotNull(saved.Snapshot);
+        Assert.Equal("Updated title", saved.Snapshot!.Title);
+        Assert.Equal(["One", "Two", "Three", "Four", "Five"], saved.Snapshot.ColLabels);
+        Assert.Equal(2, saved.Snapshot!.Version);
+        Assert.Equal("Title 0-0", saved.Snapshot.Cells[0].Title);
+        Assert.Equal(created.Cells[0].Cost + 5, saved.Snapshot.Cells[0].Cost);
 
         var game = await db.Games.SingleAsync();
         Assert.Equal("Updated title", game.Title);
+    }
+
+    [Fact]
+    public async Task UpdateDraftSetupAsync_WhenExpectedVersionIsStale_ReturnsConflict()
+    {
+        await using var db = CreateContext();
+        IGameSetupRepository repo = CreateRepository(db);
+
+        var created = await repo.CreateDraftSetupAsync("Initial title");
+        Assert.NotNull(created);
+
+        var result = await repo.UpdateDraftSetupAsync(
+            new GameSetupDraftUpdate(
+                created.Version + 99,
+                "Updated title",
+                created.RowLabels.ToArray(),
+                created.ColLabels.ToArray(),
+                created.Cells
+                    .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
+                    .ToArray()
+            )
+        );
+
+        Assert.Equal(UpdateDraftSetupRepositoryStatus.StaleVersion, result.Status);
+        Assert.Null(result.Snapshot);
     }
 
     [Fact]
@@ -164,6 +191,7 @@ public sealed class DbGameSetupRepositoryTests
 
         var saved = await repo.UpdateDraftSetupAsync(
             new GameSetupDraftUpdate(
+                created.Version,
                 "Initial title",
                 ["100", "125", "150", "175", "200", "225"],
                 created.ColLabels.ToArray(),
@@ -171,11 +199,12 @@ public sealed class DbGameSetupRepositoryTests
             )
         );
 
-        Assert.NotNull(saved);
-        Assert.Equal(6, saved!.Rows);
-        Assert.Equal(originalTopLeft.Id, saved.Cells.Single(cell => cell.Row == 1 && cell.Col == 0).Id);
-        Assert.Equal(originalSecondRowLeft.Id, saved.Cells.Single(cell => cell.Row == 2 && cell.Col == 0).Id);
-        Assert.NotEqual(originalTopLeft.Id, saved.Cells.Single(cell => cell.Row == 0 && cell.Col == 0).Id);
+        Assert.Equal(UpdateDraftSetupRepositoryStatus.Updated, saved.Status);
+        Assert.NotNull(saved.Snapshot);
+        Assert.Equal(6, saved.Snapshot!.Rows);
+        Assert.Equal(originalTopLeft.Id, saved.Snapshot.Cells.Single(cell => cell.Row == 1 && cell.Col == 0).Id);
+        Assert.Equal(originalSecondRowLeft.Id, saved.Snapshot.Cells.Single(cell => cell.Row == 2 && cell.Col == 0).Id);
+        Assert.NotEqual(originalTopLeft.Id, saved.Snapshot.Cells.Single(cell => cell.Row == 0 && cell.Col == 0).Id);
     }
 
     private static DbGameSetupRepository CreateRepository(ApplicationDbContext db)

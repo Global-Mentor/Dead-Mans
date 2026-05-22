@@ -22,6 +22,7 @@ public static class ApiContractMapper
     public static GameSetupDraftUpdate ToUpdateModel(this UpdateGameSetupRequestDto request)
     {
         return new GameSetupDraftUpdate(
+            request.ExpectedVersion,
             request.Title,
             request.RowLabels,
             request.ColLabels,

@@ -1,4 +1,5 @@
 using backend.Application.Abstractions;
+using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Configuration;
 using backend.Application.Contracts;
@@ -12,6 +13,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
     private readonly IGameSetupRepository _gameSetupRepository;
     private readonly IGameSetupCellMediaRepository _cellMediaRepository;
     private readonly IObjectStorage _objectStorage;
+    private readonly IGameSetupEventsPublisher _eventsPublisher;
     private readonly MediaStorageSettings _storageSettings;
     private readonly ILogger<GameSetupCellMediaService> _logger;
 
@@ -19,6 +21,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         IGameSetupRepository gameSetupRepository,
         IGameSetupCellMediaRepository cellMediaRepository,
         IObjectStorage objectStorage,
+        IGameSetupEventsPublisher eventsPublisher,
         IOptions<MediaStorageSettings> storageSettings,
         ILogger<GameSetupCellMediaService> logger
     )
@@ -26,6 +29,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         _gameSetupRepository = gameSetupRepository;
         _cellMediaRepository = cellMediaRepository;
         _objectStorage = objectStorage;
+        _eventsPublisher = eventsPublisher;
         _storageSettings = storageSettings.Value;
         _logger = logger;
     }
@@ -105,6 +109,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
                 await TryDeleteDetachedObjectAsync(existingMedia, cellId, cancellationToken);
             }
 
+            await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.Uploaded, media);
         }
         catch (Exception ex)
@@ -142,6 +147,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         }
 
         await TryDeleteDetachedObjectAsync(detachedMedia, cellId, cancellationToken);
+        await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
         return new DeleteDraftGameSetupCellMediaResult(DeleteDraftGameSetupCellMediaOutcome.Deleted);
     }
 

@@ -78,6 +78,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClaimsTransformation, CurrentUserRoleClaimsTransformation>();
         services.AddHttpClient<ITwitchLoginService, TwitchLoginService>();
         services.AddSingleton<IGameBoardEventsPublisher, SignalRGameBoardEventsPublisher>();
+        services.AddSingleton<IGameSetupEventsPublisher, SignalRGameSetupEventsPublisher>();
         services
             .AddSignalR()
             .AddJsonProtocol(options =>
