@@ -2,7 +2,9 @@ openapi: 3.0.3
 info:
   title: Dead-Mans API
   version: v1
-  description: Canonical transport contract for Dead-Mans auth and game-board APIs.
+  description: >
+    Canonical transport contract for Dead-Mans: HTTP paths under /api and SignalR hubs
+    documented in x-signalr. Regenerate frontend contracts after changes.
 servers:
   - url: /api
 paths:
@@ -138,6 +140,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: No draft game available for setup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Draft setup version conflict; another session saved the draft first
           content:
             application/json:
               schema:
@@ -454,8 +462,12 @@ components:
           minimum: 0
     UpdateGameSetupRequestDto:
       type: object
-      required: [title, rowLabels, colLabels, cells]
+      required: [expectedVersion, title, rowLabels, colLabels, cells]
       properties:
+        expectedVersion:
+          type: integer
+          minimum: 1
+          description: Board version the client last loaded; save fails with 409 when the draft changed elsewhere
         title:
           type: string
           minLength: 1
@@ -571,3 +583,50 @@ components:
           type: string
           nullable: true
           description: Stable machine-readable error code.
+    GameCellOpenedEventDto:
+      type: object
+      required: [gameId, version, cell]
+      description: SignalR payload for game-board hub event cellOpened.
+      properties:
+        gameId:
+          type: string
+        version:
+          type: integer
+        cell:
+          $ref: '#/components/schemas/GameBoardCellDto'
+    GameSetupDraftChangedEventDto:
+      type: object
+      description: >
+        SignalR payload for game-setup hub event draftChanged. The server sends no JSON body;
+        clients refetch GET /api/game/setup after receiving the event.
+      additionalProperties: false
+x-signalr:
+  version: v1
+  description: >
+    SignalR hubs run on the backend origin (not under /api). Negotiate with cookie auth
+    (same session as HTTP). Event names and hub paths are stable contract surface.
+  hubs:
+    gameBoard:
+      path: /hubs/game-board
+      security:
+        - cookieAuth: []
+      authorization:
+        summary: Any authenticated panel user.
+      serverEvents:
+        cellOpened:
+          summary: A board cell was opened by an admin.
+          payload:
+            $ref: '#/components/schemas/GameCellOpenedEventDto'
+      clientEvents: {}
+    gameSetup:
+      path: /hubs/game-setup
+      security:
+        - cookieAuth: []
+      authorization:
+        summary: Admin role required (enforced in GameSetupHub).
+      serverEvents:
+        draftChanged:
+          summary: Draft setup changed; clients resync from GET /api/game/setup.
+          payload:
+            $ref: '#/components/schemas/GameSetupDraftChangedEventDto'
+      clientEvents: {}
