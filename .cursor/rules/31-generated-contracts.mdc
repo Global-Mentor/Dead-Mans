@@ -1,12 +1,12 @@
 ---
 description: Generated frontend transport contracts are not hand-edited
-globs: frontend/src/shared/api/contracts/**/*.ts
+globs: frontend/src/shared/api/contracts/**/*.ts,frontend/src/shared/realtime/generated.ts
 alwaysApply: false
 ---
 
 # Generated Contracts
 
-- Treat `frontend/src/shared/api/contracts/generated.ts` as generated code. Do not hand-edit it.
-- If a generated type is wrong or missing, fix `backend/openapi/deadmans.v1.yaml` and regenerate instead of patching generated output.
+- Treat `frontend/src/shared/api/contracts/generated.ts` and `frontend/src/shared/realtime/generated.ts` as generated code. Do not hand-edit them.
+- If a generated type or realtime hub/event name is wrong or missing, fix `backend/openapi/deadmans.v1.yaml` and run `npm --prefix frontend run generate:transport` instead of patching generated output.
 - Keep `frontend/src/shared/api/contracts/index.ts` focused on stable aliases and intentional re-exports; do not manually mirror the full generated surface there.
 - Prefer stable aliases from `index.ts` in feature code when they provide a cleaner boundary than raw generated names.
