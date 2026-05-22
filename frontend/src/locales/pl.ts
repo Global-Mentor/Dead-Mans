@@ -69,7 +69,7 @@ const pl = {
     gameSetup: {
       title: 'Konfiguracja gry',
       description:
-        'Szkic gry do konfiguracji nazwy, kolumn, cen i przyszłych obrazów kart.',
+        'Szkic gry do konfiguracji nazwy, układu planszy, pól kart i obrazów.',
       loading: 'Ładowanie konfiguracji gry...',
       errorLoading: 'Nie udało się załadować konfiguracji gry.',
       empty: 'Nie ma jeszcze gry w statusie szkicu. Utwórz nową, aby rozpocząć konfigurację.',
@@ -77,24 +77,58 @@ const pl = {
       gameNameLabel: 'Nazwa gry',
       columnLabel: 'Kolumna {{column}}',
       rowLabel: 'Wiersz {{row}}',
-      imagePlaceholder: 'Miejsce na przesłanie obrazu',
+      imagePlaceholder: 'Brak obrazu',
       cellTitleLabel: 'Nazwa karty',
+      cellMedia: {
+        upload: 'Prześlij',
+        replace: 'Zamień',
+        remove: 'Usuń',
+        uploading: 'Przesyłanie...',
+        removing: 'Usuwanie...',
+        uploadPrompt: 'Kliknij lub przeciągnij obraz',
+        dropPrompt: 'Puść, aby przesłać',
+        errors: {
+          invalidType: 'Dozwolone są tylko obrazy PNG, JPEG, WebP i GIF.',
+          tooLarge: 'Obraz nie może być większy niż 5 MB.',
+          saveRequired:
+            'Poczekaj, aż nowa karta zsynchronizuje się z serwerem, i prześlij obraz ponownie.',
+          invalidFile: 'Ten plik obrazu nie jest obsługiwany.',
+          notFound: 'Nie znaleziono karty lub jej obrazu. Odśwież stronę i spróbuj ponownie.',
+          uploadFailed: 'Nie udało się przesłać obrazu. Spróbuj ponownie.',
+          deleteFailed: 'Nie udało się usunąć obrazu. Spróbuj ponownie.',
+        },
+      },
       cellPriceLabel: 'Cena',
       save: 'Zapisz zmiany',
       saving: 'Zapisywanie...',
-      unsavedChanges: 'Masz niezapisane zmiany. Zapisz je przed opuszczeniem strony.',
-      localDraftRestored:
-        'Niezapisane zmiany zostały przywrócone z tej przeglądarki. Zapisz je na serwerze, gdy będziesz gotowy.',
+      persistenceHint:
+        'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Edytuj pola lokalnie i kliknij Zapisz. Wiersze i kolumny zapisują się po potwierdzeniu w oknie układu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
+      reloadFromServer: 'Odśwież',
+      remoteChangeNotice:
+        'Inny administrator zmienił szkic. Kliknij Odśwież, aby odrzucić niezapisane zmiany i pokazać wersję z serwera.',
+      draftRemovedNotice:
+        'Inny administrator zresetował szkic. Twoje niezapisane zmiany zostały odrzucone.',
+      sync: {
+        pending: 'Oczekuje synchronizacji',
+        saving: 'Zapisywanie…',
+        saved: 'Zapisano',
+        error: 'Błąd zapisu',
+        conflict: 'Odświeżono po konflikcie',
+      },
       invalidTitle: 'Nazwa gry musi mieć od 1 do 200 znaków.',
+      invalidRowLabel: 'Każda etykieta wiersza musi mieć od 1 do 100 znaków.',
+      invalidColumnLabel: 'Każda etykieta kolumny musi mieć od 1 do 100 znaków.',
+      invalidCellTitle: 'Nazwa karty może mieć maksymalnie 200 znaków.',
       saveFailed: 'Nie udało się zapisać konfiguracji gry. Spróbuj ponownie.',
       resetFailed: 'Nie udało się zresetować konfiguracji gry. Spróbuj ponownie.',
       boardTitle: 'Plansza gry',
       boardDescription:
-        'Edytuj etykiety wierszy i kolumn oraz pola kart. Zapisz, aby utrwalić zmiany.',
+        'Edytuj etykiety i pola kart, potem kliknij Zapisz. Zmiany układu zapisują się po potwierdzeniu w oknie dialogowym.',
       settingsSidebar: {
         overline: 'Konfiguracja',
         title: 'Ustawienia gry',
-        description: 'Ogólne ustawienia szkicu i rozmiar planszy.',
+        description:
+          'Nazwa i rozmiar planszy. Edytuj pola lokalnie, potem kliknij Zapisz. Obrazy — od razu w storage.',
         boardSizeLabel: 'Aktualny rozmiar',
         boardSizeValue: '{{rows}} wierszy × {{columns}} kolumn',
         manageLayout: 'Wiersze i kolumny…',
@@ -103,7 +137,7 @@ const pl = {
       resetDialog: {
         title: 'Zresetuj szkic',
         description:
-          'To trwale usuwa bieżący szkic, w tym nazwę gry, planszę, karty i niezapisane zmiany w przeglądarce. Następnie trzeba będzie utworzyć nowy szkic.',
+          'To trwale usuwa bieżący szkic, w tym nazwę, planszę, karty i wszystkie przesłane obrazy w storage. Następnie trzeba będzie utworzyć nowy szkic.',
         cancel: 'Anuluj',
         confirm: 'Zresetuj szkic',
         submitting: 'Resetowanie...',
@@ -111,7 +145,7 @@ const pl = {
       layoutDialog: {
         title: 'Wiersze i kolumny',
         description:
-          'Wybierz czynność, obiekt i pozycję. Przed zastosowaniem pojawi się prośba o potwierdzenie.',
+          'Wybierz czynność, obiekt i pozycję. Po potwierdzeniu zmiany zapisują się do wspólnego szkicu.',
         actionLabel: 'Czynność',
         actionAdd: 'Dodaj',
         actionRemove: 'Usuń',
@@ -135,15 +169,23 @@ const pl = {
         confirmAddRow: 'Dodać nowy wiersz: {{target}}?',
         confirmAddColumn: 'Dodać nową kolumnę: {{target}}?',
         confirmRemoveRow:
-          'Usunąć {{target}}? Karty w tym wierszu zostaną usunięte z bazy po zapisaniu.',
+          'Usunąć {{target}}? Po synchronizacji szkicu karty w tym wierszu i ich obrazy zostaną usunięte z serwera.',
         confirmRemoveColumn:
-          'Usunąć {{target}}? Karty w tej kolumnie zostaną usunięte z bazy po zapisaniu.',
+          'Usunąć {{target}}? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
+      },
+      emptyPanel: {
+        description: 'W bazie nie ma jeszcze szkicu. Utwórz grę w oknie dialogowym.',
       },
       createDialog: {
-        title: 'Utwórz nową grę',
-        description:
-          'Obecnie nie ma gry w trakcie konfiguracji. Wpisz nazwę, aby utworzyć szkic z tabelą startową.',
+        promptTitle: 'Brak szkicu gry',
+        promptDescription:
+          'Obecnie nie ma gry w konfiguracji. Rozpocznij tworzenie, gdy będziesz gotowy — wszyscy administratorzy zobaczą ten sam szkic.',
+        startCreate: 'Utwórz grę',
+        title: 'Nazwa nowej gry',
+        detailsDescription:
+          'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',
         nameLabel: 'Nazwa gry',
+        back: 'Wstecz',
         confirm: 'Utwórz',
         validationRequired: 'Wpisz nazwę gry.',
         alreadyExists: 'Szkic gry już istnieje. Odśwież stronę.',

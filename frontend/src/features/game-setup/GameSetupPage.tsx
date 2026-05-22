@@ -2,9 +2,29 @@ import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/materia
 import { useTranslation } from 'react-i18next'
 import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
 import { CreateGameSetupDialog } from './ui/CreateGameSetupDialog.tsx'
+import { gameSetupSidebarPaperSx } from './ui/game-setup-ui-styles.ts'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
+import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
 import { useGameSetupPage } from './use-game-setup-page.ts'
+
+function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
+  switch (syncStatus) {
+    case 'saving':
+      return { color: 'info' as const, labelKey: 'gameSetup.sync.saving' }
+    case 'saved':
+      return { color: 'success' as const, labelKey: 'gameSetup.sync.saved' }
+    case 'error':
+      return { color: 'error' as const, labelKey: 'gameSetup.sync.error' }
+    case 'conflict':
+      return { color: 'warning' as const, labelKey: 'gameSetup.sync.conflict' }
+    default:
+      return {
+        color: isDirty ? ('warning' as const) : ('default' as const),
+        labelKey: isDirty ? 'gameSetup.sync.pending' : 'gameSetup.sync.saved',
+      }
+  }
+}
 
 export function GameSetupPage() {
   const { t } = useTranslation()
@@ -15,17 +35,31 @@ export function GameSetupPage() {
     isError,
     isEmpty,
     isDirty,
-    restoredFromLocal,
+    syncStatus,
+    remoteChangeNotice,
+    draftRemovedNotice,
     saveErrorMessage,
     resetErrorMessage,
     updateDraft,
+    applyLayoutChange,
     saveDraft,
+    reloadFromServer,
     createDraft,
     deleteDraft,
     isCreating,
     isResetting,
     isSaving,
+    cellMediaDisplayByCellId,
+    isCellMediaBusy,
+    cellMediaErrorMessage,
+    uploadCellMedia,
+    deleteCellMedia,
+    dismissCellMediaError,
+    dismissRemoteChangeNotice,
+    dismissDraftRemovedNotice,
   } = useGameSetupPage()
+
+  const syncChip = getSyncChipProps(syncStatus, isDirty)
 
   if (isLoading) {
     return (
@@ -54,12 +88,46 @@ export function GameSetupPage() {
           sx={{
             flex: 1,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            px: { xs: 1, sm: 2 },
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 2,
+            alignItems: 'stretch',
+            minHeight: 0,
           }}
         >
-          <PageStatePanel title={t('gameSetup.title')} message={t('gameSetup.empty')} />
+          <Paper variant="outlined" sx={gameSetupSidebarPaperSx}>
+            <Typography variant="overline" color="text.secondary">
+              {t('gameSetup.settingsSidebar.overline')}
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+              {t('gameSetup.settingsSidebar.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {t('gameSetup.emptyPanel.description')}
+            </Typography>
+          </Paper>
+
+          <Paper
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              p: { xs: 2, md: 3 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography variant="h5" gutterBottom>
+              {t('gameSetup.boardTitle')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('gameSetup.empty')}
+            </Typography>
+            {draftRemovedNotice ? (
+              <Alert severity="warning" sx={{ mt: 2 }} onClose={dismissDraftRemovedNotice}>
+                {t('gameSetup.draftRemovedNotice')}
+              </Alert>
+            ) : null}
+          </Paper>
         </Box>
         <CreateGameSetupDialog
           open={isEmpty}
@@ -86,6 +154,7 @@ export function GameSetupPage() {
       <GameSetupSettingsSidebar
         draft={draft}
         onDraftChange={updateDraft}
+        onLayoutChange={applyLayoutChange}
         isResetting={isResetting}
         onReset={deleteDraft}
       />
@@ -115,6 +184,7 @@ export function GameSetupPage() {
           </Box>
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
             <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
+            <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
             <Button
               variant="contained"
               disabled={!isDirty || isSaving}
@@ -125,17 +195,30 @@ export function GameSetupPage() {
           </Stack>
         </Stack>
 
-        {restoredFromLocal ? (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            {t('gameSetup.localDraftRestored')}
+        <Alert severity="info" sx={{ mt: 2 }}>
+          {t('gameSetup.persistenceHint')}
+        </Alert>
+
+        {remoteChangeNotice ? (
+          <Alert
+            severity="warning"
+            sx={{ mt: 2 }}
+            onClose={dismissRemoteChangeNotice}
+            action={
+              <Button color="inherit" size="small" onClick={() => void reloadFromServer()}>
+                {t('gameSetup.reloadFromServer')}
+              </Button>
+            }
+          >
+            {t('gameSetup.remoteChangeNotice')}
           </Alert>
         ) : null}
 
         {saveErrorMessage ? (
           <Alert severity="error" sx={{ mt: 2 }}>
-            {saveErrorMessage === 'invalidTitle'
-              ? t('gameSetup.invalidTitle')
-              : t('gameSetup.saveFailed')}
+            {saveErrorMessage === 'saveFailed'
+              ? t('gameSetup.saveFailed')
+              : t(`gameSetup.${saveErrorMessage}`)}
           </Alert>
         ) : null}
 
@@ -145,14 +228,22 @@ export function GameSetupPage() {
           </Alert>
         ) : null}
 
-        {isDirty ? (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            {t('gameSetup.unsavedChanges')}
+        {cellMediaErrorMessage ? (
+          <Alert severity="error" sx={{ mt: 2 }} onClose={dismissCellMediaError}>
+            {cellMediaErrorMessage}
           </Alert>
         ) : null}
 
         <Box sx={{ mt: 3, flex: 1, minHeight: 0 }}>
-          <GameSetupGrid snapshot={snapshot} draft={draft} onDraftChange={updateDraft} />
+          <GameSetupGrid
+            snapshot={snapshot}
+            draft={draft}
+            onDraftChange={updateDraft}
+            cellMediaDisplayByCellId={cellMediaDisplayByCellId}
+            isCellMediaBusy={isCellMediaBusy}
+            onUploadCellMedia={(cellId, file) => void uploadCellMedia(cellId, file)}
+            onDeleteCellMedia={deleteCellMedia}
+          />
         </Box>
       </Paper>
     </Box>

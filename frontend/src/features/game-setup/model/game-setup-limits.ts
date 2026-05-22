@@ -1,2 +1,11 @@
+// Keep in sync with backend/Application/Features/GameSetup/GameSetupBoardLimits.cs
+// and GameSetupDraftValidator.cs.
+export const GAME_SETUP_MIN_ROWS = 1
 export const GAME_SETUP_MAX_ROWS = 20
+export const GAME_SETUP_MIN_COLS = 1
 export const GAME_SETUP_MAX_COLS = 12
+
+export const GAME_SETUP_MAX_TITLE_LENGTH = 200
+export const GAME_SETUP_MAX_ROW_LABEL_LENGTH = 100
+export const GAME_SETUP_MAX_COLUMN_LABEL_LENGTH = 100
+export const GAME_SETUP_MAX_CELL_TITLE_LENGTH = 200

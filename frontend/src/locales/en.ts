@@ -68,7 +68,7 @@ const en = {
     gameSetup: {
       title: 'Game setup',
       description:
-        'Draft game for configuring the title, columns, prices, and future card images.',
+        'Draft game for configuring the title, board layout, card fields, and images.',
       loading: 'Loading game setup...',
       errorLoading: 'Failed to load game setup.',
       empty: 'There is no draft game yet. Create a new one to start setup.',
@@ -76,23 +76,57 @@ const en = {
       gameNameLabel: 'Game name',
       columnLabel: 'Column {{column}}',
       rowLabel: 'Row {{row}}',
-      imagePlaceholder: 'Image upload placeholder',
+      imagePlaceholder: 'No image yet',
       cellTitleLabel: 'Card name',
+      cellMedia: {
+        upload: 'Upload',
+        replace: 'Replace',
+        remove: 'Remove',
+        uploading: 'Uploading...',
+        removing: 'Removing...',
+        uploadPrompt: 'Click or drag an image here',
+        dropPrompt: 'Release to upload',
+        errors: {
+          invalidType: 'Only PNG, JPEG, WebP, and GIF images are allowed.',
+          tooLarge: 'Image must be 5 MB or smaller.',
+          saveRequired: 'Wait until the new card syncs to the server, then upload the image again.',
+          invalidFile: 'This image file is not allowed.',
+          notFound: 'The card or its image was not found. Refresh the page and try again.',
+          uploadFailed: 'Failed to upload the image. Please try again.',
+          deleteFailed: 'Failed to remove the image. Please try again.',
+        },
+      },
       cellPriceLabel: 'Price',
       save: 'Save changes',
       saving: 'Saving...',
-      unsavedChanges: 'You have unsaved changes. Save them before leaving this page.',
-      localDraftRestored:
-        'Unsaved changes were restored from this browser. Save them to the server when you are ready.',
+      persistenceHint:
+        'All admins share one draft in the database. Edit fields locally, then click Save. Row and column changes save when you confirm them in the layout dialog. Images upload to storage immediately. Other admins see updates in real time via SignalR.',
+      reloadFromServer: 'Reload',
+      remoteChangeNotice:
+        'Another administrator changed this draft. Reload to discard your unsaved edits and show the server version.',
+      draftRemovedNotice:
+        'Another administrator reset the draft. Your unsaved edits were discarded.',
+      sync: {
+        pending: 'Pending sync',
+        saving: 'Saving…',
+        saved: 'Saved',
+        error: 'Save failed',
+        conflict: 'Reloaded after conflict',
+      },
       invalidTitle: 'Game title must be between 1 and 200 characters.',
+      invalidRowLabel: 'Each row label must be between 1 and 100 characters.',
+      invalidColumnLabel: 'Each column label must be between 1 and 100 characters.',
+      invalidCellTitle: 'Card titles must be at most 200 characters.',
       saveFailed: 'Failed to save game setup. Please try again.',
       resetFailed: 'Failed to reset game setup. Please try again.',
       boardTitle: 'Game board',
-      boardDescription: 'Edit row and column headers and card fields. Save to persist changes.',
+      boardDescription:
+        'Edit row and column headers and card fields, then click Save. Layout changes save when you confirm them.',
       settingsSidebar: {
         overline: 'Setup',
         title: 'Game settings',
-        description: 'General settings for the draft game and board size.',
+        description:
+          'Game name and board size. Edit fields locally, then click Save. Images upload to storage immediately.',
         boardSizeLabel: 'Current size',
         boardSizeValue: '{{rows}} rows × {{columns}} columns',
         manageLayout: 'Rows and columns…',
@@ -101,14 +135,15 @@ const en = {
       resetDialog: {
         title: 'Reset draft',
         description:
-          'This permanently deletes the current draft, including the game name, board, cards, and unsaved browser changes. You will create a new draft afterwards.',
+          'This permanently deletes the current draft, including the game name, board, cards, and all uploaded images in storage. You will create a new draft afterwards.',
         cancel: 'Cancel',
         confirm: 'Reset draft',
         submitting: 'Resetting...',
       },
       layoutDialog: {
         title: 'Rows and columns',
-        description: 'Choose an action, target, and position. You will be asked to confirm before applying.',
+        description:
+          'Choose an action, target, and position. Changes save to the shared draft after you confirm.',
         actionLabel: 'Action',
         actionAdd: 'Add',
         actionRemove: 'Remove',
@@ -132,15 +167,22 @@ const en = {
         confirmAddRow: 'Add a new row: {{target}}?',
         confirmAddColumn: 'Add a new column: {{target}}?',
         confirmRemoveRow:
-          'Remove {{target}}? Cards in this row will be deleted after you save to the server.',
+          'Remove {{target}}? After the draft syncs, cards in this row and their uploaded images will be deleted from the server.',
         confirmRemoveColumn:
-          'Remove {{target}}? Cards in this column will be deleted after you save to the server.',
+          'Remove {{target}}? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
+      },
+      emptyPanel: {
+        description: 'No draft game in the database yet. Use the dialog to create one.',
       },
       createDialog: {
-        title: 'Create a new game',
-        description:
-          'There is no game in setup right now. Enter a title to create a draft with a starter board.',
+        promptTitle: 'No draft game yet',
+        promptDescription:
+          'There is no game in setup right now. Start creation when you are ready — other admins will see the same draft.',
+        startCreate: 'Create game',
+        title: 'Name the new game',
+        detailsDescription: 'Enter a title for the draft. It will be created with a starter board.',
         nameLabel: 'Game name',
+        back: 'Back',
         confirm: 'Create',
         validationRequired: 'Enter a game title.',
         alreadyExists: 'A draft game already exists. Refresh the page.',

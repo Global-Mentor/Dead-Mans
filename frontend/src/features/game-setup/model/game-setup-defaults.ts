@@ -15,5 +15,5 @@ export function defaultGameSetupRowLabel(rowIndex: number): string {
 }
 
 export function defaultGameSetupColumnLabel(columnIndex: number): string {
-  return `Column ${columnIndex + 1}`
+  return `${columnIndex + 1}`
 }
