@@ -2,14 +2,18 @@ import { useEffect } from 'react'
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../../shared/api/query-keys.ts'
-import { getBackendOrigin } from '../../../shared/api/config.ts'
 import type { GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { logger } from '../../../shared/lib/logger.ts'
+import {
+  buildRealtimeHubUrl,
+  isExpectedSignalrNegotiationShutdown,
+  realtimeHubs,
+} from '../../../shared/realtime/index.ts'
 import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
 import { applyCellOpenedEvent, type CellOpenedEvent } from './game-board-realtime-model.ts'
 
-const GAME_BOARD_HUB_URL = `${getBackendOrigin()}/hubs/game-board`
-const CELL_OPENED_EVENT = 'cellOpened'
+const GAME_BOARD_HUB_URL = buildRealtimeHubUrl('gameBoard')
+const CELL_OPENED_EVENT = realtimeHubs.gameBoard.events.cellOpened
 
 export function GameBoardRealtimeSync() {
   const queryClient = useQueryClient()
@@ -82,7 +86,7 @@ export function GameBoardRealtimeSync() {
         logger.info('Game board realtime connected')
         await syncFromServerIfNewer()
       } catch (error) {
-        if (disposed || isExpectedNegotiationShutdown(error)) {
+        if (disposed || isExpectedSignalrNegotiationShutdown(error)) {
           return
         }
 
@@ -107,14 +111,3 @@ export function GameBoardRealtimeSync() {
   return null
 }
 
-function isExpectedNegotiationShutdown(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  const message = error.message.toLowerCase()
-  return (
-    message.includes('stopped during negotiation')
-    || message.includes('connection was stopped')
-  )
-}

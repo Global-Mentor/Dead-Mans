@@ -1,10 +1,6 @@
-import type { GameBoardCell, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
+import type { GameBoardSnapshot, GameCellOpenedEvent } from '../../../shared/api/contracts/index.ts'
 
-export interface CellOpenedEvent {
-  gameId: string
-  version: number
-  cell: GameBoardCell
-}
+export type CellOpenedEvent = GameCellOpenedEvent
 
 export interface CellOpenedPatchResult {
   nextSnapshot: GameBoardSnapshot | null

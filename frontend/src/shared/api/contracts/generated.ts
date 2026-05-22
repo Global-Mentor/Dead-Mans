@@ -166,6 +166,8 @@ export interface components {
             cost: number;
         };
         UpdateGameSetupRequestDto: {
+            /** @description Board version the client last loaded; save fails with 409 when the draft changed elsewhere */
+            expectedVersion: number;
             title: string;
             rowLabels: string[];
             colLabels: string[];
@@ -210,6 +212,14 @@ export interface components {
             /** @description Stable machine-readable error code. */
             code?: string | null;
         };
+        /** @description SignalR payload for game-board hub event cellOpened. */
+        GameCellOpenedEventDto: {
+            gameId: string;
+            version: number;
+            cell: components["schemas"]["GameBoardCellDto"];
+        };
+        /** @description SignalR payload for game-setup hub event draftChanged. The server sends no JSON body; clients refetch GET /api/game/setup after receiving the event. */
+        GameSetupDraftChangedEventDto: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -362,6 +372,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Draft setup version conflict; another session saved the draft first */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Server error */
             500: {
                 headers: {
@@ -442,7 +461,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Draft game setup deleted */
+            /** @description Draft game setup deleted from the database; uploaded cell images under the draft game media prefix are removed from object storage when possible */
             204: {
                 headers: {
                     [name: string]: unknown;
