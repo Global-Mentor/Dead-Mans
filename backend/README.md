@@ -11,7 +11,8 @@ Backend сейчас поддерживает только два приклад
 - `Application/` - auth session service и game-board service.
 - `Infrastructure/` - Twitch auth, EF Core persistence, `DbGameBoardRepository`.
 - `Data/` - `ApplicationDbContext`, entities, configurations, migrations.
-- `openapi/deadmans.v1.yaml` - канонический контракт для auth + game board.
+- `openapi/deadmans.v1.yaml` - канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
+- `Api/Contracts/RealtimeHubContracts.cs` - hub paths и event names (синхронно с OpenAPI).
 
 ## Актуальные endpoint'ы
 

@@ -33,8 +33,8 @@
 - инфраструктурный и технологический курс: `STACK.md`;
 - общий локальный запуск и обзор репозитория: `README.md`;
 - обзор потоков и границ: `docs/architecture/overview.md`;
-- transport-контракт: `backend/openapi/deadmans.v1.yaml`;
-- frontend transport types: generated из OpenAPI в `frontend/src/shared/api/contracts/`.
+- transport-контракт: `backend/openapi/deadmans.v1.yaml` (HTTP + SignalR в `x-signalr`);
+- frontend transport types: generated из OpenAPI в `frontend/src/shared/api/contracts/` и `frontend/src/shared/realtime/generated.ts`.
 
 Если меняется один из этих слоёв, изменения должны пройти по всей цепочке зависимых файлов и документации, а не остаться локальным исключением.
 
@@ -84,6 +84,7 @@
 - `AuthLandingPage` - вход через Twitch.
 - `TwitchAuthCallbackPage` - завершение OAuth flow и восстановление сессии.
 - `GameBoardPage` - игровое поле из БД с admin-only открытием ячеек.
+- `GameSetupPage` - admin-настройка общего черновика игры (Save, layout, cell media, SignalR sync).
 
 ### Актуальный shell панели
 
@@ -184,7 +185,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR;
-- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — черновик, пакетное сохранение названия, строк-ценовых линий, колонок и полей карточек; `DELETE /api/game/setup` (reset draft) сначала удаляет черновик из БД, затем best-effort чистит объекты под префиксом `GameMediaObjectKeyFormat.BuildGameMediaPrefix` в `Storage:BucketName`; отдельные `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка и удаление изображения ячейки в существующий bucket (`Storage:BucketName`), object key `{GamesPrefix}/{gameId}/{CardsGroup}/{col}-{row}.ext` (как в seed migration, папка `cards`); несохранённые правки текстовых полей дублируются в `localStorage` браузера до успешного save/reset;
+- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;
