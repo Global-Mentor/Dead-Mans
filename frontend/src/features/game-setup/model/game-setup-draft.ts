@@ -146,10 +146,14 @@ export function normalizeGameSetupDraftForSave(draft: GameSetupDraftState): Game
   }
 }
 
-export function buildUpdateGameSetupRequest(draft: GameSetupDraftState): UpdateGameSetupRequest {
+export function buildUpdateGameSetupRequest(
+  draft: GameSetupDraftState,
+  expectedVersion: number,
+): UpdateGameSetupRequest {
   const normalized = normalizeGameSetupDraftForSave(draft)
 
   return {
+    expectedVersion,
     title: normalized.title,
     rowLabels: normalized.rowLabels,
     colLabels: normalized.colLabels,

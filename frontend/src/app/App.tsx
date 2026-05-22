@@ -3,6 +3,7 @@ import { Box, CircularProgress } from '@mui/material'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
+import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
 import { gameBoardRoute, gameSetupRoute, panelRootPath } from '../routes/app-routes.ts'
 import { PanelIndexRedirect } from '../routes/PanelIndexRedirect.tsx'
 import { RequirePanelRouteAccess } from '../routes/RequirePanelRouteAccess.tsx'
@@ -102,6 +103,7 @@ export default function App() {
           path={gameSetupRoute.path}
           element={
             <RequirePanelRouteAccess route={gameSetupRoute}>
+              <GameSetupRealtimeSync />
               <Suspense fallback={<PanelRouteFallback />}>
                 <GameSetupPage />
               </Suspense>

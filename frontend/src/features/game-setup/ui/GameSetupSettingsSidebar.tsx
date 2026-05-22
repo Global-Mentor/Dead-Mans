@@ -2,12 +2,15 @@ import { Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
+import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 import { GameSetupBoardLayoutDialog } from './GameSetupBoardLayoutDialog.tsx'
 import { ResetGameSetupDialog } from './ResetGameSetupDialog.tsx'
+import { gameSetupSidebarPaperSx } from './game-setup-ui-styles.ts'
 
 interface GameSetupSettingsSidebarProps {
   draft: GameSetupDraftState
   onDraftChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
+  onLayoutChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
   onReset: () => void | Promise<void>
   isResetting: boolean
 }
@@ -15,6 +18,7 @@ interface GameSetupSettingsSidebarProps {
 export function GameSetupSettingsSidebar({
   draft,
   onDraftChange,
+  onLayoutChange,
   onReset,
   isResetting,
 }: GameSetupSettingsSidebarProps) {
@@ -24,18 +28,7 @@ export function GameSetupSettingsSidebar({
 
   return (
     <>
-      <Paper
-        variant="outlined"
-        sx={{
-          width: { xs: '100%', md: 280 },
-          flexShrink: 0,
-          p: 2.5,
-          borderRadius: 2,
-          alignSelf: 'stretch',
-          background:
-            'linear-gradient(180deg, rgba(144,202,249,0.08) 0%, rgba(20,24,41,0.98) 100%)',
-        }}
-      >
+      <Paper variant="outlined" sx={gameSetupSidebarPaperSx}>
         <Typography variant="overline" color="text.secondary">
           {t('gameSetup.settingsSidebar.overline')}
         </Typography>
@@ -59,6 +52,7 @@ export function GameSetupSettingsSidebar({
             }}
             size="small"
             fullWidth
+            inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
           />
 
           <Divider />
@@ -105,7 +99,7 @@ export function GameSetupSettingsSidebar({
         open={isLayoutDialogOpen}
         draft={draft}
         onClose={() => setIsLayoutDialogOpen(false)}
-        onApply={onDraftChange}
+        onApply={onLayoutChange}
       />
     </>
   )
