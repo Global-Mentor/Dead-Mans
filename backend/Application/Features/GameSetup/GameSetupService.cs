@@ -1,4 +1,5 @@
 using backend.Application.Abstractions;
+using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Configuration;
 using backend.Application.Contracts;
@@ -10,18 +11,21 @@ public sealed class GameSetupService : IGameSetupService
 {
     private readonly IGameSetupRepository _repository;
     private readonly IObjectStorage _objectStorage;
+    private readonly IGameSetupEventsPublisher _eventsPublisher;
     private readonly MediaStorageSettings _storageSettings;
     private readonly ILogger<GameSetupService> _logger;
 
     public GameSetupService(
         IGameSetupRepository repository,
         IObjectStorage objectStorage,
+        IGameSetupEventsPublisher eventsPublisher,
         IOptions<MediaStorageSettings> storageSettings,
         ILogger<GameSetupService> logger
     )
     {
         _repository = repository;
         _objectStorage = objectStorage;
+        _eventsPublisher = eventsPublisher;
         _storageSettings = storageSettings.Value;
         _logger = logger;
     }
@@ -52,6 +56,7 @@ public sealed class GameSetupService : IGameSetupService
             return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.DraftAlreadyExists);
         }
 
+        await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
         return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.Created, snapshot);
     }
 
@@ -86,19 +91,29 @@ public sealed class GameSetupService : IGameSetupService
         }
 
         var normalizedUpdate = new GameSetupDraftUpdate(
+            update.ExpectedVersion,
             normalizedTitle,
             normalizedRowLabels,
             normalizedColumnLabels,
             normalizedCells
         );
 
-        var savedSnapshot = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);
-        if (savedSnapshot is null)
+        var saveResult = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);
+        var result = saveResult.Status switch
         {
-            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.NoDraftFound);
+            UpdateDraftSetupRepositoryStatus.Updated when saveResult.Snapshot is not null =>
+                new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.Updated, saveResult.Snapshot),
+            UpdateDraftSetupRepositoryStatus.StaleVersion =>
+                new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.StaleVersion),
+            _ => new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.NoDraftFound),
+        };
+
+        if (result.Outcome == UpdateDraftGameSetupOutcome.Updated)
+        {
+            await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
         }
 
-        return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.Updated, savedSnapshot);
+        return result;
     }
 
     public async Task<DeleteDraftGameSetupResult> DeleteDraftSetupAsync(
@@ -119,6 +134,7 @@ public sealed class GameSetupService : IGameSetupService
             cancellationToken
         );
 
+        await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
         return new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.Deleted);
     }
 }

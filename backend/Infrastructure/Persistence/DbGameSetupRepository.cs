@@ -159,7 +159,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
         }
     }
 
-    public async Task<GameBoardSnapshot?> UpdateDraftSetupAsync(
+    public async Task<UpdateDraftSetupRepositoryResult> UpdateDraftSetupAsync(
         GameSetupDraftUpdate update,
         CancellationToken cancellationToken = default
     )
@@ -174,7 +174,18 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 .FirstOrDefaultAsync(cancellationToken);
             if (draftGame?.Board is not { } board)
             {
-                return null;
+                return new UpdateDraftSetupRepositoryResult(UpdateDraftSetupRepositoryStatus.NotFound);
+            }
+
+            if (board.Version != update.ExpectedVersion)
+            {
+                _logger.LogInformation(
+                    AppMessages.Logs.GameSetupDraftVersionConflict,
+                    draftGame.Id,
+                    update.ExpectedVersion,
+                    board.Version
+                );
+                return new UpdateDraftSetupRepositoryResult(UpdateDraftSetupRepositoryStatus.StaleVersion);
             }
 
             await _dbContext.Entry(board)
@@ -286,7 +297,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 board.Version
             );
 
-            return await BuildSnapshotAsync(
+            var snapshot = await BuildSnapshotAsync(
                 new SelectedBoard(
                     board.Id,
                     draftGame.Id,
@@ -301,6 +312,8 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 ),
                 cancellationToken
             );
+
+            return new UpdateDraftSetupRepositoryResult(UpdateDraftSetupRepositoryStatus.Updated, snapshot);
         }
         catch (Exception ex)
         {

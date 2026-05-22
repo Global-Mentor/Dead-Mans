@@ -100,6 +100,7 @@ public sealed class GameSetupController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update(
@@ -125,6 +126,12 @@ public sealed class GameSetupController : ControllerBase
                     Ok(result.Snapshot.ToSetupDto()),
                 UpdateDraftGameSetupOutcome.NoDraftFound => NotFound(
                     new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
+                ),
+                UpdateDraftGameSetupOutcome.StaleVersion => Conflict(
+                    new ErrorResponse(
+                        AppMessages.Client.GameSetupDraftVersionConflict,
+                        AppMessages.ErrorCodes.GameSetupDraftVersionConflict
+                    )
                 ),
                 UpdateDraftGameSetupOutcome.InvalidTitle => BadRequest(
                     new ErrorResponse(

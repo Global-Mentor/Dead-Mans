@@ -18,6 +18,7 @@ public enum UpdateDraftGameSetupOutcome
 {
     Updated,
     NoDraftFound,
+    StaleVersion,
     InvalidTitle,
     InvalidRowLabels,
     InvalidColumnLabels,

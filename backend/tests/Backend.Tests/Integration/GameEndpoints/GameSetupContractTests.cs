@@ -96,6 +96,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var updateResponse = await adminClient.PutAsJsonAsync(
             "/api/game/setup",
             new UpdateGameSetupRequestDto(
+                created.Version,
                 "Draft to delete",
                 customizedRowLabels,
                 created.ColLabels.ToArray(),
@@ -210,6 +211,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var updateResponse = await adminClient.PutAsJsonAsync(
             "/api/game/setup",
             new UpdateGameSetupRequestDto(
+                created.Version,
                 "After save",
                 ["100", "125", "150", "175", "200"],
                 ["Col A", "Col B", "Col C", "Col D", "Col E"],
@@ -252,6 +254,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var response = await adminClient.PutAsJsonAsync(
             "/api/game/setup",
             new UpdateGameSetupRequestDto(
+                1,
                 "Missing draft",
                 ["1"],
                 ["Col 1"],
@@ -277,6 +280,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var response = await adminClient.PutAsJsonAsync(
             "/api/game/setup",
             new UpdateGameSetupRequestDto(
+                snapshot.Version,
                 " ",
                 snapshot.RowLabels.ToArray(),
                 snapshot.ColLabels.ToArray(),
@@ -290,6 +294,53 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.InvalidGameSetupTitle, payload.Error);
+    }
+
+    [Fact]
+    public async Task UpdateSetup_WhenVersionIsStale_ReturnsConflict()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var createResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Versioned draft")
+        );
+        var created = await createResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(created);
+
+        var firstSave = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                created.Version,
+                "First save",
+                created.RowLabels.ToArray(),
+                created.ColLabels.ToArray(),
+                created.Cells
+                    .Select(cell => new UpdateGameSetupCellDto(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
+                    .ToArray()
+            )
+        );
+        Assert.Equal(HttpStatusCode.OK, firstSave.StatusCode);
+
+        var staleSave = await adminClient.PutAsJsonAsync(
+            "/api/game/setup",
+            new UpdateGameSetupRequestDto(
+                created.Version,
+                "Stale save",
+                created.RowLabels.ToArray(),
+                created.ColLabels.ToArray(),
+                created.Cells
+                    .Select(cell => new UpdateGameSetupCellDto(cell.Id, cell.Row, cell.Col, "Stale", cell.Cost))
+                    .ToArray()
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, staleSave.StatusCode);
+        var payload = await staleSave.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.GameSetupDraftVersionConflict, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameSetupDraftVersionConflict, payload.Code);
     }
 
     [Fact]
@@ -314,7 +365,13 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
 
         var updateResponse = await adminClient.PutAsJsonAsync(
             "/api/game/setup",
-            new UpdateGameSetupRequestDto("Resize draft", rowLabels, created.ColLabels.ToArray(), cells)
+            new UpdateGameSetupRequestDto(
+                created.Version,
+                "Resize draft",
+                rowLabels,
+                created.ColLabels.ToArray(),
+                cells
+            )
         );
 
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);

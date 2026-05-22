@@ -5,6 +5,7 @@ public sealed record CreateGameSetupRequestDto(string Title);
 public sealed record UpdateGameSetupCellDto(string? Id, int Row, int Col, string? Title, int Cost);
 
 public sealed record UpdateGameSetupRequestDto(
+    int ExpectedVersion,
     string Title,
     IReadOnlyList<string> RowLabels,
     IReadOnlyList<string> ColLabels,

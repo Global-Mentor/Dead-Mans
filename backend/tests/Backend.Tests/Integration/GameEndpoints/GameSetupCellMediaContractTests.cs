@@ -158,7 +158,7 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
                 Rows = 1,
                 Cols = 1,
                 RowLabels = ["100"],
-                ColLabels = ["Column 1"],
+                ColLabels = ["1"],
                 CreatedAtUtc = createdAt,
             }
         );

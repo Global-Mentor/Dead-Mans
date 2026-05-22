@@ -30,11 +30,14 @@ public static class AppMessages
             "Cell image must be a supported image file up to 5 MB.";
         public const string UnableToUploadGameSetupCellMedia = "Unable to upload the game setup cell image.";
         public const string UnableToDeleteGameSetupCellMedia = "Unable to delete the game setup cell image.";
+        public const string GameSetupDraftVersionConflict =
+            "The draft was changed by another session. Reload the latest setup and try again.";
     }
 
     public static class ErrorCodes
     {
         public const string InvalidGameSetupTitle = "game_setup.invalid_title";
+        public const string GameSetupDraftVersionConflict = "game_setup.stale_version";
     }
 
     public static class Exceptions
@@ -147,6 +150,8 @@ public static class AppMessages
             "Draft game setup created. GameId: {GameId}, CellCount: {CellCount}.";
         public const string GameSetupDraftSaved =
             "Draft game setup saved. GameId: {GameId}, BoardVersion: {BoardVersion}.";
+        public const string GameSetupDraftVersionConflict =
+            "Draft game setup save rejected due to version conflict. GameId: {GameId}, ExpectedVersion: {ExpectedVersion}, CurrentVersion: {CurrentVersion}.";
         public const string GameSetupDraftSaveFailed = "Failed to save draft game setup.";
         public const string GameSetupDraftDeleted = "Draft game setup deleted. GameId: {GameId}.";
         public const string GameSetupDraftDeleteFailed = "Failed to delete draft game setup.";

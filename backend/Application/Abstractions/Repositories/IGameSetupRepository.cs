@@ -15,7 +15,7 @@ public interface IGameSetupRepository
         CancellationToken cancellationToken = default
     );
 
-    Task<GameBoardSnapshot?> UpdateDraftSetupAsync(
+    Task<UpdateDraftSetupRepositoryResult> UpdateDraftSetupAsync(
         GameSetupDraftUpdate update,
         CancellationToken cancellationToken = default
     );
