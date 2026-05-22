@@ -1,0 +1,20 @@
+# Realtime (SignalR)
+
+Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and payload schemas under `components/schemas`.
+
+## Hubs
+
+| Hub | Path | Auth | Server → client events |
+|-----|------|------|------------------------|
+| game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | `cellOpened` → `GameCellOpenedEventDto` |
+| game-setup | `/hubs/game-setup` | Cookie session, admin only | `draftChanged` → no body; refetch `GET /api/game/setup` |
+
+Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
+
+## Code alignment
+
+- Backend: `backend/Api/Contracts/RealtimeHubContracts.cs` (paths + event names; must match OpenAPI).
+- Frontend: `npm --prefix frontend run generate:realtime` → `frontend/src/shared/realtime/generated.ts`.
+- HTTP payload types: `GameCellOpenedEventDto` in generated OpenAPI types (`npm run generate:contracts`).
+
+After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

@@ -16,17 +16,20 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - вход через Twitch;
 - восстановление сессии через `/auth/me`;
 - защищённая панель под `/panel` с role-aware navigation;
-- страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR.
+- страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
+- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`.
 
 ## Источник контрактов
 
 Frontend не держит transport-контракты вручную как отдельную правду. Канонический источник - `../backend/openapi/deadmans.v1.yaml`.
 
-Сгенерировать типы:
+Сгенерировать transport-артефакты:
 
 ```bash
-npm run generate:contracts
+npm run generate:transport
 ```
+
+(`generate:contracts` — HTTP/OpenAPI schemas; `generate:realtime` — hub paths и event names из `x-signalr`.)
 
 ## Режим API
 
@@ -35,7 +38,7 @@ Frontend использует общий `httpClient`.
 - `GET /api/game` идёт через относительный `/api` base URL;
 - `POST /api/game/cells/{cellId}/open` идёт через тот же API transport;
 - auth-запросы идут на backend origin для `/auth/*`;
-- realtime hub подключается к `VITE_BACKEND_ORIGIN` по `/hubs/game-board`;
+- realtime hubs: пути и события из OpenAPI `x-signalr`, код в `src/shared/realtime/generated.ts` (`buildRealtimeHubUrl`);
 - все запросы отправляют `credentials: 'include'`.
 
 `VITE_BACKEND_ORIGIN`:
@@ -66,4 +69,4 @@ npm run build
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend должен содержать Twitch auth, panel shell, role-aware routing и игровой экран. Дополнительные игровые режимы, альтернативные панели и моковые игровые срезы считаются вне скоупа.
+На текущем этапе frontend должен содержать Twitch auth, panel shell, role-aware routing, игровой экран и admin game setup. Дополнительные игровые режимы, альтернативные панели и моковые игровые срезы считаются вне скоупа.
