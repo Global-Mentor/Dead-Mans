@@ -205,7 +205,8 @@ try
             "application/yaml"
         )
     );
-    app.MapHub<GameBoardHub>("/hubs/game-board");
+    app.MapHub<GameBoardHub>(RealtimeHubContracts.GameBoard.HubPath);
+    app.MapHub<GameSetupHub>(RealtimeHubContracts.GameSetup.HubPath);
     app.MapControllers();
 
     app.Run();

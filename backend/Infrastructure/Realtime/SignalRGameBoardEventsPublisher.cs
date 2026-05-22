@@ -1,3 +1,4 @@
+using backend.Api.Contracts;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
 using Microsoft.AspNetCore.SignalR;
@@ -6,7 +7,7 @@ namespace backend.Infrastructure.Realtime;
 
 public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
 {
-    public const string CellOpenedEventName = "cellOpened";
+    public const string CellOpenedEventName = RealtimeHubContracts.GameBoard.CellOpenedEvent;
 
     private readonly IHubContext<GameBoardHub> _hubContext;
 
