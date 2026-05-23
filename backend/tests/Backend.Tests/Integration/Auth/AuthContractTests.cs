@@ -47,6 +47,28 @@ public sealed class AuthContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task PostLogout_WithoutApiClientHeader_ReturnsForbidden()
+    {
+        var response = await _client.PostAsync("/auth/logout", content: null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.LogoutRequiresApiClientHeader, payload.Error);
+    }
+
+    [Fact]
+    public async Task PostLogout_WithApiClientHeader_ReturnsNoContent()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/auth/logout");
+        request.Headers.Add("X-Dead-Mans-Api-Client", "1");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
     public async Task HandleTwitchCallback_WithoutCode_RedirectsToFrontendErrorRoute()
     {
         var response = await _client.GetAsync("/auth/twitch/callback?state=test-state");

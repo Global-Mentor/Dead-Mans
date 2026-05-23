@@ -11,6 +11,8 @@ public static class AppMessages
         public const string AccessDenied = "You do not have access to this resource.";
         public const string AuthCookieMissingClaims = "Auth cookie is missing required user claims.";
         public const string UserMissingOrInactive = "User no longer exists or is inactive.";
+        public const string LogoutRequiresApiClientHeader =
+            "Logout must be initiated from the application.";
         public const string NoActiveOrFinishedGame = "No active or finished game was found.";
         public const string UnableToLoadCurrentGame = "Unable to load the current game.";
         public const string GameCellNotFound = "Requested game cell was not found.";
