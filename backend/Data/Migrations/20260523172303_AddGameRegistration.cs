@@ -39,6 +39,17 @@ namespace backend.Data.Migrations
                 type: "timestamp with time zone",
                 nullable: true);
 
+            migrationBuilder.Sql(
+                """
+                UPDATE "games"
+                SET
+                  "Status" = 'ready',
+                  "ReadyAtUtc" = "CreatedAtUtc",
+                  "StartedAtUtc" = NULL
+                WHERE "Id" = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid;
+                """
+            );
+
             migrationBuilder.CreateTable(
                 name: "game_participation_slots",
                 columns: table => new
@@ -62,6 +73,23 @@ namespace backend.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.Sql(
+                """
+                INSERT INTO "game_participation_slots" ("Id", "GameId", "SlotIndex", "Availability", "ReservedLabel", "CreatedAtUtc")
+                SELECT slot."Id", game_row."Id", slot."SlotIndex", 'public', NULL, game_row."ReadyAtUtc"
+                FROM "games" AS game_row
+                CROSS JOIN (VALUES
+                  ('a615abf5-c309-48cb-b787-45d9e8c4a2db'::uuid, 1),
+                  ('e62d7e69-1c9e-435d-8d7c-fb39627c642f'::uuid, 2),
+                  ('529e1684-c3bb-45f0-a76c-3675e8a29a21'::uuid, 3),
+                  ('08e18272-37b4-4985-a629-262cb8372995'::uuid, 4),
+                  ('72c9326b-1634-4283-a739-5498936fdff7'::uuid, 5),
+                  ('f197148f-e3b1-4059-9449-0b5eef88095a'::uuid, 6)
+                ) AS slot("Id", "SlotIndex")
+                WHERE game_row."Id" = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid;
+                """
+            );
 
             migrationBuilder.CreateTable(
                 name: "game_teams",
@@ -393,6 +421,17 @@ namespace backend.Data.Migrations
             migrationBuilder.DropColumn(
                 name: "ReadyAtUtc",
                 table: "games");
+
+            migrationBuilder.Sql(
+                """
+                UPDATE "games"
+                SET
+                  "Status" = 'active',
+                  "StartedAtUtc" = "CreatedAtUtc",
+                  "FinishedAtUtc" = NULL
+                WHERE "Id" = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid;
+                """
+            );
 
             migrationBuilder.AddCheckConstraint(
                 name: "CK_games_finishedat_semantics",

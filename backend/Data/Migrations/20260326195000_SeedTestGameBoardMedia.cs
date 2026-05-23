@@ -80,7 +80,7 @@ VALUES (
   NULL,
   {SqlLiteral(GameStatusValue.Active)},
   {SqlTimestamptz(createdAt)},
-  NULL,
+  {SqlTimestamptz(createdAt)},
   NULL
 );"
             );
