@@ -78,6 +78,7 @@
 
 - auth HTTP использует тот же общий `httpClient`, что и игровые API, только с другим `baseUrl` для `/auth/*`;
 - transport-типы импортируются централизованно из `src/shared/api/contracts/index.ts`.
+- registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
 
 ### Основные страницы
 
@@ -194,7 +195,8 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - безопасный локальный backend bootstrap через `backend/scripts/setup-local.ps1` без удаления БД и storage;
 - отдельный destructive reset через `backend/scripts/reset-local.ps1` с подтверждением;
 - backend tests для auth transport-контрактов;
-- документация по стеку и архитектуре.
+- документация по стеку и архитектуре;
+- регистрация команд: статусы игры `draft → ready → active → finished`, слоты/команды/инвайты, API `/api/game/registration` и `/api/game/lifecycle/*`, страницы `/panel/game-application` и `/panel/team-registrations` (см. `docs/architecture/game-registration.md`).
 
 ---
 
