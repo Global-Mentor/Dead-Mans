@@ -7,4 +7,9 @@ export const queryKeys = {
     all: ['gameSetup'] as const,
     draftSnapshot: () => ['gameSetup', 'draftSnapshot'] as const,
   },
+  gameRegistration: {
+    all: ['gameRegistration'] as const,
+    snapshot: () => ['gameRegistration', 'snapshot'] as const,
+    adminTeams: () => ['gameRegistration', 'adminTeams'] as const,
+  },
 }

@@ -7,6 +7,7 @@ import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
 import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
 import { useGameSetupPage } from './use-game-setup-page.ts'
+import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {
@@ -127,6 +128,7 @@ export function GameSetupPage() {
                 {t('gameSetup.draftRemovedNotice')}
               </Alert>
             ) : null}
+            <GameSetupRegistrationPlannedSection />
           </Paper>
         </Box>
         <CreateGameSetupDialog
@@ -245,6 +247,8 @@ export function GameSetupPage() {
             onDeleteCellMedia={deleteCellMedia}
           />
         </Box>
+
+        <GameSetupRegistrationPlannedSection />
       </Paper>
     </Box>
   )

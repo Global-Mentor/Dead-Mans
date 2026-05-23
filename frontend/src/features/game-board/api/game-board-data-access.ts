@@ -1,19 +1,12 @@
-import { ApiError } from '../../../shared/api/errors/ApiError.ts'
+import { fetchNotFoundAsNull } from '../../../shared/api/fetch-not-found-as-null.ts'
 import type { GameBoardCellId, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { gameBoardApi } from './game-board-api.ts'
 
 /**
- * Loads the current DB-backed board. `404` means no active or finished game — not a transport error.
+ * Loads the current DB-backed board. `404` means no active, ready, or finished game — not a transport error.
  */
 export async function fetchCurrentGameBoardSnapshot(): Promise<GameBoardSnapshot | null> {
-  try {
-    return await gameBoardApi.getCurrentSnapshot()
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return null
-    }
-    throw error
-  }
+  return fetchNotFoundAsNull(() => gameBoardApi.getCurrentSnapshot())
 }
 
 export async function openGameBoardCell(cellId: GameBoardCellId): Promise<void> {

@@ -43,18 +43,28 @@ const en = {
           label: 'Game setup',
           description: 'Draft table for configuring game cards.',
         },
+        gameApplication: {
+          label: 'Team application',
+          description: 'Register a team while the game accepts applications.',
+        },
+        teamRegistrations: {
+          label: 'Team registrations',
+          description: 'Review and confirm teams for the ready game.',
+        },
       },
     },
     gameBoard: {
       title: 'Game board',
       loading: 'Loading game board...',
       errorLoading: 'Failed to load game board.',
-      empty: 'No active or finished game in the database yet.',
+      empty: 'No current game board is available yet.',
       cellLabel: 'Cell',
       closedCellLabel: 'Hidden',
       costLabel: '{{cost}} pts',
       statusActive: 'Active',
+      statusReady: 'Ready for registration',
       statusFinished: 'Finished',
+      applicationButton: 'Team application',
       openConfirmTitle: 'Open card?',
       openConfirmDescription:
         'Are you sure you want to open this card (row {{row}}, column {{col}}, cost {{cost}})?',
@@ -187,6 +197,189 @@ const en = {
         validationRequired: 'Enter a game title.',
         alreadyExists: 'A draft game already exists. Refresh the page.',
         error: 'Failed to create the draft game. Please try again.',
+      },
+    },
+    gameApplication: {
+      title: 'Team application',
+      loading: 'Loading registration...',
+      errorLoading: 'Failed to load registration.',
+      notOpen: 'Registration is not open. Wait until an administrator publishes the game.',
+      description: 'Create a team or join an open room while the game is in the ready state.',
+      invitationsTitle: 'Pending invitations',
+      invitationSlot: 'Slot {{slot}}',
+      acceptInvitation: 'Accept',
+      declineInvitation: 'Decline',
+      myTeamTitle: 'Your team',
+      leaveTeam: 'Leave team',
+      createTeamTitle: 'Start a new team',
+      createOpenTeam: 'Open room',
+      createClosedTeam: 'Closed room (admin invites)',
+      openTeamsTitle: 'Open teams',
+      joinTeam: 'Join',
+      teamSlot: 'Slot {{slot}} · {{count}} player(s)',
+      backToBoard: 'Back to game board',
+    },
+    gameRegistration: {
+      teamStatus: {
+        forming: 'Forming',
+        confirmed: 'Confirmed',
+        disbanded: 'Disbanded',
+      },
+      errors: {
+        notOpen: 'Registration is not open for a ready game.',
+        noSlots: 'No team slots are available.',
+        alreadyOnTeam: 'You are already on a team for this game.',
+        teamNotFound: 'Team was not found.',
+        teamNotJoinable: 'This team cannot be joined or confirmed in its current state.',
+        notTeamMember: 'You are not on a team for this game.',
+        invitationInvalid: 'Invitation was not found or is no longer pending.',
+        slotNotFound: 'Participation slot was not found.',
+        slotNotAvailable: 'Participation slot is not available.',
+        pendingInvitation: 'This player already has a pending invitation for this game.',
+        operationFailed: 'The registration operation could not be completed.',
+        unauthorized: 'Sign in to continue.',
+        forbidden: 'You do not have permission for this action.',
+        generic: 'Something went wrong. Try again.',
+      },
+    },
+    teamRegistrations: {
+      title: 'Team registrations',
+      loading: 'Loading teams...',
+      errorLoading: 'Failed to load teams.',
+      notOpen: 'Team registration is not open for a ready game yet.',
+      description: 'Confirm teams that meet the player count rules for this game.',
+      empty: 'No teams have registered yet.',
+      slot: 'Slot',
+      status: 'Status',
+      players: 'Players',
+      actions: 'Actions',
+      confirm: 'Confirm',
+      reject: 'Reject',
+    },
+    plannedFeatures: {
+      roadmapTitle: 'Planned next (not wired yet)',
+      roadmapHint:
+        'Design notes from our discussions. Backend may already exist; UI and setup sync are still TODO.',
+      formShellBadge: 'UI mockup',
+      gameSetup: {
+        form: {
+          registrationTitle: 'Registration settings (draft)',
+          registrationDescription:
+            'Configure team slots, reserved seats, roster size, and open the ready phase from setup.',
+          teamSlotCount: 'Number of team slots',
+          minPlayers: 'Min players per team',
+          maxPlayers: 'Max players per team',
+          reservedSlots: 'Reserved slots',
+          reservedSlotsPlaceholder: 'e.g. slot 6 — guest team (not accepting public sign-ups)',
+          openRegistration: 'Open registration (draft → ready)',
+          startGame: 'Start game (ready → active)',
+        },
+        roadmap: {
+          slots: {
+            title: 'Slot grid in setup',
+            description:
+              'Edit how many teams can join and mark each slot public or reserved. Sync with PUT /api/game/setup.',
+          },
+          teamLimits: {
+            title: 'Min/max players per team',
+            description: 'Save 1–3 (or other) limits on the draft game, not only hard-coded defaults.',
+          },
+          lifecycle: {
+            title: 'Lifecycle from setup',
+            description:
+              'Buttons calling POST /api/game/lifecycle/open-registration, /start, /finish.',
+          },
+        },
+      },
+      gameBoard: {
+        form: {
+          lifecycleTitle: 'Game lifecycle (admin)',
+          lifecycleDescription:
+            'Move the current draft to ready, then start the live game, then finish.',
+          openRegistration: 'Open registration',
+          startGame: 'Start game',
+          finishGame: 'Finish game',
+        },
+        roadmap: {
+          lifecycle: {
+            title: 'Admin lifecycle panel',
+            description: 'Wire the three lifecycle endpoints with confirm dialogs and toasts.',
+          },
+          applicationGate: {
+            title: 'Application button visibility',
+            description:
+              'Show “Team application” only while game status is ready (hide in draft/active/finished).',
+          },
+        },
+      },
+      gameApplication: {
+        form: {
+          slotsTitle: 'Slots overview',
+          slotsDescription: 'Live map of public/reserved slots and occupancy from GET /api/game/registration.',
+          slotLabel: 'Slot {{slot}}',
+          slotFree: 'free',
+          memberInviteTitle: 'Closed team invites',
+          memberInviteDescription:
+            'Invite teammates to a closed room; today only admin can invite via API.',
+          inviteTeammate: 'Invite player',
+          submitForReview: 'Submit team for review',
+        },
+        roadmap: {
+          slotsOverview: {
+            title: 'Slot board UI',
+            description: 'Visual grid of all slots, reserved labels, pending invites, and confirmed teams.',
+          },
+          memberInvites: {
+            title: 'Player-to-player invites',
+            description:
+              'Same accept/decline flow as admin invites, initiated by any team member for closed rooms.',
+          },
+          submitForReview: {
+            title: 'Optional “ready for review” action',
+            description:
+              'Captain submits when roster is complete; admin list can filter awaiting review.',
+          },
+          statusUx: {
+            title: 'Clearer team status',
+            description:
+              'Explain forming vs confirmed; block actions after admin confirm or when game leaves ready.',
+          },
+          closedWhenInactive: {
+            title: 'Read-only when registration closed',
+            description: 'After active/finished, show history only (no leave/join).',
+          },
+        },
+      },
+      teamRegistrations: {
+        form: {
+          inviteTitle: 'Invite player to slot / team',
+          inviteDescription:
+            'Search users, pick slot (public/reserved), chain invites for closed teams. Uses POST .../invitations.',
+          slot: 'Slot',
+          player: 'Player',
+          targetTeam: 'Target team (optional)',
+          sendInvite: 'Send invitation',
+        },
+        roadmap: {
+          adminInvite: {
+            title: 'Admin invite UI',
+            description:
+              'User picker + slot selector + invite chain (P1 accept → invite P2). API already exists.',
+          },
+          slotBoard: {
+            title: 'Slot-centric admin view',
+            description: 'See reserved vs public slots and pending invites per slot.',
+          },
+          moderationPolicy: {
+            title: 'Manual accept mode toggle',
+            description:
+              'Today join-in-open-room is instant; optional queue for admin approve before confirmed.',
+          },
+          filters: {
+            title: 'Filters and sorting',
+            description: 'Filter forming/confirmed/disbanded; sort by slot or player count.',
+          },
+        },
       },
     },
     languageSwitcher: {
