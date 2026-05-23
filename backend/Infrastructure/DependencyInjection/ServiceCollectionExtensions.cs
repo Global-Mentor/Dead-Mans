@@ -73,7 +73,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameSetupCellMediaService, GameSetupCellMediaService>();
         services.AddScoped<IAuthSessionService, AuthSessionService>();
         services.AddScoped<ITwitchAuthFlowService, TwitchAuthFlowService>();
-        services.AddScoped<IAuthUserReader, DbAuthUserReader>();
+        if (environment.IsEnvironment("Testing"))
+        {
+            services.AddScoped<DbAuthUserReader>();
+            services.AddScoped<IAuthUserReader, TestingAuthUserReader>();
+        }
+        else
+        {
+            services.AddScoped<IAuthUserReader, DbAuthUserReader>();
+        }
         services.AddScoped<IUserRoleService, UserRoleService>();
         services.AddScoped<IClaimsTransformation, CurrentUserRoleClaimsTransformation>();
         services.AddHttpClient<ITwitchLoginService, TwitchLoginService>();
