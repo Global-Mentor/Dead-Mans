@@ -26,7 +26,7 @@
   - **TypeScript**: статическая типизация, защита от типичных багов, само-документация кода.
 
 - **React Router v7 (`react-router-dom`)**
-  - Навигация и роутинг внутри SPA: login, callback и защищенный маршрут `game-board`.
+  - Навигация и роутинг внутри SPA: login, callback и защищённая панель `/panel` (`game-board`, admin-only `game-setup`).
 
 - **TanStack Query (`@tanstack/react-query`)**
   - Управление серверным состоянием: запросы к API, кеш, рефетч, статусы загрузки/ошибок.

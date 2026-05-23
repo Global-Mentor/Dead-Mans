@@ -126,7 +126,8 @@ Backend живет в `backend/` и представляет собой layered 
 - `POST /auth/logout` - завершает сессию.
 
 Runtime-роли для backend-авторизации считаются из БД на каждом аутентифицированном запросе. Cookie хранит identity/session claims, а не долгоживущий snapshot ролей.
-Деактивированные пользователи не могут получить новую auth-сессию. Права на игровые endpoint'ы задаются выборочно на уровне самих контроллеров/действий.
+Деактивированные пользователи не могут получить новую auth-сессию; существующая cookie-сессия отклоняется middleware на `/api/*`, `/auth/*` и `/hubs/*` (401 + sign-out), а не только на `/auth/me`. `POST /auth/logout` требует заголовок `X-Dead-Mans-Api-Client: 1` (его выставляет frontend `httpClient`). Права на игровые endpoint'ы задаются выборочно на уровне самих контроллеров/действий.
+Закрытые ячейки в `GET /api/game` не отдают `title`/`description` в JSON (только после открытия).
 
 Auth требует корректно настроенный `ApplicationDbContext`. Если backend запущен без persistence-конфигурации, старт должен завершаться явной ошибкой, а не оставлять приложение в полу-рабочем состоянии.
 
@@ -184,7 +185,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - feature-first фронтенд с `app/`, `routes/`, `features/`, `shared/`, `locales/`;
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
-- game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR;
+- game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR (после успешной записи в БД publish best-effort, см. `docs/architecture/realtime.md`);
 - game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
