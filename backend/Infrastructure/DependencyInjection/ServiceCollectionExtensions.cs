@@ -4,6 +4,8 @@ using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Features.Auth;
 using backend.Application.Features.GameBoard;
+using backend.Application.Features.GameLifecycle;
+using backend.Application.Features.GameRegistration;
 using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Infrastructure.Auth;
@@ -71,6 +73,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameSetupService, GameSetupService>();
         services.AddScoped<IGameSetupCellMediaRepository, DbGameSetupCellMediaRepository>();
         services.AddScoped<IGameSetupCellMediaService, GameSetupCellMediaService>();
+        services.AddScoped<IGameRegistrationReadStore, GameRegistrationReadStore>();
+        services.AddScoped<IGameRegistrationPersistence, DbGameRegistrationPersistence>();
+        services.AddScoped<IGameRegistrationService, GameRegistrationService>();
+        services.AddScoped<IGameLifecycleReadStore, GameLifecycleReadStore>();
+        services.AddScoped<IGameLifecyclePersistence, DbGameLifecyclePersistence>();
+        services.AddScoped<IGameLifecycleService, GameLifecycleService>();
         services.AddScoped<IAuthSessionService, AuthSessionService>();
         services.AddScoped<ITwitchAuthFlowService, TwitchAuthFlowService>();
         if (environment.IsEnvironment("Testing"))

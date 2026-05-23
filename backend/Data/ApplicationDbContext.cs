@@ -20,7 +20,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<BoardCell> BoardCells => Set<BoardCell>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<BoardCellMedia> BoardCellMedia => Set<BoardCellMedia>();
-
+    public DbSet<GameParticipationSlot> GameParticipationSlots => Set<GameParticipationSlot>();
+    public DbSet<GameTeam> GameTeams => Set<GameTeam>();
+    public DbSet<GameTeamMember> GameTeamMembers => Set<GameTeamMember>();
+    public DbSet<GameParticipationInvitation> GameParticipationInvitations =>
+        Set<GameParticipationInvitation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,5 +37,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BoardCellConfiguration());
         modelBuilder.ApplyConfiguration(new MediaAssetConfiguration());
         modelBuilder.ApplyConfiguration(new BoardCellMediaConfiguration());
+        modelBuilder.ApplyConfiguration(new GameParticipationSlotConfiguration());
+        modelBuilder.ApplyConfiguration(new GameTeamConfiguration());
+        modelBuilder.ApplyConfiguration(new GameTeamMemberConfiguration());
+        modelBuilder.ApplyConfiguration(new GameParticipationInvitationConfiguration());
     }
 }

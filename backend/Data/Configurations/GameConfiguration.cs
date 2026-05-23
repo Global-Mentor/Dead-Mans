@@ -21,6 +21,14 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
                     "CK_games_finishedat_semantics",
                     GameStatusValue.CheckSqlFinishedAtSemantics
                 );
+                tableBuilder.HasCheckConstraint(
+                    "CK_games_lifecycle_timestamps",
+                    GameStatusValue.CheckSqlLifecycleTimestampSemantics
+                );
+                tableBuilder.HasCheckConstraint(
+                    "CK_games_team_size_limits",
+                    GameStatusValue.CheckSqlTeamSizeLimits
+                );
             }
         );
 
@@ -30,12 +38,22 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.Property(x => x.Description).HasMaxLength(2000);
         builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
+        builder.Property(x => x.MinPlayersPerTeam).HasDefaultValue((short)1);
+        builder.Property(x => x.MaxPlayersPerTeam).HasDefaultValue((short)3);
 
         builder.HasIndex(x => new { x.Status, x.CreatedAtUtc });
-        builder.HasIndex(x => x.Status)
-            .HasDatabaseName("UX_games_single_draft")
+        builder
+            .HasIndex(x => x.Status, "UX_games_single_draft")
             .IsUnique()
-            .HasFilter("\"Status\" = 'draft'");
+            .HasFilter($"\"Status\" = '{GameStatusValue.Draft}'");
+        builder
+            .HasIndex(x => x.Status, "UX_games_single_ready")
+            .IsUnique()
+            .HasFilter($"\"Status\" = '{GameStatusValue.Ready}'");
+        builder
+            .HasIndex(x => x.Status, "UX_games_single_active")
+            .IsUnique()
+            .HasFilter($"\"Status\" = '{GameStatusValue.Active}'");
         builder.HasIndex(x => x.CreatedAtUtc);
     }
 }

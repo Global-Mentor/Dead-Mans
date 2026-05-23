@@ -36,6 +36,15 @@ public sealed class GameBoardService : IGameBoardService
             return activeBoard;
         }
 
+        var readyBoard = await _repository.GetLatestBoardByStatusAsync(
+            GameStatusValue.Ready,
+            cancellationToken
+        );
+        if (readyBoard is not null)
+        {
+            return readyBoard;
+        }
+
         return await _repository.GetLatestBoardByStatusAsync(
             GameStatusValue.Finished,
             cancellationToken

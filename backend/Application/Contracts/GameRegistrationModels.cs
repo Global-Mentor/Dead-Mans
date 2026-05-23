@@ -1,0 +1,100 @@
+namespace backend.Application.Contracts;
+
+public sealed record ReadyGameRegistrationContext(
+    Guid GameId,
+    short MinPlayersPerTeam,
+    short MaxPlayersPerTeam
+);
+
+public sealed record AvailableParticipationSlot(Guid SlotId, int SlotIndex);
+
+public sealed record ParticipationSlotSnapshot(Guid SlotId, int SlotIndex);
+
+public sealed record JoinableTeamSnapshot(Guid TeamId, string Status, bool RecruitmentOpen);
+
+public sealed record TeamAdminActionSnapshot(string Status, int MemberCount);
+
+public sealed record TeamInviteTargetSnapshot(Guid TeamId, Guid SlotId, string Status, int MemberCount);
+
+public sealed record PendingInvitationSnapshot(
+    Guid InvitationId,
+    Guid GameId,
+    Guid SlotId,
+    Guid? TeamId,
+    string Status,
+    Guid InvitedUserId
+);
+
+public sealed record AcceptInvitationCommand(
+    Guid InvitationId,
+    Guid UserId,
+    Guid GameId,
+    Guid SlotId,
+    Guid? TeamId,
+    short MaxPlayersPerTeam
+);
+
+public sealed record RegistrationPlayerDto(Guid UserId, string Login, string DisplayName);
+
+public sealed record RegistrationTeamMemberDto(RegistrationPlayerDto Player, DateTime JoinedAtUtc);
+
+public sealed record RegistrationTeamDto(
+    Guid TeamId,
+    int SlotIndex,
+    string SlotAvailability,
+    string? ReservedLabel,
+    bool RecruitmentOpen,
+    string Status,
+    IReadOnlyList<RegistrationTeamMemberDto> Members
+);
+
+public sealed record RegistrationSlotDto(
+    Guid SlotId,
+    int SlotIndex,
+    string Availability,
+    string? ReservedLabel,
+    bool IsAvailableForNewTeam,
+    Guid? TeamId,
+    string? TeamStatus
+);
+
+public sealed record RegistrationInvitationDto(
+    Guid InvitationId,
+    Guid SlotId,
+    int SlotIndex,
+    Guid? TeamId,
+    string Status,
+    DateTime CreatedAtUtc
+);
+
+public sealed record GameRegistrationSnapshot(
+    Guid GameId,
+    string GameStatus,
+    short MinPlayersPerTeam,
+    short MaxPlayersPerTeam,
+    IReadOnlyList<RegistrationSlotDto> Slots,
+    IReadOnlyList<RegistrationTeamDto> Teams,
+    RegistrationTeamDto? MyTeam,
+    IReadOnlyList<RegistrationInvitationDto> MyPendingInvitations
+);
+
+public enum GameRegistrationErrorCode
+{
+    None,
+    GameNotInReady,
+    UserAlreadyOnTeam,
+    NoAvailableSlot,
+    TeamNotFound,
+    TeamNotJoinable,
+    TeamFull,
+    NotTeamMember,
+    InvitationNotFound,
+    InvitationNotPending,
+    UserNotFound,
+    SlotNotFound,
+    SlotNotAvailable,
+    PendingInvitationExists,
+    OperationFailed,
+}
+
+public sealed record GameRegistrationResult<T>(bool Success, T? Value, GameRegistrationErrorCode Error);

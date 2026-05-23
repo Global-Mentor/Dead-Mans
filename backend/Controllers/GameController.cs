@@ -36,7 +36,7 @@ public sealed class GameController : ControllerBase
             if (board is null)
             {
                 _logger.LogInformation(AppMessages.Logs.GameNoBoardForGet);
-                return NotFound(new ErrorResponse(AppMessages.Client.NoActiveOrFinishedGame));
+                return NotFound(new ErrorResponse(AppMessages.Client.NoCurrentGameBoard));
             }
 
             return Ok(board.ToDto());

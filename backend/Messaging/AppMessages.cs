@@ -34,12 +34,46 @@ public static class AppMessages
         public const string UnableToDeleteGameSetupCellMedia = "Unable to delete the game setup cell image.";
         public const string GameSetupDraftVersionConflict =
             "The draft was changed by another session. Reload the latest setup and try again.";
+        public const string ReadyGameAlreadyExists = "A game is already open for registration.";
+        public const string ActiveGameAlreadyExists = "An active game is already in progress.";
+        public const string GameNotReadyForStart = "No game is ready to start.";
+        public const string GameNotActiveForFinish = "No active game is available to finish.";
+        public const string GameRegistrationSlotsRequired =
+            "Configure at least one team slot before opening registration.";
+        public const string GameRegistrationNotOpen = "Registration is not open for a ready game.";
+        public const string GameRegistrationNoSlots = "No team slots are available.";
+        public const string GameRegistrationAlreadyOnTeam = "You are already on a team for this game.";
+        public const string GameRegistrationTeamNotFound = "Team was not found.";
+        public const string GameRegistrationTeamNotJoinable =
+            "This team cannot be joined or confirmed in its current state.";
+        public const string GameRegistrationNotTeamMember = "You are not on a team for this game.";
+        public const string GameRegistrationInvitationInvalid =
+            "Invitation was not found or is no longer pending.";
+        public const string GameRegistrationSlotNotFound = "Participation slot was not found.";
+        public const string GameRegistrationSlotNotAvailable = "Participation slot is not available.";
+        public const string GameRegistrationInvalidTeamSizeLimits =
+            "Minimum players per team cannot exceed the maximum.";
+        public const string GameRegistrationPendingInvitationExists =
+            "This player already has a pending invitation for this game.";
+        public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
+        public const string NoCurrentGameBoard = "No current game board was found.";
     }
 
     public static class ErrorCodes
     {
         public const string InvalidGameSetupTitle = "game_setup.invalid_title";
         public const string GameSetupDraftVersionConflict = "game_setup.stale_version";
+        public const string GameRegistrationNotOpen = "game_registration.not_open";
+        public const string GameRegistrationNoSlots = "game_registration.no_slots";
+        public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
+        public const string GameRegistrationTeamNotFound = "game_registration.team_not_found";
+        public const string GameRegistrationTeamNotJoinable = "game_registration.team_not_joinable";
+        public const string GameRegistrationNotTeamMember = "game_registration.not_team_member";
+        public const string GameRegistrationInvitationInvalid = "game_registration.invitation_invalid";
+        public const string GameRegistrationSlotNotFound = "game_registration.slot_not_found";
+        public const string GameRegistrationSlotNotAvailable = "game_registration.slot_not_available";
+        public const string GameRegistrationPendingInvitation = "game_registration.pending_invitation";
+        public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
     }
 
     public static class Exceptions

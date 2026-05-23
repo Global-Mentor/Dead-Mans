@@ -1,5 +1,6 @@
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
+using backend.Application.Configuration;
 using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Data.Entities;
@@ -82,9 +83,28 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 Description = null,
                 Status = GameStatusValue.Draft,
                 CreatedAtUtc = utcNow,
+                ReadyAtUtc = null,
                 StartedAtUtc = null,
-                FinishedAtUtc = null
+                FinishedAtUtc = null,
+                MinPlayersPerTeam = GameRegistrationDefaults.MinPlayersPerTeam,
+                MaxPlayersPerTeam = GameRegistrationDefaults.MaxPlayersPerTeam
             };
+
+            var participationSlots = GameRegistrationDefaults
+                .BuildDefaultSlots()
+                .Select(
+                    slot =>
+                        new GameParticipationSlot
+                        {
+                            Id = Guid.NewGuid(),
+                            GameId = gameId,
+                            SlotIndex = slot.SlotIndex,
+                            Availability = slot.Availability,
+                            ReservedLabel = null,
+                            CreatedAtUtc = utcNow
+                        }
+                )
+                .ToList();
 
             var board = new GameBoard
             {
@@ -121,6 +141,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             }
 
             _dbContext.Games.Add(game);
+            _dbContext.GameParticipationSlots.AddRange(participationSlots);
             _dbContext.GameBoards.Add(board);
             _dbContext.BoardCells.AddRange(cells);
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -391,7 +412,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             .Where(cell => cell.BoardId == board.BoardId)
             .OrderBy(cell => cell.RowIndex)
             .ThenBy(cell => cell.ColIndex)
-            .Select(cell => new RawCell(
+            .Select(cell => new GameBoardCellProjection.RawCell(
                 cell.Id,
                 cell.RowIndex,
                 cell.ColIndex,
@@ -403,12 +424,14 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             ))
             .ToListAsync(cancellationToken);
 
-        var mediaByCellId = await LoadMediaByCellIdAsync(
+        var mediaByCellId = await GameBoardCellProjection.LoadMediaByCellIdAsync(
+            _dbContext,
+            _storagePublicBaseUrl,
             rawCells.Select(cell => cell.Id).ToArray(),
             cancellationToken
         );
         var resultCells = rawCells
-            .Select(cell => MapCell(cell, mediaByCellId))
+            .Select(cell => GameBoardCellProjection.MapCell(cell, mediaByCellId, revealClosedContent: true))
             .ToArray();
 
         return new GameBoardSnapshot(
@@ -422,56 +445,6 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             board.RowLabels,
             board.ColLabels,
             resultCells
-        );
-    }
-
-    private async Task<Dictionary<Guid, List<GameBoardCellMedia>>> LoadMediaByCellIdAsync(
-        Guid[] cellIds,
-        CancellationToken cancellationToken
-    )
-    {
-        if (cellIds.Length == 0)
-        {
-            return [];
-        }
-
-        var mediaRows = await _dbContext.BoardCellMedia
-            .AsNoTracking()
-            .Where(link => cellIds.Contains(link.CellId))
-            .OrderBy(link => link.SortOrder)
-            .Select(link => new { link.CellId, link.MediaAsset.Bucket, link.MediaAsset.ObjectKey })
-            .ToListAsync(cancellationToken);
-
-        return mediaRows
-            .GroupBy(row => row.CellId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(item => new GameBoardCellMedia(
-                        GameBoardMediaUrlBuilder.Build(_storagePublicBaseUrl, item.Bucket, item.ObjectKey)
-                    ))
-                    .ToList()
-            );
-    }
-
-    private static GameBoardCell MapCell(
-        RawCell cell,
-        IReadOnlyDictionary<Guid, List<GameBoardCellMedia>> mediaByCellId
-    )
-    {
-        var state = cell.State == BoardCellState.Open ? GameBoardCellState.Open : GameBoardCellState.Closed;
-        var media = mediaByCellId.TryGetValue(cell.Id, out var cellMedia) ? cellMedia : [];
-
-        return new GameBoardCell(
-            cell.Id.ToString(),
-            cell.Row,
-            cell.Col,
-            cell.CellType,
-            cell.Title,
-            cell.Description,
-            cell.Cost,
-            state,
-            media
         );
     }
 
@@ -524,17 +497,6 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
     }
 
     private sealed record BoardSelectionRow(SelectedBoard Board);
-
-    private sealed record RawCell(
-        Guid Id,
-        int Row,
-        int Col,
-        string CellType,
-        string? Title,
-        string? Description,
-        int Cost,
-        BoardCellState State
-    );
 
     private sealed record SelectedBoard(
         Guid BoardId,

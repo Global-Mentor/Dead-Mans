@@ -12,3 +12,4 @@ public interface IGameBoardRepository
 
     Task<OpenGameCellResult?> TryOpenCellAsync(Guid cellId, CancellationToken cancellationToken = default);
 }
+
