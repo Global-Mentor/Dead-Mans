@@ -32,8 +32,9 @@ flowchart LR
   setupApi --> gameSetupController[GameSetupController]
   setupMedia --> gameSetupMediaController[GameSetupCellMediaController]
   gameSetupController --> gameSetupService[IGameSetupService]
-  gameSetupMediaController --> gameSetupService
+  gameSetupMediaController --> gameSetupCellMediaService[IGameSetupCellMediaService]
   gameSetupService --> gameSetupRepo[DbGameSetupRepository]
+  gameSetupCellMediaService --> gameSetupRepo
   gameSetupRepo --> postgres
   gameSetupService --> setupPublisher[IGameSetupEventsPublisher]
   setupPublisher --> setupHub[GameSetupHub]
