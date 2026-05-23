@@ -52,7 +52,7 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
                 .Where(cell => cell.BoardId == selectedBoard.BoardId)
                 .OrderBy(cell => cell.RowIndex)
                 .ThenBy(cell => cell.ColIndex)
-                .Select(cell => new RawCell(
+                .Select(cell => new GameBoardCellProjection.RawCell(
                     cell.Id,
                     cell.RowIndex,
                     cell.ColIndex,
@@ -69,10 +69,15 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
                 .Select(cell => cell.Id)
                 .ToArray();
 
-            var mediaByCellId = await LoadMediaByCellIdAsync(openCellIds, cancellationToken);
+            var mediaByCellId = await GameBoardCellProjection.LoadMediaByCellIdAsync(
+                _dbContext,
+                _storagePublicBaseUrl,
+                openCellIds,
+                cancellationToken
+            );
 
             var resultCells = cells
-                .Select(cell => MapCell(cell, mediaByCellId))
+                .Select(cell => GameBoardCellProjection.MapCell(cell, mediaByCellId, revealClosedContent: false))
                 .ToArray();
 
             _logger.LogDebug(
@@ -116,20 +121,11 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
 
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            var cell = await _dbContext.BoardCells
-                .AsNoTracking()
-                .Where(x => x.Id == cellId)
-                .Select(x => new OpenCellTarget(
-                    x.Id,
-                    x.BoardId,
-                    x.RowIndex,
-                    x.ColIndex,
-                    x.CellType,
-                    x.Title,
-                    x.Description,
-                    x.Cost
-                ))
-                .FirstOrDefaultAsync(cancellationToken);
+            var cell = await GameBoardCellOpenGuard.FindActiveGameCellAsync(
+                _dbContext,
+                cellId,
+                cancellationToken
+            );
             if (cell is null)
             {
                 _logger.LogInformation(AppMessages.Logs.GameCellNotFoundForOpen, cellId);
@@ -168,7 +164,7 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             await transaction.CommitAsync(cancellationToken);
 
             var mappedCell = await LoadOpenedCellAsync(
-                new RawCell(
+                new GameBoardCellProjection.RawCell(
                     cell.Id,
                     cell.Row,
                     cell.Col,
@@ -200,6 +196,17 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
         CancellationToken cancellationToken
     )
     {
+        var activeCell = await GameBoardCellOpenGuard.FindActiveGameCellAsync(
+            _dbContext,
+            cellId,
+            cancellationToken
+        );
+        if (activeCell is null)
+        {
+            _logger.LogInformation(AppMessages.Logs.GameCellNotFoundForOpen, cellId);
+            return null;
+        }
+
         var cell = await _dbContext.BoardCells.FirstOrDefaultAsync(
             x => x.Id == cellId,
             cancellationToken
@@ -229,10 +236,10 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
         }
 
         var mappedCell = await LoadOpenedCellAsync(
-            new RawCell(
+            new GameBoardCellProjection.RawCell(
                 cell.Id,
-                cell.RowIndex,
-                cell.ColIndex,
+                activeCell.Row,
+                activeCell.Col,
                 cell.CellType,
                 cell.Title,
                 cell.Description,
@@ -250,67 +257,21 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
         );
     }
 
-    private async Task<Dictionary<Guid, List<GameBoardCellMedia>>> LoadMediaByCellIdAsync(
-        Guid[] openCellIds,
+    private async Task<GameBoardCell> LoadOpenedCellAsync(
+        GameBoardCellProjection.RawCell cell,
         CancellationToken cancellationToken
     )
     {
-        if (openCellIds.Length == 0)
-        {
-            return [];
-        }
-
-        var mediaRows = await _dbContext.BoardCellMedia
-            .AsNoTracking()
-            .Where(link => openCellIds.Contains(link.CellId))
-            .OrderBy(link => link.SortOrder)
-            .Select(link => new { link.CellId, link.MediaAsset.Bucket, link.MediaAsset.ObjectKey })
-            .ToListAsync(cancellationToken);
-
-        return mediaRows
-            .GroupBy(row => row.CellId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(item => new GameBoardCellMedia(
-                        GameBoardMediaUrlBuilder.Build(_storagePublicBaseUrl, item.Bucket, item.ObjectKey)
-                    ))
-                    .ToList()
-            );
-    }
-
-    private async Task<GameBoardCell> LoadOpenedCellAsync(RawCell cell, CancellationToken cancellationToken)
-    {
-        var mediaByCellId = await LoadMediaByCellIdAsync([cell.Id], cancellationToken);
-        return MapCell(
-            new RawCell(cell.Id, cell.Row, cell.Col, cell.CellType, cell.Title, cell.Description, cell.Cost, BoardCellState.Open),
-            mediaByCellId
+        var mediaByCellId = await GameBoardCellProjection.LoadMediaByCellIdAsync(
+            _dbContext,
+            _storagePublicBaseUrl,
+            [cell.Id],
+            cancellationToken
         );
-    }
-
-    private static GameBoardCell MapCell(
-        RawCell cell,
-        IReadOnlyDictionary<Guid, List<GameBoardCellMedia>> mediaByCellId
-    )
-    {
-        var state = cell.State == BoardCellState.Open ? GameBoardCellState.Open : GameBoardCellState.Closed;
-        var media = state == GameBoardCellState.Open
-            && mediaByCellId.TryGetValue(cell.Id, out var cellMedia)
-            ? cellMedia
-            : [];
-
-        var revealContent = state == GameBoardCellState.Open;
-
-        return new GameBoardCell(
-            cell.Id.ToString(),
-            cell.Row,
-            cell.Col,
-            cell.CellType,
-            revealContent ? cell.Title : null,
-            revealContent ? cell.Description : null,
-            cell.Cost,
-            state,
-            media
+        return GameBoardCellProjection.MapCell(
+            cell with { State = BoardCellState.Open },
+            mediaByCellId,
+            revealClosedContent: false
         );
     }
 
@@ -335,7 +296,9 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
                     board.Cols,
                     board.RowLabels,
                     board.ColLabels,
-                    ActiveSortAtUtc = game.StartedAtUtc ?? game.CreatedAtUtc,
+                    ActiveSortAtUtc = status == GameStatusValue.Ready
+                        ? game.ReadyAtUtc ?? game.CreatedAtUtc
+                        : game.StartedAtUtc ?? game.CreatedAtUtc,
                     FinishedSortAtUtc = game.FinishedAtUtc ?? game.CreatedAtUtc
                 }
             );
@@ -383,28 +346,6 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
     }
 
     private sealed record BoardSelectionRow(SelectedBoard Board);
-
-    private sealed record RawCell(
-        Guid Id,
-        int Row,
-        int Col,
-        string CellType,
-        string? Title,
-        string? Description,
-        int Cost,
-        BoardCellState State
-    );
-
-    private sealed record OpenCellTarget(
-        Guid Id,
-        Guid BoardId,
-        int Row,
-        int Col,
-        string CellType,
-        string? Title,
-        string? Description,
-        int Cost
-    );
 
     private sealed record SelectedBoard(
         Guid BoardId,

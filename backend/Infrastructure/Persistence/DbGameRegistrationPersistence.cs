@@ -1,0 +1,514 @@
+using backend.Application.Abstractions.Repositories;
+using backend.Application.Contracts;
+using backend.Data;
+using backend.Data.Entities;
+using backend.Domain.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace backend.Infrastructure.Persistence;
+
+public sealed class DbGameRegistrationPersistence : IGameRegistrationPersistence
+{
+    private readonly ApplicationDbContext _dbContext;
+    private readonly IGameRegistrationReadStore _reads;
+    private readonly ILogger<DbGameRegistrationPersistence> _logger;
+
+    public DbGameRegistrationPersistence(
+        ApplicationDbContext dbContext,
+        IGameRegistrationReadStore reads,
+        ILogger<DbGameRegistrationPersistence> logger
+    )
+    {
+        _dbContext = dbContext;
+        _reads = reads;
+        _logger = logger;
+    }
+
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistCreateTeamAsync(
+        Guid gameId,
+        Guid userId,
+        Guid slotId,
+        bool recruitmentOpen,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var utcNow = DateTime.UtcNow;
+        var team = new GameTeam
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            SlotId = slotId,
+            RecruitmentOpen = recruitmentOpen,
+            Status = TeamStatusValue.Forming,
+            CreatedByUserId = userId,
+            CreatedAtUtc = utcNow,
+            UpdatedAtUtc = utcNow
+        };
+
+        var member = new GameTeamMember
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            TeamId = team.Id,
+            UserId = userId,
+            JoinedAtUtc = utcNow
+        };
+
+        try
+        {
+            _dbContext.GameTeams.Add(team);
+            _dbContext.GameTeamMembers.Add(member);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (PostgresUniqueViolation.TryGetConstraintName(ex, out _))
+        {
+            _logger.LogWarning(ex, "Create team failed due to unique constraint for game {GameId}.", gameId);
+            return Fail<RegistrationTeamDto>(GameRegistrationUniqueViolationMapper.Map(ex));
+        }
+
+        return await LoadTeamResultAsync(team.Id, cancellationToken);
+    }
+
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistJoinTeamAsync(
+        Guid gameId,
+        Guid userId,
+        Guid teamId,
+        short maxPlayersPerTeam,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var team = await _dbContext.GameTeams
+            .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
+        if (team is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
+        }
+
+        try
+        {
+            if (_dbContext.Database.IsRelational())
+            {
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"""SELECT 1 FROM game_teams WHERE "Id" = {team.Id} FOR UPDATE""",
+                    cancellationToken
+                );
+                await _dbContext.Entry(team).ReloadAsync(cancellationToken);
+
+                var joinResult = await AddJoiningMemberAsync(gameId, userId, team, maxPlayersPerTeam, cancellationToken);
+                if (!joinResult.Success)
+                {
+                    return joinResult;
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                var joinResult = await AddJoiningMemberAsync(gameId, userId, team, maxPlayersPerTeam, cancellationToken);
+                if (!joinResult.Success)
+                {
+                    return joinResult;
+                }
+            }
+        }
+        catch (DbUpdateException ex) when (PostgresUniqueViolation.TryGetConstraintName(ex, out _))
+        {
+            _logger.LogWarning(ex, "Join team failed due to unique constraint for game {GameId}.", gameId);
+            return Fail<RegistrationTeamDto>(GameRegistrationUniqueViolationMapper.Map(ex));
+        }
+
+        return await LoadTeamResultAsync(team.Id, cancellationToken);
+    }
+
+    public async Task<GameRegistrationResult<bool>> PersistLeaveTeamAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var membership = await _dbContext.GameTeamMembers
+            .Include(member => member.Team)
+            .FirstOrDefaultAsync(
+                member => member.GameId == gameId && member.UserId == userId && member.LeftAtUtc == null,
+                cancellationToken
+            );
+        if (membership?.Team is null)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.NotTeamMember);
+        }
+
+        var utcNow = DateTime.UtcNow;
+        var team = membership.Team;
+        var memberCount = await _dbContext.GameTeamMembers.CountAsync(
+            member => member.TeamId == team.Id && member.LeftAtUtc == null,
+            cancellationToken
+        );
+        membership.LeftAtUtc = utcNow;
+
+        if (memberCount <= 1)
+        {
+            team.Status = TeamStatusValue.Disbanded;
+            team.DisbandedAtUtc = utcNow;
+            team.UpdatedAtUtc = utcNow;
+        }
+        else
+        {
+            if (team.Status == TeamStatusValue.Confirmed)
+            {
+                team.Status = TeamStatusValue.Forming;
+                team.ConfirmedAtUtc = null;
+                team.ConfirmedByUserId = null;
+            }
+
+            team.UpdatedAtUtc = utcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
+    }
+
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistConfirmTeamAsync(
+        Guid gameId,
+        Guid adminUserId,
+        Guid teamId,
+        short minPlayersPerTeam,
+        short maxPlayersPerTeam,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var team = await _dbContext.GameTeams
+            .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
+        if (team is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
+        }
+
+        if (team.Status != TeamStatusValue.Forming)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
+        var memberCount = await _dbContext.GameTeamMembers.CountAsync(
+            member => member.TeamId == team.Id && member.LeftAtUtc == null,
+            cancellationToken
+        );
+        if (memberCount < minPlayersPerTeam || memberCount > maxPlayersPerTeam)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
+        var utcNow = DateTime.UtcNow;
+        team.Status = TeamStatusValue.Confirmed;
+        team.ConfirmedAtUtc = utcNow;
+        team.ConfirmedByUserId = adminUserId;
+        team.UpdatedAtUtc = utcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await LoadTeamResultAsync(team.Id, cancellationToken);
+    }
+
+    public async Task<GameRegistrationResult<bool>> PersistRejectTeamAsync(
+        Guid gameId,
+        Guid adminUserId,
+        Guid teamId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var team = await _dbContext.GameTeams
+            .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
+        if (team is null)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.TeamNotFound);
+        }
+
+        if (team.Status != TeamStatusValue.Forming)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
+        var utcNow = DateTime.UtcNow;
+        var members = await _dbContext.GameTeamMembers
+            .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
+            .ToListAsync(cancellationToken);
+        foreach (var member in members)
+        {
+            member.LeftAtUtc = utcNow;
+        }
+
+        team.Status = TeamStatusValue.Rejected;
+        team.RejectedAtUtc = utcNow;
+        team.RejectedByUserId = adminUserId;
+        team.UpdatedAtUtc = utcNow;
+
+        var pendingInvitations = await _dbContext.GameParticipationInvitations
+            .Where(
+                invitation => invitation.TeamId == team.Id
+                    && invitation.Status == ParticipationInvitationStatusValue.Pending
+            )
+            .ToListAsync(cancellationToken);
+        foreach (var invitation in pendingInvitations)
+        {
+            invitation.Status = ParticipationInvitationStatusValue.Cancelled;
+            invitation.RespondedAtUtc = utcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Team {TeamId} rejected by admin {AdminUserId}.",
+            teamId,
+            adminUserId
+        );
+
+        return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
+    }
+
+    public async Task<GameRegistrationResult<RegistrationInvitationDto>> PersistCreateAdminInvitationAsync(
+        Guid gameId,
+        Guid adminUserId,
+        Guid slotId,
+        int slotIndex,
+        Guid invitedUserId,
+        Guid? teamId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var invitation = new GameParticipationInvitation
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            SlotId = slotId,
+            TeamId = teamId,
+            InvitedUserId = invitedUserId,
+            InvitedByUserId = adminUserId,
+            InvitedByKind = InvitedByKindValue.Admin,
+            Status = ParticipationInvitationStatusValue.Pending,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        _dbContext.GameParticipationInvitations.Add(invitation);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var dto = new RegistrationInvitationDto(
+            invitation.Id,
+            slotId,
+            slotIndex,
+            teamId,
+            invitation.Status,
+            invitation.CreatedAtUtc
+        );
+        return new GameRegistrationResult<RegistrationInvitationDto>(true, dto, GameRegistrationErrorCode.None);
+    }
+
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistAcceptInvitationAsync(
+        AcceptInvitationCommand command,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (_dbContext.Database.IsRelational())
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var acceptResult = await AcceptInvitationCoreAsync(command, cancellationToken);
+            if (!acceptResult.Success)
+            {
+                return acceptResult;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return acceptResult;
+        }
+
+        try
+        {
+            return await AcceptInvitationCoreAsync(command, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (PostgresUniqueViolation.TryGetConstraintName(ex, out _))
+        {
+            _logger.LogWarning(ex, "Accept invitation failed due to unique constraint.");
+            return Fail<RegistrationTeamDto>(
+                GameRegistrationUniqueViolationMapper.Map(ex, GameRegistrationErrorCode.SlotNotAvailable)
+            );
+        }
+    }
+
+    private async Task<GameRegistrationResult<RegistrationTeamDto>> AcceptInvitationCoreAsync(
+        AcceptInvitationCommand command,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var invitation = await _dbContext.GameParticipationInvitations
+                .FirstOrDefaultAsync(candidate => candidate.Id == command.InvitationId, cancellationToken);
+            if (invitation is null)
+            {
+                return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.InvitationNotFound);
+            }
+
+            if (invitation.InvitedUserId != command.UserId
+                || invitation.Status != ParticipationInvitationStatusValue.Pending)
+            {
+                return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.InvitationNotPending);
+            }
+
+            var utcNow = DateTime.UtcNow;
+            invitation.Status = ParticipationInvitationStatusValue.Accepted;
+            invitation.RespondedAtUtc = utcNow;
+
+            GameTeam team;
+            if (command.TeamId.HasValue)
+            {
+                var existingTeam = await _dbContext.GameTeams
+                    .FirstOrDefaultAsync(candidate => candidate.Id == command.TeamId.Value, cancellationToken);
+                if (existingTeam is null)
+                {
+                    return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
+                }
+
+                team = existingTeam;
+                if (team.Status != TeamStatusValue.Forming || team.SlotId != command.SlotId)
+                {
+                    return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+                }
+
+                var memberCount = await _dbContext.GameTeamMembers.CountAsync(
+                    member => member.TeamId == team.Id && member.LeftAtUtc == null,
+                    cancellationToken
+                );
+                if (memberCount >= command.MaxPlayersPerTeam)
+                {
+                    return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamFull);
+                }
+
+                _dbContext.GameTeamMembers.Add(
+                    new GameTeamMember
+                    {
+                        Id = Guid.NewGuid(),
+                        GameId = command.GameId,
+                        TeamId = team.Id,
+                        UserId = command.UserId,
+                        JoinedAtUtc = utcNow
+                    }
+                );
+                team.UpdatedAtUtc = utcNow;
+            }
+            else
+            {
+                team = new GameTeam
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = command.GameId,
+                    SlotId = command.SlotId,
+                    RecruitmentOpen = false,
+                    Status = TeamStatusValue.Forming,
+                    CreatedByUserId = command.UserId,
+                    CreatedAtUtc = utcNow,
+                    UpdatedAtUtc = utcNow
+                };
+                _dbContext.GameTeams.Add(team);
+                _dbContext.GameTeamMembers.Add(
+                    new GameTeamMember
+                    {
+                        Id = Guid.NewGuid(),
+                        GameId = command.GameId,
+                        TeamId = team.Id,
+                        UserId = command.UserId,
+                        JoinedAtUtc = utcNow
+                    }
+                );
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return await LoadTeamResultAsync(team.Id, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (PostgresUniqueViolation.TryGetConstraintName(ex, out _))
+        {
+            _logger.LogWarning(ex, "Accept invitation failed due to unique constraint.");
+            return Fail<RegistrationTeamDto>(
+                GameRegistrationUniqueViolationMapper.Map(ex, GameRegistrationErrorCode.SlotNotAvailable)
+            );
+        }
+    }
+
+    private async Task<GameRegistrationResult<RegistrationTeamDto>> AddJoiningMemberAsync(
+        Guid gameId,
+        Guid userId,
+        GameTeam team,
+        short maxPlayersPerTeam,
+        CancellationToken cancellationToken
+    )
+    {
+        if (team.Status != TeamStatusValue.Forming || !team.RecruitmentOpen)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
+        var memberCount = await _dbContext.GameTeamMembers.CountAsync(
+            member => member.TeamId == team.Id && member.LeftAtUtc == null,
+            cancellationToken
+        );
+        if (memberCount >= maxPlayersPerTeam)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamFull);
+        }
+
+        _dbContext.GameTeamMembers.Add(
+            new GameTeamMember
+            {
+                Id = Guid.NewGuid(),
+                GameId = gameId,
+                TeamId = team.Id,
+                UserId = userId,
+                JoinedAtUtc = DateTime.UtcNow
+            }
+        );
+        team.UpdatedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return await LoadTeamResultAsync(team.Id, cancellationToken);
+    }
+
+    public async Task<GameRegistrationResult<bool>> PersistDeclineInvitationAsync(
+        Guid userId,
+        Guid invitationId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var invitation = await _dbContext.GameParticipationInvitations
+            .FirstOrDefaultAsync(candidate => candidate.Id == invitationId, cancellationToken);
+        if (invitation is null)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.InvitationNotFound);
+        }
+
+        if (invitation.InvitedUserId != userId
+            || invitation.Status != ParticipationInvitationStatusValue.Pending)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.InvitationNotPending);
+        }
+
+        invitation.Status = ParticipationInvitationStatusValue.Declined;
+        invitation.RespondedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
+    }
+
+    private async Task<GameRegistrationResult<RegistrationTeamDto>> LoadTeamResultAsync(
+        Guid teamId,
+        CancellationToken cancellationToken
+    )
+    {
+        var dto = await _reads.LoadTeamDtoAsync(teamId, cancellationToken);
+        if (dto is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.OperationFailed);
+        }
+
+        return new GameRegistrationResult<RegistrationTeamDto>(true, dto, GameRegistrationErrorCode.None);
+    }
+
+    private static GameRegistrationResult<T> Fail<T>(GameRegistrationErrorCode error) =>
+        new(false, default, error);
+}
