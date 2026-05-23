@@ -221,7 +221,17 @@ export interface components {
         /** @description SignalR payload for game-setup hub event draftChanged. The server sends no JSON body; clients refetch GET /api/game/setup after receiving the event. */
         GameSetupDraftChangedEventDto: Record<string, never>;
     };
-    responses: never;
+    responses: {
+        /** @description Server error */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -265,6 +275,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     getDraftGameSetup: {
@@ -312,6 +323,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateDraftGameSetup: {
@@ -381,15 +393,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
+            500: components["responses"]["InternalServerError"];
         };
     };
     createDraftGameSetup: {
@@ -450,6 +454,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     deleteDraftGameSetup: {
@@ -495,15 +500,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
+            500: components["responses"]["InternalServerError"];
         };
     };
     uploadDraftGameSetupCellMedia: {
@@ -569,15 +566,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
+            500: components["responses"]["InternalServerError"];
         };
     };
     deleteDraftGameSetupCellMedia: {
@@ -625,15 +614,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
+            500: components["responses"]["InternalServerError"];
         };
     };
     openGameCell: {
@@ -681,6 +662,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     getAuthSession: {
@@ -727,6 +709,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Logout request missing required API client header */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

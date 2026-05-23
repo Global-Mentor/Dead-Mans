@@ -32,6 +32,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/setup:
     get:
       operationId: getDraftGameSetup
@@ -62,6 +64,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createDraftGameSetup
       security:
@@ -103,6 +107,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       operationId: updateDraftGameSetup
       security:
@@ -151,11 +157,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: deleteDraftGameSetup
       security:
@@ -182,11 +184,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /game/setup/cells/{cellId}/media:
     post:
       operationId: uploadDraftGameSetupCellMedia
@@ -242,11 +240,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: deleteDraftGameSetupCellMedia
       security:
@@ -280,11 +274,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /game/cells/{cellId}/open:
     post:
       operationId: openGameCell
@@ -318,6 +308,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /auth/me:
     servers:
       - url: /
@@ -346,6 +338,12 @@ paths:
       responses:
         '204':
           description: Session terminated
+        '403':
+          description: Logout request missing required API client header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /auth/twitch/login:
     servers:
       - url: /
@@ -391,6 +389,13 @@ paths:
                 type: string
                 format: uri
 components:
+  responses:
+    InternalServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   securitySchemes:
     cookieAuth:
       type: apiKey
