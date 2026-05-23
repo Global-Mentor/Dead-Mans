@@ -49,6 +49,10 @@ function toRequestInit(options: HttpRequestOptions): RequestInit {
   return {
     credentials: 'include',
     ...requestInit,
+    headers: {
+      'X-Dead-Mans-Api-Client': '1',
+      ...(requestInit.headers ?? {}),
+    },
   }
 }
 

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Mapping;
+using backend.Infrastructure.Auth;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -53,10 +54,25 @@ public sealed class AuthSessionController : ControllerBase
 
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Logout()
     {
+        if (!IsApiClientRequest())
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse(AppMessages.Client.LogoutRequiresApiClientHeader)
+            );
+        }
+
         _logger.LogInformation(AppMessages.Logs.UserSignedOut);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return NoContent();
+    }
+
+    private bool IsApiClientRequest()
+    {
+        return Request.Headers.TryGetValue(AuthRequestHeaders.ApiClient, out var values)
+            && values.Any(value => string.Equals(value, AuthRequestHeaders.ApiClientValue, StringComparison.Ordinal));
     }
 }
