@@ -1,4 +1,15 @@
 export const API_ERROR_CODES = {
   invalidGameSetupTitle: 'game_setup.invalid_title',
   gameSetupStaleVersion: 'game_setup.stale_version',
+  gameRegistrationNotOpen: 'game_registration.not_open',
+  gameRegistrationNoSlots: 'game_registration.no_slots',
+  gameRegistrationAlreadyOnTeam: 'game_registration.already_on_team',
+  gameRegistrationTeamNotFound: 'game_registration.team_not_found',
+  gameRegistrationTeamNotJoinable: 'game_registration.team_not_joinable',
+  gameRegistrationNotTeamMember: 'game_registration.not_team_member',
+  gameRegistrationInvitationInvalid: 'game_registration.invitation_invalid',
+  gameRegistrationSlotNotFound: 'game_registration.slot_not_found',
+  gameRegistrationSlotNotAvailable: 'game_registration.slot_not_available',
+  gameRegistrationPendingInvitation: 'game_registration.pending_invitation',
+  gameRegistrationOperationFailed: 'game_registration.operation_failed',
 } as const

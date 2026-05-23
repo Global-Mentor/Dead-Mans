@@ -43,6 +43,14 @@ const uk = {
           label: 'Налаштування гри',
           description: 'Чернеткова таблиця для налаштування карток гри.',
         },
+        gameApplication: {
+          label: 'Заявка на гру',
+          description: 'Реєстрація команди під час прийому заявок.',
+        },
+        teamRegistrations: {
+          label: 'Заявки команд',
+          description: 'Перегляд і підтвердження команд.',
+        },
       },
     },
     gameBoard: {
@@ -54,7 +62,9 @@ const uk = {
       closedCellLabel: 'Приховано',
       costLabel: '{{cost}} оч.',
       statusActive: 'Активна',
+      statusReady: 'Прийом заявок',
       statusFinished: 'Завершена',
+      applicationButton: 'Заявка на гру',
       openConfirmTitle: 'Відкрити картку?',
       openConfirmDescription:
         'Ви впевнені, що хочете відкрити цю картку (ряд {{row}}, колонка {{col}}, вартість {{cost}})?',
@@ -189,6 +199,190 @@ const uk = {
         validationRequired: 'Введіть назву гри.',
         alreadyExists: 'Чернетка гри вже існує. Оновіть сторінку.',
         error: 'Не вдалося створити чернетку гри. Спробуйте ще раз.',
+      },
+    },
+    gameApplication: {
+      title: 'Заявка на гру',
+      loading: 'Завантаження реєстрації...',
+      errorLoading: 'Не вдалося завантажити реєстрацію.',
+      notOpen: 'Прийом заявок закритий.',
+      description: 'Створіть команду або приєднайтесь до відкритої кімнати.',
+      invitationsTitle: 'Запрошення',
+      invitationSlot: 'Слот {{slot}}',
+      acceptInvitation: 'Прийняти',
+      declineInvitation: 'Відхилити',
+      myTeamTitle: 'Ваша команда',
+      leaveTeam: 'Вийти з команди',
+      createTeamTitle: 'Створити команду',
+      createOpenTeam: 'Відкрита кімната',
+      createClosedTeam: 'Закрита кімната',
+      openTeamsTitle: 'Відкриті команди',
+      joinTeam: 'Приєднатися',
+      teamSlot: 'Слот {{slot}} · гравців: {{count}}',
+      backToBoard: 'До ігрового поля',
+    },
+    gameRegistration: {
+      teamStatus: {
+        forming: 'Формування',
+        confirmed: 'Підтверджена',
+        disbanded: 'Розформована',
+      },
+      errors: {
+        notOpen: 'Прийом заявок для гри в статусі ready не відкритий.',
+        noSlots: 'Немає вільних слотів для команд.',
+        alreadyOnTeam: 'Ви вже в команді на цю гру.',
+        teamNotFound: 'Команду не знайдено.',
+        teamNotJoinable: 'До цієї команди не можна приєднатися або підтвердити її в поточному стані.',
+        notTeamMember: 'Ви не в команді на цю гру.',
+        invitationInvalid: 'Запрошення не знайдено або вже не активне.',
+        slotNotFound: 'Слот участі не знайдено.',
+        slotNotAvailable: 'Слот участі недоступний.',
+        pendingInvitation: 'У цього гравця вже є очікуване запрошення на цю гру.',
+        operationFailed: 'Не вдалося виконати операцію реєстрації.',
+        unauthorized: 'Увійдіть в акаунт, щоб продовжити.',
+        forbidden: 'Недостатньо прав для цієї дії.',
+        generic: 'Щось пішло не так. Спробуйте ще раз.',
+      },
+    },
+    teamRegistrations: {
+      title: 'Заявки команд',
+      loading: 'Завантаження команд...',
+      errorLoading: 'Не вдалося завантажити команди.',
+      notOpen: 'Прийом заявок для гри в статусі ready ще не відкритий.',
+      description: 'Підтвердіть команди згідно з правилами складу.',
+      empty: 'Ще немає зареєстрованих команд.',
+      slot: 'Слот',
+      status: 'Статус',
+      players: 'Гравці',
+      actions: 'Дії',
+      confirm: 'Підтвердити',
+      reject: 'Відхилити',
+    },
+    plannedFeatures: {
+      roadmapTitle: 'Заплановано (ще не підключено)',
+      roadmapHint:
+        'Нотатки з обговорення. Частина API на backend вже є; UI та sync у setup — пізніше.',
+      formShellBadge: 'Макет UI',
+      gameSetup: {
+        form: {
+          registrationTitle: 'Налаштування реєстрації (чернетка)',
+          registrationDescription:
+            'Слоти команд, резерв, розмір складу та перехід draft → ready з setup.',
+          teamSlotCount: 'Кількість слотів команд',
+          minPlayers: 'Мін. гравців у команді',
+          maxPlayers: 'Макс. гравців у команді',
+          reservedSlots: 'Зарезервовані слоти',
+          reservedSlotsPlaceholder:
+            'напр. слот 6 — гостьова команда (без публічних заявок)',
+          openRegistration: 'Відкрити реєстрацію (draft → ready)',
+          startGame: 'Почати гру (ready → active)',
+        },
+        roadmap: {
+          slots: {
+            title: 'Сітка слотів у setup',
+            description:
+              'Кількість команд і public/reserved на слот. Синхронізація з PUT /api/game/setup.',
+          },
+          teamLimits: {
+            title: 'Мін/макс гравців у команді',
+            description: 'Зберігати ліміти 1–3 (або інші) в чернетці, не лише дефолти БД.',
+          },
+          lifecycle: {
+            title: 'Життєвий цикл з setup',
+            description:
+              'Кнопки POST /api/game/lifecycle/open-registration, /start, /finish.',
+          },
+        },
+      },
+      gameBoard: {
+        form: {
+          lifecycleTitle: 'Життєвий цикл гри (адмін)',
+          lifecycleDescription: 'Переходи draft → ready → active → finished.',
+          openRegistration: 'Відкрити реєстрацію',
+          startGame: 'Почати гру',
+          finishGame: 'Завершити гру',
+        },
+        roadmap: {
+          lifecycle: {
+            title: 'Панель lifecycle для адміна',
+            description: 'Підключити три endpoint з підтвердженням і сповіщеннями.',
+          },
+          applicationGate: {
+            title: 'Кнопка заявки за статусом',
+            description:
+              'Показувати «Заявка на гру» лише в ready; ховати в draft/active/finished.',
+          },
+        },
+      },
+      gameApplication: {
+        form: {
+          slotsTitle: 'Огляд слотів',
+          slotsDescription:
+            'Карта public/reserved і зайнятості з GET /api/game/registration.',
+          slotLabel: 'Слот {{slot}}',
+          slotFree: 'вільний',
+          memberInviteTitle: 'Інвайти в закриту команду',
+          memberInviteDescription:
+            'Запрошення тіммейтів; зараз інвайти лише через адміна (API).',
+          inviteTeammate: 'Запросити гравця',
+          submitForReview: 'Надіслати на перевірку',
+        },
+        roadmap: {
+          slotsOverview: {
+            title: 'Дошка слотів',
+            description:
+              'Усі слоти, резерв, pending-інвайти та підтверджені команди.',
+          },
+          memberInvites: {
+            title: 'Інвайти від гравців',
+            description:
+              'Той самий accept/decline, ініціатор — учасник закритої команди.',
+          },
+          submitForReview: {
+            title: 'Кнопка «готові до перевірки»',
+            description: 'Надсилання складу адміну; фільтр у списку команд.',
+          },
+          statusUx: {
+            title: 'Статуси команди',
+            description:
+              'forming vs confirmed; обмеження після підтвердження і поза ready.',
+          },
+          closedWhenInactive: {
+            title: 'Лише читання після ready',
+            description: 'У active/finished — історія без join/leave.',
+          },
+        },
+      },
+      teamRegistrations: {
+        form: {
+          inviteTitle: 'Запросити гравця в слот / команду',
+          inviteDescription:
+            'Пошук користувача, слот, ланцюжок для closed. POST .../invitations.',
+          slot: 'Слот',
+          player: 'Гравець',
+          targetTeam: 'Команда (опційно)',
+          sendInvite: 'Надіслати запрошення',
+        },
+        roadmap: {
+          adminInvite: {
+            title: 'UI інвайтів адміна',
+            description:
+              'Вибір гравця + слот + ланцюжок (P1 accept → інвайт P2). API вже є.',
+          },
+          slotBoard: {
+            title: 'Вид по слотах',
+            description: 'Reserved/public і pending-інвайти на слот.',
+          },
+          moderationPolicy: {
+            title: 'Ручний режим модерації',
+            description:
+              'Зараз join у open room одразу; опційна черга на confirm.',
+          },
+          filters: {
+            title: 'Фільтри',
+            description: 'forming/confirmed/disbanded; сортування за слотом.',
+          },
+        },
       },
     },
     languageSwitcher: {

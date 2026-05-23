@@ -31,9 +31,29 @@ export const gameSetupRoute = {
   allowedRoles: ['admin'],
 } as const satisfies PanelRouteDefinition
 
+export const gameApplicationRoute = {
+  id: 'game-application',
+  path: 'game-application',
+  fullPath: `${panelRootPath}/game-application`,
+  labelKey: 'navigation.items.gameApplication.label',
+  descriptionKey: 'navigation.items.gameApplication.description',
+  allowedRoles: authenticatedPanelRoles,
+} as const satisfies PanelRouteDefinition
+
+export const teamRegistrationsRoute = {
+  id: 'team-registrations',
+  path: 'team-registrations',
+  fullPath: `${panelRootPath}/team-registrations`,
+  labelKey: 'navigation.items.teamRegistrations.label',
+  descriptionKey: 'navigation.items.teamRegistrations.description',
+  allowedRoles: ['admin'],
+} as const satisfies PanelRouteDefinition
+
 export const panelRoutes = [
   gameBoardRoute,
+  gameApplicationRoute,
   gameSetupRoute,
+  teamRegistrationsRoute,
 ] as const satisfies readonly PanelRouteDefinition[]
 
 export const defaultRoute = panelRoutes[0]

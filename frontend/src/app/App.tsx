@@ -4,7 +4,13 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
 import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
-import { gameBoardRoute, gameSetupRoute, panelRootPath } from '../routes/app-routes.ts'
+import {
+  gameApplicationRoute,
+  gameBoardRoute,
+  gameSetupRoute,
+  panelRootPath,
+  teamRegistrationsRoute,
+} from '../routes/app-routes.ts'
 import { PanelIndexRedirect } from '../routes/PanelIndexRedirect.tsx'
 import { RequirePanelRouteAccess } from '../routes/RequirePanelRouteAccess.tsx'
 import { RequireAuth } from '../shared/auth/RequireAuth.tsx'
@@ -27,6 +33,16 @@ const GameBoardPage = lazy(() =>
 const GameSetupPage = lazy(() =>
   import('../features/game-setup/GameSetupPage.tsx').then((module) => ({
     default: module.GameSetupPage,
+  })),
+)
+const GameApplicationPage = lazy(() =>
+  import('../features/game-application/GameApplicationPage.tsx').then((module) => ({
+    default: module.GameApplicationPage,
+  })),
+)
+const TeamRegistrationsPage = lazy(() =>
+  import('../features/team-registrations/TeamRegistrationsPage.tsx').then((module) => ({
+    default: module.TeamRegistrationsPage,
   })),
 )
 
@@ -100,12 +116,32 @@ export default function App() {
           }
         />
         <Route
+          path={gameApplicationRoute.path}
+          element={
+            <RequirePanelRouteAccess route={gameApplicationRoute}>
+              <Suspense fallback={<PanelRouteFallback />}>
+                <GameApplicationPage />
+              </Suspense>
+            </RequirePanelRouteAccess>
+          }
+        />
+        <Route
           path={gameSetupRoute.path}
           element={
             <RequirePanelRouteAccess route={gameSetupRoute}>
               <GameSetupRealtimeSync />
               <Suspense fallback={<PanelRouteFallback />}>
                 <GameSetupPage />
+              </Suspense>
+            </RequirePanelRouteAccess>
+          }
+        />
+        <Route
+          path={teamRegistrationsRoute.path}
+          element={
+            <RequirePanelRouteAccess route={teamRegistrationsRoute}>
+              <Suspense fallback={<PanelRouteFallback />}>
+                <TeamRegistrationsPage />
               </Suspense>
             </RequirePanelRouteAccess>
           }

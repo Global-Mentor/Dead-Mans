@@ -13,14 +13,20 @@ import {
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { Link as RouterLink } from 'react-router-dom'
+import { gameApplicationRoute, gameSetupRoute, hasAccessToPanelRoute } from '../../routes/app-routes.ts'
 import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { useGameBoardPage } from './use-game-board-page.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
+import { useAuth } from '../../shared/auth/use-auth.ts'
+import { GameBoardAdminPlannedSection } from './ui/GameBoardAdminPlannedSection.tsx'
 
 export function GameBoardPage() {
   const { t } = useTranslation()
   const { data, isError, isLoading } = useGameBoardPage()
+  const { user } = useAuth()
+  const isAdmin = hasAccessToPanelRoute(gameSetupRoute, user?.roles)
   const {
     pendingCell,
     toastMessage,
@@ -95,20 +101,39 @@ export function GameBoardPage() {
             {snapshot.description}
           </Typography>
         ) : null}
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
           <Chip
             size="small"
-            color={snapshot.status === 'active' ? 'success' : 'default'}
+            color={
+              snapshot.status === 'active'
+                ? 'success'
+                : snapshot.status === 'ready'
+                  ? 'info'
+                  : 'default'
+            }
             label={t(
-              snapshot.status === 'active' ? 'gameBoard.statusActive' : 'gameBoard.statusFinished',
+              snapshot.status === 'active'
+                ? 'gameBoard.statusActive'
+                : snapshot.status === 'ready'
+                  ? 'gameBoard.statusReady'
+                  : 'gameBoard.statusFinished',
             )}
           />
+          <Button
+            component={RouterLink}
+            to={gameApplicationRoute.fullPath}
+            size="small"
+            variant="outlined"
+          >
+            {t('gameBoard.applicationButton')}
+          </Button>
         </Stack>
         <GameBoardGrid
           snapshot={snapshot}
           canOpenCells={canOpenCells}
           onCellRequestOpen={requestOpenCell}
         />
+        {isAdmin ? <GameBoardAdminPlannedSection /> : null}
       </Paper>
 
       <Dialog

@@ -43,18 +43,28 @@ const ru = {
           label: 'Настройка игры',
           description: 'Черновая таблица для настройки карточек игры.',
         },
+        gameApplication: {
+          label: 'Заявка на игру',
+          description: 'Регистрация команды, пока игра принимает заявки.',
+        },
+        teamRegistrations: {
+          label: 'Заявки команд',
+          description: 'Просмотр и подтверждение команд.',
+        },
       },
     },
     gameBoard: {
       title: 'Игровое поле',
       loading: 'Загрузка игрового поля...',
       errorLoading: 'Не удалось загрузить игровое поле.',
-      empty: 'В базе пока нет активной или завершённой игры.',
+      empty: 'Игровое поле сейчас недоступно.',
       cellLabel: 'Ячейка',
       closedCellLabel: 'Скрыто',
       costLabel: '{{cost}} очк.',
       statusActive: 'Активна',
+      statusReady: 'Приём заявок',
       statusFinished: 'Завершена',
+      applicationButton: 'Заявка на игру',
       openConfirmTitle: 'Открыть карточку?',
       openConfirmDescription:
         'Вы уверены, что хотите открыть эту карточку (ряд {{row}}, колонка {{col}}, стоимость {{cost}})?',
@@ -188,6 +198,192 @@ const ru = {
         validationRequired: 'Введите название игры.',
         alreadyExists: 'Черновик игры уже существует. Обновите страницу.',
         error: 'Не удалось создать черновик игры. Попробуйте ещё раз.',
+      },
+    },
+    gameApplication: {
+      title: 'Заявка на игру',
+      loading: 'Загрузка регистрации...',
+      errorLoading: 'Не удалось загрузить регистрацию.',
+      notOpen: 'Приём заявок закрыт. Дождитесь публикации игры администратором.',
+      description:
+        'Создайте команду или вступите в открытую комнату, пока игра в статусе ready.',
+      invitationsTitle: 'Приглашения',
+      invitationSlot: 'Слот {{slot}}',
+      acceptInvitation: 'Принять',
+      declineInvitation: 'Отклонить',
+      myTeamTitle: 'Ваша команда',
+      leaveTeam: 'Выйти из команды',
+      createTeamTitle: 'Создать команду',
+      createOpenTeam: 'Открытая комната',
+      createClosedTeam: 'Закрытая (инвайты от админа)',
+      openTeamsTitle: 'Открытые команды',
+      joinTeam: 'Вступить',
+      teamSlot: 'Слот {{slot}} · игроков: {{count}}',
+      backToBoard: 'К игровому полю',
+    },
+    gameRegistration: {
+      teamStatus: {
+        forming: 'Формирование',
+        confirmed: 'Подтверждена',
+        disbanded: 'Расформирована',
+      },
+      errors: {
+        notOpen: 'Приём заявок для игры в статусе ready не открыт.',
+        noSlots: 'Нет свободных слотов для команд.',
+        alreadyOnTeam: 'Вы уже состоите в команде на эту игру.',
+        teamNotFound: 'Команда не найдена.',
+        teamNotJoinable: 'К этой команде нельзя присоединиться или подтвердить её в текущем состоянии.',
+        notTeamMember: 'Вы не состоите в команде на эту игру.',
+        invitationInvalid: 'Приглашение не найдено или уже не активно.',
+        slotNotFound: 'Слот участия не найден.',
+        slotNotAvailable: 'Слот участия недоступен.',
+        pendingInvitation: 'У этого игрока уже есть ожидающее приглашение на эту игру.',
+        operationFailed: 'Не удалось выполнить операцию регистрации.',
+        unauthorized: 'Войдите в аккаунт, чтобы продолжить.',
+        forbidden: 'Недостаточно прав для этого действия.',
+        generic: 'Что-то пошло не так. Попробуйте ещё раз.',
+      },
+    },
+    teamRegistrations: {
+      title: 'Заявки команд',
+      loading: 'Загрузка команд...',
+      errorLoading: 'Не удалось загрузить команды.',
+      notOpen: 'Приём заявок для игры в статусе ready пока не открыт.',
+      description: 'Подтвердите команды, которые соответствуют правилам состава.',
+      empty: 'Пока нет зарегистрированных команд.',
+      slot: 'Слот',
+      status: 'Статус',
+      players: 'Игроки',
+      actions: 'Действия',
+      confirm: 'Подтвердить',
+      reject: 'Отклонить',
+    },
+    plannedFeatures: {
+      roadmapTitle: 'Запланировано (ещё не подключено)',
+      roadmapHint:
+        'Заметки по нашему обсуждению. Часть API на backend уже есть; UI и сохранение в setup — позже.',
+      formShellBadge: 'Макет UI',
+      gameSetup: {
+        form: {
+          registrationTitle: 'Настройки регистрации (черновик)',
+          registrationDescription:
+            'Слоты команд, резерв, размер состава и переход draft → ready из setup.',
+          teamSlotCount: 'Количество слотов команд',
+          minPlayers: 'Мин. игроков в команде',
+          maxPlayers: 'Макс. игроков в команде',
+          reservedSlots: 'Зарезервированные слоты',
+          reservedSlotsPlaceholder:
+            'напр. слот 6 — гостевая команда (без публичных заявок)',
+          openRegistration: 'Открыть регистрацию (draft → ready)',
+          startGame: 'Начать игру (ready → active)',
+        },
+        roadmap: {
+          slots: {
+            title: 'Сетка слотов в setup',
+            description:
+              'Число команд и public/reserved на слот. Синхронизация с PUT /api/game/setup.',
+          },
+          teamLimits: {
+            title: 'Мин/макс игроков',
+            description: 'Сохранять лимиты 1–3 (или другие) в черновике, не только дефолты в БД.',
+          },
+          lifecycle: {
+            title: 'Жизненный цикл из setup',
+            description:
+              'Кнопки POST /api/game/lifecycle/open-registration, /start, /finish.',
+          },
+        },
+      },
+      gameBoard: {
+        form: {
+          lifecycleTitle: 'Жизненный цикл игры (админ)',
+          lifecycleDescription: 'Переводы draft → ready → active → finished.',
+          openRegistration: 'Открыть регистрацию',
+          startGame: 'Начать игру',
+          finishGame: 'Завершить игру',
+        },
+        roadmap: {
+          lifecycle: {
+            title: 'Панель lifecycle для админа',
+            description: 'Подключить три endpoint с подтверждением и уведомлениями.',
+          },
+          applicationGate: {
+            title: 'Кнопка заявки по статусу',
+            description:
+              'Показывать «Заявка на игру» только в ready; скрывать в draft/active/finished.',
+          },
+        },
+      },
+      gameApplication: {
+        form: {
+          slotsTitle: 'Обзор слотов',
+          slotsDescription:
+            'Карта public/reserved и занятости из GET /api/game/registration.',
+          slotLabel: 'Слот {{slot}}',
+          slotFree: 'свободен',
+          memberInviteTitle: 'Инвайты в закрытую команду',
+          memberInviteDescription:
+            'Приглашение тиммейтов; сейчас инвайты только через админа (API).',
+          inviteTeammate: 'Пригласить игрока',
+          submitForReview: 'Отправить на проверку',
+        },
+        roadmap: {
+          slotsOverview: {
+            title: 'Доска слотов',
+            description:
+              'Все слоты, резерв, pending-инвайты и подтверждённые команды.',
+          },
+          memberInvites: {
+            title: 'Инвайты от игроков',
+            description:
+              'Тот же accept/decline, инициатор — участник закрытой команды.',
+          },
+          submitForReview: {
+            title: 'Кнопка «готовы к проверке»',
+            description:
+              'Отправка состава админу; фильтр в списке команд.',
+          },
+          statusUx: {
+            title: 'Статусы команды',
+            description:
+              'forming vs confirmed; ограничения после подтверждения и вне ready.',
+          },
+          closedWhenInactive: {
+            title: 'Только чтение после ready',
+            description: 'В active/finished — история, без join/leave.',
+          },
+        },
+      },
+      teamRegistrations: {
+        form: {
+          inviteTitle: 'Пригласить игрока в слот / команду',
+          inviteDescription:
+            'Поиск пользователя, слот, цепочка для closed. POST .../invitations.',
+          slot: 'Слот',
+          player: 'Игрок',
+          targetTeam: 'Команда (опционально)',
+          sendInvite: 'Отправить приглашение',
+        },
+        roadmap: {
+          adminInvite: {
+            title: 'UI инвайтов админа',
+            description:
+              'Выбор игрока + слот + цепочка (P1 accept → инвайт P2). API уже есть.',
+          },
+          slotBoard: {
+            title: 'Вид по слотам',
+            description: 'Reserved/public и pending-инвайты на слот.',
+          },
+          moderationPolicy: {
+            title: 'Ручной режим модерации',
+            description:
+              'Сейчас join в open room сразу; опционально очередь на confirm.',
+          },
+          filters: {
+            title: 'Фильтры',
+            description: 'forming/confirmed/disbanded; сортировка по слоту.',
+          },
+        },
       },
     },
     languageSwitcher: {

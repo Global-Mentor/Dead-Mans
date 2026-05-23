@@ -44,6 +44,14 @@ const pl = {
           label: 'Konfiguracja gry',
           description: 'Robocza tabela do konfiguracji kart gry.',
         },
+        gameApplication: {
+          label: 'Zgłoszenie do gry',
+          description: 'Rejestracja drużyny podczas przyjmowania zgłoszeń.',
+        },
+        teamRegistrations: {
+          label: 'Zgłoszenia drużyn',
+          description: 'Przegląd i zatwierdzanie drużyn.',
+        },
       },
     },
     gameBoard: {
@@ -55,7 +63,9 @@ const pl = {
       closedCellLabel: 'Ukryte',
       costLabel: '{{cost}} pkt',
       statusActive: 'Aktywna',
+      statusReady: 'Przyjmowanie zgłoszeń',
       statusFinished: 'Zakończona',
+      applicationButton: 'Zgłoszenie do gry',
       openConfirmTitle: 'Otworzyć kartę?',
       openConfirmDescription:
         'Czy na pewno chcesz otworzyć tę kartę (wiersz {{row}}, kolumna {{col}}, koszt {{cost}})?',
@@ -190,6 +200,188 @@ const pl = {
         validationRequired: 'Wpisz nazwę gry.',
         alreadyExists: 'Szkic gry już istnieje. Odśwież stronę.',
         error: 'Nie udało się utworzyć szkicu gry. Spróbuj ponownie.',
+      },
+    },
+    gameApplication: {
+      title: 'Zgłoszenie do gry',
+      loading: 'Ładowanie rejestracji...',
+      errorLoading: 'Nie udało się załadować rejestracji.',
+      notOpen: 'Rejestracja jest zamknięta.',
+      description: 'Utwórz drużynę lub dołącz do otwartego pokoju.',
+      invitationsTitle: 'Zaproszenia',
+      invitationSlot: 'Slot {{slot}}',
+      acceptInvitation: 'Akceptuj',
+      declineInvitation: 'Odrzuć',
+      myTeamTitle: 'Twoja drużyna',
+      leaveTeam: 'Opuść drużynę',
+      createTeamTitle: 'Utwórz drużynę',
+      createOpenTeam: 'Otwarty pokój',
+      createClosedTeam: 'Zamknięty pokój',
+      openTeamsTitle: 'Otwarte drużyny',
+      joinTeam: 'Dołącz',
+      teamSlot: 'Slot {{slot}} · graczy: {{count}}',
+      backToBoard: 'Wróć do planszy',
+    },
+    gameRegistration: {
+      teamStatus: {
+        forming: 'Formowanie',
+        confirmed: 'Potwierdzona',
+        disbanded: 'Rozwiązana',
+      },
+      errors: {
+        notOpen: 'Rejestracja dla gry w statusie ready nie jest otwarta.',
+        noSlots: 'Brak wolnych slotów drużynowych.',
+        alreadyOnTeam: 'Już jesteś w drużynie w tej grze.',
+        teamNotFound: 'Nie znaleziono drużyny.',
+        teamNotJoinable: 'Do tej drużyny nie można dołączyć ani jej potwierdzić w tym stanie.',
+        notTeamMember: 'Nie jesteś w drużynie w tej grze.',
+        invitationInvalid: 'Zaproszenie nie zostało znalezione lub nie jest już aktywne.',
+        slotNotFound: 'Nie znaleziono slotu uczestnictwa.',
+        slotNotAvailable: 'Slot uczestnictwa jest niedostępny.',
+        pendingInvitation: 'Ten gracz ma już oczekujące zaproszenie w tej grze.',
+        operationFailed: 'Nie udało się wykonać operacji rejestracji.',
+        unauthorized: 'Zaloguj się, aby kontynuować.',
+        forbidden: 'Brak uprawnień do tej operacji.',
+        generic: 'Coś poszło nie tak. Spróbuj ponownie.',
+      },
+    },
+    teamRegistrations: {
+      title: 'Zgłoszenia drużyn',
+      loading: 'Ładowanie drużyn...',
+      errorLoading: 'Nie udało się załadować drużyn.',
+      notOpen: 'Rejestracja drużyn dla gry w statusie ready nie jest jeszcze otwarta.',
+      description: 'Zatwierdź drużyny zgodnie z zasadami składu.',
+      empty: 'Brak zarejestrowanych drużyn.',
+      slot: 'Slot',
+      status: 'Status',
+      players: 'Gracze',
+      actions: 'Akcje',
+      confirm: 'Zatwierdź',
+      reject: 'Odrzuć',
+    },
+    plannedFeatures: {
+      roadmapTitle: 'Zaplanowane (jeszcze nie podłączone)',
+      roadmapHint:
+        'Notatki projektowe. Część API na backendzie już istnieje; UI i synchronizacja w setup — później.',
+      formShellBadge: 'Makieta UI',
+      gameSetup: {
+        form: {
+          registrationTitle: 'Ustawienia rejestracji (szkic)',
+          registrationDescription:
+            'Sloty drużyn, miejsca zarezerwowane, rozmiar składu i przejście draft → ready z setup.',
+          teamSlotCount: 'Liczba slotów drużynowych',
+          minPlayers: 'Min. graczy w drużynie',
+          maxPlayers: 'Maks. graczy w drużynie',
+          reservedSlots: 'Zarezerwowane sloty',
+          reservedSlotsPlaceholder: 'np. slot 6 — drużyna gościnna (bez publicznych zgłoszeń)',
+          openRegistration: 'Otwórz rejestrację (draft → ready)',
+          startGame: 'Rozpocznij grę (ready → active)',
+        },
+        roadmap: {
+          slots: {
+            title: 'Siatka slotów w setup',
+            description: 'Liczba drużyn i public/reserved na slot. Sync z PUT /api/game/setup.',
+          },
+          teamLimits: {
+            title: 'Min/maks graczy w drużynie',
+            description: 'Zapis limitów 1–3 (lub innych) w szkicu, nie tylko domyślne wartości.',
+          },
+          lifecycle: {
+            title: 'Cykl życia z setup',
+            description:
+              'Przyciski POST /api/game/lifecycle/open-registration, /start, /finish.',
+          },
+        },
+      },
+      gameBoard: {
+        form: {
+          lifecycleTitle: 'Cykl życia gry (admin)',
+          lifecycleDescription: 'Przejścia draft → ready → active → finished.',
+          openRegistration: 'Otwórz rejestrację',
+          startGame: 'Rozpocznij grę',
+          finishGame: 'Zakończ grę',
+        },
+        roadmap: {
+          lifecycle: {
+            title: 'Panel lifecycle dla admina',
+            description: 'Podłączyć trzy endpointy z potwierdzeniem i powiadomieniami.',
+          },
+          applicationGate: {
+            title: 'Widoczność przycisku zgłoszenia',
+            description:
+              'Pokazywać „Zgłoszenie do gry” tylko w ready; ukrywać w draft/active/finished.',
+          },
+        },
+      },
+      gameApplication: {
+        form: {
+          slotsTitle: 'Przegląd slotów',
+          slotsDescription:
+            'Mapa public/reserved i zajętości z GET /api/game/registration.',
+          slotLabel: 'Slot {{slot}}',
+          slotFree: 'wolny',
+          memberInviteTitle: 'Zaproszenia do zamkniętej drużyny',
+          memberInviteDescription:
+            'Zapraszanie drużyny; dziś tylko admin przez API.',
+          inviteTeammate: 'Zaproś gracza',
+          submitForReview: 'Wyślij do weryfikacji',
+        },
+        roadmap: {
+          slotsOverview: {
+            title: 'UI tablicy slotów',
+            description:
+              'Siatka slotów, etykiety reserved, pending zaproszenia i potwierdzone drużyny.',
+          },
+          memberInvites: {
+            title: 'Zaproszenia gracz–gracz',
+            description:
+              'Ten sam flow accept/decline, inicjowany przez członka zamkniętej drużyny.',
+          },
+          submitForReview: {
+            title: 'Opcjonalne „gotowi do weryfikacji”',
+            description: 'Wysyłka składu do admina; filtr na liście drużyn.',
+          },
+          statusUx: {
+            title: 'Jaśniejszy status drużyny',
+            description:
+              'forming vs confirmed; blokada akcji po potwierdzeniu lub poza ready.',
+          },
+          closedWhenInactive: {
+            title: 'Tylko odczyt po zamknięciu rejestracji',
+            description: 'Po active/finished — historia bez join/leave.',
+          },
+        },
+      },
+      teamRegistrations: {
+        form: {
+          inviteTitle: 'Zaproś gracza do slotu / drużyny',
+          inviteDescription:
+            'Wyszukiwanie użytkownika, slot, łańcuch dla closed. POST .../invitations.',
+          slot: 'Slot',
+          player: 'Gracz',
+          targetTeam: 'Drużyna (opcjonalnie)',
+          sendInvite: 'Wyślij zaproszenie',
+        },
+        roadmap: {
+          adminInvite: {
+            title: 'UI zaproszeń admina',
+            description:
+              'Wybór gracza + slot + łańcuch (P1 accept → zaproszenie P2). API już jest.',
+          },
+          slotBoard: {
+            title: 'Widok admina po slotach',
+            description: 'Reserved vs public i pending zaproszenia na slot.',
+          },
+          moderationPolicy: {
+            title: 'Tryb ręcznej akceptacji',
+            description:
+              'Dziś join w otwartym pokoju jest natychmiastowy; opcjonalna kolejka do confirm.',
+          },
+          filters: {
+            title: 'Filtry i sortowanie',
+            description: 'forming/confirmed/disbanded; sortowanie po slocie lub liczbie graczy.',
+          },
+        },
       },
     },
     languageSwitcher: {
