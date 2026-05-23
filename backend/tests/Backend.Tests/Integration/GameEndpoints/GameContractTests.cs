@@ -48,6 +48,24 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetGame_WhenAuthenticatedButInactive_ReturnsUnauthorized()
+    {
+        var inactiveUserId = Guid.NewGuid();
+        await SeedInactiveUserAsync(inactiveUserId);
+        using var authenticatedClient = CreateAuthenticatedClient(
+            [AuthRoleCodes.Viewer],
+            userId: inactiveUserId
+        );
+
+        var response = await authenticatedClient.GetAsync("/api/game");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.UserMissingOrInactive, payload.Error);
+    }
+
+    [Fact]
     public async Task GetGame_WhenAuthenticated_ReturnsBoardSnapshot()
     {
         var finishedGameId = await SeedGamesAsync();
@@ -134,7 +152,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     {
         var cellId = await SeedSingleCellAsync();
         var publisher = new RecordingGameBoardEventsPublisher();
-        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher);
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher: publisher);
 
         var response = await adminClient.PostAsync($"/api/game/cells/{cellId}/open", content: null);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -150,7 +168,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     {
         var cellId = await SeedSingleCellAsync();
         var publisher = new RecordingGameBoardEventsPublisher();
-        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher);
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher: publisher);
 
         var firstResponse = await adminClient.PostAsync($"/api/game/cells/{cellId}/open", content: null);
         var secondResponse = await adminClient.PostAsync($"/api/game/cells/{cellId}/open", content: null);
@@ -293,17 +311,38 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         return cellId;
     }
 
+    private async Task SeedInactiveUserAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = $"inactive-{userId:N}",
+                Login = "inactive-viewer",
+                DisplayName = "Inactive Viewer",
+                IsActive = false,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        await dbContext.SaveChangesAsync();
+    }
+
     private HttpClient CreateAuthenticatedClient(
         string[] roles,
+        Guid? userId = null,
         RecordingGameBoardEventsPublisher? publisher = null
     )
     {
-        var authenticatedFactory = CreateAuthenticatedFactory(roles, publisher);
+        var authenticatedFactory = CreateAuthenticatedFactory(roles, userId, publisher);
         return authenticatedFactory.CreateClient();
     }
 
     private WebApplicationFactory<Program> CreateAuthenticatedFactory(
         string[] roles,
+        Guid? userId = null,
         RecordingGameBoardEventsPublisher? publisher = null
     )
     {
@@ -328,12 +367,13 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                                 options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
                                 options.DefaultScheme = TestAuthenticationHandler.SchemeName;
                             })
-                            .AddScheme<
-                                AuthenticationSchemeOptions,
-                                TestAuthenticationHandler
-                            >(
+                            .AddScheme<TestAuthSchemeOptions, TestAuthenticationHandler>(
                                 TestAuthenticationHandler.SchemeName,
-                                options => options.ClaimsIssuer = string.Join(',', roles)
+                                options =>
+                                {
+                                    options.ClaimsIssuer = string.Join(',', roles);
+                                    options.UserId = userId;
+                                }
                             );
                     }
                 )
@@ -342,12 +382,17 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         return authenticatedFactory;
     }
 
-    private sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    private sealed class TestAuthSchemeOptions : AuthenticationSchemeOptions
+    {
+        public Guid? UserId { get; set; }
+    }
+
+    private sealed class TestAuthenticationHandler : AuthenticationHandler<TestAuthSchemeOptions>
     {
         public const string SchemeName = "TestAuth";
 
         public TestAuthenticationHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            IOptionsMonitor<TestAuthSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder
         )
@@ -359,7 +404,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         {
             var roles = (Options.ClaimsIssuer ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()) };
+            var userId = Options.UserId ?? Guid.NewGuid();
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var identity = new ClaimsIdentity(

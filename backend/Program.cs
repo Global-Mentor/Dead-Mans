@@ -196,6 +196,7 @@ try
     }
 
     app.UseAuthentication();
+    app.UseMiddleware<ActiveUserMiddleware>();
     app.UseAuthorization();
 
     app.MapGet(
