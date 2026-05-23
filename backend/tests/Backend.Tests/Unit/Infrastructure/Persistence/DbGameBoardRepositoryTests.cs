@@ -238,6 +238,8 @@ public sealed class DbGameBoardRepositoryTests
                 BoardId = boardId,
                 RowIndex = 0,
                 ColIndex = 0,
+                Title = "Secret title",
+                Description = "Secret description",
                 State = BoardCellState.Closed,
                 Cost = 100,
                 CellType = BoardCellPersistence.DefaultCellType
@@ -250,6 +252,12 @@ public sealed class DbGameBoardRepositoryTests
             Options.Create(Storage),
             NullLogger<DbGameBoardRepository>.Instance
         );
+
+        var snapshot = await repo.GetLatestBoardByStatusAsync(GameStatusValue.Active);
+        Assert.NotNull(snapshot);
+        var closedCell = Assert.Single(snapshot.Cells);
+        Assert.Null(closedCell.Title);
+        Assert.Null(closedCell.Description);
 
         var first = await repo.TryOpenCellAsync(cellId);
         var second = await repo.TryOpenCellAsync(cellId);

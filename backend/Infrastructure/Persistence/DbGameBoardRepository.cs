@@ -299,13 +299,15 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             ? cellMedia
             : [];
 
+        var revealContent = state == GameBoardCellState.Open;
+
         return new GameBoardCell(
             cell.Id.ToString(),
             cell.Row,
             cell.Col,
             cell.CellType,
-            cell.Title,
-            cell.Description,
+            revealContent ? cell.Title : null,
+            revealContent ? cell.Description : null,
             cell.Cost,
             state,
             media
