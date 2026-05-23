@@ -3,6 +3,7 @@ using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Configuration;
 using backend.Application.Contracts;
+using backend.Application.Realtime;
 using backend.Messaging;
 using Microsoft.Extensions.Options;
 
@@ -109,10 +110,10 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
                 await TryDeleteDetachedObjectAsync(existingMedia, cellId, cancellationToken);
             }
 
-            await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
+            await PublishDraftChangedBestEffortAsync(cancellationToken);
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.Uploaded, media);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(
                 ex,
@@ -147,8 +148,17 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         }
 
         await TryDeleteDetachedObjectAsync(detachedMedia, cellId, cancellationToken);
-        await _eventsPublisher.PublishDraftChangedAsync(cancellationToken);
+        await PublishDraftChangedBestEffortAsync(cancellationToken);
         return new DeleteDraftGameSetupCellMediaResult(DeleteDraftGameSetupCellMediaOutcome.Deleted);
+    }
+
+    private Task PublishDraftChangedBestEffortAsync(CancellationToken cancellationToken)
+    {
+        return RealtimePublishGuard.TryPublishAsync(
+            () => _eventsPublisher.PublishDraftChangedAsync(cancellationToken),
+            _logger,
+            AppMessages.Logs.RealtimeGameSetupDraftChangedPublishFailed
+        );
     }
 
     private Task TryDeleteDetachedObjectAsync(

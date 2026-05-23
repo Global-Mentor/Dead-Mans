@@ -2,7 +2,9 @@ using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
+using backend.Application.Realtime;
 using backend.Domain.Persistence;
+using backend.Messaging;
 
 namespace backend.Application.Features.GameBoard;
 
@@ -51,17 +53,15 @@ public sealed class GameBoardService : IGameBoardService
             return result;
         }
 
-        try
-        {
-            await _eventsPublisher.PublishCellOpenedAsync(
+        await RealtimePublishGuard.TryPublishAsync(
+            () => _eventsPublisher.PublishCellOpenedAsync(
                 new GameCellOpenedEvent(result.GameId, result.Version, result.Cell),
                 cancellationToken
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to publish game cell opened event. CellId: {CellId}.", cellId);
-        }
+            ),
+            _logger,
+            AppMessages.Logs.RealtimeGameCellOpenedPublishFailed,
+            cellId
+        );
 
         return result;
     }

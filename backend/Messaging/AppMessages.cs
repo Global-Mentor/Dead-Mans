@@ -135,6 +135,10 @@ public static class AppMessages
         public const string GameCellAlreadyOpen = "Game cell is already open. CellId: {CellId}.";
         public const string GameCellOpened = "Game cell opened. CellId: {CellId}.";
         public const string GameCellOpenFailed = "Failed to open game cell. CellId: {CellId}.";
+        public const string RealtimeGameCellOpenedPublishFailed =
+            "Failed to publish game cell opened realtime event. CellId: {CellId}.";
+        public const string RealtimeGameSetupDraftChangedPublishFailed =
+            "Failed to publish game setup draft changed realtime event.";
 
         public const string AuthSessionMissingClaim =
             "Auth session request missing or invalid NameIdentifier claim.";
