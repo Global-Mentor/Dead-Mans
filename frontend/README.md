@@ -17,7 +17,16 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - восстановление сессии через `/auth/me`;
 - защищённая панель под `/panel` с role-aware navigation;
 - страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
-- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`.
+- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`; planned UI-блоки показываются только когда регистрация ещё не открыта.
+
+## Структура API-слоя
+
+- `src/shared/api/client/` — общий `httpClient`;
+- `src/shared/api/contracts/` — generated transport types;
+- `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
+- `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
+- `src/features/*` — UI, hooks и feature-local data access (board, setup, auth).
 
 ## Источник контрактов
 
@@ -69,4 +78,4 @@ npm run build
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend должен содержать Twitch auth, panel shell, role-aware routing, игровой экран и admin game setup. Дополнительные игровые режимы, альтернативные панели и моковые игровые срезы считаются вне скоупа.
+На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI (с planned-моками для ещё не подключённых кнопок). Lifecycle-кнопки и admin invite UI пока только в roadmap-блоках.

@@ -1,27 +1,24 @@
 # Dead-Mans Backend
 
-Backend сейчас поддерживает только два прикладных сценария:
-
-- Twitch authentication и cookie session;
-- game board API: чтение текущего снимка, admin-only открытие ячеек и realtime-синхронизация состояния.
+Backend поддерживает auth, game board, game setup (admin draft), game registration и lifecycle.
 
 ## Что есть в коде
 
-- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`.
-- `Application/` - auth session service и game-board service.
-- `Infrastructure/` - Twitch auth, EF Core persistence, `DbGameBoardRepository`.
-- `Data/` - `ApplicationDbContext`, entities, configurations, migrations.
-- `openapi/deadmans.v1.yaml` - канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
-- `Api/Contracts/RealtimeHubContracts.cs` - hub paths и event names (синхронно с OpenAPI).
+- `Controllers/` — auth, game board, game setup, registration, lifecycle.
+- `Application/` — use-case services (`GameBoard`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
+- `Infrastructure/` — Twitch auth, EF repositories (`DbGame*Repository`), SignalR publishers.
+- `Data/` — `ApplicationDbContext`, entities, configurations, migrations.
+- `openapi/deadmans.v1.yaml` — канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
+- `Api/Contracts/RealtimeHubContracts.cs` — hub paths и event names (синхронно с OpenAPI).
 
 ## Актуальные endpoint'ы
 
-- `GET /api/game`
-- `POST /api/game/cells/{cellId}/open`
-- `GET /auth/me`
-- `POST /auth/logout`
-- `GET /auth/twitch/login`
-- `GET /auth/twitch/callback`
+- `GET /api/game`, `POST /api/game/cells/{cellId}/open`
+- `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
+- `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`
+- `GET /api/game/registration/teams` (admin), confirm/reject, invitations
+- `POST /api/game/lifecycle/open-registration`, `/start`, `/finish` (admin workflow; HTTP в контроллере)
+- `GET /auth/me`, `POST /auth/logout`, Twitch login/callback
 
 ## Локальный запуск
 

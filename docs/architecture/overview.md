@@ -7,6 +7,7 @@
 - Twitch auth
 - game board с чтением снимка, admin-only открытием ячеек и realtime-синхронизацией
 - game setup: один общий admin-черновик в БД, Save + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset с очисткой DB и object storage, realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
+- game registration: приём заявок в статусе `ready`, команды и инвайты (см. `docs/architecture/game-registration.md`)
 
 ## Поток данных
 
@@ -49,13 +50,16 @@ flowchart LR
 - `features/auth/` - Twitch login, callback, session restore
 - `features/game-board/` - экран игрового поля, open-cell flow и realtime sync
 - `features/game-setup/` - настройка черновика игры, cell media, Save/layout flow, realtime sync
+- `features/game-registration/` - общий HTTP client и data access для регистрации команд (используют `game-application` и `team-registrations`)
+- `features/game-application/` - страница заявки игрока
+- `features/team-registrations/` - admin-подтверждение команд
 - `shared/api/client/` - HTTP transport
 - `shared/api/contracts/` - generated types из OpenAPI
 - `shared/auth/` - auth context и guard
 
 ## Backend
 
-- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`, `GameSetupController`, `GameSetupCellMediaController`
+- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`, `GameSetupController`, `GameSetupCellMediaController`, `GameLifecycleController`, `GameRegistrationController`
 - `Api/Contracts/` + `Api/Mapping/` - transport DTO и явный mapping из application-моделей
 - `Application/Features/Auth/` - auth session service
 - `Application/Features/GameBoard/` - game-board service
