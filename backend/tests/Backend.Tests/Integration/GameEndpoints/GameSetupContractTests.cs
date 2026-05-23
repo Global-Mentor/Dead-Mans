@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
+using backend.Application.Abstractions.Realtime;
 using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Domain.Persistence;
@@ -75,6 +76,23 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
             GameSetupStubDefaults.DefaultRowCosts,
             payload.Cells.GroupBy(cell => cell.Row).OrderBy(group => group.Key).Select(group => group.First().Cost).ToArray()
         );
+    }
+
+    [Fact]
+    public async Task CreateSetup_WhenRealtimePublishFails_StillReturnsCreated()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient(
+            [AuthRoleCodes.Admin],
+            new FailingGameSetupEventsPublisher()
+        );
+
+        var response = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Stream setup")
+        );
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
@@ -393,13 +411,22 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         await dbContext.SaveChangesAsync();
     }
 
-    private HttpClient CreateAuthenticatedClient(string[] roles)
+    private HttpClient CreateAuthenticatedClient(
+        string[] roles,
+        IGameSetupEventsPublisher? eventsPublisher = null
+    )
     {
         var authenticatedFactory = _factory.WithWebHostBuilder(
             builder =>
                 builder.ConfigureServices(
                     services =>
                     {
+                        if (eventsPublisher is not null)
+                        {
+                            services.RemoveAll<IGameSetupEventsPublisher>();
+                            services.AddSingleton(eventsPublisher);
+                        }
+
                         services.RemoveAll<IClaimsTransformation>();
                         services.AddSingleton<IClaimsTransformation, PassthroughClaimsTransformation>();
                         services
@@ -452,6 +479,14 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             return Task.FromResult(principal);
+        }
+    }
+
+    private sealed class FailingGameSetupEventsPublisher : IGameSetupEventsPublisher
+    {
+        public Task PublishDraftChangedAsync(CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("Simulated SignalR publish failure.");
         }
     }
 }

@@ -11,6 +11,10 @@ Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and paylo
 
 Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
 
+## Publish failures
+
+After a successful DB write, SignalR publish is **best-effort** (`RealtimePublishGuard` in Application): failures are logged but do not fail the HTTP response. PostgreSQL and `GET /api/game` / `GET /api/game/setup` remain the source of truth; clients can refetch if an event is missed.
+
 ## Code alignment
 
 - Backend: `backend/Api/Contracts/RealtimeHubContracts.cs` (paths + event names; must match OpenAPI).
