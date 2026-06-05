@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { queryKeys } from '../../shared/api/query-keys.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
+import { gameSetupRoute, hasAccessToPanelRoute } from '../../routes/app-routes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import { openGameBoardCell } from './api/game-board-data-access.ts'
@@ -29,7 +30,7 @@ export function useOpenGameBoardCell() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const canOpenCells = useMemo(
-    () => user?.roles.includes('admin') === true,
+    () => hasAccessToPanelRoute(gameSetupRoute, user?.roles),
     [user?.roles],
   )
 

@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
-import { formatRegistrationTeamStatus } from '../game-registration/registration-team-status.ts'
+import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
 import { TeamRegistrationsInvitePlannedSection } from './ui/TeamRegistrationsInvitePlannedSection.tsx'
 

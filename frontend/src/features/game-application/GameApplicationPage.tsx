@@ -14,7 +14,7 @@ import { gameBoardRoute } from '../../routes/app-routes.ts'
 import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
 import { useGameApplicationPage } from './use-game-application-page.ts'
 import type { RegistrationTeam } from '../../shared/api/contracts/index.ts'
-import { formatRegistrationTeamStatus } from '../game-registration/registration-team-status.ts'
+import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
 import { GameApplicationPlannedSection } from './ui/GameApplicationPlannedSection.tsx'
 
 export function GameApplicationPage() {
