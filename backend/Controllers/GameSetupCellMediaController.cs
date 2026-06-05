@@ -1,6 +1,7 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Contracts;
+using backend.Api.Http;
 using backend.Api.Mapping;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authorization;
@@ -14,15 +15,10 @@ namespace backend.Controllers;
 public sealed class GameSetupCellMediaController : ControllerBase
 {
     private readonly IGameSetupCellMediaService _cellMediaService;
-    private readonly ILogger<GameSetupCellMediaController> _logger;
 
-    public GameSetupCellMediaController(
-        IGameSetupCellMediaService cellMediaService,
-        ILogger<GameSetupCellMediaController> logger
-    )
+    public GameSetupCellMediaController(IGameSetupCellMediaService cellMediaService)
     {
         _cellMediaService = cellMediaService;
-        _logger = logger;
     }
 
     [HttpPost]
@@ -41,47 +37,42 @@ public sealed class GameSetupCellMediaController : ControllerBase
     {
         if (file is null || file.Length == 0)
         {
-            return BadRequest(new ErrorResponse(AppMessages.Client.InvalidGameSetupCellMediaUpload));
-        }
-
-        try
-        {
-            await using var stream = file.OpenReadStream();
-            var result = await _cellMediaService.UploadAsync(
-                cellId,
-                stream,
-                file.ContentType,
-                file.Length,
-                cancellationToken
+            return this.BadRequestError(
+                AppMessages.Client.InvalidGameSetupCellMediaUpload,
+                AppMessages.ErrorCodes.GameSetupInvalidCellMediaUpload
             );
-
-            return result.Outcome switch
-            {
-                UploadDraftGameSetupCellMediaOutcome.Uploaded when result.Media is not null =>
-                    Ok(result.Media.ToDto()),
-                UploadDraftGameSetupCellMediaOutcome.NoDraft => NotFound(
-                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
-                ),
-                UploadDraftGameSetupCellMediaOutcome.CellNotFound => NotFound(
-                    new ErrorResponse(AppMessages.Client.GameSetupCellNotFound)
-                ),
-                UploadDraftGameSetupCellMediaOutcome.InvalidFile => BadRequest(
-                    new ErrorResponse(AppMessages.Client.InvalidGameSetupCellMediaUpload)
-                ),
-                _ => StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ErrorResponse(AppMessages.Client.UnableToUploadGameSetupCellMedia)
-                ),
-            };
         }
-        catch (Exception ex)
+
+        await using var stream = file.OpenReadStream();
+        var result = await _cellMediaService.UploadAsync(
+            cellId,
+            stream,
+            file.ContentType,
+            file.Length,
+            cancellationToken
+        );
+
+        return result.Outcome switch
         {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupCellMediaUploadFailed, cellId);
-            return StatusCode(
+            UploadDraftGameSetupCellMediaOutcome.Uploaded when result.Media is not null =>
+                Ok(result.Media.ToDto()),
+            UploadDraftGameSetupCellMediaOutcome.NoDraft => this.NotFoundError(
+                AppMessages.Client.NoDraftGameForSetup,
+                AppMessages.ErrorCodes.GameSetupNoDraft
+            ),
+            UploadDraftGameSetupCellMediaOutcome.CellNotFound => this.NotFoundError(
+                AppMessages.Client.GameSetupCellNotFound,
+                AppMessages.ErrorCodes.GameSetupCellNotFound
+            ),
+            UploadDraftGameSetupCellMediaOutcome.InvalidFile => this.BadRequestError(
+                AppMessages.Client.InvalidGameSetupCellMediaUpload,
+                AppMessages.ErrorCodes.GameSetupInvalidCellMediaUpload
+            ),
+            _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToUploadGameSetupCellMedia)
-            );
-        }
+                AppMessages.Client.UnableToUploadGameSetupCellMedia
+            ),
+        };
     }
 
     [HttpDelete]
@@ -92,34 +83,26 @@ public sealed class GameSetupCellMediaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid cellId, CancellationToken cancellationToken)
     {
-        try
+        var result = await _cellMediaService.DeleteAsync(cellId, cancellationToken);
+        return result.Outcome switch
         {
-            var result = await _cellMediaService.DeleteAsync(cellId, cancellationToken);
-            return result.Outcome switch
-            {
-                DeleteDraftGameSetupCellMediaOutcome.Deleted => NoContent(),
-                DeleteDraftGameSetupCellMediaOutcome.NoDraft => NotFound(
-                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
-                ),
-                DeleteDraftGameSetupCellMediaOutcome.CellNotFound => NotFound(
-                    new ErrorResponse(AppMessages.Client.GameSetupCellNotFound)
-                ),
-                DeleteDraftGameSetupCellMediaOutcome.MediaNotFound => NotFound(
-                    new ErrorResponse(AppMessages.Client.GameSetupCellMediaNotFound)
-                ),
-                _ => StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetupCellMedia)
-                ),
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupCellMediaDeleteFailed, cellId);
-            return StatusCode(
+            DeleteDraftGameSetupCellMediaOutcome.Deleted => NoContent(),
+            DeleteDraftGameSetupCellMediaOutcome.NoDraft => this.NotFoundError(
+                AppMessages.Client.NoDraftGameForSetup,
+                AppMessages.ErrorCodes.GameSetupNoDraft
+            ),
+            DeleteDraftGameSetupCellMediaOutcome.CellNotFound => this.NotFoundError(
+                AppMessages.Client.GameSetupCellNotFound,
+                AppMessages.ErrorCodes.GameSetupCellNotFound
+            ),
+            DeleteDraftGameSetupCellMediaOutcome.MediaNotFound => this.NotFoundError(
+                AppMessages.Client.GameSetupCellMediaNotFound,
+                AppMessages.ErrorCodes.GameSetupCellMediaNotFound
+            ),
+            _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetupCellMedia)
-            );
-        }
+                AppMessages.Client.UnableToDeleteGameSetupCellMedia
+            ),
+        };
     }
 }

@@ -1,4 +1,9 @@
 <Solution>
+  <Project Path="backend.Domain.csproj" />
+  <Project Path="backend.Application.csproj" />
+  <Project Path="backend.Data.csproj" />
+  <Project Path="backend.Api.csproj" />
+  <Project Path="backend.Infrastructure.csproj" />
   <Project Path="backend.csproj" />
   <Project Path="tests/Backend.Tests/Backend.Tests.csproj" />
 </Solution>

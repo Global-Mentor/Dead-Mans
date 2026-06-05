@@ -1,8 +1,9 @@
 using backend.Api.Contracts;
+using backend.Api.Errors;
+using backend.Api.Http;
 using backend.Application.Abstractions;
 using backend.Application.Contracts;
 using backend.Application.Abstractions.Auth;
-using backend.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -56,34 +57,6 @@ public sealed class GameLifecycleController : ControllerBase
             return Ok(new GameLifecycleStateDto(result.GameId.Value, successStatus));
         }
 
-        return result.Error switch
-        {
-            GameLifecycleErrorCode.DraftNotFound or GameLifecycleErrorCode.GameNotReady
-                or GameLifecycleErrorCode.GameNotActive =>
-                NotFound(new ErrorResponse(MapLifecycleError(result.Error))),
-            GameLifecycleErrorCode.ReadyGameAlreadyExists
-                or GameLifecycleErrorCode.ActiveGameAlreadyExists
-                or GameLifecycleErrorCode.NoParticipationSlots
-                or GameLifecycleErrorCode.InvalidTeamSizeLimits =>
-                Conflict(new ErrorResponse(MapLifecycleError(result.Error))),
-            _ => StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToLoadCurrentGame)
-            )
-        };
+        return this.Error(DomainErrorHttpPolicy.FromLifecycle(result.Error));
     }
-
-    private static string MapLifecycleError(GameLifecycleErrorCode error) =>
-        error switch
-        {
-            GameLifecycleErrorCode.DraftNotFound => AppMessages.Client.NoDraftGameForSetup,
-            GameLifecycleErrorCode.ReadyGameAlreadyExists => AppMessages.Client.ReadyGameAlreadyExists,
-            GameLifecycleErrorCode.ActiveGameAlreadyExists => AppMessages.Client.ActiveGameAlreadyExists,
-            GameLifecycleErrorCode.GameNotReady => AppMessages.Client.GameNotReadyForStart,
-            GameLifecycleErrorCode.GameNotActive => AppMessages.Client.GameNotActiveForFinish,
-            GameLifecycleErrorCode.NoParticipationSlots => AppMessages.Client.GameRegistrationSlotsRequired,
-            GameLifecycleErrorCode.InvalidTeamSizeLimits =>
-                AppMessages.Client.GameRegistrationInvalidTeamSizeLimits,
-            _ => AppMessages.Client.UnableToLoadCurrentGame
-        };
 }

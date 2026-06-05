@@ -1208,6 +1208,42 @@ components:
           type: string
           nullable: true
           description: Stable machine-readable error code.
+          enum:
+            - game_board.not_found
+            - game_board.cell_not_found
+            - game_setup.no_draft
+            - game_setup.draft_exists
+            - game_setup.invalid_title
+            - game_setup.invalid_save_request
+            - game_setup.cell_not_found
+            - game_setup.cell_media_not_found
+            - game_setup.invalid_cell_media_upload
+            - game_setup.stale_version
+            - game_lifecycle.draft_not_found
+            - game_lifecycle.ready_already_exists
+            - game_lifecycle.active_already_exists
+            - game_lifecycle.game_not_ready
+            - game_lifecycle.game_not_active
+            - game_lifecycle.registration_slots_required
+            - game_lifecycle.invalid_team_size_limits
+            - game_lifecycle.operation_failed
+            - game_common.unexpected_server_error
+            - game_registration.not_open
+            - game_registration.no_slots
+            - game_registration.already_on_team
+            - game_registration.team_not_found
+            - game_registration.team_not_joinable
+            - game_registration.not_team_member
+            - game_registration.invitation_invalid
+            - game_registration.slot_not_found
+            - game_registration.slot_not_available
+            - game_registration.user_not_found
+            - game_registration.pending_invitation
+            - game_registration.operation_failed
+        requestId:
+          type: string
+          nullable: true
+          description: Server request correlation identifier for diagnostics.
     GameCellOpenedEventDto:
       type: object
       required: [gameId, version, cell]

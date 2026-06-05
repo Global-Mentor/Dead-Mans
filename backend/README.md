@@ -11,6 +11,29 @@ Backend поддерживает auth, game board, game setup (admin draft), gam
 - `openapi/deadmans.v1.yaml` — канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
 - `Api/Contracts/RealtimeHubContracts.cs` — hub paths и event names (синхронно с OpenAPI).
 
+## Архитектурные границы сборки
+
+Backend разделен на layer-проекты и собирается как единая `backend.slnx`:
+
+- `backend.Domain.csproj` — domain-модели и value objects.
+- `backend.Application.csproj` — use-cases и порты (без зависимости на `Microsoft.AspNetCore.App`).
+- `backend.Data.csproj` — EF Core persistence model и migrations.
+- `backend.Api.csproj` — transport contracts / API mapping helpers.
+- `backend.Infrastructure.csproj` — реализации портов, auth, realtime, storage, DI.
+- `backend.csproj` — web host (`Program` + `Controllers`), компоновка слоев.
+
+Guardrails:
+
+- тест `BackendProjectDependencyRulesTests` фиксирует допустимую матрицу `ProjectReference`;
+- тест фиксирует `ErrorResponse.code.enum` в OpenAPI синхронным с `AppMessages.ErrorCodes`;
+- тест запрещает hardcoded `game_*.*` error-code литералы вне `AppMessages.ErrorCodes`;
+- runtime-код формирует ошибки через `ErrorResponseFactory` (есть тест-запрет на `new ErrorResponse(...)`);
+- контроллеры формируют error `IActionResult` через `ApiErrorResults` helper-методы (есть тест-запрет на прямой `ErrorResponseFactory.Create(...)` в `Controllers/`);
+- `DomainErrorHttpPolicy` задает единое отображение domain `*ErrorCode -> HTTP status + payload` и покрыт тестом полноты enum;
+- непойманные исключения обрабатываются централизованно в `ApiExceptionHandlingMiddleware` и возвращают единый 500 payload;
+- error payload включает `requestId` для трассировки, а `ApiErrorMetrics` публикует счетчики backend ошибок по статусу/коду/источнику;
+- CI собирает `backend/backend.slnx`, поэтому нарушение границ ловится на PR.
+
 ## Актуальные endpoint'ы
 
 - `GET /api/game`, `POST /api/game/cells/{cellId}/open`

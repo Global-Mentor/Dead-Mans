@@ -145,6 +145,25 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.GameCellNotFound, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameBoardCellNotFound, payload.Code);
+    }
+
+    [Fact]
+    public async Task GetGame_WhenServiceThrows_ReturnsInternalServerErrorPayload()
+    {
+        using var authenticatedClient = CreateAuthenticatedClient(
+            [AuthRoleCodes.Viewer],
+            gameBoardService: new ThrowingGameBoardService()
+        );
+
+        var response = await authenticatedClient.GetAsync("/api/game");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.UnexpectedServerError, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.UnexpectedServerError, payload.Code);
+        Assert.False(string.IsNullOrWhiteSpace(payload.RequestId));
     }
 
     [Fact]
@@ -333,17 +352,19 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     private HttpClient CreateAuthenticatedClient(
         string[] roles,
         Guid? userId = null,
-        RecordingGameBoardEventsPublisher? publisher = null
+        RecordingGameBoardEventsPublisher? publisher = null,
+        IGameBoardService? gameBoardService = null
     )
     {
-        var authenticatedFactory = CreateAuthenticatedFactory(roles, userId, publisher);
+        var authenticatedFactory = CreateAuthenticatedFactory(roles, userId, publisher, gameBoardService);
         return authenticatedFactory.CreateClient();
     }
 
     private WebApplicationFactory<Program> CreateAuthenticatedFactory(
         string[] roles,
         Guid? userId = null,
-        RecordingGameBoardEventsPublisher? publisher = null
+        RecordingGameBoardEventsPublisher? publisher = null,
+        IGameBoardService? gameBoardService = null
     )
     {
         var authenticatedFactory = _factory.WithWebHostBuilder(
@@ -358,6 +379,12 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                         {
                             services.RemoveAll<IGameBoardEventsPublisher>();
                             services.AddSingleton<IGameBoardEventsPublisher>(publisher);
+                        }
+
+                        if (gameBoardService is not null)
+                        {
+                            services.RemoveAll<IGameBoardService>();
+                            services.AddSingleton(gameBoardService);
                         }
 
                         services
@@ -438,5 +465,16 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             PublishedEvents.Add(@event);
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class ThrowingGameBoardService : IGameBoardService
+    {
+        public Task<GameBoardSnapshot?> GetCurrentBoardAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated game board failure.");
+
+        public Task<OpenGameCellResult?> TryOpenCellAsync(
+            Guid cellId,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Simulated game board failure.");
     }
 }

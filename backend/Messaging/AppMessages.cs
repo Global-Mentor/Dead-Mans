@@ -57,12 +57,32 @@ public static class AppMessages
             "This player already has a pending invitation for this game.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
         public const string NoCurrentGameBoard = "No current game board was found.";
+        public const string UnexpectedServerError = "An unexpected server error occurred.";
     }
 
     public static class ErrorCodes
     {
+        public const string GameBoardNotFound = "game_board.not_found";
+        public const string GameBoardCellNotFound = "game_board.cell_not_found";
+        public const string GameSetupNoDraft = "game_setup.no_draft";
+        public const string GameSetupDraftExists = "game_setup.draft_exists";
         public const string InvalidGameSetupTitle = "game_setup.invalid_title";
+        public const string GameSetupInvalidSaveRequest = "game_setup.invalid_save_request";
+        public const string GameSetupCellNotFound = "game_setup.cell_not_found";
+        public const string GameSetupCellMediaNotFound = "game_setup.cell_media_not_found";
+        public const string GameSetupInvalidCellMediaUpload = "game_setup.invalid_cell_media_upload";
         public const string GameSetupDraftVersionConflict = "game_setup.stale_version";
+        public const string GameLifecycleDraftNotFound = "game_lifecycle.draft_not_found";
+        public const string GameLifecycleReadyAlreadyExists = "game_lifecycle.ready_already_exists";
+        public const string GameLifecycleActiveAlreadyExists = "game_lifecycle.active_already_exists";
+        public const string GameLifecycleGameNotReady = "game_lifecycle.game_not_ready";
+        public const string GameLifecycleGameNotActive = "game_lifecycle.game_not_active";
+        public const string GameLifecycleRegistrationSlotsRequired =
+            "game_lifecycle.registration_slots_required";
+        public const string GameLifecycleInvalidTeamSizeLimits =
+            "game_lifecycle.invalid_team_size_limits";
+        public const string GameLifecycleOperationFailed = "game_lifecycle.operation_failed";
+        public const string UnexpectedServerError = "game_common.unexpected_server_error";
         public const string GameRegistrationNotOpen = "game_registration.not_open";
         public const string GameRegistrationNoSlots = "game_registration.no_slots";
         public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
