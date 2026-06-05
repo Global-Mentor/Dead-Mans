@@ -233,6 +233,7 @@ const en = {
         teamNotJoinable: 'This team cannot be joined or confirmed in its current state.',
         notTeamMember: 'You are not on a team for this game.',
         invitationInvalid: 'Invitation was not found or is no longer pending.',
+        userNotFound: 'The selected user was not found or is inactive.',
         slotNotFound: 'Participation slot was not found.',
         slotNotAvailable: 'Participation slot is not available.',
         pendingInvitation: 'This player already has a pending invitation for this game.',

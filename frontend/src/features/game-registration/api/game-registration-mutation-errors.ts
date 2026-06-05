@@ -12,6 +12,7 @@ const REGISTRATION_ERROR_I18N_KEYS: Record<string, string> = {
   [API_ERROR_CODES.gameRegistrationInvitationInvalid]: 'gameRegistration.errors.invitationInvalid',
   [API_ERROR_CODES.gameRegistrationSlotNotFound]: 'gameRegistration.errors.slotNotFound',
   [API_ERROR_CODES.gameRegistrationSlotNotAvailable]: 'gameRegistration.errors.slotNotAvailable',
+  [API_ERROR_CODES.gameRegistrationUserNotFound]: 'gameRegistration.errors.userNotFound',
   [API_ERROR_CODES.gameRegistrationPendingInvitation]: 'gameRegistration.errors.pendingInvitation',
   [API_ERROR_CODES.gameRegistrationOperationFailed]: 'gameRegistration.errors.operationFailed',
 }

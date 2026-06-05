@@ -81,6 +81,7 @@ public static class GameRegistrationErrorMapping
             GameRegistrationErrorCode.InvitationNotFound
                 or GameRegistrationErrorCode.InvitationNotPending =>
                 AppMessages.ErrorCodes.GameRegistrationInvitationInvalid,
+            GameRegistrationErrorCode.UserNotFound => AppMessages.ErrorCodes.GameRegistrationUserNotFound,
             GameRegistrationErrorCode.SlotNotFound => AppMessages.ErrorCodes.GameRegistrationSlotNotFound,
             GameRegistrationErrorCode.SlotNotAvailable => AppMessages.ErrorCodes.GameRegistrationSlotNotAvailable,
             GameRegistrationErrorCode.PendingInvitationExists =>

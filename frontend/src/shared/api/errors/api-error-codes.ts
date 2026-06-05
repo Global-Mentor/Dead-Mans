@@ -10,6 +10,7 @@ export const API_ERROR_CODES = {
   gameRegistrationInvitationInvalid: 'game_registration.invitation_invalid',
   gameRegistrationSlotNotFound: 'game_registration.slot_not_found',
   gameRegistrationSlotNotAvailable: 'game_registration.slot_not_available',
+  gameRegistrationUserNotFound: 'game_registration.user_not_found',
   gameRegistrationPendingInvitation: 'game_registration.pending_invitation',
   gameRegistrationOperationFailed: 'game_registration.operation_failed',
 } as const
