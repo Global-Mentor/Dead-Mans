@@ -7,6 +7,8 @@ alwaysApply: false
 # Backend Layering Rules
 
 - Keep controllers thin. Controllers translate HTTP concerns only and depend on application services or ports, never directly on `ApplicationDbContext`, repositories, or infrastructure adapters.
+- Keep controller error shaping consistent. Build error `IActionResult` through `ApiErrorResults` helpers; do not handcraft `StatusCode(..., new ErrorResponse(...))` branches in controllers.
+- Keep unhandled exception behavior centralized in middleware. Do not add broad `catch (Exception)` blocks in controllers for request-pipeline errors.
 - Keep layer ownership explicit:
   - Application: use cases, orchestration, service contracts
   - Domain: business rules and domain concepts
@@ -14,6 +16,7 @@ alwaysApply: false
   - Data: EF entities, configurations, migrations
 - Keep controller-facing auth flow models, option classes, and boundary exceptions above infrastructure when controllers or startup need to reference them.
 - Keep mapping boundaries explicit. Do not leak transport DTOs into Application/Domain or EF entities into API contracts.
+- Keep domain-to-HTTP error mapping explicit and exhaustive in policy layers (for example `DomainErrorHttpPolicy`). When a domain `*ErrorCode` enum changes, update the policy in the same task.
 - Keep repository ports above infrastructure. Adapters must not decide business flow or become hidden orchestration layers.
 - If a repository needs explicit selection criteria or fallback policy, pass that policy in from Application instead of hardcoding the product decision inside the adapter.
 - Make authorization and role checks explicit and consistent. Frontend visibility is not protection.
@@ -21,4 +24,4 @@ alwaysApply: false
 - Keep Postgres-first assumptions intact. Avoid SQL Server-specific design choices or provider shortcuts that fight the chosen deployment path.
 - Treat object storage as S3-compatible and key-based. Do not build new flows around local disk as the primary storage path.
 - Prefer clear, composable services over god classes. If a service mixes transport, orchestration, persistence, domain rules, and formatting, split it by responsibility.
-- Add backend tests for regressions that matter: transport contracts, authorization, mapping boundaries, startup invariants, and critical use cases.
+- Add backend tests for regressions that matter: transport contracts, authorization, mapping boundaries, startup invariants, critical use cases, and architecture guardrails that enforce the chosen boundaries.
