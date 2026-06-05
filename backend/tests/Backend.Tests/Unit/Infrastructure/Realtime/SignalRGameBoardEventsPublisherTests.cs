@@ -1,3 +1,4 @@
+using backend.Api.Contracts;
 using backend.Application.Contracts;
 using backend.Infrastructure.Realtime;
 using Microsoft.AspNetCore.SignalR;
@@ -33,8 +34,11 @@ public sealed class SignalRGameBoardEventsPublisherTests
         Assert.Equal(SignalRGameBoardEventsPublisher.CellOpenedEventName, proxy.Method);
         Assert.NotNull(proxy.Args);
         Assert.Single(proxy.Args!);
-        var sentPayload = Assert.IsType<GameCellOpenedEvent>(proxy.Args![0]);
-        Assert.Equal(payload, sentPayload);
+        var sentPayload = Assert.IsType<GameCellOpenedEventDto>(proxy.Args![0]);
+        Assert.Equal(payload.GameId, sentPayload.GameId);
+        Assert.Equal(payload.Version, sentPayload.Version);
+        Assert.Equal(payload.Cell.Id, sentPayload.Cell.Id);
+        Assert.Equal(payload.Cell.State.ToString().ToLowerInvariant(), sentPayload.Cell.State);
     }
 
     private sealed class FakeHubContext : IHubContext<GameBoardHub>

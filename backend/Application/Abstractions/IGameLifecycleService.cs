@@ -1,18 +1,6 @@
+using backend.Application.Contracts;
+
 namespace backend.Application.Abstractions;
-
-public enum GameLifecycleErrorCode
-{
-    None,
-    DraftNotFound,
-    ReadyGameAlreadyExists,
-    ActiveGameAlreadyExists,
-    GameNotReady,
-    GameNotActive,
-    NoParticipationSlots,
-    InvalidTeamSizeLimits,
-}
-
-public sealed record GameLifecycleResult(bool Success, Guid? GameId, GameLifecycleErrorCode Error);
 
 public interface IGameLifecycleService
 {

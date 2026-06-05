@@ -1,4 +1,4 @@
-using backend.Application.Abstractions;
+using backend.Application.Contracts;
 
 namespace backend.Application.Abstractions.Repositories;
 

@@ -69,6 +69,11 @@ public static class ApiContractMapper
         );
     }
 
+    public static GameCellOpenedEventDto ToDto(this GameCellOpenedEvent @event)
+    {
+        return new GameCellOpenedEventDto(@event.GameId, @event.Version, ToDto(@event.Cell));
+    }
+
     private static GameBoardCellDto ToDto(GameBoardCell cell)
     {
         return new GameBoardCellDto(

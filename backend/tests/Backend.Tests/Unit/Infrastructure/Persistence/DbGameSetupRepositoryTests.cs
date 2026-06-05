@@ -1,6 +1,6 @@
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
-using backend.Application.Features.GameSetup;
+using backend.Application.Configuration;
 using backend.Data;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
@@ -81,7 +81,7 @@ public sealed class DbGameSetupRepositoryTests
         Assert.Equal(0, await db.BoardCellMedia.CountAsync());
         Assert.All(snapshot.Cells, cell => Assert.Null(cell.Title));
         Assert.Equal(
-            GameSetupStubDefaults.DefaultRowCosts,
+            GameSetupDefaults.DefaultRowCosts,
             snapshot.Cells.GroupBy(cell => cell.Row).OrderBy(group => group.Key).Select(group => group.First().Cost).ToArray()
         );
     }
@@ -183,7 +183,7 @@ public sealed class DbGameSetupRepositoryTests
         var originalSecondRowLeft = created.Cells.Single(cell => cell.Row == 1 && cell.Col == 0);
 
         var insertedRowCells = Enumerable.Range(0, created.Cols)
-            .Select(col => new GameSetupCellUpdate(null, 0, col, null, GameSetupStubDefaults.GetRowCost(0)));
+            .Select(col => new GameSetupCellUpdate(null, 0, col, null, GameSetupDefaults.GetRowCost(0)));
         var shiftedExistingCells = created.Cells
             .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row + 1, cell.Col, cell.Title, cell.Cost));
 
