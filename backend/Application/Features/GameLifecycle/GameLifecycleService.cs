@@ -1,5 +1,6 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
+using backend.Application.Contracts;
 
 namespace backend.Application.Features.GameLifecycle;
 

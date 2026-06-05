@@ -1,4 +1,5 @@
 using backend.Api.Contracts;
+using backend.Api.Mapping;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
 using Microsoft.AspNetCore.SignalR;
@@ -18,6 +19,6 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
 
     public Task PublishCellOpenedAsync(GameCellOpenedEvent @event, CancellationToken cancellationToken = default)
     {
-        return _hubContext.Clients.All.SendAsync(CellOpenedEventName, @event, cancellationToken);
+        return _hubContext.Clients.All.SendAsync(CellOpenedEventName, @event.ToDto(), cancellationToken);
     }
 }

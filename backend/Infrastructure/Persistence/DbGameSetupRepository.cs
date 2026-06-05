@@ -1,7 +1,6 @@
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
 using backend.Application.Configuration;
-using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Data.Entities;
 using backend.Domain.Models;
@@ -73,8 +72,8 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             var utcNow = DateTime.UtcNow;
             var gameId = Guid.NewGuid();
             var boardId = Guid.NewGuid();
-            var rowLabels = GameSetupStubDefaults.BuildRowLabels();
-            var columnLabels = GameSetupStubDefaults.BuildColumnLabels();
+            var rowLabels = GameSetupDefaults.BuildRowLabels();
+            var columnLabels = GameSetupDefaults.BuildColumnLabels();
 
             var game = new Game
             {
@@ -111,17 +110,17 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 Id = boardId,
                 GameId = gameId,
                 Version = 1,
-                Rows = GameSetupStubDefaults.Rows,
-                Cols = GameSetupStubDefaults.Cols,
+                Rows = GameSetupDefaults.Rows,
+                Cols = GameSetupDefaults.Cols,
                 RowLabels = rowLabels,
                 ColLabels = columnLabels,
                 CreatedAtUtc = utcNow
             };
 
-            var cells = new List<BoardCell>(GameSetupStubDefaults.Rows * GameSetupStubDefaults.Cols);
-            for (var row = 0; row < GameSetupStubDefaults.Rows; row += 1)
+            var cells = new List<BoardCell>(GameSetupDefaults.Rows * GameSetupDefaults.Cols);
+            for (var row = 0; row < GameSetupDefaults.Rows; row += 1)
             {
-                for (var col = 0; col < GameSetupStubDefaults.Cols; col += 1)
+                for (var col = 0; col < GameSetupDefaults.Cols; col += 1)
                 {
                     cells.Add(
                         new BoardCell
@@ -133,7 +132,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                             State = BoardCellState.Closed,
                             CellType = BoardCellPersistence.DefaultCellType,
                             Title = null,
-                            Cost = GameSetupStubDefaults.GetRowCost(row),
+                            Cost = GameSetupDefaults.GetRowCost(row),
                             Description = null
                         }
                     );

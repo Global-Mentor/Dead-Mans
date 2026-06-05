@@ -1,5 +1,6 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
+using backend.Application.Contracts;
 using backend.Data;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;

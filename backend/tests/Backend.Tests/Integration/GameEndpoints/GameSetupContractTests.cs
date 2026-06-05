@@ -5,7 +5,7 @@ using System.Text.Encodings.Web;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Application.Abstractions.Realtime;
-using backend.Application.Features.GameSetup;
+using backend.Application.Configuration;
 using backend.Data;
 using backend.Domain.Persistence;
 using backend.Messaging;
@@ -73,7 +73,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         Assert.Equal(["100", "125", "150", "175", "200"], payload.RowLabels);
         Assert.All(payload.Cells, cell => Assert.Null(cell.Title));
         Assert.Equal(
-            GameSetupStubDefaults.DefaultRowCosts,
+            GameSetupDefaults.DefaultRowCosts,
             payload.Cells.GroupBy(cell => cell.Row).OrderBy(group => group.Key).Select(group => group.First().Cost).ToArray()
         );
     }

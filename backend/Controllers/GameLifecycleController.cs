@@ -1,5 +1,6 @@
 using backend.Api.Contracts;
 using backend.Application.Abstractions;
+using backend.Application.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authorization;
