@@ -7,6 +7,7 @@
     "dev": "vite --host localhost --port 5180 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "check:locales": "node scripts/check-locale-keys.mjs",
     "generate:contracts": "openapi-typescript ../backend/openapi/deadmans.v1.yaml -o src/shared/api/contracts/generated.ts",
     "generate:realtime": "node scripts/generate-realtime-contracts.mjs",
     "generate:transport": "npm run generate:contracts && npm run generate:realtime",
