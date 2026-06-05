@@ -19,6 +19,6 @@ After a successful DB write, SignalR publish is **best-effort** (`RealtimePublis
 
 - Backend: `backend/Api/Contracts/RealtimeHubContracts.cs` (paths + event names; must match OpenAPI).
 - Frontend: `npm --prefix frontend run generate:realtime` → `frontend/src/shared/realtime/generated.ts`.
-- HTTP payload types: `GameCellOpenedEventDto` in generated OpenAPI types (`npm run generate:contracts`).
+- HTTP payload types: `GameCellOpenedEventDto` in generated OpenAPI types (`npm run generate:transport`).
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

@@ -10,7 +10,7 @@
 | `backend/` | Web API, EF Core, миграции |
 | `legacy-v1/` | reference, не участвует в активной разработке |
 
-Дополнительно: [`STACK.md`](STACK.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
+Дополнительно: [`docs/development.md`](docs/development.md) · [`STACK.md`](STACK.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
 
 ## Требования для локального запуска
 
@@ -51,8 +51,8 @@
 
 ## Не Windows
 
-Локальный запуск на macOS/Linux и прочие детали по частям приложения — в **`backend/README.md`** и **`frontend/README.md`**.
+Локальный запуск на macOS/Linux и общий cross-platform workflow — в [`docs/development.md`](docs/development.md).
 
 ## Контракт API и типы на frontend
 
-Источник правды: `backend/openapi/deadmans.v1.yaml`. После изменений контракта типы для frontend перегенерируются командой из `frontend` (см. [`frontend/README.md`](frontend/README.md), скрипт `generate:contracts`).
+Источник правды: `backend/openapi/deadmans.v1.yaml`. После изменений контракта transport-артефакты frontend перегенерируются командой `npm --prefix frontend run generate:transport` (см. [`docs/development.md`](docs/development.md)).
