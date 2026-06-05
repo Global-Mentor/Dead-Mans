@@ -274,6 +274,84 @@ public sealed class DbGameRegistrationPersistence : IGameRegistrationPersistence
         CancellationToken cancellationToken = default
     )
     {
+        if (_dbContext.Database.IsRelational())
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"""SELECT 1 FROM game_participation_slots WHERE "Id" = {slotId} FOR UPDATE""",
+                cancellationToken
+            );
+            if (teamId.HasValue)
+            {
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"""SELECT 1 FROM game_teams WHERE "Id" = {teamId.Value} FOR UPDATE""",
+                    cancellationToken
+                );
+            }
+
+            var validationError = await ValidateInvitationTargetAsync(
+                gameId,
+                slotId,
+                invitedUserId,
+                teamId,
+                cancellationToken
+            );
+            if (validationError != GameRegistrationErrorCode.None)
+            {
+                return Fail<RegistrationInvitationDto>(validationError);
+            }
+
+            var transactionalResult = await SaveAdminInvitationAsync(
+                gameId,
+                adminUserId,
+                slotId,
+                slotIndex,
+                invitedUserId,
+                teamId,
+                cancellationToken
+            );
+            if (!transactionalResult.Success)
+            {
+                return transactionalResult;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return transactionalResult;
+        }
+
+        var inMemoryValidationError = await ValidateInvitationTargetAsync(
+            gameId,
+            slotId,
+            invitedUserId,
+            teamId,
+            cancellationToken
+        );
+        if (inMemoryValidationError != GameRegistrationErrorCode.None)
+        {
+            return Fail<RegistrationInvitationDto>(inMemoryValidationError);
+        }
+
+        return await SaveAdminInvitationAsync(
+            gameId,
+            adminUserId,
+            slotId,
+            slotIndex,
+            invitedUserId,
+            teamId,
+            cancellationToken
+        );
+    }
+
+    private async Task<GameRegistrationResult<RegistrationInvitationDto>> SaveAdminInvitationAsync(
+        Guid gameId,
+        Guid adminUserId,
+        Guid slotId,
+        int slotIndex,
+        Guid invitedUserId,
+        Guid? teamId,
+        CancellationToken cancellationToken
+    )
+    {
         var invitation = new GameParticipationInvitation
         {
             Id = Guid.NewGuid(),
@@ -288,7 +366,19 @@ public sealed class DbGameRegistrationPersistence : IGameRegistrationPersistence
         };
 
         _dbContext.GameParticipationInvitations.Add(invitation);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (PostgresUniqueViolation.TryGetConstraintName(ex, out _))
+        {
+            _logger.LogWarning(
+                ex,
+                "Create admin invitation failed due to unique constraint for game {GameId}.",
+                gameId
+            );
+            return Fail<RegistrationInvitationDto>(GameRegistrationUniqueViolationMapper.Map(ex));
+        }
 
         var dto = new RegistrationInvitationDto(
             invitation.Id,
@@ -299,6 +389,104 @@ public sealed class DbGameRegistrationPersistence : IGameRegistrationPersistence
             invitation.CreatedAtUtc
         );
         return new GameRegistrationResult<RegistrationInvitationDto>(true, dto, GameRegistrationErrorCode.None);
+    }
+
+    private async Task<GameRegistrationErrorCode> ValidateInvitationTargetAsync(
+        Guid gameId,
+        Guid slotId,
+        Guid invitedUserId,
+        Guid? teamId,
+        CancellationToken cancellationToken
+    )
+    {
+        var invitedUserExistsAndActive = await _dbContext.Users.AnyAsync(
+            user => user.Id == invitedUserId && user.IsActive,
+            cancellationToken
+        );
+        if (!invitedUserExistsAndActive)
+        {
+            return GameRegistrationErrorCode.UserNotFound;
+        }
+
+        var slotExists = await _dbContext.GameParticipationSlots.AnyAsync(
+            slot => slot.Id == slotId && slot.GameId == gameId,
+            cancellationToken
+        );
+        if (!slotExists)
+        {
+            return GameRegistrationErrorCode.SlotNotFound;
+        }
+
+        var userAlreadyOnTeam = await (
+            from member in _dbContext.GameTeamMembers
+            join team in _dbContext.GameTeams on member.TeamId equals team.Id
+            where member.GameId == gameId
+                && member.UserId == invitedUserId
+                && member.LeftAtUtc == null
+                && (team.Status == TeamStatusValue.Forming || team.Status == TeamStatusValue.Confirmed)
+            select member.Id
+        ).AnyAsync(cancellationToken);
+        if (userAlreadyOnTeam)
+        {
+            return GameRegistrationErrorCode.UserAlreadyOnTeam;
+        }
+
+        var hasPendingInvitationForUser = await _dbContext.GameParticipationInvitations.AnyAsync(
+            invitation =>
+                invitation.GameId == gameId
+                && invitation.InvitedUserId == invitedUserId
+                && invitation.Status == ParticipationInvitationStatusValue.Pending,
+            cancellationToken
+        );
+        if (hasPendingInvitationForUser)
+        {
+            return GameRegistrationErrorCode.PendingInvitationExists;
+        }
+
+        var slotAlreadyBlockedByPendingInvite = await _dbContext.GameParticipationInvitations.AnyAsync(
+            invitation =>
+                invitation.GameId == gameId
+                && invitation.SlotId == slotId
+                && invitation.Status == ParticipationInvitationStatusValue.Pending,
+            cancellationToken
+        );
+        if (slotAlreadyBlockedByPendingInvite)
+        {
+            return GameRegistrationErrorCode.SlotNotAvailable;
+        }
+
+        if (teamId.HasValue)
+        {
+            var team = await _dbContext.GameTeams
+                .Where(candidate => candidate.Id == teamId.Value && candidate.GameId == gameId)
+                .Select(candidate => new { candidate.SlotId, candidate.Status })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (team is null)
+            {
+                return GameRegistrationErrorCode.TeamNotFound;
+            }
+
+            if (team.SlotId != slotId || team.Status != TeamStatusValue.Forming)
+            {
+                return GameRegistrationErrorCode.TeamNotJoinable;
+            }
+
+            return GameRegistrationErrorCode.None;
+        }
+
+        var slotAlreadyOccupiedByTeam = await _dbContext.GameTeams.AnyAsync(
+            team =>
+                team.GameId == gameId
+                && team.SlotId == slotId
+                && (team.Status == TeamStatusValue.Forming || team.Status == TeamStatusValue.Confirmed),
+            cancellationToken
+        );
+        if (slotAlreadyOccupiedByTeam)
+        {
+            return GameRegistrationErrorCode.SlotNotAvailable;
+        }
+
+        return GameRegistrationErrorCode.None;
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistAcceptInvitationAsync(

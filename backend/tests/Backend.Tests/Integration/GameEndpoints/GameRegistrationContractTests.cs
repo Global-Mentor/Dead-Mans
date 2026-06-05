@@ -204,6 +204,95 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamNotJoinable, payload.Code);
     }
 
+    [Fact]
+    public async Task CreateInvitation_WhenDuplicatePendingForUser_ReturnsConflict()
+    {
+        await ClearRegistrationDataAsync();
+        var adminId = Guid.NewGuid();
+        var invitedUserId = Guid.NewGuid();
+        await SeedReadyGameAsync();
+        await SeedUserAsync(invitedUserId, "invited-player");
+        var slotId = await GetFirstSlotIdForReadyGameAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Admin],
+            adminId
+        );
+
+        var request = new CreateAdminInvitationRequestDto(slotId, invitedUserId, null);
+
+        var firstResponse = await adminClient.PostAsJsonAsync("/api/game/registration/invitations", request);
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+
+        var secondResponse = await adminClient.PostAsJsonAsync("/api/game/registration/invitations", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        var payload = await secondResponse.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.GameRegistrationPendingInvitationExists, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationPendingInvitation, payload.Code);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_WhenInvitedUserMissing_ReturnsNotFoundWithSpecificCode()
+    {
+        await ClearRegistrationDataAsync();
+        var adminId = Guid.NewGuid();
+        await SeedReadyGameAsync();
+        var slotId = await GetFirstSlotIdForReadyGameAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Admin],
+            adminId
+        );
+
+        var response = await adminClient.PostAsJsonAsync(
+            "/api/game/registration/invitations",
+            new CreateAdminInvitationRequestDto(slotId, Guid.NewGuid(), null)
+        );
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.UserMissingOrInactive, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationUserNotFound, payload.Code);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_WhenSlotAlreadyHasPendingInvite_ReturnsConflict()
+    {
+        await ClearRegistrationDataAsync();
+        var adminId = Guid.NewGuid();
+        var firstInvitedUserId = Guid.NewGuid();
+        var secondInvitedUserId = Guid.NewGuid();
+        await SeedReadyGameAsync();
+        await SeedUserAsync(firstInvitedUserId, "invited-one");
+        await SeedUserAsync(secondInvitedUserId, "invited-two");
+        var slotId = await GetFirstSlotIdForReadyGameAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Admin],
+            adminId
+        );
+
+        var firstResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/registration/invitations",
+            new CreateAdminInvitationRequestDto(slotId, firstInvitedUserId, null)
+        );
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+
+        var secondResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/registration/invitations",
+            new CreateAdminInvitationRequestDto(slotId, secondInvitedUserId, null)
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        var payload = await secondResponse.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.GameRegistrationSlotNotAvailable, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationSlotNotAvailable, payload.Code);
+    }
+
     private async Task ClearRegistrationDataAsync()
     {
         using var scope = _factory.Services.CreateScope();
@@ -339,6 +428,18 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         return await dbContext.Games
             .Where(game => game.Status == GameStatusValue.Ready)
             .Select(game => game.Id)
+            .FirstAsync();
+    }
+
+    private async Task<Guid> GetFirstSlotIdForReadyGameAsync()
+    {
+        var gameId = await GetReadyGameIdAsync();
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await dbContext.GameParticipationSlots
+            .Where(slot => slot.GameId == gameId)
+            .OrderBy(slot => slot.SlotIndex)
+            .Select(slot => slot.Id)
             .FirstAsync();
     }
 

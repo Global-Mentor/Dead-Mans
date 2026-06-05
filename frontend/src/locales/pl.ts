@@ -236,6 +236,7 @@ const pl = {
         teamNotJoinable: 'Do tej drużyny nie można dołączyć ani jej potwierdzić w tym stanie.',
         notTeamMember: 'Nie jesteś w drużynie w tej grze.',
         invitationInvalid: 'Zaproszenie nie zostało znalezione lub nie jest już aktywne.',
+        userNotFound: 'Wybrany użytkownik nie został znaleziony lub jest nieaktywny.',
         slotNotFound: 'Nie znaleziono slotu uczestnictwa.',
         slotNotAvailable: 'Slot uczestnictwa jest niedostępny.',
         pendingInvitation: 'Ten gracz ma już oczekujące zaproszenie w tej grze.',

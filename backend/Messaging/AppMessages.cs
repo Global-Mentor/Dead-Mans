@@ -72,6 +72,7 @@ public static class AppMessages
         public const string GameRegistrationInvitationInvalid = "game_registration.invitation_invalid";
         public const string GameRegistrationSlotNotFound = "game_registration.slot_not_found";
         public const string GameRegistrationSlotNotAvailable = "game_registration.slot_not_available";
+        public const string GameRegistrationUserNotFound = "game_registration.user_not_found";
         public const string GameRegistrationPendingInvitation = "game_registration.pending_invitation";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
     }
