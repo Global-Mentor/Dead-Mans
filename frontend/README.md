@@ -59,7 +59,7 @@ Frontend использует общий `httpClient`.
 
 ## Локальный запуск
 
-Backend должен быть поднят по инструкции в корневом `README.md` (`setup-local.ps1` / `setup-local.bat`).
+Backend должен быть поднят по инструкции в [`docs/development.md`](../docs/development.md) (`backend/scripts/setup-local.ps1` / `setup-local.bat`).
 
 ```bash
 npm install

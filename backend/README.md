@@ -22,7 +22,7 @@ Backend поддерживает auth, game board, game setup (admin draft), gam
 
 ## Локальный запуск
 
-Bootstrap и сброс: корневой `README.md` (`scripts/setup-local.ps1`, `reset-local.ps1`; на Windows — `setup-local.bat`, `reset-local.bat` в корне репо).
+Bootstrap и сброс: [`docs/development.md`](../docs/development.md) (`backend/scripts/setup-local.ps1`, `backend/scripts/reset-local.ps1`; на Windows — `setup-local.bat`, `reset-local.bat` в корне репо).
 
 Сервер из каталога `backend/`:
 
@@ -52,7 +52,7 @@ Game setup (admin draft):
 Uploader:
 
 - `tools/SeedTestGameBoardMedia/`
-- `scripts/upload-test-game-board-media.ps1`
+- `backend/scripts/upload-test-game-board-media.ps1`
 
 Migration создает тестовую игру и записи `media_assets` / `board_cell_media`, а uploader заливает в bucket `deadman` реальные PNG-файлы с теми же object key (`games/{gameId}/cards/{col}-{row}.png`).
 

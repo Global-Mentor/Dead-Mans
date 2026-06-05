@@ -75,7 +75,7 @@ flowchart LR
 
 ## Локальное развертывание
 
-Корневой `README.md`: `backend/scripts/setup-local.ps1` (идемпотентный bootstrap), `reset-local.ps1` (удаление volumes + повторный setup). В Windows в корне — `setup-local.bat` / `reset-local.bat` как обёртки над теми же `.ps1`.
+Общий workflow: [`docs/development.md`](../development.md). Скрипты bootstrap/reset: `backend/scripts/setup-local.ps1` и `backend/scripts/reset-local.ps1`. В Windows в корне — `setup-local.bat` / `reset-local.bat` как обёртки над теми же `.ps1`.
 
 ## Контракты
 
@@ -86,5 +86,5 @@ Source of truth:
 Frontend regeneration:
 
 ```bash
-npm --prefix frontend run generate:contracts
+npm --prefix frontend run generate:transport
 ```

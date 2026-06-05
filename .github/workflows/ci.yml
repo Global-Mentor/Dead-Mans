@@ -30,14 +30,14 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend install
 
-      - name: Generate frontend contracts
-        run: npm --prefix frontend run generate:contracts
+      - name: Generate frontend transport artifacts
+        run: npm --prefix frontend run generate:transport
 
       - name: Validate OpenAPI contract
         run: npx --yes swagger-cli validate backend/openapi/deadmans.v1.yaml
 
-      - name: Verify generated contracts are up to date
-        run: git diff --exit-code -- frontend/src/shared/api/contracts
+      - name: Verify generated transport artifacts are up to date
+        run: git diff --exit-code -- frontend/src/shared/api/contracts frontend/src/shared/realtime/generated.ts
 
       - name: Build backend
         run: dotnet build backend/backend.slnx

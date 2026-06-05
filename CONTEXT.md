@@ -140,10 +140,10 @@ Auth требует корректно настроенный `ApplicationDbCont
 
 - `backend/openapi/deadmans.v1.yaml`
 
-Frontend генерирует типы через:
+Frontend генерирует transport-артефакты через:
 
 ```bash
-npm --prefix frontend run generate:contracts
+npm --prefix frontend run generate:transport
 ```
 
 Swagger UI в development должен смотреть на тот же YAML-файл, чтобы документация и generation не расходились.
