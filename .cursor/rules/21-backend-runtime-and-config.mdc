@@ -8,8 +8,10 @@ alwaysApply: false
 
 - Treat backend config and scripts as architectural code. `appsettings*.json`, project files, solution files, and PowerShell scripts should preserve the chosen startup, persistence, storage, and deployment model.
 - Keep runtime configuration env-driven and compatible with the documented local-to-production path: Postgres-first persistence, S3-compatible storage, Docker-based local infra, and explicit startup validation.
+- Keep request-pipeline middleware order intentional and stable. Preserve centralized exception handling middleware that produces the canonical API error payload.
 - Keep shared option/config shapes in stable modules when they are referenced across startup, controllers, and application services. Do not hide cross-layer runtime contracts inside a single infrastructure adapter namespace.
 - Do not add config that creates a second hidden runtime path when the project already has a documented one.
 - Keep project files and scripts coherent with the real workflow: build, test, migrations, local setup/reset, and media bootstrap.
+- Keep backend observability baseline intact: error responses should preserve request correlation data and error metrics should remain emitted from central helpers/middleware.
 - Prefer explicit failure for broken config, missing secrets, bad storage wiring, or invalid startup invariants over partial fallback behavior.
 - When a script or config path is replaced, remove or fully rewrite the old path; do not accumulate dead setup variants.

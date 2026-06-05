@@ -11,5 +11,6 @@ alwaysApply: false
 - Do not create parallel hand-maintained hub/event names outside OpenAPI and the generated or mirrored constant layers.
 - Change the contract first, then bring backend controllers/mappings and frontend usage in sync.
 - Keep schemas, names, status codes, auth expectations, and examples aligned with actual behavior. Do not patch implementation only and leave the contract behind.
+- Keep `components.schemas.ErrorResponse` aligned with runtime payload shape (`error`, `code`, `requestId`) and keep `code.enum` synchronized with `AppMessages.ErrorCodes` in backend.
 - After contract changes, regenerate frontend transport artifacts with `npm --prefix frontend run generate:transport`, commit generated files (`src/shared/api/contracts/` and `src/shared/realtime/generated.ts`), and keep CI clean.
 - Keep transport naming consistent across OpenAPI schemas, API DTOs, and frontend aliases. Do not create parallel hand-maintained transport definitions or one-off request/response shapes.
