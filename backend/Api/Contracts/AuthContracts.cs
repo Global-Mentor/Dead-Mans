@@ -13,4 +13,4 @@ public sealed record AuthSessionDto(
     IReadOnlyList<AuthRole> Roles
 );
 
-public sealed record ErrorResponse(string Error, string? Code = null);
+public sealed record ErrorResponse(string Error, string? Code = null, string? RequestId = null);

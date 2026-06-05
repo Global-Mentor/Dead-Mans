@@ -30,7 +30,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var snapshot = await _registrationService.GetRegistrationSnapshotAsync(
@@ -55,7 +55,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.CreateTeamAsync(
@@ -73,7 +73,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.JoinTeamAsync(userId.Value, teamId, cancellationToken);
@@ -87,7 +87,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.LeaveTeamAsync(userId.Value, cancellationToken);
@@ -96,7 +96,7 @@ public sealed class GameRegistrationController : ControllerBase
             return NoContent();
         }
 
-        return GameRegistrationErrorMapping.ToActionResult(result.Error);
+        return GameRegistrationErrorMapping.ToActionResult(this, result.Error);
     }
 
     [HttpGet("teams")]
@@ -122,7 +122,7 @@ public sealed class GameRegistrationController : ControllerBase
         var adminId = RequireUserId();
         if (adminId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.ConfirmTeamAsync(
@@ -141,7 +141,7 @@ public sealed class GameRegistrationController : ControllerBase
         var adminId = RequireUserId();
         if (adminId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.RejectTeamAsync(
@@ -154,7 +154,7 @@ public sealed class GameRegistrationController : ControllerBase
             return NoContent();
         }
 
-        return GameRegistrationErrorMapping.ToActionResult(result.Error);
+        return GameRegistrationErrorMapping.ToActionResult(this, result.Error);
     }
 
     [HttpPost("invitations")]
@@ -168,7 +168,7 @@ public sealed class GameRegistrationController : ControllerBase
         var adminId = RequireUserId();
         if (adminId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.CreateAdminInvitationAsync(
@@ -183,7 +183,7 @@ public sealed class GameRegistrationController : ControllerBase
             return StatusCode(StatusCodes.Status201Created, result.Value.ToDto());
         }
 
-        return GameRegistrationErrorMapping.ToActionResult(result.Error);
+        return GameRegistrationErrorMapping.ToActionResult(this, result.Error);
     }
 
     [HttpPost("invitations/{invitationId:guid}/accept")]
@@ -196,7 +196,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.AcceptInvitationAsync(
@@ -217,7 +217,7 @@ public sealed class GameRegistrationController : ControllerBase
         var userId = RequireUserId();
         if (userId is null)
         {
-            return Unauthorized(new ApiContracts.ErrorResponse(AppMessages.Client.AuthenticationRequired));
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
         var result = await _registrationService.DeclineInvitationAsync(
@@ -230,7 +230,7 @@ public sealed class GameRegistrationController : ControllerBase
             return NoContent();
         }
 
-        return GameRegistrationErrorMapping.ToActionResult(result.Error);
+        return GameRegistrationErrorMapping.ToActionResult(this, result.Error);
     }
 
     private Guid? RequireUserId() => HttpContext.TryGetUserId();
@@ -245,6 +245,6 @@ public sealed class GameRegistrationController : ControllerBase
             return StatusCode(successStatusCode, result.Value.ToDto());
         }
 
-        return GameRegistrationErrorMapping.ToActionResult(result.Error);
+        return GameRegistrationErrorMapping.ToActionResult(this, result.Error);
     }
 }

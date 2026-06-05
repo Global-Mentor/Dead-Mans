@@ -51,10 +51,10 @@ public sealed class ActiveUserMiddleware
 
         if (IsApiOrAuthPath(context.Request.Path))
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/json; charset=utf-8";
-            await context.Response.WriteAsJsonAsync(
-                new ErrorResponse(AppMessages.Client.UserMissingOrInactive)
+            await ErrorResponseFactory.WriteAsync(
+                context.Response,
+                StatusCodes.Status401Unauthorized,
+                AppMessages.Client.UserMissingOrInactive
             );
             return;
         }

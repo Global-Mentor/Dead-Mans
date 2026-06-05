@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
+using System.Text;
 using backend.Application.Abstractions.Auth;
 using backend.Messaging;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 
 namespace backend.Application.Features.Auth;
@@ -65,7 +65,7 @@ public sealed class TwitchAuthFlowService : ITwitchAuthFlowService
             query["reason"] = reason;
         }
 
-        return QueryHelpers.AddQueryString(_twitchAuthOptions.FrontendRedirectUri, query);
+        return AddQueryString(_twitchAuthOptions.FrontendRedirectUri, query);
     }
 
     private static string CreateState()
@@ -76,5 +76,31 @@ public sealed class TwitchAuthFlowService : ITwitchAuthFlowService
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');
+    }
+
+    private static string AddQueryString(string uri, IReadOnlyDictionary<string, string?> queryParameters)
+    {
+        if (queryParameters.Count == 0)
+        {
+            return uri;
+        }
+
+        var fragmentIndex = uri.IndexOf('#');
+        var baseUri = fragmentIndex >= 0 ? uri[..fragmentIndex] : uri;
+        var fragment = fragmentIndex >= 0 ? uri[fragmentIndex..] : string.Empty;
+        var separator = baseUri.Contains('?') ? '&' : '?';
+
+        var queryBuilder = new StringBuilder(baseUri);
+        foreach (var (key, value) in queryParameters)
+        {
+            queryBuilder.Append(separator);
+            queryBuilder.Append(Uri.EscapeDataString(key));
+            queryBuilder.Append('=');
+            queryBuilder.Append(Uri.EscapeDataString(value ?? string.Empty));
+            separator = '&';
+        }
+
+        queryBuilder.Append(fragment);
+        return queryBuilder.ToString();
     }
 }

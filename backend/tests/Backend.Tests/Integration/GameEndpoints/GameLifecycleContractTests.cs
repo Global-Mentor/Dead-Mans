@@ -2,11 +2,14 @@ using System.Net;
 using System.Net.Http.Json;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
+using backend.Application.Abstractions;
+using backend.Application.Contracts;
 using backend.Data;
 using backend.Domain.Persistence;
 using backend.Messaging;
 using Backend.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Backend.Tests.Integration.GameEndpoints;
 
@@ -41,6 +44,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.NoDraftGameForSetup, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleDraftNotFound, payload.Code);
     }
 
     [Fact]
@@ -113,6 +117,54 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.GameNotReadyForStart, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleGameNotReady, payload.Code);
+    }
+
+    [Fact]
+    public async Task OpenRegistration_WhenServiceThrows_ReturnsInternalServerErrorPayload()
+    {
+        using var adminClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Admin],
+            configureServices: services =>
+            {
+                services.RemoveAll<IGameLifecycleService>();
+                services.AddSingleton<IGameLifecycleService>(new ThrowingGameLifecycleService());
+            }
+        );
+
+        var response = await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.UnexpectedServerError, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.UnexpectedServerError, payload.Code);
+        Assert.False(string.IsNullOrWhiteSpace(payload.RequestId));
+    }
+
+    [Fact]
+    public async Task OpenRegistration_WhenParallelRequests_ProducesOkAndHandledError()
+    {
+        await ClearGamesAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var setupResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Parallel lifecycle draft")
+        );
+        Assert.Equal(HttpStatusCode.Created, setupResponse.StatusCode);
+
+        var firstOpen = adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        var secondOpen = adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+
+        var responses = await Task.WhenAll(firstOpen, secondOpen);
+        var statuses = responses.Select(response => response.StatusCode).ToArray();
+
+        Assert.All(
+            statuses,
+            status => Assert.Contains(status, [HttpStatusCode.OK, HttpStatusCode.Conflict, HttpStatusCode.NotFound])
+        );
+        Assert.DoesNotContain(HttpStatusCode.InternalServerError, statuses);
     }
 
     private async Task ClearGamesAsync()
@@ -128,5 +180,17 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
         dbContext.Games.RemoveRange(dbContext.Games);
         await dbContext.SaveChangesAsync();
+    }
+
+    private sealed class ThrowingGameLifecycleService : IGameLifecycleService
+    {
+        public Task<GameLifecycleResult> OpenRegistrationAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated lifecycle failure.");
+
+        public Task<GameLifecycleResult> StartGameAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated lifecycle failure.");
+
+        public Task<GameLifecycleResult> FinishGameAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated lifecycle failure.");
     }
 }

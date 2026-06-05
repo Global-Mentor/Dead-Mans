@@ -1,6 +1,7 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Contracts;
+using backend.Api.Http;
 using backend.Api.Mapping;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authorization;
@@ -30,25 +31,17 @@ public sealed class GameController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        try
+        var board = await _gameBoardService.GetCurrentBoardAsync(cancellationToken);
+        if (board is null)
         {
-            var board = await _gameBoardService.GetCurrentBoardAsync(cancellationToken);
-            if (board is null)
-            {
-                _logger.LogInformation(AppMessages.Logs.GameNoBoardForGet);
-                return NotFound(new ErrorResponse(AppMessages.Client.NoCurrentGameBoard));
-            }
-
-            return Ok(board.ToDto());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameBoardLoadFailed);
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToLoadCurrentGame)
+            _logger.LogInformation(AppMessages.Logs.GameNoBoardForGet);
+            return this.NotFoundError(
+                AppMessages.Client.NoCurrentGameBoard,
+                AppMessages.ErrorCodes.GameBoardNotFound
             );
         }
+
+        return Ok(board.ToDto());
     }
 
     [HttpPost("cells/{cellId:guid}/open")]
@@ -60,23 +53,15 @@ public sealed class GameController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> OpenCell(Guid cellId, CancellationToken cancellationToken)
     {
-        try
+        var openResult = await _gameBoardService.TryOpenCellAsync(cellId, cancellationToken);
+        if (openResult is null)
         {
-            var openResult = await _gameBoardService.TryOpenCellAsync(cellId, cancellationToken);
-            if (openResult is null)
-            {
-                return NotFound(new ErrorResponse(AppMessages.Client.GameCellNotFound));
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameCellOpenFailed, cellId);
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToOpenGameCell)
+            return this.NotFoundError(
+                AppMessages.Client.GameCellNotFound,
+                AppMessages.ErrorCodes.GameBoardCellNotFound
             );
         }
+
+        return NoContent();
     }
 }

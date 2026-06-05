@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using backend.Api.Contracts;
+using backend.Api.Http;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Mapping;
 using backend.Infrastructure.Auth;
@@ -38,7 +39,7 @@ public sealed class AuthSessionController : ControllerBase
         if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var parsedUserId))
         {
             _logger.LogWarning(AppMessages.Logs.AuthSessionMissingClaim);
-            return Unauthorized(new ErrorResponse(AppMessages.Client.AuthCookieMissingClaims));
+            return this.UnauthorizedError(AppMessages.Client.AuthCookieMissingClaims);
         }
 
         var session = await _authSessionService.GetSessionAsync(parsedUserId, HttpContext.RequestAborted);
@@ -46,7 +47,7 @@ public sealed class AuthSessionController : ControllerBase
         {
             _logger.LogWarning(AppMessages.Logs.AuthSessionUserGone, parsedUserId);
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Unauthorized(new ErrorResponse(AppMessages.Client.UserMissingOrInactive));
+            return this.UnauthorizedError(AppMessages.Client.UserMissingOrInactive);
         }
 
         return Ok(session.ToDto());
@@ -59,9 +60,9 @@ public sealed class AuthSessionController : ControllerBase
     {
         if (!IsApiClientRequest())
         {
-            return StatusCode(
+            return this.StatusError(
                 StatusCodes.Status403Forbidden,
-                new ErrorResponse(AppMessages.Client.LogoutRequiresApiClientHeader)
+                AppMessages.Client.LogoutRequiresApiClientHeader
             );
         }
 

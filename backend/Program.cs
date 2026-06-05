@@ -1,9 +1,11 @@
 using backend.Api.Contracts;
+using backend.Api.Http;
 using backend.Application.Abstractions.Auth;
 using backend.Infrastructure.Auth;
 using backend.Messaging;
 using backend.Infrastructure.Configuration;
 using backend.Infrastructure.DependencyInjection;
+using backend.Infrastructure.Http;
 using backend.Infrastructure.Realtime;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -170,6 +172,7 @@ try
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
+    app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
@@ -236,8 +239,8 @@ finally
 
 static Task WriteErrorResponseAsync(HttpResponse response, int statusCode, string message)
 {
-    response.StatusCode = statusCode;
-    return response.WriteAsJsonAsync(new ErrorResponse(message));
+    ApiErrorMetrics.Record(statusCode, null, "auth");
+    return ErrorResponseFactory.WriteAsync(response, statusCode, message);
 }
 
 static bool TryParseCidrNetwork(

@@ -1,6 +1,7 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Contracts;
+using backend.Api.Http;
 using backend.Api.Mapping;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authorization;
@@ -30,25 +31,17 @@ public sealed class GameSetupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        try
+        var snapshot = await _gameSetupService.GetDraftSetupAsync(cancellationToken);
+        if (snapshot is null)
         {
-            var snapshot = await _gameSetupService.GetDraftSetupAsync(cancellationToken);
-            if (snapshot is null)
-            {
-                _logger.LogInformation(AppMessages.Logs.GameSetupDraftNotFound);
-                return NotFound(new ErrorResponse(AppMessages.Client.NoDraftGameForSetup));
-            }
-
-            return Ok(snapshot.ToSetupDto());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftLoadFailed);
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToLoadGameSetup)
+            _logger.LogInformation(AppMessages.Logs.GameSetupDraftNotFound);
+            return this.NotFoundError(
+                AppMessages.Client.NoDraftGameForSetup,
+                AppMessages.ErrorCodes.GameSetupNoDraft
             );
         }
+
+        return Ok(snapshot.ToSetupDto());
     }
 
     [HttpPost]
@@ -63,36 +56,24 @@ public sealed class GameSetupController : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        try
+        var result = await _gameSetupService.CreateDraftSetupAsync(request?.Title ?? string.Empty, cancellationToken);
+        return result.Outcome switch
         {
-            var result = await _gameSetupService.CreateDraftSetupAsync(request?.Title ?? string.Empty, cancellationToken);
-            return result.Outcome switch
-            {
-                CreateDraftGameSetupOutcome.Created when result.Snapshot is not null =>
-                    CreatedAtAction(nameof(Get), null, result.Snapshot.ToSetupDto()),
-                CreateDraftGameSetupOutcome.DraftAlreadyExists => Conflict(
-                    new ErrorResponse(AppMessages.Client.DraftGameAlreadyExists)
-                ),
-                CreateDraftGameSetupOutcome.InvalidTitle => BadRequest(
-                    new ErrorResponse(
-                        AppMessages.Client.InvalidGameSetupTitle,
-                        AppMessages.ErrorCodes.InvalidGameSetupTitle
-                    )
-                ),
-                _ => StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ErrorResponse(AppMessages.Client.UnableToCreateGameSetup)
-                )
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftCreateFailed);
-            return StatusCode(
+            CreateDraftGameSetupOutcome.Created when result.Snapshot is not null =>
+                CreatedAtAction(nameof(Get), null, result.Snapshot.ToSetupDto()),
+            CreateDraftGameSetupOutcome.DraftAlreadyExists => this.ConflictError(
+                AppMessages.Client.DraftGameAlreadyExists,
+                AppMessages.ErrorCodes.GameSetupDraftExists
+            ),
+            CreateDraftGameSetupOutcome.InvalidTitle => this.BadRequestError(
+                AppMessages.Client.InvalidGameSetupTitle,
+                AppMessages.ErrorCodes.InvalidGameSetupTitle
+            ),
+            _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToCreateGameSetup)
-            );
-        }
+                AppMessages.Client.UnableToCreateGameSetup
+            )
+        };
     }
 
     [HttpPut]
@@ -110,53 +91,45 @@ public sealed class GameSetupController : ControllerBase
     {
         if (request is null)
         {
-            return BadRequest(new ErrorResponse(AppMessages.Client.InvalidGameSetupSaveRequest));
-        }
-
-        try
-        {
-            var result = await _gameSetupService.UpdateDraftSetupAsync(
-                request.ToUpdateModel(),
-                cancellationToken
+            return this.BadRequestError(
+                AppMessages.Client.InvalidGameSetupSaveRequest,
+                AppMessages.ErrorCodes.GameSetupInvalidSaveRequest
             );
-
-            return result.Outcome switch
-            {
-                UpdateDraftGameSetupOutcome.Updated when result.Snapshot is not null =>
-                    Ok(result.Snapshot.ToSetupDto()),
-                UpdateDraftGameSetupOutcome.NoDraftFound => NotFound(
-                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
-                ),
-                UpdateDraftGameSetupOutcome.StaleVersion => Conflict(
-                    new ErrorResponse(
-                        AppMessages.Client.GameSetupDraftVersionConflict,
-                        AppMessages.ErrorCodes.GameSetupDraftVersionConflict
-                    )
-                ),
-                UpdateDraftGameSetupOutcome.InvalidTitle => BadRequest(
-                    new ErrorResponse(
-                        AppMessages.Client.InvalidGameSetupTitle,
-                        AppMessages.ErrorCodes.InvalidGameSetupTitle
-                    )
-                ),
-                UpdateDraftGameSetupOutcome.InvalidRowLabels
-                or UpdateDraftGameSetupOutcome.InvalidColumnLabels
-                or UpdateDraftGameSetupOutcome.InvalidCells =>
-                    BadRequest(new ErrorResponse(AppMessages.Client.InvalidGameSetupSaveRequest)),
-                _ => StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ErrorResponse(AppMessages.Client.UnableToSaveGameSetup)
-                )
-            };
         }
-        catch (Exception ex)
+
+        var result = await _gameSetupService.UpdateDraftSetupAsync(
+            request.ToUpdateModel(),
+            cancellationToken
+        );
+
+        return result.Outcome switch
         {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftSaveFailed);
-            return StatusCode(
+            UpdateDraftGameSetupOutcome.Updated when result.Snapshot is not null =>
+                Ok(result.Snapshot.ToSetupDto()),
+            UpdateDraftGameSetupOutcome.NoDraftFound => this.NotFoundError(
+                AppMessages.Client.NoDraftGameForSetup,
+                AppMessages.ErrorCodes.GameSetupNoDraft
+            ),
+            UpdateDraftGameSetupOutcome.StaleVersion => this.ConflictError(
+                AppMessages.Client.GameSetupDraftVersionConflict,
+                AppMessages.ErrorCodes.GameSetupDraftVersionConflict
+            ),
+            UpdateDraftGameSetupOutcome.InvalidTitle => this.BadRequestError(
+                AppMessages.Client.InvalidGameSetupTitle,
+                AppMessages.ErrorCodes.InvalidGameSetupTitle
+            ),
+            UpdateDraftGameSetupOutcome.InvalidRowLabels
+            or UpdateDraftGameSetupOutcome.InvalidColumnLabels
+            or UpdateDraftGameSetupOutcome.InvalidCells =>
+                this.BadRequestError(
+                    AppMessages.Client.InvalidGameSetupSaveRequest,
+                    AppMessages.ErrorCodes.GameSetupInvalidSaveRequest
+                ),
+            _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToSaveGameSetup)
-            );
-        }
+                AppMessages.Client.UnableToSaveGameSetup
+            )
+        };
     }
 
     [HttpDelete]
@@ -167,28 +140,18 @@ public sealed class GameSetupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(CancellationToken cancellationToken)
     {
-        try
+        var result = await _gameSetupService.DeleteDraftSetupAsync(cancellationToken);
+        return result.Outcome switch
         {
-            var result = await _gameSetupService.DeleteDraftSetupAsync(cancellationToken);
-            return result.Outcome switch
-            {
-                DeleteDraftGameSetupOutcome.Deleted => NoContent(),
-                DeleteDraftGameSetupOutcome.NoDraftFound => NotFound(
-                    new ErrorResponse(AppMessages.Client.NoDraftGameForSetup)
-                ),
-                _ => StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetup)
-                )
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, AppMessages.Logs.GameSetupDraftDeleteFailed);
-            return StatusCode(
+            DeleteDraftGameSetupOutcome.Deleted => NoContent(),
+            DeleteDraftGameSetupOutcome.NoDraftFound => this.NotFoundError(
+                AppMessages.Client.NoDraftGameForSetup,
+                AppMessages.ErrorCodes.GameSetupNoDraft
+            ),
+            _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
-                new ErrorResponse(AppMessages.Client.UnableToDeleteGameSetup)
-            );
-        }
+                AppMessages.Client.UnableToDeleteGameSetup
+            )
+        };
     }
 }

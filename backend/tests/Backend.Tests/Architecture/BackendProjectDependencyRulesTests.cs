@@ -1,0 +1,417 @@
+using System.Xml.Linq;
+using System.Text.RegularExpressions;
+using backend.Messaging;
+
+namespace Backend.Tests.Architecture;
+
+public sealed class BackendProjectDependencyRulesTests
+{
+    [Fact]
+    public void LayeredProjects_ShouldKeepExpectedProjectReferences()
+    {
+        var backendRoot = ResolveBackendRoot();
+
+        AssertProjectReferences(
+            backendRoot,
+            "backend.Domain.csproj",
+            Array.Empty<string>()
+        );
+        AssertProjectReferences(
+            backendRoot,
+            "backend.Application.csproj",
+            ["backend.Domain.csproj"]
+        );
+        AssertProjectReferences(
+            backendRoot,
+            "backend.Data.csproj",
+            ["backend.Domain.csproj"]
+        );
+        AssertProjectReferences(
+            backendRoot,
+            "backend.Api.csproj",
+            ["backend.Application.csproj", "backend.Domain.csproj"]
+        );
+        AssertProjectReferences(
+            backendRoot,
+            "backend.Infrastructure.csproj",
+            [
+                "backend.Api.csproj",
+                "backend.Application.csproj",
+                "backend.Data.csproj",
+                "backend.Domain.csproj"
+            ]
+        );
+        AssertProjectReferences(
+            backendRoot,
+            "backend.csproj",
+            [
+                "backend.Api.csproj",
+                "backend.Application.csproj",
+                "backend.Data.csproj",
+                "backend.Domain.csproj",
+                "backend.Infrastructure.csproj"
+            ]
+        );
+    }
+
+    [Fact]
+    public void ApplicationProject_ShouldNotDependOnAspNetCoreSharedFramework()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var csprojPath = Path.Combine(backendRoot, "backend.Application.csproj");
+        var document = XDocument.Load(csprojPath);
+
+        var frameworkReferences = document
+            .Descendants("FrameworkReference")
+            .Select(element => element.Attribute("Include")?.Value)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        Assert.DoesNotContain("Microsoft.AspNetCore.App", frameworkReferences);
+    }
+
+    [Fact]
+    public void SourceFiles_ShouldRespectLayerUsingBoundaries()
+    {
+        var backendRoot = ResolveBackendRoot();
+
+        AssertNoForbiddenUsings(
+            Path.Combine(backendRoot, "Domain"),
+            ["using backend.Application", "using backend.Data", "using backend.Infrastructure", "using backend.Api"]
+        );
+        AssertNoForbiddenUsings(
+            Path.Combine(backendRoot, "Application"),
+            ["using backend.Data", "using backend.Infrastructure", "using backend.Controllers", "using Microsoft.AspNetCore"]
+        );
+        AssertNoForbiddenUsings(
+            Path.Combine(backendRoot, "Data"),
+            ["using backend.Application", "using backend.Infrastructure", "using backend.Controllers", "using backend.Api"]
+        );
+        AssertNoForbiddenUsings(
+            Path.Combine(backendRoot, "Api"),
+            ["using backend.Infrastructure", "using backend.Data", "using backend.Controllers"]
+        );
+        AssertNoForbiddenUsings(
+            Path.Combine(backendRoot, "Infrastructure"),
+            ["using backend.Controllers"]
+        );
+    }
+
+    [Fact]
+    public void ErrorCodeCatalog_ShouldMatchOpenApiEnum()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var openApiPath = Path.Combine(backendRoot, "openapi", "deadmans.v1.yaml");
+        var openApiCodes = ExtractOpenApiErrorCodes(openApiPath);
+
+        var catalogCodes = typeof(AppMessages.ErrorCodes)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(field => field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            .Select(field => field.GetRawConstantValue())
+            .OfType<string>()
+            .OrderBy(code => code, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(catalogCodes, openApiCodes);
+    }
+
+    [Fact]
+    public void BackendSource_ShouldNotContainHardcodedErrorCodeLiteralsOutsideCatalog()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var catalogFile = Path.Combine(backendRoot, "Messaging", "AppMessages.cs");
+        var hardcodedCodePattern = new Regex(
+            "\"game_[a-z0-9_]+\\.[a-z0-9_\\.]+\"",
+            RegexOptions.Compiled
+        );
+
+        var violations = Directory
+            .EnumerateFiles(backendRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}tests{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.Equals(catalogFile, StringComparison.OrdinalIgnoreCase))
+            .Select(path => new
+            {
+                Path = path,
+                Matches = hardcodedCodePattern.Matches(File.ReadAllText(path)).Select(match => match.Value).ToArray()
+            })
+            .Where(item => item.Matches.Length > 0)
+            .Select(item => $"{Path.GetRelativePath(backendRoot, item.Path)} -> {string.Join(", ", item.Matches)}")
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Found hardcoded error code literals outside AppMessages.ErrorCodes:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void BackendSource_ShouldUseErrorResponseFactoryInsteadOfDirectConstruction()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var factoryFile = Path.Combine(
+            backendRoot,
+            "Api",
+            "Contracts",
+            "ErrorResponseFactory.cs"
+        );
+
+        var violations = Directory
+            .EnumerateFiles(backendRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}tests{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.Equals(factoryFile, StringComparison.OrdinalIgnoreCase))
+            .Select(path => new
+            {
+                Path = path,
+                Lines = File.ReadAllLines(path)
+            })
+            .SelectMany(
+                file =>
+                    file.Lines.Select(
+                        (line, index) => new
+                        {
+                            file.Path,
+                            Line = line.Trim(),
+                            LineNumber = index + 1
+                        }
+                    )
+            )
+            .Where(item => item.Line.Contains("new ErrorResponse(", StringComparison.Ordinal))
+            .Select(
+                item =>
+                    $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Found direct ErrorResponse construction outside ErrorResponseFactory:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void Controllers_ShouldUseApiErrorResultHelpersInsteadOfErrorResponseFactory()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersRoot = Path.Combine(backendRoot, "Controllers");
+
+        var violations = Directory
+            .EnumerateFiles(controllersRoot, "*.cs", SearchOption.AllDirectories)
+            .Select(path => new
+            {
+                Path = path,
+                Lines = File.ReadAllLines(path)
+            })
+            .SelectMany(
+                file =>
+                    file.Lines.Select(
+                        (line, index) => new
+                        {
+                            file.Path,
+                            Line = line.Trim(),
+                            LineNumber = index + 1
+                        }
+                    )
+            )
+            .Where(item => item.Line.Contains("ErrorResponseFactory.Create(", StringComparison.Ordinal))
+            .Select(
+                item =>
+                    $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Controllers must build error IActionResult via ApiErrorResults helpers:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void Controllers_ShouldNotCatchGenericException_ForRequestPipelineErrors()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersRoot = Path.Combine(backendRoot, "Controllers");
+
+        var violations = Directory
+            .EnumerateFiles(controllersRoot, "*.cs", SearchOption.AllDirectories)
+            .Select(path => new
+            {
+                Path = path,
+                Lines = File.ReadAllLines(path)
+            })
+            .SelectMany(
+                file =>
+                    file.Lines.Select(
+                        (line, index) => new
+                        {
+                            file.Path,
+                            Line = line.Trim(),
+                            LineNumber = index + 1
+                        }
+                    )
+            )
+            .Where(item => item.Line.StartsWith("catch (Exception", StringComparison.Ordinal))
+            .Select(
+                item =>
+                    $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Controllers should rely on ApiExceptionHandlingMiddleware for unhandled exceptions:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void ApiProject_ShouldTreatSwitchExhaustivenessWarningAsError()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var apiCsprojPath = Path.Combine(backendRoot, "backend.Api.csproj");
+        var document = XDocument.Load(apiCsprojPath);
+
+        var warningsAsErrors = document
+            .Descendants("WarningsAsErrors")
+            .Select(element => element.Value)
+            .ToArray();
+
+        Assert.Contains(
+            warningsAsErrors,
+            value => value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Contains("CS8509", StringComparer.Ordinal)
+        );
+    }
+
+    [Fact]
+    public void DomainErrorHttpPolicy_ShouldAvoidDefaultSwitchBranch()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var policyPath = Path.Combine(backendRoot, "Api", "Errors", "DomainErrorHttpPolicy.cs");
+        var content = File.ReadAllText(policyPath);
+
+        Assert.DoesNotContain("_ =>", content, StringComparison.Ordinal);
+    }
+
+    private static void AssertProjectReferences(
+        string backendRoot,
+        string projectName,
+        IReadOnlyCollection<string> expectedReferences
+    )
+    {
+        var csprojPath = Path.Combine(backendRoot, projectName);
+        var document = XDocument.Load(csprojPath);
+        var actualReferences = document
+            .Descendants("ProjectReference")
+            .Select(element => element.Attribute("Include")?.Value)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(Path.GetFileName)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+
+        var expected = expectedReferences.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        Assert.Equal(expected, actualReferences);
+    }
+
+    private static string ResolveBackendRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            var candidate = Path.Combine(current.FullName, "backend", "backend.slnx");
+            if (File.Exists(candidate))
+            {
+                return Path.Combine(current.FullName, "backend");
+            }
+
+            current = current.Parent;
+        }
+
+        throw new InvalidOperationException("Unable to resolve backend root from test output directory.");
+    }
+
+    private static void AssertNoForbiddenUsings(
+        string directory,
+        IReadOnlyCollection<string> forbiddenUsingPrefixes
+    )
+    {
+        var violations = Directory
+            .EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+            .Select(path => new
+            {
+                Path = path,
+                Lines = File.ReadAllLines(path)
+            })
+            .SelectMany(
+                file => file.Lines.Select((line, index) => new { file.Path, Line = line.Trim(), LineNumber = index + 1 })
+            )
+            .Where(item => forbiddenUsingPrefixes.Any(prefix => item.Line.StartsWith(prefix, StringComparison.Ordinal)))
+            .Select(item => $"{Path.GetRelativePath(directory, item.Path)}:{item.LineNumber} -> {item.Line}")
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            $"Found forbidden usings in '{Path.GetFileName(directory)}':{Environment.NewLine}{string.Join(Environment.NewLine, violations)}"
+        );
+    }
+
+    private static string[] ExtractOpenApiErrorCodes(string openApiPath)
+    {
+        var lines = File.ReadAllLines(openApiPath);
+        var schemaIndex = Array.FindIndex(lines, line => line.Trim() == "ErrorResponse:");
+        Assert.True(schemaIndex >= 0, "OpenAPI schema 'ErrorResponse' was not found.");
+
+        var codeIndex = -1;
+        for (var i = schemaIndex + 1; i < lines.Length; i++)
+        {
+            if (!lines[i].StartsWith("    ", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            if (lines[i].Trim() == "code:")
+            {
+                codeIndex = i;
+                break;
+            }
+        }
+
+        Assert.True(codeIndex >= 0, "OpenAPI 'ErrorResponse.code' property was not found.");
+
+        var enumIndex = -1;
+        for (var i = codeIndex + 1; i < lines.Length; i++)
+        {
+            if (!lines[i].StartsWith("      ", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            if (lines[i].Trim() == "enum:")
+            {
+                enumIndex = i;
+                break;
+            }
+        }
+
+        Assert.True(enumIndex >= 0, "OpenAPI 'ErrorResponse.code.enum' section was not found.");
+
+        var values = new List<string>();
+        for (var i = enumIndex + 1; i < lines.Length; i++)
+        {
+            if (!lines[i].StartsWith("            - ", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            values.Add(lines[i].Trim().Substring(2).Trim());
+        }
+
+        return values.OrderBy(code => code, StringComparer.Ordinal).ToArray();
+    }
+}

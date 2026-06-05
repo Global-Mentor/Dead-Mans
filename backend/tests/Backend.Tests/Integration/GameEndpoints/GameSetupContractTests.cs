@@ -5,7 +5,9 @@ using System.Text.Encodings.Web;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Application.Abstractions.Realtime;
+using backend.Application.Abstractions;
 using backend.Application.Configuration;
+using backend.Application.Contracts;
 using backend.Data;
 using backend.Domain.Persistence;
 using backend.Messaging;
@@ -50,6 +52,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.NoDraftGameForSetup, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameSetupNoDraft, payload.Code);
     }
 
     [Fact]
@@ -183,6 +186,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var payload = await secondResponse.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.DraftGameAlreadyExists, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameSetupDraftExists, payload.Code);
     }
 
     [Fact]
@@ -200,6 +204,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.InvalidGameSetupTitle, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.InvalidGameSetupTitle, payload.Code);
     }
 
     [Fact]
@@ -281,6 +286,9 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameSetupNoDraft, payload.Code);
     }
 
     [Fact]
@@ -312,6 +320,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.InvalidGameSetupTitle, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.InvalidGameSetupTitle, payload.Code);
     }
 
     [Fact]
@@ -362,6 +371,31 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
     }
 
     [Fact]
+    public async Task CreateSetup_WhenParallelRequests_ProducesCreatedAndConflictWithoutServerError()
+    {
+        await ClearGamesAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var firstCreate = adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Parallel draft")
+        );
+        var secondCreate = adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Parallel draft")
+        );
+
+        var responses = await Task.WhenAll(firstCreate, secondCreate);
+        var statuses = responses.Select(response => response.StatusCode).ToArray();
+
+        Assert.All(
+            statuses,
+            status => Assert.Contains(status, [HttpStatusCode.Created, HttpStatusCode.Conflict])
+        );
+        Assert.DoesNotContain(HttpStatusCode.InternalServerError, statuses);
+    }
+
+    [Fact]
     public async Task UpdateSetup_WhenAdmin_RemovesLastRowAndDeletesCells()
     {
         await ClearGamesAsync();
@@ -400,6 +434,24 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         Assert.DoesNotContain(saved.Cells, cell => cell.Row == 4);
     }
 
+    [Fact]
+    public async Task GetSetup_WhenServiceThrows_ReturnsInternalServerErrorPayload()
+    {
+        using var adminClient = CreateAuthenticatedClient(
+            [AuthRoleCodes.Admin],
+            gameSetupService: new ThrowingGameSetupService()
+        );
+
+        var response = await adminClient.GetAsync("/api/game/setup");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.Client.UnexpectedServerError, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.UnexpectedServerError, payload.Code);
+        Assert.False(string.IsNullOrWhiteSpace(payload.RequestId));
+    }
+
     private async Task ClearGamesAsync()
     {
         using var scope = _factory.Services.CreateScope();
@@ -413,7 +465,8 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
 
     private HttpClient CreateAuthenticatedClient(
         string[] roles,
-        IGameSetupEventsPublisher? eventsPublisher = null
+        IGameSetupEventsPublisher? eventsPublisher = null,
+        IGameSetupService? gameSetupService = null
     )
     {
         var authenticatedFactory = _factory.WithWebHostBuilder(
@@ -425,6 +478,12 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
                         {
                             services.RemoveAll<IGameSetupEventsPublisher>();
                             services.AddSingleton(eventsPublisher);
+                        }
+
+                        if (gameSetupService is not null)
+                        {
+                            services.RemoveAll<IGameSetupService>();
+                            services.AddSingleton(gameSetupService);
                         }
 
                         services.RemoveAll<IClaimsTransformation>();
@@ -488,5 +547,25 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         {
             throw new InvalidOperationException("Simulated SignalR publish failure.");
         }
+    }
+
+    private sealed class ThrowingGameSetupService : IGameSetupService
+    {
+        public Task<GameBoardSnapshot?> GetDraftSetupAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated setup failure.");
+
+        public Task<CreateDraftGameSetupResult> CreateDraftSetupAsync(
+            string title,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Simulated setup failure.");
+
+        public Task<UpdateDraftGameSetupResult> UpdateDraftSetupAsync(
+            GameSetupDraftUpdate update,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Simulated setup failure.");
+
+        public Task<DeleteDraftGameSetupResult> DeleteDraftSetupAsync(
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Simulated setup failure.");
     }
 }
