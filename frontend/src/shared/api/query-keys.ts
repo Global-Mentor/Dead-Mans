@@ -12,4 +12,8 @@ export const queryKeys = {
     snapshot: () => ['gameRegistration', 'snapshot'] as const,
     adminTeams: () => ['gameRegistration', 'adminTeams'] as const,
   },
+  gameModifiers: {
+    all: ['gameModifiers'] as const,
+    catalog: () => ['gameModifiers', 'catalog'] as const,
+  },
 }

@@ -21,12 +21,15 @@ import { useGameBoardPage } from './use-game-board-page.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { GameBoardAdminPlannedSection } from './ui/GameBoardAdminPlannedSection.tsx'
+import { GameBoardModifiersSection } from './ui/GameBoardModifiersSection.tsx'
 
 export function GameBoardPage() {
   const { t } = useTranslation()
   const { data, isError, isLoading } = useGameBoardPage()
   const { user } = useAuth()
   const isAdmin = hasAccessToPanelRoute(gameSetupRoute, user?.roles)
+  const canActivateModifiers =
+    user?.roles?.includes('admin') === true || user?.roles?.includes('moderator') === true
   const {
     pendingCell,
     toastMessage,
@@ -132,6 +135,10 @@ export function GameBoardPage() {
           snapshot={snapshot}
           canOpenCells={canOpenCells}
           onCellRequestOpen={requestOpenCell}
+        />
+        <GameBoardModifiersSection
+          snapshot={snapshot}
+          canActivateModifiers={canActivateModifiers}
         />
         {isAdmin ? <GameBoardAdminPlannedSection /> : null}
       </Paper>

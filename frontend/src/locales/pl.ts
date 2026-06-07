@@ -75,6 +75,24 @@ const pl = {
       openForbidden: 'Tylko administrator może otwierać karty.',
       openNotFound: 'Wybrana karta nie została znaleziona.',
       openFailed: 'Nie udało się otworzyć karty.',
+      modifiers: {
+        title: 'Modyfikatory gry',
+        description: 'Aktywne modyfikatory włączone dla bieżącej gry.',
+        loading: 'Ładowanie katalogu modyfikatorów...',
+        error: 'Nie udało się załadować katalogu modyfikatorów.',
+        empty: 'Dla tej gry nie włączono modyfikatorów.',
+        activeBadge: 'Aktywny',
+        activate: 'Aktywuj',
+        errors: {
+          forbidden: 'Modyfikatory mogą aktywować tylko moderatorzy i administratorzy.',
+          unknownCode: 'Wybrany modyfikator nie jest już dostępny.',
+          gameNotActive: 'Modyfikatory można aktywować tylko podczas aktywnej gry.',
+          notEnabled: 'Ten modyfikator nie jest włączony dla bieżącej gry.',
+          conflictActive: 'Ten modyfikator koliduje z już aktywnym modyfikatorem.',
+          limitReached: 'Osiągnięto limit aktywacji dla tego modyfikatora.',
+          generic: 'Nie udało się aktywować modyfikatora.',
+        },
+      },
     },
     gameSetup: {
       title: 'Konfiguracja gry',
@@ -113,6 +131,14 @@ const pl = {
       saving: 'Zapisywanie...',
       persistenceHint:
         'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Edytuj pola lokalnie i kliknij Zapisz. Wiersze i kolumny zapisują się po potwierdzeniu w oknie układu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
+      modifiers: {
+        title: 'Dostępne modyfikatory dla tej gry',
+        description:
+          'Wybierz, które globalne modyfikatory będzie można aktywować podczas tej gry. Lista jest wspólna dla wszystkich administratorów.',
+        loading: 'Ładowanie katalogu modyfikatorów...',
+        error: 'Nie udało się załadować katalogu modyfikatorów.',
+        empty: 'Katalog modyfikatorów jest pusty.',
+      },
       reloadFromServer: 'Odśwież',
       remoteChangeNotice:
         'Inny administrator zmienił szkic. Kliknij Odśwież, aby odrzucić niezapisane zmiany i pokazać wersję z serwera.',

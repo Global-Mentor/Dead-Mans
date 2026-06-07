@@ -304,6 +304,22 @@ export function useGameSetupPage() {
     await deleteDraftMutation.mutateAsync()
   }
 
+  const toggleModifier = (modifierCode: string, enabled: boolean) => {
+    updateDraft((current) => {
+      const currentCodes = current.enabledModifierCodes
+      const nextCodes = enabled
+        ? currentCodes.includes(modifierCode)
+          ? currentCodes
+          : [...currentCodes, modifierCode]
+        : currentCodes.filter((code) => code !== modifierCode)
+
+      return {
+        ...current,
+        enabledModifierCodes: nextCodes,
+      }
+    })
+  }
+
   const dismissRemoteChangeNotice = () => setRemoteChangeNotice(false)
   const dismissDraftRemovedNotice = () => setDraftRemovedNotice(false)
 
@@ -332,6 +348,7 @@ export function useGameSetupPage() {
     reloadFromServer,
     createDraft: createDraftMutation.mutateAsync,
     deleteDraft,
+    toggleModifier,
     isCreating: createDraftMutation.isPending,
     isResetting: deleteDraftMutation.isPending,
     isSaving: saveDraftMutation.isPending,

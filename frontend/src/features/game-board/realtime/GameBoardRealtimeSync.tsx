@@ -10,10 +10,15 @@ import {
   realtimeHubs,
 } from '../../../shared/realtime/index.ts'
 import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
-import { applyCellOpenedEvent, type CellOpenedEvent } from './game-board-realtime-model.ts'
+import {
+  applyCellOpenedEvent,
+  type CellOpenedEvent,
+  type ModifierActivatedEvent,
+} from './game-board-realtime-model.ts'
 
 const GAME_BOARD_HUB_URL = buildRealtimeHubUrl('gameBoard')
 const CELL_OPENED_EVENT = realtimeHubs.gameBoard.events.cellOpened
+const MODIFIER_ACTIVATED_EVENT = realtimeHubs.gameBoard.events.modifierActivated
 
 export function GameBoardRealtimeSync() {
   const queryClient = useQueryClient()
@@ -65,6 +70,11 @@ export function GameBoardRealtimeSync() {
       )
     })
 
+    connection.on(MODIFIER_ACTIVATED_EVENT, (event: ModifierActivatedEvent) => {
+      logger.debug('Game board modifier realtime event received', event)
+      void syncFromServerIfNewer()
+    })
+
     connection.onreconnected(() => {
       logger.info('Game board realtime reconnected')
       return syncFromServerIfNewer()
@@ -97,6 +107,7 @@ export function GameBoardRealtimeSync() {
     return () => {
       disposed = true
       connection.off(CELL_OPENED_EVENT)
+      connection.off(MODIFIER_ACTIVATED_EVENT)
       // React StrictMode can unmount while start() is still negotiating.
       // Await startup first to avoid stop() interrupting negotiate.
       void (async () => {
