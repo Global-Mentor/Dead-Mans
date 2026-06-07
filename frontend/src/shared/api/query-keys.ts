@@ -16,4 +16,9 @@ export const queryKeys = {
     all: ['gameModifiers'] as const,
     catalog: () => ['gameModifiers', 'catalog'] as const,
   },
+  gameQuestions: {
+    all: ['gameQuestions'] as const,
+    catalog: (filters?: { vectorCode?: string; category?: string; search?: string }) =>
+      ['gameQuestions', 'catalog', filters ?? {}] as const,
+  },
 }

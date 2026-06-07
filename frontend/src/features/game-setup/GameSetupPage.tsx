@@ -9,6 +9,7 @@ import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
 import { useGameSetupPage } from './use-game-setup-page.ts'
 import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
+import { GameSetupQuestionsSection } from './ui/GameSetupQuestionsSection.tsx'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {
@@ -204,6 +205,7 @@ export function GameSetupPage() {
         </Alert>
 
         <GameSetupModifiersSection draft={draft} onToggle={toggleModifier} />
+        <GameSetupQuestionsSection />
 
         {remoteChangeNotice ? (
           <Alert
