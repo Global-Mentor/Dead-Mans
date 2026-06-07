@@ -13,4 +13,10 @@ export const API_ERROR_CODES = {
   gameRegistrationUserNotFound: 'game_registration.user_not_found',
   gameRegistrationPendingInvitation: 'game_registration.pending_invitation',
   gameRegistrationOperationFailed: 'game_registration.operation_failed',
+  gameModifierUnknownCode: 'game_modifier.unknown_code',
+  gameModifierGameNotActive: 'game_modifier.game_not_active',
+  gameModifierNotEnabled: 'game_modifier.not_enabled',
+  gameModifierConflictActive: 'game_modifier.conflict_active',
+  gameModifierLimitReached: 'game_modifier.limit_reached',
+  gameModifierUserNotResolved: 'game_modifier.user_not_resolved',
 } as const

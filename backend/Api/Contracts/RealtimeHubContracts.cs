@@ -9,6 +9,7 @@ public static class RealtimeHubContracts
     {
         public const string HubPath = "/hubs/game-board";
         public const string CellOpenedEvent = "cellOpened";
+        public const string ModifierActivatedEvent = "modifierActivated";
     }
 
     public static class GameSetup

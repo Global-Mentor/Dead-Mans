@@ -15,6 +15,7 @@ using backend.Infrastructure.Realtime;
 using backend.Messaging;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Backend.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
@@ -200,6 +201,71 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal("open", payload.Cell.State.ToString().ToLowerInvariant());
     }
 
+    [Fact]
+    public async Task GetModifierCatalog_WhenAuthenticated_ReturnsSeededCatalog()
+    {
+        await EnsureModifierDefinitionsSeededAsync();
+        using var authenticatedClient = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+
+        var response = await authenticatedClient.GetAsync("/api/game/modifiers/catalog");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<IReadOnlyList<GameModifierDefinitionDto>>();
+        Assert.NotNull(payload);
+        Assert.Contains(payload, modifier => modifier.Code == "chirik");
+    }
+
+    [Fact]
+    public async Task ActivateModifier_WhenModeratorAndEnabledForActiveGame_ReturnsNoContent()
+    {
+        await EnsureModifierDefinitionsSeededAsync();
+        await SeedActiveGameWithEnabledModifiersAsync(["chirik"]);
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+
+        var response = await moderatorClient.PostAsync("/api/game/modifiers/chirik/activate", content: null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(1, await dbContext.GameActiveModifiers.CountAsync(x => x.ModifierCode == "chirik"));
+    }
+
+    [Fact]
+    public async Task ActivateModifier_WhenConflictAlreadyActive_ReturnsConflictCode()
+    {
+        await EnsureModifierDefinitionsSeededAsync();
+        await SeedActiveGameWithEnabledModifiersAsync(["prokaznik", "mentorbait"], ["prokaznik"]);
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+
+        var response = await moderatorClient.PostAsync(
+            "/api/game/modifiers/mentorbait/activate",
+            content: null
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameModifierConflictActive, payload.Code);
+    }
+
+    [Fact]
+    public async Task ActivateModifier_WhenLimitReached_ReturnsConflictCode()
+    {
+        await EnsureModifierDefinitionsSeededAsync();
+        await SeedActiveGameWithEnabledModifiersAsync(["feyerverk"], ["feyerverk"]);
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+
+        var response = await moderatorClient.PostAsync(
+            "/api/game/modifiers/feyerverk/activate",
+            content: null
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameModifierLimitReached, payload.Code);
+    }
+
     private async Task AssertRepositoryFallbackAsync(Guid finishedGameId)
     {
         using var scope = _factory.Services.CreateScope();
@@ -216,6 +282,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        dbContext.GameActiveModifiers.RemoveRange(dbContext.GameActiveModifiers);
+        dbContext.GameModifierSelections.RemoveRange(dbContext.GameModifierSelections);
         dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
         dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
         dbContext.Games.RemoveRange(dbContext.Games);
@@ -279,6 +347,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        dbContext.GameActiveModifiers.RemoveRange(dbContext.GameActiveModifiers);
+        dbContext.GameModifierSelections.RemoveRange(dbContext.GameModifierSelections);
         dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
         dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
         dbContext.Games.RemoveRange(dbContext.Games);
@@ -328,6 +398,170 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         await dbContext.SaveChangesAsync();
         return cellId;
+    }
+
+    private async Task SeedActiveGameWithEnabledModifiersAsync(
+        IReadOnlyList<string> enabledCodes,
+        IReadOnlyList<string>? alreadyActiveCodes = null
+    )
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        dbContext.GameActiveModifiers.RemoveRange(dbContext.GameActiveModifiers);
+        dbContext.GameModifierSelections.RemoveRange(dbContext.GameModifierSelections);
+        dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
+        dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
+        dbContext.Games.RemoveRange(dbContext.Games);
+        await dbContext.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        var gameId = Guid.NewGuid();
+        var boardId = Guid.NewGuid();
+
+        dbContext.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Game with modifiers",
+                Status = GameStatusValue.Active,
+                CreatedAtUtc = now,
+                StartedAtUtc = now
+            }
+        );
+        dbContext.GameBoards.Add(
+            new GameBoard
+            {
+                Id = boardId,
+                GameId = gameId,
+                Rows = 1,
+                Cols = 1,
+                RowLabels = ["A"],
+                ColLabels = ["1"],
+                CreatedAtUtc = now,
+            }
+        );
+        dbContext.BoardCells.Add(
+            new BoardCell
+            {
+                Id = Guid.NewGuid(),
+                BoardId = boardId,
+                RowIndex = 0,
+                ColIndex = 0,
+                Title = "Cell",
+                Cost = 100,
+                State = BoardCellState.Closed
+            }
+        );
+        dbContext.GameModifierSelections.AddRange(
+            enabledCodes.Select(
+                code =>
+                    new GameModifierSelection
+                    {
+                        GameId = gameId,
+                        ModifierCode = code,
+                        EnabledAtUtc = now
+                    }
+            )
+        );
+        dbContext.GameActiveModifiers.AddRange(
+            (alreadyActiveCodes ?? [])
+                .Select(
+                    code =>
+                        new GameActiveModifier
+                        {
+                            Id = Guid.NewGuid(),
+                            GameId = gameId,
+                            ModifierCode = code,
+                            ActivatedByUserId = Guid.NewGuid(),
+                            ActivatedAtUtc = now
+                        }
+                )
+        );
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task EnsureModifierDefinitionsSeededAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        if (await dbContext.ModifierDefinitions.AnyAsync())
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        dbContext.ModifierDefinitions.AddRange(
+            new ModifierDefinition
+            {
+                Code = "chirik",
+                Name = "Чирик",
+                Description = "Test",
+                Kind = "active",
+                Category = "movement_restriction",
+                ScoringType = "non_scoring",
+                Tier = "low",
+                ActivationCost = 3,
+                DefaultLimitPerGame = 5,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            },
+            new ModifierDefinition
+            {
+                Code = "prokaznik",
+                Name = "Проказник",
+                Description = "Test",
+                Kind = "active",
+                Category = "mentor_intervention",
+                ScoringType = "non_scoring",
+                Tier = "mid",
+                ActivationCost = 6,
+                DefaultLimitPerGame = 2,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            },
+            new ModifierDefinition
+            {
+                Code = "mentorbait",
+                Name = "Менторбайт",
+                Description = "Test",
+                Kind = "active",
+                Category = "mentor_intervention",
+                ScoringType = "non_scoring",
+                Tier = "mid",
+                ActivationCost = 8,
+                DefaultLimitPerGame = 1,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            },
+            new ModifierDefinition
+            {
+                Code = "feyerverk",
+                Name = "Фейерверк",
+                Description = "Test",
+                Kind = "active",
+                Category = "mentor_intervention",
+                ScoringType = "non_scoring",
+                Tier = "high",
+                ActivationCost = 11,
+                DefaultLimitPerGame = 1,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            }
+        );
+        dbContext.ModifierConflicts.AddRange(
+            new ModifierConflict
+            {
+                ModifierCode = "prokaznik",
+                ConflictsWithModifierCode = "mentorbait"
+            },
+            new ModifierConflict
+            {
+                ModifierCode = "mentorbait",
+                ConflictsWithModifierCode = "prokaznik"
+            }
+        );
+        await dbContext.SaveChangesAsync();
     }
 
     private async Task SeedInactiveUserAsync(Guid userId)
@@ -456,6 +690,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     private sealed class RecordingGameBoardEventsPublisher : IGameBoardEventsPublisher
     {
         public List<GameCellOpenedEvent> PublishedEvents { get; } = [];
+        public List<GameModifierActivatedEvent> PublishedModifierEvents { get; } = [];
 
         public Task PublishCellOpenedAsync(
             GameCellOpenedEvent @event,
@@ -463,6 +698,15 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         )
         {
             PublishedEvents.Add(@event);
+            return Task.CompletedTask;
+        }
+
+        public Task PublishModifierActivatedAsync(
+            GameModifierActivatedEvent @event,
+            CancellationToken cancellationToken = default
+        )
+        {
+            PublishedModifierEvents.Add(@event);
             return Task.CompletedTask;
         }
     }

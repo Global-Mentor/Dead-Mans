@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607164749_AddGameModifiers")]
+    partial class AddGameModifiers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -199,11 +202,10 @@ namespace backend.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModifierCode");
-
                     b.HasIndex("GameId", "ActivatedAtUtc");
 
-                    b.HasIndex("GameId", "ModifierCode");
+                    b.HasIndex("GameId", "ModifierCode")
+                        .IsUnique();
 
                     b.ToTable("game_active_modifiers", null, t =>
                         {
@@ -270,8 +272,6 @@ namespace backend.Data.Migrations
                     b.HasKey("GameId", "ModifierCode");
 
                     b.HasIndex("GameId");
-
-                    b.HasIndex("ModifierCode");
 
                     b.ToTable("game_modifier_selections", null, t =>
                         {
@@ -536,403 +536,6 @@ namespace backend.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.ModifierConflict", b =>
-                {
-                    b.Property<string>("ModifierCode")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("ConflictsWithModifierCode")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.HasKey("ModifierCode", "ConflictsWithModifierCode");
-
-                    b.HasIndex("ConflictsWithModifierCode");
-
-                    b.ToTable("modifier_conflicts", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_modifier_conflicts_distinct_codes", "\"ModifierCode\" <> \"ConflictsWithModifierCode\"");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            ModifierCode = "prokaznik",
-                            ConflictsWithModifierCode = "mentorbait"
-                        },
-                        new
-                        {
-                            ModifierCode = "mentorbait",
-                            ConflictsWithModifierCode = "prokaznik"
-                        },
-                        new
-                        {
-                            ModifierCode = "prokaznik",
-                            ConflictsWithModifierCode = "krysa"
-                        },
-                        new
-                        {
-                            ModifierCode = "krysa",
-                            ConflictsWithModifierCode = "prokaznik"
-                        },
-                        new
-                        {
-                            ModifierCode = "prokaznik",
-                            ConflictsWithModifierCode = "shot"
-                        },
-                        new
-                        {
-                            ModifierCode = "shot",
-                            ConflictsWithModifierCode = "prokaznik"
-                        },
-                        new
-                        {
-                            ModifierCode = "mentorbait",
-                            ConflictsWithModifierCode = "krysa"
-                        },
-                        new
-                        {
-                            ModifierCode = "krysa",
-                            ConflictsWithModifierCode = "mentorbait"
-                        });
-                });
-
-            modelBuilder.Entity("backend.Data.Entities.ModifierDefinition", b =>
-                {
-                    b.Property<string>("Code")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("ActivationCommand")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("ActivationCost")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("DefaultLimitPerGame")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("IconEmoji")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("MetadataJson")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ScoringType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("Tier")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Code");
-
-                    b.ToTable("modifier_definitions", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_modifier_definitions_cost_non_negative", "\"ActivationCost\" >= 0");
-
-                            t.HasCheckConstraint("CK_modifier_definitions_kind_allowed", "\"Kind\" IN ('active','passive')");
-
-                            t.HasCheckConstraint("CK_modifier_definitions_limit_positive_or_null", "\"DefaultLimitPerGame\" IS NULL OR \"DefaultLimitPerGame\" > 0");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            Code = "chirik",
-                            ActivationCommand = "!активировать чирик",
-                            ActivationCost = 3,
-                            Category = "movement_restriction",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 5,
-                            Description = "Первые 60 секунд разрешено перемещаться только на корточках.",
-                            IconEmoji = "💰",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Чирик",
-                            ScoringType = "non_scoring",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "zhazhda",
-                            ActivationCommand = "!активировать жажда",
-                            ActivationCost = 3,
-                            Category = "score",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 2,
-                            Description = "Убийства дают нарастающий бонус +5, миссия без убийств даёт штраф 25.",
-                            IconEmoji = "💉",
-                            IsArchived = false,
-                            Kind = "active",
-                            MetadataJson = "{\"bonusPerKill\":5,\"missionFailurePenalty\":25}",
-                            Name = "Жажда",
-                            ScoringType = "conditional_bonus_penalty",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "rashodnik",
-                            ActivationCommand = "!активировать расходник",
-                            ActivationCost = 4,
-                            Category = "loadout",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 4,
-                            Description = "Игроки могут заменить один расходник на свой выбор.",
-                            IconEmoji = "🎯",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Расходник",
-                            ScoringType = "non_scoring",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "trupy",
-                            ActivationCommand = "!активировать трупы",
-                            ActivationCost = 4,
-                            Category = "combat_rule",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Запрет на сжигание трупов.",
-                            IconEmoji = "🔥",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Трупы",
-                            ScoringType = "non_scoring",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "navyki",
-                            ActivationCommand = "!активировать навыки",
-                            ActivationCost = 4,
-                            Category = "loadout",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 5,
-                            Description = "Количество доступных очков навыков уменьшено на 20% (-2 при 10).",
-                            IconEmoji = "⚙️",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Навыки",
-                            ScoringType = "non_scoring",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "patron",
-                            ActivationCommand = "!активировать патрон",
-                            ActivationCost = 4,
-                            Category = "score",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Если враг убит первой пулей, команда получает +1 убийство в счётчик.",
-                            IconEmoji = "🔫",
-                            IsArchived = false,
-                            Kind = "active",
-                            MetadataJson = "{\"bonusKills\":1}",
-                            Name = "Патрон",
-                            ScoringType = "conditional_bonus",
-                            Tier = "low",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "prokaznik",
-                            ActivationCommand = "!активировать проказник",
-                            ActivationCost = 6,
-                            Category = "mentor_intervention",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 2,
-                            Description = "Ментор пакостит 5 минут или пока не кончатся обманки.",
-                            IconEmoji = "🙊",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Проказник",
-                            ScoringType = "non_scoring",
-                            Tier = "mid",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "diareya",
-                            ActivationCommand = "!активировать диарея",
-                            ActivationCost = 7,
-                            Category = "behavior_rule",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "При упоминании/обнаружении туалета игрок обязан зайти в него (если нет врага в поле зрения).",
-                            IconEmoji = "💩",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Диарея",
-                            ScoringType = "non_scoring",
-                            Tier = "mid",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "mentorbait",
-                            ActivationCommand = "!активировать менторбайт",
-                            ActivationCost = 8,
-                            Category = "mentor_intervention",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Ментор с шумелками на 5 минут, команда решает как использовать.",
-                            IconEmoji = "📣",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Менторбайт",
-                            ScoringType = "non_scoring",
-                            Tier = "mid",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "kep",
-                            ActivationCommand = "!активировать кэп",
-                            ActivationCost = 10,
-                            Category = "communication_rule",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Только капитан команды может пользоваться голосовым чатом.",
-                            IconEmoji = "🔇",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Кэп",
-                            ScoringType = "non_scoring",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "feyerverk",
-                            ActivationCommand = "!активировать фейерверк",
-                            ActivationCost = 11,
-                            Category = "mentor_intervention",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Ментор раз в минуту стреляет осветительными снарядами в небо 5 минут.",
-                            IconEmoji = "🎆",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Фейерверк",
-                            ScoringType = "non_scoring",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "krysa",
-                            ActivationCommand = "!активировать крыса",
-                            ActivationCost = 12,
-                            Category = "mentor_intervention",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Ментор с полным набором ловушек; убийства ментора идут в счёт команды.",
-                            IconEmoji = "🐀",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Крыса",
-                            ScoringType = "conditional_bonus",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "shot",
-                            ActivationCommand = "!активировать шот",
-                            ActivationCost = 13,
-                            Category = "mentor_intervention",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ментор получает оружие с одним выстрелом, убийство идёт в счёт команды.",
-                            IconEmoji = "🥠",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Шот",
-                            ScoringType = "conditional_bonus",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "podem",
-                            ActivationCommand = "!активировать подъём",
-                            ActivationCost = 14,
-                            Category = "combat_rule",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Нельзя поднимать союзника, пока не убит враг.",
-                            IconEmoji = "☠️",
-                            IsArchived = false,
-                            Kind = "active",
-                            Name = "Подъём",
-                            ScoringType = "non_scoring",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Code = "hard75",
-                            ActivationCommand = "!активировать хард75",
-                            ActivationCost = 18,
-                            Category = "score",
-                            CreatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DefaultLimitPerGame = 1,
-                            Description = "Каждое убийство получает множитель +0.75 до восстановления полосок.",
-                            IconEmoji = "💀",
-                            IsArchived = false,
-                            Kind = "active",
-                            MetadataJson = "{\"killMultiplierDelta\":0.75}",
-                            Name = "Хард75",
-                            ScoringType = "multiplier",
-                            Tier = "high",
-                            UpdatedAtUtc = new DateTime(2026, 6, 7, 0, 0, 0, 0, DateTimeKind.Utc)
-                        });
-                });
-
             modelBuilder.Entity("backend.Data.Entities.Role", b =>
                 {
                     b.Property<short>("Id")
@@ -1125,15 +728,7 @@ namespace backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.Data.Entities.ModifierDefinition", "ModifierDefinition")
-                        .WithMany("GameActivations")
-                        .HasForeignKey("ModifierCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Game");
-
-                    b.Navigation("ModifierDefinition");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.GameBoard", b =>
@@ -1155,15 +750,7 @@ namespace backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.Data.Entities.ModifierDefinition", "ModifierDefinition")
-                        .WithMany("GameSelections")
-                        .HasForeignKey("ModifierCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Game");
-
-                    b.Navigation("ModifierDefinition");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.GameParticipationInvitation", b =>
@@ -1278,25 +865,6 @@ namespace backend.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.ModifierConflict", b =>
-                {
-                    b.HasOne("backend.Data.Entities.ModifierDefinition", "ConflictsWithModifier")
-                        .WithMany()
-                        .HasForeignKey("ConflictsWithModifierCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Data.Entities.ModifierDefinition", "Modifier")
-                        .WithMany()
-                        .HasForeignKey("ModifierCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ConflictsWithModifier");
-
-                    b.Navigation("Modifier");
-                });
-
             modelBuilder.Entity("backend.Data.Entities.UserRole", b =>
                 {
                     b.HasOne("backend.Data.Entities.User", "AssignedByUser")
@@ -1352,13 +920,6 @@ namespace backend.Data.Migrations
             modelBuilder.Entity("backend.Data.Entities.MediaAsset", b =>
                 {
                     b.Navigation("CellLinks");
-                });
-
-            modelBuilder.Entity("backend.Data.Entities.ModifierDefinition", b =>
-                {
-                    b.Navigation("GameActivations");
-
-                    b.Navigation("GameSelections");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.Role", b =>

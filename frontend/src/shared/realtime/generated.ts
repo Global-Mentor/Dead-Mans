@@ -6,6 +6,7 @@ export const realtimeHubs = {
     path: '/hubs/game-board',
     events: {
       cellOpened: 'cellOpened',
+      modifierActivated: 'modifierActivated',
     },
   },
   gameSetup: {

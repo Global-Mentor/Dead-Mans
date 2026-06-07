@@ -28,7 +28,8 @@ public static class ApiContractMapper
             request.ColLabels,
             request.Cells
                 .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
-                .ToArray()
+                .ToArray(),
+            request.EnabledModifierCodes ?? Array.Empty<string>()
         );
     }
 
@@ -44,7 +45,8 @@ public static class ApiContractMapper
             snapshot.Cols,
             snapshot.RowLabels.ToArray(),
             snapshot.ColLabels.ToArray(),
-            snapshot.Cells.Select(ToDto).ToArray()
+            snapshot.Cells.Select(ToDto).ToArray(),
+            snapshot.EnabledModifierCodes.ToArray()
         );
     }
 
@@ -65,13 +67,46 @@ public static class ApiContractMapper
             snapshot.Cols,
             snapshot.RowLabels.ToArray(),
             snapshot.ColLabels.ToArray(),
-            snapshot.Cells.Select(ToDto).ToArray()
+            snapshot.Cells.Select(ToDto).ToArray(),
+            snapshot.EnabledModifierCodes.ToArray(),
+            snapshot.ActiveModifiers.Select(ToDto).ToArray()
         );
     }
 
     public static GameCellOpenedEventDto ToDto(this GameCellOpenedEvent @event)
     {
         return new GameCellOpenedEventDto(@event.GameId, @event.Version, ToDto(@event.Cell));
+    }
+
+    public static GameModifierDefinitionDto ToDto(this GameModifierDefinition definition)
+    {
+        return new GameModifierDefinitionDto(
+            definition.Code,
+            definition.Kind,
+            definition.Category,
+            definition.ScoringType,
+            definition.Tier,
+            definition.Name,
+            definition.Description,
+            definition.ActivationCost,
+            definition.DefaultLimitPerGame,
+            definition.IconEmoji,
+            definition.ActivationCommand
+        );
+    }
+
+    public static GameModifierActivationDto ToDto(this GameModifierActivation activation)
+    {
+        return new GameModifierActivationDto(
+            activation.ModifierCode,
+            activation.ActivatedByUserId,
+            activation.ActivatedAtUtc
+        );
+    }
+
+    public static GameModifierActivatedEventDto ToDto(this GameModifierActivatedEvent @event)
+    {
+        return new GameModifierActivatedEventDto(@event.GameId, @event.Version, @event.Activation.ToDto());
     }
 
     private static GameBoardCellDto ToDto(GameBoardCell cell)

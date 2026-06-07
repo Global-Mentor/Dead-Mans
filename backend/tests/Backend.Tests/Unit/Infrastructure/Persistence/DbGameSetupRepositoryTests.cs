@@ -129,7 +129,8 @@ public sealed class DbGameSetupRepositoryTests
             ["One", "Two", "Three", "Four", "Five"],
             created.Cells
                 .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, $"Title {cell.Row}-{cell.Col}", cell.Cost + 5))
-                .ToArray()
+                .ToArray(),
+            []
         );
 
         var saved = await repo.UpdateDraftSetupAsync(update);
@@ -163,7 +164,8 @@ public sealed class DbGameSetupRepositoryTests
                 created.ColLabels.ToArray(),
                 created.Cells
                     .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
-                    .ToArray()
+                    .ToArray(),
+                []
             )
         );
 
@@ -195,7 +197,8 @@ public sealed class DbGameSetupRepositoryTests
                 "Initial title",
                 ["100", "125", "150", "175", "200", "225"],
                 created.ColLabels.ToArray(),
-                insertedRowCells.Concat(shiftedExistingCells).ToArray()
+                insertedRowCells.Concat(shiftedExistingCells).ToArray(),
+                []
             )
         );
 

@@ -298,6 +298,39 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
                 );
             }
 
+            var existingEnabledModifierSelections = await _dbContext.GameModifierSelections
+                .Where(x => x.GameId == draftGame.Id)
+                .ToListAsync(cancellationToken);
+            var enabledCodes = new HashSet<string>(update.EnabledModifierCodes, StringComparer.Ordinal);
+            var selectionsToRemove = existingEnabledModifierSelections
+                .Where(x => !enabledCodes.Contains(x.ModifierCode))
+                .ToList();
+            if (selectionsToRemove.Count > 0)
+            {
+                _dbContext.GameModifierSelections.RemoveRange(selectionsToRemove);
+            }
+
+            var existingCodes = existingEnabledModifierSelections
+                .Select(x => x.ModifierCode)
+                .ToHashSet(StringComparer.Ordinal);
+            var selectionTimestamp = DateTime.UtcNow;
+            var selectionsToAdd = enabledCodes
+                .Where(code => !existingCodes.Contains(code))
+                .Select(
+                    code =>
+                        new GameModifierSelection
+                        {
+                            GameId = draftGame.Id,
+                            ModifierCode = code,
+                            EnabledAtUtc = selectionTimestamp
+                        }
+                )
+                .ToArray();
+            if (selectionsToAdd.Length > 0)
+            {
+                _dbContext.GameModifierSelections.AddRange(selectionsToAdd);
+            }
+
             draftGame.Title = update.Title;
             board.Rows = rowCount;
             board.Cols = colCount;
@@ -432,6 +465,24 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
         var resultCells = rawCells
             .Select(cell => GameBoardCellProjection.MapCell(cell, mediaByCellId, revealClosedContent: true))
             .ToArray();
+        var enabledModifierCodes = await _dbContext.GameModifierSelections
+            .AsNoTracking()
+            .Where(x => x.GameId == board.GameId)
+            .OrderBy(x => x.ModifierCode)
+            .Select(x => x.ModifierCode)
+            .ToArrayAsync(cancellationToken);
+        var activeModifiers = await _dbContext.GameActiveModifiers
+            .AsNoTracking()
+            .Where(x => x.GameId == board.GameId)
+            .OrderBy(x => x.ActivatedAtUtc)
+            .Select(
+                x => new GameModifierActivation(
+                    x.ModifierCode,
+                    x.ActivatedByUserId.ToString(),
+                    x.ActivatedAtUtc
+                )
+            )
+            .ToArrayAsync(cancellationToken);
 
         return new GameBoardSnapshot(
             board.GameId.ToString(),
@@ -443,7 +494,9 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             board.Cols,
             board.RowLabels,
             board.ColLabels,
-            resultCells
+            resultCells,
+            enabledModifierCodes,
+            activeModifiers
         );
     }
 

@@ -37,6 +37,7 @@ Guardrails:
 ## Актуальные endpoint'ы
 
 - `GET /api/game`, `POST /api/game/cells/{cellId}/open`
+- `GET /api/game/modifiers/catalog`, `POST /api/game/modifiers/{modifierCode}/activate`
 - `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
 - `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`
 - `GET /api/game/registration/teams` (admin), confirm/reject, invitations

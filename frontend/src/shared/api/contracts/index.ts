@@ -10,6 +10,9 @@ export type GameBoardSnapshot = Omit<
   status: 'ready' | 'active' | 'finished'
 }
 export type GameCellOpenedEvent = components['schemas']['GameCellOpenedEventDto']
+export type GameModifierDefinition = components['schemas']['GameModifierDefinitionDto']
+export type GameModifierActivation = components['schemas']['GameModifierActivationDto']
+export type GameModifierActivatedEvent = components['schemas']['GameModifierActivatedEventDto']
 export type GameSetupSnapshot = components['schemas']['GameSetupSnapshotDto']
 export type CreateGameSetupRequest = components['schemas']['CreateGameSetupRequestDto']
 export type UpdateGameSetupRequest = components['schemas']['UpdateGameSetupRequestDto']

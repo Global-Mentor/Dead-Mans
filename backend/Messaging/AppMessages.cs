@@ -57,6 +57,14 @@ public static class AppMessages
             "This player already has a pending invitation for this game.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
         public const string NoCurrentGameBoard = "No current game board was found.";
+        public const string GameModifierUnknownCode = "Requested game modifier code is not supported.";
+        public const string GameModifierGameNotActive = "No active game is available for modifier activation.";
+        public const string GameModifierNotEnabled =
+            "Requested game modifier is not enabled for the current game.";
+        public const string GameModifierConflictActive =
+            "Requested game modifier conflicts with another active modifier.";
+        public const string GameModifierLimitReached =
+            "Requested game modifier reached its activation limit for the current game.";
         public const string UnexpectedServerError = "An unexpected server error occurred.";
     }
 
@@ -95,6 +103,12 @@ public static class AppMessages
         public const string GameRegistrationUserNotFound = "game_registration.user_not_found";
         public const string GameRegistrationPendingInvitation = "game_registration.pending_invitation";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
+        public const string GameModifierUnknownCode = "game_modifier.unknown_code";
+        public const string GameModifierGameNotActive = "game_modifier.game_not_active";
+        public const string GameModifierNotEnabled = "game_modifier.not_enabled";
+        public const string GameModifierConflictActive = "game_modifier.conflict_active";
+        public const string GameModifierLimitReached = "game_modifier.limit_reached";
+        public const string GameModifierUserNotResolved = "game_modifier.user_not_resolved";
     }
 
     public static class Exceptions
@@ -192,6 +206,8 @@ public static class AppMessages
         public const string GameCellOpenFailed = "Failed to open game cell. CellId: {CellId}.";
         public const string RealtimeGameCellOpenedPublishFailed =
             "Failed to publish game cell opened realtime event. CellId: {CellId}.";
+        public const string RealtimeGameModifierActivatedPublishFailed =
+            "Failed to publish game modifier activated realtime event. ModifierCode: {ModifierCode}.";
         public const string RealtimeGameSetupDraftChangedPublishFailed =
             "Failed to publish game setup draft changed realtime event.";
 

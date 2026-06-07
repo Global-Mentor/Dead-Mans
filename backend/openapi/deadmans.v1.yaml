@@ -34,6 +34,72 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/modifiers/catalog:
+    get:
+      operationId: getGameModifierCatalog
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Global catalog of supported game modifiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameModifierDefinitionDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/modifiers/{modifierCode}/activate:
+    post:
+      operationId: activateGameModifier
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: modifierCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Modifier activated for the current active game
+        '400':
+          description: User id could not be resolved from auth cookie claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Unknown modifier code or no active game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Modifier not enabled for the game or already active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/setup:
     get:
       operationId: getDraftGameSetup
@@ -925,7 +991,7 @@ components:
           minimum: 0
     UpdateGameSetupRequestDto:
       type: object
-      required: [expectedVersion, title, rowLabels, colLabels, cells]
+      required: [expectedVersion, title, rowLabels, colLabels, cells, enabledModifierCodes]
       properties:
         expectedVersion:
           type: integer
@@ -956,9 +1022,16 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/UpdateGameSetupCellDto'
+        enabledModifierCodes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
     GameSetupSnapshotDto:
       type: object
-      required: [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells]
+      required:
+        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierCodes]
       properties:
         gameId:
           type: string
@@ -988,6 +1061,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameBoardCellDto'
+        enabledModifierCodes:
+          type: array
+          items:
+            type: string
     GameLifecycleStateDto:
       type: object
       required: [gameId, status]
@@ -1152,7 +1229,18 @@ components:
           nullable: true
     GameBoardSnapshotDto:
       type: object
-      required: [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells]
+      required:
+        - gameId
+        - title
+        - status
+        - version
+        - rows
+        - cols
+        - rowLabels
+        - colLabels
+        - cells
+        - enabledModifierCodes
+        - activeModifiers
       properties:
         gameId:
           type: string
@@ -1182,6 +1270,67 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameBoardCellDto'
+        enabledModifierCodes:
+          type: array
+          items:
+            type: string
+        activeModifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameModifierActivationDto'
+    GameModifierDefinitionDto:
+      type: object
+      required:
+        - code
+        - kind
+        - category
+        - scoringType
+        - tier
+        - name
+        - description
+        - activationCost
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+          enum: [active, passive]
+        category:
+          type: string
+        scoringType:
+          type: string
+        tier:
+          type: string
+          enum: [low, mid, high]
+        name:
+          type: string
+        description:
+          type: string
+        activationCost:
+          type: integer
+          minimum: 0
+        defaultLimitPerGame:
+          type: integer
+          nullable: true
+          minimum: 1
+        iconEmoji:
+          type: string
+          nullable: true
+        activationCommand:
+          type: string
+          nullable: true
+    GameModifierActivationDto:
+      type: object
+      required: [modifierCode, activatedByUserId, activatedAtUtc]
+      properties:
+        modifierCode:
+          type: string
+        activatedByUserId:
+          type: string
+          format: uuid
+        activatedAtUtc:
+          type: string
+          format: date-time
     AuthRole:
       type: string
       enum: [admin, moderator, viewer]
@@ -1240,6 +1389,12 @@ components:
             - game_registration.user_not_found
             - game_registration.pending_invitation
             - game_registration.operation_failed
+            - game_modifier.unknown_code
+            - game_modifier.game_not_active
+            - game_modifier.not_enabled
+            - game_modifier.conflict_active
+            - game_modifier.limit_reached
+            - game_modifier.user_not_resolved
         requestId:
           type: string
           nullable: true
@@ -1255,6 +1410,17 @@ components:
           type: integer
         cell:
           $ref: '#/components/schemas/GameBoardCellDto'
+    GameModifierActivatedEventDto:
+      type: object
+      required: [gameId, version, activation]
+      description: SignalR payload for game-board hub event modifierActivated.
+      properties:
+        gameId:
+          type: string
+        version:
+          type: integer
+        activation:
+          $ref: '#/components/schemas/GameModifierActivationDto'
     GameSetupDraftChangedEventDto:
       type: object
       description: >
@@ -1278,6 +1444,10 @@ x-signalr:
           summary: A board cell was opened by an admin.
           payload:
             $ref: '#/components/schemas/GameCellOpenedEventDto'
+        modifierActivated:
+          summary: A game modifier was activated by a moderator or admin.
+          payload:
+            $ref: '#/components/schemas/GameModifierActivatedEventDto'
       clientEvents: {}
     gameSetup:
       path: /hubs/game-setup

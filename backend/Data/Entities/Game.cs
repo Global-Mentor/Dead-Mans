@@ -28,4 +28,10 @@ public class Game
 
     public ICollection<GameParticipationSlot> ParticipationSlots { get; set; } =
         new List<GameParticipationSlot>();
+
+    public ICollection<GameModifierSelection> EnabledModifiers { get; set; } =
+        new List<GameModifierSelection>();
+
+    public ICollection<GameActiveModifier> ActiveModifiers { get; set; } =
+        new List<GameActiveModifier>();
 }

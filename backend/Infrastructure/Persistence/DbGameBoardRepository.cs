@@ -79,6 +79,24 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
             var resultCells = cells
                 .Select(cell => GameBoardCellProjection.MapCell(cell, mediaByCellId, revealClosedContent: false))
                 .ToArray();
+            var enabledModifierCodes = await _dbContext.GameModifierSelections
+                .AsNoTracking()
+                .Where(x => x.GameId == selectedBoard.GameId)
+                .OrderBy(x => x.ModifierCode)
+                .Select(x => x.ModifierCode)
+                .ToArrayAsync(cancellationToken);
+            var activeModifiers = await _dbContext.GameActiveModifiers
+                .AsNoTracking()
+                .Where(x => x.GameId == selectedBoard.GameId)
+                .OrderBy(x => x.ActivatedAtUtc)
+                .Select(
+                    x => new GameModifierActivation(
+                        x.ModifierCode,
+                        x.ActivatedByUserId.ToString(),
+                        x.ActivatedAtUtc
+                    )
+                )
+                .ToArrayAsync(cancellationToken);
 
             _logger.LogDebug(
                 AppMessages.Logs.GameBoardSnapshotResolved,
@@ -97,7 +115,9 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
                 selectedBoard.Cols,
                 selectedBoard.RowLabels,
                 selectedBoard.ColLabels,
-                resultCells
+                resultCells,
+                enabledModifierCodes,
+                activeModifiers
             );
         }
         catch (Exception ex)

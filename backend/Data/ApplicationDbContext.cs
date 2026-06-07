@@ -25,6 +25,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<GameTeamMember> GameTeamMembers => Set<GameTeamMember>();
     public DbSet<GameParticipationInvitation> GameParticipationInvitations =>
         Set<GameParticipationInvitation>();
+    public DbSet<GameModifierSelection> GameModifierSelections => Set<GameModifierSelection>();
+    public DbSet<GameActiveModifier> GameActiveModifiers => Set<GameActiveModifier>();
+    public DbSet<ModifierDefinition> ModifierDefinitions => Set<ModifierDefinition>();
+    public DbSet<ModifierConflict> ModifierConflicts => Set<ModifierConflict>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,5 +45,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GameTeamConfiguration());
         modelBuilder.ApplyConfiguration(new GameTeamMemberConfiguration());
         modelBuilder.ApplyConfiguration(new GameParticipationInvitationConfiguration());
+        modelBuilder.ApplyConfiguration(new ModifierDefinitionConfiguration());
+        modelBuilder.ApplyConfiguration(new ModifierConflictConfiguration());
+        modelBuilder.ApplyConfiguration(new GameModifierSelectionConfiguration());
+        modelBuilder.ApplyConfiguration(new GameActiveModifierConfiguration());
     }
 }
