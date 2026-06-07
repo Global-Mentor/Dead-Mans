@@ -100,6 +100,254 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/questions/catalog:
+    get:
+      operationId: getGameQuestionCatalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: vectorCode
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: includeDisabled
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Question catalog for vector management
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameQuestionCatalogItemDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/{questionId}/enabled:
+    patch:
+      operationId: setGameQuestionEnabled
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetGameQuestionEnabledRequestDto'
+      responses:
+        '204':
+          description: Question enable flag updated
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/categories/{category}/enabled:
+    patch:
+      operationId: setGameQuestionCategoryEnabled
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: vectorCode
+          in: query
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetGameQuestionCategoryEnabledRequestDto'
+      responses:
+        '204':
+          description: Category enable flag updated for matching questions
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/ask-next:
+    post:
+      operationId: askNextGameQuestion
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Next question selected and round created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskedGameQuestionDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active game or no available questions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/rounds/{roundId}/answer:
+    post:
+      operationId: answerGameQuestionRound
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roundId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerGameQuestionRequestDto'
+      responses:
+        '200':
+          description: Question round answered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameQuestionRoundSummaryDto'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Round not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Round already closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/games/{gameId}/history:
+    get:
+      operationId: getGameQuestionHistory
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Asked question history for a game
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameQuestionRoundSummaryDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/setup:
     get:
       operationId: getDraftGameSetup
@@ -1331,6 +1579,171 @@ components:
         activatedAtUtc:
           type: string
           format: date-time
+    GameQuestionCatalogItemDto:
+      type: object
+      required:
+        - questionId
+        - vectorCode
+        - questionCode
+        - category
+        - text
+        - answer
+        - reward
+        - isEnabled
+        - askedTotalCount
+        - correctTotalCount
+      properties:
+        questionId:
+          type: string
+          format: uuid
+        vectorCode:
+          type: string
+        questionCode:
+          type: string
+        category:
+          type: string
+        text:
+          type: string
+        answer:
+          type: string
+        reward:
+          type: integer
+          minimum: 0
+        isEnabled:
+          type: boolean
+        askedTotalCount:
+          type: integer
+          minimum: 0
+        correctTotalCount:
+          type: integer
+          minimum: 0
+        lastAskedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+    SetGameQuestionEnabledRequestDto:
+      type: object
+      required: [isEnabled]
+      properties:
+        isEnabled:
+          type: boolean
+    SetGameQuestionCategoryEnabledRequestDto:
+      type: object
+      required: [isEnabled]
+      properties:
+        isEnabled:
+          type: boolean
+    AskedGameQuestionDto:
+      type: object
+      required:
+        - roundId
+        - gameId
+        - askOrder
+        - questionId
+        - vectorCode
+        - questionCode
+        - category
+        - text
+        - reward
+        - askedAtUtc
+      properties:
+        roundId:
+          type: string
+          format: uuid
+        gameId:
+          type: string
+          format: uuid
+        askOrder:
+          type: integer
+          minimum: 1
+        questionId:
+          type: string
+          format: uuid
+        vectorCode:
+          type: string
+        questionCode:
+          type: string
+        category:
+          type: string
+        text:
+          type: string
+        reward:
+          type: integer
+          minimum: 0
+        askedAtUtc:
+          type: string
+          format: date-time
+    AnswerGameQuestionRequestDto:
+      type: object
+      required: [answer]
+      properties:
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 500
+        answeredByDisplayName:
+          type: string
+          nullable: true
+          maxLength: 128
+    GameQuestionRoundSummaryDto:
+      type: object
+      required:
+        - roundId
+        - gameId
+        - askOrder
+        - questionId
+        - questionText
+        - category
+        - reward
+        - status
+        - askedAtUtc
+      properties:
+        roundId:
+          type: string
+          format: uuid
+        gameId:
+          type: string
+          format: uuid
+        askOrder:
+          type: integer
+          minimum: 1
+        questionId:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+        category:
+          type: string
+        reward:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [asked, answered_correct, answered_wrong, timeout, skipped]
+        askedAtUtc:
+          type: string
+          format: date-time
+        answeredAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        answeredByDisplayName:
+          type: string
+          nullable: true
+        answeredByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        submittedAnswer:
+          type: string
+          nullable: true
+        isCorrect:
+          type: boolean
+          nullable: true
+        awardedPoints:
+          type: integer
+          nullable: true
+          minimum: 0
     AuthRole:
       type: string
       enum: [admin, moderator, viewer]
@@ -1395,6 +1808,12 @@ components:
             - game_modifier.conflict_active
             - game_modifier.limit_reached
             - game_modifier.user_not_resolved
+            - game_question.invalid_request
+            - game_question.not_found
+            - game_question.no_active_game
+            - game_question.no_available_questions
+            - game_question.round_not_found
+            - game_question.round_not_pending
         requestId:
           type: string
           nullable: true

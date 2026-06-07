@@ -65,6 +65,14 @@ public static class AppMessages
             "Requested game modifier conflicts with another active modifier.";
         public const string GameModifierLimitReached =
             "Requested game modifier reached its activation limit for the current game.";
+        public const string GameQuestionInvalidRequest = "Question request payload is invalid.";
+        public const string GameQuestionNotFound = "Requested question was not found.";
+        public const string GameQuestionNoActiveGame = "No active game is available for asking questions.";
+        public const string GameQuestionNoAvailableQuestions =
+            "No enabled questions are available for this game.";
+        public const string GameQuestionRoundNotFound = "Question round was not found.";
+        public const string GameQuestionRoundNotPending =
+            "Question round cannot be answered because it is already closed.";
         public const string UnexpectedServerError = "An unexpected server error occurred.";
     }
 
@@ -109,6 +117,12 @@ public static class AppMessages
         public const string GameModifierConflictActive = "game_modifier.conflict_active";
         public const string GameModifierLimitReached = "game_modifier.limit_reached";
         public const string GameModifierUserNotResolved = "game_modifier.user_not_resolved";
+        public const string GameQuestionInvalidRequest = "game_question.invalid_request";
+        public const string GameQuestionNotFound = "game_question.not_found";
+        public const string GameQuestionNoActiveGame = "game_question.no_active_game";
+        public const string GameQuestionNoAvailableQuestions = "game_question.no_available_questions";
+        public const string GameQuestionRoundNotFound = "game_question.round_not_found";
+        public const string GameQuestionRoundNotPending = "game_question.round_not_pending";
     }
 
     public static class Exceptions

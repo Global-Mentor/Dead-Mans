@@ -1,0 +1,13 @@
+namespace backend.Domain.Persistence;
+
+public static class GameQuestionRoundStatusValue
+{
+    public const string Asked = "asked";
+    public const string AnsweredCorrect = "answered_correct";
+    public const string AnsweredWrong = "answered_wrong";
+    public const string Timeout = "timeout";
+    public const string Skipped = "skipped";
+
+    public static string CheckSqlAllowedStatuses { get; } =
+        $"\"Status\" IN ('{Asked}','{AnsweredCorrect}','{AnsweredWrong}','{Timeout}','{Skipped}')";
+}

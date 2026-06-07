@@ -52,6 +52,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/questions/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGameQuestionCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/questions/{questionId}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setGameQuestionEnabled"];
+        trace?: never;
+    };
+    "/game/questions/categories/{category}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setGameQuestionCategoryEnabled"];
+        trace?: never;
+    };
+    "/game/questions/ask-next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["askNextGameQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/questions/rounds/{roundId}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["answerGameQuestionRound"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/questions/games/{gameId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGameQuestionHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/setup": {
         parameters: {
             query?: never;
@@ -521,6 +617,71 @@ export interface components {
             /** Format: date-time */
             activatedAtUtc: string;
         };
+        GameQuestionCatalogItemDto: {
+            /** Format: uuid */
+            questionId: string;
+            vectorCode: string;
+            questionCode: string;
+            category: string;
+            text: string;
+            answer: string;
+            reward: number;
+            isEnabled: boolean;
+            askedTotalCount: number;
+            correctTotalCount: number;
+            /** Format: date-time */
+            lastAskedAtUtc?: string | null;
+        };
+        SetGameQuestionEnabledRequestDto: {
+            isEnabled: boolean;
+        };
+        SetGameQuestionCategoryEnabledRequestDto: {
+            isEnabled: boolean;
+        };
+        AskedGameQuestionDto: {
+            /** Format: uuid */
+            roundId: string;
+            /** Format: uuid */
+            gameId: string;
+            askOrder: number;
+            /** Format: uuid */
+            questionId: string;
+            vectorCode: string;
+            questionCode: string;
+            category: string;
+            text: string;
+            reward: number;
+            /** Format: date-time */
+            askedAtUtc: string;
+        };
+        AnswerGameQuestionRequestDto: {
+            answer: string;
+            answeredByDisplayName?: string | null;
+        };
+        GameQuestionRoundSummaryDto: {
+            /** Format: uuid */
+            roundId: string;
+            /** Format: uuid */
+            gameId: string;
+            askOrder: number;
+            /** Format: uuid */
+            questionId: string;
+            questionText: string;
+            category: string;
+            reward: number;
+            /** @enum {string} */
+            status: "asked" | "answered_correct" | "answered_wrong" | "timeout" | "skipped";
+            /** Format: date-time */
+            askedAtUtc: string;
+            /** Format: date-time */
+            answeredAtUtc?: string | null;
+            answeredByDisplayName?: string | null;
+            /** Format: uuid */
+            answeredByUserId?: string | null;
+            submittedAnswer?: string | null;
+            isCorrect?: boolean | null;
+            awardedPoints?: number | null;
+        };
         /** @enum {string} */
         AuthRole: "admin" | "moderator" | "viewer";
         AuthSessionDto: {
@@ -535,7 +696,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "game_board.not_found" | "game_board.cell_not_found" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.ready_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.operation_failed" | "game_common.unexpected_server_error" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.operation_failed" | "game_modifier.unknown_code" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.user_not_resolved" | null;
+            code?: "game_board.not_found" | "game_board.cell_not_found" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.ready_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.operation_failed" | "game_common.unexpected_server_error" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.operation_failed" | "game_modifier.unknown_code" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.user_not_resolved" | "game_question.invalid_request" | "game_question.not_found" | "game_question.no_active_game" | "game_question.no_available_questions" | "game_question.round_not_found" | "game_question.round_not_pending" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -704,6 +865,311 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
+        };
+    };
+    getGameQuestionCatalog: {
+        parameters: {
+            query?: {
+                vectorCode?: string;
+                category?: string;
+                search?: string;
+                includeDisabled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Question catalog for vector management */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameQuestionCatalogItemDto"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setGameQuestionEnabled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGameQuestionEnabledRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Question enable flag updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Question not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setGameQuestionCategoryEnabled: {
+        parameters: {
+            query?: {
+                vectorCode?: string;
+            };
+            header?: never;
+            path: {
+                category: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGameQuestionCategoryEnabledRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Category enable flag updated for matching questions */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    askNextGameQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Next question selected and round created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskedGameQuestionDto"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No active game or no available questions */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    answerGameQuestionRound: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerGameQuestionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Question round answered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameQuestionRoundSummaryDto"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round already closed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getGameQuestionHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gameId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Asked question history for a game */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameQuestionRoundSummaryDto"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getDraftGameSetup: {

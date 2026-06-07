@@ -109,6 +109,60 @@ public static class ApiContractMapper
         return new GameModifierActivatedEventDto(@event.GameId, @event.Version, @event.Activation.ToDto());
     }
 
+    public static GameQuestionCatalogItemDto ToDto(this GameQuestionCatalogItem item)
+    {
+        return new GameQuestionCatalogItemDto(
+            item.QuestionId.ToString(),
+            item.VectorCode,
+            item.QuestionCode,
+            item.Category,
+            item.Text,
+            item.Answer,
+            item.Reward,
+            item.IsEnabled,
+            item.AskedTotalCount,
+            item.CorrectTotalCount,
+            item.LastAskedAtUtc
+        );
+    }
+
+    public static AskedGameQuestionDto ToDto(this AskedGameQuestion question)
+    {
+        return new AskedGameQuestionDto(
+            question.RoundId.ToString(),
+            question.GameId.ToString(),
+            question.AskOrder,
+            question.QuestionId.ToString(),
+            question.VectorCode,
+            question.QuestionCode,
+            question.Category,
+            question.Text,
+            question.Reward,
+            question.AskedAtUtc
+        );
+    }
+
+    public static GameQuestionRoundSummaryDto ToDto(this GameQuestionRoundSummary round)
+    {
+        return new GameQuestionRoundSummaryDto(
+            round.RoundId.ToString(),
+            round.GameId.ToString(),
+            round.AskOrder,
+            round.QuestionId.ToString(),
+            round.QuestionText,
+            round.Category,
+            round.Reward,
+            round.Status,
+            round.AskedAtUtc,
+            round.AnsweredAtUtc,
+            round.AnsweredByDisplayName,
+            round.AnsweredByUserId?.ToString(),
+            round.SubmittedAnswer,
+            round.IsCorrect,
+            round.AwardedPoints
+        );
+    }
+
     private static GameBoardCellDto ToDto(GameBoardCell cell)
     {
         return new GameBoardCellDto(

@@ -32,3 +32,10 @@ export type CreateRegistrationTeamRequest =
   components['schemas']['CreateRegistrationTeamRequestDto']
 export type CreateAdminInvitationRequest =
   components['schemas']['CreateAdminInvitationRequestDto']
+export type GameQuestionCatalogItemDto = components['schemas']['GameQuestionCatalogItemDto']
+export type SetGameQuestionEnabledRequestDto = components['schemas']['SetGameQuestionEnabledRequestDto']
+export type SetGameQuestionCategoryEnabledRequestDto =
+  components['schemas']['SetGameQuestionCategoryEnabledRequestDto']
+export type AskedGameQuestionDto = components['schemas']['AskedGameQuestionDto']
+export type AnswerGameQuestionRequestDto = components['schemas']['AnswerGameQuestionRequestDto']
+export type GameQuestionRoundSummaryDto = components['schemas']['GameQuestionRoundSummaryDto']

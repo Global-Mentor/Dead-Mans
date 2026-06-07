@@ -6,6 +6,7 @@ using backend.Application.Features.Auth;
 using backend.Application.Features.GameBoard;
 using backend.Application.Features.GameLifecycle;
 using backend.Application.Features.GameModifiers;
+using backend.Application.Features.GameQuestions;
 using backend.Application.Features.GameRegistration;
 using backend.Application.Features.GameSetup;
 using backend.Data;
@@ -76,6 +77,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameSetupCellMediaService, GameSetupCellMediaService>();
         services.AddScoped<IGameModifierRepository, DbGameModifierRepository>();
         services.AddScoped<IGameModifierService, GameModifierService>();
+        services.AddScoped<IGameQuestionRepository, DbGameQuestionRepository>();
+        services.AddScoped<IGameQuestionService, GameQuestionService>();
         services.AddScoped<IGameRegistrationReadStore, GameRegistrationReadStore>();
         services.AddScoped<IGameRegistrationPersistence, DbGameRegistrationPersistence>();
         services.AddScoped<IGameRegistrationService, GameRegistrationService>();
