@@ -188,6 +188,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - Twitch login flow с backend cookie session;
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR (после успешной записи в БД publish best-effort, см. `docs/architecture/realtime.md`);
 - game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
+- game modifiers (phase 1): каталог модификаторов хранится в БД (`modifier_definitions`) с полями для расчёта (`category`, `scoringType`, `tier`, `defaultLimitPerGame`) и конфликтами (`modifier_conflicts`); в draft admin выбирает `enabledModifierCodes` через `PUT /api/game/setup`; в active-игре `admin/moderator` может активировать модификатор `POST /api/game/modifiers/{modifierCode}/activate`; состояние (`enabledModifierCodes`, `activeModifiers`) входит в `GET /api/game`; realtime по `/hubs/game-board` событием `modifierActivated`;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;

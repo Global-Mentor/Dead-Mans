@@ -17,7 +17,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - восстановление сессии через `/auth/me`;
 - защищённая панель под `/panel` с role-aware navigation;
 - страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
-- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
+- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierCodes`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
+- блок модификаторов на `game-board`: каталог из `GET /api/game/modifiers/catalog`, активация через `POST /api/game/modifiers/{modifierCode}/activate` (admin/moderator), realtime через событие `modifierActivated` на `/hubs/game-board`;
 - страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`; planned UI-блоки показываются только когда регистрация ещё не открыта.
 
 ## Структура API-слоя
