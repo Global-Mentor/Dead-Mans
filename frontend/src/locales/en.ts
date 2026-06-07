@@ -74,6 +74,24 @@ const en = {
       openForbidden: 'Only administrators can open cards.',
       openNotFound: 'The selected card was not found.',
       openFailed: 'Failed to open card.',
+      modifiers: {
+        title: 'Game modifiers',
+        description: 'Active game modifiers configured for this game.',
+        loading: 'Loading modifier catalog...',
+        error: 'Failed to load modifier catalog.',
+        empty: 'No modifiers are enabled for this game.',
+        activeBadge: 'Active',
+        activate: 'Activate',
+        errors: {
+          forbidden: 'Only moderators and administrators can activate modifiers.',
+          unknownCode: 'The selected modifier is no longer available.',
+          gameNotActive: 'Modifiers can be activated only while the game is active.',
+          notEnabled: 'This modifier is not enabled for the current game.',
+          conflictActive: 'This modifier conflicts with another active modifier.',
+          limitReached: 'Activation limit reached for this modifier.',
+          generic: 'Failed to activate modifier.',
+        },
+      },
     },
     gameSetup: {
       title: 'Game setup',
@@ -111,6 +129,14 @@ const en = {
       saving: 'Saving...',
       persistenceHint:
         'All admins share one draft in the database. Edit fields locally, then click Save. Row and column changes save when you confirm them in the layout dialog. Images upload to storage immediately. Other admins see updates in real time via SignalR.',
+      modifiers: {
+        title: 'Available modifiers for this game',
+        description:
+          'Choose which global modifiers can be activated during this game. The list is shared for all admins.',
+        loading: 'Loading modifier catalog...',
+        error: 'Failed to load modifier catalog.',
+        empty: 'Modifier catalog is empty.',
+      },
       reloadFromServer: 'Reload',
       remoteChangeNotice:
         'Another administrator changed this draft. Reload to discard your unsaved edits and show the server version.',

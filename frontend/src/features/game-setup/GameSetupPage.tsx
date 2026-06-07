@@ -8,6 +8,7 @@ import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
 import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
 import { useGameSetupPage } from './use-game-setup-page.ts'
 import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
+import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {
@@ -58,6 +59,7 @@ export function GameSetupPage() {
     dismissCellMediaError,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
+    toggleModifier,
   } = useGameSetupPage()
 
   const syncChip = getSyncChipProps(syncStatus, isDirty)
@@ -200,6 +202,8 @@ export function GameSetupPage() {
         <Alert severity="info" sx={{ mt: 2 }}>
           {t('gameSetup.persistenceHint')}
         </Alert>
+
+        <GameSetupModifiersSection draft={draft} onToggle={toggleModifier} />
 
         {remoteChangeNotice ? (
           <Alert
