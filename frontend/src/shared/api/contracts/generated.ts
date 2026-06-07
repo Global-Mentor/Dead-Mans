@@ -20,6 +20,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/modifiers/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGameModifierCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/modifiers/{modifierCode}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["activateGameModifier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/setup": {
         parameters: {
             query?: never;
@@ -364,6 +396,7 @@ export interface components {
             rowLabels: string[];
             colLabels: string[];
             cells: components["schemas"]["UpdateGameSetupCellDto"][];
+            enabledModifierCodes: string[];
         };
         GameSetupSnapshotDto: {
             gameId: string;
@@ -377,6 +410,7 @@ export interface components {
             rowLabels: string[];
             colLabels: string[];
             cells: components["schemas"]["GameBoardCellDto"][];
+            enabledModifierCodes: string[];
         };
         GameLifecycleStateDto: {
             /** Format: uuid */
@@ -462,6 +496,30 @@ export interface components {
             rowLabels: string[];
             colLabels: string[];
             cells: components["schemas"]["GameBoardCellDto"][];
+            enabledModifierCodes: string[];
+            activeModifiers: components["schemas"]["GameModifierActivationDto"][];
+        };
+        GameModifierDefinitionDto: {
+            code: string;
+            /** @enum {string} */
+            kind: "active" | "passive";
+            category: string;
+            scoringType: string;
+            /** @enum {string} */
+            tier: "low" | "mid" | "high";
+            name: string;
+            description: string;
+            activationCost: number;
+            defaultLimitPerGame?: number | null;
+            iconEmoji?: string | null;
+            activationCommand?: string | null;
+        };
+        GameModifierActivationDto: {
+            modifierCode: string;
+            /** Format: uuid */
+            activatedByUserId: string;
+            /** Format: date-time */
+            activatedAtUtc: string;
         };
         /** @enum {string} */
         AuthRole: "admin" | "moderator" | "viewer";
@@ -473,14 +531,25 @@ export interface components {
         };
         ErrorResponse: {
             error: string;
-            /** @description Stable machine-readable error code. */
-            code?: string | null;
+            /**
+             * @description Stable machine-readable error code.
+             * @enum {string|null}
+             */
+            code?: "game_board.not_found" | "game_board.cell_not_found" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.ready_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.operation_failed" | "game_common.unexpected_server_error" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.operation_failed" | "game_modifier.unknown_code" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.user_not_resolved" | null;
+            /** @description Server request correlation identifier for diagnostics. */
+            requestId?: string | null;
         };
         /** @description SignalR payload for game-board hub event cellOpened. */
         GameCellOpenedEventDto: {
             gameId: string;
             version: number;
             cell: components["schemas"]["GameBoardCellDto"];
+        };
+        /** @description SignalR payload for game-board hub event modifierActivated. */
+        GameModifierActivatedEventDto: {
+            gameId: string;
+            version: number;
+            activation: components["schemas"]["GameModifierActivationDto"];
         };
         /** @description SignalR payload for game-setup hub event draftChanged. The server sends no JSON body; clients refetch GET /api/game/setup after receiving the event. */
         GameSetupDraftChangedEventDto: Record<string, never>;
@@ -532,6 +601,101 @@ export interface operations {
             };
             /** @description No active, ready, or finished game available */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    getGameModifierCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Global catalog of supported game modifiers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameModifierDefinitionDto"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    activateGameModifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                modifierCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Modifier activated for the current active game */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description User id could not be resolved from auth cookie claims */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown modifier code or no active game */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Modifier not enabled for the game or already active */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

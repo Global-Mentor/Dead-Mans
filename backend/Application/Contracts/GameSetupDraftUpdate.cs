@@ -7,5 +7,6 @@ public sealed record GameSetupDraftUpdate(
     string Title,
     IReadOnlyList<string> RowLabels,
     IReadOnlyList<string> ColLabels,
-    IReadOnlyList<GameSetupCellUpdate> Cells
+    IReadOnlyList<GameSetupCellUpdate> Cells,
+    IReadOnlyList<string> EnabledModifierCodes
 );

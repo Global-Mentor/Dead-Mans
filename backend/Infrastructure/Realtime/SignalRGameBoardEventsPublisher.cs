@@ -9,6 +9,7 @@ namespace backend.Infrastructure.Realtime;
 public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
 {
     public const string CellOpenedEventName = RealtimeHubContracts.GameBoard.CellOpenedEvent;
+    public const string ModifierActivatedEventName = RealtimeHubContracts.GameBoard.ModifierActivatedEvent;
 
     private readonly IHubContext<GameBoardHub> _hubContext;
 
@@ -20,5 +21,17 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
     public Task PublishCellOpenedAsync(GameCellOpenedEvent @event, CancellationToken cancellationToken = default)
     {
         return _hubContext.Clients.All.SendAsync(CellOpenedEventName, @event.ToDto(), cancellationToken);
+    }
+
+    public Task PublishModifierActivatedAsync(
+        GameModifierActivatedEvent @event,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _hubContext.Clients.All.SendAsync(
+            ModifierActivatedEventName,
+            @event.ToDto(),
+            cancellationToken
+        );
     }
 }

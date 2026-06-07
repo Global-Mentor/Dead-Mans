@@ -12,6 +12,7 @@ namespace backend.Application.Features.GameSetup;
 public sealed class GameSetupService : IGameSetupService
 {
     private readonly IGameSetupRepository _repository;
+    private readonly IGameModifierRepository _gameModifierRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly IGameSetupEventsPublisher _eventsPublisher;
     private readonly MediaStorageSettings _storageSettings;
@@ -19,6 +20,7 @@ public sealed class GameSetupService : IGameSetupService
 
     public GameSetupService(
         IGameSetupRepository repository,
+        IGameModifierRepository gameModifierRepository,
         IObjectStorage objectStorage,
         IGameSetupEventsPublisher eventsPublisher,
         IOptions<MediaStorageSettings> storageSettings,
@@ -26,6 +28,7 @@ public sealed class GameSetupService : IGameSetupService
     )
     {
         _repository = repository;
+        _gameModifierRepository = gameModifierRepository;
         _objectStorage = objectStorage;
         _eventsPublisher = eventsPublisher;
         _storageSettings = storageSettings.Value;
@@ -92,12 +95,29 @@ public sealed class GameSetupService : IGameSetupService
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidCells);
         }
 
+        if (!GameSetupDraftValidator.TryNormalizeEnabledModifierCodes(
+                update.EnabledModifierCodes,
+                out var normalizedEnabledModifierCodes
+            ))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledModifiers);
+        }
+
+        if (!await _gameModifierRepository.ModifierCodesExistAsync(
+                normalizedEnabledModifierCodes,
+                cancellationToken
+            ))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledModifiers);
+        }
+
         var normalizedUpdate = new GameSetupDraftUpdate(
             update.ExpectedVersion,
             normalizedTitle,
             normalizedRowLabels,
             normalizedColumnLabels,
-            normalizedCells
+            normalizedCells,
+            normalizedEnabledModifierCodes
         );
 
         var saveResult = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);

@@ -8,6 +8,7 @@ internal static class GameSetupDraftValidator
     public const int MaxRowLabelLength = 100;
     public const int MaxColumnLabelLength = 100;
     public const int MaxCellTitleLength = 200;
+    public const int MaxModifierCodeLength = 64;
 
     public static bool TryNormalizeTitle(string title, out string normalizedTitle)
     {
@@ -108,6 +109,31 @@ internal static class GameSetupDraftValidator
         }
 
         normalizedCells = normalized.ToArray();
+        return true;
+    }
+
+    public static bool TryNormalizeEnabledModifierCodes(
+        IReadOnlyList<string> enabledModifierCodes,
+        out string[] normalizedCodes
+    )
+    {
+        var uniqueCodes = new HashSet<string>(StringComparer.Ordinal);
+        var normalized = new List<string>(enabledModifierCodes.Count);
+        foreach (var rawCode in enabledModifierCodes)
+        {
+            var normalizedCode = rawCode.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(normalizedCode)
+                || normalizedCode.Length > MaxModifierCodeLength
+                || !uniqueCodes.Add(normalizedCode))
+            {
+                normalizedCodes = Array.Empty<string>();
+                return false;
+            }
+
+            normalized.Add(normalizedCode);
+        }
+
+        normalizedCodes = normalized.ToArray();
         return true;
     }
 }
