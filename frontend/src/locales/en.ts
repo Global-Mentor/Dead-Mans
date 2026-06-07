@@ -137,6 +137,19 @@ const en = {
         error: 'Failed to load modifier catalog.',
         empty: 'Modifier catalog is empty.',
       },
+      questions: {
+        title: 'Question management',
+        description:
+          'Temporary admin form to enable/disable questions and categories in the shared vector.',
+        searchLabel: 'Search by question/answer',
+        categoryAll: 'All categories',
+        enableCategory: 'Enable category',
+        disableCategory: 'Disable category',
+        loading: 'Loading question catalog...',
+        error: 'Failed to load question catalog.',
+        empty: 'No questions match current filters.',
+        meta: 'Category: {{category}} · Reward: {{reward}} · Asked: {{asked}} · Correct: {{correct}}',
+      },
       reloadFromServer: 'Reload',
       remoteChangeNotice:
         'Another administrator changed this draft. Reload to discard your unsaved edits and show the server version.',

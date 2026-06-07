@@ -19,4 +19,10 @@ export const API_ERROR_CODES = {
   gameModifierConflictActive: 'game_modifier.conflict_active',
   gameModifierLimitReached: 'game_modifier.limit_reached',
   gameModifierUserNotResolved: 'game_modifier.user_not_resolved',
+  gameQuestionInvalidRequest: 'game_question.invalid_request',
+  gameQuestionNotFound: 'game_question.not_found',
+  gameQuestionNoActiveGame: 'game_question.no_active_game',
+  gameQuestionNoAvailableQuestions: 'game_question.no_available_questions',
+  gameQuestionRoundNotFound: 'game_question.round_not_found',
+  gameQuestionRoundNotPending: 'game_question.round_not_pending',
 } as const

@@ -112,6 +112,22 @@ export const httpClient = {
     return handleResponse<T>(response)
   },
 
+  async patch<T>(path: string, body?: unknown, options: HttpRequestOptions = {}): Promise<T> {
+    const url = buildUrl(path, options)
+    logger.debug('HTTP PATCH', { url, body, options })
+    const requestInit = toRequestInit(options)
+    const response = await fetch(url, {
+      ...requestInit,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(requestInit.headers ?? {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+    return handleResponse<T>(response)
+  },
+
   async delete<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
     const url = buildUrl(path, options)
     logger.debug('HTTP DELETE', { url, options })

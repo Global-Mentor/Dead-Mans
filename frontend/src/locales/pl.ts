@@ -139,6 +139,19 @@ const pl = {
         error: 'Nie udało się załadować katalogu modyfikatorów.',
         empty: 'Katalog modyfikatorów jest pusty.',
       },
+      questions: {
+        title: 'Zarządzanie pytaniami',
+        description:
+          'Tymczasowy formularz admina do włączania/wyłączania pytań i kategorii we wspólnym wektorze.',
+        searchLabel: 'Szukaj po pytaniu/odpowiedzi',
+        categoryAll: 'Wszystkie kategorie',
+        enableCategory: 'Włącz kategorię',
+        disableCategory: 'Wyłącz kategorię',
+        loading: 'Ładowanie katalogu pytań...',
+        error: 'Nie udało się załadować katalogu pytań.',
+        empty: 'Brak pytań dla bieżących filtrów.',
+        meta: 'Kategoria: {{category}} · Nagroda: {{reward}} · Zadane: {{asked}} · Poprawne: {{correct}}',
+      },
       reloadFromServer: 'Odśwież',
       remoteChangeNotice:
         'Inny administrator zmienił szkic. Kliknij Odśwież, aby odrzucić niezapisane zmiany i pokazać wersję z serwera.',
