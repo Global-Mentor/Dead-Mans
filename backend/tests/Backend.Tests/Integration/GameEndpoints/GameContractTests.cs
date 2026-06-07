@@ -266,6 +266,73 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(AppMessages.ErrorCodes.GameModifierLimitReached, payload.Code);
     }
 
+    [Fact]
+    public async Task GetQuestionCatalog_WhenAdmin_ReturnsCatalog()
+    {
+        await SeedQuestionVectorWithQuestionsAsync(
+            [
+                new SeedQuestionItem("sample-q-1001", "lore", "Как называется демо вопрос?", "Демо", 1),
+                new SeedQuestionItem("sample-q-1002", "locations", "Сколько точек эвакуации на демо карте?", "2", 2)
+            ]
+        );
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var response = await adminClient.GetAsync("/api/game/questions/catalog");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<IReadOnlyList<GameQuestionCatalogItemDto>>();
+        Assert.NotNull(payload);
+        Assert.Contains(payload, question => question.QuestionCode == "sample-q-1001");
+        Assert.Contains(payload, question => question.QuestionCode == "sample-q-1002");
+    }
+
+    [Fact]
+    public async Task AskNextQuestion_WhenOnlySingleQuestionAvailable_SecondCallReturnsNotFound()
+    {
+        await SeedActiveGameForQuestionsAsync();
+        await SeedQuestionVectorWithQuestionsAsync(
+            [new SeedQuestionItem("single-q-0001", "lore", "Одиночный вопрос?", "Да", 2)]
+        );
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+
+        var firstResponse = await moderatorClient.PostAsync("/api/game/questions/ask-next", content: null);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        var secondResponse = await moderatorClient.PostAsync("/api/game/questions/ask-next", content: null);
+        Assert.Equal(HttpStatusCode.NotFound, secondResponse.StatusCode);
+        var payload = await secondResponse.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameQuestionNoAvailableQuestions, payload.Code);
+    }
+
+    [Fact]
+    public async Task AnswerQuestionRound_WhenAnswerCorrect_ReturnsAnsweredCorrectWithPoints()
+    {
+        await SeedActiveGameForQuestionsAsync();
+        await SeedQuestionVectorWithQuestionsAsync(
+            [new SeedQuestionItem("answer-q-0001", "stats", "Сколько будет 1+1?", "2", 3)]
+        );
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+
+        var askResponse = await moderatorClient.PostAsync("/api/game/questions/ask-next", content: null);
+        Assert.Equal(HttpStatusCode.OK, askResponse.StatusCode);
+        var asked = await askResponse.Content.ReadFromJsonAsync<AskedGameQuestionDto>();
+        Assert.NotNull(asked);
+
+        var answerResponse = await moderatorClient.PostAsJsonAsync(
+            $"/api/game/questions/rounds/{asked.RoundId}/answer",
+            new AnswerGameQuestionRequestDto("2", "Integration Tester")
+        );
+
+        Assert.Equal(HttpStatusCode.OK, answerResponse.StatusCode);
+        var answered = await answerResponse.Content.ReadFromJsonAsync<GameQuestionRoundSummaryDto>();
+        Assert.NotNull(answered);
+        Assert.Equal("answered_correct", answered.Status);
+        Assert.True(answered.IsCorrect);
+        Assert.Equal(3, answered.AwardedPoints);
+        Assert.Equal("Integration Tester", answered.AnsweredByDisplayName);
+    }
+
     private async Task AssertRepositoryFallbackAsync(Guid finishedGameId)
     {
         using var scope = _factory.Services.CreateScope();
@@ -563,6 +630,99 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         );
         await dbContext.SaveChangesAsync();
     }
+
+    private async Task SeedActiveGameForQuestionsAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        dbContext.GameQuestionRounds.RemoveRange(dbContext.GameQuestionRounds);
+        dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
+        dbContext.QuestionVectors.RemoveRange(dbContext.QuestionVectors);
+        dbContext.GameActiveModifiers.RemoveRange(dbContext.GameActiveModifiers);
+        dbContext.GameModifierSelections.RemoveRange(dbContext.GameModifierSelections);
+        dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
+        dbContext.GameBoards.RemoveRange(dbContext.GameBoards);
+        dbContext.Games.RemoveRange(dbContext.Games);
+        await dbContext.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        dbContext.Games.Add(
+            new Game
+            {
+                Id = Guid.NewGuid(),
+                Title = "Questions Active Game",
+                Status = GameStatusValue.Active,
+                CreatedAtUtc = now,
+                StartedAtUtc = now
+            }
+        );
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task SeedQuestionVectorWithQuestionsAsync(IReadOnlyList<SeedQuestionItem> questions)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        dbContext.GameQuestionRounds.RemoveRange(dbContext.GameQuestionRounds);
+        dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
+        dbContext.QuestionVectors.RemoveRange(dbContext.QuestionVectors);
+        await dbContext.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        var vector = new QuestionVector
+        {
+            Code = "sample-default",
+            Name = "Sample default vector",
+            IsEnabled = true,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        };
+        dbContext.QuestionVectors.Add(vector);
+
+        var sortOrder = 1;
+        foreach (var question in questions)
+        {
+            dbContext.QuestionDefinitions.Add(
+                new QuestionDefinition
+                {
+                    Id = Guid.NewGuid(),
+                    VectorCode = vector.Code,
+                    ExternalCode = question.QuestionCode,
+                    Category = question.Category,
+                    Text = question.Text,
+                    Answer = question.Answer,
+                    NormalizedAnswer = NormalizeAnswer(question.Answer),
+                    Reward = question.Reward,
+                    IsEnabled = true,
+                    SortOrder = sortOrder++,
+                    AskedTotalCount = 0,
+                    CorrectTotalCount = 0,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now
+                }
+            );
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static string NormalizeAnswer(string answer)
+    {
+        return string.Join(
+            " ",
+            answer.Trim().ToLowerInvariant().Replace('ё', 'е').Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        );
+    }
+
+    private sealed record SeedQuestionItem(
+        string QuestionCode,
+        string Category,
+        string Text,
+        string Answer,
+        int Reward
+    );
 
     private async Task SeedInactiveUserAsync(Guid userId)
     {

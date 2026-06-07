@@ -29,6 +29,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<GameActiveModifier> GameActiveModifiers => Set<GameActiveModifier>();
     public DbSet<ModifierDefinition> ModifierDefinitions => Set<ModifierDefinition>();
     public DbSet<ModifierConflict> ModifierConflicts => Set<ModifierConflict>();
+    public DbSet<QuestionVector> QuestionVectors => Set<QuestionVector>();
+    public DbSet<QuestionDefinition> QuestionDefinitions => Set<QuestionDefinition>();
+    public DbSet<GameQuestionRound> GameQuestionRounds => Set<GameQuestionRound>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,5 +52,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ModifierConflictConfiguration());
         modelBuilder.ApplyConfiguration(new GameModifierSelectionConfiguration());
         modelBuilder.ApplyConfiguration(new GameActiveModifierConfiguration());
+        modelBuilder.ApplyConfiguration(new QuestionVectorConfiguration());
+        modelBuilder.ApplyConfiguration(new QuestionDefinitionConfiguration());
+        modelBuilder.ApplyConfiguration(new GameQuestionRoundConfiguration());
     }
 }

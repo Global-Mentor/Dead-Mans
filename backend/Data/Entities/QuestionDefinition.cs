@@ -1,0 +1,38 @@
+namespace backend.Data.Entities;
+
+public class QuestionDefinition
+{
+    public Guid Id { get; set; }
+
+    public string VectorCode { get; set; } = string.Empty;
+
+    public string ExternalCode { get; set; } = string.Empty;
+
+    public string Category { get; set; } = string.Empty;
+
+    public string Text { get; set; } = string.Empty;
+
+    public string Answer { get; set; } = string.Empty;
+
+    public string NormalizedAnswer { get; set; } = string.Empty;
+
+    public int Reward { get; set; }
+
+    public bool IsEnabled { get; set; } = true;
+
+    public int SortOrder { get; set; }
+
+    public int AskedTotalCount { get; set; }
+
+    public int CorrectTotalCount { get; set; }
+
+    public DateTime? LastAskedAtUtc { get; set; }
+
+    public DateTime CreatedAtUtc { get; set; }
+
+    public DateTime UpdatedAtUtc { get; set; }
+
+    public QuestionVector? Vector { get; set; }
+
+    public ICollection<GameQuestionRound> AskedInGames { get; set; } = new List<GameQuestionRound>();
+}
