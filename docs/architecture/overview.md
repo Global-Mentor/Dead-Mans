@@ -57,6 +57,9 @@ flowchart LR
 - `features/game-registration/` - общий HTTP client и data access для регистрации команд (используют `game-application` и `team-registrations`)
 - `features/game-application/` - страница заявки игрока
 - `features/team-registrations/` - admin-подтверждение команд
+- `routes/` - декларативные panel routes, guard/access helpers и route elements для `/panel`
+- `shared/ui/` - единые UI primitives (buttons/inputs/cards/dialogs/loading/state)
+- `shared/theme/` - единые UI tokens и layout presets
 - `shared/api/client/` - HTTP transport
 - `shared/api/contracts/` - generated types из OpenAPI
 - `shared/auth/` - auth context и guard

@@ -69,6 +69,8 @@
 - `src/app/` - composition root, providers, theme;
 - `src/routes/` - route config;
 - `src/features/*` - feature UI, hooks/model и feature-facing data access;
+- `src/shared/ui/` - единый слой UI-primitives (buttons/inputs/cards/dialogs/state panels);
+- `src/shared/theme/` - общие UI tokens и layout presets для единообразных стилей;
 - `src/shared/api/client/` - общий HTTP transport;
 - `src/shared/api/config.ts` - единая env-конфигурация (`VITE_API_BASE_URL`, `VITE_BACKEND_ORIGIN`);
 - `src/shared/api/contracts/` - generated transport types из OpenAPI и стабильные alias-типы;

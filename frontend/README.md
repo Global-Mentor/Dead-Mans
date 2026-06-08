@@ -29,6 +29,20 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/*` — UI, hooks и feature-local data access (board, setup, auth).
 
+## UI и стили (единый стандарт)
+
+Фронтенд использует один визуальный baseline:
+
+- `src/app/theme/appTheme.ts` — единая MUI theme-конфигурация (palette, typography, component defaults/overrides);
+- `src/shared/theme/` — общие UI-токены и layout presets;
+- `src/shared/ui/` — переиспользуемые primitives (`AppButton`, `FormTextField`, `FormSelect`, `SectionCard`, `ConfirmDialog`, `PageStatePanel`, `CenteredProgress`).
+
+Правило миграции и дальнейшей разработки:
+
+- layout-уникальность — локально в `sx`;
+- повторяемые visual patterns — только через theme override или `shared/ui`;
+- не вводим второй styling-подход параллельно MUI (`CSS Modules`, `Tailwind`, отдельный runtime-styling).
+
 ## Источник контрактов
 
 Frontend не держит transport-контракты вручную как отдельную правду. Канонический источник - `../backend/openapi/deadmans.v1.yaml`.
