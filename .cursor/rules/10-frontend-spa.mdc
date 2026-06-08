@@ -12,7 +12,7 @@ alwaysApply: false
   - `layouts/`: shells
   - `features/`: feature UI, hooks, and data access
   - `shared/`: cross-feature primitives only
-- Keep app composition in `app/`. Route trees, lazy page wiring, and other app-wide composition should not drift into parallel root-level entry modules.
+- Keep app composition in `app/`. The single panel route source of truth is `panel-route-config.tsx` (metadata + lazy pages + optional realtime sync). Route trees (`app-route-tree.tsx`) and `AppRoutes` consume it; `routes/app-routes.ts` re-exports metadata and access helpers only.
 - Keep pages and layouts thin. Data loading, orchestration, permissions, route access rules, and non-trivial state transitions belong in hooks, route helpers, or feature modules.
 - Keep feature boundaries explicit. When a feature is consumed by another feature, expose a public API (`features/<feature>/index.ts`) instead of deep imports into a neighbor's `api/`, `model/`, or `ui/` internals.
 - Use shared HTTP infrastructure and feature-facing data access. Do not scatter raw `fetch`, ad-hoc transport code, or local API shapes across components.

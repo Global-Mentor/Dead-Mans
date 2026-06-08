@@ -1,63 +1,22 @@
 import type { AuthRole } from '../shared/api/contracts/index.ts'
 import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 
-export const panelRootPath = '/panel'
-
-export interface PanelRouteDefinition {
-  id: string
-  path: string
-  fullPath: string
-  labelKey: string
-  descriptionKey?: string
-  allowedRoles?: readonly AuthRole[]
-}
-
-const authenticatedPanelRoles = ['viewer', 'moderator', 'admin'] as const satisfies readonly AuthRole[]
-
-export const gameBoardRoute = {
-  id: 'game-board',
-  path: 'game-board',
-  fullPath: `${panelRootPath}/game-board`,
-  labelKey: 'navigation.items.gameBoard.label',
-  descriptionKey: 'navigation.items.gameBoard.description',
-  allowedRoles: authenticatedPanelRoles,
-} as const satisfies PanelRouteDefinition
-
-export const gameSetupRoute = {
-  id: 'game-setup',
-  path: 'game-setup',
-  fullPath: `${panelRootPath}/game-setup`,
-  labelKey: 'navigation.items.gameSetup.label',
-  descriptionKey: 'navigation.items.gameSetup.description',
-  allowedRoles: ['admin'],
-} as const satisfies PanelRouteDefinition
-
-export const gameApplicationRoute = {
-  id: 'game-application',
-  path: 'game-application',
-  fullPath: `${panelRootPath}/game-application`,
-  labelKey: 'navigation.items.gameApplication.label',
-  descriptionKey: 'navigation.items.gameApplication.description',
-  allowedRoles: authenticatedPanelRoles,
-} as const satisfies PanelRouteDefinition
-
-export const teamRegistrationsRoute = {
-  id: 'team-registrations',
-  path: 'team-registrations',
-  fullPath: `${panelRootPath}/team-registrations`,
-  labelKey: 'navigation.items.teamRegistrations.label',
-  descriptionKey: 'navigation.items.teamRegistrations.description',
-  allowedRoles: ['admin'],
-} as const satisfies PanelRouteDefinition
-
-export const panelRoutes = [
-  gameBoardRoute,
+export {
+  defaultRoute,
   gameApplicationRoute,
+  gameBoardRoute,
   gameSetupRoute,
+  panelRootPath,
+  panelRouteConfig,
+  panelRoutes,
   teamRegistrationsRoute,
-] as const satisfies readonly PanelRouteDefinition[]
+  type PanelRouteDefinition,
+  type PanelRouteId,
+  type PanelRouteMetadata,
+} from '../app/panel-route-config.tsx'
 
-export const defaultRoute = panelRoutes[0]
+import { panelRoutes } from '../app/panel-route-config.tsx'
+import type { PanelRouteDefinition } from '../app/panel-route-config.tsx'
 
 export function hasAccessToPanelRoute(
   route: PanelRouteDefinition,
