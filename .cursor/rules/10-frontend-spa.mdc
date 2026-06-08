@@ -27,6 +27,7 @@ alwaysApply: false
   - primitives (controls and base building blocks),
   - patterns (page/section/layout composition),
   - feedback (dialog/toast/loading/error/empty states).
+- Keep `shared/ui` physically structured by those layers (`shared/ui/primitives`, `shared/ui/patterns`, `shared/ui/feedback`) and expose them through barrel exports instead of ad-hoc file-level imports.
 - Prefer `shared/ui/index.ts` barrel imports for shared UI usage in features.
 - Prefer shared UI contracts over raw MUI duplication:
   - actions via `AppButton`/`AppLinkButton`,
