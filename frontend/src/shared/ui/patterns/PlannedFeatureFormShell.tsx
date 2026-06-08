@@ -1,7 +1,7 @@
 import { Box, type SxProps, type Theme, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SectionCard } from './SectionCard.tsx'
+import { SectionCard } from '../primitives/SectionCard.tsx'
 
 interface PlannedFeatureFormShellProps {
   titleKey: string

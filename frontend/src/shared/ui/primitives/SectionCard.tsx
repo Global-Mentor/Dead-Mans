@@ -1,6 +1,6 @@
 import { Paper } from '@mui/material'
 import type { PaperProps } from '@mui/material'
-import { uiTokens } from '../theme/tokens.ts'
+import { uiTokens } from '../../theme/tokens.ts'
 
 interface SectionCardProps extends PaperProps {
   inset?: boolean

@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import type { BoxProps, SxProps, Theme } from '@mui/material'
-import { pageShellSx, setupSplitLayoutSx } from '../theme/layout-sx.ts'
+import { pageShellSx, setupSplitLayoutSx } from '../../theme/layout-sx.ts'
 
 type PageShellVariant = 'standard' | 'centered' | 'split'
 

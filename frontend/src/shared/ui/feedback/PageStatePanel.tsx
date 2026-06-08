@@ -1,5 +1,5 @@
 import { CircularProgress, Stack, Typography } from '@mui/material'
-import { SectionCard } from './SectionCard.tsx'
+import { SectionCard } from '../primitives/SectionCard.tsx'
 
 interface PageStatePanelProps {
   title?: string

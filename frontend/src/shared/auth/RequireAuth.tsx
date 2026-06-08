@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from './use-auth.ts'
-import { CenteredProgress } from '../ui/CenteredProgress.tsx'
+import { CenteredProgress } from '../ui/index.ts'
 
 interface RequireAuthProps {
   children: ReactNode
