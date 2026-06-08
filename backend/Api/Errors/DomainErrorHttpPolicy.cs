@@ -7,7 +7,7 @@ namespace backend.Api.Errors;
 
 public static class DomainErrorHttpPolicy
 {
-#pragma warning disable CS8524 // Unnamed enum values are rejected via ArgumentOutOfRangeException at call sites.
+#pragma warning disable CS8524
     public static ApiErrorDescriptor FromRegistration(GameRegistrationErrorCode error) =>
         error switch
         {

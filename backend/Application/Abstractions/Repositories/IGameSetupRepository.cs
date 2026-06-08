@@ -19,9 +19,5 @@ public interface IGameSetupRepository
         GameSetupDraftUpdate update,
         CancellationToken cancellationToken = default
     );
-
-    /// <summary>
-    /// Deletes the current draft game. Returns its id when removed, otherwise null.
-    /// </summary>
     Task<Guid?> DeleteDraftSetupAsync(CancellationToken cancellationToken = default);
 }

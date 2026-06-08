@@ -3,14 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+#pragma warning disable CA1814
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddModifierDefinitionsAndSeed : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
@@ -143,8 +141,6 @@ namespace backend.Data.Migrations
                 principalColumn: "Code",
                 onDelete: ReferentialAction.Cascade);
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(

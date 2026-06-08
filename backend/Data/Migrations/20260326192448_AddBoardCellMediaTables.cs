@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddBoardCellMediaTables : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -83,8 +81,6 @@ namespace backend.Data.Migrations
                 table: "media_assets",
                 column: "Status");
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddGameModifiers : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -69,8 +67,6 @@ namespace backend.Data.Migrations
                 table: "game_modifier_selections",
                 column: "GameId");
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

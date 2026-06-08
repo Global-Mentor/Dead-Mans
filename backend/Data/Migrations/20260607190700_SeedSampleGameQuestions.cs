@@ -6,12 +6,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260607190700_SeedSampleGameQuestions")]
     public partial class SeedSampleGameQuestions : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(
@@ -115,8 +113,6 @@ namespace backend.Data.Migrations
                 """
             );
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(

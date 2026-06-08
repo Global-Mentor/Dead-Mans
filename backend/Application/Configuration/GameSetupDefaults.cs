@@ -1,6 +1,4 @@
 namespace backend.Application.Configuration;
-
-/// <summary>Default board shape and field values for a newly created draft game.</summary>
 public static class GameSetupDefaults
 {
     public const int Rows = 5;

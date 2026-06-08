@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddGameRegistration : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropCheckConstraint(
@@ -370,8 +368,6 @@ namespace backend.Data.Migrations
                 unique: true,
                 filter: "\"Status\" IN ('forming','confirmed')");
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
