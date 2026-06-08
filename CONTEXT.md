@@ -33,6 +33,7 @@
 - инфраструктурный и технологический курс: `STACK.md`;
 - общий локальный запуск и обзор репозитория: `README.md`;
 - обзор потоков и границ: `docs/architecture/overview.md`;
+- политика retention/удаления: `docs/architecture/data-retention.md`;
 - transport-контракт: `backend/openapi/deadmans.v1.yaml` (HTTP + SignalR в `x-signalr`);
 - frontend transport types: generated из OpenAPI в `frontend/src/shared/api/contracts/` и `frontend/src/shared/realtime/generated.ts`.
 
@@ -187,8 +188,10 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - auth context и protected route для панели;
 - Twitch login flow с backend cookie session;
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR (после успешной записи в БД publish best-effort, см. `docs/architecture/realtime.md`);
-- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
+- game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `DELETE /api/game/setup` — осознанное исключение и делает hard-delete только draft-игры (с cleanup draft media); `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
 - game modifiers (phase 1): каталог модификаторов хранится в БД (`modifier_definitions`) с полями для расчёта (`category`, `scoringType`, `tier`, `defaultLimitPerGame`) и конфликтами (`modifier_conflicts`); в draft admin выбирает `enabledModifierCodes` через `PUT /api/game/setup`; в active-игре `admin/moderator` может активировать модификатор `POST /api/game/modifiers/{modifierCode}/activate`; состояние (`enabledModifierCodes`, `activeModifiers`) входит в `GET /api/game`; realtime по `/hubs/game-board` событием `modifierActivated`;
+- game history (phase 1): endpoint `GET /api/game/history/users/{userId}` (self или `admin/moderator`) возвращает историю пользователя по играм: активации модификаторов и ответы на вопросы, сгруппированные по игре;
+- soft-delete workflow: вопросы удаляются через soft-delete (`DELETE /api/game/questions/{questionId}`), не-draft игры архивируются через soft-delete (`DELETE /api/game/lifecycle/games/{gameId}`); draft-игра остаётся исключением и удаляется hard-delete через `DELETE /api/game/setup`;
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;

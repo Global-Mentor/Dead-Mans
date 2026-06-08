@@ -1,0 +1,15 @@
+---
+description: Enforce backend data retention and delete policy
+globs: backend/**/*.cs
+alwaysApply: false
+---
+
+# Backend Data Retention
+
+- Follow `docs/architecture/data-retention.md` as the source of truth for deletion behavior.
+- `draft` game deletion is the only allowed hard-delete exception (`DELETE /api/game/setup`).
+- Non-draft games must use soft-delete (`games.IsDeleted`, `games.DeletedAtUtc`) rather than physical deletion.
+- Question catalog deletion must be soft-delete (`question_definitions.IsDeleted`, `question_definitions.DeletedAtUtc`), not physical deletion.
+- Global catalog and identity data (`users`, `question_definitions`, `modifier_definitions`) must not be cascade-deleted by game flows.
+- Keep FK delete behavior history-safe: prefer `Restrict`/archive/deactivate for references used by historical records.
+- When delete policy changes, update OpenAPI, generated frontend contracts, tests, and docs in the same task.
