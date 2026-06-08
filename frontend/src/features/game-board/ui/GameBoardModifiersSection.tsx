@@ -2,6 +2,7 @@ import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { AppButton, AsyncSection, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
+import { huntModifierItemSx } from '../theme/modifier-item-sx.ts'
 import { useGameBoardModifiers } from '../use-game-board-modifiers.ts'
 
 interface GameBoardModifiersSectionProps {
@@ -52,7 +53,7 @@ export function GameBoardModifiersSection({
               && !activateMutation.isPending
 
             return (
-              <Box key={modifier.code} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
+              <Box key={modifier.code} sx={huntModifierItemSx}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
                   <Box>
                     <Typography variant="subtitle2">{modifier.name}</Typography>

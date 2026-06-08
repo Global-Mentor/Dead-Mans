@@ -1,7 +1,7 @@
 import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gameSetupSidebarPaperSx } from '../../../shared/theme/layout-sx.ts'
+import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
 import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'

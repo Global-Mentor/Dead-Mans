@@ -15,6 +15,7 @@ import {
   GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
   GAME_SETUP_MAX_ROW_LABEL_LENGTH,
 } from '../model/game-setup-limits.ts'
+import { setupCellCardSx } from '../theme/setup-cell-sx.ts'
 import { GameSetupCellImage } from './GameSetupCellImage.tsx'
 
 interface GameSetupGridProps {
@@ -102,17 +103,7 @@ export function GameSetupGrid({
             : undefined
 
           return (
-            <SectionCard
-              variantStyle="dashed"
-              sx={{
-                p: 1,
-                aspectRatio: '5 / 6',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                bgcolor: 'action.hover',
-              }}
-            >
+            <SectionCard variantStyle="dashed" sx={setupCellCardSx}>
               <GameSetupCellImage
                 imageUrl={imageUrl}
                 imageKey={imageKey}
