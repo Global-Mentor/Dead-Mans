@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import {
   activateGameModifier,
   fetchGameModifierCatalog,
 } from '../../game-modifiers/api/game-modifiers-data-access.ts'
+import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
 
 interface GameBoardModifiersSectionProps {
   snapshot: GameBoardSnapshot
@@ -77,7 +78,7 @@ export function GameBoardModifiersSection({
   const visibleCatalog = (catalogQuery.data ?? []).filter((modifier) => enabledCodeSet.has(modifier.code))
 
   return (
-    <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+    <SectionCard sx={{ mt: 2 }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
         {t('gameBoard.modifiers.title')}
       </Typography>
@@ -147,24 +148,24 @@ export function GameBoardModifiersSection({
                             : `${t('gameBoard.modifiers.activeBadge')} ${activationCount}`
                         }
                       />
-                      <Button
+                      <AppButton
                         size="small"
-                        variant="outlined"
+                        tone="secondary"
                         disabled={!canActivate}
                         onClick={() => activateMutation.mutate(modifier.code)}
                       >
                         {t('gameBoard.modifiers.activate')}
-                      </Button>
+                      </AppButton>
                     </>
                   ) : (
-                    <Button
+                    <AppButton
                       size="small"
-                      variant="outlined"
+                      tone="secondary"
                       disabled={!canActivate}
                       onClick={() => activateMutation.mutate(modifier.code)}
                     >
                       {t('gameBoard.modifiers.activate')}
-                    </Button>
+                    </AppButton>
                   )}
                 </Stack>
               </Stack>
@@ -172,6 +173,6 @@ export function GameBoardModifiersSection({
           )
         })}
       </Stack>
-    </Paper>
+    </SectionCard>
   )
 }

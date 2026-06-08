@@ -1,12 +1,5 @@
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.tsx'
 
 interface ResetGameSetupDialogProps {
   open: boolean
@@ -24,24 +17,16 @@ export function ResetGameSetupDialog({
   const { t } = useTranslation()
 
   return (
-    <Dialog open={open} onClose={isSubmitting ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{t('gameSetup.resetDialog.title')}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>{t('gameSetup.resetDialog.description')}</DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isSubmitting}>
-          {t('gameSetup.resetDialog.cancel')}
-        </Button>
-        <Button
-          color="error"
-          variant="contained"
-          disabled={isSubmitting}
-          onClick={() => void onConfirm()}
-        >
-          {isSubmitting ? t('gameSetup.resetDialog.submitting') : t('gameSetup.resetDialog.confirm')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDialog
+      open={open}
+      isBusy={isSubmitting}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      title={t('gameSetup.resetDialog.title')}
+      description={t('gameSetup.resetDialog.description')}
+      cancelLabel={t('gameSetup.resetDialog.cancel')}
+      confirmLabel={isSubmitting ? t('gameSetup.resetDialog.submitting') : t('gameSetup.resetDialog.confirm')}
+      confirmTone="danger"
+    />
   )
 }

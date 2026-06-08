@@ -1,5 +1,6 @@
-import { Button, MenuItem, Stack, TextField } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { AppButton, FormSelect } from '../../../shared/ui/index.ts'
 import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
 import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
 import { teamRegistrationsPlannedRoadmap } from '../team-registrations-planned-features.ts'
@@ -15,35 +16,34 @@ export function TeamRegistrationsInvitePlannedSection() {
       >
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              select
+            <FormSelect
               label={t('plannedFeatures.teamRegistrations.form.slot')}
-              size="small"
               disabled
-              defaultValue={1}
-              fullWidth
-            >
-              <MenuItem value={1}>1</MenuItem>
-              <MenuItem value={2}>2</MenuItem>
-            </TextField>
-            <TextField
-              select
+              value={1}
+              onChange={() => undefined}
+              options={[
+                { value: 1, label: '1' },
+                { value: 2, label: '2' },
+              ]}
+            />
+            <FormSelect
               label={t('plannedFeatures.teamRegistrations.form.player')}
-              size="small"
               disabled
-              fullWidth
+              value=""
+              onChange={() => undefined}
+              options={[{ value: '', label: t('plannedFeatures.teamRegistrations.form.player') }]}
             />
           </Stack>
-          <TextField
-            select
+          <FormSelect
             label={t('plannedFeatures.teamRegistrations.form.targetTeam')}
-            size="small"
             disabled
-            fullWidth
+            value=""
+            onChange={() => undefined}
+            options={[{ value: '', label: t('plannedFeatures.teamRegistrations.form.targetTeam') }]}
           />
-          <Button variant="contained" disabled>
+          <AppButton disabled>
             {t('plannedFeatures.teamRegistrations.form.sendInvite')}
-          </Button>
+          </AppButton>
         </Stack>
       </PlannedFeatureFormShell>
       <PlannedFeatureRoadmap items={teamRegistrationsPlannedRoadmap} />

@@ -1,5 +1,6 @@
-import { Button, Stack, TextField } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
 import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
 import { gameSetupPlannedRoadmap } from '../game-setup-planned-features.ts'
@@ -14,48 +15,40 @@ export function GameSetupRegistrationPlannedSection() {
         descriptionKey="plannedFeatures.gameSetup.form.registrationDescription"
       >
         <Stack spacing={2}>
-          <TextField
+          <FormTextField
             label={t('plannedFeatures.gameSetup.form.teamSlotCount')}
             type="number"
-            size="small"
             disabled
             defaultValue={6}
-            fullWidth
           />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
+            <FormTextField
               label={t('plannedFeatures.gameSetup.form.minPlayers')}
               type="number"
-              size="small"
               disabled
               defaultValue={1}
-              fullWidth
             />
-            <TextField
+            <FormTextField
               label={t('plannedFeatures.gameSetup.form.maxPlayers')}
               type="number"
-              size="small"
               disabled
               defaultValue={3}
-              fullWidth
             />
           </Stack>
-          <TextField
+          <FormTextField
             label={t('plannedFeatures.gameSetup.form.reservedSlots')}
             placeholder={t('plannedFeatures.gameSetup.form.reservedSlotsPlaceholder')}
-            size="small"
             disabled
-            fullWidth
             multiline
             minRows={2}
           />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button variant="contained" disabled fullWidth>
+            <AppButton disabled fullWidth>
               {t('plannedFeatures.gameSetup.form.openRegistration')}
-            </Button>
-            <Button variant="outlined" disabled fullWidth>
+            </AppButton>
+            <AppButton tone="secondary" disabled fullWidth>
               {t('plannedFeatures.gameSetup.form.startGame')}
-            </Button>
+            </AppButton>
           </Stack>
         </Stack>
       </PlannedFeatureFormShell>

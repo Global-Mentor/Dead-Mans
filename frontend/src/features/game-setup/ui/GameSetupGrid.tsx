@@ -1,7 +1,8 @@
-import { Box, Paper, TextField } from '@mui/material'
+import { Box } from '@mui/material'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
+import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import {
   getGameSetupCellAt,
   upsertGameSetupCellDraft,
@@ -59,7 +60,7 @@ export function GameSetupGrid({
         >
           <Box sx={{ minWidth: 72 }} />
           {draft.colLabels.map((columnLabel, columnIndex) => (
-            <TextField
+            <FormTextField
               key={`column-${columnIndex}`}
               label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
               value={columnLabel}
@@ -72,7 +73,6 @@ export function GameSetupGrid({
                   ),
                 }))
               }}
-              size="small"
               inputProps={{
                 maxLength: GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
                 sx: { textAlign: 'center', fontWeight: 600 },
@@ -92,7 +92,7 @@ export function GameSetupGrid({
         >
           {draft.rowLabels.map((rowLabel, rowIndex) => (
             <Fragment key={`row-${rowIndex}`}>
-              <TextField
+              <FormTextField
                 label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
                 value={rowLabel}
                 onChange={(event) => {
@@ -104,7 +104,6 @@ export function GameSetupGrid({
                     ),
                   }))
                 }}
-                size="small"
                 inputProps={{
                   maxLength: GAME_SETUP_MAX_ROW_LABEL_LENGTH,
                   sx: { textAlign: 'center', fontWeight: 600 },
@@ -122,9 +121,8 @@ export function GameSetupGrid({
                   : undefined
 
                 return (
-                  <Paper
+                  <SectionCard
                     key={`${rowIndex}-${colIndex}`}
-                    variant="outlined"
                     sx={{
                       p: 1,
                       aspectRatio: '5 / 6',
@@ -132,7 +130,7 @@ export function GameSetupGrid({
                       flexDirection: 'column',
                       gap: 1,
                       borderStyle: 'dashed',
-                      bgcolor: 'rgba(255,255,255,0.02)',
+                      bgcolor: 'action.hover',
                     }}
                   >
                     <GameSetupCellImage
@@ -146,7 +144,7 @@ export function GameSetupGrid({
                       onUpload={onUploadCellMedia}
                       onDelete={onDeleteCellMedia}
                     />
-                    <TextField
+                    <FormTextField
                       label={t('gameSetup.cellTitleLabel')}
                       value={cellDraft?.title ?? ''}
                       onChange={(event) => {
@@ -157,10 +155,9 @@ export function GameSetupGrid({
                           }),
                         )
                       }}
-                      size="small"
                       inputProps={{ maxLength: GAME_SETUP_MAX_CELL_TITLE_LENGTH }}
                     />
-                    <TextField
+                    <FormTextField
                       label={t('gameSetup.cellPriceLabel')}
                       value={cellDraft?.cost ?? 0}
                       onChange={(event) => {
@@ -172,11 +169,10 @@ export function GameSetupGrid({
                           }),
                         )
                       }}
-                      size="small"
                       type="number"
                       inputProps={{ min: 0 }}
                     />
-                  </Paper>
+                  </SectionCard>
                 )
               })}
             </Fragment>

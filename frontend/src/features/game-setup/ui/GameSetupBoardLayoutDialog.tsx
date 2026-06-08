@@ -1,20 +1,15 @@
 import {
   Alert,
-  Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Typography,
 } from '@mui/material'
-import type { SelectChangeEvent } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AppButton, FormSelect } from '../../../shared/ui/index.ts'
 import {
   applyGameSetupBoardLayoutChange,
   canApplyBoardLayoutChange,
@@ -123,62 +118,45 @@ export function GameSetupBoardLayoutDialog({
 
         {!confirmStep ? (
           <Stack spacing={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="board-layout-action-label">
-                {t('gameSetup.layoutDialog.actionLabel')}
-              </InputLabel>
-              <Select
-                labelId="board-layout-action-label"
-                label={t('gameSetup.layoutDialog.actionLabel')}
-                value={action}
-                onChange={(event: SelectChangeEvent<BoardLayoutAction>) => {
-                  setAction(event.target.value as BoardLayoutAction)
-                  setConfirmStep(false)
-                }}
-              >
-                <MenuItem value="add">{t('gameSetup.layoutDialog.actionAdd')}</MenuItem>
-                <MenuItem value="remove">{t('gameSetup.layoutDialog.actionRemove')}</MenuItem>
-              </Select>
-            </FormControl>
+            <FormSelect
+              label={t('gameSetup.layoutDialog.actionLabel')}
+              value={action}
+              onChange={(nextAction) => {
+                setAction(nextAction)
+                setConfirmStep(false)
+              }}
+              options={[
+                { value: 'add', label: t('gameSetup.layoutDialog.actionAdd') },
+                { value: 'remove', label: t('gameSetup.layoutDialog.actionRemove') },
+              ]}
+            />
 
-            <FormControl fullWidth size="small">
-              <InputLabel id="board-layout-axis-label">
-                {t('gameSetup.layoutDialog.axisLabel')}
-              </InputLabel>
-              <Select
-                labelId="board-layout-axis-label"
-                label={t('gameSetup.layoutDialog.axisLabel')}
-                value={axis}
-                onChange={(event: SelectChangeEvent<BoardLayoutAxis>) => {
-                  setAxis(event.target.value as BoardLayoutAxis)
-                  setConfirmStep(false)
-                }}
-              >
-                <MenuItem value="row">{t('gameSetup.layoutDialog.axisRow')}</MenuItem>
-                <MenuItem value="column">{t('gameSetup.layoutDialog.axisColumn')}</MenuItem>
-              </Select>
-            </FormControl>
+            <FormSelect
+              label={t('gameSetup.layoutDialog.axisLabel')}
+              value={axis}
+              onChange={(nextAxis) => {
+                setAxis(nextAxis)
+                setConfirmStep(false)
+              }}
+              options={[
+                { value: 'row', label: t('gameSetup.layoutDialog.axisRow') },
+                { value: 'column', label: t('gameSetup.layoutDialog.axisColumn') },
+              ]}
+            />
 
-            <FormControl fullWidth size="small" disabled={positionIndexes.length === 0 || !canApply}>
-              <InputLabel id="board-layout-position-label">
-                {t('gameSetup.layoutDialog.positionLabel')}
-              </InputLabel>
-              <Select
-                labelId="board-layout-position-label"
-                label={t('gameSetup.layoutDialog.positionLabel')}
-                value={selectedPositionIndex}
-                onChange={(event: SelectChangeEvent<number>) => {
-                  setPositionIndex(Number(event.target.value))
-                  setConfirmStep(false)
-                }}
-              >
-                {positionIndexes.map((index) => (
-                  <MenuItem key={`${action}-${axis}-${index}`} value={index}>
-                    {getPositionLabel(index)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <FormSelect
+              disabled={positionIndexes.length === 0 || !canApply}
+              label={t('gameSetup.layoutDialog.positionLabel')}
+              value={selectedPositionIndex}
+              onChange={(nextPositionIndex) => {
+                setPositionIndex(Number(nextPositionIndex))
+                setConfirmStep(false)
+              }}
+              options={positionIndexes.map((index) => ({
+                value: index,
+                label: getPositionLabel(index),
+              }))}
+            />
 
             {!canApply ? (
               <Alert severity="warning">{t('gameSetup.layoutDialog.limitReached')}</Alert>
@@ -193,17 +171,17 @@ export function GameSetupBoardLayoutDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={confirmStep ? () => setConfirmStep(false) : handleClose}>
+        <AppButton tone="ghost" onClick={confirmStep ? () => setConfirmStep(false) : handleClose}>
           {confirmStep ? t('gameSetup.layoutDialog.back') : t('gameSetup.layoutDialog.cancel')}
-        </Button>
-        <Button
-          variant="contained"
+        </AppButton>
+        <AppButton
+          tone="primary"
           color={action === 'remove' ? 'error' : 'primary'}
           disabled={!canApply || positionIndexes.length === 0}
           onClick={handlePrimaryClick}
         >
           {confirmStep ? t('gameSetup.layoutDialog.confirm') : t('gameSetup.layoutDialog.review')}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   )

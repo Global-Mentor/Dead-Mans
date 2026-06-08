@@ -1,14 +1,13 @@
 import {
-  Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField,
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 
@@ -66,9 +65,8 @@ function CreateGameSetupDialogForm({ isSubmitting, onCreate }: CreateGameSetupDi
             : t('gameSetup.createDialog.detailsDescription')}
         </Typography>
         {!isPromptStep ? (
-          <TextField
+          <FormTextField
             autoFocus
-            fullWidth
             label={t('gameSetup.createDialog.nameLabel')}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -87,18 +85,18 @@ function CreateGameSetupDialogForm({ isSubmitting, onCreate }: CreateGameSetupDi
       </DialogContent>
       <DialogActions>
         {!isPromptStep ? (
-          <Button onClick={() => setStep('prompt')} disabled={isSubmitting}>
+          <AppButton tone="ghost" onClick={() => setStep('prompt')} disabled={isSubmitting}>
             {t('gameSetup.createDialog.back')}
-          </Button>
+          </AppButton>
         ) : null}
         {isPromptStep ? (
-          <Button variant="contained" onClick={() => setStep('details')}>
+          <AppButton onClick={() => setStep('details')}>
             {t('gameSetup.createDialog.startCreate')}
-          </Button>
+          </AppButton>
         ) : (
-          <Button variant="contained" onClick={() => void handleCreate()} disabled={isSubmitting}>
+          <AppButton onClick={() => void handleCreate()} disabled={isSubmitting}>
             {t('gameSetup.createDialog.confirm')}
-          </Button>
+          </AppButton>
         )}
       </DialogActions>
     </>

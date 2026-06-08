@@ -1,54 +1,43 @@
 import { Suspense, lazy } from 'react'
-import { Box, CircularProgress } from '@mui/material'
 import { Route } from 'react-router-dom'
 import {
   gameApplicationRoute,
   gameBoardRoute,
   gameSetupRoute,
   teamRegistrationsRoute,
-} from '../../routes/app-routes.ts'
-import { PanelIndexRedirect } from '../../routes/PanelIndexRedirect.tsx'
-import { RequirePanelRouteAccess } from '../../routes/RequirePanelRouteAccess.tsx'
-import { GameBoardRealtimeSync } from '../../features/game-board/realtime/GameBoardRealtimeSync.tsx'
-import { GameSetupRealtimeSync } from '../../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
+} from './app-routes.ts'
+import { PanelIndexRedirect } from './PanelIndexRedirect.tsx'
+import { RequirePanelRouteAccess } from './RequirePanelRouteAccess.tsx'
+import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
+import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
+import { CenteredProgress } from '../shared/ui/CenteredProgress.tsx'
 
 const GameBoardPage = lazy(() =>
-  import('../../features/game-board/GameBoardPage.tsx').then((module) => ({
+  import('../features/game-board/GameBoardPage.tsx').then((module) => ({
     default: module.GameBoardPage,
   })),
 )
 const GameSetupPage = lazy(() =>
-  import('../../features/game-setup/GameSetupPage.tsx').then((module) => ({
+  import('../features/game-setup/GameSetupPage.tsx').then((module) => ({
     default: module.GameSetupPage,
   })),
 )
 const GameApplicationPage = lazy(() =>
-  import('../../features/game-application/GameApplicationPage.tsx').then((module) => ({
+  import('../features/game-application/GameApplicationPage.tsx').then((module) => ({
     default: module.GameApplicationPage,
   })),
 )
 const TeamRegistrationsPage = lazy(() =>
-  import('../../features/team-registrations/TeamRegistrationsPage.tsx').then((module) => ({
+  import('../features/team-registrations/TeamRegistrationsPage.tsx').then((module) => ({
     default: module.TeamRegistrationsPage,
   })),
 )
 
 function PanelRouteFallback() {
-  return (
-    <Box
-      sx={{
-        minHeight: 240,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <CircularProgress size={28} />
-    </Box>
-  )
+  return <CenteredProgress minHeight={240} />
 }
 
-export function PanelRoutes() {
+export function PanelRouteElements() {
   return (
     <>
       <Route index element={<PanelIndexRedirect />} />
@@ -97,3 +86,4 @@ export function PanelRoutes() {
     </>
   )
 }
+

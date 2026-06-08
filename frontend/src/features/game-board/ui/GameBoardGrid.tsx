@@ -93,7 +93,9 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                       }
                     }}
                     sx={{
-                      border: isOpen ? '2px solid #90caf9' : '1px solid rgba(255,255,255,0.12)',
+                      border: '1px solid',
+                      borderColor: isOpen ? 'primary.main' : 'divider',
+                      borderWidth: isOpen ? 2 : 1,
                       borderRadius: 1,
                       position: 'relative',
                       overflow: 'hidden',
@@ -108,7 +110,7 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                       transition: 'border-color 0.15s ease, transform 0.15s ease',
                       '&:hover': isClickable
                         ? {
-                            borderColor: '#42a5f5',
+                            borderColor: 'primary.light',
                             transform: 'translateY(-1px)',
                           }
                         : undefined,
@@ -150,7 +152,7 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                             <Typography
                               variant="subtitle2"
                               color="text.secondary"
-                              sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                            sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
                             >
                               {t('gameBoard.closedCellLabel')}
                             </Typography>

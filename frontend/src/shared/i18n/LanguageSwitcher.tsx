@@ -1,6 +1,5 @@
-import { FormControl, MenuItem, Select } from '@mui/material'
-import type { SelectChangeEvent } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { FormSelect } from '../ui/FormSelect.tsx'
 
 const languageCodes = ['ru', 'en', 'uk', 'pl'] as const
 
@@ -11,36 +10,27 @@ export function LanguageSwitcher() {
     (i18n.resolvedLanguage || i18n.language || 'ru').split('-')[0] ?? 'ru'
   const value = languageCodes.includes(current as (typeof languageCodes)[number]) ? current : 'ru'
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
-    const next = event.target.value
+  const handleChange = (next: string) => {
     void i18n.changeLanguage(next)
   }
 
   return (
-    <FormControl
+    <FormSelect
       size="small"
+      label=""
+      value={value}
+      onChange={handleChange}
+      options={languageCodes.map((languageCode) => ({
+        value: languageCode,
+        label: t(`languageSwitcher.languages.${languageCode}`),
+      }))}
       sx={{
         minWidth: 70,
         ml: 2,
         '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
+        '& .MuiInputBase-input': { py: 0.3, fontSize: 12 },
+        '& .MuiInputLabel-root': { display: 'none' },
       }}
-    >
-      <Select
-        value={value}
-        onChange={handleChange}
-        autoWidth
-        displayEmpty
-        sx={{
-          fontSize: 12,
-          py: 0.3,
-        }}
-      >
-        {languageCodes.map((languageCode) => (
-          <MenuItem key={languageCode} value={languageCode}>
-            {t(`languageSwitcher.languages.${languageCode}`)}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+    />
   )
 }

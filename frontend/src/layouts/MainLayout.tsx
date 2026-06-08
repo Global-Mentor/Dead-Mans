@@ -2,6 +2,7 @@ import { Box, Container, Typography } from '@mui/material'
 import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
+import { uiTokens } from '../shared/theme/tokens.ts'
 import { PanelNavigationDrawer } from './PanelNavigationDrawer.tsx'
 
 export function MainLayout() {
@@ -28,6 +29,7 @@ export function MainLayout() {
         sx={{
           flexGrow: 1,
           py: 3,
+          pb: uiTokens.spacing.page.md,
           display: 'flex',
           flexDirection: 'column',
         }}

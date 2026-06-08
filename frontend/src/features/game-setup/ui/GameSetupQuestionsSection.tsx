@@ -1,13 +1,10 @@
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   Chip,
   FormControlLabel,
-  Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -19,6 +16,7 @@ import {
   setGameQuestionCategoryEnabled,
   setGameQuestionEnabled,
 } from '../api/game-questions-data-access.ts'
+import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 
 function toCategoryTitle(category: string) {
   return category
@@ -59,7 +57,7 @@ export function GameSetupQuestionsSection() {
     },
   })
 
-  const questions = catalogQuery.data ?? []
+  const questions = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data])
 
   const categories = useMemo(() => {
     return Array.from(new Set(questions.map((question) => question.category))).sort((a, b) =>
@@ -76,7 +74,7 @@ export function GameSetupQuestionsSection() {
   }, [activeCategory, questions])
 
   return (
-    <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+    <SectionCard sx={{ mt: 2 }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
         {t('gameSetup.questions.title')}
       </Typography>
@@ -85,9 +83,7 @@ export function GameSetupQuestionsSection() {
       </Typography>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
-        <TextField
-          size="small"
-          fullWidth
+        <FormTextField
           value={search}
           label={t('gameSetup.questions.searchLabel')}
           onChange={(event) => setSearch(event.target.value)}
@@ -112,23 +108,23 @@ export function GameSetupQuestionsSection() {
 
       {activeCategory ? (
         <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-          <Button
+          <AppButton
             size="small"
-            variant="outlined"
+            tone="secondary"
             disabled={toggleCategoryMutation.isPending}
             onClick={() => toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: true })}
           >
             {t('gameSetup.questions.enableCategory')}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             size="small"
-            variant="outlined"
+            tone="secondary"
             color="warning"
             disabled={toggleCategoryMutation.isPending}
             onClick={() => toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: false })}
           >
             {t('gameSetup.questions.disableCategory')}
-          </Button>
+          </AppButton>
         </Stack>
       ) : null}
 
@@ -193,6 +189,6 @@ export function GameSetupQuestionsSection() {
           ))}
         </Stack>
       ) : null}
-    </Paper>
+    </SectionCard>
   )
 }
