@@ -1,10 +1,16 @@
 import type { Theme } from '@mui/material/styles'
+import { huntPalette } from './hunt-palette.ts'
+
+export const huntTypography = {
+  display: '"Cinzel", "Source Serif 4", Georgia, serif',
+  body: '"Source Serif 4", Georgia, "Times New Roman", serif',
+} as const
 
 export const uiTokens = {
   borderRadius: {
-    sm: 1.5,
-    md: 2,
-    lg: 3,
+    sm: 1,
+    md: 1.5,
+    lg: 2,
   },
   spacing: {
     section: 2,
@@ -14,12 +20,11 @@ export const uiTokens = {
     },
   },
   brand: {
-    twitch: '#6441A5',
-    twitchHover: '#7c4fd9',
+    twitch: huntPalette.twitch,
+    twitchHover: huntPalette.twitchHover,
   },
 } as const
 
 export function getThemeGradients(theme: Theme) {
   return theme.custom.gradients
 }
-
