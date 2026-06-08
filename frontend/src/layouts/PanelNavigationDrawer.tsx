@@ -11,11 +11,13 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getPanelRouteByPath } from '../routes/app-routes.ts'
 import { useAccessiblePanelRoutes } from '../routes/use-accessible-panel-routes.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
+import { huntBrassTitleSx, huntOverlineSx } from '../shared/theme/surface-sx.ts'
 import { AppButton, SectionCard } from '../shared/ui/index.ts'
 
 export function PanelNavigationDrawer() {
@@ -42,15 +44,10 @@ export function PanelNavigationDrawer() {
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          borderRadius: '18px 0 0 18px',
+          borderRadius: '6px 0 0 6px',
           opacity: isOpen ? 0 : 1,
           pointerEvents: isOpen ? 'none' : 'auto',
           transition: 'opacity 0.2s ease',
-          '&.Mui-focusVisible': {
-            outline: '2px solid',
-            outlineColor: 'primary.main',
-            outlineOffset: 2,
-          },
         }}
       >
         <SectionCard
@@ -58,12 +55,12 @@ export function PanelNavigationDrawer() {
             px: 1.5,
             py: 1.75,
             maxWidth: 120,
-            borderRadius: '18px 0 0 18px',
+            borderRadius: '6px 0 0 6px',
             background: (theme) => theme.custom.gradients.panelAccent,
           }}
         >
           <Stack spacing={0.75} alignItems="center">
-            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: '0.16em' }}>
+            <Typography variant="caption" sx={huntOverlineSx}>
               {t('navigation.thumbnail')}
             </Typography>
             <Typography
@@ -72,6 +69,7 @@ export function PanelNavigationDrawer() {
                 textAlign: 'center',
                 fontWeight: 700,
                 lineHeight: 1.2,
+                color: 'text.primary',
               }}
             >
               {activeRoute ? t(activeRoute.labelKey) : t('navigation.title')}
@@ -96,10 +94,10 @@ export function PanelNavigationDrawer() {
           <Stack spacing={2}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
               <Box>
-                <Typography variant="overline" color="text.secondary">
+                <Typography variant="overline" sx={huntOverlineSx}>
                   {t('navigation.title')}
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ ...huntBrassTitleSx, mt: 0.5 }}>
                   {user.displayName}
                 </Typography>
               </Box>
@@ -118,7 +116,7 @@ export function PanelNavigationDrawer() {
           <Divider />
 
           <Box>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.25 }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.25, ...huntOverlineSx }}>
               {t('navigation.availableSections')}
             </Typography>
 
@@ -133,15 +131,24 @@ export function PanelNavigationDrawer() {
                     to={route.fullPath}
                     selected={isActive}
                     onClick={() => setIsOpen(false)}
-                    sx={{
+                    sx={(theme) => ({
                       mb: 1,
-                      borderRadius: 2,
+                      borderRadius: 1,
                       alignItems: 'flex-start',
-                    }}
+                      borderLeft: isActive
+                        ? `3px solid ${theme.palette.primary.main}`
+                        : `3px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    })}
                   >
                     <ListItemText
                       primary={
-                        <Typography variant="body1" sx={{ fontWeight: isActive ? 700 : 600 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight: isActive ? 700 : 600,
+                            color: isActive ? 'primary.light' : 'text.primary',
+                          }}
+                        >
                           {t(route.labelKey)}
                         </Typography>
                       }

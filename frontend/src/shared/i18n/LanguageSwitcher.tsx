@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { FormSelect } from '../ui/index.ts'
 
@@ -25,12 +26,14 @@ export function LanguageSwitcher() {
         value: languageCode,
         label: t(`languageSwitcher.languages.${languageCode}`),
       }))}
-      sx={{
+      sx={(theme) => ({
         minWidth: 70,
         ml: 2,
-        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
+        '& .MuiOutlinedInput-notchedOutline': {
+          borderColor: alpha(theme.palette.primary.main, 0.35),
+        },
         '& .MuiInputLabel-root': { display: 'none' },
-      }}
+      })}
     />
   )
 }

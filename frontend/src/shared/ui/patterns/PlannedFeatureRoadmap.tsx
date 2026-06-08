@@ -1,5 +1,6 @@
 import { Alert, Box, type SxProps, Stack, type Theme, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { huntBrassTitleSx } from '../../theme/surface-sx.ts'
 
 export interface PlannedFeatureRoadmapItem {
   titleKey: string
@@ -20,7 +21,7 @@ export function PlannedFeatureRoadmap({ items, sx }: PlannedFeatureRoadmapProps)
 
   return (
     <Alert severity="info" variant="outlined" sx={{ ...sx }}>
-      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+      <Typography variant="subtitle2" sx={huntBrassTitleSx} gutterBottom>
         {t('plannedFeatures.roadmapTitle')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>

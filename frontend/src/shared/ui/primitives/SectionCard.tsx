@@ -1,5 +1,6 @@
 import { Paper } from '@mui/material'
 import type { PaperProps } from '@mui/material'
+import { huntInsetSurfaceSx, huntPanelSx } from '../../theme/surface-sx.ts'
 import { uiTokens } from '../../theme/tokens.ts'
 
 interface SectionCardProps extends PaperProps {
@@ -15,19 +16,20 @@ export function SectionCard({ inset = false, variantStyle = 'default', sx, ...pr
     <Paper
       variant="outlined"
       {...props}
-      sx={{
-        p: uiTokens.spacing.section,
-        borderRadius: (theme) => theme.shape.borderRadius,
-        ...(isInset ? { backgroundColor: 'action.hover' } : undefined),
-        ...(isDashed
+      sx={[
+        (theme) => ({
+          p: uiTokens.spacing.section,
+          borderRadius: theme.shape.borderRadius,
+          ...(isInset ? huntInsetSurfaceSx(theme) : huntPanelSx(theme)),
+        }),
+        isDashed
           ? {
               borderStyle: 'dashed',
-              opacity: 0.92,
+              opacity: 0.94,
             }
-          : undefined),
-        ...sx,
-      }}
+          : null,
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
     />
   )
 }
-

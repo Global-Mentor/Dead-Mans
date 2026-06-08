@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { huntBrassTitleSx } from '../../theme/surface-sx.ts'
 
 interface SectionHeaderProps {
   title: ReactNode
@@ -16,7 +17,9 @@ export function SectionHeader({ title, description, actions }: SectionHeaderProp
       alignItems={{ xs: 'stretch', sm: 'flex-start' }}
     >
       <Box>
-        <Typography variant="subtitle1">{title}</Typography>
+        <Typography variant="subtitle1" sx={huntBrassTitleSx}>
+          {title}
+        </Typography>
         {description ? (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {description}
