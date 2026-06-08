@@ -80,6 +80,26 @@ public sealed class GameQuestionController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{questionId:guid}")]
+    [Authorize(Roles = AuthRoleCodes.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteQuestion(Guid questionId, CancellationToken cancellationToken)
+    {
+        var deleted = await _gameQuestionService.SoftDeleteQuestionAsync(questionId, cancellationToken);
+        if (!deleted)
+        {
+            return this.NotFoundError(
+                AppMessages.Client.GameQuestionNotFound,
+                AppMessages.ErrorCodes.GameQuestionNotFound
+            );
+        }
+
+        return NoContent();
+    }
+
     [HttpPatch("categories/{category}/enabled")]
     [Authorize(Roles = AuthRoleCodes.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -165,10 +185,25 @@ public sealed class GameQuestionController : ControllerBase
             );
         }
 
+        Guid? answeredForUserId = null;
+        if (!string.IsNullOrWhiteSpace(request.AnsweredForUserId))
+        {
+            if (!Guid.TryParse(request.AnsweredForUserId, out var parsedAnsweredForUserId))
+            {
+                return this.BadRequestError(
+                    AppMessages.Client.GameQuestionInvalidRequest,
+                    AppMessages.ErrorCodes.GameQuestionInvalidRequest
+                );
+            }
+
+            answeredForUserId = parsedAnsweredForUserId;
+        }
+
         var result = await _gameQuestionService.AnswerRoundAsync(
             roundId,
             request.Answer,
             HttpContext.TryGetUserId(),
+            answeredForUserId,
             request.AnsweredByDisplayName,
             cancellationToken
         );

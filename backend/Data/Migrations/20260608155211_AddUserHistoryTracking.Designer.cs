@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608155211_AddUserHistoryTracking")]
+    partial class AddUserHistoryTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,20 +117,12 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime?>("FinishedAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<short>("MaxPlayersPerTeam")
                         .ValueGeneratedOnAdd()
@@ -159,27 +154,25 @@ namespace backend.Data.Migrations
 
                     b.HasIndex("CreatedAtUtc");
 
-                    b.HasIndex("IsDeleted", "Status", "CreatedAtUtc");
+                    b.HasIndex("Status", "CreatedAtUtc");
 
                     b.HasIndex(new[] { "Status" }, "UX_games_single_active")
                         .IsUnique()
-                        .HasFilter("\"Status\" = 'active' AND \"IsDeleted\" = FALSE");
+                        .HasFilter("\"Status\" = 'active'");
 
                     b.HasIndex(new[] { "Status" }, "UX_games_single_draft")
                         .IsUnique()
-                        .HasFilter("\"Status\" = 'draft' AND \"IsDeleted\" = FALSE");
+                        .HasFilter("\"Status\" = 'draft'");
 
                     b.HasIndex(new[] { "Status" }, "UX_games_single_ready")
                         .IsUnique()
-                        .HasFilter("\"Status\" = 'ready' AND \"IsDeleted\" = FALSE");
+                        .HasFilter("\"Status\" = 'ready'");
 
                     b.ToTable("games", null, t =>
                         {
                             t.HasCheckConstraint("CK_games_finishedat_semantics", "((\"Status\" IN ('draft','ready','active')) AND \"FinishedAtUtc\" IS NULL) OR ((\"Status\" = 'finished') AND \"FinishedAtUtc\" IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_games_lifecycle_timestamps", "((\"Status\" = 'draft') AND \"ReadyAtUtc\" IS NULL AND \"StartedAtUtc\" IS NULL AND \"FinishedAtUtc\" IS NULL) OR ((\"Status\" = 'ready') AND \"ReadyAtUtc\" IS NOT NULL AND \"StartedAtUtc\" IS NULL AND \"FinishedAtUtc\" IS NULL) OR ((\"Status\" = 'active') AND \"ReadyAtUtc\" IS NOT NULL AND \"StartedAtUtc\" IS NOT NULL AND \"FinishedAtUtc\" IS NULL) OR ((\"Status\" = 'finished') AND \"ReadyAtUtc\" IS NOT NULL AND \"StartedAtUtc\" IS NOT NULL AND \"FinishedAtUtc\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("CK_games_soft_delete_semantics", "(\"IsDeleted\" = FALSE AND \"DeletedAtUtc\" IS NULL) OR (\"IsDeleted\" = TRUE AND \"DeletedAtUtc\" IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_games_status_allowed", "\"Status\" IN ('draft','ready','active','finished')");
 
@@ -1052,18 +1045,10 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("ExternalCode")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
@@ -1104,9 +1089,9 @@ namespace backend.Data.Migrations
                     b.HasIndex("VectorCode", "ExternalCode")
                         .IsUnique();
 
-                    b.HasIndex("VectorCode", "Category", "IsEnabled");
+                    b.HasIndex("IsEnabled", "AskedTotalCount", "LastAskedAtUtc");
 
-                    b.HasIndex("IsDeleted", "IsEnabled", "AskedTotalCount", "LastAskedAtUtc");
+                    b.HasIndex("VectorCode", "Category", "IsEnabled");
 
                     b.ToTable("question_definitions", null, t =>
                         {
@@ -1117,8 +1102,6 @@ namespace backend.Data.Migrations
                             t.HasCheckConstraint("CK_question_definitions_counts_relation", "\"CorrectTotalCount\" <= \"AskedTotalCount\"");
 
                             t.HasCheckConstraint("CK_question_definitions_reward_non_negative", "\"Reward\" >= 0");
-
-                            t.HasCheckConstraint("CK_question_definitions_soft_delete_semantics", "(\"IsDeleted\" = FALSE AND \"DeletedAtUtc\" IS NULL) OR (\"IsDeleted\" = TRUE AND \"DeletedAtUtc\" IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_question_definitions_sort_order_non_negative", "\"SortOrder\" >= 0");
                         });
@@ -1355,7 +1338,7 @@ namespace backend.Data.Migrations
                     b.HasOne("backend.Data.Entities.ModifierDefinition", "ModifierDefinition")
                         .WithMany("GameActivations")
                         .HasForeignKey("ModifierCode")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ActivatedByUser");
@@ -1387,7 +1370,7 @@ namespace backend.Data.Migrations
                     b.HasOne("backend.Data.Entities.ModifierDefinition", "ModifierDefinition")
                         .WithMany("GameSelections")
                         .HasForeignKey("ModifierCode")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Game");
@@ -1472,7 +1455,7 @@ namespace backend.Data.Migrations
                     b.HasOne("backend.Data.Entities.QuestionDefinition", "Question")
                         .WithMany("AskedInGames")
                         .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AnsweredByUser");

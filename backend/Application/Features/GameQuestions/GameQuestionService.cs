@@ -40,6 +40,14 @@ public sealed class GameQuestionService : IGameQuestionService
         return _repository.SetQuestionEnabledAsync(questionId, isEnabled, cancellationToken);
     }
 
+    public Task<bool> SoftDeleteQuestionAsync(
+        Guid questionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.SoftDeleteQuestionAsync(questionId, cancellationToken);
+    }
+
     public Task<int> SetCategoryEnabledAsync(
         string? vectorCode,
         string category,
@@ -78,6 +86,7 @@ public sealed class GameQuestionService : IGameQuestionService
         Guid roundId,
         string submittedAnswer,
         Guid? answeredByUserId,
+        Guid? answeredForUserId,
         string? answeredByDisplayName,
         CancellationToken cancellationToken = default
     )
@@ -101,6 +110,7 @@ public sealed class GameQuestionService : IGameQuestionService
         var updatedRound = await _repository.AnswerRoundAsync(
             roundId,
             answeredByUserId,
+            answeredForUserId,
             answeredByDisplayName,
             submittedAnswer,
             cancellationToken

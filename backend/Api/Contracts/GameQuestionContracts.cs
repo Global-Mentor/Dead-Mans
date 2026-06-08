@@ -31,7 +31,11 @@ public sealed record AskedGameQuestionDto(
     DateTime AskedAtUtc
 );
 
-public sealed record AnswerGameQuestionRequestDto(string Answer, string? AnsweredByDisplayName);
+public sealed record AnswerGameQuestionRequestDto(
+    string Answer,
+    string? AnsweredByDisplayName,
+    string? AnsweredForUserId
+);
 
 public sealed record GameQuestionRoundSummaryDto(
     string RoundId,
@@ -46,6 +50,7 @@ public sealed record GameQuestionRoundSummaryDto(
     DateTime? AnsweredAtUtc,
     string? AnsweredByDisplayName,
     string? AnsweredByUserId,
+    string? AnsweredForUserId,
     string? SubmittedAnswer,
     bool? IsCorrect,
     int? AwardedPoints

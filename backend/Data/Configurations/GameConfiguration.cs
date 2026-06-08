@@ -29,6 +29,10 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
                     "CK_games_team_size_limits",
                     GameStatusValue.CheckSqlTeamSizeLimits
                 );
+                tableBuilder.HasCheckConstraint(
+                    "CK_games_soft_delete_semantics",
+                    "(\"IsDeleted\" = FALSE AND \"DeletedAtUtc\" IS NULL) OR (\"IsDeleted\" = TRUE AND \"DeletedAtUtc\" IS NOT NULL)"
+                );
             }
         );
 
@@ -38,22 +42,24 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.Property(x => x.Description).HasMaxLength(2000);
         builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
+        builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+        builder.Property(x => x.DeletedAtUtc);
         builder.Property(x => x.MinPlayersPerTeam).HasDefaultValue((short)1);
         builder.Property(x => x.MaxPlayersPerTeam).HasDefaultValue((short)3);
 
-        builder.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+        builder.HasIndex(x => new { x.IsDeleted, x.Status, x.CreatedAtUtc });
         builder
             .HasIndex(x => x.Status, "UX_games_single_draft")
             .IsUnique()
-            .HasFilter($"\"Status\" = '{GameStatusValue.Draft}'");
+            .HasFilter($"\"Status\" = '{GameStatusValue.Draft}' AND \"IsDeleted\" = FALSE");
         builder
             .HasIndex(x => x.Status, "UX_games_single_ready")
             .IsUnique()
-            .HasFilter($"\"Status\" = '{GameStatusValue.Ready}'");
+            .HasFilter($"\"Status\" = '{GameStatusValue.Ready}' AND \"IsDeleted\" = FALSE");
         builder
             .HasIndex(x => x.Status, "UX_games_single_active")
             .IsUnique()
-            .HasFilter($"\"Status\" = '{GameStatusValue.Active}'");
+            .HasFilter($"\"Status\" = '{GameStatusValue.Active}' AND \"IsDeleted\" = FALSE");
         builder.HasIndex(x => x.CreatedAtUtc);
     }
 }

@@ -32,6 +32,10 @@ public class QuestionDefinitionConfiguration : IEntityTypeConfiguration<Question
                     "CK_question_definitions_counts_relation",
                     "\"CorrectTotalCount\" <= \"AskedTotalCount\""
                 );
+                tableBuilder.HasCheckConstraint(
+                    "CK_question_definitions_soft_delete_semantics",
+                    "(\"IsDeleted\" = FALSE AND \"DeletedAtUtc\" IS NULL) OR (\"IsDeleted\" = TRUE AND \"DeletedAtUtc\" IS NOT NULL)"
+                );
             }
         );
 
@@ -46,6 +50,8 @@ public class QuestionDefinitionConfiguration : IEntityTypeConfiguration<Question
         builder.Property(x => x.NormalizedAnswer).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Reward).IsRequired();
         builder.Property(x => x.IsEnabled).HasDefaultValue(true);
+        builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+        builder.Property(x => x.DeletedAtUtc);
         builder.Property(x => x.SortOrder).IsRequired();
         builder.Property(x => x.AskedTotalCount).HasDefaultValue(0);
         builder.Property(x => x.CorrectTotalCount).HasDefaultValue(0);
@@ -54,7 +60,7 @@ public class QuestionDefinitionConfiguration : IEntityTypeConfiguration<Question
 
         builder.HasIndex(x => new { x.VectorCode, x.ExternalCode }).IsUnique();
         builder.HasIndex(x => new { x.VectorCode, x.Category, x.IsEnabled });
-        builder.HasIndex(x => new { x.IsEnabled, x.AskedTotalCount, x.LastAskedAtUtc });
+        builder.HasIndex(x => new { x.IsDeleted, x.IsEnabled, x.AskedTotalCount, x.LastAskedAtUtc });
         builder.HasIndex(x => x.SortOrder);
 
         builder

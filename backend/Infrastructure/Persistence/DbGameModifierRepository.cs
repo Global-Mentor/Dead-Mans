@@ -115,7 +115,7 @@ public sealed class DbGameModifierRepository : IGameModifierRepository
 
         var activeGame = await _dbContext.Games
             .AsNoTracking()
-            .Where(x => x.Status == GameStatusValue.Active)
+            .Where(x => x.Status == GameStatusValue.Active && !x.IsDeleted)
             .OrderByDescending(x => x.StartedAtUtc ?? x.CreatedAtUtc)
             .Select(x => new { x.Id })
             .FirstOrDefaultAsync(cancellationToken);

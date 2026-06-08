@@ -121,6 +121,16 @@ public static class DomainErrorHttpPolicy
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationInvalidTeamSizeLimits,
                 AppMessages.ErrorCodes.GameLifecycleInvalidTeamSizeLimits
+            ),
+            GameLifecycleErrorCode.DraftDeleteNotAllowed => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.DraftGameDeleteNotAllowed,
+                AppMessages.ErrorCodes.GameLifecycleDraftDeleteNotAllowed
+            ),
+            GameLifecycleErrorCode.GameNotFound => new(
+                StatusCodes.Status404NotFound,
+                AppMessages.Client.GameLifecycleGameNotFound,
+                AppMessages.ErrorCodes.GameLifecycleGameNotFound
             )
         };
 #pragma warning restore CS8524

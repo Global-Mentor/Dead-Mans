@@ -18,4 +18,9 @@ public interface IGameLifecyclePersistence
         Guid activeGameId,
         CancellationToken cancellationToken = default
     );
+
+    Task<GameLifecycleResult> ArchiveGameAsync(
+        Guid gameId,
+        CancellationToken cancellationToken = default
+    );
 }

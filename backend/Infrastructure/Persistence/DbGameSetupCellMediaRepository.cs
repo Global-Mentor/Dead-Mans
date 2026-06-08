@@ -37,7 +37,7 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
                 game => game.Id,
                 (row, game) => new { row.cell, row.board, game }
             )
-            .Where(row => row.game.Status == GameStatusValue.Draft)
+            .Where(row => row.game.Status == GameStatusValue.Draft && !row.game.IsDeleted)
             .Select(row => new GameSetupDraftCellRef(
                 row.game.Id,
                 row.board.Id,

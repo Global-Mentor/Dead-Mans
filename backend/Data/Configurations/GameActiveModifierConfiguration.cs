@@ -26,6 +26,7 @@ public class GameActiveModifierConfiguration : IEntityTypeConfiguration<GameActi
 
         builder.HasIndex(x => new { x.GameId, x.ModifierCode });
         builder.HasIndex(x => new { x.GameId, x.ActivatedAtUtc });
+        builder.HasIndex(x => new { x.ActivatedByUserId, x.ActivatedAtUtc });
 
         builder.HasOne(x => x.Game)
             .WithMany(x => x.ActiveModifiers)
@@ -36,6 +37,11 @@ public class GameActiveModifierConfiguration : IEntityTypeConfiguration<GameActi
             .WithMany(x => x.GameActivations)
             .HasForeignKey(x => x.ModifierCode)
             .HasPrincipalKey(x => x.Code)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.ActivatedByUser)
+            .WithMany(x => x.ActivatedGameModifiers)
+            .HasForeignKey(x => x.ActivatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

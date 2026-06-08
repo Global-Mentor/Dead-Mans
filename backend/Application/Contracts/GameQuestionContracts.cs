@@ -42,6 +42,7 @@ public sealed record GameQuestionRoundSummary(
     DateTime? AnsweredAtUtc,
     string? AnsweredByDisplayName,
     Guid? AnsweredByUserId,
+    Guid? AnsweredForUserId,
     string? SubmittedAnswer,
     bool? IsCorrect,
     int? AwardedPoints
@@ -62,6 +63,7 @@ public static class GameQuestionRoundSummaryFactory
         DateTime? answeredAtUtc,
         string? answeredByDisplayName,
         Guid? answeredByUserId,
+        Guid? answeredForUserId,
         string? submittedAnswer,
         bool? isCorrect,
         int? awardedPoints
@@ -84,6 +86,7 @@ public static class GameQuestionRoundSummaryFactory
             answeredAtUtc,
             answeredByDisplayName,
             answeredByUserId,
+            answeredForUserId,
             submittedAnswer,
             isCorrect,
             awardedPoints

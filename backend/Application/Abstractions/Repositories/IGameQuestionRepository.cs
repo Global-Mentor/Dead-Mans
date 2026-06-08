@@ -18,6 +18,8 @@ public interface IGameQuestionRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<bool> SoftDeleteQuestionAsync(Guid questionId, CancellationToken cancellationToken = default);
+
     Task<int> SetCategoryEnabledAsync(
         string? vectorCode,
         string category,
@@ -36,6 +38,7 @@ public interface IGameQuestionRepository
     Task<GameQuestionRoundSummary?> AnswerRoundAsync(
         Guid roundId,
         Guid? answeredByUserId,
+        Guid? answeredForUserId,
         string? answeredByDisplayName,
         string submittedAnswer,
         CancellationToken cancellationToken = default

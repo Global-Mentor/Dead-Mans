@@ -40,6 +40,9 @@ public static class AppMessages
         public const string GameNotActiveForFinish = "No active game is available to finish.";
         public const string GameRegistrationSlotsRequired =
             "Configure at least one team slot before opening registration.";
+        public const string DraftGameDeleteNotAllowed =
+            "Draft game can only be removed through game setup draft deletion.";
+        public const string GameLifecycleGameNotFound = "Requested game was not found.";
         public const string GameRegistrationNotOpen = "Registration is not open for a ready game.";
         public const string GameRegistrationNoSlots = "No team slots are available.";
         public const string GameRegistrationAlreadyOnTeam = "You are already on a team for this game.";
@@ -98,6 +101,9 @@ public static class AppMessages
         public const string GameLifecycleInvalidTeamSizeLimits =
             "game_lifecycle.invalid_team_size_limits";
         public const string GameLifecycleOperationFailed = "game_lifecycle.operation_failed";
+        public const string GameLifecycleDraftDeleteNotAllowed =
+            "game_lifecycle.draft_delete_not_allowed";
+        public const string GameLifecycleGameNotFound = "game_lifecycle.game_not_found";
         public const string UnexpectedServerError = "game_common.unexpected_server_error";
         public const string GameRegistrationNotOpen = "game_registration.not_open";
         public const string GameRegistrationNoSlots = "game_registration.no_slots";
