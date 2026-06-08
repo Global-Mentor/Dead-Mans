@@ -6,11 +6,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace backend.Infrastructure.Auth;
-
-/// <summary>
-/// Rejects authenticated requests when the user record is missing or inactive,
-/// matching <see cref="AuthSessionController.Me"/> session semantics across the API and hubs.
-/// </summary>
 public sealed class ActiveUserMiddleware
 {
     private readonly RequestDelegate _next;

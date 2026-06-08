@@ -3,8 +3,6 @@ using backend.Data.Configurations;
 using backend.Data.Entities;
 
 namespace backend.Data;
-
-/// <summary>EF Core entry point for auth, users/roles, and persisted game boards/cells/media.</summary>
 public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)

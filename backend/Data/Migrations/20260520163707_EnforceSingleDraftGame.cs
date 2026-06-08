@@ -4,10 +4,8 @@
 
 namespace backend.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class EnforceSingleDraftGame : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
@@ -26,8 +24,6 @@ namespace backend.Data.Migrations
                 unique: true,
                 filter: "\"Status\" = 'draft'");
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(

@@ -260,7 +260,6 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             }
             else if (!shouldVacatePositions && existingCells.Count > 0)
             {
-                // EF InMemory does not exercise relational unique-index moves; rebuild cells there for test parity.
                 _dbContext.BoardCells.RemoveRange(existingCells);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }

@@ -1,8 +1,4 @@
 namespace backend.Domain.Persistence;
-
-/// <summary>
-/// Shared object-key layout for game media. Values come from configuration, not literals in feature code.
-/// </summary>
 public static class GameMediaObjectKeyFormat
 {
     public static string BuildGameMediaPrefix(string gamesPrefix, Guid gameId)

@@ -6,10 +6,6 @@ using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Infrastructure.Persistence;
-
-/// <summary>
-/// Read-model queries and DTO projection for game registration.
-/// </summary>
 public sealed class GameRegistrationReadStore : IGameRegistrationReadStore
 {
     private readonly ApplicationDbContext _dbContext;

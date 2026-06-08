@@ -1,8 +1,4 @@
 namespace backend.Messaging;
-
-/// <summary>
-/// API error payloads, exception messages, and Microsoft.Extensions.Logging message templates in one place.
-/// </summary>
 public static class AppMessages
 {
     public static class Client

@@ -16,8 +16,6 @@ namespace backend.Data.Migrations
     {
         private const string Bucket = "deadman";
         private const string CardsGroup = "cards";
-
-        // Must stay in sync with the test media seeder tool.
         private static readonly Guid TestGameId = Guid.Parse("c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a");
 
         private static DateTime FixedCreatedAtUtc =>
@@ -36,8 +34,6 @@ namespace backend.Data.Migrations
             {
                 return "NULL";
             }
-
-            // Escape single-quotes for SQL string literal.
             var escaped = value.Replace("'", "''");
             return $"'{escaped}'";
         }
@@ -49,7 +45,6 @@ namespace backend.Data.Migrations
 
         private static string SqlTimestamptz(DateTime valueUtc)
         {
-            // valueUtc is always in UTC (FixedCreatedAtUtc).
             var iso = valueUtc.ToString("O");
             return $"'{iso}'::timestamptz";
         }
