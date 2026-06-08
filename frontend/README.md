@@ -41,7 +41,11 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 - `src/app/theme/appTheme.ts` — единая MUI theme-конфигурация (palette, typography, component defaults/overrides);
 - `src/shared/theme/` — общие UI-токены и layout presets, где градиенты/фон берутся из `theme.custom.gradients`;
-- `src/shared/ui/` — переиспользуемые primitives/patterns/feedback.
+- `src/shared/ui/` - переиспользуемый UI-слой с явной вложенной структурой:
+  - `primitives/` - базовые контролы и атомарные building blocks;
+  - `patterns/` - типовые секции/компоновка страниц;
+  - `feedback/` - диалоги, toast, загрузка и state-panels;
+  - `index.ts` - единый публичный barrel для импортов в фичах.
 
 Ключевые reusable-компоненты:
 
