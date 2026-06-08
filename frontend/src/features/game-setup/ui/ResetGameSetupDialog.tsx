@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.tsx'
+import { ConfirmDialog } from '../../../shared/ui/index.ts'
 
 interface ResetGameSetupDialogProps {
   open: boolean

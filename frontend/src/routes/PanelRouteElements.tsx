@@ -10,7 +10,7 @@ import { PanelIndexRedirect } from './PanelIndexRedirect.tsx'
 import { RequirePanelRouteAccess } from './RequirePanelRouteAccess.tsx'
 import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
 import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
-import { CenteredProgress } from '../shared/ui/CenteredProgress.tsx'
+import { CenteredProgress } from '../shared/ui/index.ts'
 
 const GameBoardPage = lazy(() =>
   import('../features/game-board/GameBoardPage.tsx').then((module) => ({

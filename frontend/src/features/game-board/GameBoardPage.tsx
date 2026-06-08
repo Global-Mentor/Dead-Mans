@@ -1,29 +1,30 @@
 import {
-  Alert,
-  Box,
-  Button,
   Chip,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
-import { gameApplicationRoute, hasPanelCapability } from '../../routes/app-routes.ts'
-import { ConfirmDialog, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
+import { gameApplicationRoute } from '../../routes/app-routes.ts'
+import {
+  AppLinkButton,
+  AppToast,
+  ConfirmDialog,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { useGameBoardPage } from './use-game-board-page.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
-import { useAuth } from '../../shared/auth/use-auth.ts'
 import { GameBoardAdminPlannedSection } from './ui/GameBoardAdminPlannedSection.tsx'
 import { GameBoardModifiersSection } from './ui/GameBoardModifiersSection.tsx'
+import { usePanelCapabilities } from '../../shared/auth/use-panel-capabilities.ts'
 
 export function GameBoardPage() {
   const { t } = useTranslation()
   const { data, isError, isLoading } = useGameBoardPage()
-  const { user } = useAuth()
-  const isAdmin = hasPanelCapability('gameSetup', user?.roles)
-  const canActivateModifiers = hasPanelCapability('modifierActivation', user?.roles)
+  const { canGameSetup, canModifierActivation } = usePanelCapabilities()
   const {
     pendingCell,
     toastMessage,
@@ -72,15 +73,7 @@ export function GameBoardPage() {
   const snapshot = data
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: { xs: 1, sm: 2 },
-      }}
-    >
+    <PageShell variant="centered">
       <SectionCard
         sx={{
           width: '100%',
@@ -89,41 +82,34 @@ export function GameBoardPage() {
           flexDirection: 'column',
         }}
       >
-        <Typography variant="h5" gutterBottom>
-          {snapshot.title || t('gameBoard.title')}
-        </Typography>
-        {snapshot.description ? (
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {snapshot.description}
-          </Typography>
-        ) : null}
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
-          <Chip
-            size="small"
-            color={
-              snapshot.status === 'active'
-                ? 'success'
-                : snapshot.status === 'ready'
-                  ? 'info'
-                  : 'default'
-            }
-            label={t(
-              snapshot.status === 'active'
-                ? 'gameBoard.statusActive'
-                : snapshot.status === 'ready'
-                  ? 'gameBoard.statusReady'
-                  : 'gameBoard.statusFinished',
-            )}
-          />
-          <Button
-            component={RouterLink}
-            to={gameApplicationRoute.fullPath}
-            size="small"
-            variant="outlined"
-          >
-            {t('gameBoard.applicationButton')}
-          </Button>
-        </Stack>
+        <SectionHeader
+          title={<Typography variant="h5">{snapshot.title || t('gameBoard.title')}</Typography>}
+          description={snapshot.description}
+          actions={
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Chip
+                size="small"
+                color={
+                  snapshot.status === 'active'
+                    ? 'success'
+                    : snapshot.status === 'ready'
+                      ? 'info'
+                      : 'default'
+                }
+                label={t(
+                  snapshot.status === 'active'
+                    ? 'gameBoard.statusActive'
+                    : snapshot.status === 'ready'
+                      ? 'gameBoard.statusReady'
+                      : 'gameBoard.statusFinished',
+                )}
+              />
+              <AppLinkButton to={gameApplicationRoute.fullPath} size="small" tone="secondary">
+                {t('gameBoard.applicationButton')}
+              </AppLinkButton>
+            </Stack>
+          }
+        />
         <GameBoardGrid
           snapshot={snapshot}
           canOpenCells={canOpenCells}
@@ -131,9 +117,9 @@ export function GameBoardPage() {
         />
         <GameBoardModifiersSection
           snapshot={snapshot}
-          canActivateModifiers={canActivateModifiers}
+          canActivateModifiers={canModifierActivation}
         />
-        {isAdmin ? <GameBoardAdminPlannedSection /> : null}
+        {canGameSetup ? <GameBoardAdminPlannedSection /> : null}
       </SectionCard>
 
       <ConfirmDialog
@@ -151,16 +137,7 @@ export function GameBoardPage() {
         confirmLabel={t('gameBoard.openConfirm')}
       />
 
-      <Snackbar
-        open={toastMessage !== null}
-        autoHideDuration={3000}
-        onClose={dismissToast}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={dismissToast} severity="info" variant="filled">
-          {toastMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <AppToast message={toastMessage} onClose={dismissToast} severity="info" autoHideDuration={3000} />
+    </PageShell>
   )
 }

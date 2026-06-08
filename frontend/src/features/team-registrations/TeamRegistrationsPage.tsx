@@ -1,7 +1,4 @@
 import {
-  Alert,
-  Box,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -11,12 +8,17 @@ import {
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
-import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
+import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
 import { TeamRegistrationsInvitePlannedSection } from './ui/TeamRegistrationsInvitePlannedSection.tsx'
-import { AppButton, SectionCard } from '../../shared/ui/index.ts'
-import { pageShellSx } from '../../shared/theme/layout-sx.ts'
+import {
+  AppButton,
+  AppToast,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 
 export function TeamRegistrationsPage() {
   const { t } = useTranslation()
@@ -45,26 +47,21 @@ export function TeamRegistrationsPage() {
 
   if (teamsQuery.data == null) {
     return (
-      <Box sx={pageShellSx}>
+      <PageShell>
         <PageStatePanel
           title={t('teamRegistrations.title')}
           message={t('teamRegistrations.notOpen')}
         />
         <TeamRegistrationsInvitePlannedSection />
-      </Box>
+      </PageShell>
     )
   }
 
   const teams = teamsQuery.data
 
   return (
-    <Box sx={pageShellSx}>
-      <Typography variant="h5" gutterBottom>
-        {t('teamRegistrations.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        {t('teamRegistrations.description')}
-      </Typography>
+    <PageShell>
+      <SectionHeader title={t('teamRegistrations.title')} description={t('teamRegistrations.description')} />
 
       {teams.length === 0 ? (
         <Typography variant="body2">{t('teamRegistrations.empty')}</Typography>
@@ -101,8 +98,7 @@ export function TeamRegistrationsPage() {
                       </AppButton>
                       <AppButton
                         size="small"
-                        color="warning"
-                        tone="ghost"
+                        tone="warningGhost"
                         disabled={
                           team.status !== 'forming'
                           || (rejectTeam.isPending && rejectTeam.variables === team.teamId)
@@ -120,16 +116,7 @@ export function TeamRegistrationsPage() {
         </SectionCard>
       )}
 
-      <Snackbar
-        open={toastMessage !== null}
-        autoHideDuration={5000}
-        onClose={dismissToast}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={dismissToast} severity="error" variant="filled" sx={{ width: '100%' }}>
-          {toastMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <AppToast message={toastMessage} onClose={dismissToast} severity="error" autoHideDuration={5000} />
+    </PageShell>
   )
 }

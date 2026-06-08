@@ -1,4 +1,4 @@
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import { Alert, Box, type SxProps, Stack, type Theme, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 
 export interface PlannedFeatureRoadmapItem {
@@ -8,7 +8,7 @@ export interface PlannedFeatureRoadmapItem {
 
 interface PlannedFeatureRoadmapProps {
   items: readonly PlannedFeatureRoadmapItem[]
-  sx?: object
+  sx?: SxProps<Theme>
 }
 
 export function PlannedFeatureRoadmap({ items, sx }: PlannedFeatureRoadmapProps) {

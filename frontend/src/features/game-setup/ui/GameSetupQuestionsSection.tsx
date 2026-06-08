@@ -1,22 +1,13 @@
 import {
-  Alert,
   Box,
   Checkbox,
   Chip,
   FormControlLabel,
-  Stack,
-  Typography,
+  Stack, Typography,
 } from '@mui/material'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { queryKeys } from '../../../shared/api/query-keys.ts'
-import {
-  fetchGameQuestionCatalog,
-  setGameQuestionCategoryEnabled,
-  setGameQuestionEnabled,
-} from '../api/game-questions-data-access.ts'
-import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, AsyncSection, FormTextField, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
+import { useGameSetupQuestionsCatalog } from '../use-game-setup-questions-catalog.ts'
 
 function toCategoryTitle(category: string) {
   return category
@@ -28,59 +19,24 @@ function toCategoryTitle(category: string) {
 
 export function GameSetupQuestionsSection() {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-
-  const catalogQuery = useQuery({
-    queryKey: queryKeys.gameQuestions.catalog({ search }),
-    queryFn: () =>
-      fetchGameQuestionCatalog({
-        search,
-        includeDisabled: true,
-      }),
-  })
-
-  const toggleQuestionMutation = useMutation({
-    mutationFn: ({ questionId, isEnabled }: { questionId: string; isEnabled: boolean }) =>
-      setGameQuestionEnabled(questionId, isEnabled),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.gameQuestions.all })
-    },
-  })
-
-  const toggleCategoryMutation = useMutation({
-    mutationFn: ({ category, isEnabled }: { category: string; isEnabled: boolean }) =>
-      setGameQuestionCategoryEnabled(category, isEnabled),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.gameQuestions.all })
-    },
-  })
-
-  const questions = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data])
-
-  const categories = useMemo(() => {
-    return Array.from(new Set(questions.map((question) => question.category))).sort((a, b) =>
-      a.localeCompare(b),
-    )
-  }, [questions])
-
-  const filteredQuestions = useMemo(() => {
-    if (!activeCategory) {
-      return questions
-    }
-
-    return questions.filter((question) => question.category === activeCategory)
-  }, [activeCategory, questions])
+  const {
+    search,
+    setSearch,
+    activeCategory,
+    setActiveCategory,
+    catalogQuery,
+    toggleQuestionMutation,
+    toggleCategoryMutation,
+    categories,
+    filteredQuestions,
+  } = useGameSetupQuestionsCatalog()
 
   return (
     <SectionCard sx={{ mt: 2 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-        {t('gameSetup.questions.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        {t('gameSetup.questions.description')}
-      </Typography>
+      <SectionHeader
+        title={t('gameSetup.questions.title')}
+        description={t('gameSetup.questions.description')}
+      />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
         <FormTextField
@@ -118,8 +74,7 @@ export function GameSetupQuestionsSection() {
           </AppButton>
           <AppButton
             size="small"
-            tone="secondary"
-            color="warning"
+            tone="warningGhost"
             disabled={toggleCategoryMutation.isPending}
             onClick={() => toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: false })}
           >
@@ -128,25 +83,14 @@ export function GameSetupQuestionsSection() {
         </Stack>
       ) : null}
 
-      {catalogQuery.isLoading ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          {t('gameSetup.questions.loading')}
-        </Typography>
-      ) : null}
-
-      {catalogQuery.isError ? (
-        <Alert severity="error" sx={{ mt: 1.5 }}>
-          {t('gameSetup.questions.error')}
-        </Alert>
-      ) : null}
-
-      {filteredQuestions.length === 0 && !catalogQuery.isLoading ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          {t('gameSetup.questions.empty')}
-        </Typography>
-      ) : null}
-
-      {filteredQuestions.length > 0 ? (
+      <AsyncSection
+        isLoading={catalogQuery.isLoading}
+        isError={catalogQuery.isError}
+        isEmpty={filteredQuestions.length === 0}
+        loadingMessage={t('gameSetup.questions.loading')}
+        errorMessage={t('gameSetup.questions.error')}
+        emptyMessage={t('gameSetup.questions.empty')}
+      >
         <Stack spacing={0.5} sx={{ mt: 1.5, maxHeight: 360, overflowY: 'auto', pr: 0.5 }}>
           {filteredQuestions.map((question) => (
             <Box
@@ -188,7 +132,7 @@ export function GameSetupQuestionsSection() {
             </Box>
           ))}
         </Stack>
-      ) : null}
+      </AsyncSection>
     </SectionCard>
   )
 }

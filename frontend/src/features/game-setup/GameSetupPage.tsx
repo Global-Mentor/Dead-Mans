@@ -1,6 +1,6 @@
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
+import { AppButton, PageShell, PageStatePanel, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
 import { CreateGameSetupDialog } from './ui/CreateGameSetupDialog.tsx'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
@@ -9,7 +9,7 @@ import { useGameSetupPage } from './use-game-setup-page.ts'
 import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
 import { GameSetupQuestionsSection } from './ui/GameSetupQuestionsSection.tsx'
-import { gameSetupSidebarPaperSx, setupSplitLayoutSx } from '../../shared/theme/layout-sx.ts'
+import { gameSetupSidebarPaperSx } from '../../shared/theme/layout-sx.ts'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {
@@ -88,7 +88,7 @@ export function GameSetupPage() {
   if (!snapshot || !draft) {
     return (
       <>
-        <Box sx={setupSplitLayoutSx}>
+        <PageShell variant="split">
           <SectionCard inset sx={gameSetupSidebarPaperSx}>
             <Typography variant="overline" color="text.secondary">
               {t('gameSetup.settingsSidebar.overline')}
@@ -123,7 +123,7 @@ export function GameSetupPage() {
             ) : null}
             <GameSetupRegistrationPlannedSection />
           </SectionCard>
-        </Box>
+        </PageShell>
         <CreateGameSetupDialog
           open={isEmpty}
           isSubmitting={isCreating}
@@ -136,7 +136,7 @@ export function GameSetupPage() {
   }
 
   return (
-    <Box sx={setupSplitLayoutSx}>
+    <PageShell variant="split">
       <GameSetupSettingsSidebar
         draft={draft}
         onDraftChange={updateDraft}
@@ -153,31 +153,19 @@ export function GameSetupPage() {
           flexDirection: 'column',
         }}
       >
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', sm: 'flex-start' }}
-        >
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              {t('gameSetup.boardTitle')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('gameSetup.boardDescription')}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
-            <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
-            <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
-            <AppButton
-              disabled={!isDirty || isSaving}
-              onClick={() => void saveDraft()}
-            >
-              {isSaving ? t('gameSetup.saving') : t('gameSetup.save')}
-            </AppButton>
-          </Stack>
-        </Stack>
+        <SectionHeader
+          title={<Typography variant="h5">{t('gameSetup.boardTitle')}</Typography>}
+          description={t('gameSetup.boardDescription')}
+          actions={
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" flexWrap="wrap">
+              <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
+              <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
+              <AppButton disabled={!isDirty || isSaving} onClick={() => void saveDraft()}>
+                {isSaving ? t('gameSetup.saving') : t('gameSetup.save')}
+              </AppButton>
+            </Stack>
+          }
+        />
 
         <Alert severity="info" sx={{ mt: 2 }}>
           {t('gameSetup.persistenceHint')}
@@ -235,6 +223,6 @@ export function GameSetupPage() {
 
         <GameSetupRegistrationPlannedSection />
       </SectionCard>
-    </Box>
+    </PageShell>
   )
 }

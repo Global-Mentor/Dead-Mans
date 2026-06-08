@@ -108,8 +108,6 @@ export function GameBoardRealtimeSync() {
       disposed = true
       connection.off(CELL_OPENED_EVENT)
       connection.off(MODIFIER_ACTIVATED_EVENT)
-      // React StrictMode can unmount while start() is still negotiating.
-      // Await startup first to avoid stop() interrupting negotiate.
       void (async () => {
         await startPromise.catch(() => undefined)
         if (connection.state !== HubConnectionState.Disconnected) {

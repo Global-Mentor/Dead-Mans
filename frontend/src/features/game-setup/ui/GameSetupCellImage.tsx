@@ -1,7 +1,7 @@
 import { Box, CircularProgress, Stack, Typography } from '@mui/material'
 import { useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/AppButton.tsx'
+import { AppButton } from '../../../shared/ui/index.ts'
 import {
   dataTransferHasImageFiles,
   extractGameSetupCellMediaFileFromDataTransfer,
@@ -283,8 +283,7 @@ export function GameSetupCellImage({
           {showImage && phase !== 'deleting' ? (
             <AppButton
               size="small"
-              tone="secondary"
-              color="inherit"
+              tone="ghost"
               disabled={isBusy}
               onClick={() => onDelete(cellId)}
               data-cell-media-action

@@ -1,27 +1,14 @@
 import { Button } from '@mui/material'
 import type { ButtonProps } from '@mui/material'
+import { resolveAppButtonTone } from './app-button-tone.ts'
+import type { AppButtonTone } from './app-button-tone.ts'
 
-export type AppButtonTone = 'primary' | 'secondary' | 'danger' | 'ghost'
-
-interface AppButtonProps extends Omit<ButtonProps, 'variant'> {
+export interface AppButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
   tone?: AppButtonTone
 }
 
-function resolveToneProps(tone: AppButtonTone): Pick<ButtonProps, 'variant' | 'color'> {
-  switch (tone) {
-    case 'secondary':
-      return { variant: 'outlined', color: 'primary' }
-    case 'danger':
-      return { variant: 'contained', color: 'error' }
-    case 'ghost':
-      return { variant: 'text', color: 'inherit' }
-    default:
-      return { variant: 'contained', color: 'primary' }
-  }
-}
-
 export function AppButton({ tone = 'primary', ...props }: AppButtonProps) {
-  const toneProps = resolveToneProps(tone)
+  const toneProps = resolveAppButtonTone(tone)
   return <Button {...toneProps} {...props} />
 }
 

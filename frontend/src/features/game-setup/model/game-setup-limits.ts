@@ -1,5 +1,3 @@
-// Keep in sync with backend/Application/Features/GameSetup/GameSetupBoardLimits.cs
-// and GameSetupDraftValidator.cs.
 export const GAME_SETUP_MIN_ROWS = 1
 export const GAME_SETUP_MAX_ROWS = 20
 export const GAME_SETUP_MIN_COLS = 1

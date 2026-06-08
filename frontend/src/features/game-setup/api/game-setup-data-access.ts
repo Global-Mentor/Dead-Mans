@@ -6,9 +6,7 @@ import type {
 } from '../../../shared/api/contracts/index.ts'
 import { gameSetupApi } from './game-setup-api.ts'
 
-/**
- * Loads the current draft setup snapshot. `404` means no draft game exists yet.
- */
+
 export async function fetchDraftGameSetupSnapshot(): Promise<GameSetupSnapshot | null> {
   return fetchNotFoundAsNull(() => gameSetupApi.getDraftSnapshot())
 }

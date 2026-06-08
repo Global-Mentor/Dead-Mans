@@ -193,12 +193,11 @@ export function useGameSetupPage() {
 
     if (!snapshot) {
       if (hadSnapshot && draftOverride !== null) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- remote draft deleted while editing
-        setDraftRemovedNotice(true)
+        queueMicrotask(() => setDraftRemovedNotice(true))
       }
 
       lastSyncedVersionRef.current = null
-      setDraftOverride(null)
+      queueMicrotask(() => setDraftOverride(null))
       return
     }
 
@@ -210,12 +209,12 @@ export function useGameSetupPage() {
     }
 
     if (isDirty) {
-      setRemoteChangeNotice(true)
+      queueMicrotask(() => setRemoteChangeNotice(true))
       return
     }
 
-    setDraftOverride(null)
-    setRemoteChangeNotice(false)
+    queueMicrotask(() => setDraftOverride(null))
+    queueMicrotask(() => setRemoteChangeNotice(false))
   }, [draftOverride, isDirty, snapshot])
 
   const resolvedSyncStatus = useMemo((): GameSetupSyncStatus => {
@@ -291,6 +290,7 @@ export function useGameSetupPage() {
     mutationFn: deleteDraftGameSetup,
     onSuccess: () => {
       applyLoadedDraftState(createLoadedDraftState(null))
+      setDraftRemovedNotice(false)
       setSaveErrorMessage(null)
       setResetErrorMessage(null)
       setSyncStatus('idle')
@@ -326,6 +326,9 @@ export function useGameSetupPage() {
   const reloadFromServer = async () => {
     const loaded = await loadGameSetupDraftQueryState()
     applyLoadedDraftState(loaded)
+    if (loaded.snapshot) {
+      setDraftRemovedNotice(false)
+    }
     setRemoteChangeNotice(false)
     setSyncStatus('saved')
   }

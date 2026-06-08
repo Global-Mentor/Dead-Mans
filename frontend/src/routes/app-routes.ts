@@ -1,4 +1,5 @@
 import type { AuthRole } from '../shared/api/contracts/index.ts'
+import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 
 export const panelRootPath = '/panel'
 
@@ -58,13 +59,6 @@ export const panelRoutes = [
 
 export const defaultRoute = panelRoutes[0]
 
-type PanelCapability = 'gameSetup' | 'modifierActivation'
-
-const panelCapabilityRoles: Record<PanelCapability, readonly AuthRole[]> = {
-  gameSetup: ['admin'],
-  modifierActivation: ['admin', 'moderator'],
-}
-
 export function hasAccessToPanelRoute(
   route: PanelRouteDefinition,
   roles: readonly AuthRole[] | undefined,
@@ -96,13 +90,4 @@ export function getPanelRouteByPath(pathname: string) {
   )
 }
 
-export function hasPanelCapability(
-  capability: PanelCapability,
-  roles: readonly AuthRole[] | undefined,
-) {
-  if (!roles || roles.length === 0) {
-    return false
-  }
-
-  return roles.some((role) => panelCapabilityRoles[capability].includes(role))
-}
+export { hasPanelCapability }

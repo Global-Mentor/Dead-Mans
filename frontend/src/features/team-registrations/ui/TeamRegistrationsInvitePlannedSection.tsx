@@ -1,8 +1,6 @@
 import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton, FormSelect } from '../../../shared/ui/index.ts'
-import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
-import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
+import { AppButton, FormSelect, PlannedFeatureFormShell, PlannedFeatureRoadmap } from '../../../shared/ui/index.ts'
 import { teamRegistrationsPlannedRoadmap } from '../team-registrations-planned-features.ts'
 
 export function TeamRegistrationsInvitePlannedSection() {
