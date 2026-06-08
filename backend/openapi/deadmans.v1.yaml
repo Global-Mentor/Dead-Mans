@@ -187,6 +187,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/{questionId}:
+    delete:
+      operationId: deleteGameQuestion
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Question soft-deleted from catalog
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/questions/categories/{category}/enabled:
     patch:
       operationId: setGameQuestionCategoryEnabled
@@ -348,6 +381,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/history/users/{userId}:
+    get:
+      operationId: getUserGameHistory
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User activity history grouped by games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserGameHistoryItemDto'
+        '400':
+          description: Invalid auth cookie claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied for another user's history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/setup:
     get:
       operationId: getDraftGameSetup
@@ -478,7 +550,7 @@ paths:
         - cookieAuth: []
       responses:
         '204':
-          description: Draft game setup deleted from the database; uploaded cell images under the draft game media prefix are removed from object storage when possible
+          description: Draft game setup hard-deleted from the database; uploaded cell images under the draft game media prefix are removed from object storage when possible
         '401':
           description: Not authenticated
           content:
@@ -726,6 +798,47 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: No active game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /game/lifecycle/games/{gameId}:
+    delete:
+      operationId: archiveGame
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Non-draft game archived via soft-delete
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Draft games must be deleted through game setup draft deletion
           content:
             application/json:
               schema:
@@ -1685,6 +1798,10 @@ components:
           type: string
           nullable: true
           maxLength: 128
+        answeredForUserId:
+          type: string
+          format: uuid
+          nullable: true
     GameQuestionRoundSummaryDto:
       type: object
       required:
@@ -1734,6 +1851,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        answeredForUserId:
+          type: string
+          format: uuid
+          nullable: true
         submittedAnswer:
           type: string
           nullable: true
@@ -1744,6 +1865,87 @@ components:
           type: integer
           nullable: true
           minimum: 0
+    UserGameModifierActivationHistoryItemDto:
+      type: object
+      required: [modifierCode, activatedAtUtc]
+      properties:
+        modifierCode:
+          type: string
+        activatedAtUtc:
+          type: string
+          format: date-time
+    UserGameQuestionAnswerHistoryItemDto:
+      type: object
+      required:
+        - roundId
+        - questionId
+        - questionText
+        - category
+        - answeredAtUtc
+        - isCorrect
+        - awardedPoints
+      properties:
+        roundId:
+          type: string
+          format: uuid
+        questionId:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+        category:
+          type: string
+        answeredAtUtc:
+          type: string
+          format: date-time
+        isCorrect:
+          type: boolean
+        awardedPoints:
+          type: integer
+          minimum: 0
+        submittedAnswer:
+          type: string
+          nullable: true
+        answeredByUserId:
+          type: string
+          format: uuid
+          nullable: true
+    UserGameHistoryItemDto:
+      type: object
+      required:
+        - gameId
+        - gameTitle
+        - gameStatus
+        - createdAtUtc
+        - modifierActivations
+        - questionAnswers
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        gameTitle:
+          type: string
+        gameStatus:
+          type: string
+        createdAtUtc:
+          type: string
+          format: date-time
+        startedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        modifierActivations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserGameModifierActivationHistoryItemDto'
+        questionAnswers:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserGameQuestionAnswerHistoryItemDto'
     AuthRole:
       type: string
       enum: [admin, moderator, viewer]
@@ -1789,6 +1991,8 @@ components:
             - game_lifecycle.registration_slots_required
             - game_lifecycle.invalid_team_size_limits
             - game_lifecycle.operation_failed
+            - game_lifecycle.draft_delete_not_allowed
+            - game_lifecycle.game_not_found
             - game_common.unexpected_server_error
             - game_registration.not_open
             - game_registration.no_slots

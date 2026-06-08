@@ -40,6 +40,9 @@ public class GameQuestionRoundConfiguration : IEntityTypeConfiguration<GameQuest
         builder.HasIndex(x => new { x.GameId, x.AskOrder }).IsUnique();
         builder.HasIndex(x => new { x.GameId, x.AskedAtUtc });
         builder.HasIndex(x => new { x.GameId, x.Status });
+        builder.HasIndex(x => new { x.AnsweredForUserId, x.AnsweredAtUtc });
+        builder.HasIndex(x => new { x.AnsweredByUserId, x.AnsweredAtUtc });
+        builder.HasIndex(x => new { x.AskedByUserId, x.AskedAtUtc });
 
         builder
             .HasOne(x => x.Game)
@@ -51,6 +54,24 @@ public class GameQuestionRoundConfiguration : IEntityTypeConfiguration<GameQuest
             .HasOne(x => x.Question)
             .WithMany(x => x.AskedInGames)
             .HasForeignKey(x => x.QuestionId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne(x => x.AskedByUser)
+            .WithMany(x => x.AskedGameQuestionRounds)
+            .HasForeignKey(x => x.AskedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne(x => x.AnsweredByUser)
+            .WithMany(x => x.AnsweredGameQuestionRounds)
+            .HasForeignKey(x => x.AnsweredByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne(x => x.AnsweredForUser)
+            .WithMany(x => x.CreditedGameQuestionRounds)
+            .HasForeignKey(x => x.AnsweredForUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

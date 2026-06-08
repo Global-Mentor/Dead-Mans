@@ -30,7 +30,10 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
         var normalizedCategory = NormalizeFilter(category);
         var normalizedSearch = NormalizeFilter(search);
 
-        var query = _dbContext.QuestionDefinitions.AsNoTracking().AsQueryable();
+        var query = _dbContext.QuestionDefinitions
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(normalizedVectorCode))
         {
@@ -72,7 +75,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
     )
     {
         var question = await _dbContext.QuestionDefinitions.FirstOrDefaultAsync(
-            x => x.Id == questionId,
+            x => x.Id == questionId && !x.IsDeleted,
             cancellationToken
         );
         if (question is null)
@@ -81,6 +84,28 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
         }
 
         question.IsEnabled = isEnabled;
+        question.UpdatedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> SoftDeleteQuestionAsync(
+        Guid questionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var question = await _dbContext.QuestionDefinitions.FirstOrDefaultAsync(
+            x => x.Id == questionId && !x.IsDeleted,
+            cancellationToken
+        );
+        if (question is null)
+        {
+            return false;
+        }
+
+        question.IsDeleted = true;
+        question.DeletedAtUtc = DateTime.UtcNow;
+        question.IsEnabled = false;
         question.UpdatedAtUtc = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
@@ -101,7 +126,9 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
 
         var normalizedVectorCode = NormalizeFilter(vectorCode);
 
-        var query = _dbContext.QuestionDefinitions.Where(x => x.Category == normalizedCategory);
+        var query = _dbContext.QuestionDefinitions.Where(
+            x => x.Category == normalizedCategory && !x.IsDeleted
+        );
         if (!string.IsNullOrWhiteSpace(normalizedVectorCode))
         {
             query = query.Where(x => x.VectorCode == normalizedVectorCode);
@@ -121,7 +148,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
     {
         return await _dbContext.Games
             .AsNoTracking()
-            .Where(x => x.Status == GameStatusValue.Active)
+            .Where(x => x.Status == GameStatusValue.Active && !x.IsDeleted)
             .OrderByDescending(x => x.StartedAtUtc ?? x.CreatedAtUtc)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -147,7 +174,8 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
         var candidates = await _dbContext.QuestionDefinitions
             .Where(
                 x =>
-                    x.IsEnabled
+                    !x.IsDeleted
+                    && x.IsEnabled
                     && x.Vector != null
                     && x.Vector.IsEnabled
                     && !alreadyAskedQuestionIds.Contains(x.Id)
@@ -210,6 +238,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
     public async Task<GameQuestionRoundSummary?> AnswerRoundAsync(
         Guid roundId,
         Guid? answeredByUserId,
+        Guid? answeredForUserId,
         string? answeredByDisplayName,
         string submittedAnswer,
         CancellationToken cancellationToken = default
@@ -234,6 +263,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
 
         round.SubmittedAnswer = submittedAnswer.Trim();
         round.AnsweredByUserId = answeredByUserId;
+        round.AnsweredForUserId = answeredForUserId ?? answeredByUserId;
         round.AnsweredByDisplayName = NormalizeDisplayName(answeredByDisplayName);
         round.AnsweredAtUtc = now;
         round.IsCorrect = isCorrect;
@@ -289,6 +319,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
             round.Round.AnsweredAtUtc,
             round.Round.AnsweredByDisplayName,
             round.Round.AnsweredByUserId,
+            round.Round.AnsweredForUserId,
             round.Round.SubmittedAnswer,
             round.Round.IsCorrect,
             round.Round.AwardedPoints
@@ -319,6 +350,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
                         x.AnsweredAtUtc,
                         x.AnsweredByDisplayName,
                         x.AnsweredByUserId,
+                        x.AnsweredForUserId,
                         x.SubmittedAnswer,
                         x.IsCorrect,
                         x.AwardedPoints
@@ -364,6 +396,7 @@ public sealed class DbGameQuestionRepository : IGameQuestionRepository
             round.AnsweredAtUtc,
             round.AnsweredByDisplayName,
             round.AnsweredByUserId,
+            round.AnsweredForUserId,
             round.SubmittedAnswer,
             round.IsCorrect,
             round.AwardedPoints

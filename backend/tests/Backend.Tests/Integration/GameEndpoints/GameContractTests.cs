@@ -287,6 +287,29 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task DeleteQuestion_WhenAdmin_SoftDeletesAndHidesFromCatalog()
+    {
+        await SeedQuestionVectorWithQuestionsAsync(
+            [new SeedQuestionItem("delete-q-1001", "lore", "Вопрос для удаления?", "Да", 1)]
+        );
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+
+        var catalogResponse = await adminClient.GetAsync("/api/game/questions/catalog");
+        Assert.Equal(HttpStatusCode.OK, catalogResponse.StatusCode);
+        var catalog = await catalogResponse.Content.ReadFromJsonAsync<IReadOnlyList<GameQuestionCatalogItemDto>>();
+        var question = Assert.Single(catalog!.Where(x => x.QuestionCode == "delete-q-1001"));
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/game/questions/{question.QuestionId}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var afterDeleteResponse = await adminClient.GetAsync("/api/game/questions/catalog");
+        Assert.Equal(HttpStatusCode.OK, afterDeleteResponse.StatusCode);
+        var afterDeleteCatalog =
+            await afterDeleteResponse.Content.ReadFromJsonAsync<IReadOnlyList<GameQuestionCatalogItemDto>>();
+        Assert.DoesNotContain(afterDeleteCatalog!, x => x.QuestionCode == "delete-q-1001");
+    }
+
+    [Fact]
     public async Task AskNextQuestion_WhenOnlySingleQuestionAvailable_SecondCallReturnsNotFound()
     {
         await SeedActiveGameForQuestionsAsync();
@@ -321,7 +344,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         var answerResponse = await moderatorClient.PostAsJsonAsync(
             $"/api/game/questions/rounds/{asked.RoundId}/answer",
-            new AnswerGameQuestionRequestDto("2", "Integration Tester")
+            new AnswerGameQuestionRequestDto("2", "Integration Tester", null)
         );
 
         Assert.Equal(HttpStatusCode.OK, answerResponse.StatusCode);

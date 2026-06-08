@@ -16,6 +16,8 @@ public enum GameLifecycleErrorCode
     GameNotActive,
     NoParticipationSlots,
     InvalidTeamSizeLimits,
+    DraftDeleteNotAllowed,
+    GameNotFound,
 }
 
 public sealed record GameLifecycleResult(bool Success, Guid? GameId, GameLifecycleErrorCode Error);

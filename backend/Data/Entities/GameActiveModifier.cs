@@ -15,4 +15,6 @@ public class GameActiveModifier
     public Game Game { get; set; } = default!;
 
     public ModifierDefinition ModifierDefinition { get; set; } = default!;
+
+    public User? ActivatedByUser { get; set; }
 }

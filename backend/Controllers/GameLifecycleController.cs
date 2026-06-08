@@ -50,6 +50,21 @@ public sealed class GameLifecycleController : ControllerBase
         return ToActionResult(result, GameLifecycleStatuses.Finished);
     }
 
+    [HttpDelete("games/{gameId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ArchiveGame(Guid gameId, CancellationToken cancellationToken)
+    {
+        var result = await _lifecycleService.ArchiveGameAsync(gameId, cancellationToken);
+        if (result.Success)
+        {
+            return NoContent();
+        }
+
+        return this.Error(DomainErrorHttpPolicy.FromLifecycle(result.Error));
+    }
+
     private IActionResult ToActionResult(GameLifecycleResult result, string successStatus)
     {
         if (result.Success && result.GameId.HasValue)

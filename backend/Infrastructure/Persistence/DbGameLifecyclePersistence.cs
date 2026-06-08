@@ -28,7 +28,10 @@ public sealed class DbGameLifecyclePersistence : IGameLifecyclePersistence
     {
         var draft = await _dbContext.Games
             .Include(game => game.ParticipationSlots)
-            .FirstOrDefaultAsync(game => game.Id == draftGameId, cancellationToken);
+            .FirstOrDefaultAsync(
+                game => game.Id == draftGameId && !game.IsDeleted,
+                cancellationToken
+            );
         if (draft is null)
         {
             return new GameLifecycleResult(false, null, GameLifecycleErrorCode.DraftNotFound);
@@ -75,7 +78,10 @@ public sealed class DbGameLifecyclePersistence : IGameLifecyclePersistence
     )
     {
         var ready = await _dbContext.Games
-            .FirstOrDefaultAsync(game => game.Id == readyGameId, cancellationToken);
+            .FirstOrDefaultAsync(
+                game => game.Id == readyGameId && !game.IsDeleted,
+                cancellationToken
+            );
         if (ready is null)
         {
             return new GameLifecycleResult(false, null, GameLifecycleErrorCode.GameNotReady);
@@ -103,7 +109,10 @@ public sealed class DbGameLifecyclePersistence : IGameLifecyclePersistence
     )
     {
         var active = await _dbContext.Games
-            .FirstOrDefaultAsync(game => game.Id == activeGameId, cancellationToken);
+            .FirstOrDefaultAsync(
+                game => game.Id == activeGameId && !game.IsDeleted,
+                cancellationToken
+            );
         if (active is null)
         {
             return new GameLifecycleResult(false, null, GameLifecycleErrorCode.GameNotActive);
@@ -116,6 +125,37 @@ public sealed class DbGameLifecyclePersistence : IGameLifecyclePersistence
 
         _logger.LogInformation("Game {GameId} finished.", active.Id);
         return new GameLifecycleResult(true, active.Id, GameLifecycleErrorCode.None);
+    }
+
+    public async Task<GameLifecycleResult> ArchiveGameAsync(
+        Guid gameId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var game = await _dbContext.Games.FirstOrDefaultAsync(
+            candidate => candidate.Id == gameId && !candidate.IsDeleted,
+            cancellationToken
+        );
+        if (game is null)
+        {
+            return new GameLifecycleResult(false, null, GameLifecycleErrorCode.GameNotFound);
+        }
+
+        if (game.Status == GameStatusValue.Draft)
+        {
+            return new GameLifecycleResult(
+                false,
+                game.Id,
+                GameLifecycleErrorCode.DraftDeleteNotAllowed
+            );
+        }
+
+        game.IsDeleted = true;
+        game.DeletedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Game {GameId} archived (soft-delete).", game.Id);
+        return new GameLifecycleResult(true, game.Id, GameLifecycleErrorCode.None);
     }
 
     private static GameLifecycleResult MapLifecycleUniqueViolation(

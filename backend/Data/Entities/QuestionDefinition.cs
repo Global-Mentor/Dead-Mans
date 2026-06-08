@@ -20,6 +20,10 @@ public class QuestionDefinition
 
     public bool IsEnabled { get; set; } = true;
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAtUtc { get; set; }
+
     public int SortOrder { get; set; }
 
     public int AskedTotalCount { get; set; }

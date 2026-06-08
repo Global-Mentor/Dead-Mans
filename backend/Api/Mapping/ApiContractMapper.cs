@@ -157,9 +157,48 @@ public static class ApiContractMapper
             round.AnsweredAtUtc,
             round.AnsweredByDisplayName,
             round.AnsweredByUserId?.ToString(),
+            round.AnsweredForUserId?.ToString(),
             round.SubmittedAnswer,
             round.IsCorrect,
             round.AwardedPoints
+        );
+    }
+
+    public static UserGameHistoryItemDto ToDto(this UserGameHistoryItem item)
+    {
+        return new UserGameHistoryItemDto(
+            item.GameId.ToString(),
+            item.GameTitle,
+            item.GameStatus,
+            item.CreatedAtUtc,
+            item.StartedAtUtc,
+            item.FinishedAtUtc,
+            item.ModifierActivations.Select(ToDto).ToArray(),
+            item.QuestionAnswers.Select(ToDto).ToArray()
+        );
+    }
+
+    public static UserGameModifierActivationHistoryItemDto ToDto(
+        this UserGameModifierActivationHistoryItem item
+    )
+    {
+        return new UserGameModifierActivationHistoryItemDto(item.ModifierCode, item.ActivatedAtUtc);
+    }
+
+    public static UserGameQuestionAnswerHistoryItemDto ToDto(
+        this UserGameQuestionAnswerHistoryItem item
+    )
+    {
+        return new UserGameQuestionAnswerHistoryItemDto(
+            item.RoundId.ToString(),
+            item.QuestionId.ToString(),
+            item.QuestionText,
+            item.Category,
+            item.AnsweredAtUtc,
+            item.IsCorrect,
+            item.AwardedPoints,
+            item.SubmittedAnswer,
+            item.AnsweredByUserId?.ToString()
         );
     }
 

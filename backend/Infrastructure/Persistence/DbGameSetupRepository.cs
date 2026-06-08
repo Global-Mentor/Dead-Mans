@@ -59,7 +59,10 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
     {
         return _dbContext.Games
             .AsNoTracking()
-            .AnyAsync(game => game.Status == GameStatusValue.Draft, cancellationToken);
+            .AnyAsync(
+                game => game.Status == GameStatusValue.Draft && !game.IsDeleted,
+                cancellationToken
+            );
     }
 
     public async Task<GameBoardSnapshot?> CreateDraftSetupAsync(
@@ -189,7 +192,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
             var draftGame = await _dbContext.Games
                 .Include(game => game.Board!)
                 .ThenInclude(board => board.Cells)
-                .Where(game => game.Status == GameStatusValue.Draft)
+                .Where(game => game.Status == GameStatusValue.Draft && !game.IsDeleted)
                 .OrderByDescending(game => game.CreatedAtUtc)
                 .FirstOrDefaultAsync(cancellationToken);
             if (draftGame?.Board is not { } board)
@@ -380,7 +383,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
         try
         {
             var draftGame = await _dbContext.Games
-                .Where(game => game.Status == GameStatusValue.Draft)
+                .Where(game => game.Status == GameStatusValue.Draft && !game.IsDeleted)
                 .OrderByDescending(game => game.CreatedAtUtc)
                 .FirstOrDefaultAsync(cancellationToken);
             if (draftGame is null)
@@ -511,7 +514,7 @@ public sealed class DbGameSetupRepository : IGameSetupRepository
     {
         return _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == GameStatusValue.Draft)
+            .Where(game => game.Status == GameStatusValue.Draft && !game.IsDeleted)
             .Join(
                 _dbContext.GameBoards.AsNoTracking(),
                 game => game.Id,

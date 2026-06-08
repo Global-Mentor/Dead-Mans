@@ -8,6 +8,7 @@ using backend.Data;
 using backend.Domain.Persistence;
 using backend.Messaging;
 using Backend.Tests.Support;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -106,6 +107,49 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
     }
 
     [Fact]
+    public async Task ArchiveGame_WhenFinishedGameExists_SoftDeletesGameAndReturnsNoContent()
+    {
+        await ClearGamesAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Archive me"));
+        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
+        var finishResponse = await adminClient.PostAsync("/api/game/lifecycle/finish", content: null);
+        Assert.Equal(HttpStatusCode.OK, finishResponse.StatusCode);
+        var finished = await finishResponse.Content.ReadFromJsonAsync<GameLifecycleStateDto>();
+        Assert.NotNull(finished);
+
+        var archiveResponse = await adminClient.DeleteAsync($"/api/game/lifecycle/games/{finished!.GameId}");
+        Assert.Equal(HttpStatusCode.NoContent, archiveResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var game = await db.Games.FirstAsync(x => x.Id == finished.GameId);
+        Assert.True(game.IsDeleted);
+        Assert.NotNull(game.DeletedAtUtc);
+    }
+
+    [Fact]
+    public async Task ArchiveGame_WhenDraftGamePassed_ReturnsConflict()
+    {
+        await ClearGamesAsync();
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var setupResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/setup",
+            new CreateGameSetupRequestDto("Draft should hard-delete only")
+        );
+        Assert.Equal(HttpStatusCode.Created, setupResponse.StatusCode);
+        var setup = await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.NotNull(setup);
+
+        var archiveResponse = await adminClient.DeleteAsync($"/api/game/lifecycle/games/{setup!.GameId}");
+        Assert.Equal(HttpStatusCode.Conflict, archiveResponse.StatusCode);
+        var payload = await archiveResponse.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleDraftDeleteNotAllowed, payload.Code);
+    }
+
+    [Fact]
     public async Task Start_WhenNoReadyGame_ReturnsNotFound()
     {
         await ClearGamesAsync();
@@ -192,5 +236,10 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
 
         public Task<GameLifecycleResult> FinishGameAsync(CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated lifecycle failure.");
+
+        public Task<GameLifecycleResult> ArchiveGameAsync(
+            Guid gameId,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Simulated lifecycle failure.");
     }
 }

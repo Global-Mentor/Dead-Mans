@@ -9,4 +9,9 @@ public interface IGameLifecycleService
     Task<GameLifecycleResult> StartGameAsync(CancellationToken cancellationToken = default);
 
     Task<GameLifecycleResult> FinishGameAsync(CancellationToken cancellationToken = default);
+
+    Task<GameLifecycleResult> ArchiveGameAsync(
+        Guid gameId,
+        CancellationToken cancellationToken = default
+    );
 }

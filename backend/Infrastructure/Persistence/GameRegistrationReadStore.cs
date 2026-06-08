@@ -22,7 +22,7 @@ public sealed class GameRegistrationReadStore : IGameRegistrationReadStore
     public async Task<ReadyGameRegistrationContext?> GetReadyGameAsync(CancellationToken cancellationToken) =>
         await _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == GameStatusValue.Ready)
+            .Where(game => game.Status == GameStatusValue.Ready && !game.IsDeleted)
             .OrderByDescending(game => game.ReadyAtUtc)
             .Select(
                 game => new ReadyGameRegistrationContext(
@@ -224,7 +224,7 @@ public sealed class GameRegistrationReadStore : IGameRegistrationReadStore
     {
         var game = await _dbContext.Games
             .AsNoTracking()
-            .FirstAsync(x => x.Id == gameId, cancellationToken);
+            .FirstAsync(x => x.Id == gameId && !x.IsDeleted, cancellationToken);
 
         var slots = await _dbContext.GameParticipationSlots
             .AsNoTracking()

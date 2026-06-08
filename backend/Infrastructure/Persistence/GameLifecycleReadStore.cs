@@ -18,7 +18,7 @@ public sealed class GameLifecycleReadStore : IGameLifecycleReadStore
     public Task<DraftGameLifecycleContext?> GetLatestDraftForOpenAsync(CancellationToken cancellationToken) =>
         _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == GameStatusValue.Draft)
+            .Where(game => game.Status == GameStatusValue.Draft && !game.IsDeleted)
             .OrderByDescending(game => game.CreatedAtUtc)
             .Select(
                 game => new DraftGameLifecycleContext(
@@ -30,15 +30,21 @@ public sealed class GameLifecycleReadStore : IGameLifecycleReadStore
             .FirstOrDefaultAsync(cancellationToken);
 
     public Task<bool> AnyReadyGameAsync(CancellationToken cancellationToken) =>
-        _dbContext.Games.AnyAsync(game => game.Status == GameStatusValue.Ready, cancellationToken);
+        _dbContext.Games.AnyAsync(
+            game => game.Status == GameStatusValue.Ready && !game.IsDeleted,
+            cancellationToken
+        );
 
     public Task<bool> AnyActiveGameAsync(CancellationToken cancellationToken) =>
-        _dbContext.Games.AnyAsync(game => game.Status == GameStatusValue.Active, cancellationToken);
+        _dbContext.Games.AnyAsync(
+            game => game.Status == GameStatusValue.Active && !game.IsDeleted,
+            cancellationToken
+        );
 
     public Task<Guid?> GetReadyGameIdForStartAsync(CancellationToken cancellationToken) =>
         _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == GameStatusValue.Ready)
+            .Where(game => game.Status == GameStatusValue.Ready && !game.IsDeleted)
             .OrderByDescending(game => game.ReadyAtUtc)
             .Select(game => (Guid?)game.Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -46,7 +52,7 @@ public sealed class GameLifecycleReadStore : IGameLifecycleReadStore
     public Task<Guid?> GetActiveGameIdForFinishAsync(CancellationToken cancellationToken) =>
         _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == GameStatusValue.Active)
+            .Where(game => game.Status == GameStatusValue.Active && !game.IsDeleted)
             .OrderByDescending(game => game.StartedAtUtc)
             .Select(game => (Guid?)game.Id)
             .FirstOrDefaultAsync(cancellationToken);

@@ -299,7 +299,7 @@ public sealed class DbGameBoardRepository : IGameBoardRepository
     {
         var baseQuery = _dbContext.Games
             .AsNoTracking()
-            .Where(game => game.Status == status)
+            .Where(game => game.Status == status && !game.IsDeleted)
             .Join(
                 _dbContext.GameBoards.AsNoTracking(),
                 game => game.Id,

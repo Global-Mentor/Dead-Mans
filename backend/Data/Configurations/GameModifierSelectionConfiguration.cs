@@ -34,6 +34,6 @@ public class GameModifierSelectionConfiguration : IEntityTypeConfiguration<GameM
             .WithMany(x => x.GameSelections)
             .HasForeignKey(x => x.ModifierCode)
             .HasPrincipalKey(x => x.Code)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -22,6 +22,8 @@ public class GameQuestionRound
 
     public Guid? AnsweredByUserId { get; set; }
 
+    public Guid? AnsweredForUserId { get; set; }
+
     public string? AnsweredByDisplayName { get; set; }
 
     public string? SubmittedAnswer { get; set; }
@@ -33,4 +35,10 @@ public class GameQuestionRound
     public Game? Game { get; set; }
 
     public QuestionDefinition? Question { get; set; }
+
+    public User? AskedByUser { get; set; }
+
+    public User? AnsweredByUser { get; set; }
+
+    public User? AnsweredForUser { get; set; }
 }

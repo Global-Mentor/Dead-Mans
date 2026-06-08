@@ -74,4 +74,12 @@ public sealed class GameLifecycleService : IGameLifecycleService
 
         return await _persistence.FinishGameAsync(activeGameId.Value, cancellationToken);
     }
+
+    public Task<GameLifecycleResult> ArchiveGameAsync(
+        Guid gameId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _persistence.ArchiveGameAsync(gameId, cancellationToken);
+    }
 }

@@ -31,4 +31,16 @@ public class User
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
     public ICollection<UserRole> AssignedRoles { get; set; } = new List<UserRole>();
+
+    public ICollection<GameActiveModifier> ActivatedGameModifiers { get; set; } =
+        new List<GameActiveModifier>();
+
+    public ICollection<GameQuestionRound> AskedGameQuestionRounds { get; set; } =
+        new List<GameQuestionRound>();
+
+    public ICollection<GameQuestionRound> AnsweredGameQuestionRounds { get; set; } =
+        new List<GameQuestionRound>();
+
+    public ICollection<GameQuestionRound> CreditedGameQuestionRounds { get; set; } =
+        new List<GameQuestionRound>();
 }

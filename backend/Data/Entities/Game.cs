@@ -20,6 +20,10 @@ public class Game
 
     public DateTime? FinishedAtUtc { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAtUtc { get; set; }
+
     public short MinPlayersPerTeam { get; set; } = 1;
 
     public short MaxPlayersPerTeam { get; set; } = 3;
