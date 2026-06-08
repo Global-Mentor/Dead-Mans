@@ -1,8 +1,6 @@
 import {
   Alert,
   Box,
-  Button,
-  Paper,
   Snackbar,
   Stack,
   Table,
@@ -17,6 +15,8 @@ import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
 import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
 import { TeamRegistrationsInvitePlannedSection } from './ui/TeamRegistrationsInvitePlannedSection.tsx'
+import { AppButton, SectionCard } from '../../shared/ui/index.ts'
+import { pageShellSx } from '../../shared/theme/layout-sx.ts'
 
 export function TeamRegistrationsPage() {
   const { t } = useTranslation()
@@ -45,7 +45,7 @@ export function TeamRegistrationsPage() {
 
   if (teamsQuery.data == null) {
     return (
-      <Box sx={{ maxWidth: 1100, mx: 'auto', p: { xs: 2, md: 3 } }}>
+      <Box sx={pageShellSx}>
         <PageStatePanel
           title={t('teamRegistrations.title')}
           message={t('teamRegistrations.notOpen')}
@@ -58,7 +58,7 @@ export function TeamRegistrationsPage() {
   const teams = teamsQuery.data
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto', p: { xs: 2, md: 3 } }}>
+    <Box sx={pageShellSx}>
       <Typography variant="h5" gutterBottom>
         {t('teamRegistrations.title')}
       </Typography>
@@ -69,7 +69,7 @@ export function TeamRegistrationsPage() {
       {teams.length === 0 ? (
         <Typography variant="body2">{t('teamRegistrations.empty')}</Typography>
       ) : (
-        <Paper sx={{ overflowX: 'auto' }}>
+        <SectionCard sx={{ overflowX: 'auto', p: 0 }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -89,9 +89,8 @@ export function TeamRegistrationsPage() {
                   </TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button
+                      <AppButton
                         size="small"
-                        variant="contained"
                         disabled={
                           team.status !== 'forming'
                           || (confirmTeam.isPending && confirmTeam.variables === team.teamId)
@@ -99,10 +98,11 @@ export function TeamRegistrationsPage() {
                         onClick={() => confirmTeam.mutate(team.teamId)}
                       >
                         {t('teamRegistrations.confirm')}
-                      </Button>
-                      <Button
+                      </AppButton>
+                      <AppButton
                         size="small"
                         color="warning"
+                        tone="ghost"
                         disabled={
                           team.status !== 'forming'
                           || (rejectTeam.isPending && rejectTeam.variables === team.teamId)
@@ -110,14 +110,14 @@ export function TeamRegistrationsPage() {
                         onClick={() => rejectTeam.mutate(team.teamId)}
                       >
                         {t('teamRegistrations.reject')}
-                      </Button>
+                      </AppButton>
                     </Stack>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </Paper>
+        </SectionCard>
       )}
 
       <Snackbar

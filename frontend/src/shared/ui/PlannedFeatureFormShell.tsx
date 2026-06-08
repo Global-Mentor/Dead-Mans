@@ -1,6 +1,7 @@
-import { Box, Paper, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SectionCard } from './SectionCard.tsx'
 
 interface PlannedFeatureFormShellProps {
   titleKey: string
@@ -18,13 +19,11 @@ export function PlannedFeatureFormShell({
   const { t } = useTranslation()
 
   return (
-    <Paper
-      variant="outlined"
+    <SectionCard
+      inset
       sx={{
-        p: 2,
         borderStyle: 'dashed',
         borderColor: 'divider',
-        bgcolor: 'action.hover',
         opacity: 0.92,
         ...sx,
       }}
@@ -43,6 +42,6 @@ export function PlannedFeatureFormShell({
       <Box sx={{ pointerEvents: 'none', userSelect: 'none' }} aria-hidden>
         {children}
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }

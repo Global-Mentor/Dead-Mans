@@ -1,31 +1,18 @@
-import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { panelRootPath } from '../../routes/app-routes.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher.tsx'
+import { AppButton, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
+import { uiTokens } from '../../shared/theme/tokens.ts'
 
 export function AuthLandingPage() {
   const { t } = useTranslation()
   const { authStatus, isAuthenticated, startTwitchLogin } = useAuth()
 
   if (authStatus === 'checking') {
-    return (
-      <Box
-        sx={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Stack spacing={2} alignItems="center">
-          <CircularProgress size={28} />
-          <Typography>{t('auth.checkingSession')}</Typography>
-        </Stack>
-      </Box>
-    )
+    return <CenteredProgress minHeight="100vh" message={t('auth.checkingSession')} />
   }
 
   if (isAuthenticated) {
@@ -51,15 +38,14 @@ export function AuthLandingPage() {
       >
         <LanguageSwitcher />
       </Box>
-      <Paper
-        elevation={6}
+      <SectionCard
         sx={{
           px: 6,
           py: 5,
           maxWidth: 480,
           textAlign: 'center',
-          background:
-            'radial-gradient(circle at top, rgba(144,202,249,0.12) 0, transparent 60%), #141829',
+          background: uiTokens.gradients.authCard,
+          border: 'none',
         }}
       >
         <Stack spacing={3}>
@@ -87,26 +73,24 @@ export function AuthLandingPage() {
             <Typography variant="body1" sx={{ mb: 2 }}>
               {t('auth.description')}
             </Typography>
-            <Button
-              variant="contained"
+            <AppButton
               size="large"
               onClick={startTwitchLogin}
               sx={{
                 mt: 1,
                 px: 4,
                 py: 1.2,
-                fontWeight: 600,
-                backgroundColor: '#6441A5',
+                backgroundColor: uiTokens.brand.twitch,
                 '&:hover': {
-                  backgroundColor: '#7c4fd9',
+                  backgroundColor: uiTokens.brand.twitchHover,
                 },
               }}
             >
               {t('auth.button')}
-            </Button>
+            </AppButton>
           </Box>
         </Stack>
-      </Paper>
+      </SectionCard>
     </Box>
   )
 }

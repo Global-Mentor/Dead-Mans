@@ -1,9 +1,10 @@
-import { Alert, Box, Checkbox, FormControlLabel, FormGroup, Paper, Typography } from '@mui/material'
+import { Alert, Box, Checkbox, FormControlLabel, FormGroup, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { queryKeys } from '../../../shared/api/query-keys.ts'
 import { fetchGameModifierCatalog } from '../../game-modifiers/api/game-modifiers-data-access.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
+import { SectionCard } from '../../../shared/ui/index.ts'
 
 interface GameSetupModifiersSectionProps {
   draft: GameSetupDraftState
@@ -18,7 +19,7 @@ export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifier
   })
 
   return (
-    <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+    <SectionCard sx={{ mt: 2 }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
         {t('gameSetup.modifiers.title')}
       </Typography>
@@ -67,6 +68,6 @@ export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifier
           })}
         </FormGroup>
       ) : null}
-    </Paper>
+    </SectionCard>
   )
 }

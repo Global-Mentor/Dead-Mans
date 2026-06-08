@@ -1,10 +1,10 @@
 import { Suspense, lazy } from 'react'
-import { Box, CircularProgress } from '@mui/material'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { panelRootPath } from '../routes/app-routes.ts'
+import { PanelRouteElements } from '../routes/PanelRouteElements.tsx'
 import { RequireAuth } from '../shared/auth/RequireAuth.tsx'
-import { PanelRoutes } from './routes/PanelRoutes.tsx'
+import { CenteredProgress } from '../shared/ui/CenteredProgress.tsx'
 
 const AuthLandingPage = lazy(() =>
   import('../features/auth/AuthLandingPage.tsx').then((module) => ({
@@ -17,18 +17,7 @@ const TwitchAuthCallbackPage = lazy(() =>
   })),
 )
 function AppFallback() {
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <CircularProgress size={28} />
-    </Box>
-  )
+  return <CenteredProgress minHeight="100vh" />
 }
 
 export default function App() {
@@ -58,7 +47,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {PanelRoutes()}
+        <PanelRouteElements />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

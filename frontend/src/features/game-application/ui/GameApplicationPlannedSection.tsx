@@ -1,7 +1,9 @@
-import { Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { AppButton } from '../../../shared/ui/AppButton.tsx'
 import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
 import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
+import { SectionCard } from '../../../shared/ui/SectionCard.tsx'
 import { gameApplicationPlannedRoadmap } from '../game-application-planned-features.ts'
 
 export function GameApplicationPlannedSection() {
@@ -15,9 +17,8 @@ export function GameApplicationPlannedSection() {
       >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {[1, 2, 3, 4, 5, 6].map((slot) => (
-            <Paper
+            <SectionCard
               key={slot}
-              variant="outlined"
               sx={{
                 p: 1.5,
                 minWidth: 88,
@@ -29,7 +30,7 @@ export function GameApplicationPlannedSection() {
                 {t('plannedFeatures.gameApplication.form.slotLabel', { slot })}
               </Typography>
               <Chip size="small" label={t('plannedFeatures.gameApplication.form.slotFree')} />
-            </Paper>
+            </SectionCard>
           ))}
         </Stack>
       </PlannedFeatureFormShell>
@@ -39,12 +40,12 @@ export function GameApplicationPlannedSection() {
         descriptionKey="plannedFeatures.gameApplication.form.memberInviteDescription"
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <Button variant="outlined" disabled fullWidth>
+          <AppButton tone="secondary" disabled fullWidth>
             {t('plannedFeatures.gameApplication.form.inviteTeammate')}
-          </Button>
-          <Button variant="text" disabled fullWidth>
+          </AppButton>
+          <AppButton tone="ghost" disabled fullWidth>
             {t('plannedFeatures.gameApplication.form.submitForReview')}
-          </Button>
+          </AppButton>
         </Stack>
       </PlannedFeatureFormShell>
 

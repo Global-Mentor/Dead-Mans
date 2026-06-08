@@ -58,6 +58,13 @@ export const panelRoutes = [
 
 export const defaultRoute = panelRoutes[0]
 
+type PanelCapability = 'gameSetup' | 'modifierActivation'
+
+const panelCapabilityRoles: Record<PanelCapability, readonly AuthRole[]> = {
+  gameSetup: ['admin'],
+  modifierActivation: ['admin', 'moderator'],
+}
+
 export function hasAccessToPanelRoute(
   route: PanelRouteDefinition,
   roles: readonly AuthRole[] | undefined,
@@ -87,4 +94,15 @@ export function getPanelRouteByPath(pathname: string) {
       (route) => pathname === route.fullPath || pathname.startsWith(`${route.fullPath}/`),
     ) ?? null
   )
+}
+
+export function hasPanelCapability(
+  capability: PanelCapability,
+  roles: readonly AuthRole[] | undefined,
+) {
+  if (!roles || roles.length === 0) {
+    return false
+  }
+
+  return roles.some((role) => panelCapabilityRoles[capability].includes(role))
 }

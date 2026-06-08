@@ -1,4 +1,5 @@
-import { CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { CircularProgress, Stack, Typography } from '@mui/material'
+import { SectionCard } from './SectionCard.tsx'
 
 interface PageStatePanelProps {
   title?: string
@@ -14,7 +15,7 @@ export function PageStatePanel({
   showSpinner = false,
 }: PageStatePanelProps) {
   return (
-    <Paper sx={{ p: 3 }}>
+    <SectionCard>
       <Stack spacing={title ? 1 : 0} alignItems={showSpinner ? 'center' : 'stretch'}>
         {showSpinner ? <CircularProgress size={28} /> : null}
         {title ? <Typography variant="h6">{title}</Typography> : null}
@@ -26,6 +27,6 @@ export function PageStatePanel({
           {message}
         </Typography>
       </Stack>
-    </Paper>
+    </SectionCard>
   )
 }

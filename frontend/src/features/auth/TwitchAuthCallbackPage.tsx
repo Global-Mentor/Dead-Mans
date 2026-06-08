@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { AppButton, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
 import { useTwitchAuthCallback } from './use-twitch-auth-callback.ts'
 
 export function TwitchAuthCallbackPage() {
@@ -22,15 +23,15 @@ export function TwitchAuthCallbackPage() {
           justifyContent: 'center',
         }}
       >
-        <Paper sx={{ p: 4, minWidth: 320 }}>
-          <Stack spacing={2}>
+        <SectionCard sx={{ p: 4, minWidth: 320 }}>
+          <Box sx={{ display: 'grid', gap: 2 }}>
             <Typography variant="h6">{t('auth.callbackFailedTitle')}</Typography>
             <Typography color="text.secondary">{callbackReasonMessage}</Typography>
-            <Button variant="contained" onClick={navigateToLogin}>
+            <AppButton onClick={navigateToLogin}>
               {t('auth.backToLogin')}
-            </Button>
-          </Stack>
-        </Paper>
+            </AppButton>
+          </Box>
+        </SectionCard>
       </Box>
     )
   }
@@ -45,32 +46,20 @@ export function TwitchAuthCallbackPage() {
           justifyContent: 'center',
         }}
       >
-        <Paper sx={{ p: 4, minWidth: 320 }}>
-          <Stack spacing={2}>
+        <SectionCard sx={{ p: 4, minWidth: 320 }}>
+          <Box sx={{ display: 'grid', gap: 2 }}>
             <Typography variant="h6">{t('auth.callbackFailedTitle')}</Typography>
             <Typography color="text.secondary">{t('auth.sessionRestoreFailed')}</Typography>
-            <Button variant="contained" onClick={navigateToLogin}>
+            <AppButton onClick={navigateToLogin}>
               {t('auth.backToLogin')}
-            </Button>
-          </Stack>
-        </Paper>
+            </AppButton>
+          </Box>
+        </SectionCard>
       </Box>
     )
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Paper sx={{ p: 4, minWidth: 320, textAlign: 'center' }}>
-        <CircularProgress size={26} />
-        <Typography sx={{ mt: 2 }}>{t('auth.processing')}</Typography>
-      </Paper>
-    </Box>
+    <CenteredProgress minHeight="100vh" message={t('auth.processing')} />
   )
 }

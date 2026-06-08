@@ -1,11 +1,12 @@
-import { Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { gameSetupSidebarPaperSx } from '../../../shared/theme/layout-sx.ts'
+import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 import { GameSetupBoardLayoutDialog } from './GameSetupBoardLayoutDialog.tsx'
 import { ResetGameSetupDialog } from './ResetGameSetupDialog.tsx'
-import { gameSetupSidebarPaperSx } from './game-setup-ui-styles.ts'
 
 interface GameSetupSettingsSidebarProps {
   draft: GameSetupDraftState
@@ -28,7 +29,7 @@ export function GameSetupSettingsSidebar({
 
   return (
     <>
-      <Paper variant="outlined" sx={gameSetupSidebarPaperSx}>
+      <SectionCard inset sx={gameSetupSidebarPaperSx}>
         <Typography variant="overline" color="text.secondary">
           {t('gameSetup.settingsSidebar.overline')}
         </Typography>
@@ -40,7 +41,7 @@ export function GameSetupSettingsSidebar({
         </Typography>
 
         <Stack spacing={2}>
-          <TextField
+          <FormTextField
             label={t('gameSetup.gameNameLabel')}
             value={draft.title}
             onChange={(event) => {
@@ -50,8 +51,6 @@ export function GameSetupSettingsSidebar({
                 title: nextTitle,
               }))
             }}
-            size="small"
-            fullWidth
             inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
           />
 
@@ -69,21 +68,21 @@ export function GameSetupSettingsSidebar({
             </Typography>
           </Box>
 
-          <Button variant="outlined" fullWidth onClick={() => setIsLayoutDialogOpen(true)}>
+          <AppButton tone="secondary" fullWidth onClick={() => setIsLayoutDialogOpen(true)}>
             {t('gameSetup.settingsSidebar.manageLayout')}
-          </Button>
+          </AppButton>
 
-          <Button
-            variant="outlined"
+          <AppButton
+            tone="secondary"
             color="error"
             fullWidth
             disabled={isResetting}
             onClick={() => setIsResetDialogOpen(true)}
           >
             {t('gameSetup.settingsSidebar.resetDraft')}
-          </Button>
+          </AppButton>
         </Stack>
-      </Paper>
+      </SectionCard>
 
       <ResetGameSetupDialog
         open={isResetDialogOpen}

@@ -1,8 +1,7 @@
-import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
+import { AppButton, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
 import { CreateGameSetupDialog } from './ui/CreateGameSetupDialog.tsx'
-import { gameSetupSidebarPaperSx } from './ui/game-setup-ui-styles.ts'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
 import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
@@ -10,6 +9,7 @@ import { useGameSetupPage } from './use-game-setup-page.ts'
 import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
 import { GameSetupQuestionsSection } from './ui/GameSetupQuestionsSection.tsx'
+import { gameSetupSidebarPaperSx, setupSplitLayoutSx } from '../../shared/theme/layout-sx.ts'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {
@@ -88,17 +88,8 @@ export function GameSetupPage() {
   if (!snapshot || !draft) {
     return (
       <>
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-            alignItems: 'stretch',
-            minHeight: 0,
-          }}
-        >
-          <Paper variant="outlined" sx={gameSetupSidebarPaperSx}>
+        <Box sx={setupSplitLayoutSx}>
+          <SectionCard inset sx={gameSetupSidebarPaperSx}>
             <Typography variant="overline" color="text.secondary">
               {t('gameSetup.settingsSidebar.overline')}
             </Typography>
@@ -108,13 +99,12 @@ export function GameSetupPage() {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {t('gameSetup.emptyPanel.description')}
             </Typography>
-          </Paper>
+          </SectionCard>
 
-          <Paper
+          <SectionCard
             sx={{
               flex: 1,
               minWidth: 0,
-              p: { xs: 2, md: 3 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -132,7 +122,7 @@ export function GameSetupPage() {
               </Alert>
             ) : null}
             <GameSetupRegistrationPlannedSection />
-          </Paper>
+          </SectionCard>
         </Box>
         <CreateGameSetupDialog
           open={isEmpty}
@@ -146,16 +136,7 @@ export function GameSetupPage() {
   }
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: { xs: 'column', md: 'row' },
-        gap: 2,
-        alignItems: 'stretch',
-        minHeight: 0,
-      }}
-    >
+    <Box sx={setupSplitLayoutSx}>
       <GameSetupSettingsSidebar
         draft={draft}
         onDraftChange={updateDraft}
@@ -164,11 +145,10 @@ export function GameSetupPage() {
         onReset={deleteDraft}
       />
 
-      <Paper
+      <SectionCard
         sx={{
           flex: 1,
           minWidth: 0,
-          p: { xs: 2, md: 3 },
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -190,13 +170,12 @@ export function GameSetupPage() {
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
             <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
             <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
-            <Button
-              variant="contained"
+            <AppButton
               disabled={!isDirty || isSaving}
               onClick={() => void saveDraft()}
             >
               {isSaving ? t('gameSetup.saving') : t('gameSetup.save')}
-            </Button>
+            </AppButton>
           </Stack>
         </Stack>
 
@@ -213,9 +192,9 @@ export function GameSetupPage() {
             sx={{ mt: 2 }}
             onClose={dismissRemoteChangeNotice}
             action={
-              <Button color="inherit" size="small" onClick={() => void reloadFromServer()}>
+              <AppButton tone="ghost" size="small" onClick={() => void reloadFromServer()}>
                 {t('gameSetup.reloadFromServer')}
-              </Button>
+              </AppButton>
             }
           >
             {t('gameSetup.remoteChangeNotice')}
@@ -255,7 +234,7 @@ export function GameSetupPage() {
         </Box>
 
         <GameSetupRegistrationPlannedSection />
-      </Paper>
+      </SectionCard>
     </Box>
   )
 }

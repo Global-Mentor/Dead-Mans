@@ -3,19 +3,14 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Paper,
   Snackbar,
   Stack,
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
-import { gameApplicationRoute, gameSetupRoute, hasAccessToPanelRoute } from '../../routes/app-routes.ts'
-import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
+import { gameApplicationRoute, hasPanelCapability } from '../../routes/app-routes.ts'
+import { ConfirmDialog, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { useGameBoardPage } from './use-game-board-page.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
@@ -27,9 +22,8 @@ export function GameBoardPage() {
   const { t } = useTranslation()
   const { data, isError, isLoading } = useGameBoardPage()
   const { user } = useAuth()
-  const isAdmin = hasAccessToPanelRoute(gameSetupRoute, user?.roles)
-  const canActivateModifiers =
-    user?.roles?.includes('admin') === true || user?.roles?.includes('moderator') === true
+  const isAdmin = hasPanelCapability('gameSetup', user?.roles)
+  const canActivateModifiers = hasPanelCapability('modifierActivation', user?.roles)
   const {
     pendingCell,
     toastMessage,
@@ -87,9 +81,8 @@ export function GameBoardPage() {
         px: { xs: 1, sm: 2 },
       }}
     >
-      <Paper
+      <SectionCard
         sx={{
-          p: { xs: 2, md: 3 },
           width: '100%',
           maxWidth: 960,
           display: 'flex',
@@ -141,32 +134,22 @@ export function GameBoardPage() {
           canActivateModifiers={canActivateModifiers}
         />
         {isAdmin ? <GameBoardAdminPlannedSection /> : null}
-      </Paper>
+      </SectionCard>
 
-      <Dialog
+      <ConfirmDialog
         open={pendingCell !== null}
         onClose={dismissPendingCell}
-        aria-labelledby="open-cell-dialog-title"
-      >
-        <DialogTitle id="open-cell-dialog-title">{t('gameBoard.openConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            {t('gameBoard.openConfirmDescription', {
-              cost: pendingCell?.cost ?? 0,
-              row: pendingCell?.row ?? '-',
-              col: pendingCell?.col ?? '-',
-            })}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={dismissPendingCell} disabled={isSubmitting}>
-            {t('gameBoard.openCancel')}
-          </Button>
-          <Button variant="contained" onClick={confirmOpenCell} disabled={isSubmitting}>
-            {t('gameBoard.openConfirm')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={confirmOpenCell}
+        isBusy={isSubmitting}
+        title={t('gameBoard.openConfirmTitle')}
+        description={t('gameBoard.openConfirmDescription', {
+          cost: pendingCell?.cost ?? 0,
+          row: pendingCell?.row ?? '-',
+          col: pendingCell?.col ?? '-',
+        })}
+        cancelLabel={t('gameBoard.openCancel')}
+        confirmLabel={t('gameBoard.openConfirm')}
+      />
 
       <Snackbar
         open={toastMessage !== null}

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Chip,
-  Paper,
   Snackbar,
   Stack,
   Typography,
@@ -16,6 +15,8 @@ import { useGameApplicationPage } from './use-game-application-page.ts'
 import type { RegistrationTeam } from '../../shared/api/contracts/index.ts'
 import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
 import { GameApplicationPlannedSection } from './ui/GameApplicationPlannedSection.tsx'
+import { AppButton, SectionCard } from '../../shared/ui/index.ts'
+import { pageShellSx } from '../../shared/theme/layout-sx.ts'
 
 export function GameApplicationPage() {
   const { t } = useTranslation()
@@ -52,7 +53,7 @@ export function GameApplicationPage() {
 
   if (snapshotQuery.data == null) {
     return (
-      <Box sx={{ maxWidth: 960, mx: 'auto', p: { xs: 2, md: 3 } }}>
+      <Box sx={pageShellSx}>
         <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
         <GameApplicationPlannedSection />
       </Box>
@@ -66,7 +67,7 @@ export function GameApplicationPage() {
   )
 
   return (
-    <Box sx={{ maxWidth: 960, mx: 'auto', p: { xs: 2, md: 3 } }}>
+    <Box sx={pageShellSx}>
       <Typography variant="h5" gutterBottom>
         {t('gameApplication.title')}
       </Typography>
@@ -75,7 +76,7 @@ export function GameApplicationPage() {
       </Typography>
 
       {snapshot.myPendingInvitations.length > 0 ? (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <SectionCard sx={{ mb: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             {t('gameApplication.invitationsTitle')}
           </Typography>
@@ -91,9 +92,8 @@ export function GameApplicationPage() {
                 <Typography variant="body2">
                   {t('gameApplication.invitationSlot', { slot: invitation.slotIndex })}
                 </Typography>
-                <Button
+                <AppButton
                   size="small"
-                  variant="contained"
                   disabled={
                     acceptInvitation.isPending
                     && acceptInvitation.variables === invitation.invitationId
@@ -101,9 +101,10 @@ export function GameApplicationPage() {
                   onClick={() => acceptInvitation.mutate(invitation.invitationId)}
                 >
                   {t('gameApplication.acceptInvitation')}
-                </Button>
-                <Button
+                </AppButton>
+                <AppButton
                   size="small"
+                  tone="ghost"
                   disabled={
                     declineInvitation.isPending
                     && declineInvitation.variables === invitation.invitationId
@@ -111,56 +112,56 @@ export function GameApplicationPage() {
                   onClick={() => declineInvitation.mutate(invitation.invitationId)}
                 >
                   {t('gameApplication.declineInvitation')}
-                </Button>
+                </AppButton>
               </Stack>
             ))}
           </Stack>
-        </Paper>
+        </SectionCard>
       ) : null}
 
       {snapshot.myTeam ? (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <SectionCard sx={{ mb: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             {t('gameApplication.myTeamTitle')}
           </Typography>
           <TeamSummary team={snapshot.myTeam} />
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             <Chip size="small" label={formatRegistrationTeamStatus(snapshot.myTeam.status, t)} />
-            <Button
+            <AppButton
               color="warning"
+              tone="ghost"
               disabled={leaveTeam.isPending}
               onClick={() => leaveTeam.mutate()}
             >
               {t('gameApplication.leaveTeam')}
-            </Button>
+            </AppButton>
           </Stack>
-        </Paper>
+        </SectionCard>
       ) : (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <SectionCard sx={{ mb: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             {t('gameApplication.createTeamTitle')}
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button
-              variant="contained"
+            <AppButton
               disabled={createTeam.isPending}
               onClick={() => createTeam.mutate(true)}
             >
               {t('gameApplication.createOpenTeam')}
-            </Button>
-            <Button
-              variant="outlined"
+            </AppButton>
+            <AppButton
+              tone="secondary"
               disabled={createTeam.isPending}
               onClick={() => createTeam.mutate(false)}
             >
               {t('gameApplication.createClosedTeam')}
-            </Button>
+            </AppButton>
           </Stack>
-        </Paper>
+        </SectionCard>
       )}
 
       {snapshot.myTeam === null && openTeams.length > 0 ? (
-        <Paper sx={{ p: 2 }}>
+        <SectionCard>
           <Typography variant="subtitle1" gutterBottom>
             {t('gameApplication.openTeamsTitle')}
           </Typography>
@@ -175,17 +176,16 @@ export function GameApplicationPage() {
                 flexWrap="wrap"
               >
                 <TeamSummary team={team} />
-                <Button
-                  variant="contained"
+                <AppButton
                   disabled={joinTeam.isPending && joinTeam.variables === team.teamId}
                   onClick={() => joinTeam.mutate(team.teamId)}
                 >
                   {t('gameApplication.joinTeam')}
-                </Button>
+                </AppButton>
               </Stack>
             ))}
           </Stack>
-        </Paper>
+        </SectionCard>
       ) : null}
 
       <Button component={RouterLink} to={gameBoardRoute.fullPath} sx={{ mt: 2 }}>

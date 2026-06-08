@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
   Box,
-  Button,
   ButtonBase,
   Chip,
   Divider,
@@ -9,7 +8,6 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  Paper,
   Stack,
   Typography,
 } from '@mui/material'
@@ -18,6 +16,8 @@ import { useTranslation } from 'react-i18next'
 import { getPanelRouteByPath } from '../routes/app-routes.ts'
 import { useAccessiblePanelRoutes } from '../routes/use-accessible-panel-routes.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
+import { AppButton, SectionCard } from '../shared/ui/index.ts'
+import { uiTokens } from '../shared/theme/tokens.ts'
 
 export function PanelNavigationDrawer() {
   const { t } = useTranslation()
@@ -49,17 +49,13 @@ export function PanelNavigationDrawer() {
           transition: 'opacity 0.2s ease',
         }}
       >
-        <Paper
-          elevation={10}
+        <SectionCard
           sx={{
             px: 1.5,
             py: 1.75,
             maxWidth: 120,
             borderRadius: '18px 0 0 18px',
-            border: '1px solid',
-            borderColor: 'divider',
-            background:
-              'linear-gradient(180deg, rgba(144,202,249,0.16) 0%, rgba(20,24,41,0.98) 100%)',
+            background: uiTokens.gradients.panelAccent,
           }}
         >
           <Stack spacing={0.75} alignItems="center">
@@ -77,7 +73,7 @@ export function PanelNavigationDrawer() {
               {activeRoute ? t(activeRoute.labelKey) : t('navigation.title')}
             </Typography>
           </Stack>
-        </Paper>
+        </SectionCard>
       </ButtonBase>
 
       <Drawer
@@ -103,9 +99,9 @@ export function PanelNavigationDrawer() {
                   {user.displayName}
                 </Typography>
               </Box>
-              <Button variant="text" size="small" onClick={() => setIsOpen(false)}>
+              <AppButton tone="ghost" size="small" onClick={() => setIsOpen(false)}>
                 {t('navigation.close')}
-              </Button>
+              </AppButton>
             </Stack>
 
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
