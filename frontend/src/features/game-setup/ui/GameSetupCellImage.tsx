@@ -3,6 +3,14 @@ import { useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppButton } from '../../../shared/ui/index.ts'
 import {
+  createSetupCellDropzoneSx,
+  setupCellBusyOverlaySx,
+  setupCellDragOverlaySx,
+  setupCellImageLabelSx,
+  setupCellImagePreviewSx,
+  setupCellMediaActionsSx,
+} from '../theme/cell-image-sx.ts'
+import {
   dataTransferHasImageFiles,
   extractGameSetupCellMediaFileFromDataTransfer,
   GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES,
@@ -46,15 +54,12 @@ function GameSetupCellImagePreview({
       alt={alt}
       onLoad={() => setImageLoaded(true)}
       onError={() => setImageLoaded(false)}
-      sx={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        opacity: imageLoaded && !isBusy && !isDragOver ? 1 : 0,
-        transition: 'opacity 160ms ease',
-      }}
+      sx={[
+        setupCellImagePreviewSx,
+        {
+          opacity: imageLoaded && !isBusy && !isDragOver ? 1 : 0,
+        },
+      ]}
     />
   )
 }
@@ -161,35 +166,17 @@ export function GameSetupCellImage({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      sx={{
-        flex: 1,
-        borderRadius: 1,
-        border: '1px dashed',
-        borderColor: showDragOver ? 'primary.main' : 'divider',
-        bgcolor: showDragOver ? 'action.hover' : 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        justifyContent: 'center',
-        textAlign: 'center',
-        color: 'text.secondary',
-        overflow: 'hidden',
-        position: 'relative',
-        minHeight: 96,
-        transition: 'border-color 160ms ease, background-color 160ms ease',
-      }}
+      sx={createSetupCellDropzoneSx({ showDragOver })}
     >
       <Box
         component="label"
         htmlFor={canManageMedia && !isBusy ? inputId : undefined}
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: canManageMedia && !isBusy ? 'pointer' : 'default',
-        }}
+        sx={[
+          setupCellImageLabelSx,
+          {
+            cursor: canManageMedia && !isBusy ? 'pointer' : 'default',
+          },
+        ]}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest('[data-cell-media-action]')) {
             event.preventDefault()
@@ -213,19 +200,7 @@ export function GameSetupCellImage({
         )}
 
         {showDragOver ? (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(25, 118, 210, 0.18)',
-              border: '2px dashed',
-              borderColor: 'primary.main',
-              zIndex: 2,
-            }}
-          >
+          <Box sx={setupCellDragOverlaySx}>
             <Typography variant="caption" sx={{ px: 1, color: 'primary.main', fontWeight: 600 }}>
               {t('gameSetup.cellMedia.dropPrompt')}
             </Typography>
@@ -233,19 +208,7 @@ export function GameSetupCellImage({
         ) : null}
 
         {isBusy ? (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.75,
-              bgcolor: 'rgba(0,0,0,0.5)',
-              zIndex: 3,
-            }}
-          >
+          <Box sx={setupCellBusyOverlaySx}>
             <CircularProgress size={28} color="inherit" />
             {statusLabel ? (
               <Typography variant="caption" sx={{ color: 'common.white', px: 1 }}>
@@ -261,13 +224,7 @@ export function GameSetupCellImage({
           direction="row"
           spacing={0.5}
           justifyContent="center"
-          sx={{
-            position: 'absolute',
-            left: 4,
-            right: 4,
-            bottom: 4,
-            zIndex: 4,
-          }}
+          sx={setupCellMediaActionsSx}
           data-cell-media-action
         >
           <AppButton

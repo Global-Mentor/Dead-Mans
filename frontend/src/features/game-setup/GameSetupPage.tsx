@@ -9,7 +9,7 @@ import { useGameSetupPage } from './use-game-setup-page.ts'
 import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
 import { GameSetupQuestionsSection } from './ui/GameSetupQuestionsSection.tsx'
-import { gameSetupSidebarPaperSx } from '../../shared/theme/layout-sx.ts'
+import { gameSetupSidebarPaperSx } from './theme/layout-sx.ts'
 
 function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
   switch (syncStatus) {

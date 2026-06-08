@@ -1,8 +1,4 @@
-import {
-  Chip,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Chip, Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { gameApplicationRoute } from '../../routes/app-routes.ts'
 import {
@@ -83,7 +79,7 @@ export function GameBoardPage() {
         }}
       >
         <SectionHeader
-          title={<Typography variant="h5">{snapshot.title || t('gameBoard.title')}</Typography>}
+          title={snapshot.title || t('gameBoard.title')}
           description={snapshot.description}
           actions={
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">

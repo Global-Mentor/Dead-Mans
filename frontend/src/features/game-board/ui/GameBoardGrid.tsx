@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameBoardCell, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { BoardMatrix } from '../../../shared/ui/index.ts'
+import { createBoardCellSx } from '../theme/board-cell-sx.ts'
 
 interface GameBoardGridProps {
   snapshot: GameBoardSnapshot
@@ -84,36 +85,7 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                   }
                 }
               }}
-              sx={{
-                border: '1px solid',
-                borderColor: isOpen ? 'primary.main' : 'divider',
-                borderWidth: isOpen ? 2 : 1,
-                borderRadius: 1,
-                position: 'relative',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                aspectRatio: '5 / 6',
-                gap: 0.5,
-                p: 0.5,
-                cursor: isClickable ? 'pointer' : 'default',
-                transition: 'border-color 0.15s ease, transform 0.15s ease',
-                '&:hover': isClickable
-                  ? {
-                      borderColor: 'primary.light',
-                      transform: 'translateY(-1px)',
-                    }
-                  : undefined,
-                '&:focus-visible': isClickable
-                  ? {
-                      outline: '2px solid',
-                      outlineColor: 'primary.main',
-                      outlineOffset: 2,
-                    }
-                  : undefined,
-              }}
+              sx={createBoardCellSx({ isOpen, isClickable })}
             >
               {url ? (
                 <Box
