@@ -1,5 +1,5 @@
 import { Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { AppButton } from './AppButton.tsx'
 
 interface ConfirmDialogProps {
@@ -25,11 +25,25 @@ export function ConfirmDialog({
   onClose,
   onConfirm,
 }: ConfirmDialogProps) {
+  const descriptionId = useId()
+
   return (
-    <Dialog open={open} onClose={isBusy ? undefined : onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={isBusy ? undefined : onClose}
+      fullWidth
+      maxWidth="sm"
+      aria-describedby={descriptionId}
+    >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        {typeof description === 'string' ? <Typography variant="body2">{description}</Typography> : description}
+        {typeof description === 'string' ? (
+          <Typography id={descriptionId} variant="body2">
+            {description}
+          </Typography>
+        ) : (
+          <div id={descriptionId}>{description}</div>
+        )}
       </DialogContent>
       <DialogActions>
         <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>

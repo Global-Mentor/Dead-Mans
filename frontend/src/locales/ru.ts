@@ -427,6 +427,7 @@ const ru = {
       },
     },
     languageSwitcher: {
+      ariaLabel: 'Язык интерфейса',
       languages: {
         ru: 'RU',
         en: 'EN',

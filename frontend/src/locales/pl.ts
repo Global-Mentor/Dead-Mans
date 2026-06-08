@@ -425,6 +425,7 @@ const pl = {
       },
     },
     languageSwitcher: {
+      ariaLabel: 'Język interfejsu',
       languages: {
         ru: 'RU',
         en: 'EN',

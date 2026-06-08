@@ -18,6 +18,7 @@ export function LanguageSwitcher() {
     <FormSelect
       size="small"
       label=""
+      ariaLabel={t('languageSwitcher.ariaLabel')}
       value={value}
       onChange={handleChange}
       options={languageCodes.map((languageCode) => ({

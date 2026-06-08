@@ -12,12 +12,14 @@ interface FormSelectProps<TValue extends string | number>
   value: TValue
   options: readonly FormSelectOption<TValue>[]
   onChange: (value: TValue) => void
+  ariaLabel?: string
 }
 
 export function FormSelect<TValue extends string | number>({
   value,
   options,
   onChange,
+  ariaLabel,
   ...props
 }: FormSelectProps<TValue>) {
   return (
@@ -27,6 +29,15 @@ export function FormSelect<TValue extends string | number>({
       size={props.size ?? 'small'}
       fullWidth={props.fullWidth ?? true}
       value={value}
+      SelectProps={
+        ariaLabel
+          ? {
+              inputProps: {
+                'aria-label': ariaLabel,
+              },
+            }
+          : undefined
+      }
       onChange={(event) => onChange(event.target.value as TValue)}
     >
       {options.map((option) => (

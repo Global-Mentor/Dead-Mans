@@ -47,6 +47,11 @@ export function PanelNavigationDrawer() {
           opacity: isOpen ? 0 : 1,
           pointerEvents: isOpen ? 'none' : 'auto',
           transition: 'opacity 0.2s ease',
+          '&.Mui-focusVisible': {
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: 2,
+          },
         }}
       >
         <SectionCard
