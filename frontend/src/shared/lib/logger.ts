@@ -1,6 +1,4 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
-
-// Keep debug logs in development only.
 const isDev = import.meta.env.DEV
 
 function log(level: LogLevel, message: string, payload?: unknown) {

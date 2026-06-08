@@ -1,4 +1,4 @@
-import type { PlannedFeatureRoadmapItem } from '../../shared/ui/PlannedFeatureRoadmap.tsx'
+import type { PlannedFeatureRoadmapItem } from '../../shared/ui/index.ts'
 
 export const teamRegistrationsPlannedRoadmap: readonly PlannedFeatureRoadmapItem[] = [
   {

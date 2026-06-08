@@ -4,7 +4,7 @@ import { MainLayout } from '../layouts/MainLayout.tsx'
 import { panelRootPath } from '../routes/app-routes.ts'
 import { PanelRouteElements } from '../routes/PanelRouteElements.tsx'
 import { RequireAuth } from '../shared/auth/RequireAuth.tsx'
-import { CenteredProgress } from '../shared/ui/CenteredProgress.tsx'
+import { CenteredProgress } from '../shared/ui/index.ts'
 
 const AuthLandingPage = lazy(() =>
   import('../features/auth/AuthLandingPage.tsx').then((module) => ({

@@ -1,15 +1,11 @@
 import {
   Alert,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Stack,
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, FormSelect } from '../../../shared/ui/index.ts'
+import { AppButton, AppDialog, FormSelect } from '../../../shared/ui/index.ts'
 import {
   applyGameSetupBoardLayoutChange,
   canApplyBoardLayoutChange,
@@ -109,9 +105,25 @@ export function GameSetupBoardLayoutDialog({
         : 'gameSetup.layoutDialog.confirmRemoveColumn'
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t('gameSetup.layoutDialog.title')}</DialogTitle>
-      <DialogContent>
+    <AppDialog
+      open={open}
+      onClose={handleClose}
+      title={t('gameSetup.layoutDialog.title')}
+      actions={
+        <>
+          <AppButton tone="ghost" onClick={confirmStep ? () => setConfirmStep(false) : handleClose}>
+            {confirmStep ? t('gameSetup.layoutDialog.back') : t('gameSetup.layoutDialog.cancel')}
+          </AppButton>
+          <AppButton
+            tone={action === 'remove' ? 'danger' : 'primary'}
+            disabled={!canApply || positionIndexes.length === 0}
+            onClick={handlePrimaryClick}
+          >
+            {confirmStep ? t('gameSetup.layoutDialog.confirm') : t('gameSetup.layoutDialog.review')}
+          </AppButton>
+        </>
+      }
+    >
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {t('gameSetup.layoutDialog.description')}
         </Typography>
@@ -169,20 +181,6 @@ export function GameSetupBoardLayoutDialog({
             })}
           </Alert>
         )}
-      </DialogContent>
-      <DialogActions>
-        <AppButton tone="ghost" onClick={confirmStep ? () => setConfirmStep(false) : handleClose}>
-          {confirmStep ? t('gameSetup.layoutDialog.back') : t('gameSetup.layoutDialog.cancel')}
-        </AppButton>
-        <AppButton
-          tone="primary"
-          color={action === 'remove' ? 'error' : 'primary'}
-          disabled={!canApply || positionIndexes.length === 0}
-          onClick={handlePrimaryClick}
-        >
-          {confirmStep ? t('gameSetup.layoutDialog.confirm') : t('gameSetup.layoutDialog.review')}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   )
 }

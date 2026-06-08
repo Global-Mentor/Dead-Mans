@@ -1,6 +1,7 @@
-import { MenuItem, TextField } from '@mui/material'
-import type { TextFieldProps } from '@mui/material'
-import type { ReactNode } from 'react'
+import { MenuItem } from '@mui/material'
+import type { ChangeEvent, ReactNode } from 'react'
+import { FormTextField } from './FormTextField.tsx'
+import type { FormTextFieldProps } from './FormTextField.tsx'
 
 interface FormSelectOption<TValue extends string | number> {
   value: TValue
@@ -8,7 +9,7 @@ interface FormSelectOption<TValue extends string | number> {
 }
 
 interface FormSelectProps<TValue extends string | number>
-  extends Omit<TextFieldProps, 'select' | 'value' | 'onChange'> {
+  extends Omit<FormTextFieldProps, 'select' | 'value' | 'onChange'> {
   value: TValue
   options: readonly FormSelectOption<TValue>[]
   onChange: (value: TValue) => void
@@ -23,11 +24,9 @@ export function FormSelect<TValue extends string | number>({
   ...props
 }: FormSelectProps<TValue>) {
   return (
-    <TextField
+    <FormTextField
       {...props}
       select
-      size={props.size ?? 'small'}
-      fullWidth={props.fullWidth ?? true}
       value={value}
       SelectProps={
         ariaLabel
@@ -38,14 +37,14 @@ export function FormSelect<TValue extends string | number>({
             }
           : undefined
       }
-      onChange={(event) => onChange(event.target.value as TValue)}
+      onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value as TValue)}
     >
       {options.map((option) => (
         <MenuItem key={String(option.value)} value={option.value}>
           {option.label}
         </MenuItem>
       ))}
-    </TextField>
+    </FormTextField>
   )
 }
 

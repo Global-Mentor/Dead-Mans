@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FormSelect } from '../ui/FormSelect.tsx'
+import { FormSelect } from '../ui/index.ts'
 
 const languageCodes = ['ru', 'en', 'uk', 'pl'] as const
 
@@ -16,7 +16,7 @@ export function LanguageSwitcher() {
 
   return (
     <FormSelect
-      size="small"
+      layout="compact"
       label=""
       ariaLabel={t('languageSwitcher.ariaLabel')}
       value={value}
@@ -29,7 +29,6 @@ export function LanguageSwitcher() {
         minWidth: 70,
         ml: 2,
         '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
-        '& .MuiInputBase-input': { py: 0.3, fontSize: 12 },
         '& .MuiInputLabel-root': { display: 'none' },
       }}
     />

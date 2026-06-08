@@ -1,22 +1,24 @@
 import {
-  Alert,
   Box,
-  Button,
   Chip,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
 import { gameBoardRoute } from '../../routes/app-routes.ts'
-import { PageStatePanel } from '../../shared/ui/PageStatePanel.tsx'
 import { useGameApplicationPage } from './use-game-application-page.ts'
 import type { RegistrationTeam } from '../../shared/api/contracts/index.ts'
-import { formatRegistrationTeamStatus } from '../game-registration/model/registration-team-status.ts'
+import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
 import { GameApplicationPlannedSection } from './ui/GameApplicationPlannedSection.tsx'
-import { AppButton, SectionCard } from '../../shared/ui/index.ts'
-import { pageShellSx } from '../../shared/theme/layout-sx.ts'
+import {
+  AppButton,
+  AppLinkButton,
+  AppToast,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 
 export function GameApplicationPage() {
   const { t } = useTranslation()
@@ -53,10 +55,10 @@ export function GameApplicationPage() {
 
   if (snapshotQuery.data == null) {
     return (
-      <Box sx={pageShellSx}>
+      <PageShell>
         <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
         <GameApplicationPlannedSection />
-      </Box>
+      </PageShell>
     )
   }
 
@@ -67,13 +69,8 @@ export function GameApplicationPage() {
   )
 
   return (
-    <Box sx={pageShellSx}>
-      <Typography variant="h5" gutterBottom>
-        {t('gameApplication.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        {t('gameApplication.description')}
-      </Typography>
+    <PageShell>
+      <SectionHeader title={t('gameApplication.title')} description={t('gameApplication.description')} />
 
       {snapshot.myPendingInvitations.length > 0 ? (
         <SectionCard sx={{ mb: 2 }}>
@@ -128,8 +125,7 @@ export function GameApplicationPage() {
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             <Chip size="small" label={formatRegistrationTeamStatus(snapshot.myTeam.status, t)} />
             <AppButton
-              color="warning"
-              tone="ghost"
+              tone="warningGhost"
               disabled={leaveTeam.isPending}
               onClick={() => leaveTeam.mutate()}
             >
@@ -188,21 +184,12 @@ export function GameApplicationPage() {
         </SectionCard>
       ) : null}
 
-      <Button component={RouterLink} to={gameBoardRoute.fullPath} sx={{ mt: 2 }}>
+      <AppLinkButton to={gameBoardRoute.fullPath} sx={{ mt: 2 }} tone="ghost">
         {t('gameApplication.backToBoard')}
-      </Button>
+      </AppLinkButton>
 
-      <Snackbar
-        open={toastMessage !== null}
-        autoHideDuration={5000}
-        onClose={dismissToast}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={dismissToast} severity="error" variant="filled" sx={{ width: '100%' }}>
-          {toastMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <AppToast message={toastMessage} onClose={dismissToast} severity="error" autoHideDuration={5000} />
+    </PageShell>
   )
 }
 

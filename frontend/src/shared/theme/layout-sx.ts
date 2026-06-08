@@ -1,5 +1,5 @@
 import type { SxProps, Theme } from '@mui/material'
-import { uiTokens } from './tokens.ts'
+import { getThemeGradients, uiTokens } from './tokens.ts'
 
 export const pageShellSx: SxProps<Theme> = {
   maxWidth: 1100,
@@ -20,8 +20,8 @@ export const gameSetupSidebarPaperSx: SxProps<Theme> = {
   width: { xs: '100%', md: 280 },
   flexShrink: 0,
   p: 2.5,
-  borderRadius: uiTokens.borderRadius.md,
+  borderRadius: (theme) => theme.shape.borderRadius,
   alignSelf: 'stretch',
-  background: uiTokens.gradients.panelAccentSoft,
+  background: (theme) => getThemeGradients(theme).panelAccentSoft,
 }
 

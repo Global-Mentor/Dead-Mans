@@ -44,7 +44,7 @@ export function AuthLandingPage() {
           py: 5,
           maxWidth: 480,
           textAlign: 'center',
-          background: uiTokens.gradients.authCard,
+          background: (theme) => theme.custom.gradients.authCard,
           border: 'none',
         }}
       >

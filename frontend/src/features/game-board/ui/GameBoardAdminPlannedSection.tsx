@@ -1,8 +1,6 @@
 import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
-import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
-import { AppButton } from '../../../shared/ui/AppButton.tsx'
+import { AppButton, PlannedFeatureFormShell, PlannedFeatureRoadmap } from '../../../shared/ui/index.ts'
 import { gameBoardPlannedRoadmap } from '../game-board-planned-features.ts'
 
 export function GameBoardAdminPlannedSection() {
@@ -18,10 +16,10 @@ export function GameBoardAdminPlannedSection() {
           <AppButton disabled sx={{ flex: 1 }}>
             {t('plannedFeatures.gameBoard.form.openRegistration')}
           </AppButton>
-          <AppButton color="success" disabled sx={{ flex: 1 }}>
+          <AppButton tone="success" disabled sx={{ flex: 1 }}>
             {t('plannedFeatures.gameBoard.form.startGame')}
           </AppButton>
-          <AppButton tone="secondary" color="warning" disabled sx={{ flex: 1 }}>
+          <AppButton tone="warningGhost" disabled sx={{ flex: 1 }}>
             {t('plannedFeatures.gameBoard.form.finishGame')}
           </AppButton>
         </Stack>

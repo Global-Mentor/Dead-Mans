@@ -1,8 +1,8 @@
 import { Box } from '@mui/material'
-import { Fragment, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
-import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { BoardMatrix, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import {
   getGameSetupCellAt,
   upsertGameSetupCellDraft,
@@ -46,139 +46,116 @@ export function GameSetupGrid({
   }, [snapshot.cells])
 
   return (
-    <Box sx={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
-      <Box sx={{ minWidth: { xs: 680, sm: 'auto' } }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: `auto repeat(${draft.colLabels.length}, 1fr)`,
-            columnGap: 0.75,
-            rowGap: 0.75,
-            mb: 1,
-            alignItems: 'center',
-          }}
-        >
-          <Box sx={{ minWidth: 72 }} />
-          {draft.colLabels.map((columnLabel, columnIndex) => (
-            <FormTextField
-              key={`column-${columnIndex}`}
-              label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
-              value={columnLabel}
-              onChange={(event) => {
-                const nextValue = event.target.value
-                onDraftChange((current) => ({
-                  ...current,
-                  colLabels: current.colLabels.map((label, index) =>
-                    index === columnIndex ? nextValue : label,
-                  ),
-                }))
-              }}
-              inputProps={{
-                maxLength: GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
-                sx: { textAlign: 'center', fontWeight: 600 },
-              }}
-            />
-          ))}
-        </Box>
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <BoardMatrix
+        colLabels={draft.colLabels}
+        rowLabels={draft.rowLabels}
+        minWidth={680}
+        gap={0.75}
+        renderColumnLabel={(columnLabel, columnIndex) => (
+          <FormTextField
+            layout="centered"
+            label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
+            value={columnLabel}
+            onChange={(event) => {
+              const nextValue = event.target.value
+              onDraftChange((current) => ({
+                ...current,
+                colLabels: current.colLabels.map((label, index) =>
+                  index === columnIndex ? nextValue : label,
+                ),
+              }))
+            }}
+            inputProps={{
+              maxLength: GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
+            }}
+          />
+        )}
+        renderRowLabel={(rowLabel, rowIndex) => (
+          <FormTextField
+            layout="centered"
+            label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
+            value={rowLabel}
+            onChange={(event) => {
+              const nextValue = event.target.value
+              onDraftChange((current) => ({
+                ...current,
+                rowLabels: current.rowLabels.map((label, index) =>
+                  index === rowIndex ? nextValue : label,
+                ),
+              }))
+            }}
+            inputProps={{
+              maxLength: GAME_SETUP_MAX_ROW_LABEL_LENGTH,
+            }}
+          />
+        )}
+        renderCell={(rowIndex, colIndex, rowLabel) => {
+          const cellDraft = getGameSetupCellAt(draft, rowIndex, colIndex)
+          const cellId = cellDraft?.id
+          const serverImageUrl = cellId ? mediaUrlByCellId.get(cellId) : undefined
+          const cellDisplay = cellId ? cellMediaDisplayByCellId[cellId] : undefined
+          const imageUrl = resolveGameSetupCellImageUrl(serverImageUrl, cellDisplay)
+          const cellImageBusy = isCellMediaBusy(cellId)
+          const imageKey = cellId
+            ? `${cellId}:${cellDisplay?.cacheRevision ?? 0}:${cellDisplay?.phase ?? 'idle'}`
+            : undefined
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: `auto repeat(${draft.colLabels.length}, 1fr)`,
-            columnGap: 0.75,
-            rowGap: 0.75,
-            alignItems: 'stretch',
-          }}
-        >
-          {draft.rowLabels.map((rowLabel, rowIndex) => (
-            <Fragment key={`row-${rowIndex}`}>
+          return (
+            <SectionCard
+              variantStyle="dashed"
+              sx={{
+                p: 1,
+                aspectRatio: '5 / 6',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                bgcolor: 'action.hover',
+              }}
+            >
+              <GameSetupCellImage
+                imageUrl={imageUrl}
+                imageKey={imageKey}
+                alt={cellDraft?.title ?? rowLabel}
+                cellId={cellId}
+                phase={cellDisplay?.phase ?? 'idle'}
+                canManageMedia
+                isBusy={cellImageBusy}
+                onUpload={onUploadCellMedia}
+                onDelete={onDeleteCellMedia}
+              />
               <FormTextField
-                label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
-                value={rowLabel}
+                label={t('gameSetup.cellTitleLabel')}
+                value={cellDraft?.title ?? ''}
                 onChange={(event) => {
                   const nextValue = event.target.value
-                  onDraftChange((current) => ({
-                    ...current,
-                    rowLabels: current.rowLabels.map((label, index) =>
-                      index === rowIndex ? nextValue : label,
-                    ),
-                  }))
+                  onDraftChange((current) =>
+                    upsertGameSetupCellDraft(current, rowIndex, colIndex, {
+                      title: nextValue,
+                    }),
+                  )
                 }}
-                inputProps={{
-                  maxLength: GAME_SETUP_MAX_ROW_LABEL_LENGTH,
-                  sx: { textAlign: 'center', fontWeight: 600 },
-                }}
+                inputProps={{ maxLength: GAME_SETUP_MAX_CELL_TITLE_LENGTH }}
               />
-              {draft.colLabels.map((_, colIndex) => {
-                const cellDraft = getGameSetupCellAt(draft, rowIndex, colIndex)
-                const cellId = cellDraft?.id
-                const serverImageUrl = cellId ? mediaUrlByCellId.get(cellId) : undefined
-                const cellDisplay = cellId ? cellMediaDisplayByCellId[cellId] : undefined
-                const imageUrl = resolveGameSetupCellImageUrl(serverImageUrl, cellDisplay)
-                const cellImageBusy = isCellMediaBusy(cellId)
-                const imageKey = cellId
-                  ? `${cellId}:${cellDisplay?.cacheRevision ?? 0}:${cellDisplay?.phase ?? 'idle'}`
-                  : undefined
-
-                return (
-                  <SectionCard
-                    key={`${rowIndex}-${colIndex}`}
-                    sx={{
-                      p: 1,
-                      aspectRatio: '5 / 6',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1,
-                      borderStyle: 'dashed',
-                      bgcolor: 'action.hover',
-                    }}
-                  >
-                    <GameSetupCellImage
-                      imageUrl={imageUrl}
-                      imageKey={imageKey}
-                      alt={cellDraft?.title ?? rowLabel}
-                      cellId={cellId}
-                      phase={cellDisplay?.phase ?? 'idle'}
-                      canManageMedia
-                      isBusy={cellImageBusy}
-                      onUpload={onUploadCellMedia}
-                      onDelete={onDeleteCellMedia}
-                    />
-                    <FormTextField
-                      label={t('gameSetup.cellTitleLabel')}
-                      value={cellDraft?.title ?? ''}
-                      onChange={(event) => {
-                        const nextValue = event.target.value
-                        onDraftChange((current) =>
-                          upsertGameSetupCellDraft(current, rowIndex, colIndex, {
-                            title: nextValue,
-                          }),
-                        )
-                      }}
-                      inputProps={{ maxLength: GAME_SETUP_MAX_CELL_TITLE_LENGTH }}
-                    />
-                    <FormTextField
-                      label={t('gameSetup.cellPriceLabel')}
-                      value={cellDraft?.cost ?? 0}
-                      onChange={(event) => {
-                        const parsed = Number.parseInt(event.target.value, 10)
-                        const nextCost = Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
-                        onDraftChange((current) =>
-                          upsertGameSetupCellDraft(current, rowIndex, colIndex, {
-                            cost: nextCost,
-                          }),
-                        )
-                      }}
-                      type="number"
-                      inputProps={{ min: 0 }}
-                    />
-                  </SectionCard>
-                )
-              })}
-            </Fragment>
-          ))}
-        </Box>
-      </Box>
+              <FormTextField
+                label={t('gameSetup.cellPriceLabel')}
+                value={cellDraft?.cost ?? 0}
+                onChange={(event) => {
+                  const parsed = Number.parseInt(event.target.value, 10)
+                  const nextCost = Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
+                  onDraftChange((current) =>
+                    upsertGameSetupCellDraft(current, rowIndex, colIndex, {
+                      cost: nextCost,
+                    }),
+                  )
+                }}
+                type="number"
+                inputProps={{ min: 0 }}
+              />
+            </SectionCard>
+          )
+        }}
+      />
     </Box>
   )
 }

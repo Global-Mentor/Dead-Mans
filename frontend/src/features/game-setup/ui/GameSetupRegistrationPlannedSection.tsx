@@ -1,8 +1,6 @@
 import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
-import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
-import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
+import { AppButton, FormTextField, PlannedFeatureFormShell, PlannedFeatureRoadmap } from '../../../shared/ui/index.ts'
 import { gameSetupPlannedRoadmap } from '../game-setup-planned-features.ts'
 
 export function GameSetupRegistrationPlannedSection() {

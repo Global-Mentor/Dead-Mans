@@ -17,7 +17,6 @@ import { getPanelRouteByPath } from '../routes/app-routes.ts'
 import { useAccessiblePanelRoutes } from '../routes/use-accessible-panel-routes.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
 import { AppButton, SectionCard } from '../shared/ui/index.ts'
-import { uiTokens } from '../shared/theme/tokens.ts'
 
 export function PanelNavigationDrawer() {
   const { t } = useTranslation()
@@ -60,7 +59,7 @@ export function PanelNavigationDrawer() {
             py: 1.75,
             maxWidth: 120,
             borderRadius: '18px 0 0 18px',
-            background: uiTokens.gradients.panelAccent,
+            background: (theme) => theme.custom.gradients.panelAccent,
           }}
         >
           <Stack spacing={0.75} alignItems="center">

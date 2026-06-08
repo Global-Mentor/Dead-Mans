@@ -73,8 +73,7 @@ export function GameSetupSettingsSidebar({
           </AppButton>
 
           <AppButton
-            tone="secondary"
-            color="error"
+            tone="dangerSecondary"
             fullWidth
             disabled={isResetting}
             onClick={() => setIsResetDialogOpen(true)}

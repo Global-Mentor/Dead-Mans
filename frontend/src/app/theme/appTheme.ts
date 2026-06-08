@@ -1,22 +1,30 @@
-import { createTheme } from '@mui/material'
+import { alpha, createTheme } from '@mui/material/styles'
 import { uiTokens } from '../../shared/theme/tokens.ts'
+
+const appThemePalette = {
+  backgroundDefault: '#0b1020',
+  backgroundPaper: '#141829',
+  primaryMain: '#90caf9',
+}
+
+const baseRadius = 12
 
 export const appTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#90caf9',
+      main: appThemePalette.primaryMain,
     },
     secondary: {
       main: '#f48fb1',
     },
     background: {
-      default: '#0b1020',
-      paper: '#141829',
+      default: appThemePalette.backgroundDefault,
+      paper: appThemePalette.backgroundPaper,
     },
   },
   shape: {
-    borderRadius: 10,
+    borderRadius: baseRadius,
   },
   typography: {
     fontFamily: '"Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
@@ -37,7 +45,7 @@ export const appTheme = createTheme({
       },
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: baseRadius,
           textTransform: 'none',
           fontWeight: 600,
         },
@@ -48,7 +56,7 @@ export const appTheme = createTheme({
         root: {
           '&.Mui-focusVisible': {
             outline: '2px solid',
-            outlineColor: '#90caf9',
+            outlineColor: appThemePalette.primaryMain,
             outlineOffset: 2,
           },
         },
@@ -63,14 +71,14 @@ export const appTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: baseRadius,
         },
       },
     },
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 14,
+          borderRadius: baseRadius,
         },
       },
     },
@@ -82,7 +90,7 @@ export const appTheme = createTheme({
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: baseRadius,
         },
       },
     },
@@ -91,7 +99,7 @@ export const appTheme = createTheme({
         body: {
           minWidth: 320,
           minHeight: '100vh',
-          backgroundColor: '#0b1020',
+          backgroundColor: appThemePalette.backgroundDefault,
         },
         '#root': {
           minHeight: '100vh',
@@ -105,4 +113,34 @@ export const appTheme = createTheme({
   },
 })
 
+appTheme.custom = {
+  gradients: {
+    panelAccent: `linear-gradient(180deg, ${alpha(appThemePalette.primaryMain, 0.12)} 0%, ${alpha(appThemePalette.backgroundPaper, 0.98)} 100%)`,
+    panelAccentSoft: `linear-gradient(180deg, ${alpha(appThemePalette.primaryMain, 0.08)} 0%, ${alpha(appThemePalette.backgroundPaper, 0.98)} 100%)`,
+    authCard: `radial-gradient(circle at top, ${alpha(appThemePalette.primaryMain, 0.12)} 0, transparent 60%), ${appThemePalette.backgroundPaper}`,
+  },
+}
+
 export { uiTokens }
+
+declare module '@mui/material/styles' {
+  interface Theme {
+    custom: {
+      gradients: {
+        panelAccent: string
+        panelAccentSoft: string
+        authCard: string
+      }
+    }
+  }
+
+  interface ThemeOptions {
+    custom?: {
+      gradients?: {
+        panelAccent?: string
+        panelAccentSoft?: string
+        authCard?: string
+      }
+    }
+  }
+}

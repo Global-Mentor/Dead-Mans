@@ -1,10 +1,10 @@
-import { Alert, Box, Checkbox, FormControlLabel, FormGroup, Typography } from '@mui/material'
+import { Box, Checkbox, FormControlLabel, FormGroup, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { queryKeys } from '../../../shared/api/query-keys.ts'
-import { fetchGameModifierCatalog } from '../../game-modifiers/api/game-modifiers-data-access.ts'
+import { fetchGameModifierCatalog } from '../../game-modifiers/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
-import { SectionCard } from '../../../shared/ui/index.ts'
+import { AsyncSection, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
 
 interface GameSetupModifiersSectionProps {
   draft: GameSetupDraftState
@@ -20,34 +20,20 @@ export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifier
 
   return (
     <SectionCard sx={{ mt: 2 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-        {t('gameSetup.modifiers.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        {t('gameSetup.modifiers.description')}
-      </Typography>
-
-      {catalogQuery.isLoading ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          {t('gameSetup.modifiers.loading')}
-        </Typography>
-      ) : null}
-
-      {catalogQuery.isError ? (
-        <Alert severity="error" sx={{ mt: 1.5 }}>
-          {t('gameSetup.modifiers.error')}
-        </Alert>
-      ) : null}
-
-      {catalogQuery.data && catalogQuery.data.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          {t('gameSetup.modifiers.empty')}
-        </Typography>
-      ) : null}
-
-      {catalogQuery.data && catalogQuery.data.length > 0 ? (
+      <SectionHeader
+        title={t('gameSetup.modifiers.title')}
+        description={t('gameSetup.modifiers.description')}
+      />
+      <AsyncSection
+        isLoading={catalogQuery.isLoading}
+        isError={catalogQuery.isError}
+        isEmpty={(catalogQuery.data?.length ?? 0) === 0}
+        loadingMessage={t('gameSetup.modifiers.loading')}
+        errorMessage={t('gameSetup.modifiers.error')}
+        emptyMessage={t('gameSetup.modifiers.empty')}
+      >
         <FormGroup sx={{ mt: 1 }}>
-          {catalogQuery.data.map((modifier) => {
+          {(catalogQuery.data ?? []).map((modifier) => {
             const checked = draft.enabledModifierCodes.includes(modifier.code)
             return (
               <Box key={modifier.code} sx={{ py: 0.5 }}>
@@ -67,7 +53,7 @@ export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifier
             )
           })}
         </FormGroup>
-      ) : null}
+      </AsyncSection>
     </SectionCard>
   )
 }

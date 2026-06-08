@@ -1,5 +1,3 @@
-// Generated from backend/openapi/deadmans.v1.yaml (x-signalr). Do not edit.
-// Regenerate: npm --prefix frontend run generate:realtime
 
 export const realtimeHubs = {
   gameBoard: {

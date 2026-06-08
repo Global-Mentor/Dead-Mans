@@ -1,9 +1,6 @@
 import { Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/AppButton.tsx'
-import { PlannedFeatureFormShell } from '../../../shared/ui/PlannedFeatureFormShell.tsx'
-import { PlannedFeatureRoadmap } from '../../../shared/ui/PlannedFeatureRoadmap.tsx'
-import { SectionCard } from '../../../shared/ui/SectionCard.tsx'
+import { AppButton, PlannedFeatureFormShell, PlannedFeatureRoadmap, SectionCard } from '../../../shared/ui/index.ts'
 import { gameApplicationPlannedRoadmap } from '../game-application-planned-features.ts'
 
 export function GameApplicationPlannedSection() {
@@ -19,11 +16,11 @@ export function GameApplicationPlannedSection() {
           {[1, 2, 3, 4, 5, 6].map((slot) => (
             <SectionCard
               key={slot}
+              variantStyle="dashed"
               sx={{
                 p: 1.5,
                 minWidth: 88,
                 textAlign: 'center',
-                borderStyle: 'dashed',
               }}
             >
               <Typography variant="caption" display="block">
