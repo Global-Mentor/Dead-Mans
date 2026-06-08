@@ -10,3 +10,4 @@ alwaysApply: false
 - If a generated type or realtime hub/event name is wrong or missing, fix `backend/openapi/deadmans.v1.yaml` and run `npm --prefix frontend run generate:transport` instead of patching generated output.
 - Keep `frontend/src/shared/api/contracts/index.ts` focused on stable aliases and intentional re-exports; do not manually mirror the full generated surface there.
 - Prefer stable aliases from `index.ts` in feature code when they provide a cleaner boundary than raw generated names.
+- Partial regeneration is allowed when scoped: `generate:contracts` for HTTP schemas only, `generate:realtime` for SignalR only; use full `generate:transport` when in doubt.

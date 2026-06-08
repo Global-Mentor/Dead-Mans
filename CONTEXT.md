@@ -68,12 +68,15 @@
 
 - `src/app/` - composition root, providers, theme;
 - `src/routes/` - route config;
+- `src/layouts/` - shell-компоненты панели и контейнер навигации;
 - `src/features/*` - feature UI, hooks/model и feature-facing data access;
-- `src/shared/ui/` - единый слой UI-primitives (buttons/inputs/cards/dialogs/state panels);
+- `src/shared/ui/` - единый переиспользуемый слой: primitives, patterns, feedback;
 - `src/shared/theme/` - общие UI tokens и layout presets для единообразных стилей;
 - `src/shared/api/client/` - общий HTTP transport;
 - `src/shared/api/config.ts` - единая env-конфигурация (`VITE_API_BASE_URL`, `VITE_BACKEND_ORIGIN`);
+- `src/shared/api/query-keys.ts` - централизованные query keys;
 - `src/shared/api/contracts/` - generated transport types из OpenAPI и стабильные alias-типы;
+- `src/shared/realtime/` - generated hub constants и realtime-хелперы;
 - `src/shared/auth/` - auth context, API и route guards;
 - `src/locales/` - языковые ресурсы.
 
@@ -82,6 +85,7 @@
 - auth HTTP использует тот же общий `httpClient`, что и игровые API, только с другим `baseUrl` для `/auth/*`;
 - transport-типы импортируются централизованно из `src/shared/api/contracts/index.ts`.
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
+- capability-level проверки (`gameSetup`, `modifierActivation`) задаются через `src/shared/auth/panel-capabilities.ts` и `use-panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
 
 ### Основные страницы
 
@@ -89,6 +93,8 @@
 - `TwitchAuthCallbackPage` - завершение OAuth flow и восстановление сессии.
 - `GameBoardPage` - игровое поле из БД с admin-only открытием ячеек.
 - `GameSetupPage` - admin-настройка общего черновика игры (Save, layout, cell media, SignalR sync).
+- `GameApplicationPage` - заявка игрока и управление командой.
+- `TeamRegistrationsPage` - admin-модерация команд и инвайтов.
 
 ### Актуальный shell панели
 
@@ -97,6 +103,7 @@
 - Навигация по внутренним разделам строится декларативно через `src/routes/app-routes.ts`.
 - Правая панель навигации показывает только те разделы, которые доступны текущему пользователю по ролям.
 - Даже если frontend скрывает пункт навигации, доступ к маршруту всё равно должен проверяться через общие route/access helpers, а не только через UI.
+- Маршрутный доступ и capability-доступ разделены: route visibility (`hasAccessToPanelRoute`) и действия внутри страницы (`hasPanelCapability`) не должны смешиваться.
 
 Фронтенд работает через backend HTTP API.
 
@@ -112,7 +119,7 @@ Backend живет в `backend/` и представляет собой layered 
 - `Domain/` - доменные модели и правила;
 - `Infrastructure/` - adapters и DI;
 - `Data/` - EF Core `ApplicationDbContext`, entities, configurations, migrations (Npgsql/PostgreSQL baseline);
-- `Controllers/` - thin HTTP layer;
+- `Controllers/` - thin HTTP-слой;
 - `openapi/deadmans.v1.yaml` - канонический transport source of truth.
 
 ### Важный текущий split
@@ -180,7 +187,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - user-facing текст проходит через i18n;
 - security и role checks не размазываются между несколькими слоями без необходимости;
 - при структурных изменениях обновляются docs, а не только код;
-- если уже есть хороший паттерн в проекте, его лучше продолжить, чем изобретать новый "чуть удобнее" локально.
+- если уже есть хороший паттерн в проекте, его лучше продолжить, чем изобретать новый «чуть удобнее» локально.
 
 ---
 
@@ -192,6 +199,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - game API на панели: `GET /api/game`, `POST /api/game/cells/{cellId}/open`, realtime sync через SignalR (после успешной записи в БД publish best-effort, см. `docs/architecture/realtime.md`);
 - game setup для admin: `GET/POST/PUT/DELETE /api/game/setup` — один общий черновик в БД; `PUT` с `expectedVersion` и `409` при конфликте; `DELETE /api/game/setup` — осознанное исключение и делает hard-delete только draft-игры (с cleanup draft media); `POST/DELETE /api/game/setup/cells/{cellId}/media` — изображения сразу в bucket; realtime: hub/event в OpenAPI `x-signalr` (`/hubs/game-setup`, `draftChanged`); на frontend текстовые поля сохраняются кнопкой Save, layout — при подтверждении в диалоге, без `localStorage`;
 - game modifiers (phase 1): каталог модификаторов хранится в БД (`modifier_definitions`) с полями для расчёта (`category`, `scoringType`, `tier`, `defaultLimitPerGame`) и конфликтами (`modifier_conflicts`); в draft admin выбирает `enabledModifierCodes` через `PUT /api/game/setup`; в active-игре `admin/moderator` может активировать модификатор `POST /api/game/modifiers/{modifierCode}/activate`; состояние (`enabledModifierCodes`, `activeModifiers`) входит в `GET /api/game`; realtime по `/hubs/game-board` событием `modifierActivated`;
+- game questions (phase 1): каталог вопросов (`/api/game/questions/catalog`) с поиском/фильтрацией и массовым enable/disable по категориям управляется в `game-setup`; gameplay endpoints (`ask-next`, `answer`, game history) реализованы на backend и в контрактах, но без отдельного panel UI на `game-board`;
 - game history (phase 1): endpoint `GET /api/game/history/users/{userId}` (self или `admin/moderator`) возвращает историю пользователя по играм: активации модификаторов и ответы на вопросы, сгруппированные по игре;
 - soft-delete workflow: вопросы удаляются через soft-delete (`DELETE /api/game/questions/{questionId}`), не-draft игры архивируются через soft-delete (`DELETE /api/game/lifecycle/games/{gameId}`); draft-игра остаётся исключением и удаляется hard-delete через `DELETE /api/game/setup`;
 - централизованный query key слой на frontend;
@@ -200,7 +208,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - role-aware panel routing и правая navigation drawer для внутренних разделов панели;
 - безопасный локальный backend bootstrap через `backend/scripts/setup-local.ps1` без удаления БД и storage;
 - отдельный destructive reset через `backend/scripts/reset-local.ps1` с подтверждением;
-- backend tests для auth transport-контрактов;
+- backend integration и contract tests для auth, game board/setup, registration и lifecycle;
 - документация по стеку и архитектуре;
 - регистрация команд: статусы игры `draft → ready → active → finished`, слоты/команды/инвайты, API `/api/game/registration` и `/api/game/lifecycle/*`, страницы `/panel/game-application` и `/panel/team-registrations` (см. `docs/architecture/game-registration.md`).
 

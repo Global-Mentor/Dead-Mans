@@ -19,6 +19,7 @@ alwaysApply: true
 - Keep sources of truth singular:
   - transport contract: `backend/openapi/deadmans.v1.yaml`
   - generated frontend transport types: `frontend/src/shared/api/contracts/`
+  - generated frontend realtime constants: `frontend/src/shared/realtime/generated.ts`
   - architecture and workflow memory: repo docs
   - data retention and delete policy: `docs/architecture/data-retention.md`
   - runtime config: shared config/options modules

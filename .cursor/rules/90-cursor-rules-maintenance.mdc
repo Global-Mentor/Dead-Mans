@@ -14,3 +14,7 @@ alwaysApply: false
 - When architecture changes, update or delete outdated rules in the same task.
 - If two rules say the same thing, merge or simplify them.
 - Do not keep stale Cursor guidance as historical baggage. Rules should describe the current preferred path only.
+- During maintenance, explicitly check for overlap between:
+  - core vs quality vs docs rules (`00`, `05`, `40`),
+  - backend layering vs runtime rules (`20`, `21`),
+  - OpenAPI source-of-truth vs generated artifacts rules (`30`, `31`).

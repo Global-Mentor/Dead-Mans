@@ -2,12 +2,13 @@
 
 ## Текущий продуктовый скоуп
 
-Приложение состоит из двух вертикалей:
+Приложение состоит из нескольких продуктовых вертикалей:
 
 - Twitch auth
 - game board с чтением снимка, admin-only открытием ячеек и realtime-синхронизацией
 - game setup: один общий admin-черновик в БД, Save + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset через hard-delete только для `draft` (исключение из soft-delete политики), realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
 - game modifiers (phase 1): глобальный каталог модификаторов, выбор `enabledModifierCodes` в draft setup, активация `admin/moderator` только в `active`-игре, хранение `activeModifiers` в БД и realtime событие `modifierActivated` на `game-board` hub
+- game questions (phase 1): каталог вопросов с поиском/фильтрацией и enable/disable в `game-setup`; backend runtime API для ask/answer/history доступен по OpenAPI-контракту
 - game history (phase 1): user-centric API `GET /api/game/history/users/{userId}` возвращает активность пользователя по играм (какие модификаторы активировал и какие вопросы были зачтены как ответы пользователя)
 - lifecycle archive (phase 1): `DELETE /api/game/lifecycle/games/{gameId}` выполняет soft-delete для non-draft игр; draft остаётся отдельным hard-delete сценарием через game setup
 - game registration: приём заявок в статусе `ready`, команды и инвайты (см. `docs/architecture/game-registration.md`)
@@ -54,26 +55,37 @@ flowchart LR
 - `features/auth/` - Twitch login, callback, session restore
 - `features/game-board/` - экран игрового поля, open-cell flow и realtime sync
 - `features/game-setup/` - настройка черновика игры, cell media, Save/layout flow, realtime sync
+- `features/game-modifiers/` - shared feature API для каталога и активации модификаторов
 - `features/game-registration/` - общий HTTP client и data access для регистрации команд (используют `game-application` и `team-registrations`)
 - `features/game-application/` - страница заявки игрока
 - `features/team-registrations/` - admin-подтверждение команд
 - `routes/` - декларативные panel routes, guard/access helpers и route elements для `/panel`
-- `shared/ui/` - единые UI primitives (buttons/inputs/cards/dialogs/loading/state)
+- `layouts/` - `MainLayout`, `PanelNavigationDrawer`
+- `shared/ui/` - reusable layers: primitives, patterns, feedback
 - `shared/theme/` - единые UI tokens и layout presets
 - `shared/api/client/` - HTTP transport
+- `shared/api/query-keys.ts` - единые query-key identity helpers
 - `shared/api/contracts/` - generated types из OpenAPI
-- `shared/auth/` - auth context и guard
+- `shared/auth/` - auth context/guard + capability helpers (`panel-capabilities.ts`, `use-panel-capabilities.ts`)
 
 ## Backend
 
-- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`, `GameSetupController`, `GameSetupCellMediaController`, `GameLifecycleController`, `GameRegistrationController`
+- `Controllers/` - `AuthController`, `AuthSessionController`, `GameController`, `GameModifierController`, `GameQuestionController`, `GameHistoryController`, `GameSetupController`, `GameSetupCellMediaController`, `GameLifecycleController`, `GameRegistrationController`
 - `Api/Contracts/` + `Api/Mapping/` - transport DTO и явный mapping из application-моделей
 - `Application/Features/Auth/` - auth session service
 - `Application/Features/GameBoard/` - game-board service
 - `Application/Features/GameSetup/` - draft setup, cell media, storage cleanup on reset
+- `Application/Features/GameModifiers/` - catalog and activation orchestration
+- `Application/Features/GameQuestions/` - catalog mutation + ask/answer flow
+- `Application/Features/GameHistory/` - user activity history
+- `Application/Features/GameRegistration/` - registration use-cases
+- `Application/Features/GameLifecycle/` - lifecycle transitions and archive
 - `Application/Abstractions/IObjectStorage.cs` + `Infrastructure/Storage/` - S3-compatible object storage port
 - `Infrastructure/Persistence/DbGameBoardRepository.cs` - чтение игрового поля из БД
 - `Infrastructure/Persistence/DbGameSetupRepository.cs` - draft setup persistence
+- `Infrastructure/Persistence/DbGameModifierRepository.cs` - modifiers persistence
+- `Infrastructure/Persistence/DbGameQuestionRepository.cs` - questions persistence
+- `Infrastructure/Persistence/DbGameHistoryRepository.cs` - history persistence
 - `Infrastructure/Auth/` - Twitch auth, роли, claims transformation
 - `Infrastructure/Realtime/` - SignalR hubs и publishers (`GameBoardHub`, `GameSetupHub`)
 - `Data/` - EF Core context, entities, migrations

@@ -6,7 +6,7 @@ Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and paylo
 
 | Hub | Path | Auth | Server → client events |
 |-----|------|------|------------------------|
-| game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | `cellOpened` → `GameCellOpenedEventDto` |
+| game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | `cellOpened` → `GameCellOpenedEventDto`; `modifierActivated` → `GameModifierActivatedEventDto` |
 | game-setup | `/hubs/game-setup` | Cookie session, admin only | `draftChanged` → no body; refetch `GET /api/game/setup` |
 
 Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
@@ -19,6 +19,6 @@ After a successful DB write, SignalR publish is **best-effort** (`RealtimePublis
 
 - Backend: `backend/Api/Contracts/RealtimeHubContracts.cs` (paths + event names; must match OpenAPI).
 - Frontend: `npm --prefix frontend run generate:realtime` → `frontend/src/shared/realtime/generated.ts`.
-- HTTP payload types: `GameCellOpenedEventDto` in generated OpenAPI types (`npm run generate:transport`).
+- HTTP payload types: `GameCellOpenedEventDto` and `GameModifierActivatedEventDto` in generated OpenAPI types (`npm run generate:transport`).
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

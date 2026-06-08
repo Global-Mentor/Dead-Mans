@@ -68,6 +68,11 @@ This regenerates:
 - `frontend/src/shared/api/contracts/generated.ts`
 - `frontend/src/shared/realtime/generated.ts`
 
+Optional partial regeneration:
+
+- `npm --prefix frontend run generate:contracts` (HTTP/OpenAPI schemas only)
+- `npm --prefix frontend run generate:realtime` (SignalR hubs/events only)
+
 Do not hand-edit generated files.
 
 ## Verification Before PR
@@ -75,6 +80,7 @@ Do not hand-edit generated files.
 - Backend tests:
   - `dotnet test backend/backend.slnx`
 - Frontend lint/build:
+  - `npm --prefix frontend run check:locales`
   - `npm --prefix frontend run lint`
   - `npm --prefix frontend run build`
 - Generated artifacts are up to date:
