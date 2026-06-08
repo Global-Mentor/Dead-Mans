@@ -20,6 +20,7 @@ alwaysApply: true
   - transport contract: `backend/openapi/deadmans.v1.yaml`
   - generated frontend transport types: `frontend/src/shared/api/contracts/`
   - architecture and workflow memory: repo docs
+  - data retention and delete policy: `docs/architecture/data-retention.md`
   - runtime config: shared config/options modules
 - Prefer explicit boundaries over convenience shortcuts. If a change blurs a boundary, move it to the correct layer instead.
 - When structure, architecture, auth, transport, workflow, or a source of truth changes, update dependent code and docs in the same task.

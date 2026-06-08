@@ -6,9 +6,12 @@
 
 - Twitch auth
 - game board с чтением снимка, admin-only открытием ячеек и realtime-синхронизацией
-- game setup: один общий admin-черновик в БД, Save + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset с очисткой DB и object storage, realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
+- game setup: один общий admin-черновик в БД, Save + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset через hard-delete только для `draft` (исключение из soft-delete политики), realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
 - game modifiers (phase 1): глобальный каталог модификаторов, выбор `enabledModifierCodes` в draft setup, активация `admin/moderator` только в `active`-игре, хранение `activeModifiers` в БД и realtime событие `modifierActivated` на `game-board` hub
+- game history (phase 1): user-centric API `GET /api/game/history/users/{userId}` возвращает активность пользователя по играм (какие модификаторы активировал и какие вопросы были зачтены как ответы пользователя)
+- lifecycle archive (phase 1): `DELETE /api/game/lifecycle/games/{gameId}` выполняет soft-delete для non-draft игр; draft остаётся отдельным hard-delete сценарием через game setup
 - game registration: приём заявок в статусе `ready`, команды и инвайты (см. `docs/architecture/game-registration.md`)
+- политика удаления и сохранения истории: `docs/architecture/data-retention.md`
 
 ## Поток данных
 

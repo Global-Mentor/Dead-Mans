@@ -38,10 +38,12 @@ Guardrails:
 
 - `GET /api/game`, `POST /api/game/cells/{cellId}/open`
 - `GET /api/game/modifiers/catalog`, `POST /api/game/modifiers/{modifierCode}/activate`
+- `DELETE /api/game/questions/{questionId}` (admin): soft-delete вопроса из каталога
 - `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
 - `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`
 - `GET /api/game/registration/teams` (admin), confirm/reject, invitations
-- `POST /api/game/lifecycle/open-registration`, `/start`, `/finish` (admin workflow; HTTP в контроллере)
+- `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered question rounds)
+- `POST /api/game/lifecycle/open-registration`, `/start`, `/finish`, `DELETE /api/game/lifecycle/games/{gameId}` (admin lifecycle + non-draft archive workflow)
 - `GET /auth/me`, `POST /auth/logout`, Twitch login/callback
 
 ## Локальный запуск
@@ -60,12 +62,14 @@ dotnet run --project backend.csproj
 
 Игровое поле читается из PostgreSQL через EF Core. Открытие ячеек выполняется на backend с role-check по admin и публикует realtime-события через SignalR. Медиа-URL для ячеек строятся на основе `Storage:PublicBaseUrl`.
 
+Политика удаления/архивации данных: [`docs/architecture/data-retention.md`](../docs/architecture/data-retention.md).
+
 Game setup (admin draft):
 
 - `GET/POST/PUT/DELETE /api/game/setup` — черновик и пакетное сохранение текстовых полей.
 - `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка/удаление изображения ячейки (multipart, admin only).
 - Object key: `{Storage:GamesPrefix}/{gameId}/{Storage:CardsGroup}/{col}-{row}.{ext}` (см. `GameMediaObjectKeyFormat`).
-- `DELETE /api/game/setup` удаляет черновик в Postgres, затем best-effort удаляет все объекты с префиксом `{GamesPrefix}/{gameId}/` в `Storage:BucketName`.
+- `DELETE /api/game/setup` выполняет hard-delete только для текущего черновика (`draft`) и очищает связанные draft media-артефакты; это исключение из общей soft-delete политики.
 
 Обязательные ключи `Storage` для media: `PublicBaseUrl`, `BucketName`, `GamesPrefix`, `CardsGroup`. Для записи в MinIO в dev также `AccessKey` / `SecretKey` (или `MINIO_ROOT_*`).
 
