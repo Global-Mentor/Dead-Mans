@@ -1,4 +1,5 @@
 import { Box, type SxProps, type Theme, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SectionCard } from '../primitives/SectionCard.tsx'
@@ -21,10 +22,12 @@ export function PlannedFeatureFormShell({
   return (
     <SectionCard
       variantStyle="dashed"
-      sx={{
-        borderColor: 'divider',
-        ...sx,
-      }}
+      sx={[
+        (theme) => ({
+          borderColor: alpha(theme.palette.primary.main, 0.22),
+        }),
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
     >
       <Typography variant="overline" color="text.secondary" display="block">
         {t('plannedFeatures.formShellBadge')}
