@@ -1,6 +1,6 @@
 # Dead-Mans
 
-Веб-приложение: авторизация через Twitch, защищённая панель с игровым полем (`game-board`), модификаторами игры и админским открытием ячеек. Снимок поля читается из PostgreSQL (`GET /api/game`), открытие ячейки выполняется через `POST /api/game/cells/{cellId}/open`, модификаторы активируются через `POST /api/game/modifiers/{modifierCode}/activate`, а realtime-обновления приходят через SignalR. Медиа для ячеек — через S3-совместимое хранилище (локально MinIO).
+Веб-приложение: авторизация через Twitch, защищённая панель с игровым полем (`game-board`), админским разделом настройки (`game-setup`), регистрацией команд (`game-application` / `team-registrations`), модификаторами игры и админским открытием ячеек. Снимок поля читается из PostgreSQL (`GET /api/game`), открытие ячейки выполняется через `POST /api/game/cells/{cellId}/open`, модификаторы активируются через `POST /api/game/modifiers/{modifierCode}/activate`, а realtime-обновления приходят через SignalR. Медиа для ячеек — через S3-совместимое хранилище (локально MinIO).
 
 **Стек:** React + TypeScript (Vite) · ASP.NET Core 8 · PostgreSQL · MinIO. Контракт HTTP API: [`backend/openapi/deadmans.v1.yaml`](backend/openapi/deadmans.v1.yaml).
 
@@ -10,7 +10,7 @@
 | `backend/` | Web API, EF Core, миграции |
 | `legacy-v1/` | reference, не участвует в активной разработке |
 
-Дополнительно: [`docs/development.md`](docs/development.md) · [`STACK.md`](STACK.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
+Дополнительно: [`CONTEXT.md`](CONTEXT.md) · [`docs/development.md`](docs/development.md) · [`STACK.md`](STACK.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`docs/architecture/realtime.md`](docs/architecture/realtime.md) · [`docs/architecture/data-retention.md`](docs/architecture/data-retention.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
 
 ## Требования для локального запуска
 

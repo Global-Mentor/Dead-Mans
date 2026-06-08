@@ -1,12 +1,12 @@
 ## Общий стек проекта
 
 Проект разделен на несколько частей:
-- **legacy-v1**: старый прототип (vanilla JS + socket.io + localStorage) - только как reference-источник идей.
+- **legacy-v1**: старый прототип (vanilla JS + socket.io + localStorage) — только как reference-источник идей.
 - **frontend**: активный SPA на React + TypeScript.
 - **backend**: активный ASP.NET Core Web API.
 - **OpenAPI contract**: `backend/openapi/deadmans.v1.yaml` - канонический transport-контракт для frontend/backend.
 
-Ниже - актуальный стек проекта и инфраструктурный курс разработки.
+Ниже — актуальный стек проекта и инфраструктурный курс разработки.
 
 ---
 
@@ -20,13 +20,13 @@
 
 ## Frontend
 
-- **Vite + React + TypeScript**
+- **Vite 7 + React 19 + TypeScript**
   - **Vite**: быстрый dev-сервер и сборщик, удобен для SPA, быстрые перезапуски.
   - **React**: основа клиентского UI, декларативные компоненты и экосистема.
   - **TypeScript**: статическая типизация, защита от типичных багов, само-документация кода.
 
 - **React Router v7 (`react-router-dom`)**
-  - Навигация и роутинг внутри SPA: login, callback и защищённая панель `/panel` (`game-board`, admin-only `game-setup`).
+  - Навигация и роутинг внутри SPA: login, callback и защищённая панель `/panel` (`game-board`, `game-setup`, `game-application`, `team-registrations`).
 
 - **TanStack Query (`@tanstack/react-query`)**
   - Управление серверным состоянием: запросы к API, кеш, рефетч, статусы загрузки/ошибок.
@@ -41,7 +41,7 @@
   - **browser-languagedetector**: автоматический выбор языка по браузеру/настройкам.
 
 - **SignalR клиент (`@microsoft/signalr`)**
-  - Используется для realtime-синхронизации игрового поля после открытия ячеек.
+  - Используется для realtime-синхронизации `game-board` (`cellOpened`, `modifierActivated`) и `game-setup` (`draftChanged`).
 
 - **Тестирование (на перспективу: Vitest + React Testing Library)**
   - Юнит- и компонентные тесты без привязки к конкретному рантайму браузера.
@@ -56,7 +56,7 @@
 
 - **Entity Framework Core + Npgsql**
   - ORM и провайдер под PostgreSQL как целевой persistence слой.
-  - Миграции - через EF Core migrations.
+  - Миграции — через EF Core migrations.
 
 - **PostgreSQL 16**
   - Единый baseline для локальной разработки и будущего прода.
@@ -114,7 +114,7 @@
   - Автоматическая сборка и тесты при `push` в `main` и на всех `pull_request`; деплой настраивается отдельным workflow.
 
 - **Логирование и мониторинг**
-  - ASP.NET logging + наблюдаемость (Application Insights / Grafana + Prometheus - по мере развития проекта).
+  - ASP.NET logging + наблюдаемость (Application Insights / Grafana + Prometheus — по мере развития проекта).
 
 ---
 

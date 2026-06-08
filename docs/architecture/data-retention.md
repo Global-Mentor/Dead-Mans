@@ -11,9 +11,10 @@
 ## Матрица удаления
 
 - `DELETE /api/game/setup` -> **hard-delete** только для `draft`-игры.
+- `DELETE /api/game/setup/cells/{cellId}/media` -> hard-delete media-объекта для draft-ячейки + unlink из draft snapshot.
 - `DELETE /api/game/lifecycle/games/{gameId}` -> **soft-delete** для non-draft игр (`games.IsDeleted`, `games.DeletedAtUtc`).
 - `DELETE /api/game/questions/{questionId}` -> **soft-delete** вопроса (`question_definitions.IsDeleted`, `question_definitions.DeletedAtUtc`).
-- каталог модификаторов -> **archive** через `modifier_definitions.IsArchived`.
+- каталог модификаторов -> **archive-ready модель** через `modifier_definitions.IsArchived` (HTTP archive endpoint пока не реализован).
 - пользователи -> **deactivate** через `users.IsActive`.
 
 ## Инварианты безопасности

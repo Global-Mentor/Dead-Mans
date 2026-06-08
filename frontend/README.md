@@ -19,6 +19,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
 - страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierCodes`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
 - блок модификаторов на `game-board`: каталог из `GET /api/game/modifiers/catalog`, активация через `POST /api/game/modifiers/{modifierCode}/activate` (admin/moderator), realtime через событие `modifierActivated` на `/hubs/game-board`;
+- блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
 - страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`; planned UI-блоки показываются только когда регистрация ещё не открыта.
 
 ## Структура API-слоя
@@ -26,7 +27,12 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/shared/api/client/` — общий `httpClient`;
 - `src/shared/api/contracts/` — generated transport types;
 - `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
+- `src/shared/api/query-keys.ts` — централизованные query keys для TanStack Query;
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
+- `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
+- `src/features/game-modifiers/index.ts` — public API modifiers feature;
+- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigationDrawer`);
+- `src/shared/auth/panel-capabilities.ts` + `use-panel-capabilities.ts` — capability-level access helpers (`gameSetup`, `modifierActivation`) поверх route-level role checks;
 - `src/features/*` — UI, hooks и feature-local data access (board, setup, auth).
 
 ## UI и стили (единый стандарт)
@@ -34,13 +40,20 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 Фронтенд использует один визуальный baseline:
 
 - `src/app/theme/appTheme.ts` — единая MUI theme-конфигурация (palette, typography, component defaults/overrides);
-- `src/shared/theme/` — общие UI-токены и layout presets;
-- `src/shared/ui/` — переиспользуемые primitives (`AppButton`, `FormTextField`, `FormSelect`, `SectionCard`, `ConfirmDialog`, `PageStatePanel`, `CenteredProgress`).
+- `src/shared/theme/` — общие UI-токены и layout presets, где градиенты/фон берутся из `theme.custom.gradients`;
+- `src/shared/ui/` — переиспользуемые primitives/patterns/feedback.
+
+Ключевые reusable-компоненты:
+
+- primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `FormSelect`, `SectionCard`;
+- patterns: `PageShell`, `SectionHeader`, `BoardMatrix`, `AsyncSection`;
+- feedback: `AppDialog`, `ConfirmDialog`, `AppToast`, `PageStatePanel`, `CenteredProgress`.
 
 Правило миграции и дальнейшей разработки:
 
 - layout-уникальность — локально в `sx`;
 - повторяемые visual patterns — только через theme override или `shared/ui`;
+- межфичевые импорты — через public API (`features/<feature>/index.ts`), без deep-import в `api/`/`model/` соседа;
 - не вводим второй styling-подход параллельно MUI (`CSS Modules`, `Tailwind`, отдельный runtime-styling).
 
 ## Источник контрактов
@@ -88,6 +101,14 @@ npm run dev
 ## Сборка
 
 ```bash
+npm run build
+```
+
+## Локальная проверка
+
+```bash
+npm run check:locales
+npm run lint
 npm run build
 ```
 

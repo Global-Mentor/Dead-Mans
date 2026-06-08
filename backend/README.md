@@ -1,11 +1,11 @@
 # Dead-Mans Backend
 
-Backend поддерживает auth, game board, game setup (admin draft), game registration и lifecycle.
+Backend поддерживает auth, game board, game setup (admin draft), modifiers, questions, user history, game registration и lifecycle.
 
 ## Что есть в коде
 
-- `Controllers/` — auth, game board, game setup, registration, lifecycle.
-- `Application/` — use-case services (`GameBoard`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
+- `Controllers/` — auth, game board, modifiers, questions, history, game setup, registration и lifecycle.
+- `Application/` — use-case сервисы (`GameBoard`, `GameModifiers`, `GameQuestions`, `GameHistory`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
 - `Infrastructure/` — Twitch auth, EF repositories (`DbGame*Repository`), SignalR publishers.
 - `Data/` — `ApplicationDbContext`, entities, configurations, migrations.
 - `openapi/deadmans.v1.yaml` — канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
@@ -38,6 +38,8 @@ Guardrails:
 
 - `GET /api/game`, `POST /api/game/cells/{cellId}/open`
 - `GET /api/game/modifiers/catalog`, `POST /api/game/modifiers/{modifierCode}/activate`
+- `GET /api/game/questions/catalog`, `PATCH /api/game/questions/{questionId}/enabled`, `PATCH /api/game/questions/categories/{category}/enabled`
+- `POST /api/game/questions/ask-next`, `POST /api/game/questions/rounds/{roundId}/answer`, `GET /api/game/questions/games/{gameId}/history`
 - `DELETE /api/game/questions/{questionId}` (admin): soft-delete вопроса из каталога
 - `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
 - `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`

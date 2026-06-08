@@ -1,6 +1,6 @@
 ---
 description: Frontend tooling and config must reinforce the SPA architecture
-globs: frontend/*.{json,js,ts}
+globs: frontend/**/*.{json,js,mjs,ts}
 alwaysApply: false
 ---
 
@@ -10,5 +10,6 @@ alwaysApply: false
 - Keep the contract workflow intact: OpenAPI-generated types remain the transport source for the SPA, and scripts/config should keep regeneration, linting, and build verification working.
 - Prefer explicit config over magical defaults when auth origin, proxying, build behavior, or strictness affect runtime behavior.
 - Keep TypeScript and linting strict. Do not relax checks casually to make a local change pass.
+- Keep locale checks in the quality workflow. When adding/changing i18n keys, keep `npm --prefix frontend run check:locales` passing.
 - Add dependencies only when they fit the project direction and do not introduce a competing pattern for routing, data fetching, forms, state, styling, or i18n.
 - Remove obsolete scripts, stale config entries, and dead tooling flags when a workflow is replaced.

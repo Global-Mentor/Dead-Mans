@@ -9,6 +9,7 @@ alwaysApply: false
 - `backend/openapi/deadmans.v1.yaml` is the canonical transport contract for frontend/backend integration (HTTP paths and SignalR hubs/events in `x-signalr`).
 - SignalR hub paths, event names, and event payload schemas live in the same OpenAPI file (`x-signalr` + `components/schemas`). Backend constants: `backend/Api/Contracts/RealtimeHubContracts.cs`. Frontend constants: `npm --prefix frontend run generate:realtime` → `src/shared/realtime/generated.ts`.
 - Do not create parallel hand-maintained hub/event names outside OpenAPI and the generated or mirrored constant layers.
+- Hand-maintained frontend realtime helpers are allowed in `frontend/src/shared/realtime/` only when they compose generated hub/event constants, not duplicate string literals.
 - Change the contract first, then bring backend controllers/mappings and frontend usage in sync.
 - Keep schemas, names, status codes, auth expectations, and examples aligned with actual behavior. Do not patch implementation only and leave the contract behind.
 - Keep `components.schemas.ErrorResponse` aligned with runtime payload shape (`error`, `code`, `requestId`) and keep `code.enum` synchronized with `AppMessages.ErrorCodes` in backend.

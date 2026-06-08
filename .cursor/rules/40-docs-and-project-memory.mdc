@@ -1,6 +1,6 @@
 ---
 description: Keep project docs aligned with architecture and workflow changes
-globs: **/*.md
+globs: {CONTEXT.md,README.md,STACK.md,docs/**/*.md,backend/README.md,frontend/README.md}
 alwaysApply: false
 ---
 
