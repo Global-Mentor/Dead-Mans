@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { panelRootPath } from '../../routes/app-routes.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher.tsx'
-import { AppButton, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
+import { huntAuthCardSx, huntBrassTitleSx, huntOverlineSx } from '../../shared/theme/surface-sx.ts'
 import { uiTokens } from '../../shared/theme/tokens.ts'
+import { AppButton, AuthScreenShell, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
 
 export function AuthLandingPage() {
   const { t } = useTranslation()
@@ -20,79 +21,64 @@ export function AuthLandingPage() {
   }
 
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <AuthScreenShell>
       <Box
         sx={{
           position: 'absolute',
           top: 16,
           right: 16,
+          zIndex: 2,
         }}
       >
         <LanguageSwitcher />
       </Box>
       <SectionCard
-        sx={{
-          px: 6,
-          py: 5,
-          maxWidth: 480,
-          textAlign: 'center',
-          background: (theme) => theme.custom.gradients.authCard,
-          border: 'none',
-        }}
+        sx={[
+          (theme) => huntAuthCardSx(theme),
+          { px: { xs: 4, sm: 6 }, py: 5 },
+        ]}
       >
         <Stack spacing={3}>
           <Box>
+            <Typography variant="overline" sx={huntOverlineSx}>
+              {t('auth.subtitle')}
+            </Typography>
             <Typography
               variant="h3"
               sx={{
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
+                ...huntBrassTitleSx,
+                mt: 1,
+                fontSize: { xs: '1.75rem', sm: '2.2rem' },
               }}
             >
               {t('auth.title')}
             </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mt: 1 }}
-            >
-              {t('auth.subtitle')}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="body1" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
               {t('auth.description')}
             </Typography>
-            <AppButton
-              size="large"
-              onClick={startTwitchLogin}
-              sx={{
-                mt: 1,
-                px: 4,
-                py: 1.2,
-                backgroundColor: uiTokens.brand.twitch,
-                '&:hover': {
-                  backgroundColor: uiTokens.brand.twitchHover,
-                },
-              }}
-            >
-              {t('auth.button')}
-            </AppButton>
           </Box>
+
+          <AppButton
+            size="large"
+            onClick={startTwitchLogin}
+            sx={{
+              mt: 1,
+              px: 4,
+              py: 1.2,
+              backgroundColor: uiTokens.brand.twitch,
+              border: 'none',
+              backgroundImage: 'none',
+              color: 'common.white',
+              '&:hover': {
+                backgroundColor: uiTokens.brand.twitchHover,
+                backgroundImage: 'none',
+              },
+            }}
+          >
+            {t('auth.button')}
+          </AppButton>
         </Stack>
       </SectionCard>
-    </Box>
+    </AuthScreenShell>
   )
 }
-
-
