@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { AppButton } from './AppButton.tsx'
+import { AppButton } from '../primitives/AppButton.tsx'
 import { AppDialog } from './AppDialog.tsx'
 
 interface ConfirmDialogProps {
