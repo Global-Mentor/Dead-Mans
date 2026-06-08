@@ -59,7 +59,9 @@ flowchart LR
 - `features/game-registration/` - общий HTTP client и data access для регистрации команд (используют `game-application` и `team-registrations`)
 - `features/game-application/` - страница заявки игрока
 - `features/team-registrations/` - admin-подтверждение команд
-- `routes/` - декларативные panel routes, guard/access helpers и route elements для `/panel`
+- `app/panel-route-config.tsx` - единый источник panel routes (метаданные, lazy-страницы, realtime-sync)
+- `app/AppRoutes.tsx` + `app/app-route-tree.tsx` - дерево маршрутов через `useRoutes`
+- `routes/app-routes.ts` - re-export метаданных, guard/access helpers и redirects
 - `layouts/` - `MainLayout`, `PanelNavigationDrawer`
 - `shared/ui/` - reusable layers: primitives, patterns, feedback
 - `shared/theme/` - единые UI tokens и layout presets

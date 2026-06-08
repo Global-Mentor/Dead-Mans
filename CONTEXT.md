@@ -66,8 +66,8 @@
 
 Фронтенд живёт в `frontend/` и представляет собой React SPA с feature-first структурой:
 
-- `src/app/` - composition root, providers, theme;
-- `src/routes/` - route config;
+- `src/app/` - composition root, providers, theme, единый panel route config (`panel-route-config`) и route tree (`AppRoutes`, `app-route-tree`);
+- `src/routes/` - re-export route metadata, guard/access helpers и redirects;
 - `src/layouts/` - shell-компоненты панели и контейнер навигации;
 - `src/features/*` - feature UI, hooks/model и feature-facing data access;
 - `src/shared/ui/` - единый переиспользуемый слой: primitives, patterns, feedback;
@@ -100,7 +100,7 @@
 
 - Внутренний раздел приложения живёт под `panelRootPath` (`/panel`).
 - Панель использует общий `MainLayout`.
-- Навигация по внутренним разделам строится декларативно через `src/routes/app-routes.ts`.
+- Все panel routes описаны в одном месте: `src/app/panel-route-config.tsx`. Навигация, access helpers и `useRoutes` берут данные из этого конфига через `panelRoutes` / `panelRouteConfig`.
 - Правая панель навигации показывает только те разделы, которые доступны текущему пользователю по ролям.
 - Даже если frontend скрывает пункт навигации, доступ к маршруту всё равно должен проверяться через общие route/access helpers, а не только через UI.
 - Маршрутный доступ и capability-доступ разделены: route visibility (`hasAccessToPanelRoute`) и действия внутри страницы (`hasPanelCapability`) не должны смешиваться.
