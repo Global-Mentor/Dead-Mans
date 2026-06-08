@@ -43,6 +43,17 @@ export const appTheme = createTheme({
         },
       },
     },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: '2px solid',
+            outlineColor: '#90caf9',
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
     MuiTextField: {
       defaultProps: {
         size: 'small',

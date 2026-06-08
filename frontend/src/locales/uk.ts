@@ -426,6 +426,7 @@ const uk = {
       },
     },
     languageSwitcher: {
+      ariaLabel: 'Мова інтерфейсу',
       languages: {
         ru: 'RU',
         en: 'EN',

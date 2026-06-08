@@ -79,6 +79,16 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                     key={`${rowLabel}-${colIndex}`}
                     role={isClickable ? 'button' : undefined}
                     tabIndex={isClickable ? 0 : undefined}
+                    aria-disabled={isClickable ? undefined : true}
+                    aria-label={
+                      cell
+                        ? t('gameBoard.openConfirmDescription', {
+                            cost: cell.cost,
+                            row: cell.row,
+                            col: cell.col,
+                          })
+                        : undefined
+                    }
                     onClick={() => {
                       if (cell && !isOpen && canOpenCells) {
                         onCellRequestOpen(cell)
@@ -112,6 +122,13 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                         ? {
                             borderColor: 'primary.light',
                             transform: 'translateY(-1px)',
+                          }
+                        : undefined,
+                      '&:focus-visible': isClickable
+                        ? {
+                            outline: '2px solid',
+                            outlineColor: 'primary.main',
+                            outlineOffset: 2,
                           }
                         : undefined,
                     }}
@@ -152,7 +169,7 @@ export function GameBoardGrid({ snapshot, canOpenCells, onCellRequestOpen }: Gam
                             <Typography
                               variant="subtitle2"
                               color="text.secondary"
-                            sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                              sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
                             >
                               {t('gameBoard.closedCellLabel')}
                             </Typography>

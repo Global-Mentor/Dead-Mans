@@ -423,6 +423,7 @@ const en = {
       },
     },
     languageSwitcher: {
+      ariaLabel: 'Interface language',
       languages: {
         ru: 'RU',
         en: 'EN',
