@@ -40,10 +40,15 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 ## UI и стили (единый стандарт)
 
-Фронтенд использует один визуальный baseline:
+Фронтенд использует один визуальный baseline в стиле Hunt: Showdown (мрачный фронтир, латунь, мох, пергамент):
 
-- `src/app/theme/appTheme.ts` — единая MUI theme-конфигурация (palette, typography, component defaults/overrides);
-- `src/shared/theme/` — общие UI-токены и layout presets, где градиенты/фон берутся из `theme.custom.gradients`;
+- `src/shared/theme/hunt-palette.ts` — каноническая палитра (единственный источник raw colors);
+- `src/shared/theme/tokens.ts` — `huntTypography`, spacing и brand tokens;
+- `src/shared/theme/surface-sx.ts` — переиспользуемые surface/title/auth presets (`huntPanelSx`, `huntAuthCardSx`, …);
+- `src/app/theme/appTheme.ts` — MUI theme: palette, typography, component overrides, `theme.custom.gradients`;
+- feature-local presets живут в `features/<feature>/theme/`:
+  - `game-board/theme/board-cell-sx.ts`, `modifier-item-sx.ts`
+  - `game-setup/theme/layout-sx.ts`, `setup-cell-sx.ts`, `cell-image-sx.ts`;
 - `src/shared/ui/` - переиспользуемый UI-слой с явной вложенной структурой:
   - `primitives/` - базовые контролы и атомарные building blocks;
   - `patterns/` - типовые секции/компоновка страниц;
@@ -53,7 +58,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 Ключевые reusable-компоненты:
 
 - primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `FormSelect`, `SectionCard`;
-- patterns: `PageShell`, `SectionHeader`, `BoardMatrix`, `AsyncSection`;
+- patterns: `PageShell`, `SectionHeader`, `BoardMatrix`, `AsyncSection`, `AuthScreenShell`;
 - feedback: `AppDialog`, `ConfirmDialog`, `AppToast`, `PageStatePanel`, `CenteredProgress`.
 
 Правило миграции и дальнейшей разработки:

@@ -33,7 +33,7 @@ alwaysApply: false
   - actions via `AppButton`/`AppLinkButton`,
   - repeated async section states via shared async/state components,
   - repeated toast/dialog wiring via shared feedback components.
-- Keep visual tokens centralized in theme/shared-theme helpers. Avoid introducing parallel hardcoded color/radius/token systems in feature components.
+- Keep visual tokens centralized in `hunt-palette.ts`, `tokens.ts`, `surface-sx.ts`, and `appTheme.ts`. Feature-local styling presets belong in `features/<feature>/theme/`. Avoid parallel hardcoded color systems in components.
 - For row/column board-like layouts, use shared matrix/grid primitives before adding another feature-local grid shell.
 - Keep planned feature placeholders consistent: use `*-planned-features.ts` and shared `PlannedFeature*` components instead of one-off placeholder sections.
 - Prefer env/config switches over rewriting feature code when transport or runtime behavior changes. Keep mock-friendly seams, but treat real HTTP flow as the target path.
