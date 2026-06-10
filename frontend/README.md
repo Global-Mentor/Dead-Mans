@@ -9,7 +9,9 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - React Router
 - TanStack Query
 - MUI
+- React Hook Form + Zod
 - i18next / react-i18next
+- Vitest + React Testing Library
 
 ## Что есть в приложении
 
@@ -28,6 +30,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/shared/api/contracts/` — generated transport types;
 - `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
 - `src/shared/api/query-keys.ts` — централизованные query keys для TanStack Query;
+- `src/shared/api/parse-api-response.ts` — единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
 - `src/features/game-modifiers/index.ts` — public API modifiers feature;
@@ -36,7 +39,16 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/routes/app-routes.ts` — re-export метаданных, guards и access helpers;
 - `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigationDrawer`);
 - `src/shared/auth/panel-capabilities.ts` + `use-panel-capabilities.ts` — capability-level access helpers (`gameSetup`, `modifierActivation`) поверх route-level role checks;
-- `src/features/*` — UI, hooks и feature-local data access (board, setup, auth).
+- `src/features/*` — feature-first модули; page entrypoints остаются в корне фичи, а нетривиальные внутренности разделяются на `ui/`, `model/`, `api/`, `realtime/`, `theme/` и `lib/` по необходимости.
+
+## Инженерный baseline
+
+- TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
+- OpenAPI-generated типы остаются compile-time source of truth. Zod применяется выборочно на критичных runtime-границах; сейчас так валидируется auth session.
+- Submitted-формы с валидацией используют React Hook Form + `zodResolver`. Для MUI-полей используется общий `ControlledFormTextField`.
+- Локальное UI-state остаётся в React. Zustand добавляется только при реальном cross-tree client-state, а не заранее.
+- MUI + Emotion и `AppToast` остаются единым UI/feedback baseline. Иконки, Framer Motion, SVG-компоненты и брендовые icon packs добавляются вместе с использующей их фичей.
+- Весь user-facing текст проходит через i18n.
 
 ## UI и стили (единый стандарт)
 
@@ -57,7 +69,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 Ключевые reusable-компоненты:
 
-- primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `FormSelect`, `SectionCard`;
+- primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `ControlledFormTextField`, `FormSelect`, `SectionCard`;
 - patterns: `PageShell`, `SectionHeader`, `BoardMatrix`, `AsyncSection`, `AuthScreenShell`;
 - feedback: `AppDialog`, `ConfirmDialog`, `AppToast`, `PageStatePanel`, `CenteredProgress`.
 
@@ -119,6 +131,7 @@ npm run build
 ## Локальная проверка
 
 ```bash
+npm run test
 npm run check:locales
 npm run lint
 npm run build

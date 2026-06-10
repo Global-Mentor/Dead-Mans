@@ -36,6 +36,10 @@
   - Готовые UI-компоненты и тема для панели.
   - Ускоряет разработку, не надо верстать все с нуля.
 
+- **React Hook Form + Zod**
+  - Submitted-формы используют типизированное состояние и декларативную валидацию через `zodResolver`.
+  - Zod также применяется выборочно для runtime-проверки критичных API-ответов; generated OpenAPI-типы остаются compile-time source of truth.
+
 - **Интернационализация (`react-i18next`, `i18next`, `i18next-browser-languagedetector`)**
   - **i18next/react-i18next**: i18n-движок, переключение языков и ключи переводов.
   - **browser-languagedetector**: автоматический выбор языка по браузеру/настройкам.
@@ -43,8 +47,12 @@
 - **SignalR клиент (`@microsoft/signalr`)**
   - Используется для realtime-синхронизации `game-board` (`cellOpened`, `modifierActivated`) и `game-setup` (`draftChanged`).
 
-- **Тестирование (на перспективу: Vitest + React Testing Library)**
-  - Юнит- и компонентные тесты без привязки к конкретному рантайму браузера.
+- **Тестирование (Vitest + React Testing Library)**
+  - Юнит-тесты для model/shared logic и поведенческие тесты hooks/components в `jsdom`.
+
+- **Client-only state и UI add-ons — по потребности**
+  - Локальное UI-state остаётся в React; Zustand вводится только для реального cross-tree состояния и не дублирует TanStack Query/auth.
+  - Framer Motion, Lucide, SVGR и отдельные toast/icon packs добавляются вместе с использующей их фичей, а не как неиспользуемый baseline.
 
 ---
 

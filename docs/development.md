@@ -79,7 +79,8 @@ Do not hand-edit generated files.
 
 - Backend tests:
   - `dotnet test backend/backend.slnx`
-- Frontend lint/build:
+- Frontend tests/lint/build:
+  - `npm --prefix frontend run test`
   - `npm --prefix frontend run check:locales`
   - `npm --prefix frontend run lint`
   - `npm --prefix frontend run build`
