@@ -5,7 +5,7 @@ import {
   fetchGameQuestionCatalog,
   setGameQuestionCategoryEnabled,
   setGameQuestionEnabled,
-} from './api/game-questions-data-access.ts'
+} from './api/game-questions-api.ts'
 
 export function useGameSetupQuestionsCatalog() {
   const queryClient = useQueryClient()

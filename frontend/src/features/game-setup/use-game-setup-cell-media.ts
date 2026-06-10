@@ -7,7 +7,7 @@ import { queryKeys } from '../../shared/api/query-keys.ts'
 import {
   deleteDraftGameSetupCellMedia,
   uploadDraftGameSetupCellMedia,
-} from './api/game-setup-data-access.ts'
+} from './api/game-setup-api.ts'
 import {
   validateGameSetupCellMediaFile,
   type GameSetupCellMediaValidationError,

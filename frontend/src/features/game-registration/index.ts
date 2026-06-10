@@ -2,5 +2,5 @@ export { formatRegistrationTeamStatus } from './model/registration-team-status.t
 export {
   fetchGameRegistrationAdminTeams,
   fetchGameRegistrationSnapshot,
-} from './api/game-registration-data-access.ts'
+} from './api/game-registration-api.ts'
 export { useGameRegistrationMutations } from './api/use-game-registration-mutations.ts'

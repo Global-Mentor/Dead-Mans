@@ -7,7 +7,7 @@ import {
   createDraftGameSetup,
   deleteDraftGameSetup,
   saveDraftGameSetup,
-} from './api/game-setup-data-access.ts'
+} from './api/game-setup-api.ts'
 import {
   buildUpdateGameSetupRequest,
   isGameSetupDraftDirty,

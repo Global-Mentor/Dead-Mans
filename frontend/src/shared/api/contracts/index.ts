@@ -7,7 +7,6 @@ export type GameBoardSnapshot = Omit<components['schemas']['GameBoardSnapshotDto
   status: 'ready' | 'active' | 'finished'
 }
 export type GameCellOpenedEvent = components['schemas']['GameCellOpenedEventDto']
-export type GameModifierDefinition = components['schemas']['GameModifierDefinitionDto']
 export type GameModifierActivatedEvent = components['schemas']['GameModifierActivatedEventDto']
 export type GameSetupSnapshot = components['schemas']['GameSetupSnapshotDto']
 export type CreateGameSetupRequest = components['schemas']['CreateGameSetupRequestDto']
@@ -17,13 +16,4 @@ export type ErrorResponse = components['schemas']['ErrorResponse']
 export type AuthRole = components['schemas']['AuthRole']
 export type AuthSession = components['schemas']['AuthSessionDto']
 
-export type GameRegistrationSnapshot = components['schemas']['GameRegistrationSnapshotDto']
 export type RegistrationTeam = components['schemas']['RegistrationTeamDto']
-export type GameQuestionCatalogItemDto = components['schemas']['GameQuestionCatalogItemDto']
-export type SetGameQuestionEnabledRequestDto =
-  components['schemas']['SetGameQuestionEnabledRequestDto']
-export type SetGameQuestionCategoryEnabledRequestDto =
-  components['schemas']['SetGameQuestionCategoryEnabledRequestDto']
-export type AskedGameQuestionDto = components['schemas']['AskedGameQuestionDto']
-export type AnswerGameQuestionRequestDto = components['schemas']['AnswerGameQuestionRequestDto']
-export type GameQuestionRoundSummaryDto = components['schemas']['GameQuestionRoundSummaryDto']

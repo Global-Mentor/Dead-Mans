@@ -1,1 +1,1 @@
-export { fetchGameModifierCatalog } from './api/game-modifiers-data-access.ts'
+export { fetchGameModifierCatalog } from './api/game-modifiers-api.ts'

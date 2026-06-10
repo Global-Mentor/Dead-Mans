@@ -1,22 +1,62 @@
-import { httpClient } from '../../../shared/api/client/httpClient.ts'
+import {
+  apiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+} from '../../../shared/api/client/openApiClient.ts'
+import { fetchNotFoundAsNull } from '../../../shared/api/fetch-not-found-as-null.ts'
 import type {
   CreateGameSetupRequest,
-  GameBoardCellMedia,
-  GameSetupSnapshot,
   UpdateGameSetupRequest,
 } from '../../../shared/api/contracts/index.ts'
 
-export const gameSetupApi = {
-  getDraftSnapshot: () => httpClient.get<GameSetupSnapshot>('/game/setup'),
-  createDraft: (request: CreateGameSetupRequest) =>
-    httpClient.post<GameSetupSnapshot>('/game/setup', request),
-  saveDraft: (request: UpdateGameSetupRequest) =>
-    httpClient.put<GameSetupSnapshot>('/game/setup', request),
-  deleteDraft: () => httpClient.delete<void>('/game/setup'),
-  uploadCellMedia: (cellId: string, file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return httpClient.postForm<GameBoardCellMedia>(`/game/setup/cells/${cellId}/media`, formData)
-  },
-  deleteCellMedia: (cellId: string) => httpClient.delete<void>(`/game/setup/cells/${cellId}/media`),
+export function fetchDraftGameSetupSnapshot() {
+  return fetchNotFoundAsNull(() => unwrapOpenApiData(apiClient.GET('/game/setup')))
+}
+
+export function createDraftGameSetup(request: CreateGameSetupRequest) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/setup', {
+      body: request,
+    }),
+  )
+}
+
+export function saveDraftGameSetup(request: UpdateGameSetupRequest) {
+  return unwrapOpenApiData(
+    apiClient.PUT('/game/setup', {
+      body: request,
+    }),
+  )
+}
+
+export function deleteDraftGameSetup() {
+  return ensureOpenApiSuccess(apiClient.DELETE('/game/setup'))
+}
+
+export function uploadDraftGameSetupCellMedia(cellId: string, file: File) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/setup/cells/{cellId}/media', {
+      params: {
+        path: { cellId },
+      },
+      body: {
+        file: file.name,
+      },
+      bodySerializer: () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return formData
+      },
+    }),
+  )
+}
+
+export function deleteDraftGameSetupCellMedia(cellId: string) {
+  return ensureOpenApiSuccess(
+    apiClient.DELETE('/game/setup/cells/{cellId}/media', {
+      params: {
+        path: { cellId },
+      },
+    }),
+  )
 }

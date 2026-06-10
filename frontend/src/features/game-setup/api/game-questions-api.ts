@@ -1,44 +1,50 @@
-import { httpClient } from '../../../shared/api/client/httpClient.ts'
-import type {
-  AnswerGameQuestionRequestDto,
-  AskedGameQuestionDto,
-  GameQuestionCatalogItemDto,
-  GameQuestionRoundSummaryDto,
-  SetGameQuestionCategoryEnabledRequestDto,
-  SetGameQuestionEnabledRequestDto,
-} from '../../../shared/api/contracts/index.ts'
+import {
+  apiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+} from '../../../shared/api/client/openApiClient.ts'
+import type { operations } from '../../../shared/api/contracts/generated.ts'
 
-export const gameQuestionsApi = {
-  getCatalog: (params?: {
-    vectorCode?: string
-    category?: string
-    search?: string
-    includeDisabled?: boolean
-  }) =>
-    httpClient.get<GameQuestionCatalogItemDto[]>('/game/questions/catalog', {
-      query: {
-        vectorCode: params?.vectorCode,
-        category: params?.category,
-        search: params?.search,
-        includeDisabled: params?.includeDisabled ?? true,
+type GameQuestionCatalogFilters = NonNullable<
+  operations['getGameQuestionCatalog']['parameters']['query']
+>
+
+export function fetchGameQuestionCatalog(filters: GameQuestionCatalogFilters = {}) {
+  return unwrapOpenApiData(
+    apiClient.GET('/game/questions/catalog', {
+      params: {
+        query: {
+          ...filters,
+          includeDisabled: filters.includeDisabled ?? true,
+        },
       },
     }),
-  setQuestionEnabled: (questionId: string, request: SetGameQuestionEnabledRequestDto) =>
-    httpClient.patch<void>(`/game/questions/${questionId}/enabled`, request),
-  setCategoryEnabled: (
-    category: string,
-    request: SetGameQuestionCategoryEnabledRequestDto,
-    vectorCode?: string,
-  ) =>
-    httpClient.patch<void>(
-      `/game/questions/categories/${encodeURIComponent(category)}/enabled`,
-      request,
-      { query: vectorCode ? { vectorCode } : undefined },
-    ),
-  askNext: () => httpClient.post<AskedGameQuestionDto>('/game/questions/ask-next'),
-  answerRound: (roundId: string, request: AnswerGameQuestionRequestDto) =>
-    httpClient.post<GameQuestionRoundSummaryDto>(
-      `/game/questions/rounds/${roundId}/answer`,
-      request,
-    ),
+  )
+}
+
+export function setGameQuestionEnabled(questionId: string, isEnabled: boolean) {
+  return ensureOpenApiSuccess(
+    apiClient.PATCH('/game/questions/{questionId}/enabled', {
+      params: {
+        path: { questionId },
+      },
+      body: { isEnabled },
+    }),
+  )
+}
+
+export function setGameQuestionCategoryEnabled(
+  category: string,
+  isEnabled: boolean,
+  vectorCode?: string,
+) {
+  return ensureOpenApiSuccess(
+    apiClient.PATCH('/game/questions/categories/{category}/enabled', {
+      params: {
+        path: { category },
+        query: { vectorCode },
+      },
+      body: { isEnabled },
+    }),
+  )
 }
