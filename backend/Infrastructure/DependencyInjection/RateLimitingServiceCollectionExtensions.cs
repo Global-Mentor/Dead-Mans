@@ -4,6 +4,7 @@ using backend.Api.Contracts;
 using backend.Api.Http;
 using backend.Infrastructure.Configuration;
 using backend.Messaging;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace backend.Infrastructure.DependencyInjection;
