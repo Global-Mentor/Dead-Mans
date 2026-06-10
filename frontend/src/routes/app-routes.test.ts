@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest'
+import {
+  gameApplicationRoute,
+  gameBoardRoute,
+  gameSetupRoute,
+  getAccessiblePanelRoutes,
+  getPanelRouteByPath,
+  teamRegistrationsRoute,
+} from './app-routes.ts'
+
+describe('panel route helpers', () => {
+  it('keeps player navigation focused on player routes', () => {
+    expect(getAccessiblePanelRoutes(['viewer'])).toEqual([gameBoardRoute, gameApplicationRoute])
+  })
+
+  it('includes administration routes for admins', () => {
+    expect(getAccessiblePanelRoutes(['admin'])).toEqual([
+      gameBoardRoute,
+      gameApplicationRoute,
+      gameSetupRoute,
+      teamRegistrationsRoute,
+    ])
+  })
+
+  it('resolves nested panel paths to their route metadata', () => {
+    expect(getPanelRouteByPath('/panel/game-board/cell/1')).toBe(gameBoardRoute)
+    expect(getPanelRouteByPath('/outside')).toBeNull()
+  })
+})
