@@ -55,4 +55,4 @@
 
 ## Контракт API и типы на frontend
 
-Источник правды: `backend/openapi/deadmans.v1.yaml`. После изменений контракта transport-артефакты frontend перегенерируются командой `npm --prefix frontend run generate:transport` (см. [`docs/development.md`](docs/development.md)).
+Источник правды: `backend/openapi/deadmans.v1.yaml`. После изменений контракта transport-артефакты frontend перегенерируются командой `npm --prefix frontend run generate:transport` (см. [`docs/development.md`](docs/development.md)). HTTP-вызовы используют `openapi-fetch` поверх generated `paths`, поэтому endpoint, параметры, body и response проверяются TypeScript.

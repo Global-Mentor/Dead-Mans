@@ -56,7 +56,7 @@ flowchart LR
 - `features/game-board/` - экран игрового поля, open-cell flow и realtime sync
 - `features/game-setup/` - настройка черновика игры, cell media, Save/layout flow, realtime sync
 - `features/game-modifiers/` - shared feature API каталога модификаторов для game setup
-- `features/game-registration/` - общий HTTP client и data access для регистрации команд (используют `game-application` и `team-registrations`)
+- `features/game-registration/` - единый typed API-модуль регистрации команд (используют `game-application` и `team-registrations`)
 - `features/game-application/` - страница заявки игрока
 - `features/team-registrations/` - admin-подтверждение команд
 - `app/panel-route-config.tsx` - единый источник panel routes (метаданные, lazy-страницы, realtime-sync)
@@ -65,7 +65,7 @@ flowchart LR
 - `layouts/` - `MainLayout`, `PanelNavigation`
 - `shared/ui/` - reusable layers: primitives, patterns, feedback
 - `shared/theme/` - единые UI tokens и layout presets
-- `shared/api/client/` - HTTP transport
+- `shared/api/client/` - `openapi-fetch` transport поверх generated `paths`, общая обработка `ApiError`
 - `shared/api/query-keys.ts` - единые query-key identity helpers
 - `shared/api/contracts/` - generated types из OpenAPI
 - `shared/auth/` - auth context/guard + action-level capability helpers (`panel-capabilities.ts`)
