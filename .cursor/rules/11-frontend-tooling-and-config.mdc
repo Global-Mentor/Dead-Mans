@@ -10,7 +10,9 @@ alwaysApply: false
 - Keep the contract workflow intact: OpenAPI-generated types remain the transport source for the SPA, and scripts/config should keep regeneration, linting, and build verification working.
 - Prefer explicit config over magical defaults when auth origin, proxying, build behavior, or strictness affect runtime behavior.
 - Keep TypeScript and linting strict. Do not relax checks casually to make a local change pass.
-- Keep locale checks in the quality workflow. When adding/changing i18n keys, keep `npm --prefix frontend run check:locales` passing.
-- Keep `npm --prefix frontend run test`, lint, locale checks, and build green when changing frontend behavior or tooling.
+- Use `npm --prefix frontend run check` as the canonical frontend quality gate. It must cover Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip, and the production build.
+- Keep CI and local verification aligned: CI installs frontend dependencies with `npm --prefix frontend ci` and runs the same `check` script.
+- Treat Prettier and Knip configuration as maintained project tooling. Keep generated transport artifacts excluded from formatting/dead-code ownership where their generators are the source of truth.
+- Add focused behavioral tests when cleanup changes user-visible empty/error states, route access, or action capabilities; compilation and Knip alone are not regression coverage.
 - Add dependencies only when they fit the project direction, are used by the same change, and do not introduce a competing pattern for routing, data fetching, forms, state, styling, feedback, or i18n.
 - Remove obsolete scripts, stale config entries, and dead tooling flags when a workflow is replaced.

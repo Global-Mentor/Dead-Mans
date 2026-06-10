@@ -1,6 +1,7 @@
 ## Общий стек проекта
 
 Проект разделен на несколько частей:
+
 - **legacy-v1**: старый прототип (vanilla JS + socket.io + localStorage) — только как reference-источник идей.
 - **frontend**: активный SPA на React + TypeScript.
 - **backend**: активный ASP.NET Core Web API.
@@ -49,6 +50,10 @@
 
 - **Тестирование (Vitest + React Testing Library)**
   - Юнит-тесты для model/shared logic и поведенческие тесты hooks/components в `jsdom`.
+
+- **Качество кода (Prettier + ESLint + Knip)**
+  - Prettier задаёт единый формат, ESLint проверяет кодовые правила, Knip обнаруживает неиспользуемые файлы, exports и dependencies.
+  - Каноническая локальная проверка: `npm --prefix frontend run check`.
 
 - **Client-only state и UI add-ons — по потребности**
   - Локальное UI-state остаётся в React; Zustand вводится только для реального cross-tree состояния и не дублирует TanStack Query/auth.
@@ -119,7 +124,8 @@
   - Хранение кода, история изменений, code review, CI/CD.
 
 - **CI/CD (GitHub Actions)**
-  - Автоматическая сборка и тесты при `push` в `main` и на всех `pull_request`; деплой настраивается отдельным workflow.
+  - Автоматическая сборка и тесты при `push` в `main` и на всех `pull_request`; frontend устанавливается через `npm ci` и проходит единый `npm run check`.
+  - Деплой настраивается отдельным workflow.
 
 - **Логирование и мониторинг**
   - ASP.NET logging + наблюдаемость (Application Insights / Grafana + Prometheus — по мере развития проекта).
@@ -133,5 +139,3 @@
 - Локальное файловое хранение "на диске" как основной путь.
 - Скрытые альтернативные runtime-path'ы, которые расходятся с env-driven и Postgres/S3-first baseline.
 - Раннее встраивание локальной LLM в основной сервис.
-
-

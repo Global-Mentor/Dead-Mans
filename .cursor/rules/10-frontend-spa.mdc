@@ -42,6 +42,6 @@ alwaysApply: false
 - MUI + Emotion is the styling system. Keep the existing MUI feedback layer unless a replacement solves a concrete product need; do not add a second global toast system.
 - Add icon, animation, SVG-component, or brand-icon dependencies only with the feature that uses them. Prefer Lucide for general-purpose icons and Framer Motion for complex presence/layout transitions when those needs appear, but do not install or wrap them preemptively.
 - For row/column board-like layouts, use shared matrix/grid primitives before adding another feature-local grid shell.
-- Keep planned feature placeholders consistent: use `*-planned-features.ts` and shared `PlannedFeature*` components instead of one-off placeholder sections.
+- Keep speculative roadmap UI out of production pages. Future features belong in docs/issues until they have a real user flow; unavailable states should show concise user-facing feedback without disabled mock controls.
 - Prefer env/config switches over rewriting feature code when transport or runtime behavior changes. Keep mock-friendly seams, but treat real HTTP flow as the target path.
 - Use Vitest for unit tests and React Testing Library for hooks/components. Prioritize shared logic, authorization/capabilities, validation, cache behavior, and non-trivial feature model transitions; prefer focused behavioral coverage over broad snapshot-style tests.

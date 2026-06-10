@@ -12,6 +12,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - React Hook Form + Zod
 - i18next / react-i18next
 - Vitest + React Testing Library
+- Prettier + Knip
 
 ## Что есть в приложении
 
@@ -131,11 +132,12 @@ npm run build
 ## Локальная проверка
 
 ```bash
-npm run test
-npm run check:locales
-npm run lint
-npm run build
+npm run check
 ```
+
+`check` последовательно проверяет форматирование, TypeScript, ESLint, локали, тесты,
+неиспользуемый код/экспорты через Knip и production-сборку. CI устанавливает зависимости через
+`npm ci` и запускает тот же quality gate.
 
 ## Ограничение текущего скоупа
 

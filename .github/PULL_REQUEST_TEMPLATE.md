@@ -10,3 +10,4 @@
 - [ ] If deletion/archive behavior changed, I reviewed `docs/architecture/data-retention.md` and kept implementation aligned.
 - [ ] If deletion behavior changed, I updated backend tests to cover the expected hard/soft-delete path.
 - [ ] I verified this change cannot cascade-delete global identity/catalog data (`users`, `question_definitions`, `modifier_definitions`) from game flows.
+- [ ] If frontend code or tooling changed, I ran `npm --prefix frontend run check`.

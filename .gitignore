@@ -26,6 +26,7 @@
 **/logs/
 *.log
 .build-check/
+/.kombai/canvas/hunt_concepts.canvas
 
 # Local secrets/config overrides
 .env
