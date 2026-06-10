@@ -1,11 +1,23 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Typography } from '@mui/material'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { AppButton, AppDialog, FormTextField } from '../../../shared/ui/index.ts'
+import { z } from 'zod'
+import {
+  AppButton,
+  AppDialog,
+  ControlledFormTextField,
+} from '../../../shared/ui/index.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 
 type CreateGameSetupDialogStep = 'prompt' | 'details'
+const createGameSetupFormId = 'create-game-setup-form'
+
+interface CreateGameSetupFormValues {
+  title: string
+}
 
 interface CreateGameSetupDialogProps {
   open: boolean
@@ -21,29 +33,42 @@ interface CreateGameSetupDialogBodyProps {
 function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDialogBodyProps) {
   const { t } = useTranslation()
   const [step, setStep] = useState<CreateGameSetupDialogStep>('prompt')
-  const [title, setTitle] = useState('')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const formSchema = z.object({
+    title: z
+      .string()
+      .trim()
+      .min(1, t('gameSetup.createDialog.validationRequired'))
+      .max(GAME_SETUP_MAX_TITLE_LENGTH, t('gameSetup.invalidTitle')),
+  })
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setError,
+  } = useForm<CreateGameSetupFormValues>({
+    defaultValues: { title: '' },
+    resolver: zodResolver(formSchema),
+  })
 
-  const handleCreate = async () => {
-    const normalizedTitle = title.trim()
-    if (!normalizedTitle) {
-      setErrorMessage(t('gameSetup.createDialog.validationRequired'))
-      return
-    }
-
-    setErrorMessage(null)
+  const handleCreate = handleSubmit(async ({ title }) => {
     try {
-      await onCreate(normalizedTitle)
-      setTitle('')
+      await onCreate(title)
+      reset()
       setStep('prompt')
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        setErrorMessage(t('gameSetup.createDialog.alreadyExists'))
+        setError('title', {
+          type: 'server',
+          message: t('gameSetup.createDialog.alreadyExists'),
+        })
         return
       }
-      setErrorMessage(t('gameSetup.createDialog.error'))
+      setError('title', {
+        type: 'server',
+        message: t('gameSetup.createDialog.error'),
+      })
     }
-  }
+  })
 
   const isPromptStep = step === 'prompt'
 
@@ -65,7 +90,11 @@ function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDi
               {t('gameSetup.createDialog.startCreate')}
             </AppButton>
           ) : (
-            <AppButton onClick={() => void handleCreate()} disabled={isSubmitting}>
+            <AppButton
+              type="submit"
+              form={createGameSetupFormId}
+              disabled={isSubmitting}
+            >
               {t('gameSetup.createDialog.confirm')}
             </AppButton>
           )}
@@ -78,22 +107,16 @@ function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDi
             : t('gameSetup.createDialog.detailsDescription')}
         </Typography>
         {!isPromptStep ? (
-          <FormTextField
-            autoFocus
-            label={t('gameSetup.createDialog.nameLabel')}
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            disabled={isSubmitting}
-            error={errorMessage !== null}
-            helperText={errorMessage ?? undefined}
-            inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                void handleCreate()
-              }
-            }}
-          />
+          <form id={createGameSetupFormId} onSubmit={(event) => void handleCreate(event)}>
+            <ControlledFormTextField
+              autoFocus
+              control={control}
+              name="title"
+              label={t('gameSetup.createDialog.nameLabel')}
+              disabled={isSubmitting}
+              inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
+            />
+          </form>
         ) : null}
     </AppDialog>
   )
