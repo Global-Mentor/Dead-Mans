@@ -8,6 +8,7 @@ using backend.Infrastructure.DependencyInjection;
 using backend.Infrastructure.Http;
 using backend.Infrastructure.Realtime;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using System.Net;
@@ -85,6 +86,8 @@ try
         });
     builder.Services.AddAuthorization();
     builder.Services.AddDeadMansInfrastructure(builder.Configuration, builder.Environment);
+    builder.Services.AddDeadMansHealthChecks();
+    builder.Services.AddDeadMansRateLimiting(builder.Configuration, builder.Environment);
     builder.Services.AddDeadMansCors(builder.Configuration);
     builder.Services
         .AddOptions<ForwardedHeadersSecurityOptions>()
@@ -171,6 +174,7 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+    app.UseMiddleware<SecurityHeadersMiddleware>();
     if (app.Environment.IsDevelopment())
     {
         app.UseSwaggerUI(c =>
@@ -187,12 +191,14 @@ try
     app.UseCors(CorsPolicyNames.Default);
     if (!app.Environment.IsDevelopment())
     {
+        app.UseHsts();
         app.UseHttpsRedirection();
     }
 
     app.UseAuthentication();
     app.UseMiddleware<ActiveUserMiddleware>();
     app.UseAuthorization();
+    app.UseRateLimiter();
 
     app.MapGet(
         "/openapi/deadmans.v1.yaml",
@@ -200,6 +206,17 @@ try
             Path.Combine(app.Environment.ContentRootPath, "openapi", "deadmans.v1.yaml"),
             "application/yaml"
         )
+    );
+    app.MapHealthChecks(
+        HealthCheckContracts.LivenessPath,
+        new HealthCheckOptions { Predicate = _ => false }
+    );
+    app.MapHealthChecks(
+        HealthCheckContracts.ReadinessPath,
+        new HealthCheckOptions
+        {
+            Predicate = registration => registration.Tags.Contains(HealthCheckContracts.Tags.Ready)
+        }
     );
     app.MapHub<GameBoardHub>(RealtimeHubContracts.GameBoard.HubPath);
     app.MapHub<GameSetupHub>(RealtimeHubContracts.GameSetup.HubPath);

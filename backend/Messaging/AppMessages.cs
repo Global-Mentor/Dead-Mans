@@ -73,6 +73,7 @@ public static class AppMessages
         public const string GameQuestionRoundNotPending =
             "Question round cannot be answered because it is already closed.";
         public const string UnexpectedServerError = "An unexpected server error occurred.";
+        public const string TooManyRequests = "Too many requests. Please slow down and try again.";
     }
 
     public static class ErrorCodes
@@ -101,6 +102,7 @@ public static class AppMessages
             "game_lifecycle.draft_delete_not_allowed";
         public const string GameLifecycleGameNotFound = "game_lifecycle.game_not_found";
         public const string UnexpectedServerError = "game_common.unexpected_server_error";
+        public const string TooManyRequests = "game_common.too_many_requests";
         public const string GameRegistrationNotOpen = "game_registration.not_open";
         public const string GameRegistrationNoSlots = "game_registration.no_slots";
         public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
