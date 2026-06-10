@@ -3,11 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import type { GameBoardCellMedia, GameSetupSnapshot } from '../../shared/api/contracts/index.ts'
-import { queryKeys } from '../../shared/api/query-keys.ts'
 import {
   deleteDraftGameSetupCellMedia,
   uploadDraftGameSetupCellMedia,
 } from './api/game-setup-api.ts'
+import { gameSetupDraftQueryOptions } from './api/game-setup-queries.ts'
 import {
   validateGameSetupCellMediaFile,
   type GameSetupCellMediaValidationError,
@@ -147,7 +147,7 @@ export function useGameSetupCellMedia(
   const patchSnapshotMedia = useCallback(
     (cellId: string, media: GameBoardCellMedia | null) => {
       queryClient.setQueryData(
-        queryKeys.gameSetup.draftSnapshot(),
+        gameSetupDraftQueryOptions.queryKey,
         (current: LoadedGameSetupDraftState | undefined) => {
           if (!current?.snapshot) {
             return current
@@ -163,7 +163,7 @@ export function useGameSetupCellMedia(
     [queryClient],
   )
 
-  const uploadMutation = useMutation({
+  const { mutate: upload } = useMutation({
     mutationFn: ({ cellId, file }: { cellId: string; file: File }) =>
       uploadDraftGameSetupCellMedia(cellId, file),
     onSuccess: (media, { cellId }) => {
@@ -184,11 +184,11 @@ export function useGameSetupCellMedia(
     },
   })
 
-  const deleteMutation = useMutation({
+  const { mutate: deleteMedia } = useMutation({
     mutationFn: (cellId: string) => deleteDraftGameSetupCellMedia(cellId),
     onMutate: (cellId) => {
       const previousData = queryClient.getQueryData<LoadedGameSetupDraftState>(
-        queryKeys.gameSetup.draftSnapshot(),
+        gameSetupDraftQueryOptions.queryKey,
       )
       patchSnapshotMedia(cellId, null)
       setCellDisplay(cellId, (current) => ({
@@ -208,7 +208,7 @@ export function useGameSetupCellMedia(
     },
     onError: (error, cellId, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(queryKeys.gameSetup.draftSnapshot(), context.previousData)
+        queryClient.setQueryData(gameSetupDraftQueryOptions.queryKey, context.previousData)
       }
 
       setErrorKey(getDeleteCellMediaErrorKey(error))
@@ -241,9 +241,9 @@ export function useGameSetupCellMedia(
         previewUrl,
         cacheRevision: current.cacheRevision,
       }))
-      uploadMutation.mutate({ cellId, file })
+      upload({ cellId, file })
     },
-    [setCellDisplay, trackPreviewUrl, uploadMutation],
+    [setCellDisplay, trackPreviewUrl, upload],
   )
 
   const uploadCellMedia = useCallback(
@@ -289,9 +289,9 @@ export function useGameSetupCellMedia(
       }
 
       setErrorKey(null)
-      deleteMutation.mutate(cellId)
+      deleteMedia(cellId)
     },
-    [deleteMutation, isCellMediaBusy, snapshot],
+    [deleteMedia, isCellMediaBusy, snapshot],
   )
 
   const cellMediaErrorMessage = errorKey ? t(`gameSetup.cellMedia.errors.${errorKey}`) : null

@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
-import { queryKeys } from '../../shared/api/query-keys.ts'
 import {
   createDraftGameSetup,
   deleteDraftGameSetup,
   saveDraftGameSetup,
 } from './api/game-setup-api.ts'
+import { gameSetupDraftQueryOptions } from './api/game-setup-queries.ts'
 import {
   buildUpdateGameSetupRequest,
   isGameSetupDraftDirty,
@@ -58,10 +58,7 @@ export function useGameSetupPage() {
   const lastSyncedVersionRef = useRef<number | null>(null)
   const hadSnapshotRef = useRef(false)
 
-  const draftQuery = useQuery({
-    queryKey: queryKeys.gameSetup.draftSnapshot(),
-    queryFn: () => loadGameSetupDraftQueryState(),
-  })
+  const draftQuery = useQuery(gameSetupDraftQueryOptions)
 
   const snapshot = draftQuery.data?.snapshot ?? null
   const savedDraft = draftQuery.data?.savedDraft ?? null
@@ -81,14 +78,14 @@ export function useGameSetupPage() {
   const applyLoadedDraftState = useCallback(
     (loaded: LoadedGameSetupDraftState) => {
       const previous = queryClient.getQueryData<LoadedGameSetupDraftState>(
-        queryKeys.gameSetup.draftSnapshot(),
+        gameSetupDraftQueryOptions.queryKey,
       )
       if (previous?.snapshot && !loaded.snapshot) {
         setDraftRemovedNotice(true)
       }
 
       setDraftOverride(null)
-      queryClient.setQueryData(queryKeys.gameSetup.draftSnapshot(), loaded)
+      queryClient.setQueryData(gameSetupDraftQueryOptions.queryKey, loaded)
       lastSyncedVersionRef.current = loaded.snapshot?.version ?? null
     },
     [queryClient],
@@ -101,7 +98,7 @@ export function useGameSetupPage() {
     setRemoteChangeNotice(true)
   }, [applyLoadedDraftState])
 
-  const saveDraftMutation = useMutation({
+  const { mutateAsync: saveDraftAsync, isPending: isSaving } = useMutation({
     mutationFn: async ({
       draftToSave,
       expectedVersion,
@@ -156,11 +153,11 @@ export function useGameSetupPage() {
       return
     }
 
-    await saveDraftMutation.mutateAsync({
+    await saveDraftAsync({
       draftToSave: draft,
       expectedVersion: snapshot.version,
     })
-  }, [draft, isDirty, saveDraftMutation, snapshot])
+  }, [draft, isDirty, saveDraftAsync, snapshot])
 
   const saveDraftWithLayout = useCallback(
     async (nextDraft: GameSetupDraftState) => {
@@ -175,12 +172,12 @@ export function useGameSetupPage() {
         return
       }
 
-      await saveDraftMutation.mutateAsync({
+      await saveDraftAsync({
         draftToSave: nextDraft,
         expectedVersion: snapshot.version,
       })
     },
-    [saveDraftMutation, snapshot],
+    [saveDraftAsync, snapshot],
   )
 
   const flushDraftSave = useCallback(async () => {
@@ -354,7 +351,7 @@ export function useGameSetupPage() {
     toggleModifier,
     isCreating: createDraftMutation.isPending,
     isResetting: deleteDraftMutation.isPending,
-    isSaving: saveDraftMutation.isPending,
+    isSaving,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     ...cellMedia,

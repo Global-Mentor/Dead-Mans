@@ -1,24 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
-import { queryKeys } from '../../shared/api/query-keys.ts'
 import {
-  fetchGameRegistrationSnapshot,
-  useGameRegistrationMutations,
+  gameRegistrationSnapshotQueryOptions,
+  useAcceptGameRegistrationInvitationMutation,
+  useCreateGameRegistrationTeamMutation,
+  useDeclineGameRegistrationInvitationMutation,
+  useGameRegistrationToast,
+  useJoinGameRegistrationTeamMutation,
+  useLeaveGameRegistrationTeamMutation,
 } from '../game-registration/index.ts'
 
 export function useGameApplicationPage() {
-  const {
-    createTeam,
-    joinTeam,
-    leaveTeam,
-    acceptInvitation,
-    declineInvitation,
-    toastMessage,
-    dismissToast,
-  } = useGameRegistrationMutations()
-  const snapshotQuery = useQuery({
-    queryKey: queryKeys.gameRegistration.snapshot(),
-    queryFn: fetchGameRegistrationSnapshot,
-  })
+  const { toastMessage, onMutationError, dismissToast } = useGameRegistrationToast()
+  const createTeam = useCreateGameRegistrationTeamMutation(onMutationError)
+  const joinTeam = useJoinGameRegistrationTeamMutation(onMutationError)
+  const leaveTeam = useLeaveGameRegistrationTeamMutation(onMutationError)
+  const acceptInvitation = useAcceptGameRegistrationInvitationMutation(onMutationError)
+  const declineInvitation = useDeclineGameRegistrationInvitationMutation(onMutationError)
+  const snapshotQuery = useQuery(gameRegistrationSnapshotQueryOptions)
 
   return {
     snapshotQuery,

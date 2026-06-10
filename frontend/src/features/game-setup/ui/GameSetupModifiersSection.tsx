@@ -1,8 +1,7 @@
 import { Box, Checkbox, FormControlLabel, FormGroup, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { queryKeys } from '../../../shared/api/query-keys.ts'
-import { fetchGameModifierCatalog } from '../../game-modifiers/index.ts'
+import { gameModifierCatalogQueryOptions } from '../../game-modifiers/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { AsyncSection, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
 
@@ -13,10 +12,7 @@ interface GameSetupModifiersSectionProps {
 
 export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifiersSectionProps) {
   const { t } = useTranslation()
-  const catalogQuery = useQuery({
-    queryKey: queryKeys.gameModifiers.catalog(),
-    queryFn: fetchGameModifierCatalog,
-  })
+  const catalogQuery = useQuery(gameModifierCatalogQueryOptions)
 
   return (
     <SectionCard sx={{ mt: 2 }}>
