@@ -24,16 +24,11 @@ const uk = {
       },
     },
     navigation: {
-      title: 'Навігація',
       primary: 'Основна навігація',
       profile: 'Профіль',
       administration: 'Адміністрування',
       language: 'Мова інтерфейсу',
       logout: 'Вийти',
-      thumbnail: 'МЕНЮ',
-      open: 'Відкрити навігацію',
-      close: 'Закрити',
-      availableSections: 'Доступні розділи',
       roles: {
         admin: 'Адміністратор',
         moderator: 'Модератор',
@@ -42,19 +37,15 @@ const uk = {
       items: {
         gameBoard: {
           label: 'Гра',
-          description: 'Поточне ігрове поле та стан карток.',
         },
         gameSetup: {
           label: 'Налаштування гри',
-          description: 'Чернеткова таблиця для налаштування карток гри.',
         },
         gameApplication: {
           label: 'Подати заявку',
-          description: 'Реєстрація команди під час прийому заявок.',
         },
         teamRegistrations: {
           label: 'Заявки команд',
-          description: 'Перегляд і підтвердження команд.',
         },
       },
     },
@@ -69,7 +60,6 @@ const uk = {
       statusActive: 'Активна',
       statusReady: 'Прийом заявок',
       statusFinished: 'Завершена',
-      applicationButton: 'Заявка на гру',
       openConfirmTitle: 'Відкрити картку?',
       openConfirmDescription:
         'Ви впевнені, що хочете відкрити цю картку (ряд {{row}}, колонка {{col}}, вартість {{cost}})?',
@@ -79,24 +69,6 @@ const uk = {
       openForbidden: 'Відкривати картки може лише адміністратор.',
       openNotFound: 'Вибрану картку не знайдено.',
       openFailed: 'Не вдалося відкрити картку.',
-      modifiers: {
-        title: 'Модифікатори гри',
-        description: 'Активні модифікатори, увімкнені для поточної гри.',
-        loading: 'Завантаження каталогу модифікаторів...',
-        error: 'Не вдалося завантажити каталог модифікаторів.',
-        empty: 'Для цієї гри модифікатори не увімкнені.',
-        activeBadge: 'Активний',
-        activate: 'Активувати',
-        errors: {
-          forbidden: 'Активувати модифікатори можуть лише модератори та адміністратори.',
-          unknownCode: 'Вибраний модифікатор більше недоступний.',
-          gameNotActive: 'Модифікатори можна активувати лише під час активної гри.',
-          notEnabled: 'Цей модифікатор не увімкнений для поточної гри.',
-          conflictActive: 'Цей модифікатор конфліктує з уже активним модифікатором.',
-          limitReached: 'Для цього модифікатора досягнуто ліміт активацій.',
-          generic: 'Не вдалося активувати модифікатор.',
-        },
-      },
     },
     gameSetup: {
       title: 'Налаштування гри',
@@ -302,133 +274,6 @@ const uk = {
       actions: 'Дії',
       confirm: 'Підтвердити',
       reject: 'Відхилити',
-    },
-    plannedFeatures: {
-      roadmapTitle: 'Заплановано (ще не підключено)',
-      roadmapHint:
-        'Нотатки з обговорення. Частина API на backend вже є; UI та sync у setup — пізніше.',
-      formShellBadge: 'Макет UI',
-      gameSetup: {
-        form: {
-          registrationTitle: 'Налаштування реєстрації (чернетка)',
-          registrationDescription:
-            'Слоти команд, резерв, розмір складу та перехід draft → ready з setup.',
-          teamSlotCount: 'Кількість слотів команд',
-          minPlayers: 'Мін. гравців у команді',
-          maxPlayers: 'Макс. гравців у команді',
-          reservedSlots: 'Зарезервовані слоти',
-          reservedSlotsPlaceholder:
-            'напр. слот 6 — гостьова команда (без публічних заявок)',
-          openRegistration: 'Відкрити реєстрацію (draft → ready)',
-          startGame: 'Почати гру (ready → active)',
-        },
-        roadmap: {
-          slots: {
-            title: 'Сітка слотів у setup',
-            description:
-              'Кількість команд і public/reserved на слот. Синхронізація з PUT /api/game/setup.',
-          },
-          teamLimits: {
-            title: 'Мін/макс гравців у команді',
-            description: 'Зберігати ліміти 1–3 (або інші) в чернетці, не лише дефолти БД.',
-          },
-          lifecycle: {
-            title: 'Життєвий цикл з setup',
-            description:
-              'Кнопки POST /api/game/lifecycle/open-registration, /start, /finish.',
-          },
-        },
-      },
-      gameBoard: {
-        form: {
-          lifecycleTitle: 'Життєвий цикл гри (адмін)',
-          lifecycleDescription: 'Переходи draft → ready → active → finished.',
-          openRegistration: 'Відкрити реєстрацію',
-          startGame: 'Почати гру',
-          finishGame: 'Завершити гру',
-        },
-        roadmap: {
-          lifecycle: {
-            title: 'Панель lifecycle для адміна',
-            description: 'Підключити три endpoint з підтвердженням і сповіщеннями.',
-          },
-          applicationGate: {
-            title: 'Кнопка заявки за статусом',
-            description:
-              'Показувати «Заявка на гру» лише в ready; ховати в draft/active/finished.',
-          },
-        },
-      },
-      gameApplication: {
-        form: {
-          slotsTitle: 'Огляд слотів',
-          slotsDescription:
-            'Карта public/reserved і зайнятості з GET /api/game/registration.',
-          slotLabel: 'Слот {{slot}}',
-          slotFree: 'вільний',
-          memberInviteTitle: 'Інвайти в закриту команду',
-          memberInviteDescription:
-            'Запрошення тіммейтів; зараз інвайти лише через адміна (API).',
-          inviteTeammate: 'Запросити гравця',
-          submitForReview: 'Надіслати на перевірку',
-        },
-        roadmap: {
-          slotsOverview: {
-            title: 'Дошка слотів',
-            description:
-              'Усі слоти, резерв, pending-інвайти та підтверджені команди.',
-          },
-          memberInvites: {
-            title: 'Інвайти від гравців',
-            description:
-              'Той самий accept/decline, ініціатор — учасник закритої команди.',
-          },
-          submitForReview: {
-            title: 'Кнопка «готові до перевірки»',
-            description: 'Надсилання складу адміну; фільтр у списку команд.',
-          },
-          statusUx: {
-            title: 'Статуси команди',
-            description:
-              'forming vs confirmed; обмеження після підтвердження і поза ready.',
-          },
-          closedWhenInactive: {
-            title: 'Лише читання після ready',
-            description: 'У active/finished — історія без join/leave.',
-          },
-        },
-      },
-      teamRegistrations: {
-        form: {
-          inviteTitle: 'Запросити гравця в слот / команду',
-          inviteDescription:
-            'Пошук користувача, слот, ланцюжок для closed. POST .../invitations.',
-          slot: 'Слот',
-          player: 'Гравець',
-          targetTeam: 'Команда (опційно)',
-          sendInvite: 'Надіслати запрошення',
-        },
-        roadmap: {
-          adminInvite: {
-            title: 'UI інвайтів адміна',
-            description:
-              'Вибір гравця + слот + ланцюжок (P1 accept → інвайт P2). API вже є.',
-          },
-          slotBoard: {
-            title: 'Вид по слотах',
-            description: 'Reserved/public і pending-інвайти на слот.',
-          },
-          moderationPolicy: {
-            title: 'Ручний режим модерації',
-            description:
-              'Зараз join у open room одразу; опційна черга на confirm.',
-          },
-          filters: {
-            title: 'Фільтри',
-            description: 'forming/confirmed/disbanded; сортування за слотом.',
-          },
-        },
-      },
     },
     languageSwitcher: {
       ariaLabel: 'Мова інтерфейсу',

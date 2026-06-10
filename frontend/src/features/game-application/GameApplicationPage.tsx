@@ -9,7 +9,6 @@ import { gameBoardRoute } from '../../routes/app-routes.ts'
 import { useGameApplicationPage } from './use-game-application-page.ts'
 import type { RegistrationTeam } from '../../shared/api/contracts/index.ts'
 import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
-import { GameApplicationPlannedSection } from './ui/GameApplicationPlannedSection.tsx'
 import {
   AppButton,
   AppLinkButton,
@@ -57,7 +56,6 @@ export function GameApplicationPage() {
     return (
       <PageShell>
         <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
-        <GameApplicationPlannedSection />
       </PageShell>
     )
   }

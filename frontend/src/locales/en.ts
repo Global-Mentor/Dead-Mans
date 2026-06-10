@@ -24,16 +24,11 @@ const en = {
       },
     },
     navigation: {
-      title: 'Navigation',
       primary: 'Primary navigation',
       profile: 'Profile',
       administration: 'Administration',
       language: 'Interface language',
       logout: 'Log out',
-      thumbnail: 'MENU',
-      open: 'Open navigation',
-      close: 'Close',
-      availableSections: 'Available sections',
       roles: {
         admin: 'Administrator',
         moderator: 'Moderator',
@@ -42,19 +37,15 @@ const en = {
       items: {
         gameBoard: {
           label: 'Game',
-          description: 'Current game board and card state.',
         },
         gameSetup: {
           label: 'Game setup',
-          description: 'Draft table for configuring game cards.',
         },
         gameApplication: {
           label: 'Apply',
-          description: 'Register a team while the game accepts applications.',
         },
         teamRegistrations: {
           label: 'Team registrations',
-          description: 'Review and confirm teams for the ready game.',
         },
       },
     },
@@ -69,7 +60,6 @@ const en = {
       statusActive: 'Active',
       statusReady: 'Ready for registration',
       statusFinished: 'Finished',
-      applicationButton: 'Team application',
       openConfirmTitle: 'Open card?',
       openConfirmDescription:
         'Are you sure you want to open this card (row {{row}}, column {{col}}, cost {{cost}})?',
@@ -79,24 +69,6 @@ const en = {
       openForbidden: 'Only administrators can open cards.',
       openNotFound: 'The selected card was not found.',
       openFailed: 'Failed to open card.',
-      modifiers: {
-        title: 'Game modifiers',
-        description: 'Active game modifiers configured for this game.',
-        loading: 'Loading modifier catalog...',
-        error: 'Failed to load modifier catalog.',
-        empty: 'No modifiers are enabled for this game.',
-        activeBadge: 'Active',
-        activate: 'Activate',
-        errors: {
-          forbidden: 'Only moderators and administrators can activate modifiers.',
-          unknownCode: 'The selected modifier is no longer available.',
-          gameNotActive: 'Modifiers can be activated only while the game is active.',
-          notEnabled: 'This modifier is not enabled for the current game.',
-          conflictActive: 'This modifier conflicts with another active modifier.',
-          limitReached: 'Activation limit reached for this modifier.',
-          generic: 'Failed to activate modifier.',
-        },
-      },
     },
     gameSetup: {
       title: 'Game setup',
@@ -300,132 +272,6 @@ const en = {
       actions: 'Actions',
       confirm: 'Confirm',
       reject: 'Reject',
-    },
-    plannedFeatures: {
-      roadmapTitle: 'Planned next (not wired yet)',
-      roadmapHint:
-        'Design notes from our discussions. Backend may already exist; UI and setup sync are still TODO.',
-      formShellBadge: 'UI mockup',
-      gameSetup: {
-        form: {
-          registrationTitle: 'Registration settings (draft)',
-          registrationDescription:
-            'Configure team slots, reserved seats, roster size, and open the ready phase from setup.',
-          teamSlotCount: 'Number of team slots',
-          minPlayers: 'Min players per team',
-          maxPlayers: 'Max players per team',
-          reservedSlots: 'Reserved slots',
-          reservedSlotsPlaceholder: 'e.g. slot 6 — guest team (not accepting public sign-ups)',
-          openRegistration: 'Open registration (draft → ready)',
-          startGame: 'Start game (ready → active)',
-        },
-        roadmap: {
-          slots: {
-            title: 'Slot grid in setup',
-            description:
-              'Edit how many teams can join and mark each slot public or reserved. Sync with PUT /api/game/setup.',
-          },
-          teamLimits: {
-            title: 'Min/max players per team',
-            description: 'Save 1–3 (or other) limits on the draft game, not only hard-coded defaults.',
-          },
-          lifecycle: {
-            title: 'Lifecycle from setup',
-            description:
-              'Buttons calling POST /api/game/lifecycle/open-registration, /start, /finish.',
-          },
-        },
-      },
-      gameBoard: {
-        form: {
-          lifecycleTitle: 'Game lifecycle (admin)',
-          lifecycleDescription:
-            'Move the current draft to ready, then start the live game, then finish.',
-          openRegistration: 'Open registration',
-          startGame: 'Start game',
-          finishGame: 'Finish game',
-        },
-        roadmap: {
-          lifecycle: {
-            title: 'Admin lifecycle panel',
-            description: 'Wire the three lifecycle endpoints with confirm dialogs and toasts.',
-          },
-          applicationGate: {
-            title: 'Application button visibility',
-            description:
-              'Show “Team application” only while game status is ready (hide in draft/active/finished).',
-          },
-        },
-      },
-      gameApplication: {
-        form: {
-          slotsTitle: 'Slots overview',
-          slotsDescription: 'Live map of public/reserved slots and occupancy from GET /api/game/registration.',
-          slotLabel: 'Slot {{slot}}',
-          slotFree: 'free',
-          memberInviteTitle: 'Closed team invites',
-          memberInviteDescription:
-            'Invite teammates to a closed room; today only admin can invite via API.',
-          inviteTeammate: 'Invite player',
-          submitForReview: 'Submit team for review',
-        },
-        roadmap: {
-          slotsOverview: {
-            title: 'Slot board UI',
-            description: 'Visual grid of all slots, reserved labels, pending invites, and confirmed teams.',
-          },
-          memberInvites: {
-            title: 'Player-to-player invites',
-            description:
-              'Same accept/decline flow as admin invites, initiated by any team member for closed rooms.',
-          },
-          submitForReview: {
-            title: 'Optional “ready for review” action',
-            description:
-              'Captain submits when roster is complete; admin list can filter awaiting review.',
-          },
-          statusUx: {
-            title: 'Clearer team status',
-            description:
-              'Explain forming vs confirmed; block actions after admin confirm or when game leaves ready.',
-          },
-          closedWhenInactive: {
-            title: 'Read-only when registration closed',
-            description: 'After active/finished, show history only (no leave/join).',
-          },
-        },
-      },
-      teamRegistrations: {
-        form: {
-          inviteTitle: 'Invite player to slot / team',
-          inviteDescription:
-            'Search users, pick slot (public/reserved), chain invites for closed teams. Uses POST .../invitations.',
-          slot: 'Slot',
-          player: 'Player',
-          targetTeam: 'Target team (optional)',
-          sendInvite: 'Send invitation',
-        },
-        roadmap: {
-          adminInvite: {
-            title: 'Admin invite UI',
-            description:
-              'User picker + slot selector + invite chain (P1 accept → invite P2). API already exists.',
-          },
-          slotBoard: {
-            title: 'Slot-centric admin view',
-            description: 'See reserved vs public slots and pending invites per slot.',
-          },
-          moderationPolicy: {
-            title: 'Manual accept mode toggle',
-            description:
-              'Today join-in-open-room is instant; optional queue for admin approve before confirmed.',
-          },
-          filters: {
-            title: 'Filters and sorting',
-            description: 'Filter forming/confirmed/disbanded; sort by slot or player count.',
-          },
-        },
-      },
     },
     languageSwitcher: {
       ariaLabel: 'Interface language',

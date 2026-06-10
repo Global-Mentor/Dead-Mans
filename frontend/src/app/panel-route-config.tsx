@@ -15,7 +15,6 @@ export type PanelRouteDefinition = {
   path: string
   fullPath: string
   labelKey: string
-  descriptionKey?: string
   allowedRoles?: readonly AuthRole[]
 }
 
@@ -47,7 +46,6 @@ export const panelRouteConfig = definePanelRouteConfig([
     id: 'game-board',
     path: 'game-board',
     labelKey: 'navigation.items.gameBoard.label',
-    descriptionKey: 'navigation.items.gameBoard.description',
     allowedRoles: authenticatedPanelRoles,
     Page: lazy(() =>
       import('../features/game-board/GameBoardPage.tsx').then((module) => ({
@@ -60,7 +58,6 @@ export const panelRouteConfig = definePanelRouteConfig([
     id: 'game-application',
     path: 'game-application',
     labelKey: 'navigation.items.gameApplication.label',
-    descriptionKey: 'navigation.items.gameApplication.description',
     allowedRoles: authenticatedPanelRoles,
     Page: lazy(() =>
       import('../features/game-application/GameApplicationPage.tsx').then((module) => ({
@@ -72,7 +69,6 @@ export const panelRouteConfig = definePanelRouteConfig([
     id: 'game-setup',
     path: 'game-setup',
     labelKey: 'navigation.items.gameSetup.label',
-    descriptionKey: 'navigation.items.gameSetup.description',
     allowedRoles: ['admin'],
     Page: lazy(() =>
       import('../features/game-setup/GameSetupPage.tsx').then((module) => ({
@@ -85,7 +81,6 @@ export const panelRouteConfig = definePanelRouteConfig([
     id: 'team-registrations',
     path: 'team-registrations',
     labelKey: 'navigation.items.teamRegistrations.label',
-    descriptionKey: 'navigation.items.teamRegistrations.description',
     allowedRoles: ['admin'],
     Page: lazy(() =>
       import('../features/team-registrations/TeamRegistrationsPage.tsx').then((module) => ({
@@ -107,7 +102,6 @@ function toPanelRouteMetadata(entry: (typeof panelRouteConfig)[number]): PanelRo
     path: entry.path,
     fullPath: entry.fullPath,
     labelKey: entry.labelKey,
-    descriptionKey: entry.descriptionKey,
     allowedRoles: entry.allowedRoles,
   }
 }
