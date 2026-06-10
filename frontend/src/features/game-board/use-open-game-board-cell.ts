@@ -30,7 +30,7 @@ export function useOpenGameBoardCell() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const canOpenCells = useMemo(
-    () => hasPanelCapability('gameSetup', user?.roles),
+    () => hasPanelCapability('openGameBoardCell', user?.roles),
     [user?.roles],
   )
 
