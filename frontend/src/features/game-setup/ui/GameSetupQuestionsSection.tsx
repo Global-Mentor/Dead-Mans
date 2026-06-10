@@ -1,12 +1,12 @@
-import {
-  Box,
-  Checkbox,
-  Chip,
-  FormControlLabel,
-  Stack, Typography,
-} from '@mui/material'
+import { Box, Checkbox, Chip, FormControlLabel, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton, AsyncSection, FormTextField, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AsyncSection,
+  FormTextField,
+  SectionCard,
+  SectionHeader,
+} from '../../../shared/ui/index.ts'
 import { useGameSetupQuestionsCatalog } from '../use-game-setup-questions-catalog.ts'
 
 function toCategoryTitle(category: string) {
@@ -68,7 +68,9 @@ export function GameSetupQuestionsSection() {
             size="small"
             tone="secondary"
             disabled={toggleCategoryMutation.isPending}
-            onClick={() => toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: true })}
+            onClick={() =>
+              toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: true })
+            }
           >
             {t('gameSetup.questions.enableCategory')}
           </AppButton>
@@ -76,7 +78,9 @@ export function GameSetupQuestionsSection() {
             size="small"
             tone="warningGhost"
             disabled={toggleCategoryMutation.isPending}
-            onClick={() => toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: false })}
+            onClick={() =>
+              toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: false })
+            }
           >
             {t('gameSetup.questions.disableCategory')}
           </AppButton>
@@ -121,7 +125,11 @@ export function GameSetupQuestionsSection() {
                 }
                 sx={{ alignItems: 'flex-start', m: 0 }}
               />
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', ml: 4.5 }}
+              >
                 {t('gameSetup.questions.meta', {
                   category: question.category,
                   reward: question.reward,

@@ -8,15 +8,31 @@ interface AppDialogProps extends Omit<DialogProps, 'title'> {
   actions?: ReactNode
 }
 
-export function AppDialog({ title, description, actions, children, ...dialogProps }: AppDialogProps) {
+export function AppDialog({
+  title,
+  description,
+  actions,
+  children,
+  ...dialogProps
+}: AppDialogProps) {
   const descriptionId = useId()
 
   return (
-    <Dialog fullWidth maxWidth="sm" {...dialogProps} aria-describedby={description ? descriptionId : undefined}>
+    <Dialog
+      fullWidth
+      maxWidth="sm"
+      {...dialogProps}
+      aria-describedby={description ? descriptionId : undefined}
+    >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         {typeof description === 'string' ? (
-          <Typography id={descriptionId} variant="body2" color="text.secondary" sx={{ mb: children ? 2 : 0 }}>
+          <Typography
+            id={descriptionId}
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: children ? 2 : 0 }}
+          >
             {description}
           </Typography>
         ) : description ? (

@@ -32,12 +32,7 @@ export function AuthLandingPage() {
       >
         <LanguageSwitcher />
       </Box>
-      <SectionCard
-        sx={[
-          (theme) => huntAuthCardSx(theme),
-          { px: { xs: 4, sm: 6 }, py: 5 },
-        ]}
-      >
+      <SectionCard sx={[(theme) => huntAuthCardSx(theme), { px: { xs: 4, sm: 6 }, py: 5 }]}>
         <Stack spacing={3}>
           <Box>
             <Typography variant="overline" sx={huntOverlineSx}>

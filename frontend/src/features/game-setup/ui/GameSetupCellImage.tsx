@@ -227,12 +227,7 @@ export function GameSetupCellImage({
           sx={setupCellMediaActionsSx}
           data-cell-media-action
         >
-          <AppButton
-            size="small"
-            disabled={isBusy}
-            onClick={openFilePicker}
-            data-cell-media-action
-          >
+          <AppButton size="small" disabled={isBusy} onClick={openFilePicker} data-cell-media-action>
             {showImage && phase !== 'deleting'
               ? t('gameSetup.cellMedia.replace')
               : t('gameSetup.cellMedia.upload')}

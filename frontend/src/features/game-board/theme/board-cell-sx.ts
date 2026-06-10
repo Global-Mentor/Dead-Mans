@@ -9,9 +9,7 @@ interface BoardCellSxOptions {
 export function createBoardCellSx({ isOpen, isClickable }: BoardCellSxOptions): SxProps<Theme> {
   return (theme) => ({
     border: '1px solid',
-    borderColor: isOpen
-      ? theme.palette.primary.main
-      : alpha(theme.palette.primary.main, 0.28),
+    borderColor: isOpen ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.28),
     borderWidth: isOpen ? 2 : 1,
     borderRadius: theme.shape.borderRadius,
     position: 'relative',

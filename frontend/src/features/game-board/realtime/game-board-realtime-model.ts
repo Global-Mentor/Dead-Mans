@@ -7,7 +7,7 @@ import type {
 export type CellOpenedEvent = GameCellOpenedEvent
 export type ModifierActivatedEvent = GameModifierActivatedEvent
 
-export interface CellOpenedPatchResult {
+interface CellOpenedPatchResult {
   nextSnapshot: GameBoardSnapshot | null
   requiresResync: boolean
 }

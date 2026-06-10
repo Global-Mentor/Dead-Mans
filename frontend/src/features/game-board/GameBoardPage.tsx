@@ -28,11 +28,7 @@ export function GameBoardPage() {
 
   if (isLoading) {
     return (
-      <PageStatePanel
-        title={t('gameBoard.title')}
-        message={t('gameBoard.loading')}
-        showSpinner
-      />
+      <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} showSpinner />
     )
   }
 
@@ -119,7 +115,12 @@ export function GameBoardPage() {
         confirmLabel={t('gameBoard.openConfirm')}
       />
 
-      <AppToast message={toastMessage} onClose={dismissToast} severity="info" autoHideDuration={3000} />
+      <AppToast
+        message={toastMessage}
+        onClose={dismissToast}
+        severity="info"
+        autoHideDuration={3000}
+      />
     </PageShell>
   )
 }

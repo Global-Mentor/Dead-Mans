@@ -37,5 +37,8 @@ export const gameQuestionsApi = {
     ),
   askNext: () => httpClient.post<AskedGameQuestionDto>('/game/questions/ask-next'),
   answerRound: (roundId: string, request: AnswerGameQuestionRequestDto) =>
-    httpClient.post<GameQuestionRoundSummaryDto>(`/game/questions/rounds/${roundId}/answer`, request),
+    httpClient.post<GameQuestionRoundSummaryDto>(
+      `/game/questions/rounds/${roundId}/answer`,
+      request,
+    ),
 }

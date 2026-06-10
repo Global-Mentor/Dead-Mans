@@ -31,7 +31,8 @@ function AuthCallbackErrorCard({
 
 export function TwitchAuthCallbackPage() {
   const { t } = useTranslation()
-  const { callbackReason, isSuccess, navigateToLogin, sessionRestoreFailed } = useTwitchAuthCallback()
+  const { callbackReason, isSuccess, navigateToLogin, sessionRestoreFailed } =
+    useTwitchAuthCallback()
   const callbackReasonMessage = useMemo(() => {
     return t(`auth.callbackReasons.${callbackReason ?? 'unknown'}`, {
       defaultValue: t('auth.callbackReasons.unknown'),

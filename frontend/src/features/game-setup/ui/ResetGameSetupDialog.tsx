@@ -25,7 +25,9 @@ export function ResetGameSetupDialog({
       title={t('gameSetup.resetDialog.title')}
       description={t('gameSetup.resetDialog.description')}
       cancelLabel={t('gameSetup.resetDialog.cancel')}
-      confirmLabel={isSubmitting ? t('gameSetup.resetDialog.submitting') : t('gameSetup.resetDialog.confirm')}
+      confirmLabel={
+        isSubmitting ? t('gameSetup.resetDialog.submitting') : t('gameSetup.resetDialog.confirm')
+      }
       confirmTone="danger"
     />
   )

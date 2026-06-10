@@ -20,7 +20,7 @@ import {
 import type { LoadedGameSetupDraftState } from './model/game-setup-query-state.ts'
 import { patchGameSetupSnapshotCellMedia } from './model/game-setup-snapshot-media.ts'
 
-export type GameSetupCellMediaErrorKey =
+type GameSetupCellMediaErrorKey =
   | GameSetupCellMediaValidationError
   | 'saveRequired'
   | 'invalidFile'
@@ -88,7 +88,10 @@ export function useGameSetupCellMedia(
   }, [])
 
   const setCellDisplay = useCallback(
-    (cellId: string, updater: (current: GameSetupCellMediaDisplayState) => GameSetupCellMediaDisplayState) => {
+    (
+      cellId: string,
+      updater: (current: GameSetupCellMediaDisplayState) => GameSetupCellMediaDisplayState,
+    ) => {
       if (!snapshotKey) {
         return
       }
@@ -102,7 +105,11 @@ export function useGameSetupCellMedia(
           revokePreviewUrl(previous.previewUrl)
         }
 
-        if (next.phase === 'idle' && !next.previewUrl && next.cacheRevision === previous.cacheRevision) {
+        if (
+          next.phase === 'idle' &&
+          !next.previewUrl &&
+          next.cacheRevision === previous.cacheRevision
+        ) {
           if (!(cellId in snapshotDisplay)) {
             return current
           }

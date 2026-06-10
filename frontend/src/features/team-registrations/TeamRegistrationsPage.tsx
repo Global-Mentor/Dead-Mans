@@ -1,12 +1,4 @@
-import {
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material'
+import { Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
@@ -59,7 +51,10 @@ export function TeamRegistrationsPage() {
 
   return (
     <PageShell>
-      <SectionHeader title={t('teamRegistrations.title')} description={t('teamRegistrations.description')} />
+      <SectionHeader
+        title={t('teamRegistrations.title')}
+        description={t('teamRegistrations.description')}
+      />
 
       {teams.length === 0 ? (
         <Typography variant="body2">{t('teamRegistrations.empty')}</Typography>
@@ -87,8 +82,8 @@ export function TeamRegistrationsPage() {
                       <AppButton
                         size="small"
                         disabled={
-                          team.status !== 'forming'
-                          || (confirmTeam.isPending && confirmTeam.variables === team.teamId)
+                          team.status !== 'forming' ||
+                          (confirmTeam.isPending && confirmTeam.variables === team.teamId)
                         }
                         onClick={() => confirmTeam.mutate(team.teamId)}
                       >
@@ -98,8 +93,8 @@ export function TeamRegistrationsPage() {
                         size="small"
                         tone="warningGhost"
                         disabled={
-                          team.status !== 'forming'
-                          || (rejectTeam.isPending && rejectTeam.variables === team.teamId)
+                          team.status !== 'forming' ||
+                          (rejectTeam.isPending && rejectTeam.variables === team.teamId)
                         }
                         onClick={() => rejectTeam.mutate(team.teamId)}
                       >
@@ -114,7 +109,12 @@ export function TeamRegistrationsPage() {
         </SectionCard>
       )}
 
-      <AppToast message={toastMessage} onClose={dismissToast} severity="error" autoHideDuration={5000} />
+      <AppToast
+        message={toastMessage}
+        onClose={dismissToast}
+        severity="error"
+        autoHideDuration={5000}
+      />
     </PageShell>
   )
 }

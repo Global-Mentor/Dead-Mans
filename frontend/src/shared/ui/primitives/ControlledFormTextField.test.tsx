@@ -31,10 +31,7 @@ describe('ControlledFormTextField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith(
-        { title: 'Dead Mans' },
-        expect.anything(),
-      )
+      expect(onSubmit).toHaveBeenCalledWith({ title: 'Dead Mans' }, expect.anything())
     })
   })
 })

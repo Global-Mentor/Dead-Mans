@@ -9,9 +9,7 @@ export type AppButtonTone =
   | 'warningGhost'
   | 'success'
 
-export function resolveAppButtonTone(
-  tone: AppButtonTone,
-): Pick<ButtonProps, 'variant' | 'color'> {
+export function resolveAppButtonTone(tone: AppButtonTone): Pick<ButtonProps, 'variant' | 'color'> {
   switch (tone) {
     case 'secondary':
       return { variant: 'outlined', color: 'primary' }

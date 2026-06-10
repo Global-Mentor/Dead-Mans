@@ -27,8 +27,8 @@ import {
 } from './model/game-setup-draft-validation.ts'
 
 export type GameSetupSyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict'
-export type GameSetupSaveErrorKey = GameSetupDraftValidationError | 'saveFailed'
-export type GameSetupResetErrorKey = 'resetFailed'
+type GameSetupSaveErrorKey = GameSetupDraftValidationError | 'saveFailed'
+type GameSetupResetErrorKey = 'resetFailed'
 
 interface DraftOverride {
   key: string

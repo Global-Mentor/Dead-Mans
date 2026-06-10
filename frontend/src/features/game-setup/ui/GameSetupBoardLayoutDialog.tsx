@@ -1,8 +1,4 @@
-import {
-  Alert,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Alert, Stack, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppButton, AppDialog, FormSelect } from '../../../shared/ui/index.ts'
@@ -44,7 +40,7 @@ export function GameSetupBoardLayoutDialog({
   const count = axis === 'row' ? draft.rowLabels.length : draft.colLabels.length
   const selectedPositionIndex = positionIndexes.includes(positionIndex)
     ? positionIndex
-    : positionIndexes[0] ?? 0
+    : (positionIndexes[0] ?? 0)
 
   const handleClose = () => {
     setAction('add')
@@ -60,7 +56,9 @@ export function GameSetupBoardLayoutDialog({
       return
     }
 
-    onApply((current) => applyGameSetupBoardLayoutChange(current, action, axis, selectedPositionIndex))
+    onApply((current) =>
+      applyGameSetupBoardLayoutChange(current, action, axis, selectedPositionIndex),
+    )
     handleClose()
   }
 
@@ -124,63 +122,63 @@ export function GameSetupBoardLayoutDialog({
         </>
       }
     >
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('gameSetup.layoutDialog.description')}
-        </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {t('gameSetup.layoutDialog.description')}
+      </Typography>
 
-        {!confirmStep ? (
-          <Stack spacing={2}>
-            <FormSelect
-              label={t('gameSetup.layoutDialog.actionLabel')}
-              value={action}
-              onChange={(nextAction) => {
-                setAction(nextAction)
-                setConfirmStep(false)
-              }}
-              options={[
-                { value: 'add', label: t('gameSetup.layoutDialog.actionAdd') },
-                { value: 'remove', label: t('gameSetup.layoutDialog.actionRemove') },
-              ]}
-            />
+      {!confirmStep ? (
+        <Stack spacing={2}>
+          <FormSelect
+            label={t('gameSetup.layoutDialog.actionLabel')}
+            value={action}
+            onChange={(nextAction) => {
+              setAction(nextAction)
+              setConfirmStep(false)
+            }}
+            options={[
+              { value: 'add', label: t('gameSetup.layoutDialog.actionAdd') },
+              { value: 'remove', label: t('gameSetup.layoutDialog.actionRemove') },
+            ]}
+          />
 
-            <FormSelect
-              label={t('gameSetup.layoutDialog.axisLabel')}
-              value={axis}
-              onChange={(nextAxis) => {
-                setAxis(nextAxis)
-                setConfirmStep(false)
-              }}
-              options={[
-                { value: 'row', label: t('gameSetup.layoutDialog.axisRow') },
-                { value: 'column', label: t('gameSetup.layoutDialog.axisColumn') },
-              ]}
-            />
+          <FormSelect
+            label={t('gameSetup.layoutDialog.axisLabel')}
+            value={axis}
+            onChange={(nextAxis) => {
+              setAxis(nextAxis)
+              setConfirmStep(false)
+            }}
+            options={[
+              { value: 'row', label: t('gameSetup.layoutDialog.axisRow') },
+              { value: 'column', label: t('gameSetup.layoutDialog.axisColumn') },
+            ]}
+          />
 
-            <FormSelect
-              disabled={positionIndexes.length === 0 || !canApply}
-              label={t('gameSetup.layoutDialog.positionLabel')}
-              value={selectedPositionIndex}
-              onChange={(nextPositionIndex) => {
-                setPositionIndex(Number(nextPositionIndex))
-                setConfirmStep(false)
-              }}
-              options={positionIndexes.map((index) => ({
-                value: index,
-                label: getPositionLabel(index),
-              }))}
-            />
+          <FormSelect
+            disabled={positionIndexes.length === 0 || !canApply}
+            label={t('gameSetup.layoutDialog.positionLabel')}
+            value={selectedPositionIndex}
+            onChange={(nextPositionIndex) => {
+              setPositionIndex(Number(nextPositionIndex))
+              setConfirmStep(false)
+            }}
+            options={positionIndexes.map((index) => ({
+              value: index,
+              label: getPositionLabel(index),
+            }))}
+          />
 
-            {!canApply ? (
-              <Alert severity="warning">{t('gameSetup.layoutDialog.limitReached')}</Alert>
-            ) : null}
-          </Stack>
-        ) : (
-          <Alert severity="warning">
-            {t(confirmationKey, {
-              target: getPositionLabel(selectedPositionIndex),
-            })}
-          </Alert>
-        )}
+          {!canApply ? (
+            <Alert severity="warning">{t('gameSetup.layoutDialog.limitReached')}</Alert>
+          ) : null}
+        </Stack>
+      ) : (
+        <Alert severity="warning">
+          {t(confirmationKey, {
+            target: getPositionLabel(selectedPositionIndex),
+          })}
+        </Alert>
+      )}
     </AppDialog>
   )
 }

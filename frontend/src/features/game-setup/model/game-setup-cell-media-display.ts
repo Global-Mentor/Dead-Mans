@@ -14,7 +14,7 @@ export function createIdleCellMediaDisplayState(): GameSetupCellMediaDisplayStat
   }
 }
 
-export function appendGameSetupMediaCacheBust(url: string, revision: number): string {
+function appendGameSetupMediaCacheBust(url: string, revision: number): string {
   if (revision <= 0) {
     return url
   }
@@ -41,9 +41,7 @@ export function resolveGameSetupCellImageUrl(
     return undefined
   }
 
-  return serverUrl
-    ? appendGameSetupMediaCacheBust(serverUrl, display.cacheRevision)
-    : undefined
+  return serverUrl ? appendGameSetupMediaCacheBust(serverUrl, display.cacheRevision) : undefined
 }
 
 export function isGameSetupCellMediaBusy(

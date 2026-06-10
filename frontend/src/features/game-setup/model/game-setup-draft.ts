@@ -129,9 +129,9 @@ export function isGameSetupDraftDirty(
     }
 
     if (
-      savedCell.id !== currentCell.id
-      || savedCell.title !== currentCell.title
-      || savedCell.cost !== currentCell.cost
+      savedCell.id !== currentCell.id ||
+      savedCell.title !== currentCell.title ||
+      savedCell.cost !== currentCell.cost
     ) {
       return true
     }
@@ -140,7 +140,7 @@ export function isGameSetupDraftDirty(
   return false
 }
 
-export function normalizeGameSetupDraftForSave(draft: GameSetupDraftState): GameSetupDraftState {
+function normalizeGameSetupDraftForSave(draft: GameSetupDraftState): GameSetupDraftState {
   const rowLabels = draft.rowLabels.map((label, index) => {
     const trimmed = label.trim()
     return trimmed.length > 0 ? trimmed : defaultGameSetupRowLabel(index)

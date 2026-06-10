@@ -46,7 +46,11 @@ export function GameSetupModifiersSection({ draft, onToggle }: GameSetupModifier
                   }
                   label={`${modifier.name} (${modifier.kind}, ${modifier.category}, ${modifier.activationCost})`}
                 />
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 4.5, display: 'block' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ ml: 4.5, display: 'block' }}
+                >
                   {modifier.description}
                 </Typography>
               </Box>

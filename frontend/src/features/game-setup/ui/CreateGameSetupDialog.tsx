@@ -4,11 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import {
-  AppButton,
-  AppDialog,
-  ControlledFormTextField,
-} from '../../../shared/ui/index.ts'
+import { AppButton, AppDialog, ControlledFormTextField } from '../../../shared/ui/index.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 
@@ -40,12 +36,7 @@ function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDi
       .min(1, t('gameSetup.createDialog.validationRequired'))
       .max(GAME_SETUP_MAX_TITLE_LENGTH, t('gameSetup.invalidTitle')),
   })
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setError,
-  } = useForm<CreateGameSetupFormValues>({
+  const { control, handleSubmit, reset, setError } = useForm<CreateGameSetupFormValues>({
     defaultValues: { title: '' },
     resolver: zodResolver(formSchema),
   })
@@ -77,7 +68,9 @@ function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDi
       open
       disableEscapeKeyDown
       onClose={() => undefined}
-      title={isPromptStep ? t('gameSetup.createDialog.promptTitle') : t('gameSetup.createDialog.title')}
+      title={
+        isPromptStep ? t('gameSetup.createDialog.promptTitle') : t('gameSetup.createDialog.title')
+      }
       actions={
         <>
           {!isPromptStep ? (
@@ -90,34 +83,30 @@ function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDi
               {t('gameSetup.createDialog.startCreate')}
             </AppButton>
           ) : (
-            <AppButton
-              type="submit"
-              form={createGameSetupFormId}
-              disabled={isSubmitting}
-            >
+            <AppButton type="submit" form={createGameSetupFormId} disabled={isSubmitting}>
               {t('gameSetup.createDialog.confirm')}
             </AppButton>
           )}
         </>
       }
     >
-        <Typography variant="body2" color="text.secondary" sx={{ mb: isPromptStep ? 0 : 2 }}>
-          {isPromptStep
-            ? t('gameSetup.createDialog.promptDescription')
-            : t('gameSetup.createDialog.detailsDescription')}
-        </Typography>
-        {!isPromptStep ? (
-          <form id={createGameSetupFormId} onSubmit={(event) => void handleCreate(event)}>
-            <ControlledFormTextField
-              autoFocus
-              control={control}
-              name="title"
-              label={t('gameSetup.createDialog.nameLabel')}
-              disabled={isSubmitting}
-              inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
-            />
-          </form>
-        ) : null}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: isPromptStep ? 0 : 2 }}>
+        {isPromptStep
+          ? t('gameSetup.createDialog.promptDescription')
+          : t('gameSetup.createDialog.detailsDescription')}
+      </Typography>
+      {!isPromptStep ? (
+        <form id={createGameSetupFormId} onSubmit={(event) => void handleCreate(event)}>
+          <ControlledFormTextField
+            autoFocus
+            control={control}
+            name="title"
+            label={t('gameSetup.createDialog.nameLabel')}
+            disabled={isSubmitting}
+            inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
+          />
+        </form>
+      ) : null}
     </AppDialog>
   )
 }

@@ -5,7 +5,6 @@ export function isExpectedSignalrNegotiationShutdown(error: unknown): boolean {
 
   const message = error.message.toLowerCase()
   return (
-    message.includes('stopped during negotiation')
-    || message.includes('connection was stopped')
+    message.includes('stopped during negotiation') || message.includes('connection was stopped')
   )
 }

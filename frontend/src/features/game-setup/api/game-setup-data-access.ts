@@ -6,7 +6,6 @@ import type {
 } from '../../../shared/api/contracts/index.ts'
 import { gameSetupApi } from './game-setup-api.ts'
 
-
 export async function fetchDraftGameSetupSnapshot(): Promise<GameSetupSnapshot | null> {
   return fetchNotFoundAsNull(() => gameSetupApi.getDraftSnapshot())
 }
