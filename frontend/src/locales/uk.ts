@@ -25,6 +25,11 @@ const uk = {
     },
     navigation: {
       title: 'Навігація',
+      primary: 'Основна навігація',
+      profile: 'Профіль',
+      administration: 'Адміністрування',
+      language: 'Мова інтерфейсу',
+      logout: 'Вийти',
       thumbnail: 'МЕНЮ',
       open: 'Відкрити навігацію',
       close: 'Закрити',
@@ -32,11 +37,11 @@ const uk = {
       roles: {
         admin: 'Адміністратор',
         moderator: 'Модератор',
-        viewer: 'Глядач',
+        viewer: 'Учасник',
       },
       items: {
         gameBoard: {
-          label: 'Ігрова дошка',
+          label: 'Гра',
           description: 'Поточне ігрове поле та стан карток.',
         },
         gameSetup: {
@@ -44,7 +49,7 @@ const uk = {
           description: 'Чернеткова таблиця для налаштування карток гри.',
         },
         gameApplication: {
-          label: 'Заявка на гру',
+          label: 'Подати заявку',
           description: 'Реєстрація команди під час прийому заявок.',
         },
         teamRegistrations: {

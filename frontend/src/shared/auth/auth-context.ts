@@ -14,6 +14,7 @@ export interface AuthContextValue {
   authStatus: AuthStatus
   isAuthenticated: boolean
   startTwitchLogin: () => void
+  logout: () => Promise<void>
   refreshSession: () => Promise<boolean>
 }
 

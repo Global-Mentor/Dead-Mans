@@ -25,6 +25,11 @@ const ru = {
     },
     navigation: {
       title: 'Навигация',
+      primary: 'Основная навигация',
+      profile: 'Профиль',
+      administration: 'Администрирование',
+      language: 'Язык интерфейса',
+      logout: 'Выйти',
       thumbnail: 'МЕНЮ',
       open: 'Открыть навигацию',
       close: 'Закрыть',
@@ -32,11 +37,11 @@ const ru = {
       roles: {
         admin: 'Администратор',
         moderator: 'Модератор',
-        viewer: 'Зритель',
+        viewer: 'Участник',
       },
       items: {
         gameBoard: {
-          label: 'Игровая доска',
+          label: 'Игра',
           description: 'Текущее игровое поле и состояние карточек.',
         },
         gameSetup: {
@@ -44,7 +49,7 @@ const ru = {
           description: 'Черновая таблица для настройки карточек игры.',
         },
         gameApplication: {
-          label: 'Заявка на игру',
+          label: 'Подать заявку',
           description: 'Регистрация команды, пока игра принимает заявки.',
         },
         teamRegistrations: {

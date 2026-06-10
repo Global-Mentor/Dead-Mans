@@ -1,8 +1,6 @@
 import { Chip, Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { gameApplicationRoute } from '../../routes/app-routes.ts'
 import {
-  AppLinkButton,
   AppToast,
   ConfirmDialog,
   PageShell,
@@ -13,14 +11,10 @@ import {
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { useGameBoardPage } from './use-game-board-page.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
-import { GameBoardAdminPlannedSection } from './ui/GameBoardAdminPlannedSection.tsx'
-import { GameBoardModifiersSection } from './ui/GameBoardModifiersSection.tsx'
-import { usePanelCapabilities } from '../../shared/auth/use-panel-capabilities.ts'
 
 export function GameBoardPage() {
   const { t } = useTranslation()
   const { data, isError, isLoading } = useGameBoardPage()
-  const { canGameSetup, canModifierActivation } = usePanelCapabilities()
   const {
     pendingCell,
     toastMessage,
@@ -69,11 +63,11 @@ export function GameBoardPage() {
   const snapshot = data
 
   return (
-    <PageShell variant="centered">
+    <PageShell variant="centered" sx={{ width: '100%', px: 0 }}>
       <SectionCard
         sx={{
           width: '100%',
-          maxWidth: 960,
+          maxWidth: 1180,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -100,9 +94,6 @@ export function GameBoardPage() {
                       : 'gameBoard.statusFinished',
                 )}
               />
-              <AppLinkButton to={gameApplicationRoute.fullPath} size="small" tone="secondary">
-                {t('gameBoard.applicationButton')}
-              </AppLinkButton>
             </Stack>
           }
         />
@@ -111,11 +102,6 @@ export function GameBoardPage() {
           canOpenCells={canOpenCells}
           onCellRequestOpen={requestOpenCell}
         />
-        <GameBoardModifiersSection
-          snapshot={snapshot}
-          canActivateModifiers={canModifierActivation}
-        />
-        {canGameSetup ? <GameBoardAdminPlannedSection /> : null}
       </SectionCard>
 
       <ConfirmDialog
