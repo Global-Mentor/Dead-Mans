@@ -1,5 +1,13 @@
 import { useMutation } from '@tanstack/react-query'
-import { gameRegistrationApi } from './game-registration-api.ts'
+import {
+  acceptGameRegistrationInvitation,
+  confirmGameRegistrationTeam,
+  createGameRegistrationTeam,
+  declineGameRegistrationInvitation,
+  joinGameRegistrationTeam,
+  leaveGameRegistrationTeam,
+  rejectGameRegistrationTeam,
+} from './game-registration-api.ts'
 import { useInvalidateGameRegistration } from './use-invalidate-game-registration.ts'
 import { useGameRegistrationToast } from './use-game-registration-toast.ts'
 
@@ -9,37 +17,37 @@ export function useGameRegistrationMutations() {
   const mutationHandlers = { onSuccess: invalidate, onError: onMutationError }
 
   const createTeam = useMutation({
-    mutationFn: (recruitmentOpen: boolean) => gameRegistrationApi.createTeam(recruitmentOpen),
+    mutationFn: createGameRegistrationTeam,
     ...mutationHandlers,
   })
 
   const joinTeam = useMutation({
-    mutationFn: (teamId: string) => gameRegistrationApi.joinTeam(teamId),
+    mutationFn: joinGameRegistrationTeam,
     ...mutationHandlers,
   })
 
   const leaveTeam = useMutation({
-    mutationFn: () => gameRegistrationApi.leaveTeam(),
+    mutationFn: leaveGameRegistrationTeam,
     ...mutationHandlers,
   })
 
   const acceptInvitation = useMutation({
-    mutationFn: (invitationId: string) => gameRegistrationApi.acceptInvitation(invitationId),
+    mutationFn: acceptGameRegistrationInvitation,
     ...mutationHandlers,
   })
 
   const declineInvitation = useMutation({
-    mutationFn: (invitationId: string) => gameRegistrationApi.declineInvitation(invitationId),
+    mutationFn: declineGameRegistrationInvitation,
     ...mutationHandlers,
   })
 
   const confirmTeam = useMutation({
-    mutationFn: (teamId: string) => gameRegistrationApi.confirmTeam(teamId),
+    mutationFn: confirmGameRegistrationTeam,
     ...mutationHandlers,
   })
 
   const rejectTeam = useMutation({
-    mutationFn: (teamId: string) => gameRegistrationApi.rejectTeam(teamId),
+    mutationFn: rejectGameRegistrationTeam,
     ...mutationHandlers,
   })
 

@@ -1,23 +1,76 @@
-import { httpClient } from '../../../shared/api/client/httpClient.ts'
-import type {
-  GameRegistrationSnapshot,
-  RegistrationTeam,
-} from '../../../shared/api/contracts/index.ts'
+import {
+  apiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+} from '../../../shared/api/client/openApiClient.ts'
+import { fetchNotFoundAsNull } from '../../../shared/api/fetch-not-found-as-null.ts'
 
-export const gameRegistrationApi = {
-  getSnapshot: () => httpClient.get<GameRegistrationSnapshot>('/game/registration'),
-  createTeam: (recruitmentOpen: boolean) =>
-    httpClient.post<RegistrationTeam>('/game/registration/teams', { recruitmentOpen }),
-  joinTeam: (teamId: string) =>
-    httpClient.post<RegistrationTeam>(`/game/registration/teams/${teamId}/join`),
-  leaveTeam: () => httpClient.post<void>('/game/registration/teams/leave'),
-  acceptInvitation: (invitationId: string) =>
-    httpClient.post<RegistrationTeam>(`/game/registration/invitations/${invitationId}/accept`),
-  declineInvitation: (invitationId: string) =>
-    httpClient.post<void>(`/game/registration/invitations/${invitationId}/decline`),
-  listTeams: () => httpClient.get<RegistrationTeam[]>('/game/registration/teams'),
-  confirmTeam: (teamId: string) =>
-    httpClient.post<RegistrationTeam>(`/game/registration/teams/${teamId}/confirm`),
-  rejectTeam: (teamId: string) =>
-    httpClient.post<void>(`/game/registration/teams/${teamId}/reject`),
+export function fetchGameRegistrationSnapshot() {
+  return fetchNotFoundAsNull(() => unwrapOpenApiData(apiClient.GET('/game/registration')))
+}
+
+export function fetchGameRegistrationAdminTeams() {
+  return fetchNotFoundAsNull(() => unwrapOpenApiData(apiClient.GET('/game/registration/teams')))
+}
+
+export function createGameRegistrationTeam(recruitmentOpen: boolean) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/registration/teams', {
+      body: { recruitmentOpen },
+    }),
+  )
+}
+
+export function joinGameRegistrationTeam(teamId: string) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/registration/teams/{teamId}/join', {
+      params: {
+        path: { teamId },
+      },
+    }),
+  )
+}
+
+export function leaveGameRegistrationTeam() {
+  return ensureOpenApiSuccess(apiClient.POST('/game/registration/teams/leave'))
+}
+
+export function acceptGameRegistrationInvitation(invitationId: string) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/registration/invitations/{invitationId}/accept', {
+      params: {
+        path: { invitationId },
+      },
+    }),
+  )
+}
+
+export function declineGameRegistrationInvitation(invitationId: string) {
+  return ensureOpenApiSuccess(
+    apiClient.POST('/game/registration/invitations/{invitationId}/decline', {
+      params: {
+        path: { invitationId },
+      },
+    }),
+  )
+}
+
+export function confirmGameRegistrationTeam(teamId: string) {
+  return unwrapOpenApiData(
+    apiClient.POST('/game/registration/teams/{teamId}/confirm', {
+      params: {
+        path: { teamId },
+      },
+    }),
+  )
+}
+
+export function rejectGameRegistrationTeam(teamId: string) {
+  return ensureOpenApiSuccess(
+    apiClient.POST('/game/registration/teams/{teamId}/reject', {
+      params: {
+        path: { teamId },
+      },
+    }),
+  )
 }

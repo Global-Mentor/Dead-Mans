@@ -1,6 +1,5 @@
-import { httpClient } from '../../../shared/api/client/httpClient.ts'
-import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
+import { apiClient, unwrapOpenApiData } from '../../../shared/api/client/openApiClient.ts'
 
-export const gameModifiersApi = {
-  getCatalog: () => httpClient.get<GameModifierDefinition[]>('/game/modifiers/catalog'),
+export function fetchGameModifierCatalog() {
+  return unwrapOpenApiData(apiClient.GET('/game/modifiers/catalog'))
 }

@@ -1,5 +1,5 @@
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
-import { fetchDraftGameSetupSnapshot } from '../api/game-setup-data-access.ts'
+import { fetchDraftGameSetupSnapshot } from '../api/game-setup-api.ts'
 import { createDraftFromSnapshot, type GameSetupDraftState } from './game-setup-draft.ts'
 
 export interface LoadedGameSetupDraftState {
