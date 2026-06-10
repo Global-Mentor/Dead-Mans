@@ -66,8 +66,9 @@ flowchart LR
 - `shared/ui/` - reusable layers: primitives, patterns, feedback
 - `shared/theme/` - единые UI tokens и layout presets
 - `shared/api/client/` - `openapi-fetch` transport поверх generated `paths`, общая обработка `ApiError`
-- `shared/api/query-keys.ts` - единые query-key identity helpers
 - `shared/api/contracts/` - generated types из OpenAPI
+- `features/*/api/*-queries.ts` - feature-local query keys и `queryOptions`; повторяемые mutation policies живут рядом в `mutationOptions`
+- `shared/realtime/use-signalr-hub-lifecycle.ts` - общий SignalR connect/reconnect/cleanup lifecycle; event-specific handlers остаются в owning feature
 - `shared/auth/` - auth context/guard + action-level capability helpers (`panel-capabilities.ts`)
 
 ## Backend
