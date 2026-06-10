@@ -25,6 +25,11 @@ const en = {
     },
     navigation: {
       title: 'Navigation',
+      primary: 'Primary navigation',
+      profile: 'Profile',
+      administration: 'Administration',
+      language: 'Interface language',
+      logout: 'Log out',
       thumbnail: 'MENU',
       open: 'Open navigation',
       close: 'Close',
@@ -32,11 +37,11 @@ const en = {
       roles: {
         admin: 'Administrator',
         moderator: 'Moderator',
-        viewer: 'Viewer',
+        viewer: 'Participant',
       },
       items: {
         gameBoard: {
-          label: 'Game board',
+          label: 'Game',
           description: 'Current game board and card state.',
         },
         gameSetup: {
@@ -44,7 +49,7 @@ const en = {
           description: 'Draft table for configuring game cards.',
         },
         gameApplication: {
-          label: 'Team application',
+          label: 'Apply',
           description: 'Register a team while the game accepts applications.',
         },
         teamRegistrations: {

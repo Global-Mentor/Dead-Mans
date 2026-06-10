@@ -26,6 +26,11 @@ const pl = {
     },
     navigation: {
       title: 'Nawigacja',
+      primary: 'Główna nawigacja',
+      profile: 'Profil',
+      administration: 'Administracja',
+      language: 'Język interfejsu',
+      logout: 'Wyloguj się',
       thumbnail: 'MENU',
       open: 'Otwórz nawigację',
       close: 'Zamknij',
@@ -33,11 +38,11 @@ const pl = {
       roles: {
         admin: 'Administrator',
         moderator: 'Moderator',
-        viewer: 'Widz',
+        viewer: 'Uczestnik',
       },
       items: {
         gameBoard: {
-          label: 'Plansza gry',
+          label: 'Gra',
           description: 'Aktualna plansza gry i stan kart.',
         },
         gameSetup: {
@@ -45,7 +50,7 @@ const pl = {
           description: 'Robocza tabela do konfiguracji kart gry.',
         },
         gameApplication: {
-          label: 'Zgłoszenie do gry',
+          label: 'Zgłoś się',
           description: 'Rejestracja drużyny podczas przyjmowania zgłoszeń.',
         },
         teamRegistrations: {

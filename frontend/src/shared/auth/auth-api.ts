@@ -18,3 +18,10 @@ export async function fetchAuthMe(): Promise<AuthUser> {
     roles: data.roles,
   }
 }
+
+export async function logoutAuthSession(): Promise<void> {
+  await httpClient.post<void>('/auth/logout', undefined, {
+    baseUrl: getBackendOrigin(),
+    credentials: 'include',
+  })
+}

@@ -12,6 +12,7 @@ function createAuthContextValue(user: AuthUser | null): AuthContextValue {
     authStatus: user ? 'authenticated' : 'anonymous',
     isAuthenticated: user !== null,
     startTwitchLogin: () => undefined,
+    logout: async () => undefined,
     refreshSession: async () => user !== null,
   }
 }
