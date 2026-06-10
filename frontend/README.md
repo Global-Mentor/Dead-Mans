@@ -20,9 +20,9 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - защищённая панель под `/panel` с role-aware navigation;
 - страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
 - страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierCodes`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
-- блок модификаторов на `game-board`: каталог из `GET /api/game/modifiers/catalog`, активация через `POST /api/game/modifiers/{modifierCode}/activate` (admin/moderator), realtime через событие `modifierActivated` на `/hubs/game-board`;
+- каталог модификаторов в `game-setup`: администратор выбирает доступные для игры модификаторы; runtime activation UI пока не входит в frontend;
 - блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
-- страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`; planned UI-блоки показываются только когда регистрация ещё не открыта.
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`.
 
 ## Структура API-слоя
 
@@ -37,8 +37,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/app/panel-route-config.tsx` — единый источник panel routes (метаданные, lazy-страницы, optional realtime-sync);
 - `src/app/AppRoutes.tsx` + `src/app/app-route-tree.tsx` — дерево маршрутов (`useRoutes`);
 - `src/routes/app-routes.ts` — re-export метаданных, guards и access helpers;
-- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigationDrawer`);
-- `src/shared/auth/panel-capabilities.ts` + `use-panel-capabilities.ts` — capability-level access helpers (`gameSetup`, `modifierActivation`) поверх route-level role checks;
+- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigation`);
+- `src/shared/auth/panel-capabilities.ts` — capability-level access helpers поверх route-level role checks;
 - `src/features/*` — feature-first модули; page entrypoints остаются в корне фичи, а нетривиальные внутренности разделяются на `ui/`, `model/`, `api/`, `realtime/`, `theme/` и `lib/` по необходимости.
 
 ## Инженерный baseline
@@ -59,7 +59,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/shared/theme/surface-sx.ts` — переиспользуемые surface/title/auth presets (`huntPanelSx`, `huntAuthCardSx`, …);
 - `src/app/theme/appTheme.ts` — MUI theme: palette, typography, component overrides, `theme.custom.gradients`;
 - feature-local presets живут в `features/<feature>/theme/`:
-  - `game-board/theme/board-cell-sx.ts`, `modifier-item-sx.ts`
+  - `game-board/theme/board-cell-sx.ts`
   - `game-setup/theme/layout-sx.ts`, `setup-cell-sx.ts`, `cell-image-sx.ts`;
 - `src/shared/ui/` - переиспользуемый UI-слой с явной вложенной структурой:
   - `primitives/` - базовые контролы и атомарные building blocks;
@@ -139,4 +139,4 @@ npm run build
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI (с planned-моками для ещё не подключённых кнопок). Lifecycle-кнопки и admin invite UI пока только в roadmap-блоках.
+На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI. Lifecycle-кнопки, runtime activation UI модификаторов и admin invite UI пока не реализованы; будущие задачи описываются в документации и issue tracker, а не в production-интерфейсе.

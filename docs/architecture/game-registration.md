@@ -38,9 +38,16 @@ Draft setup creates six default public slots (`GameRegistrationDefaults`).
 - `/panel/game-application` — players
 - `/panel/team-registrations` — admin list and confirm/reject
 
-## UI roadmap markers
+## UI roadmap
 
-Each registration-related page includes dashed **UI mockup** blocks and an info **Planned next** list when registration is not open yet (`404` on snapshot). Shared primitives: `PlannedFeatureFormShell`, `PlannedFeatureRoadmap` in `frontend/src/shared/ui/`.
+Future frontend work is tracked outside the production UI:
+
+- slot-centric player and admin views with public/reserved occupancy;
+- player-to-player invitations for closed teams;
+- admin invitation flow with user and slot selection;
+- optional submit-for-review and manual moderation policies;
+- registration settings and lifecycle transitions from game setup;
+- clearer read-only history after registration closes.
 
 ## Layering and contracts
 
@@ -49,4 +56,4 @@ Each registration-related page includes dashed **UI mockup** blocks and an info 
 - **Application**: `GameRegistrationService` / `GameLifecycleService` own registration rules and lifecycle preconditions; ports `IGameRegistrationService`, `IGameLifecycleService`.
 - **Infrastructure**: `IGameRegistrationReadStore` + `IGameRegistrationPersistence`, `IGameLifecycleReadStore` + `IGameLifecyclePersistence`; slot seeding via `GameParticipationSlotInitializer` in `Infrastructure/Persistence/`.
 - **History**: admin reject marks a team as `rejected`, closes active memberships, and cancels pending team invitations. Player leave marks `LeftAtUtc`; if the last active member leaves, the team becomes `disbanded`. Rows are preserved so future player/team/game history can be built from the same tables.
-- **Frontend**: transport in `frontend/src/features/game-registration/api/`; UI in `game-application/` and `team-registrations/`. Planned roadmap blocks render only when registration is not open (`404` snapshot).
+- **Frontend**: transport in `frontend/src/features/game-registration/api/`; UI in `game-application/` and `team-registrations/`. A missing ready-game snapshot (`404`) renders a normal unavailable state without disabled mock controls.

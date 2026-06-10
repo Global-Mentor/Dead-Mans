@@ -10,7 +10,6 @@ import {
 import { useTranslation } from 'react-i18next'
 import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
-import { TeamRegistrationsInvitePlannedSection } from './ui/TeamRegistrationsInvitePlannedSection.tsx'
 import {
   AppButton,
   AppToast,
@@ -52,7 +51,6 @@ export function TeamRegistrationsPage() {
           title={t('teamRegistrations.title')}
           message={t('teamRegistrations.notOpen')}
         />
-        <TeamRegistrationsInvitePlannedSection />
       </PageShell>
     )
   }

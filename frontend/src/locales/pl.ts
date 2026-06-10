@@ -25,16 +25,11 @@ const pl = {
       },
     },
     navigation: {
-      title: 'Nawigacja',
       primary: 'Główna nawigacja',
       profile: 'Profil',
       administration: 'Administracja',
       language: 'Język interfejsu',
       logout: 'Wyloguj się',
-      thumbnail: 'MENU',
-      open: 'Otwórz nawigację',
-      close: 'Zamknij',
-      availableSections: 'Dostępne sekcje',
       roles: {
         admin: 'Administrator',
         moderator: 'Moderator',
@@ -43,19 +38,15 @@ const pl = {
       items: {
         gameBoard: {
           label: 'Gra',
-          description: 'Aktualna plansza gry i stan kart.',
         },
         gameSetup: {
           label: 'Konfiguracja gry',
-          description: 'Robocza tabela do konfiguracji kart gry.',
         },
         gameApplication: {
           label: 'Zgłoś się',
-          description: 'Rejestracja drużyny podczas przyjmowania zgłoszeń.',
         },
         teamRegistrations: {
           label: 'Zgłoszenia drużyn',
-          description: 'Przegląd i zatwierdzanie drużyn.',
         },
       },
     },
@@ -70,7 +61,6 @@ const pl = {
       statusActive: 'Aktywna',
       statusReady: 'Przyjmowanie zgłoszeń',
       statusFinished: 'Zakończona',
-      applicationButton: 'Zgłoszenie do gry',
       openConfirmTitle: 'Otworzyć kartę?',
       openConfirmDescription:
         'Czy na pewno chcesz otworzyć tę kartę (wiersz {{row}}, kolumna {{col}}, koszt {{cost}})?',
@@ -80,24 +70,6 @@ const pl = {
       openForbidden: 'Tylko administrator może otwierać karty.',
       openNotFound: 'Wybrana karta nie została znaleziona.',
       openFailed: 'Nie udało się otworzyć karty.',
-      modifiers: {
-        title: 'Modyfikatory gry',
-        description: 'Aktywne modyfikatory włączone dla bieżącej gry.',
-        loading: 'Ładowanie katalogu modyfikatorów...',
-        error: 'Nie udało się załadować katalogu modyfikatorów.',
-        empty: 'Dla tej gry nie włączono modyfikatorów.',
-        activeBadge: 'Aktywny',
-        activate: 'Aktywuj',
-        errors: {
-          forbidden: 'Modyfikatory mogą aktywować tylko moderatorzy i administratorzy.',
-          unknownCode: 'Wybrany modyfikator nie jest już dostępny.',
-          gameNotActive: 'Modyfikatory można aktywować tylko podczas aktywnej gry.',
-          notEnabled: 'Ten modyfikator nie jest włączony dla bieżącej gry.',
-          conflictActive: 'Ten modyfikator koliduje z już aktywnym modyfikatorem.',
-          limitReached: 'Osiągnięto limit aktywacji dla tego modyfikatora.',
-          generic: 'Nie udało się aktywować modyfikatora.',
-        },
-      },
     },
     gameSetup: {
       title: 'Konfiguracja gry',
@@ -303,131 +275,6 @@ const pl = {
       actions: 'Akcje',
       confirm: 'Zatwierdź',
       reject: 'Odrzuć',
-    },
-    plannedFeatures: {
-      roadmapTitle: 'Zaplanowane (jeszcze nie podłączone)',
-      roadmapHint:
-        'Notatki projektowe. Część API na backendzie już istnieje; UI i synchronizacja w setup — później.',
-      formShellBadge: 'Makieta UI',
-      gameSetup: {
-        form: {
-          registrationTitle: 'Ustawienia rejestracji (szkic)',
-          registrationDescription:
-            'Sloty drużyn, miejsca zarezerwowane, rozmiar składu i przejście draft → ready z setup.',
-          teamSlotCount: 'Liczba slotów drużynowych',
-          minPlayers: 'Min. graczy w drużynie',
-          maxPlayers: 'Maks. graczy w drużynie',
-          reservedSlots: 'Zarezerwowane sloty',
-          reservedSlotsPlaceholder: 'np. slot 6 — drużyna gościnna (bez publicznych zgłoszeń)',
-          openRegistration: 'Otwórz rejestrację (draft → ready)',
-          startGame: 'Rozpocznij grę (ready → active)',
-        },
-        roadmap: {
-          slots: {
-            title: 'Siatka slotów w setup',
-            description: 'Liczba drużyn i public/reserved na slot. Sync z PUT /api/game/setup.',
-          },
-          teamLimits: {
-            title: 'Min/maks graczy w drużynie',
-            description: 'Zapis limitów 1–3 (lub innych) w szkicu, nie tylko domyślne wartości.',
-          },
-          lifecycle: {
-            title: 'Cykl życia z setup',
-            description:
-              'Przyciski POST /api/game/lifecycle/open-registration, /start, /finish.',
-          },
-        },
-      },
-      gameBoard: {
-        form: {
-          lifecycleTitle: 'Cykl życia gry (admin)',
-          lifecycleDescription: 'Przejścia draft → ready → active → finished.',
-          openRegistration: 'Otwórz rejestrację',
-          startGame: 'Rozpocznij grę',
-          finishGame: 'Zakończ grę',
-        },
-        roadmap: {
-          lifecycle: {
-            title: 'Panel lifecycle dla admina',
-            description: 'Podłączyć trzy endpointy z potwierdzeniem i powiadomieniami.',
-          },
-          applicationGate: {
-            title: 'Widoczność przycisku zgłoszenia',
-            description:
-              'Pokazywać „Zgłoszenie do gry” tylko w ready; ukrywać w draft/active/finished.',
-          },
-        },
-      },
-      gameApplication: {
-        form: {
-          slotsTitle: 'Przegląd slotów',
-          slotsDescription:
-            'Mapa public/reserved i zajętości z GET /api/game/registration.',
-          slotLabel: 'Slot {{slot}}',
-          slotFree: 'wolny',
-          memberInviteTitle: 'Zaproszenia do zamkniętej drużyny',
-          memberInviteDescription:
-            'Zapraszanie drużyny; dziś tylko admin przez API.',
-          inviteTeammate: 'Zaproś gracza',
-          submitForReview: 'Wyślij do weryfikacji',
-        },
-        roadmap: {
-          slotsOverview: {
-            title: 'UI tablicy slotów',
-            description:
-              'Siatka slotów, etykiety reserved, pending zaproszenia i potwierdzone drużyny.',
-          },
-          memberInvites: {
-            title: 'Zaproszenia gracz–gracz',
-            description:
-              'Ten sam flow accept/decline, inicjowany przez członka zamkniętej drużyny.',
-          },
-          submitForReview: {
-            title: 'Opcjonalne „gotowi do weryfikacji”',
-            description: 'Wysyłka składu do admina; filtr na liście drużyn.',
-          },
-          statusUx: {
-            title: 'Jaśniejszy status drużyny',
-            description:
-              'forming vs confirmed; blokada akcji po potwierdzeniu lub poza ready.',
-          },
-          closedWhenInactive: {
-            title: 'Tylko odczyt po zamknięciu rejestracji',
-            description: 'Po active/finished — historia bez join/leave.',
-          },
-        },
-      },
-      teamRegistrations: {
-        form: {
-          inviteTitle: 'Zaproś gracza do slotu / drużyny',
-          inviteDescription:
-            'Wyszukiwanie użytkownika, slot, łańcuch dla closed. POST .../invitations.',
-          slot: 'Slot',
-          player: 'Gracz',
-          targetTeam: 'Drużyna (opcjonalnie)',
-          sendInvite: 'Wyślij zaproszenie',
-        },
-        roadmap: {
-          adminInvite: {
-            title: 'UI zaproszeń admina',
-            description:
-              'Wybór gracza + slot + łańcuch (P1 accept → zaproszenie P2). API już jest.',
-          },
-          slotBoard: {
-            title: 'Widok admina po slotach',
-            description: 'Reserved vs public i pending zaproszenia na slot.',
-          },
-          moderationPolicy: {
-            title: 'Tryb ręcznej akceptacji',
-            description:
-              'Dziś join w otwartym pokoju jest natychmiastowy; opcjonalna kolejka do confirm.',
-          },
-          filters: {
-            title: 'Filtry i sortowanie',
-            description: 'forming/confirmed/disbanded; sortowanie po slocie lub liczbie graczy.',
-          },
-        },
-      },
     },
     languageSwitcher: {
       ariaLabel: 'Język interfejsu',

@@ -3,6 +3,4 @@ import type { GameModifierDefinition } from '../../../shared/api/contracts/index
 
 export const gameModifiersApi = {
   getCatalog: () => httpClient.get<GameModifierDefinition[]>('/game/modifiers/catalog'),
-  activate: (modifierCode: string) =>
-    httpClient.post<void>(`/game/modifiers/${encodeURIComponent(modifierCode)}/activate`),
 }

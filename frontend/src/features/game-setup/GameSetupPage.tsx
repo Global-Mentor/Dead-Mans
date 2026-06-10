@@ -6,7 +6,6 @@ import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
 import type { GameSetupSyncStatus } from './use-game-setup-page.ts'
 import { useGameSetupPage } from './use-game-setup-page.ts'
-import { GameSetupRegistrationPlannedSection } from './ui/GameSetupRegistrationPlannedSection.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
 import { GameSetupQuestionsSection } from './ui/GameSetupQuestionsSection.tsx'
 import { gameSetupSidebarPaperSx } from './theme/layout-sx.ts'
@@ -121,7 +120,6 @@ export function GameSetupPage() {
                 {t('gameSetup.draftRemovedNotice')}
               </Alert>
             ) : null}
-            <GameSetupRegistrationPlannedSection />
           </SectionCard>
         </PageShell>
         <CreateGameSetupDialog
@@ -220,8 +218,6 @@ export function GameSetupPage() {
             onDeleteCellMedia={deleteCellMedia}
           />
         </Box>
-
-        <GameSetupRegistrationPlannedSection />
       </SectionCard>
     </PageShell>
   )
