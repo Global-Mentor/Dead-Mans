@@ -61,6 +61,12 @@ jobs:
       - name: Test backend
         run: dotnet test backend/backend.slnx --no-build
 
+      - name: Test frontend
+        run: npm --prefix frontend run test
+
+      - name: Validate frontend locales
+        run: npm --prefix frontend run check:locales
+
       - name: Lint frontend
         run: npm --prefix frontend run lint
 
