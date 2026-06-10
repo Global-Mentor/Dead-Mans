@@ -79,11 +79,12 @@ Do not hand-edit generated files.
 
 - Backend tests:
   - `dotnet test backend/backend.slnx`
-- Frontend tests/lint/build:
-  - `npm --prefix frontend run test`
-  - `npm --prefix frontend run check:locales`
-  - `npm --prefix frontend run lint`
-  - `npm --prefix frontend run build`
+- Frontend quality gate:
+  - `npm --prefix frontend run check`
+  - включает Prettier check, TypeScript, ESLint, locale consistency, Vitest, Knip и production build
 - Generated artifacts are up to date:
   - run `npm --prefix frontend run generate:transport`
   - ensure no unexpected git diff in generated paths
+
+CI устанавливает frontend dependencies через `npm --prefix frontend ci` и запускает тот же
+`npm --prefix frontend run check`, поэтому локальная проверка совпадает с pull request pipeline.

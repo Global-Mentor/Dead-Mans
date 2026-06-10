@@ -46,6 +46,7 @@
 **Dead-Mans** - панель управления для стрима и интерактивных игровых сценариев.
 
 Основные сценарии:
+
 - авторизация через Twitch.
 - просмотр игрового поля из БД.
 - открытие ячеек администраторами с realtime-синхронизацией для подключённых клиентов.
@@ -55,6 +56,7 @@
 ## 2. Активный контур
 
 В активной разработке находятся только:
+
 - `frontend/`
 - `backend/`
 
@@ -86,9 +88,10 @@
 - auth HTTP использует тот же общий `httpClient`, что и игровые API, только с другим `baseUrl` для `/auth/*`;
 - transport-типы импортируются централизованно из `src/shared/api/contracts/index.ts`.
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
-- capability-level проверки (`gameSetup`, `modifierActivation`) задаются через `src/shared/auth/panel-capabilities.ts` и `use-panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
+- capability-level проверки (`gameSetup`, `openGameBoardCell`) задаются через `src/shared/auth/panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
 - TanStack Query владеет server state; React Hook Form + Zod используются для submitted-форм, а критичный auth response дополнительно валидируется runtime-схемой.
-- Vitest + React Testing Library покрывают shared/model logic, hooks и capability rules; frontend test запускается в CI.
+- Vitest + React Testing Library покрывают shared/model logic, routes, capabilities и ключевые page states.
+- Единый frontend quality gate — `npm --prefix frontend run check`: Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip и production build. CI использует `npm ci` и запускает тот же gate.
 
 ### Основные страницы
 
@@ -104,7 +107,7 @@
 - Внутренний раздел приложения живёт под `panelRootPath` (`/panel`).
 - Панель использует общий `MainLayout`.
 - Все panel routes описаны в одном месте: `src/app/panel-route-config.tsx`. Навигация, access helpers и `useRoutes` берут данные из этого конфига через `panelRoutes` / `panelRouteConfig`.
-- Правая панель навигации показывает только те разделы, которые доступны текущему пользователю по ролям.
+- Основная навигация показывает player-разделы, а доступные admin-разделы находятся в profile menu.
 - Даже если frontend скрывает пункт навигации, доступ к маршруту всё равно должен проверяться через общие route/access helpers, а не только через UI.
 - Маршрутный доступ и capability-доступ разделены: route visibility (`hasAccessToPanelRoute`) и действия внутри страницы (`hasPanelCapability`) не должны смешиваться.
 
@@ -209,7 +212,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - централизованный query key слой на frontend;
 - общий `httpClient` для frontend API;
 - OpenAPI contract generation для frontend;
-- role-aware panel routing и правая navigation drawer для внутренних разделов панели;
+- role-aware panel routing, компактная player navigation и admin-разделы в profile menu;
 - безопасный локальный backend bootstrap через `backend/scripts/setup-local.ps1` без удаления БД и storage;
 - отдельный destructive reset через `backend/scripts/reset-local.ps1` с подтверждением;
 - backend integration и contract tests для auth, game board/setup, registration и lifecycle;
