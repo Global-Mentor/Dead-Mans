@@ -24,9 +24,7 @@ function resolveLayoutSx(layout: FormFieldLayout): SxProps<Theme> | undefined {
 
 export function FormTextField({ layout = 'default', sx, ...props }: FormTextFieldProps) {
   const layoutSx = resolveLayoutSx(layout)
-  const mergedSx = sx
-    ? ([layoutSx, sx].filter(Boolean) as SxProps<Theme>)
-    : layoutSx
+  const mergedSx = sx ? ([layoutSx, sx].filter(Boolean) as SxProps<Theme>) : layoutSx
   return (
     <TextField
       size={props.size ?? 'small'}
@@ -36,4 +34,3 @@ export function FormTextField({ layout = 'default', sx, ...props }: FormTextFiel
     />
   )
 }
-

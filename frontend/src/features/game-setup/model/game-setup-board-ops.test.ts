@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GameSetupDraftState } from './game-setup-draft.ts'
-import {
-  insertGameSetupRowAt,
-  removeGameSetupColumn,
-} from './game-setup-board-ops.ts'
+import { insertGameSetupRowAt, removeGameSetupColumn } from './game-setup-board-ops.ts'
 
 function createDraft(): GameSetupDraftState {
   return {

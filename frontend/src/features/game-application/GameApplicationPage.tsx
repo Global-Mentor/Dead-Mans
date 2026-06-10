@@ -1,9 +1,4 @@
-import {
-  Box,
-  Chip,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { gameBoardRoute } from '../../routes/app-routes.ts'
 import { useGameApplicationPage } from './use-game-application-page.ts'
@@ -68,7 +63,10 @@ export function GameApplicationPage() {
 
   return (
     <PageShell>
-      <SectionHeader title={t('gameApplication.title')} description={t('gameApplication.description')} />
+      <SectionHeader
+        title={t('gameApplication.title')}
+        description={t('gameApplication.description')}
+      />
 
       {snapshot.myPendingInvitations.length > 0 ? (
         <SectionCard sx={{ mb: 2 }}>
@@ -90,8 +88,8 @@ export function GameApplicationPage() {
                 <AppButton
                   size="small"
                   disabled={
-                    acceptInvitation.isPending
-                    && acceptInvitation.variables === invitation.invitationId
+                    acceptInvitation.isPending &&
+                    acceptInvitation.variables === invitation.invitationId
                   }
                   onClick={() => acceptInvitation.mutate(invitation.invitationId)}
                 >
@@ -101,8 +99,8 @@ export function GameApplicationPage() {
                   size="small"
                   tone="ghost"
                   disabled={
-                    declineInvitation.isPending
-                    && declineInvitation.variables === invitation.invitationId
+                    declineInvitation.isPending &&
+                    declineInvitation.variables === invitation.invitationId
                   }
                   onClick={() => declineInvitation.mutate(invitation.invitationId)}
                 >
@@ -137,10 +135,7 @@ export function GameApplicationPage() {
             {t('gameApplication.createTeamTitle')}
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <AppButton
-              disabled={createTeam.isPending}
-              onClick={() => createTeam.mutate(true)}
-            >
+            <AppButton disabled={createTeam.isPending} onClick={() => createTeam.mutate(true)}>
               {t('gameApplication.createOpenTeam')}
             </AppButton>
             <AppButton
@@ -186,7 +181,12 @@ export function GameApplicationPage() {
         {t('gameApplication.backToBoard')}
       </AppLinkButton>
 
-      <AppToast message={toastMessage} onClose={dismissToast} severity="error" autoHideDuration={5000} />
+      <AppToast
+        message={toastMessage}
+        onClose={dismissToast}
+        severity="error"
+        autoHideDuration={5000}
+      />
     </PageShell>
   )
 }

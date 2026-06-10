@@ -8,7 +8,12 @@ interface SectionCardProps extends PaperProps {
   variantStyle?: 'default' | 'inset' | 'dashed'
 }
 
-export function SectionCard({ inset = false, variantStyle = 'default', sx, ...props }: SectionCardProps) {
+export function SectionCard({
+  inset = false,
+  variantStyle = 'default',
+  sx,
+  ...props
+}: SectionCardProps) {
   const isInset = inset || variantStyle === 'inset'
   const isDashed = variantStyle === 'dashed'
 

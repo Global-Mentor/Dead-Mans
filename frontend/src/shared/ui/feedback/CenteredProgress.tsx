@@ -26,4 +26,3 @@ export function CenteredProgress({ minHeight = 240, message }: CenteredProgressP
     </Box>
   )
 }
-

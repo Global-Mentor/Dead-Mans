@@ -27,8 +27,6 @@ function resolveVariantSx(variant: PageShellVariant): BoxProps['sx'] {
 
 export function PageShell({ variant = 'standard', sx, ...props }: PageShellProps) {
   const variantSx = resolveVariantSx(variant)
-  const mergedSx = sx
-    ? ([variantSx, sx].filter(Boolean) as SxProps<Theme>)
-    : variantSx
+  const mergedSx = sx ? ([variantSx, sx].filter(Boolean) as SxProps<Theme>) : variantSx
   return <Box {...props} sx={mergedSx} />
 }

@@ -44,7 +44,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Install frontend dependencies
-        run: npm --prefix frontend install
+        run: npm --prefix frontend ci
 
       - name: Generate frontend transport artifacts
         run: npm --prefix frontend run generate:transport
@@ -61,17 +61,8 @@ jobs:
       - name: Test backend
         run: dotnet test backend/backend.slnx --no-build
 
-      - name: Test frontend
-        run: npm --prefix frontend run test
-
-      - name: Validate frontend locales
-        run: npm --prefix frontend run check:locales
-
-      - name: Lint frontend
-        run: npm --prefix frontend run lint
-
-      - name: Build frontend
-        run: npm --prefix frontend run build
+      - name: Frontend quality gate
+        run: npm --prefix frontend run check
 
   dependency-audit:
     runs-on: ubuntu-latest

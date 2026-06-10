@@ -174,7 +174,10 @@ export function PanelNavigation() {
 
         {canAdminister ? <Divider /> : null}
         {canAdminister ? (
-          <Typography variant="overline" sx={{ ...huntOverlineSx, display: 'block', px: 2, pt: 1.5 }}>
+          <Typography
+            variant="overline"
+            sx={{ ...huntOverlineSx, display: 'block', px: 2, pt: 1.5 }}
+          >
             {t('navigation.administration')}
           </Typography>
         ) : null}

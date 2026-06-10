@@ -12,8 +12,7 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ sx }: LanguageSwitcherProps) {
   const { i18n, t } = useTranslation()
 
-  const current =
-    (i18n.resolvedLanguage || i18n.language || 'ru').split('-')[0] ?? 'ru'
+  const current = (i18n.resolvedLanguage || i18n.language || 'ru').split('-')[0] ?? 'ru'
   const value = languageCodes.includes(current as (typeof languageCodes)[number]) ? current : 'ru'
 
   const handleChange = (next: string) => {

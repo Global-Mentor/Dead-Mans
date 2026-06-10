@@ -19,5 +19,3 @@ export const logger = {
   warn: (message: string, payload?: unknown) => log('warn', message, payload),
   error: (message: string, payload?: unknown) => log('error', message, payload),
 }
-
-

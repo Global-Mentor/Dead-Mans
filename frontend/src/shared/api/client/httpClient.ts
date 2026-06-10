@@ -2,7 +2,7 @@ import { logger } from '../../lib/logger.ts'
 import { ApiError } from '../errors/ApiError.ts'
 import { getApiBaseUrl } from '../config.ts'
 
-export interface HttpRequestOptions extends RequestInit {
+interface HttpRequestOptions extends RequestInit {
   query?: Record<string, string | number | boolean | undefined>
   baseUrl?: string
 }
@@ -12,7 +12,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
   const isJson = contentType.includes('application/json')
 
   if (!response.ok) {
-    const errorBody = isJson ? await response.json().catch(() => undefined) : await response.text().catch(() => '')
+    const errorBody = isJson
+      ? await response.json().catch(() => undefined)
+      : await response.text().catch(() => '')
     logger.error('HTTP error', { status: response.status, url: response.url, body: errorBody })
     throw new ApiError(`HTTP ${response.status}`, {
       status: response.status,

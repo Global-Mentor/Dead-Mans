@@ -1,6 +1,12 @@
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton, PageShell, PageStatePanel, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 import { CreateGameSetupDialog } from './ui/CreateGameSetupDialog.tsx'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
@@ -66,11 +72,7 @@ export function GameSetupPage() {
 
   if (isLoading) {
     return (
-      <PageStatePanel
-        title={t('gameSetup.title')}
-        message={t('gameSetup.loading')}
-        showSpinner
-      />
+      <PageStatePanel title={t('gameSetup.title')} message={t('gameSetup.loading')} showSpinner />
     )
   }
 
@@ -155,7 +157,13 @@ export function GameSetupPage() {
           title={<Typography variant="h5">{t('gameSetup.boardTitle')}</Typography>}
           description={t('gameSetup.boardDescription')}
           actions={
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="flex-end"
+              flexWrap="wrap"
+            >
               <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
               <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
               <AppButton disabled={!isDirty || isSaving} onClick={() => void saveDraft()}>

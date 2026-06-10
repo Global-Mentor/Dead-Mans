@@ -33,19 +33,18 @@ export function ConfirmDialog({
       description={description}
       actions={
         <>
-        <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>
-          {cancelLabel}
-        </AppButton>
-        <AppButton
-          tone={confirmTone === 'danger' ? 'danger' : 'primary'}
-          onClick={() => void onConfirm()}
-          disabled={isBusy}
-        >
-          {confirmLabel}
-        </AppButton>
+          <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>
+            {cancelLabel}
+          </AppButton>
+          <AppButton
+            tone={confirmTone === 'danger' ? 'danger' : 'primary'}
+            onClick={() => void onConfirm()}
+            disabled={isBusy}
+          >
+            {confirmLabel}
+          </AppButton>
         </>
       }
     />
   )
 }
-

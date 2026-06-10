@@ -19,7 +19,8 @@ const en = {
         missing_state: 'Twitch did not return the security state parameter.',
         state_cookie_missing: 'The local sign-in session expired. Please start again.',
         state_mismatch: 'Security validation failed during sign-in. Please try again.',
-        authentication_failed: 'The server could not complete authentication. Please try again later.',
+        authentication_failed:
+          'The server could not complete authentication. Please try again later.',
         unknown: 'An unknown error occurred during sign-in.',
       },
     },
@@ -72,8 +73,7 @@ const en = {
     },
     gameSetup: {
       title: 'Game setup',
-      description:
-        'Draft game for configuring the title, board layout, card fields, and images.',
+      description: 'Draft game for configuring the title, board layout, card fields, and images.',
       loading: 'Loading game setup...',
       errorLoading: 'Failed to load game setup.',
       empty: 'There is no draft game yet. Create a new one to start setup.',

@@ -14,7 +14,8 @@ const pl = {
       backToLogin: 'Wróć do logowania',
       callbackReasons: {
         access_denied: 'Anulowano logowanie przez Twitch.',
-        account_inactive: 'Twoje konto jest wyłączone. Skontaktuj się z administratorem, aby przywrócić dostęp.',
+        account_inactive:
+          'Twoje konto jest wyłączone. Skontaktuj się z administratorem, aby przywrócić dostęp.',
         missing_code: 'Twitch nie zwrócił kodu autoryzacyjnego.',
         missing_state: 'Twitch nie zwrócił parametru bezpieczeństwa state.',
         state_cookie_missing: 'Lokalna sesja logowania wygasła. Rozpocznij ponownie.',
@@ -73,8 +74,7 @@ const pl = {
     },
     gameSetup: {
       title: 'Konfiguracja gry',
-      description:
-        'Szkic gry do konfiguracji nazwy, układu planszy, pól kart i obrazów.',
+      description: 'Szkic gry do konfiguracji nazwy, układu planszy, pól kart i obrazów.',
       loading: 'Ładowanie konfiguracji gry...',
       errorLoading: 'Nie udało się załadować konfiguracji gry.',
       empty: 'Nie ma jeszcze gry w statusie szkicu. Utwórz nową, aby rozpocząć konfigurację.',
@@ -208,8 +208,7 @@ const pl = {
           'Obecnie nie ma gry w konfiguracji. Rozpocznij tworzenie, gdy będziesz gotowy — wszyscy administratorzy zobaczą ten sam szkic.',
         startCreate: 'Utwórz grę',
         title: 'Nazwa nowej gry',
-        detailsDescription:
-          'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',
+        detailsDescription: 'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',
         nameLabel: 'Nazwa gry',
         back: 'Wstecz',
         confirm: 'Utwórz',

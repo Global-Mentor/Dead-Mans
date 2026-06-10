@@ -20,7 +20,7 @@ export function getBackendOrigin() {
   }
 
   throw new Error(
-    'VITE_BACKEND_ORIGIN is required outside development when window.location.origin is unavailable.'
+    'VITE_BACKEND_ORIGIN is required outside development when window.location.origin is unavailable.',
   )
 }
 
@@ -29,7 +29,9 @@ function ensureValidOrigin(value: string, sourceName: string) {
   try {
     url = new URL(value)
   } catch {
-    throw new Error(`${sourceName} must be an absolute URL origin (for example, https://api.example.com).`)
+    throw new Error(
+      `${sourceName} must be an absolute URL origin (for example, https://api.example.com).`,
+    )
   }
 
   if ((url.protocol !== 'http:' && url.protocol !== 'https:') || !url.host) {

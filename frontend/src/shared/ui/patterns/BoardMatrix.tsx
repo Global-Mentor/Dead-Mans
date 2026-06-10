@@ -37,7 +37,9 @@ export function BoardMatrix({
         >
           {leadCell ?? <Box sx={{ minWidth: 72 }} />}
           {colLabels.map((columnLabel, columnIndex) => (
-            <Fragment key={`column-${columnIndex}`}>{renderColumnLabel(columnLabel, columnIndex)}</Fragment>
+            <Fragment key={`column-${columnIndex}`}>
+              {renderColumnLabel(columnLabel, columnIndex)}
+            </Fragment>
           ))}
         </Box>
 

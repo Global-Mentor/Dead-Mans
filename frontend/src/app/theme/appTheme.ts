@@ -1,6 +1,6 @@
 import { alpha, createTheme } from '@mui/material/styles'
 import { huntPalette } from '../../shared/theme/hunt-palette.ts'
-import { huntTypography, uiTokens } from '../../shared/theme/tokens.ts'
+import { huntTypography } from '../../shared/theme/tokens.ts'
 
 const baseRadius = 4
 
@@ -423,8 +423,6 @@ appTheme.custom = {
     appBackdrop,
   },
 }
-
-export { uiTokens }
 
 declare module '@mui/material/styles' {
   interface Theme {

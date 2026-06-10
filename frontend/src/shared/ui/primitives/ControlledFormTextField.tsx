@@ -3,11 +3,10 @@ import type { Control, FieldPath, FieldValues } from 'react-hook-form'
 import { FormTextField } from './FormTextField.tsx'
 import type { FormTextFieldProps } from './FormTextField.tsx'
 
-export interface ControlledFormTextFieldProps<TFieldValues extends FieldValues>
-  extends Omit<
-    FormTextFieldProps,
-    'defaultValue' | 'error' | 'inputRef' | 'name' | 'onBlur' | 'onChange' | 'value'
-  > {
+interface ControlledFormTextFieldProps<TFieldValues extends FieldValues> extends Omit<
+  FormTextFieldProps,
+  'defaultValue' | 'error' | 'inputRef' | 'name' | 'onBlur' | 'onChange' | 'value'
+> {
   control: Control<TFieldValues>
   name: FieldPath<TFieldValues>
 }

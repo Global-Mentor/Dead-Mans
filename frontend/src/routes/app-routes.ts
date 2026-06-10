@@ -1,18 +1,12 @@
 import type { AuthRole } from '../shared/api/contracts/index.ts'
-import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 
 export {
-  defaultRoute,
   gameApplicationRoute,
   gameBoardRoute,
   gameSetupRoute,
   panelRootPath,
-  panelRouteConfig,
-  panelRoutes,
   teamRegistrationsRoute,
   type PanelRouteDefinition,
-  type PanelRouteId,
-  type PanelRouteMetadata,
 } from '../app/panel-route-config.tsx'
 
 import { panelRoutes } from '../app/panel-route-config.tsx'
@@ -37,10 +31,6 @@ export function getAccessiblePanelRoutes(roles: readonly AuthRole[] | undefined)
   return panelRoutes.filter((route) => hasAccessToPanelRoute(route, roles))
 }
 
-export function getDefaultPanelRoute(roles: readonly AuthRole[] | undefined) {
-  return getAccessiblePanelRoutes(roles)[0] ?? null
-}
-
 export function getPanelRouteByPath(pathname: string) {
   return (
     panelRoutes.find(
@@ -48,5 +38,3 @@ export function getPanelRouteByPath(pathname: string) {
     ) ?? null
   )
 }
-
-export { hasPanelCapability }

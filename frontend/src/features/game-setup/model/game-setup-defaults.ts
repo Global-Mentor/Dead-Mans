@@ -1,4 +1,4 @@
-export const GAME_SETUP_DEFAULT_ROW_COSTS = [100, 125, 150, 175, 200] as const
+const GAME_SETUP_DEFAULT_ROW_COSTS = [100, 125, 150, 175, 200] as const
 
 export function defaultGameSetupRowCost(rowIndex: number): number {
   if (rowIndex < GAME_SETUP_DEFAULT_ROW_COSTS.length) {

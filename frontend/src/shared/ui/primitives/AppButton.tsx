@@ -11,4 +11,3 @@ export function AppButton({ tone = 'primary', ...props }: AppButtonProps) {
   const toneProps = resolveAppButtonTone(tone)
   return <Button {...toneProps} {...props} />
 }
-

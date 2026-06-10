@@ -1,0 +1,13 @@
+# Build output
+dist
+coverage
+
+# Dependencies
+node_modules
+
+# Lockfiles
+package-lock.json
+
+# Generated transport contracts (owned by generate:transport)
+src/shared/api/contracts/generated.ts
+src/shared/realtime/generated.ts

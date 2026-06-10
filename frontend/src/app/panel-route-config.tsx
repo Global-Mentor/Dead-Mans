@@ -6,9 +6,13 @@ import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetup
 
 export const panelRootPath = '/panel'
 
-const authenticatedPanelRoles = ['viewer', 'moderator', 'admin'] as const satisfies readonly AuthRole[]
+const authenticatedPanelRoles = [
+  'viewer',
+  'moderator',
+  'admin',
+] as const satisfies readonly AuthRole[]
 
-export type PanelRoutePage = LazyExoticComponent<ComponentType<unknown>>
+type PanelRoutePage = LazyExoticComponent<ComponentType<unknown>>
 
 export type PanelRouteDefinition = {
   id: string
@@ -23,7 +27,7 @@ type PanelRouteConfigInput = Omit<PanelRouteDefinition, 'fullPath'> & {
   Sync?: ComponentType
 }
 
-export type PanelRouteConfigEntry = PanelRouteDefinition & {
+type PanelRouteConfigEntry = PanelRouteDefinition & {
   Page: PanelRoutePage
   Sync?: ComponentType
 }
@@ -35,9 +39,7 @@ function createPanelRouteEntry(entry: PanelRouteConfigInput): PanelRouteConfigEn
   }
 }
 
-function definePanelRouteConfig<const T extends readonly PanelRouteConfigEntry[]>(
-  config: T,
-): T {
+function definePanelRouteConfig<const T extends readonly PanelRouteConfigEntry[]>(config: T): T {
   return config
 }
 
@@ -90,9 +92,9 @@ export const panelRouteConfig = definePanelRouteConfig([
   }),
 ])
 
-export type PanelRouteId = (typeof panelRouteConfig)[number]['id']
+type PanelRouteId = (typeof panelRouteConfig)[number]['id']
 
-export type PanelRouteMetadata = Omit<PanelRouteConfigEntry, 'Page' | 'Sync'> & {
+type PanelRouteMetadata = Omit<PanelRouteConfigEntry, 'Page' | 'Sync'> & {
   id: PanelRouteId
 }
 
@@ -108,13 +110,12 @@ function toPanelRouteMetadata(entry: (typeof panelRouteConfig)[number]): PanelRo
 
 export const panelRoutes = panelRouteConfig.map(toPanelRouteMetadata)
 
-const panelRouteById = Object.fromEntries(
-  panelRoutes.map((route) => [route.id, route]),
-) as Record<PanelRouteId, PanelRouteMetadata>
+const panelRouteById = Object.fromEntries(panelRoutes.map((route) => [route.id, route])) as Record<
+  PanelRouteId,
+  PanelRouteMetadata
+>
 
 export const gameBoardRoute = panelRouteById['game-board']
 export const gameApplicationRoute = panelRouteById['game-application']
 export const gameSetupRoute = panelRouteById['game-setup']
 export const teamRegistrationsRoute = panelRouteById['team-registrations']
-
-export const defaultRoute = panelRoutes[0]

@@ -8,8 +8,10 @@ interface FormSelectOption<TValue extends string | number> {
   label: ReactNode
 }
 
-interface FormSelectProps<TValue extends string | number>
-  extends Omit<FormTextFieldProps, 'select' | 'value' | 'onChange'> {
+interface FormSelectProps<TValue extends string | number> extends Omit<
+  FormTextFieldProps,
+  'select' | 'value' | 'onChange'
+> {
   value: TValue
   options: readonly FormSelectOption<TValue>[]
   onChange: (value: TValue) => void
@@ -47,4 +49,3 @@ export function FormSelect<TValue extends string | number>({
     </FormTextField>
   )
 }
-

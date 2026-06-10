@@ -10,10 +10,7 @@ interface RequirePanelRouteAccessProps {
   children: ReactNode
 }
 
-export function RequirePanelRouteAccess({
-  route,
-  children,
-}: RequirePanelRouteAccessProps) {
+export function RequirePanelRouteAccess({ route, children }: RequirePanelRouteAccessProps) {
   const { user } = useAuth()
   const accessibleRoutes = useAccessiblePanelRoutes()
   const fallbackRoute = accessibleRoutes[0]

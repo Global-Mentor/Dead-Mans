@@ -1,11 +1,7 @@
 import type { ZodType } from 'zod'
 import { logger } from '../lib/logger.ts'
 
-export function parseApiResponse<T>(
-  schema: ZodType<T>,
-  payload: unknown,
-  contractName: string,
-): T {
+export function parseApiResponse<T>(schema: ZodType<T>, payload: unknown, contractName: string): T {
   const result = schema.safeParse(payload)
 
   if (result.success) {

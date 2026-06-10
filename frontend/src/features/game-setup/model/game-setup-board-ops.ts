@@ -45,7 +45,10 @@ export function rebuildGameSetupCells(
   return cells
 }
 
-export function insertGameSetupRowAt(draft: GameSetupDraftState, rowIndex: number): GameSetupDraftState {
+export function insertGameSetupRowAt(
+  draft: GameSetupDraftState,
+  rowIndex: number,
+): GameSetupDraftState {
   if (draft.rowLabels.length >= GAME_SETUP_MAX_ROWS) {
     return draft
   }
@@ -65,7 +68,7 @@ export function insertGameSetupRowAt(draft: GameSetupDraftState, rowIndex: numbe
   }
 }
 
-export function removeGameSetupRow(draft: GameSetupDraftState, rowIndex: number): GameSetupDraftState {
+function removeGameSetupRow(draft: GameSetupDraftState, rowIndex: number): GameSetupDraftState {
   if (draft.rowLabels.length <= 1 || rowIndex < 0 || rowIndex >= draft.rowLabels.length) {
     return draft
   }
@@ -85,7 +88,7 @@ export function removeGameSetupRow(draft: GameSetupDraftState, rowIndex: number)
   }
 }
 
-export function insertGameSetupColumnAt(
+function insertGameSetupColumnAt(
   draft: GameSetupDraftState,
   columnIndex: number,
 ): GameSetupDraftState {
@@ -108,7 +111,10 @@ export function insertGameSetupColumnAt(
   }
 }
 
-export function removeGameSetupColumn(draft: GameSetupDraftState, colIndex: number): GameSetupDraftState {
+export function removeGameSetupColumn(
+  draft: GameSetupDraftState,
+  colIndex: number,
+): GameSetupDraftState {
   if (draft.colLabels.length <= 1 || colIndex < 0 || colIndex >= draft.colLabels.length) {
     return draft
   }
@@ -138,7 +144,9 @@ export function applyGameSetupBoardLayoutChange(
     return action === 'add' ? insertGameSetupRowAt(draft, index) : removeGameSetupRow(draft, index)
   }
 
-  return action === 'add' ? insertGameSetupColumnAt(draft, index) : removeGameSetupColumn(draft, index)
+  return action === 'add'
+    ? insertGameSetupColumnAt(draft, index)
+    : removeGameSetupColumn(draft, index)
 }
 
 export function getBoardLayoutPositionIndexes(
@@ -160,7 +168,7 @@ export function getBoardLayoutTargetLabel(
   axis: BoardLayoutAxis,
   index: number,
 ): string {
-  return axis === 'row' ? draft.rowLabels[index] ?? '' : draft.colLabels[index] ?? ''
+  return axis === 'row' ? (draft.rowLabels[index] ?? '') : (draft.colLabels[index] ?? '')
 }
 
 export function canApplyBoardLayoutChange(
