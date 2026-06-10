@@ -10,6 +10,7 @@ using backend.Application.Features.GameModifiers;
 using backend.Application.Features.GameQuestions;
 using backend.Application.Features.GameRegistration;
 using backend.Application.Features.GameSetup;
+using backend.Api.Contracts;
 using backend.Data;
 using backend.Infrastructure.Auth;
 using backend.Infrastructure.Configuration;
@@ -200,6 +201,18 @@ public static class ServiceCollectionExtensions
                     break;
             }
         }
+    }
+
+    public static IServiceCollection AddDeadMansHealthChecks(this IServiceCollection services)
+    {
+        services
+            .AddHealthChecks()
+            .AddDbContextCheck<ApplicationDbContext>(
+                name: HealthCheckContracts.Names.Database,
+                tags: new[] { HealthCheckContracts.Tags.Ready }
+            );
+
+        return services;
     }
 
     public static IServiceCollection AddDeadMansCors(

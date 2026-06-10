@@ -1994,6 +1994,7 @@ components:
             - game_lifecycle.draft_delete_not_allowed
             - game_lifecycle.game_not_found
             - game_common.unexpected_server_error
+            - game_common.too_many_requests
             - game_registration.not_open
             - game_registration.no_slots
             - game_registration.already_on_team
