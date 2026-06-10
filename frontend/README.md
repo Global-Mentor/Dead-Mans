@@ -30,8 +30,10 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/shared/api/client/openApiClient.ts` — `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
 - `src/shared/api/contracts/` — generated transport types;
 - `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
-- `src/shared/api/query-keys.ts` — централизованные query keys для TanStack Query;
 - `src/shared/api/parse-api-response.ts` — единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
+- `src/features/*/api/*-queries.ts` — feature-local query keys и `queryOptions`;
+- feature mutation modules используют `mutationOptions` для общих invalidation/error policies;
+- `src/shared/realtime/use-signalr-hub-lifecycle.ts` — общий connect/reconnect/start/stop lifecycle; event handlers остаются в `features/*/realtime/`;
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
 - `src/features/game-modifiers/index.ts` — public API modifiers feature;
@@ -45,6 +47,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 ## Инженерный baseline
 
 - TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
+- Query keys и `queryOptions` принадлежат фиче-владельцу данных. Повторяемые mutation policies оформляются через `mutationOptions`, а не копируются между hooks.
+- `@tanstack/eslint-plugin-query` в strict recommended режиме проверяет стабильность dependencies и использование query options.
 - OpenAPI-generated `paths` остаются compile-time source of truth для endpoint, params, body и response. Feature API использует статические path templates через `openapi-fetch`, без ручных response generics и динамической сборки URL.
 - Отдельный domain adapter остаётся только там, где есть поведение: `404 → null`, mapping, multipart или optimistic cache update. Пустые `api → data-access` прокси не создаются.
 - Zod применяется выборочно на критичных runtime-границах; сейчас так валидируется auth session.

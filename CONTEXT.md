@@ -76,10 +76,9 @@
 - `src/shared/theme/` - общие UI tokens и layout presets для единообразных стилей;
 - `src/shared/api/client/` - общие `openapi-fetch` клиенты поверх generated `paths` и перевод non-2xx ответов в `ApiError`;
 - `src/shared/api/config.ts` - единая env-конфигурация (`VITE_API_BASE_URL`, `VITE_BACKEND_ORIGIN`);
-- `src/shared/api/query-keys.ts` - централизованные query keys;
 - `src/shared/api/parse-api-response.ts` - fail-fast runtime parsing для критичных Zod-схем;
 - `src/shared/api/contracts/` - generated transport types из OpenAPI и стабильные alias-типы;
-- `src/shared/realtime/` - generated hub constants и realtime-хелперы;
+- `src/shared/realtime/` - generated hub constants, URL helpers и общий SignalR lifecycle;
 - `src/shared/auth/` - auth context, API и route guards;
 - `src/locales/` - языковые ресурсы.
 
@@ -88,6 +87,8 @@
 - auth HTTP использует тот же typed `openapi-fetch` transport, что и игровые API, но отдельный backend-origin client для `/auth/*`;
 - endpoint templates, path/query/body и response-типы выводятся из generated `paths`; стабильные domain aliases при необходимости экспортируются через `src/shared/api/contracts/index.ts`;
 - feature API и data access не дублируются: отдельный domain adapter остаётся только для `404 → null`, mapping, multipart и optimistic cache updates;
+- TanStack Query keys и `queryOptions` живут внутри owning feature; повторяемые invalidation/error policies оформляются через `mutationOptions`;
+- shared SignalR код управляет connect/reconnect/start/stop, а event-specific handlers и resync остаются внутри owning feature;
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
 - capability-level проверки (`gameSetup`, `openGameBoardCell`) задаются через `src/shared/auth/panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
 - TanStack Query владеет server state; React Hook Form + Zod используются для submitted-форм, а критичный auth response дополнительно валидируется runtime-схемой.
@@ -210,7 +211,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - game questions (phase 1): каталог вопросов (`/api/game/questions/catalog`) с поиском/фильтрацией и массовым enable/disable по категориям управляется в `game-setup`; gameplay endpoints (`ask-next`, `answer`, game history) реализованы на backend и в контрактах, но без отдельного panel UI на `game-board`;
 - game history (phase 1): endpoint `GET /api/game/history/users/{userId}` (self или `admin/moderator`) возвращает историю пользователя по играм: активации модификаторов и ответы на вопросы, сгруппированные по игре;
 - soft-delete workflow: вопросы удаляются через soft-delete (`DELETE /api/game/questions/{questionId}`), не-draft игры архивируются через soft-delete (`DELETE /api/game/lifecycle/games/{gameId}`); draft-игра остаётся исключением и удаляется hard-delete через `DELETE /api/game/setup`;
-- централизованный query key слой на frontend;
+- feature-local query keys/`queryOptions` и переиспользуемые `mutationOptions` для cache/error policies;
 - typed frontend API на `openapi-fetch` поверх generated `paths`, со статическими endpoint templates и общей обработкой `ApiError`;
 - OpenAPI contract generation для frontend;
 - role-aware panel routing, компактная player navigation и admin-разделы в profile menu;

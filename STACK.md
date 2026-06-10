@@ -32,6 +32,7 @@
 - **TanStack Query (`@tanstack/react-query`)**
   - Управление серверным состоянием: запросы к API, кеш, рефетч, статусы загрузки/ошибок.
   - Позволяет не тащить данные с сервера в Redux/глобальный стейт.
+  - Query keys и `queryOptions` находятся в owning feature; общие mutation invalidation/error policies задаются через `mutationOptions`.
 
 - **OpenAPI TypeScript + openapi-fetch**
   - `openapi-typescript` генерирует `paths` из канонического OpenAPI-контракта.
@@ -52,12 +53,14 @@
 
 - **SignalR клиент (`@microsoft/signalr`)**
   - Используется для realtime-синхронизации `game-board` (`cellOpened`, `modifierActivated`) и `game-setup` (`draftChanged`).
+  - Shared hook владеет connection lifecycle, а фичи — регистрацией и обработкой своих событий.
 
 - **Тестирование (Vitest + React Testing Library)**
   - Юнит-тесты для model/shared logic и поведенческие тесты hooks/components в `jsdom`.
 
 - **Качество кода (Prettier + ESLint + Knip)**
   - Prettier задаёт единый формат, ESLint проверяет кодовые правила, Knip обнаруживает неиспользуемые файлы, exports и dependencies.
+  - `@tanstack/eslint-plugin-query` в strict recommended режиме проверяет TanStack Query hooks и dependency stability.
   - Каноническая локальная проверка: `npm --prefix frontend run check`.
 
 - **Client-only state и UI add-ons — по потребности**
