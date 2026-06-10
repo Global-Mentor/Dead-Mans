@@ -66,3 +66,39 @@ jobs:
 
       - name: Build frontend
         run: npm --prefix frontend run build
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Audit root npm dependencies
+        run: npm audit --audit-level=high
+
+      - name: Audit frontend npm dependencies
+        run: npm --prefix frontend audit --audit-level=high
+
+      - name: Restore backend
+        run: dotnet restore backend/backend.slnx
+
+      - name: Audit backend NuGet dependencies
+        run: |
+          set -euo pipefail
+          report="$(dotnet list backend/backend.slnx package --vulnerable --include-transitive)"
+          echo "$report"
+          if echo "$report" | grep -q "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet packages detected."
+            exit 1
+          fi
