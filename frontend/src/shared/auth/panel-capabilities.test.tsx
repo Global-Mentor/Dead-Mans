@@ -7,4 +7,10 @@ describe('panel capabilities', () => {
     expect(hasPanelCapability('gameSetup', ['moderator'])).toBe(false)
     expect(hasPanelCapability('gameSetup', ['viewer'])).toBe(false)
   })
+
+  it('keeps opening game board cells restricted to admins', () => {
+    expect(hasPanelCapability('openGameBoardCell', ['admin'])).toBe(true)
+    expect(hasPanelCapability('openGameBoardCell', ['moderator'])).toBe(false)
+    expect(hasPanelCapability('openGameBoardCell', ['viewer'])).toBe(false)
+  })
 })
