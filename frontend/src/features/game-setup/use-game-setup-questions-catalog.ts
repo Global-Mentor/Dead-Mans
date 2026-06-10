@@ -1,41 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { queryKeys } from '../../shared/api/query-keys.ts'
+import { gameQuestionCatalogQueryOptions } from './api/game-question-queries.ts'
 import {
-  fetchGameQuestionCatalog,
-  setGameQuestionCategoryEnabled,
-  setGameQuestionEnabled,
-} from './api/game-questions-api.ts'
+  setGameQuestionCategoryEnabledMutationOptions,
+  setGameQuestionEnabledMutationOptions,
+} from './api/game-question-mutation-options.ts'
 
 export function useGameSetupQuestionsCatalog() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
-  const catalogQuery = useQuery({
-    queryKey: queryKeys.gameQuestions.catalog({ search }),
-    queryFn: () =>
-      fetchGameQuestionCatalog({
-        search,
-        includeDisabled: true,
-      }),
-  })
+  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions({ search }))
 
-  const toggleQuestionMutation = useMutation({
-    mutationFn: ({ questionId, isEnabled }: { questionId: string; isEnabled: boolean }) =>
-      setGameQuestionEnabled(questionId, isEnabled),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.gameQuestions.all })
-    },
-  })
+  const toggleQuestionMutation = useMutation(setGameQuestionEnabledMutationOptions(queryClient))
 
-  const toggleCategoryMutation = useMutation({
-    mutationFn: ({ category, isEnabled }: { category: string; isEnabled: boolean }) =>
-      setGameQuestionCategoryEnabled(category, isEnabled),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.gameQuestions.all })
-    },
-  })
+  const toggleCategoryMutation = useMutation(
+    setGameQuestionCategoryEnabledMutationOptions(queryClient),
+  )
 
   const questions = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data])
 

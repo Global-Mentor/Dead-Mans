@@ -5,7 +5,7 @@ import {
 } from '../../../shared/api/client/openApiClient.ts'
 import type { operations } from '../../../shared/api/contracts/generated.ts'
 
-type GameQuestionCatalogFilters = NonNullable<
+export type GameQuestionCatalogFilters = NonNullable<
   operations['getGameQuestionCatalog']['parameters']['query']
 >
 
