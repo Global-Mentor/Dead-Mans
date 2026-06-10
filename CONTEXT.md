@@ -75,6 +75,7 @@
 - `src/shared/api/client/` - общий HTTP transport;
 - `src/shared/api/config.ts` - единая env-конфигурация (`VITE_API_BASE_URL`, `VITE_BACKEND_ORIGIN`);
 - `src/shared/api/query-keys.ts` - централизованные query keys;
+- `src/shared/api/parse-api-response.ts` - fail-fast runtime parsing для критичных Zod-схем;
 - `src/shared/api/contracts/` - generated transport types из OpenAPI и стабильные alias-типы;
 - `src/shared/realtime/` - generated hub constants и realtime-хелперы;
 - `src/shared/auth/` - auth context, API и route guards;
@@ -86,6 +87,8 @@
 - transport-типы импортируются централизованно из `src/shared/api/contracts/index.ts`.
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
 - capability-level проверки (`gameSetup`, `modifierActivation`) задаются через `src/shared/auth/panel-capabilities.ts` и `use-panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
+- TanStack Query владеет server state; React Hook Form + Zod используются для submitted-форм, а критичный auth response дополнительно валидируется runtime-схемой.
+- Vitest + React Testing Library покрывают shared/model logic, hooks и capability rules; frontend test запускается в CI.
 
 ### Основные страницы
 
@@ -174,6 +177,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - frontend role gating - это UX, а не security boundary; реальные права проверяются на backend, включая admin-only открытие ячеек;
 - конфигурационные и persistence-проблемы должны проявляться явно на старте, а не оставлять приложение в полу-рабочем состоянии;
 - новые решения должны расширять уже выбранный паттерн, а не создавать второй конкурирующий способ делать то же самое.
+- зависимости для state, animation, icons, toast или asset transforms добавляются только вместе с реальным использованием, а не как обязательный неиспользуемый baseline.
 
 ---
 
