@@ -27,7 +27,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 ## Структура API-слоя
 
-- `src/shared/api/client/` — общий `httpClient`;
+- `src/shared/api/client/openApiClient.ts` — `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
 - `src/shared/api/contracts/` — generated transport types;
 - `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
 - `src/shared/api/query-keys.ts` — централизованные query keys для TanStack Query;
@@ -45,7 +45,9 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 ## Инженерный baseline
 
 - TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
-- OpenAPI-generated типы остаются compile-time source of truth. Zod применяется выборочно на критичных runtime-границах; сейчас так валидируется auth session.
+- OpenAPI-generated `paths` остаются compile-time source of truth для endpoint, params, body и response. Feature API использует статические path templates через `openapi-fetch`, без ручных response generics и динамической сборки URL.
+- Отдельный domain adapter остаётся только там, где есть поведение: `404 → null`, mapping, multipart или optimistic cache update. Пустые `api → data-access` прокси не создаются.
+- Zod применяется выборочно на критичных runtime-границах; сейчас так валидируется auth session.
 - Submitted-формы с валидацией используют React Hook Form + `zodResolver`. Для MUI-полей используется общий `ControlledFormTextField`.
 - Локальное UI-state остаётся в React. Zustand добавляется только при реальном cross-tree client-state, а не заранее.
 - MUI + Emotion и `AppToast` остаются единым UI/feedback baseline. Иконки, Framer Motion, SVG-компоненты и брендовые icon packs добавляются вместе с использующей их фичей.
@@ -95,11 +97,13 @@ npm run generate:transport
 
 ## Режим API
 
-Frontend использует общий `httpClient`.
+Frontend использует `openapi-fetch` поверх generated `paths`.
 
 - `GET /api/game` идёт через относительный `/api` base URL;
 - `POST /api/game/cells/{cellId}/open` идёт через тот же API transport;
 - auth-запросы идут на backend origin для `/auth/*`;
+- path/query/body передаются структурированно; значения path-параметров сериализует клиент;
+- non-2xx ответы централизованно преобразуются в `ApiError`;
 - realtime hubs: пути и события из OpenAPI `x-signalr`, код в `src/shared/realtime/generated.ts` (`buildRealtimeHubUrl`);
 - все запросы отправляют `credentials: 'include'`.
 

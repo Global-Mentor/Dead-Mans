@@ -33,6 +33,11 @@
   - Управление серверным состоянием: запросы к API, кеш, рефетч, статусы загрузки/ошибок.
   - Позволяет не тащить данные с сервера в Redux/глобальный стейт.
 
+- **OpenAPI TypeScript + openapi-fetch**
+  - `openapi-typescript` генерирует `paths` из канонического OpenAPI-контракта.
+  - `openapi-fetch` выводит endpoint, path/query/body и response-типы без ручных generic-типов и динамической сборки URL.
+  - Отдельные domain adapters остаются только для `404 → null`, mapping, multipart и optimistic cache updates.
+
 - **MUI (`@mui/material`, `@emotion/*`)**
   - Готовые UI-компоненты и тема для панели.
   - Ускоряет разработку, не надо верстать все с нуля.
