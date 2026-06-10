@@ -1,0 +1,41 @@
+# Normalize all text files to LF in the repository and working tree.
+# This matches the committed baseline (HEAD is already LF) and stops
+# CRLF drift introduced by Windows checkouts/editors.
+* text=auto eol=lf
+
+# Explicit text types (defensive; covered by the wildcard above).
+*.cs        text eol=lf
+*.csproj    text eol=lf
+*.slnx      text eol=lf
+*.props     text eol=lf
+*.json      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.md        text eol=lf
+*.mdc       text eol=lf
+*.bat       text eol=lf
+*.cmd       text eol=lf
+*.ps1       text eol=lf
+*.http      text eol=lf
+*.sql       text eol=lf
+*.editorconfig text eol=lf
+
+# Binary assets: never normalize or diff as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.svg   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.pdf   binary
