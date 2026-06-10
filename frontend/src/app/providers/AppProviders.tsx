@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { I18nextProvider } from 'react-i18next'
+import { Toaster } from 'sonner'
 import i18n from '../../i18n.ts'
 import { AuthProvider } from '../../shared/auth/AuthContext.tsx'
 import { appQueryClient } from './queryClient.ts'
@@ -19,7 +20,10 @@ export function AppProviders({ children }: AppProvidersProps) {
         <ThemeProvider theme={appTheme}>
           <CssBaseline />
           <BrowserRouter>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              {children}
+              <Toaster position="top-right" richColors closeButton />
+            </AuthProvider>
           </BrowserRouter>
         </ThemeProvider>
       </QueryClientProvider>
