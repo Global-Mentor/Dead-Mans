@@ -1,3 +1,4 @@
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { gameBoardRoute } from '../../routes/app-routes.ts'
 import {
@@ -66,34 +67,36 @@ export function GameApplicationPage() {
         description={t('gameApplication.description')}
       />
 
-      <PendingInvitationsSection
-        invitations={snapshot.myPendingInvitations}
-        onAccept={(invitationId) => acceptInvitation.mutate(invitationId)}
-        onDecline={(invitationId) => declineInvitation.mutate(invitationId)}
-        pendingAcceptId={acceptInvitation.isPending ? acceptInvitation.variables : undefined}
-        pendingDeclineId={declineInvitation.isPending ? declineInvitation.variables : undefined}
-      />
+      <Stack spacing={2}>
+        <PendingInvitationsSection
+          invitations={snapshot.myPendingInvitations}
+          onAccept={(invitationId) => acceptInvitation.mutate(invitationId)}
+          onDecline={(invitationId) => declineInvitation.mutate(invitationId)}
+          pendingAcceptId={acceptInvitation.isPending ? acceptInvitation.variables : undefined}
+          pendingDeclineId={declineInvitation.isPending ? declineInvitation.variables : undefined}
+        />
 
-      {snapshot.myTeam ? (
-        <MyTeamSection
-          team={snapshot.myTeam}
-          onLeave={() => leaveTeam.mutate()}
-          isLeaving={leaveTeam.isPending}
-        />
-      ) : (
-        <CreateTeamSection
-          onCreate={(recruitmentOpen) => createTeam.mutate(recruitmentOpen)}
-          isCreating={createTeam.isPending}
-        />
-      )}
+        {snapshot.myTeam ? (
+          <MyTeamSection
+            team={snapshot.myTeam}
+            onLeave={() => leaveTeam.mutate()}
+            isLeaving={leaveTeam.isPending}
+          />
+        ) : (
+          <CreateTeamSection
+            onCreate={(recruitmentOpen) => createTeam.mutate(recruitmentOpen)}
+            isCreating={createTeam.isPending}
+          />
+        )}
 
-      {snapshot.myTeam === null ? (
-        <OpenTeamsSection
-          teams={openTeams}
-          onJoin={(teamId) => joinTeam.mutate(teamId)}
-          joiningTeamId={joinTeam.isPending ? joinTeam.variables : undefined}
-        />
-      ) : null}
+        {snapshot.myTeam === null ? (
+          <OpenTeamsSection
+            teams={openTeams}
+            onJoin={(teamId) => joinTeam.mutate(teamId)}
+            joiningTeamId={joinTeam.isPending ? joinTeam.variables : undefined}
+          />
+        ) : null}
+      </Stack>
 
       <AppLinkButton to={gameBoardRoute.fullPath} sx={{ mt: 2 }} tone="ghost">
         {t('gameApplication.backToBoard')}

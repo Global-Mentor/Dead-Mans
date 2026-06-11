@@ -1,6 +1,7 @@
-import { Alert } from '@mui/material'
+import { Alert, Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { AppButton } from '../../../shared/ui/index.ts'
+import type { GameSetupCellMediaErrorKey } from '../use-game-setup-cell-media.ts'
 import type { GameSetupResetErrorKey } from '../use-game-setup-draft.ts'
 import type { GameSetupSaveErrorKey } from '../use-game-setup-save.ts'
 
@@ -10,7 +11,7 @@ interface GameSetupBoardNoticesProps {
   onReloadFromServer: () => void
   saveErrorMessage: GameSetupSaveErrorKey | null
   resetErrorMessage: GameSetupResetErrorKey | null
-  cellMediaErrorMessage: string | null
+  cellMediaErrorKey: GameSetupCellMediaErrorKey | null
   onDismissCellMediaError: () => void
 }
 
@@ -20,17 +21,25 @@ export function GameSetupBoardNotices({
   onReloadFromServer,
   saveErrorMessage,
   resetErrorMessage,
-  cellMediaErrorMessage,
+  cellMediaErrorKey,
   onDismissCellMediaError,
 }: GameSetupBoardNoticesProps) {
   const { t } = useTranslation()
+  const hasNotices =
+    remoteChangeNotice ||
+    saveErrorMessage !== null ||
+    resetErrorMessage !== null ||
+    cellMediaErrorKey !== null
+
+  if (!hasNotices) {
+    return null
+  }
 
   return (
-    <>
+    <Stack spacing={2} sx={{ mt: 2 }}>
       {remoteChangeNotice ? (
         <Alert
           severity="warning"
-          sx={{ mt: 2 }}
           onClose={onDismissRemoteChange}
           action={
             <AppButton tone="ghost" size="small" onClick={onReloadFromServer}>
@@ -43,24 +52,20 @@ export function GameSetupBoardNotices({
       ) : null}
 
       {saveErrorMessage ? (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error">
           {saveErrorMessage === 'saveFailed'
             ? t('gameSetup.saveFailed')
             : t(`gameSetup.${saveErrorMessage}`)}
         </Alert>
       ) : null}
 
-      {resetErrorMessage ? (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {t('gameSetup.resetFailed')}
-        </Alert>
-      ) : null}
+      {resetErrorMessage ? <Alert severity="error">{t('gameSetup.resetFailed')}</Alert> : null}
 
-      {cellMediaErrorMessage ? (
-        <Alert severity="error" sx={{ mt: 2 }} onClose={onDismissCellMediaError}>
-          {cellMediaErrorMessage}
+      {cellMediaErrorKey ? (
+        <Alert severity="error" onClose={onDismissCellMediaError}>
+          {t(`gameSetup.cellMedia.errors.${cellMediaErrorKey}`)}
         </Alert>
       ) : null}
-    </>
+    </Stack>
   )
 }

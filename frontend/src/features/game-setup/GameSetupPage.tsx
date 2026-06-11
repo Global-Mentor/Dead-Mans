@@ -36,7 +36,7 @@ export function GameSetupPage() {
     isSaving,
     cellMediaDisplayByCellId,
     isCellMediaBusy,
-    cellMediaErrorMessage,
+    cellMediaErrorKey,
     uploadCellMedia,
     deleteCellMedia,
     dismissCellMediaError,
@@ -123,7 +123,7 @@ export function GameSetupPage() {
           onReloadFromServer={() => void reloadFromServer()}
           saveErrorMessage={saveErrorMessage}
           resetErrorMessage={resetErrorMessage}
-          cellMediaErrorMessage={cellMediaErrorMessage}
+          cellMediaErrorKey={cellMediaErrorKey}
           onDismissCellMediaError={dismissCellMediaError}
         />
 

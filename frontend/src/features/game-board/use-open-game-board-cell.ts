@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../shared/auth/use-auth.ts'
@@ -8,7 +9,7 @@ import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import { openGameBoardCell } from './api/game-board-data-access.ts'
 import { currentGameBoardQueryOptions } from './api/game-board-queries.ts'
 
-function getOpenCellErrorMessage(error: unknown, t: (key: string) => string) {
+function getOpenCellErrorMessage(error: unknown, t: TFunction<'translation'>) {
   if (error instanceof ApiError) {
     if (error.status === 403) {
       return t('gameBoard.openForbidden')

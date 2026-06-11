@@ -1,3 +1,4 @@
+import type { ParseKeys } from 'i18next'
 import type { ComponentType, LazyExoticComponent } from 'react'
 import { lazy } from 'react'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
@@ -13,12 +14,13 @@ const authenticatedPanelRoles = [
 ] as const satisfies readonly AuthRole[]
 
 type PanelRoutePage = LazyExoticComponent<ComponentType<unknown>>
+type PanelRouteLabelKey = Extract<ParseKeys, `navigation.items.${string}.label`>
 
 export type PanelRouteDefinition = {
   id: string
   path: string
   fullPath: string
-  labelKey: string
+  labelKey: PanelRouteLabelKey
   allowedRoles?: readonly AuthRole[]
 }
 

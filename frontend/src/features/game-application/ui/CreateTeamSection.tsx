@@ -11,7 +11,7 @@ export function CreateTeamSection({ onCreate, isCreating }: CreateTeamSectionPro
   const { t } = useTranslation()
 
   return (
-    <SectionCard sx={{ mb: 2 }}>
+    <SectionCard>
       <Typography variant="subtitle1" gutterBottom>
         {t('gameApplication.createTeamTitle')}
       </Typography>

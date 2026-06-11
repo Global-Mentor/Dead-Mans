@@ -25,7 +25,7 @@ export function PendingInvitationsSection({
   }
 
   return (
-    <SectionCard sx={{ mb: 2 }}>
+    <SectionCard>
       <Typography variant="subtitle1" gutterBottom>
         {t('gameApplication.invitationsTitle')}
       </Typography>
