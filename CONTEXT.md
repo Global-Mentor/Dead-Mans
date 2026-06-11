@@ -80,7 +80,9 @@
 - `src/shared/api/contracts/` - generated transport types из OpenAPI и стабильные alias-типы;
 - `src/shared/realtime/` - generated hub constants, URL helpers и общий SignalR lifecycle;
 - `src/shared/auth/` - auth context, API и route guards;
-- `src/locales/` - языковые ресурсы.
+- `src/**/i18n/*-translations.ts` - feature-owned языковые ресурсы;
+- `src/locales/index.ts` - композиция ресурсов всех фич и список поддерживаемых языков;
+- `src/app/theme/` - композиция MUI theme из palette, typography и component overrides.
 
 ### Что важно архитектурно
 
@@ -92,7 +94,9 @@
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
 - крупные экраны и orchestration-хуки декомпозированы по зонам ответственности: страницы собираются из section-компонентов в `features/<feature>/ui/`, а `game-setup` разделён на focused hooks (`use-game-setup-draft`, `use-game-setup-save`, `use-game-setup-cell-media`) под тонким `use-game-setup-page`; `PanelNavigation` разложен на `PanelPrimaryNavigation` и `PanelProfileMenu`.
 - capability-level проверки (`gameSetup`, `openGameBoardCell`) задаются через `src/shared/auth/panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
-- TanStack Query владеет server state; React Hook Form + Zod используются для submitted-форм, а критичный auth response дополнительно валидируется runtime-схемой.
+- TanStack Query владеет server state; React Hook Form + Zod используются для transactional submitted-форм, схемы живут вне компонентов, а типы значений выводятся через `z.infer`. Плотный game-setup draft остаётся controlled React state.
+- Критичный auth response дополнительно валидируется runtime-схемой; generated OpenAPI types остаются compile-time transport source of truth.
+- Локали принадлежат фичам, ключи i18next проверяются TypeScript через module augmentation, а parity всех `en/ru/uk/pl` модулей входит в общий quality gate.
 - Vitest + React Testing Library покрывают shared/model logic, routes, capabilities и ключевые page states.
 - Единый frontend quality gate — `npm --prefix frontend run check`: Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip и production build. CI использует `npm ci` и запускает тот же gate.
 
@@ -195,6 +199,7 @@ Swagger UI в development должен смотреть на тот же YAML-ф
 - новые абстракции вводятся только если они реально очищают границу или убирают повтор;
 - `shared/` не должен становиться свалкой feature-логики;
 - user-facing текст проходит через i18n;
+- повторяемые стили живут в theme/shared UI, а feature-specific стили остаются локальными;
 - security и role checks не размазываются между несколькими слоями без необходимости;
 - при структурных изменениях обновляются docs, а не только код;
 - если уже есть хороший паттерн в проекте, его лучше продолжить, чем изобретать новый «чуть удобнее» локально.

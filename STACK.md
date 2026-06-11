@@ -41,15 +41,18 @@
 
 - **MUI (`@mui/material`, `@emotion/*`)**
   - Готовые UI-компоненты и тема для панели.
+  - App theme собирается из отдельных palette, typography и component override модулей; повторяемые стили принадлежат theme/shared UI.
   - Ускоряет разработку, не надо верстать все с нуля.
 
 - **React Hook Form + Zod**
-  - Submitted-формы используют типизированное состояние и декларативную валидацию через `zodResolver`.
+  - Transactional submitted-формы используют типизированное состояние и декларативную валидацию через `zodResolver`; схемы вынесены из компонентов, а values выводятся через `z.infer`.
+  - Плотные интерактивные draft-редакторы остаются controlled React state и не превращаются в одну большую RHF-форму.
   - Zod также применяется выборочно для runtime-проверки критичных API-ответов; generated OpenAPI-типы остаются compile-time source of truth.
 
 - **Интернационализация (`react-i18next`, `i18next`, `i18next-browser-languagedetector`)**
-  - **i18next/react-i18next**: i18n-движок, переключение языков и ключи переводов.
+  - **i18next/react-i18next**: i18n-движок, feature-owned ресурсы, переключение языков и TypeScript-проверка ключей через module augmentation.
   - **browser-languagedetector**: автоматический выбор языка по браузеру/настройкам.
+  - Locale parity check сравнивает `en/ru/uk/pl` внутри каждого feature translation module.
 
 - **SignalR клиент (`@microsoft/signalr`)**
   - Используется для realtime-синхронизации `game-board` (`cellOpened`, `modifierActivated`) и `game-setup` (`draftChanged`).

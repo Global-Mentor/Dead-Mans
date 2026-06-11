@@ -11,6 +11,7 @@ alwaysApply: false
 - Prefer explicit config over magical defaults when auth origin, proxying, build behavior, or strictness affect runtime behavior.
 - Keep TypeScript and linting strict. Do not relax checks casually to make a local change pass.
 - Keep `@tanstack/eslint-plugin-query` enabled with the flat strict recommended config so query options and hook dependency rules remain enforced.
+- Keep i18next resource type augmentation and the feature-locale parity check enabled. `check:locales` must discover every `*-translations.ts` module and compare all supported languages inside it.
 - Use `npm --prefix frontend run check` as the canonical frontend quality gate. It must cover Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip, and the production build.
 - Keep CI and local verification aligned: CI installs frontend dependencies with `npm --prefix frontend ci` and runs the same `check` script.
 - Treat Prettier and Knip configuration as maintained project tooling. Keep generated transport artifacts excluded from formatting/dead-code ownership where their generators are the source of truth.
