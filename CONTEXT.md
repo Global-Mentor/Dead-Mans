@@ -97,8 +97,10 @@
 - TanStack Query владеет server state; React Hook Form + Zod используются для transactional submitted-форм, схемы живут вне компонентов, а типы значений выводятся через `z.infer`. Плотный game-setup draft остаётся controlled React state.
 - Критичный auth response дополнительно валидируется runtime-схемой; generated OpenAPI types остаются compile-time transport source of truth.
 - Локали принадлежат фичам, ключи i18next проверяются TypeScript через module augmentation, а parity всех `en/ru/uk/pl` модулей входит в общий quality gate.
-- Vitest + React Testing Library покрывают shared/model logic, routes, capabilities и ключевые page states.
-- Единый frontend quality gate — `npm --prefix frontend run check`: Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip и production build. CI использует `npm ci` и запускает тот же gate.
+- Vitest + React Testing Library покрывают setup draft/save/conflict, registration mutations, realtime models, routes/capabilities и ключевые page states. V8 coverage thresholds заданы для критичных модулей, а не глобальным процентом по всему SPA.
+- TypeScript baseline включает `noUncheckedIndexedAccess` и `exactOptionalPropertyTypes` в app и tooling-конфигах.
+- Единый frontend quality gate — `npm --prefix frontend run check`: Prettier, строгий TypeScript, ESLint, locale consistency, Vitest coverage, Knip и production build. CI использует `npm ci` и запускает тот же gate.
+- Playwright пока остаётся следующим отдельным этапом: 3–5 smoke-сценариев после подготовки стабильных test data и auth fixture.
 
 ### Основные страницы
 

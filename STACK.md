@@ -58,12 +58,15 @@
   - Используется для realtime-синхронизации `game-board` (`cellOpened`, `modifierActivated`) и `game-setup` (`draftChanged`).
   - Shared hook владеет connection lifecycle, а фичи — регистрацией и обработкой своих событий.
 
-- **Тестирование (Vitest + React Testing Library)**
+- **Тестирование (Vitest + React Testing Library + V8 coverage)**
   - Юнит-тесты для model/shared logic и поведенческие тесты hooks/components в `jsdom`.
+  - Coverage thresholds применяются к критичным setup, registration, realtime, route и capability-модулям; формальный глобальный процент для всего SPA не используется.
+  - Playwright запланирован отдельным smoke-слоем из 3–5 сценариев после подготовки стабильных test fixtures.
 
 - **Качество кода (Prettier + ESLint + Knip)**
   - Prettier задаёт единый формат, ESLint проверяет кодовые правила, Knip обнаруживает неиспользуемые файлы, exports и dependencies.
   - `@tanstack/eslint-plugin-query` в strict recommended режиме проверяет TanStack Query hooks и dependency stability.
+  - TypeScript включает `noUncheckedIndexedAccess` и `exactOptionalPropertyTypes` для app и tooling-кода.
   - Каноническая локальная проверка: `npm --prefix frontend run check`.
 
 - **Client-only state и UI add-ons — по потребности**

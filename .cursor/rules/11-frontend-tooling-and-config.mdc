@@ -10,9 +10,11 @@ alwaysApply: false
 - Keep the contract workflow intact: OpenAPI-generated types remain the transport source for the SPA, and scripts/config should keep regeneration, linting, and build verification working.
 - Prefer explicit config over magical defaults when auth origin, proxying, build behavior, or strictness affect runtime behavior.
 - Keep TypeScript and linting strict. Do not relax checks casually to make a local change pass.
+- Keep `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` enabled in both app and tooling TypeScript configs. Narrow indexed values and omit absent optional properties instead of asserting them away or passing explicit `undefined`.
 - Keep `@tanstack/eslint-plugin-query` enabled with the flat strict recommended config so query options and hook dependency rules remain enforced.
 - Keep i18next resource type augmentation and the feature-locale parity check enabled. `check:locales` must discover every `*-translations.ts` module and compare all supported languages inside it.
-- Use `npm --prefix frontend run check` as the canonical frontend quality gate. It must cover Prettier, TypeScript, ESLint, locale consistency, Vitest, Knip, and the production build.
+- Use `npm --prefix frontend run check` as the canonical frontend quality gate. It must cover Prettier, strict TypeScript, ESLint, locale consistency, Vitest with V8 coverage, Knip, and the production build.
+- Keep coverage thresholds scoped to critical modules and workflows. Raise them as meaningful tests are added; do not replace risk-based coverage with an arbitrary global percentage target.
 - Keep CI and local verification aligned: CI installs frontend dependencies with `npm --prefix frontend ci` and runs the same `check` script.
 - Treat Prettier and Knip configuration as maintained project tooling. Keep generated transport artifacts excluded from formatting/dead-code ownership where their generators are the source of truth.
 - Add focused behavioral tests when cleanup changes user-visible empty/error states, route access, or action capabilities; compilation and Knip alone are not regression coverage.

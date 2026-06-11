@@ -11,7 +11,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - MUI
 - React Hook Form + Zod
 - i18next / react-i18next
-- Vitest + React Testing Library
+- Vitest + React Testing Library + V8 coverage
 - Prettier + Knip
 
 ## Что есть в приложении
@@ -58,6 +58,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - Локальное UI-state остаётся в React. Zustand добавляется только при реальном cross-tree client-state, а не заранее.
 - MUI + Emotion и `AppToast` остаются единым UI/feedback baseline. Иконки, Framer Motion, SVG-компоненты и брендовые icon packs добавляются вместе с использующей их фичей.
 - Весь user-facing текст проходит через feature-owned i18n resources. Module augmentation i18next проверяет ключи в TypeScript, а `check:locales` сохраняет parity `en/ru/uk/pl`.
+- TypeScript работает с `noUncheckedIndexedAccess` и `exactOptionalPropertyTypes`; optional-поля не заполняются явным `undefined`, а индексный доступ требует проверки.
+- Vitest покрывает setup draft/save/conflict, registration mutations, realtime models, route access и ключевые loading/error/empty/success состояния страниц. Coverage thresholds применяются к критичным модулям по отдельности, а не как формальная глобальная цель.
 
 ## UI и стили (единый стандарт)
 
@@ -155,9 +157,14 @@ npm run build
 npm run check
 ```
 
-`check` последовательно проверяет форматирование, TypeScript, ESLint, локали, тесты,
-неиспользуемый код/экспорты через Knip и production-сборку. CI устанавливает зависимости через
-`npm ci` и запускает тот же quality gate.
+`check` последовательно проверяет форматирование, строгий TypeScript, ESLint, локали, Vitest с
+V8 coverage для критичных модулей, неиспользуемый код/экспорты через Knip и
+production-сборку. Отдельный локальный прогон coverage: `npm run test:coverage`. CI
+устанавливает зависимости через `npm ci` и запускает тот же quality gate.
+
+Playwright пока не входит в обязательный frontend gate. Следующий e2e-этап — добавить 3–5
+стабильных smoke-сценариев для auth/panel routing, game board, game setup save/conflict и
+registration flow после подготовки управляемых test data и auth fixture.
 
 ## Ограничение текущего скоупа
 
