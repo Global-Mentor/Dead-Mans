@@ -81,10 +81,14 @@ Do not hand-edit generated files.
   - `dotnet test backend/backend.slnx`
 - Frontend quality gate:
   - `npm --prefix frontend run check`
-  - включает Prettier check, TypeScript, ESLint, locale consistency, Vitest, Knip и production build
+  - включает Prettier check, строгий TypeScript, ESLint, locale consistency, Vitest с V8 coverage для критичных модулей, Knip и production build
+  - отдельный coverage-прогон: `npm --prefix frontend run test:coverage`
 - Generated artifacts are up to date:
   - run `npm --prefix frontend run generate:transport`
   - ensure no unexpected git diff in generated paths
 
 CI устанавливает frontend dependencies через `npm --prefix frontend ci` и запускает тот же
 `npm --prefix frontend run check`, поэтому локальная проверка совпадает с pull request pipeline.
+
+Playwright smoke tests будут добавлены отдельным этапом после появления стабильных test data и
+auth fixture; плановый минимальный набор — 3–5 ключевых пользовательских сценариев.
