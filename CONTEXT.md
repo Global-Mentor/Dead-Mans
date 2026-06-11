@@ -90,6 +90,7 @@
 - TanStack Query keys и `queryOptions` живут внутри owning feature; повторяемые invalidation/error policies оформляются через `mutationOptions`;
 - shared SignalR код управляет connect/reconnect/start/stop, а event-specific handlers и resync остаются внутри owning feature;
 - registration HTTP живёт в `src/features/game-registration/api/`; UI — `game-application/` и `team-registrations/`.
+- крупные экраны и orchestration-хуки декомпозированы по зонам ответственности: страницы собираются из section-компонентов в `features/<feature>/ui/`, а `game-setup` разделён на focused hooks (`use-game-setup-draft`, `use-game-setup-save`, `use-game-setup-cell-media`) под тонким `use-game-setup-page`; `PanelNavigation` разложен на `PanelPrimaryNavigation` и `PanelProfileMenu`.
 - capability-level проверки (`gameSetup`, `openGameBoardCell`) задаются через `src/shared/auth/panel-capabilities.ts`, а не через локальные матрицы ролей в фичах.
 - TanStack Query владеет server state; React Hook Form + Zod используются для submitted-форм, а критичный auth response дополнительно валидируется runtime-схемой.
 - Vitest + React Testing Library покрывают shared/model logic, routes, capabilities и ключевые page states.
