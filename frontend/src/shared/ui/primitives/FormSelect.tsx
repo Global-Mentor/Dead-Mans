@@ -30,15 +30,15 @@ export function FormSelect<TValue extends string | number>({
       {...props}
       select
       value={value}
-      SelectProps={
-        ariaLabel
-          ? {
+      {...(ariaLabel
+        ? {
+            SelectProps: {
               inputProps: {
                 'aria-label': ariaLabel,
               },
-            }
-          : undefined
-      }
+            },
+          }
+        : {})}
       onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value as TValue)}
     >
       {options.map((option) => (

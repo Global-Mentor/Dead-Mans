@@ -4,11 +4,11 @@ import { pageShellSx, setupSplitLayoutSx } from '../../theme/layout-sx.ts'
 
 type PageShellVariant = 'standard' | 'centered' | 'split'
 
-interface PageShellProps extends BoxProps {
+interface PageShellProps extends Omit<BoxProps, 'component'> {
   variant?: PageShellVariant
 }
 
-function resolveVariantSx(variant: PageShellVariant): BoxProps['sx'] {
+function resolveVariantSx(variant: PageShellVariant): SxProps<Theme> {
   switch (variant) {
     case 'centered':
       return {

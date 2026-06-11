@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { hasPanelCapability } from './panel-capabilities.ts'
 
 describe('panel capabilities', () => {
+  it('denies access when the session has no roles', () => {
+    expect(hasPanelCapability('gameSetup', undefined)).toBe(false)
+    expect(hasPanelCapability('gameSetup', [])).toBe(false)
+  })
+
   it('keeps game setup restricted to admins', () => {
     expect(hasPanelCapability('gameSetup', ['admin'])).toBe(true)
     expect(hasPanelCapability('gameSetup', ['moderator'])).toBe(false)

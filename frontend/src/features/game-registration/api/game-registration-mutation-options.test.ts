@@ -1,12 +1,40 @@
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  acceptGameRegistrationInvitationMutationOptions,
+  confirmGameRegistrationTeamMutationOptions,
   createGameRegistrationTeamMutationOptions,
+  declineGameRegistrationInvitationMutationOptions,
+  joinGameRegistrationTeamMutationOptions,
+  leaveGameRegistrationTeamMutationOptions,
   rejectGameRegistrationTeamMutationOptions,
 } from './game-registration-mutation-options.ts'
+import {
+  acceptGameRegistrationInvitation,
+  confirmGameRegistrationTeam,
+  createGameRegistrationTeam,
+  declineGameRegistrationInvitation,
+  joinGameRegistrationTeam,
+  leaveGameRegistrationTeam,
+  rejectGameRegistrationTeam,
+} from './game-registration-api.ts'
 import { gameRegistrationQueryKeys } from './game-registration-queries.ts'
 
 describe('game registration mutation options', () => {
+  it.each([
+    [createGameRegistrationTeamMutationOptions, createGameRegistrationTeam],
+    [joinGameRegistrationTeamMutationOptions, joinGameRegistrationTeam],
+    [leaveGameRegistrationTeamMutationOptions, leaveGameRegistrationTeam],
+    [acceptGameRegistrationInvitationMutationOptions, acceptGameRegistrationInvitation],
+    [declineGameRegistrationInvitationMutationOptions, declineGameRegistrationInvitation],
+    [confirmGameRegistrationTeamMutationOptions, confirmGameRegistrationTeam],
+    [rejectGameRegistrationTeamMutationOptions, rejectGameRegistrationTeam],
+  ])('keeps each concrete mutation wired to its API operation', (factory, mutationFn) => {
+    const options = factory(new QueryClient(), vi.fn())
+
+    expect(options.mutationFn).toBe(mutationFn)
+  })
+
   it('invalidates all registration queries after a successful mutation', async () => {
     const queryClient = new QueryClient()
     const invalidateQueries = vi

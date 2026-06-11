@@ -42,7 +42,7 @@ export function setGameQuestionCategoryEnabled(
     apiClient.PATCH('/game/questions/categories/{category}/enabled', {
       params: {
         path: { category },
-        query: { vectorCode },
+        query: vectorCode ? { vectorCode } : {},
       },
       body: { isEnabled },
     }),

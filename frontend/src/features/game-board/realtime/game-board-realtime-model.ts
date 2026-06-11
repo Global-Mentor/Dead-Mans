@@ -12,6 +12,17 @@ interface CellOpenedPatchResult {
   requiresResync: boolean
 }
 
+export function selectNewerGameBoardSnapshot(
+  current: GameBoardSnapshot | null | undefined,
+  incoming: GameBoardSnapshot,
+): GameBoardSnapshot {
+  if (!current) {
+    return incoming
+  }
+
+  return incoming.version > current.version ? incoming : current
+}
+
 export function applyCellOpenedEvent(
   current: GameBoardSnapshot | null | undefined,
   event: CellOpenedEvent,

@@ -18,10 +18,10 @@ import {
 import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
 
 interface GameSetupCellImageProps {
-  imageUrl?: string
-  imageKey?: string
+  imageUrl: string | undefined
+  imageKey: string | undefined
   alt: string
-  cellId?: string
+  cellId: string | undefined
   phase: GameSetupCellMediaPhase
   canManageMedia: boolean
   isBusy: boolean
@@ -31,7 +31,7 @@ interface GameSetupCellImageProps {
 
 interface GameSetupCellImagePreviewProps {
   imageUrl: string
-  imageKey?: string
+  imageKey: string | undefined
   alt: string
   isBusy: boolean
   isDragOver: boolean
