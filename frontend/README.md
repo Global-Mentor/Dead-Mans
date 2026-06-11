@@ -40,9 +40,10 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/app/panel-route-config.tsx` — единый источник panel routes (метаданные, lazy-страницы, optional realtime-sync);
 - `src/app/AppRoutes.tsx` + `src/app/app-route-tree.tsx` — дерево маршрутов (`useRoutes`);
 - `src/routes/app-routes.ts` — re-export метаданных, guards и access helpers;
-- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigation`);
+- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigation` + `PanelPrimaryNavigation`/`PanelProfileMenu`);
 - `src/shared/auth/panel-capabilities.ts` — capability-level access helpers поверх route-level role checks;
 - `src/features/*` — feature-first модули; page entrypoints остаются в корне фичи, а нетривиальные внутренности разделяются на `ui/`, `model/`, `api/`, `realtime/`, `theme/` и `lib/` по необходимости.
+- Крупные экраны раскладываются на section-компоненты в `features/<feature>/ui/` (например, `game-application/ui/*`, `game-setup/ui/GameSetupSyncActions|BoardNotices|EmptyState`), а крупные orchestration-хуки делятся на focused hooks по одной зоне ответственности (`game-setup`: `use-game-setup-draft` / `use-game-setup-save` / `use-game-setup-cell-media`, собранные тонким `use-game-setup-page`). Одноразовые компоненты не оборачиваются в абстракции.
 
 ## Инженерный baseline
 
