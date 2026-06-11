@@ -22,7 +22,7 @@ export function AppDialog({
       fullWidth
       maxWidth="sm"
       {...dialogProps}
-      aria-describedby={description ? descriptionId : undefined}
+      {...(description ? { 'aria-describedby': descriptionId } : {})}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>

@@ -106,18 +106,22 @@ function toPanelRouteMetadata(entry: (typeof panelRouteConfig)[number]): PanelRo
     path: entry.path,
     fullPath: entry.fullPath,
     labelKey: entry.labelKey,
-    allowedRoles: entry.allowedRoles,
+    ...(entry.allowedRoles ? { allowedRoles: entry.allowedRoles } : {}),
   }
 }
 
 export const panelRoutes = panelRouteConfig.map(toPanelRouteMetadata)
 
-const panelRouteById = Object.fromEntries(panelRoutes.map((route) => [route.id, route])) as Record<
-  PanelRouteId,
-  PanelRouteMetadata
->
+function requirePanelRoute(routeId: PanelRouteId): PanelRouteMetadata {
+  const route = panelRoutes.find(({ id }) => id === routeId)
+  if (!route) {
+    throw new Error(`Panel route "${routeId}" is not configured`)
+  }
 
-export const gameBoardRoute = panelRouteById['game-board']
-export const gameApplicationRoute = panelRouteById['game-application']
-export const gameSetupRoute = panelRouteById['game-setup']
-export const teamRegistrationsRoute = panelRouteById['team-registrations']
+  return route
+}
+
+export const gameBoardRoute = requirePanelRoute('game-board')
+export const gameApplicationRoute = requirePanelRoute('game-application')
+export const gameSetupRoute = requirePanelRoute('game-setup')
+export const teamRegistrationsRoute = requirePanelRoute('team-registrations')

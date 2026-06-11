@@ -1,6 +1,6 @@
 export class ApiError extends Error {
-  status?: number
-  details?: unknown
+  status: number | undefined
+  details: unknown
 
   constructor(message: string, options: { status?: number; details?: unknown } = {}) {
     super(message)

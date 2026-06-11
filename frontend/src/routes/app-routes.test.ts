@@ -5,6 +5,7 @@ import {
   gameSetupRoute,
   getAccessiblePanelRoutes,
   getPanelRouteByPath,
+  hasAccessToPanelRoute,
   teamRegistrationsRoute,
 } from './app-routes.ts'
 
@@ -25,5 +26,19 @@ describe('panel route helpers', () => {
   it('resolves nested panel paths to their route metadata', () => {
     expect(getPanelRouteByPath('/panel/game-board/cell/1')).toBe(gameBoardRoute)
     expect(getPanelRouteByPath('/outside')).toBeNull()
+  })
+
+  it('denies restricted routes without a matching authenticated role', () => {
+    expect(hasAccessToPanelRoute(gameSetupRoute, undefined)).toBe(false)
+    expect(hasAccessToPanelRoute(gameSetupRoute, [])).toBe(false)
+    expect(hasAccessToPanelRoute(gameSetupRoute, ['viewer'])).toBe(false)
+    expect(hasAccessToPanelRoute(gameSetupRoute, ['admin'])).toBe(true)
+  })
+
+  it('allows routes that do not declare role restrictions', () => {
+    const unrestrictedRoute = { ...gameBoardRoute }
+    delete unrestrictedRoute.allowedRoles
+
+    expect(hasAccessToPanelRoute(unrestrictedRoute, undefined)).toBe(true)
   })
 })

@@ -8,6 +8,7 @@ import {
   loadGameSetupDraftQueryState,
   type LoadedGameSetupDraftState,
 } from '../model/game-setup-query-state.ts'
+import { selectNewerGameSetupState } from './game-setup-realtime-model.ts'
 
 const DRAFT_CHANGED_EVENT = realtimeHubs.gameSetup.events.draftChanged
 
@@ -25,13 +26,7 @@ export function GameSetupRealtimeSync() {
 
     queryClient.setQueryData<LoadedGameSetupDraftState>(
       gameSetupDraftQueryOptions.queryKey,
-      (current) => {
-        if (!current?.snapshot || !loaded.snapshot) {
-          return loaded
-        }
-
-        return loaded.snapshot.version >= current.snapshot.version ? loaded : current
-      },
+      (current) => selectNewerGameSetupState(current, loaded),
     )
   }, [queryClient])
 

@@ -11,7 +11,7 @@ export function AppLinkButton({ to, ...props }: AppLinkButtonProps) {
   return (
     <AppButton
       {...props}
-      component={RouterLink as unknown as AppButtonProps['component']}
+      component={RouterLink as unknown as NonNullable<AppButtonProps['component']>}
       {...({ to } as Record<string, unknown>)}
     />
   )

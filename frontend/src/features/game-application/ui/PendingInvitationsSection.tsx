@@ -7,8 +7,8 @@ interface PendingInvitationsSectionProps {
   invitations: RegistrationInvitation[]
   onAccept: (invitationId: string) => void
   onDecline: (invitationId: string) => void
-  pendingAcceptId?: string
-  pendingDeclineId?: string
+  pendingAcceptId: string | undefined
+  pendingDeclineId: string | undefined
 }
 
 export function PendingInvitationsSection({

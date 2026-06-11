@@ -8,6 +8,7 @@ import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
 import { currentGameBoardQueryOptions } from '../api/game-board-queries.ts'
 import {
   applyCellOpenedEvent,
+  selectNewerGameBoardSnapshot,
   type CellOpenedEvent,
   type ModifierActivatedEvent,
 } from './game-board-realtime-model.ts'
@@ -29,13 +30,7 @@ export function GameBoardRealtimeSync() {
 
     queryClient.setQueryData<GameBoardSnapshot | null>(
       currentGameBoardQueryOptions.queryKey,
-      (current) => {
-        if (!current) {
-          return freshSnapshot
-        }
-
-        return freshSnapshot.version > current.version ? freshSnapshot : current
-      },
+      (current) => selectNewerGameBoardSnapshot(current, freshSnapshot),
     )
   }, [queryClient])
 

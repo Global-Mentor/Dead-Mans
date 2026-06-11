@@ -1,10 +1,11 @@
 import { TextField } from '@mui/material'
-import type { SxProps, TextFieldProps, Theme } from '@mui/material'
+import type { OutlinedTextFieldProps, SxProps, Theme } from '@mui/material'
 
 type FormFieldLayout = 'default' | 'compact' | 'centered'
 
-export type FormTextFieldProps = TextFieldProps & {
+export interface FormTextFieldProps extends Omit<OutlinedTextFieldProps, 'variant'> {
   layout?: FormFieldLayout
+  variant?: 'outlined'
 }
 
 function resolveLayoutSx(layout: FormFieldLayout): SxProps<Theme> | undefined {
@@ -30,7 +31,7 @@ export function FormTextField({ layout = 'default', sx, ...props }: FormTextFiel
       size={props.size ?? 'small'}
       fullWidth={props.fullWidth ?? true}
       {...props}
-      sx={mergedSx}
+      {...(mergedSx ? { sx: mergedSx } : {})}
     />
   )
 }

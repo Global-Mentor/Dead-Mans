@@ -7,7 +7,7 @@ import { TeamSummary } from './TeamSummary.tsx'
 interface OpenTeamsSectionProps {
   teams: RegistrationTeam[]
   onJoin: (teamId: string) => void
-  joiningTeamId?: string
+  joiningTeamId: string | undefined
 }
 
 export function OpenTeamsSection({ teams, onJoin, joiningTeamId }: OpenTeamsSectionProps) {

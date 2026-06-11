@@ -1,29 +1,40 @@
 import { cleanup, screen } from '@testing-library/react'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { GameBoardPage } from './GameBoardPage.tsx'
 
+const pageMocks = vi.hoisted(() => ({
+  useGameBoardPage: vi.fn(),
+}))
+
 vi.mock('./use-game-board-page.ts', () => ({
-  useGameBoardPage: () => ({
+  useGameBoardPage: pageMocks.useGameBoardPage,
+}))
+
+const readySnapshot = {
+  gameId: 'game-1',
+  title: 'Тестовая игра',
+  description: 'Описание игры',
+  status: 'active' as const,
+  version: 1,
+  rows: 1,
+  cols: 1,
+  rowLabels: ['A'],
+  colLabels: ['1'],
+  cells: [],
+  enabledModifierCodes: [],
+  activeModifiers: [],
+}
+
+function createPageQuery(overrides: Record<string, unknown> = {}) {
+  return {
     isLoading: false,
     isError: false,
-    data: {
-      gameId: 'game-1',
-      title: 'Тестовая игра',
-      description: 'Описание игры',
-      status: 'active',
-      version: 1,
-      rows: 1,
-      cols: 1,
-      rowLabels: ['A'],
-      colLabels: ['1'],
-      cells: [],
-      enabledModifierCodes: [],
-      activeModifiers: [],
-    },
-  }),
-}))
+    data: readySnapshot,
+    ...overrides,
+  }
+}
 
 vi.mock('./use-open-game-board-cell.ts', () => ({
   useOpenGameBoardCell: () => ({
@@ -46,11 +57,32 @@ beforeAll(async () => {
   await i18n.changeLanguage('ru')
 })
 
+beforeEach(() => {
+  pageMocks.useGameBoardPage.mockReturnValue(createPageQuery())
+})
+
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
 })
 
 describe('GameBoardPage', () => {
+  it('renders loading, error and empty states', () => {
+    pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isLoading: true }))
+    renderWithAppProviders(<GameBoardPage />)
+    expect(screen.getByText('Загрузка игрового поля...')).toBeInTheDocument()
+
+    cleanup()
+    pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isError: true }))
+    renderWithAppProviders(<GameBoardPage />)
+    expect(screen.getByText('Не удалось загрузить игровое поле.')).toBeInTheDocument()
+
+    cleanup()
+    pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ data: null }))
+    renderWithAppProviders(<GameBoardPage />)
+    expect(screen.getByText('Игровое поле сейчас недоступно.')).toBeInTheDocument()
+  })
+
   it('renders only the game board surface and its status', () => {
     renderWithAppProviders(<GameBoardPage />)
 
