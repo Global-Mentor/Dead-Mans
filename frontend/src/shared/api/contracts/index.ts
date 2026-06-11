@@ -17,3 +17,4 @@ export type AuthRole = components['schemas']['AuthRole']
 export type AuthSession = components['schemas']['AuthSessionDto']
 
 export type RegistrationTeam = components['schemas']['RegistrationTeamDto']
+export type RegistrationInvitation = components['schemas']['RegistrationInvitationDto']
