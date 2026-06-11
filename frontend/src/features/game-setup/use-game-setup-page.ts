@@ -1,304 +1,49 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ApiError } from '../../shared/api/errors/ApiError.ts'
-import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
-import {
-  createDraftGameSetup,
-  deleteDraftGameSetup,
-  saveDraftGameSetup,
-} from './api/game-setup-api.ts'
-import { gameSetupDraftQueryOptions } from './api/game-setup-queries.ts'
-import {
-  buildUpdateGameSetupRequest,
-  isGameSetupDraftDirty,
-  type GameSetupDraftState,
-} from './model/game-setup-draft.ts'
-import {
-  createLoadedDraftState,
-  getSnapshotDraftKey,
-  loadGameSetupDraftQueryState,
-  type LoadedGameSetupDraftState,
-} from './model/game-setup-query-state.ts'
-import type { ErrorResponse } from '../../shared/api/contracts/index.ts'
+import type { GameSetupDraftState } from './model/game-setup-draft.ts'
 import { useGameSetupCellMedia } from './use-game-setup-cell-media.ts'
-import {
-  getGameSetupDraftValidationError,
-  type GameSetupDraftValidationError,
-} from './model/game-setup-draft-validation.ts'
+import { useGameSetupDraft } from './use-game-setup-draft.ts'
+import { useGameSetupSave } from './use-game-setup-save.ts'
 
-export type GameSetupSyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict'
-type GameSetupSaveErrorKey = GameSetupDraftValidationError | 'saveFailed'
-type GameSetupResetErrorKey = 'resetFailed'
-
-interface DraftOverride {
-  key: string
-  draft: GameSetupDraftState
-}
-
-function isStaleVersionError(error: unknown): boolean {
-  if (!(error instanceof ApiError) || error.status !== 409) {
-    return false
-  }
-
-  if (!error.details || typeof error.details !== 'object') {
-    return false
-  }
-
-  return (error.details as ErrorResponse).code === API_ERROR_CODES.gameSetupStaleVersion
-}
-
+/**
+ * Composition root for the admin game-setup page. It wires the three focused
+ * orchestration hooks — draft state ({@link useGameSetupDraft}), persistence and
+ * conflicts ({@link useGameSetupSave}), and cell media ({@link useGameSetupCellMedia})
+ * — into the single surface the page renders against. Draft lifecycle actions
+ * are wrapped here so they also reconcile save status.
+ */
 export function useGameSetupPage() {
-  const queryClient = useQueryClient()
-  const [draftOverride, setDraftOverride] = useState<DraftOverride | null>(null)
-  const [syncStatus, setSyncStatus] = useState<GameSetupSyncStatus>('saved')
-  const [saveErrorMessage, setSaveErrorMessage] = useState<GameSetupSaveErrorKey | null>(null)
-  const [resetErrorMessage, setResetErrorMessage] = useState<GameSetupResetErrorKey | null>(null)
-  const [remoteChangeNotice, setRemoteChangeNotice] = useState(false)
-  const [draftRemovedNotice, setDraftRemovedNotice] = useState(false)
-  const lastSyncedVersionRef = useRef<number | null>(null)
-  const hadSnapshotRef = useRef(false)
-
-  const draftQuery = useQuery(gameSetupDraftQueryOptions)
-
-  const snapshot = draftQuery.data?.snapshot ?? null
-  const savedDraft = draftQuery.data?.savedDraft ?? null
-  const snapshotDraftKey = snapshot ? getSnapshotDraftKey(snapshot) : null
-  const activeDraftOverride =
-    snapshotDraftKey && draftOverride?.key === snapshotDraftKey ? draftOverride : null
-  const draft = activeDraftOverride?.draft ?? draftQuery.data?.initialDraft ?? null
-
-  const isDirty = useMemo(() => {
-    if (!savedDraft || !draft) {
-      return false
-    }
-
-    return isGameSetupDraftDirty(savedDraft, draft)
-  }, [savedDraft, draft])
-
-  const applyLoadedDraftState = useCallback(
-    (loaded: LoadedGameSetupDraftState) => {
-      const previous = queryClient.getQueryData<LoadedGameSetupDraftState>(
-        gameSetupDraftQueryOptions.queryKey,
-      )
-      if (previous?.snapshot && !loaded.snapshot) {
-        setDraftRemovedNotice(true)
-      }
-
-      setDraftOverride(null)
-      queryClient.setQueryData(gameSetupDraftQueryOptions.queryKey, loaded)
-      lastSyncedVersionRef.current = loaded.snapshot?.version ?? null
-    },
-    [queryClient],
-  )
-
-  const handleSaveConflict = useCallback(async () => {
-    const loaded = await loadGameSetupDraftQueryState()
-    applyLoadedDraftState(loaded)
-    setSyncStatus('conflict')
-    setRemoteChangeNotice(true)
-  }, [applyLoadedDraftState])
-
-  const { mutateAsync: saveDraftAsync, isPending: isSaving } = useMutation({
-    mutationFn: async ({
-      draftToSave,
-      expectedVersion,
-    }: {
-      draftToSave: GameSetupDraftState
-      expectedVersion: number
-    }) => saveDraftGameSetup(buildUpdateGameSetupRequest(draftToSave, expectedVersion)),
-    onMutate: () => {
-      setSyncStatus('saving')
-      setSaveErrorMessage(null)
-    },
-    onSuccess: (nextSnapshot) => {
-      applyLoadedDraftState(createLoadedDraftState(nextSnapshot))
-      setSyncStatus('saved')
-      setRemoteChangeNotice(false)
-    },
-    onError: async (error) => {
-      if (isStaleVersionError(error)) {
-        await handleSaveConflict()
-        return
-      }
-
-      if (error instanceof ApiError && error.status === 404) {
-        applyLoadedDraftState(createLoadedDraftState(null))
-        setSyncStatus('idle')
-        return
-      }
-
-      if (error instanceof ApiError && error.details && typeof error.details === 'object') {
-        const payload = error.details as ErrorResponse
-        if (payload.code === API_ERROR_CODES.invalidGameSetupTitle) {
-          setSaveErrorMessage('invalidTitle')
-          setSyncStatus('error')
-          return
-        }
-      }
-
-      setSaveErrorMessage('saveFailed')
-      setSyncStatus('error')
-    },
+  const draft = useGameSetupDraft()
+  const save = useGameSetupSave({
+    draft: draft.draft,
+    snapshot: draft.snapshot,
+    snapshotDraftKey: draft.snapshotDraftKey,
+    isDirty: draft.isDirty,
+    applyLoadedDraftState: draft.applyLoadedDraftState,
+    setDraftOverride: draft.setDraftOverride,
+    setRemoteChangeNotice: draft.setRemoteChangeNotice,
   })
-
-  const saveDraft = useCallback(async () => {
-    if (!draft || !snapshot || !isDirty) {
-      return
-    }
-
-    const validationError = getGameSetupDraftValidationError(draft)
-    if (validationError) {
-      setSaveErrorMessage(validationError)
-      setSyncStatus('error')
-      return
-    }
-
-    await saveDraftAsync({
-      draftToSave: draft,
-      expectedVersion: snapshot.version,
-    })
-  }, [draft, isDirty, saveDraftAsync, snapshot])
-
-  const saveDraftWithLayout = useCallback(
-    async (nextDraft: GameSetupDraftState) => {
-      if (!snapshot) {
-        return
-      }
-
-      const validationError = getGameSetupDraftValidationError(nextDraft)
-      if (validationError) {
-        setSaveErrorMessage(validationError)
-        setSyncStatus('error')
-        return
-      }
-
-      await saveDraftAsync({
-        draftToSave: nextDraft,
-        expectedVersion: snapshot.version,
-      })
-    },
-    [saveDraftAsync, snapshot],
-  )
-
-  const flushDraftSave = useCallback(async () => {
-    await saveDraft()
-  }, [saveDraft])
-
-  useEffect(() => {
-    const hadSnapshot = hadSnapshotRef.current
-    hadSnapshotRef.current = snapshot !== null
-
-    if (!snapshot) {
-      if (hadSnapshot && draftOverride !== null) {
-        queueMicrotask(() => setDraftRemovedNotice(true))
-      }
-
-      lastSyncedVersionRef.current = null
-      queueMicrotask(() => setDraftOverride(null))
-      return
-    }
-
-    const previousVersion = lastSyncedVersionRef.current
-    lastSyncedVersionRef.current = snapshot.version
-
-    if (previousVersion === null || previousVersion === snapshot.version) {
-      return
-    }
-
-    if (isDirty) {
-      queueMicrotask(() => setRemoteChangeNotice(true))
-      return
-    }
-
-    queueMicrotask(() => setDraftOverride(null))
-    queueMicrotask(() => setRemoteChangeNotice(false))
-  }, [draftOverride, isDirty, snapshot])
-
-  const resolvedSyncStatus = useMemo((): GameSetupSyncStatus => {
-    if (syncStatus === 'saving' || syncStatus === 'error' || syncStatus === 'conflict') {
-      return syncStatus
-    }
-
-    if (isDirty) {
-      return syncStatus === 'saved' ? 'idle' : syncStatus
-    }
-
-    return 'saved'
-  }, [isDirty, syncStatus])
-
-  const cellMedia = useGameSetupCellMedia(snapshot, { flushDraftSave })
-
-  const createDraftMutation = useMutation({
-    mutationFn: createDraftGameSetup,
-    onSuccess: (nextSnapshot) => {
-      applyLoadedDraftState(createLoadedDraftState(nextSnapshot))
-      setResetErrorMessage(null)
-      setSaveErrorMessage(null)
-      setDraftRemovedNotice(false)
-      setSyncStatus('saved')
-    },
+  const cellMedia = useGameSetupCellMedia(draft.snapshot, {
+    flushDraftSave: save.flushDraftSave,
   })
 
   const updateDraft = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
-    if (!snapshotDraftKey || !draft) {
-      return
-    }
-
-    setDraftOverride({
-      key: snapshotDraftKey,
-      draft: updater(draft),
-    })
-    setSaveErrorMessage(null)
-    setResetErrorMessage(null)
-    setRemoteChangeNotice(false)
-    if (syncStatus === 'saved') {
-      setSyncStatus('idle')
-    }
+    draft.updateDraft(updater)
+    save.handleDraftEdited()
   }
 
-  const applyLayoutChange = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
-    if (!draft || !snapshot || !snapshotDraftKey) {
-      return
-    }
-
-    const previousDraft = draft
-    const nextDraft = updater(draft)
-    setDraftOverride({
-      key: snapshotDraftKey,
-      draft: nextDraft,
-    })
-    void saveDraftWithLayout(nextDraft).catch((error) => {
-      if (isStaleVersionError(error)) {
-        return
-      }
-
-      if (error instanceof ApiError && error.status === 404) {
-        return
-      }
-
-      setDraftOverride({
-        key: snapshotDraftKey,
-        draft: previousDraft,
-      })
-    })
+  const createDraft: typeof draft.createDraft = async (variables, options) => {
+    const result = await draft.createDraft(variables, options)
+    save.resetToSaved()
+    return result
   }
-
-  const deleteDraftMutation = useMutation({
-    mutationFn: deleteDraftGameSetup,
-    onSuccess: () => {
-      applyLoadedDraftState(createLoadedDraftState(null))
-      setDraftRemovedNotice(false)
-      setSaveErrorMessage(null)
-      setResetErrorMessage(null)
-      setSyncStatus('idle')
-    },
-    onError: () => {
-      setResetErrorMessage('resetFailed')
-    },
-  })
 
   const deleteDraft = async () => {
-    await deleteDraftMutation.mutateAsync()
+    await draft.deleteDraft()
+    save.resetToIdle()
+  }
+
+  const reloadFromServer = async () => {
+    await draft.reloadFromServer()
+    save.resetToSaved()
   }
 
   const toggleModifier = (modifierCode: string, enabled: boolean) => {
@@ -317,43 +62,30 @@ export function useGameSetupPage() {
     })
   }
 
-  const dismissRemoteChangeNotice = () => setRemoteChangeNotice(false)
-  const dismissDraftRemovedNotice = () => setDraftRemovedNotice(false)
-
-  const reloadFromServer = async () => {
-    const loaded = await loadGameSetupDraftQueryState()
-    applyLoadedDraftState(loaded)
-    if (loaded.snapshot) {
-      setDraftRemovedNotice(false)
-    }
-    setRemoteChangeNotice(false)
-    setSyncStatus('saved')
-  }
-
   return {
-    snapshot,
-    draft,
-    isLoading: draftQuery.isLoading,
-    isError: draftQuery.isError,
-    isEmpty: draftQuery.data?.snapshot === null,
-    isDirty,
-    syncStatus: resolvedSyncStatus,
-    remoteChangeNotice,
-    draftRemovedNotice,
-    saveErrorMessage,
-    resetErrorMessage,
+    snapshot: draft.snapshot,
+    draft: draft.draft,
+    isLoading: draft.isLoading,
+    isError: draft.isError,
+    isEmpty: draft.isEmpty,
+    isDirty: draft.isDirty,
+    syncStatus: save.syncStatus,
+    remoteChangeNotice: draft.remoteChangeNotice,
+    draftRemovedNotice: draft.draftRemovedNotice,
+    saveErrorMessage: save.saveErrorMessage,
+    resetErrorMessage: draft.resetErrorMessage,
     updateDraft,
-    applyLayoutChange,
-    saveDraft,
+    applyLayoutChange: save.applyLayoutChange,
+    saveDraft: save.saveDraft,
     reloadFromServer,
-    createDraft: createDraftMutation.mutateAsync,
+    createDraft,
     deleteDraft,
     toggleModifier,
-    isCreating: createDraftMutation.isPending,
-    isResetting: deleteDraftMutation.isPending,
-    isSaving,
-    dismissRemoteChangeNotice,
-    dismissDraftRemovedNotice,
+    isCreating: draft.isCreating,
+    isResetting: draft.isResetting,
+    isSaving: save.isSaving,
+    dismissRemoteChangeNotice: draft.dismissRemoteChangeNotice,
+    dismissDraftRemovedNotice: draft.dismissDraftRemovedNotice,
     ...cellMedia,
   }
 }
