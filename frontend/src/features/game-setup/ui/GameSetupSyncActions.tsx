@@ -1,9 +1,15 @@
-import { Chip, Stack } from '@mui/material'
+import { Chip, Stack, type ChipProps } from '@mui/material'
+import type { ParseKeys } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { AppButton } from '../../../shared/ui/index.ts'
 import type { GameSetupSyncStatus } from '../use-game-setup-save.ts'
 
-function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean) {
+interface SyncChipProps {
+  color: NonNullable<ChipProps['color']>
+  labelKey: ParseKeys
+}
+
+function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean): SyncChipProps {
   switch (syncStatus) {
     case 'saving':
       return { color: 'info' as const, labelKey: 'gameSetup.sync.saving' }

@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import type { GameBoardCellMedia, GameSetupSnapshot } from '../../shared/api/contracts/index.ts'
 import {
@@ -20,7 +19,7 @@ import {
 import type { LoadedGameSetupDraftState } from './model/game-setup-query-state.ts'
 import { patchGameSetupSnapshotCellMedia } from './model/game-setup-snapshot-media.ts'
 
-type GameSetupCellMediaErrorKey =
+export type GameSetupCellMediaErrorKey =
   | GameSetupCellMediaValidationError
   | 'saveRequired'
   | 'invalidFile'
@@ -61,7 +60,6 @@ export function useGameSetupCellMedia(
   options: UseGameSetupCellMediaOptions = {},
 ) {
   const { flushDraftSave } = options
-  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [displayBySnapshotKey, setDisplayBySnapshotKey] = useState<
     Record<string, Record<string, GameSetupCellMediaDisplayState>>
@@ -294,12 +292,10 @@ export function useGameSetupCellMedia(
     [deleteMedia, isCellMediaBusy, snapshot],
   )
 
-  const cellMediaErrorMessage = errorKey ? t(`gameSetup.cellMedia.errors.${errorKey}`) : null
-
   return {
     cellMediaDisplayByCellId: displayByCellId,
     isCellMediaBusy,
-    cellMediaErrorMessage,
+    cellMediaErrorKey: errorKey,
     uploadCellMedia,
     deleteCellMedia,
     dismissCellMediaError: () => setErrorKey(null),

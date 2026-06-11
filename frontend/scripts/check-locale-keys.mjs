@@ -2,8 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import ts from 'typescript'
 
-const localesDir = path.resolve(process.cwd(), 'src/locales')
-const localeFiles = ['en.ts', 'ru.ts', 'uk.ts', 'pl.ts']
+const sourceDir = path.resolve(process.cwd(), 'src')
+const supportedLanguages = ['en', 'ru', 'uk', 'pl']
 
 function flattenKeys(value, prefix = '') {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -35,7 +35,7 @@ async function loadLocaleObject(filePath) {
 
   const dataUrl = `data:text/javascript;base64,${Buffer.from(transpiled).toString('base64')}`
   const loaded = await import(dataUrl)
-  return loaded.default?.translation
+  return loaded.default
 }
 
 function describeDiff(base, current) {
@@ -44,46 +44,70 @@ function describeDiff(base, current) {
   return { missing, extra }
 }
 
-async function main() {
-  const keySetsByFile = new Map()
+async function findTranslationModules(directory) {
+  const entries = await fs.readdir(directory, { withFileTypes: true })
+  const modules = []
 
-  for (const file of localeFiles) {
-    const locale = await loadLocaleObject(path.join(localesDir, file))
-    if (!locale || typeof locale !== 'object') {
-      throw new Error(`${file}: expected default.translation object`)
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name)
+    if (entry.isDirectory()) {
+      modules.push(...(await findTranslationModules(entryPath)))
+      continue
     }
 
-    keySetsByFile.set(file, new Set(flattenKeys(locale)))
+    if (entry.isFile() && entry.name.endsWith('-translations.ts')) {
+      modules.push(entryPath)
+    }
   }
 
-  const baseline = keySetsByFile.get('en.ts')
-  if (!baseline) {
-    throw new Error('Missing baseline locale en.ts')
+  return modules.sort()
+}
+
+async function main() {
+  const translationModules = await findTranslationModules(sourceDir)
+  if (translationModules.length === 0) {
+    throw new Error('No feature translation modules found')
   }
 
   let hasDifferences = false
-  for (const [file, current] of keySetsByFile.entries()) {
-    if (file === 'en.ts') {
-      continue
+  for (const modulePath of translationModules) {
+    const translations = await loadLocaleObject(modulePath)
+    const relativePath = path.relative(process.cwd(), modulePath)
+    if (!translations || typeof translations !== 'object') {
+      throw new Error(`${relativePath}: expected a default translation object`)
     }
 
-    const { missing, extra } = describeDiff(baseline, current)
-    if (missing.length === 0 && extra.length === 0) {
-      continue
-    }
-
-    hasDifferences = true
-    console.error(`Locale key mismatch in ${file}`)
-    if (missing.length > 0) {
-      console.error(`  Missing keys (${missing.length}):`)
-      for (const key of missing) {
-        console.error(`    - ${key}`)
+    const keySets = new Map()
+    for (const language of supportedLanguages) {
+      const locale = translations[language]
+      if (!locale || typeof locale !== 'object') {
+        throw new Error(`${relativePath}: missing ${language} translation object`)
       }
+
+      keySets.set(language, new Set(flattenKeys(locale)))
     }
-    if (extra.length > 0) {
-      console.error(`  Extra keys (${extra.length}):`)
-      for (const key of extra) {
-        console.error(`    + ${key}`)
+
+    const baseline = keySets.get('en')
+    for (const language of supportedLanguages.slice(1)) {
+      const current = keySets.get(language)
+      const { missing, extra } = describeDiff(baseline, current)
+      if (missing.length === 0 && extra.length === 0) {
+        continue
+      }
+
+      hasDifferences = true
+      console.error(`Locale key mismatch in ${relativePath} (${language})`)
+      if (missing.length > 0) {
+        console.error(`  Missing keys (${missing.length}):`)
+        for (const key of missing) {
+          console.error(`    - ${key}`)
+        }
+      }
+      if (extra.length > 0) {
+        console.error(`  Extra keys (${extra.length}):`)
+        for (const key of extra) {
+          console.error(`    + ${key}`)
+        }
       }
     }
   }
@@ -93,7 +117,9 @@ async function main() {
     return
   }
 
-  console.log('Locale keys are consistent across en/ru/uk/pl.')
+  console.log(
+    `Locale keys are consistent across en/ru/uk/pl in ${translationModules.length} feature modules.`,
+  )
 }
 
 await main()

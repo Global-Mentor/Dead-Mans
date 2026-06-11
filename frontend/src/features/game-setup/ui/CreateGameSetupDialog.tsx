@@ -3,17 +3,16 @@ import { Typography } from '@mui/material'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { AppButton, AppDialog, ControlledFormTextField } from '../../../shared/ui/index.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
+import {
+  createGameSetupFormSchema,
+  type CreateGameSetupFormValues,
+} from '../model/create-game-setup-form-schema.ts'
 
 type CreateGameSetupDialogStep = 'prompt' | 'details'
 const createGameSetupFormId = 'create-game-setup-form'
-
-interface CreateGameSetupFormValues {
-  title: string
-}
 
 interface CreateGameSetupDialogProps {
   open: boolean
@@ -29,12 +28,9 @@ interface CreateGameSetupDialogBodyProps {
 function CreateGameSetupDialogBody({ isSubmitting, onCreate }: CreateGameSetupDialogBodyProps) {
   const { t } = useTranslation()
   const [step, setStep] = useState<CreateGameSetupDialogStep>('prompt')
-  const formSchema = z.object({
-    title: z
-      .string()
-      .trim()
-      .min(1, t('gameSetup.createDialog.validationRequired'))
-      .max(GAME_SETUP_MAX_TITLE_LENGTH, t('gameSetup.invalidTitle')),
+  const formSchema = createGameSetupFormSchema({
+    required: t('gameSetup.createDialog.validationRequired'),
+    invalidTitle: t('gameSetup.invalidTitle'),
   })
   const { control, handleSubmit, reset, setError } = useForm<CreateGameSetupFormValues>({
     defaultValues: { title: '' },

@@ -15,7 +15,7 @@ export function MyTeamSection({ team, onLeave, isLeaving }: MyTeamSectionProps) 
   const { t } = useTranslation()
 
   return (
-    <SectionCard sx={{ mb: 2 }}>
+    <SectionCard>
       <Typography variant="subtitle1" gutterBottom>
         {t('gameApplication.myTeamTitle')}
       </Typography>
