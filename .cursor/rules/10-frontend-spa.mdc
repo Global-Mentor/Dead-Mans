@@ -26,8 +26,9 @@ alwaysApply: false
 - Keep navigation and access control declarative. Route definitions, redirects, default panel routes, and role-aware UI visibility should come from shared route/auth helpers, not duplicated inline checks.
 - Keep route-level access and capability-level access separated: route visibility belongs to route helpers, while action-level checks belong to shared panel capability helpers.
 - Treat frontend role gating as UX only; backend remains authoritative.
-- Put all user-facing text in i18n resources. Do not hardcode labels, empty states, errors, or button copy in components.
-- Use React Hook Form with `zodResolver` for submitted forms with validation or multiple fields. Keep schemas feature-local and use shared controlled form primitives. Simple local controls and interactive draft editors may stay controlled React state when they are not submission forms.
+- Put all user-facing text in feature-owned `i18n/*-translations.ts` modules. Compose resources in `src/locales/index.ts`, keep i18next type augmentation enabled, and do not bypass typed keys with broad `string` casts.
+- Use React Hook Form with `zodResolver` for transactional submitted forms such as game creation, invitations, and registration settings when those flows exist. Keep schemas outside components in the owning feature, derive values with `z.infer`, and use shared controlled form primitives. Dense interactive editors such as game-board draft cells stay controlled React state rather than becoming one giant RHF form.
+- Add Zod runtime parsing selectively at critical or externally unstable API response boundaries. Generated OpenAPI types remain the compile-time transport source of truth.
 - Keep component-local UI state local. Introduce Zustand only for genuinely cross-tree client-only state with multiple consumers; never use it as a default modal container, auth-session owner, or server-state mirror.
 - Keep feature-specific code out of `shared/`.
 - Keep UI reuse layered inside `shared/ui`:
@@ -41,7 +42,7 @@ alwaysApply: false
   - submitted fields via shared React Hook Form adapters,
   - repeated async section states via shared async/state components,
   - repeated toast/dialog wiring via shared feedback components.
-- Keep visual tokens centralized in `hunt-palette.ts`, `tokens.ts`, `surface-sx.ts`, and `appTheme.ts`. Feature-local styling presets belong in `features/<feature>/theme/`. Avoid parallel hardcoded color systems in components.
+- Keep visual tokens centralized in `hunt-palette.ts`, `tokens.ts`, and `surface-sx.ts`. Compose the MUI theme from `app/theme/palette.ts`, `typography.ts`, and `component-overrides.ts` through `appTheme.ts`. Repeated cross-feature styles belong in theme/shared UI; feature-specific presets belong in `features/<feature>/theme/`.
 - MUI + Emotion is the styling system. Keep the existing MUI feedback layer unless a replacement solves a concrete product need; do not add a second global toast system.
 - Add icon, animation, SVG-component, or brand-icon dependencies only with the feature that uses them. Prefer Lucide for general-purpose icons and Framer Motion for complex presence/layout transitions when those needs appear, but do not install or wrap them preemptively.
 - For row/column board-like layouts, use shared matrix/grid primitives before adding another feature-local grid shell.

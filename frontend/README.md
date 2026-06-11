@@ -53,10 +53,11 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - OpenAPI-generated `paths` остаются compile-time source of truth для endpoint, params, body и response. Feature API использует статические path templates через `openapi-fetch`, без ручных response generics и динамической сборки URL.
 - Отдельный domain adapter остаётся только там, где есть поведение: `404 → null`, mapping, multipart или optimistic cache update. Пустые `api → data-access` прокси не создаются.
 - Zod применяется выборочно на критичных runtime-границах; сейчас так валидируется auth session.
-- Submitted-формы с валидацией используют React Hook Form + `zodResolver`. Для MUI-полей используется общий `ControlledFormTextField`.
+- Transactional submitted-формы с валидацией используют React Hook Form + `zodResolver`. Схемы находятся в feature model вне компонентов, типы values выводятся через `z.infer`, а для MUI-полей используется общий `ControlledFormTextField`.
+- Интерактивные ячейки game-setup draft остаются controlled React state: это редактор, а не одна transactional-форма.
 - Локальное UI-state остаётся в React. Zustand добавляется только при реальном cross-tree client-state, а не заранее.
 - MUI + Emotion и `AppToast` остаются единым UI/feedback baseline. Иконки, Framer Motion, SVG-компоненты и брендовые icon packs добавляются вместе с использующей их фичей.
-- Весь user-facing текст проходит через i18n.
+- Весь user-facing текст проходит через feature-owned i18n resources. Module augmentation i18next проверяет ключи в TypeScript, а `check:locales` сохраняет parity `en/ru/uk/pl`.
 
 ## UI и стили (единый стандарт)
 
@@ -65,7 +66,10 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/shared/theme/hunt-palette.ts` — каноническая палитра (единственный источник raw colors);
 - `src/shared/theme/tokens.ts` — `huntTypography`, spacing и brand tokens;
 - `src/shared/theme/surface-sx.ts` — переиспользуемые surface/title/auth presets (`huntPanelSx`, `huntAuthCardSx`, …);
-- `src/app/theme/appTheme.ts` — MUI theme: palette, typography, component overrides, `theme.custom.gradients`;
+- `src/app/theme/palette.ts` — MUI palette и app gradients;
+- `src/app/theme/typography.ts` — typography options;
+- `src/app/theme/component-overrides.ts` — глобальные MUI component overrides;
+- `src/app/theme/appTheme.ts` — тонкая композиция theme modules и `theme.custom.gradients`;
 - feature-local presets живут в `features/<feature>/theme/`:
   - `game-board/theme/board-cell-sx.ts`
   - `game-setup/theme/layout-sx.ts`, `setup-cell-sx.ts`, `cell-image-sx.ts`;
@@ -87,6 +91,13 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - повторяемые visual patterns — только через theme override или `shared/ui`;
 - межфичевые импорты — через public API (`features/<feature>/index.ts`), без deep-import в `api/`/`model/` соседа;
 - не вводим второй styling-подход параллельно MUI (`CSS Modules`, `Tailwind`, отдельный runtime-styling).
+
+## Локализация
+
+- каждая фича хранит переводы в собственном `i18n/*-translations.ts`;
+- `src/locales/index.ts` только собирает feature resources в общий i18next resource;
+- `src/i18next.d.ts` связывает английский resource с `CustomTypeOptions`, поэтому неизвестные ключи ломают TypeScript-check;
+- `npm run check:locales` рекурсивно проверяет одинаковый набор ключей `en/ru/uk/pl` в каждом feature module.
 
 ## Источник контрактов
 
@@ -150,4 +161,4 @@ npm run check
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI. Lifecycle-кнопки, runtime activation UI модификаторов и admin invite UI пока не реализованы; будущие задачи описываются в документации и issue tracker, а не в production-интерфейсе.
+На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI. Lifecycle-кнопки, runtime activation UI модификаторов, admin invite UI и форма registration settings пока не реализованы; будущие задачи описываются в документации и issue tracker, а не в production-интерфейсе.
