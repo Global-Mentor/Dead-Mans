@@ -390,7 +390,11 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
 
         Assert.All(
             statuses,
-            status => Assert.Contains(status, [HttpStatusCode.Created, HttpStatusCode.Conflict])
+            status =>
+                Assert.Contains(
+                    status,
+                    new[] { HttpStatusCode.Created, HttpStatusCode.Conflict }
+                )
         );
         Assert.DoesNotContain(HttpStatusCode.InternalServerError, statuses);
     }
