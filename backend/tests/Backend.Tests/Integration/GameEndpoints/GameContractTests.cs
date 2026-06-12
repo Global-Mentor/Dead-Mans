@@ -297,7 +297,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var catalogResponse = await adminClient.GetAsync("/api/game/questions/catalog");
         Assert.Equal(HttpStatusCode.OK, catalogResponse.StatusCode);
         var catalog = await catalogResponse.Content.ReadFromJsonAsync<IReadOnlyList<GameQuestionCatalogItemDto>>();
-        var question = Assert.Single(catalog!.Where(x => x.QuestionCode == "delete-q-1001"));
+        var question = Assert.Single(catalog!, x => x.QuestionCode == "delete-q-1001");
 
         var deleteResponse = await adminClient.DeleteAsync($"/api/game/questions/{question.QuestionId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);

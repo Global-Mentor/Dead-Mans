@@ -206,7 +206,11 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
 
         Assert.All(
             statuses,
-            status => Assert.Contains(status, [HttpStatusCode.OK, HttpStatusCode.Conflict, HttpStatusCode.NotFound])
+            status =>
+                Assert.Contains(
+                    status,
+                    new[] { HttpStatusCode.OK, HttpStatusCode.Conflict, HttpStatusCode.NotFound }
+                )
         );
         Assert.DoesNotContain(HttpStatusCode.InternalServerError, statuses);
     }
