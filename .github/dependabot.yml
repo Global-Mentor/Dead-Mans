@@ -1,39 +1,84 @@
 version: 2
+
 updates:
+  # ---------- Frontend dependencies (npm) ----------
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      # Safe, non-breaking updates collapse into ONE PR
+      frontend-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Breaking (major) updates also grouped, but in a SEPARATE PR
+      frontend-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  # ---------- Root tooling (npm) ----------
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    target-branch: "develop"
+    labels:
+      - "dependencies"
     groups:
       root-npm:
         patterns:
           - "*"
 
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    groups:
-      frontend-minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
-
+  # ---------- Backend dependencies (NuGet) ----------
   - package-ecosystem: "nuget"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       backend-minor-patch:
+        patterns:
+          - "*"
         update-types:
           - "minor"
           - "patch"
+      backend-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
+  # ---------- CI workflows (GitHub Actions) — change rarely ----------
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
