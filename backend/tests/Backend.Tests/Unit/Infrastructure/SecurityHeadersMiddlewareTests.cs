@@ -5,10 +5,14 @@ namespace Backend.Tests.Unit.Infrastructure;
 
 public sealed class SecurityHeadersMiddlewareTests
 {
-    [Fact]
-    public async Task InvokeAsync_ForApiRequest_AddsSecurityHeadersIncludingCsp()
+    [Theory]
+    [InlineData("/api/game")]
+    [InlineData("/auth/me")]
+    [InlineData("/auth/twitch/callback")]
+    [InlineData("/auth/callback/extra")]
+    public async Task InvokeAsync_ForApiRequest_AddsSecurityHeadersIncludingCsp(string path)
     {
-        var context = CreateHttpContext("/api/game");
+        var context = CreateHttpContext(path);
         var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
 
         await middleware.InvokeAsync(context);
@@ -25,6 +29,25 @@ public sealed class SecurityHeadersMiddlewareTests
             "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
             context.Response.Headers["Content-Security-Policy"]
         );
+    }
+
+    [Theory]
+    [InlineData("/auth/callback")]
+    [InlineData("/auth/callback/")]
+    [InlineData("/AUTH/CALLBACK")]
+    public async Task InvokeAsync_ForFrontendAuthCallback_AllowsFrontendAssetsWithoutCaching(string path)
+    {
+        var context = CreateHttpContext(path);
+        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+
+        await middleware.InvokeAsync(context);
+
+        var policy = context.Response.Headers["Content-Security-Policy"].ToString();
+        Assert.Contains("script-src 'self'", policy, StringComparison.Ordinal);
+        Assert.Contains("connect-src 'self'", policy, StringComparison.Ordinal);
+        Assert.Contains("style-src 'self' 'unsafe-inline'", policy, StringComparison.Ordinal);
+        Assert.Equal("no-store", context.Response.Headers.CacheControl);
+        Assert.Equal("no-cache", context.Response.Headers.Pragma);
     }
 
     [Fact]

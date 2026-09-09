@@ -32,9 +32,8 @@ public sealed class SecurityHeadersMiddleware
 
         if (!IsSwaggerRequest(context.Request.Path))
         {
-            headers["Content-Security-Policy"] = IsSensitiveApplicationRequest(
-                context.Request.Path
-            )
+            headers["Content-Security-Policy"] = IsSensitiveApplicationRequest(context.Request.Path)
+                && !IsFrontendAuthCallback(context.Request.Path)
                 ? ApiContentSecurityPolicy
                 : FrontendContentSecurityPolicy;
         }
@@ -45,6 +44,11 @@ public sealed class SecurityHeadersMiddleware
     private static bool IsSwaggerRequest(PathString path)
     {
         return path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFrontendAuthCallback(PathString path)
+    {
+        return string.Equals(path.Value?.TrimEnd('/'), "/auth/callback", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSensitiveApplicationRequest(PathString path)
