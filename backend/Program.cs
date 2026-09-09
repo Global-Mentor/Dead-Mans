@@ -80,8 +80,23 @@ try
     builder.Services.AddDeadMansForwardedHeaders(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
+    var releaseShaPath = Path.Combine(app.Environment.ContentRootPath, "release-sha");
+    var releaseSha = File.Exists(releaseShaPath) ? File.ReadAllText(releaseShaPath).Trim() : null;
 
     app.UseForwardedHeaders();
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments(HealthCheckContracts.PathPrefix))
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            if (!string.IsNullOrEmpty(releaseSha))
+            {
+                context.Response.Headers["X-Release-Sha"] = releaseSha;
+            }
+        }
+
+        await next(context);
+    });
     app.UseSerilogRequestLogging();
     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
     if (!app.Environment.IsDevelopment())

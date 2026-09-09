@@ -67,6 +67,9 @@ jobs:
       - name: Install root tooling
         run: npm ci
 
+      - name: Test production deployment orchestration
+        run: node --test deploy/coolify-deploy.test.mjs
+
       - name: Generate frontend transport artifacts
         run: npm --prefix frontend run generate:transport
 
@@ -154,6 +157,7 @@ jobs:
 
     outputs:
       image: ${{ steps.image.outputs.name }}
+      digest: ${{ steps.publish.outputs.digest }}
 
     steps:
       - name: Checkout
@@ -174,6 +178,7 @@ jobs:
           IMAGE: ${{ steps.image.outputs.name }}
         run: >-
           docker build --pull
+          --build-arg "RELEASE_SHA=$GITHUB_SHA"
           --label "org.opencontainers.image.revision=$GITHUB_SHA"
           --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
           --tag "$IMAGE:$GITHUB_SHA"
@@ -181,11 +186,16 @@ jobs:
           .
 
       - name: Publish production image
+        id: publish
         env:
           IMAGE: ${{ steps.image.outputs.name }}
         run: |
           docker push "$IMAGE:$GITHUB_SHA"
           docker push "$IMAGE:main"
+          reference="$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA")"
+          digest="${reference##*@}"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
   deploy-production:
     if: vars.PRODUCTION_DEPLOY_ENABLED == 'true'
@@ -198,63 +208,32 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Trigger Coolify deployment
-        id: deploy
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Skip superseded releases
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          if [[ "$head" == "$GITHUB_SHA" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "A newer commit is already on main; skipping this release."
+          fi
+
+      - name: Deploy immutable image and verify the running release
+        if: steps.release.outputs.current == 'true'
         env:
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
-        run: |
-          set -euo pipefail
-          test -n "$COOLIFY_TOKEN"
-          test -n "$COOLIFY_WEBHOOK"
-
-          response="$(curl --fail-with-body --silent --show-error --retry 3 \
-            --retry-all-errors --retry-delay 2 \
-            --header "Authorization: Bearer $COOLIFY_TOKEN" \
-            "$COOLIFY_WEBHOOK")"
-          deployment_uuid="$(jq -er '.deployments[0].deployment_uuid // .deployment_uuid' <<< "$response")"
-          coolify_origin="${COOLIFY_WEBHOOK%%/api/v1/*}"
-
-          echo "uuid=$deployment_uuid" >> "$GITHUB_OUTPUT"
-          echo "origin=$coolify_origin" >> "$GITHUB_OUTPUT"
-
-      - name: Wait for a healthy deployment
-        env:
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          COOLIFY_ORIGIN: ${{ steps.deploy.outputs.origin }}
-          DEPLOYMENT_UUID: ${{ steps.deploy.outputs.uuid }}
           PRODUCTION_HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL }}
-        run: |
-          set -euo pipefail
-
-          for attempt in {1..90}; do
-            response="$(curl --fail-with-body --silent --show-error --retry 3 \
-              --retry-all-errors --retry-delay 2 \
-              --header "Authorization: Bearer $COOLIFY_TOKEN" \
-              "$COOLIFY_ORIGIN/api/v1/deployments/$DEPLOYMENT_UUID")"
-            status="$(jq -er '.status' <<< "$response")"
-
-            case "$status" in
-              finished)
-                test -n "$PRODUCTION_HEALTH_URL"
-                curl --fail-with-body --silent --show-error --retry 6 \
-                  --retry-all-errors --retry-delay 5 \
-                  "$PRODUCTION_HEALTH_URL"
-                exit 0
-                ;;
-              failed*|cancelled*|error*)
-                echo "Coolify deployment ended with status: $status" >&2
-                exit 1
-                ;;
-              queued|in_progress)
-                ;;
-              *)
-                echo "Coolify reported status: $status"
-                ;;
-            esac
-
-            sleep 10
-          done
-
-          echo "Timed out waiting for Coolify deployment $DEPLOYMENT_UUID." >&2
-          exit 1
+          IMAGE: ${{ needs.publish-image.outputs.image }}
+          IMAGE_DIGEST: ${{ needs.publish-image.outputs.digest }}
+        run: node deploy/coolify-deploy.mjs
