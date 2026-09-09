@@ -32,6 +32,7 @@ export function ModifierCatalogRealtimeSync() {
   useSignalrHubLifecycle({
     hub: 'gameBoard',
     logLabel: 'Modifier catalog',
+    onConnected: invalidate,
     registerEventHandlers,
   })
   return null

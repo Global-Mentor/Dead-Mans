@@ -19,7 +19,7 @@ vi.mock('../../shared/realtime/index.ts', () => ({
 describe('ModifierCatalogRealtimeSync', () => {
   afterEach(() => vi.clearAllMocks())
 
-  it('invalidates catalog, revision history and setup after a catalog event', async () => {
+  it('invalidates catalog, revision history and setup on connect and catalog events', async () => {
     const queryClient = new QueryClient()
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
     render(
@@ -37,6 +37,7 @@ describe('ModifierCatalogRealtimeSync', () => {
     const unregister = options.registerEventHandlers(connection)
 
     await act(async () => {
+      await options.onConnected()
       handlers.get('modifierCatalogChanged')?.()
       await Promise.resolve()
     })
@@ -44,6 +45,7 @@ describe('ModifierCatalogRealtimeSync', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameModifiers', 'catalog'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['modifierHistory'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameSetup', 'draftSnapshot'] })
+    expect(invalidate).toHaveBeenCalledTimes(6)
     unregister()
     expect(connection.off).toHaveBeenCalledWith('modifierCatalogChanged', expect.any(Function))
   })
