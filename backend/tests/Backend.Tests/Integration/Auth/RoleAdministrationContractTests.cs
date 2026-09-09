@@ -94,11 +94,14 @@ public sealed class RoleAdministrationContractTests : IClassFixture<TestWebAppli
         request.Headers.Add("X-Dead-Mans-Api-Client", "1");
 
         var response = await client.SendAsync(request);
+        var payload = await response.Content.ReadAsStringAsync();
         var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         jsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-        var user = await response.Content.ReadFromJsonAsync<RoleAdministrationUserDto>(jsonOptions);
+        var user = JsonSerializer.Deserialize<RoleAdministrationUserDto>(payload, jsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"superadmin\"", payload, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"superAdmin\"", payload, StringComparison.Ordinal);
         Assert.NotNull(user);
         Assert.Equal([AuthRole.Viewer, AuthRole.Admin, AuthRole.SuperAdmin], user.Roles);
     }

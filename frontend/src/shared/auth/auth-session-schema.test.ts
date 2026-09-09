@@ -7,12 +7,12 @@ describe('authSessionSchema', () => {
       authSessionSchema.parse({
         userId: 'bca109e8-0662-4407-b940-19d168f0f59f',
         displayName: 'Hunter',
-        roles: ['admin', 'viewer'],
+        roles: ['viewer', 'admin', 'superadmin'],
       }),
     ).toEqual({
       userId: 'bca109e8-0662-4407-b940-19d168f0f59f',
       displayName: 'Hunter',
-      roles: ['admin', 'viewer'],
+      roles: ['viewer', 'admin', 'superadmin'],
     })
   })
 
