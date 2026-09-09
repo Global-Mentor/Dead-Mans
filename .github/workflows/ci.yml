@@ -143,3 +143,118 @@ jobs:
             echo "::error::Vulnerable NuGet packages detected."
             exit 1
           fi
+
+  publish-image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [build, dependency-audit]
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Build production image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: >-
+          docker build --pull
+          --label "org.opencontainers.image.revision=$GITHUB_SHA"
+          --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          --tag "$IMAGE:$GITHUB_SHA"
+          --tag "$IMAGE:main"
+          .
+
+      - name: Publish production image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:main"
+
+  deploy-production:
+    if: vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    needs: publish-image
+    timeout-minutes: 20
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+
+    steps:
+      - name: Trigger Coolify deployment
+        id: deploy
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+        run: |
+          set -euo pipefail
+          test -n "$COOLIFY_TOKEN"
+          test -n "$COOLIFY_WEBHOOK"
+
+          response="$(curl --fail-with-body --silent --show-error --retry 3 \
+            --retry-all-errors --retry-delay 2 \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_WEBHOOK")"
+          deployment_uuid="$(jq -er '.deployments[0].deployment_uuid // .deployment_uuid' <<< "$response")"
+          coolify_origin="${COOLIFY_WEBHOOK%%/api/v1/*}"
+
+          echo "uuid=$deployment_uuid" >> "$GITHUB_OUTPUT"
+          echo "origin=$coolify_origin" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for a healthy deployment
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_ORIGIN: ${{ steps.deploy.outputs.origin }}
+          DEPLOYMENT_UUID: ${{ steps.deploy.outputs.uuid }}
+          PRODUCTION_HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..90}; do
+            response="$(curl --fail-with-body --silent --show-error --retry 3 \
+              --retry-all-errors --retry-delay 2 \
+              --header "Authorization: Bearer $COOLIFY_TOKEN" \
+              "$COOLIFY_ORIGIN/api/v1/deployments/$DEPLOYMENT_UUID")"
+            status="$(jq -er '.status' <<< "$response")"
+
+            case "$status" in
+              finished)
+                test -n "$PRODUCTION_HEALTH_URL"
+                curl --fail-with-body --silent --show-error --retry 6 \
+                  --retry-all-errors --retry-delay 5 \
+                  "$PRODUCTION_HEALTH_URL"
+                exit 0
+                ;;
+              failed*|cancelled*|error*)
+                echo "Coolify deployment ended with status: $status" >&2
+                exit 1
+                ;;
+              queued|in_progress)
+                ;;
+              *)
+                echo "Coolify reported status: $status"
+                ;;
+            esac
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for Coolify deployment $DEPLOYMENT_UUID." >&2
+          exit 1
