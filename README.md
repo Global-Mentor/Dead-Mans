@@ -10,7 +10,7 @@
 | `backend/` | Web API, EF Core, миграции |
 | `legacy-v1/` | reference, не участвует в активной разработке |
 
-Дополнительно: [`CONTEXT.md`](CONTEXT.md) · [`docs/development.md`](docs/development.md) · [`STACK.md`](STACK.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`docs/architecture/realtime.md`](docs/architecture/realtime.md) · [`docs/architecture/data-retention.md`](docs/architecture/data-retention.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
+Дополнительно: [`docs/development.md`](docs/development.md) · [`docs/architecture/overview.md`](docs/architecture/overview.md) · [`docs/architecture/realtime.md`](docs/architecture/realtime.md) · [`docs/architecture/data-retention.md`](docs/architecture/data-retention.md) · [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md).
 
 ## Требования для локального запуска
 

@@ -196,7 +196,5 @@ outside of database resets and keeps card images/media.
 - The EF migrations history table is `__ef_migrations_history`.
 - When changing the physical schema, update this document and the retention policy
   in the same change.
-- The baseline audit and cutover evidence are recorded in
-  `docs/planning/database-production-baseline.md`.
 - The first production database rollout and restore gates are defined in
   `docs/runbooks/initial-production-database-rollout.md`.

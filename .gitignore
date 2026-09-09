@@ -16,8 +16,6 @@
 **/DocumentLayout*.json
 **/*.vsidx
 **/DesignTimeBuild/
-**/copilot-chat/
-**/CopilotIndices/
 **/*.db
 **/*.db-shm
 **/*.db-wal
@@ -27,13 +25,6 @@
 *.log
 .tmp/
 .build-check/
-/.kombai/canvas/hunt_concepts.canvas
-/.agents/
-/.codex/
-/.codex-build/
-/.codex-temp/
-/.codex-logs/
-/.codex-*.log
 /tmp_*_stdout.log
 /tmp_*_stderr.log
 
