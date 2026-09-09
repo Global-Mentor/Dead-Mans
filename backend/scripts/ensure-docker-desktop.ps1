@@ -6,8 +6,15 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 function Test-DockerEngine {
-  docker info --format "{{.ServerVersion}}" *> $null
-  return $LASTEXITCODE -eq 0
+  $previousErrorActionPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = "SilentlyContinue"
+    docker info --format "{{.ServerVersion}}" *> $null
+    return $LASTEXITCODE -eq 0
+  }
+  finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
 }
 
 if (Test-DockerEngine) {
