@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient } from '@tanstack/react-query'
+import { gameSetupDraftQueryOptions } from '../api/game-setup-queries.ts'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
 import {
   createLoadedDraftState,
@@ -51,5 +53,17 @@ describe('game setup query state', () => {
     apiMocks.fetchDraftGameSetupSnapshot.mockResolvedValue(snapshot)
 
     await expect(loadGameSetupDraftQueryState()).resolves.toEqual(createLoadedDraftState(snapshot))
+  })
+
+  it('loads through React Query without treating its context as a request id', async () => {
+    apiMocks.fetchDraftGameSetupSnapshot.mockResolvedValue(snapshot)
+    const client = new QueryClient()
+    try {
+      await expect(client.fetchQuery(gameSetupDraftQueryOptions)).resolves.toEqual(
+        createLoadedDraftState(snapshot),
+      )
+    } finally {
+      client.clear()
+    }
   })
 })

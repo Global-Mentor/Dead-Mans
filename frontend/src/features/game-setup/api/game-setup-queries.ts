@@ -8,5 +8,5 @@ const gameSetupQueryKeys = {
 
 export const gameSetupDraftQueryOptions = queryOptions({
   queryKey: gameSetupQueryKeys.draftSnapshot(),
-  queryFn: loadGameSetupDraftQueryState,
+  queryFn: () => loadGameSetupDraftQueryState(),
 })
