@@ -156,7 +156,7 @@ public sealed class AuthController : ControllerBase
     {
         return reason switch
         {
-            "access_denied" => reason,
+            "access_denied" => "access_denied",
             _ => "unknown"
         };
     }

@@ -127,4 +127,17 @@ public sealed class AuthContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Contains("path=/auth/twitch", deletedCookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("expires=Thu, 01 Jan 1970", deletedCookie, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Theory]
+    [InlineData("access_denied", "access_denied")]
+    [InlineData("access_denied\r\nforged-log-entry", "unknown")]
+    [InlineData("unexpected-provider-value", "unknown")]
+    public async Task HandleTwitchCallback_WithProviderError_UsesOnlyKnownReasons(string error, string expectedReason)
+    {
+        var response = await _client.GetAsync($"/auth/twitch/callback?error={Uri.EscapeDataString(error)}");
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.NotNull(response.Headers.Location);
+        Assert.Equal($"?status=error&reason={expectedReason}", response.Headers.Location.Query);
+    }
 }
