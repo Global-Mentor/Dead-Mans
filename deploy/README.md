@@ -36,6 +36,12 @@
 
 ## Состояние подготовки на 10.09.2026
 
-На GitHub установлен `PRODUCTION_DEPLOY_ENABLED=false`. Production ещё не развёрнут. IPv4, ОС/SSH, адрес панели Coolify, S3-провайдер и ресурсные UUID пока не подтверждены; их нужно вписать сюда после настройки. `main` не обновлён до подготовленной версии приложения. Локальный Docker gate ожидает исправления запуска Docker Desktop в Windows.
+На GitHub установлен `PRODUCTION_DEPLOY_ENABLED=false`. Production ещё не развёрнут. IPv4, ОС/SSH, адрес панели Coolify, S3-провайдер и ресурсные UUID пока не подтверждены; их нужно вписать сюда после настройки. `main` ещё не обновлён до подготовленной версии приложения.
+
+Локальный gate пройден: backend 552/552, frontend 299/299, browser smoke 3/3, тесты деплоя 6/6; форматирование, typecheck, lint, Release/frontend build, миграции, OpenAPI и аудит зависимостей успешны. Production Docker image собран и запущен non-root (UID 1654) за HTTPS proxy с пустой PostgreSQL 16 и HTTPS S3.
+
+На этом стенде проверены миграции, TLS 1.3 и отказ с неверными CA/hostname, healthcheck и SHA релиза, canonical redirect, запрет анонимного доступа, CSP callback-страницы, оба SignalR hub по WSS, S3 upload/read/delete и запрет анонимного listing/backup-доступа. Сессия и key ring пережили пересоздание контейнера. Тестовый пользователь получил superadmin, снятие роли отклонено. Backup скачан обратно из отдельного тестового S3 bucket и восстановлен в новую БД с проверкой схемы и контрольной записи. Тестовые секреты в логах приложения не обнаружены.
+
+Это локальная проверка с тестовой identity и частной CA. Настоящий Twitch OAuth, публичные сертификаты/DNS и offsite backup/restore ещё предстоит проверить на VPS. Docker-сборка также включена в CI каждого PR, чтобы ошибки упаковки выявлялись до merge.
 
 Актуальные инструкции: [установка Coolify](https://coolify.io/docs/get-started/installation), [firewall и Docker](https://coolify.io/docs/knowledge-base/server/firewall), [PostgreSQL SSL](https://coolify.io/docs/databases/ssl). Для панели нужен согласованный HTTPS-поддомен: после его проверки можно закрыть внешние порты 8000/6001/6002. Один UFW не гарантирует блокировку опубликованных Docker-портов. Перед запретом root SSH перевести управление Coolify на отдельного пользователя и проверить новое соединение.

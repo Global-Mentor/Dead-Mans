@@ -111,6 +111,10 @@ jobs:
       - name: Frontend browser smoke
         run: npm --prefix frontend run test:e2e
 
+      - name: Verify production Docker packaging before merge
+        if: github.event_name == 'pull_request'
+        run: docker build --pull --build-arg "RELEASE_SHA=$GITHUB_SHA" --tag deadmans-ci:pr .
+
   dependency-audit:
     runs-on: ubuntu-latest
 

@@ -12,7 +12,7 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400-alpine3.23 AS backend-build
 WORKDIR /src
 
-COPY global.json ./
+COPY global.json .editorconfig ./
 COPY backend/*.csproj backend/Directory.Build.props backend/Directory.Packages.props backend/backend.slnx ./backend/
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet restore backend/backend.csproj
@@ -33,7 +33,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_EnableDiagnostics=0
 
-RUN mkdir -p /var/lib/deadmans/keys \
+RUN apk add --no-cache krb5-libs \
+    && mkdir -p /var/lib/deadmans/keys \
     && chown -R app:app /var/lib/deadmans \
     && printf '%s' "$RELEASE_SHA" > /app/release-sha
 
