@@ -2,8 +2,10 @@ namespace backend.Api.Http;
 
 public sealed class SecurityHeadersMiddleware
 {
-    private const string ContentSecurityPolicy =
+    private const string ApiContentSecurityPolicy =
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+    private const string FrontendContentSecurityPolicy =
+        "default-src 'none'; base-uri 'self'; connect-src 'self'; font-src 'self' data:; frame-ancestors 'none'; img-src 'self' https: data: blob:; manifest-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'";
 
     private readonly RequestDelegate _next;
 
@@ -30,7 +32,11 @@ public sealed class SecurityHeadersMiddleware
 
         if (!IsSwaggerRequest(context.Request.Path))
         {
-            headers["Content-Security-Policy"] = ContentSecurityPolicy;
+            headers["Content-Security-Policy"] = IsSensitiveApplicationRequest(
+                context.Request.Path
+            )
+                ? ApiContentSecurityPolicy
+                : FrontendContentSecurityPolicy;
         }
 
         return _next(context);

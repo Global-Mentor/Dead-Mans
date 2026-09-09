@@ -32,6 +32,23 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ProductionLivenessEndpoint_AllowsInternalHttpProbe()
+    {
+        using var factory = CreateProductionFactory(new Dictionary<string, string?>());
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("http://api.example.com")
+            }
+        );
+
+        var response = await client.GetAsync("/health/live");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     [Theory]
     [InlineData("Cors:AllowedOrigins:0", "http://app.example.com", "must use HTTPS")]
     [InlineData("TwitchAuth:RedirectUri", "http://api.example.com/auth/twitch/callback", "must use HTTPS")]

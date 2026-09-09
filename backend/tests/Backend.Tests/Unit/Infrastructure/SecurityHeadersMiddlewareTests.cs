@@ -28,6 +28,21 @@ public sealed class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_ForFrontendRoute_AddsFrontendContentSecurityPolicy()
+    {
+        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/panel/game-board";
+
+        await middleware.InvokeAsync(context);
+
+        var policy = context.Response.Headers["Content-Security-Policy"].ToString();
+        Assert.Contains("script-src 'self'", policy, StringComparison.Ordinal);
+        Assert.Contains("connect-src 'self'", policy, StringComparison.Ordinal);
+        Assert.Contains("style-src 'self' 'unsafe-inline'", policy, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task InvokeAsync_ForSwaggerRequest_SkipsCspHeader()
     {
         var context = CreateHttpContext("/swagger/index.html");

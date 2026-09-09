@@ -29,6 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="openapi/**/*.yaml" />
+    <Content Include="openapi/**/*.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Program.cs" />
   </ItemGroup>
 

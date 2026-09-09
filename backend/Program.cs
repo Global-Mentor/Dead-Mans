@@ -83,7 +83,20 @@ try
     app.UseForwardedHeaders();
     app.UseSerilogRequestLogging();
     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+        app.UseWhen(
+            context => !context.Request.Path.StartsWithSegments(HealthCheckContracts.PathPrefix),
+            branch => branch.UseHttpsRedirection()
+        );
+    }
     app.UseMiddleware<SecurityHeadersMiddleware>();
+    if (!isDevelopment && !isTesting)
+    {
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+    }
     if (app.Environment.IsDevelopment())
     {
         app.UseSwaggerUI(c =>
@@ -94,12 +107,6 @@ try
     }
 
     app.UseCors(CorsPolicyNames.Default);
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseHsts();
-        app.UseHttpsRedirection();
-    }
-
     app.UseAuthentication();
     app.UseMiddleware<ActiveUserMiddleware>();
     app.UseMiddleware<ApiClientRequestValidationMiddleware>();
@@ -127,6 +134,11 @@ try
     app.MapHub<GameBoardHub>(RealtimeHubContracts.GameBoard.HubPath);
     app.MapHub<GameSetupHub>(RealtimeHubContracts.GameSetup.HubPath);
     app.MapControllers();
+    if (!isDevelopment && !isTesting)
+    {
+        app.MapFallbackToFile("/auth/callback", "index.html");
+        app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html");
+    }
 
     app.Run();
 }
