@@ -53,6 +53,12 @@ public static class AuthenticationServiceCollectionExtensions
         string message
     )
     {
+        if (context.Request.Path.StartsWithSegments("/panel", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.Redirect("/");
+            return Task.CompletedTask;
+        }
+
         if (!IsApplicationEndpoint(context.Request.Path))
         {
             context.Response.Redirect(context.RedirectUri);
@@ -67,6 +73,7 @@ public static class AuthenticationServiceCollectionExtensions
     {
         return path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
             || path.StartsWithSegments("/auth", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWithSegments("/hubs", StringComparison.OrdinalIgnoreCase);
+            || path.StartsWithSegments("/hubs", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
     }
 }

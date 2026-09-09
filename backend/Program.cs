@@ -4,6 +4,7 @@ using backend.Api.Contracts;
 using backend.Api.DependencyInjection;
 using backend.Api.Http;
 using backend.Api.Realtime;
+using backend.Application.Abstractions.Auth;
 using backend.Application.DependencyInjection;
 using backend.Data;
 using backend.Messaging;
@@ -92,6 +93,10 @@ try
         );
     }
     app.UseMiddleware<SecurityHeadersMiddleware>();
+    if (app.Environment.IsProduction())
+    {
+        app.UseMiddleware<CanonicalHostRedirectMiddleware>();
+    }
     if (!isDevelopment && !isTesting)
     {
         app.UseDefaultFiles();
@@ -113,13 +118,17 @@ try
     app.UseAuthorization();
     app.UseRateLimiter();
 
-    app.MapGet(
+    var openApiEndpoint = app.MapGet(
         "/openapi/deadmans.v1.yaml",
         () => Results.File(
             Path.Combine(app.Environment.ContentRootPath, "openapi", "deadmans.v1.yaml"),
             "application/yaml"
         )
     );
+    if (app.Environment.IsProduction())
+    {
+        openApiEndpoint.RequireAuthorization(policy => policy.RequireRole(AuthRoleCodes.Admin));
+    }
     app.MapHealthChecks(
         HealthCheckContracts.LivenessPath,
         new HealthCheckOptions { Predicate = _ => false }
@@ -137,7 +146,8 @@ try
     if (!isDevelopment && !isTesting)
     {
         app.MapFallbackToFile("/auth/callback", "index.html");
-        app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html");
+        app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html")
+            .RequireAuthorization();
     }
 
     app.Run();

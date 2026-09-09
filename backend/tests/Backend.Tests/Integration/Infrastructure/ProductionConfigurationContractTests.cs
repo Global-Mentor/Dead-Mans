@@ -49,6 +49,75 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ProductionRedirectHost_RedirectsRootAndPathsToCanonicalOrigin()
+    {
+        using var factory = CreateProductionFactory(
+            new Dictionary<string, string?>
+            {
+                ["AllowedHosts"] = "bug.community;deadman.bug.community",
+                ["CanonicalUrl:Origin"] = "https://deadman.bug.community",
+                ["CanonicalUrl:RedirectHosts:0"] = "bug.community"
+            }
+        );
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://bug.community")
+            }
+        );
+
+        var rootResponse = await client.GetAsync("/");
+        var pathResponse = await client.GetAsync("/panel/game-board?from=root");
+
+        Assert.Equal(HttpStatusCode.PermanentRedirect, rootResponse.StatusCode);
+        Assert.Equal(
+            "https://deadman.bug.community/",
+            rootResponse.Headers.Location?.AbsoluteUri
+        );
+        Assert.Equal(HttpStatusCode.PermanentRedirect, pathResponse.StatusCode);
+        Assert.Equal(
+            "https://deadman.bug.community/panel/game-board?from=root",
+            pathResponse.Headers.Location?.AbsoluteUri
+        );
+    }
+
+    [Fact]
+    public async Task ProductionPanelRoute_WhenAnonymous_RedirectsToSignInPage()
+    {
+        using var factory = CreateProductionFactory(new Dictionary<string, string?>());
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://api.example.com")
+            }
+        );
+
+        var response = await client.GetAsync("/panel/game-board");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task ProductionOpenApiDocument_WhenAnonymous_ReturnsUnauthorized()
+    {
+        using var factory = CreateProductionFactory(new Dictionary<string, string?>());
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://api.example.com")
+            }
+        );
+
+        var response = await client.GetAsync("/openapi/deadmans.v1.yaml");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Theory]
     [InlineData("Cors:AllowedOrigins:0", "http://app.example.com", "must use HTTPS")]
     [InlineData("TwitchAuth:RedirectUri", "http://api.example.com/auth/twitch/callback", "must use HTTPS")]
@@ -58,6 +127,10 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
     [InlineData("ConnectionStrings:DefaultConnection", "Host=db.example.com;Database=deadmans;Username=deadmans;Password=test;SSL Mode=Require", "SSL Mode=VerifyFull")]
     [InlineData("AllowedHosts", "*", "must not contain wildcard")]
     [InlineData("AllowedHosts", "localhost", "must not contain localhost")]
+    [InlineData("CanonicalUrl:Origin", "http://api.example.com", "absolute HTTPS origin")]
+    [InlineData("CanonicalUrl:RedirectHosts:0", "bad host", "valid host names")]
+    [InlineData("CanonicalUrl:RedirectHosts:0", "api.example.com", "must not contain the canonical host")]
+    [InlineData("AllowedHosts", "other.example.com", "CanonicalUrl:Origin")]
     [InlineData("DataProtection:KeysDirectory", "", "is required in Production")]
     [InlineData("RateLimiting:Enabled", "false", "must be enabled")]
     public void ProductionConfiguration_WhenSecurityBoundaryIsWeak_FailsAtStartup(
@@ -95,6 +168,7 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
             ["ConnectionStrings:DefaultConnection"] =
                 "Host=db.example.com;Database=deadmans;Username=deadmans;Password=test;SSL Mode=VerifyFull",
             ["AllowedHosts"] = "api.example.com",
+            ["CanonicalUrl:Origin"] = "https://api.example.com",
             ["DataProtection:KeysDirectory"] = Path.Combine(
                 Path.GetTempPath(),
                 "deadmans-tests",

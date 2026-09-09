@@ -37,6 +37,26 @@ public static class HostSecurityServiceCollectionExtensions
             ConfigureDataProtectionKeyManagementOptions
         >();
         services.AddHostedService<ProductionHostConfigurationStartupValidator>();
+        if (environment.IsProduction())
+        {
+            services
+                .AddOptions<CanonicalUrlOptions>()
+                .Bind(configuration.GetSection(CanonicalUrlOptions.SectionName))
+                .ValidateDataAnnotations()
+                .Validate(
+                    static options => CanonicalUrlOptions.IsValidHttpsOrigin(options.Origin),
+                    "CanonicalUrl:Origin must be an absolute HTTPS origin without a path, query string, fragment, or user info."
+                )
+                .Validate(
+                    static options => CanonicalUrlOptions.HasValidRedirectHosts(options.RedirectHosts),
+                    "CanonicalUrl:RedirectHosts must contain valid host names."
+                )
+                .Validate(
+                    static options => CanonicalUrlOptions.DoesNotRedirectCanonicalHost(options),
+                    "CanonicalUrl:RedirectHosts must not contain the canonical host."
+                )
+                .ValidateOnStart();
+        }
         var requiresHttpsExternalUrls = !environment.IsDevelopment()
             && !environment.IsEnvironment("Testing");
         services
