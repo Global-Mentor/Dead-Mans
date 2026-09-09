@@ -12,7 +12,7 @@ import { gameBoardQueryKeys } from './api/game-board-queries.ts'
 export function useGameFinish() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [toastMessage, setToastMessage] = useState('')
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
   const mutation = useMutation({
     mutationFn: ({ gameId, ...input }: Parameters<typeof finishGame>[1] & { gameId: string }) =>
       finishGame(gameId, input),
@@ -35,6 +35,6 @@ export function useGameFinish() {
     error: mutation.error,
     resetError: mutation.reset,
     toastMessage,
-    dismissToast: () => setToastMessage(''),
+    dismissToast: () => setToastMessage(null),
   }
 }

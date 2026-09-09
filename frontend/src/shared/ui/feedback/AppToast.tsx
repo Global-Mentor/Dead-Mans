@@ -22,9 +22,13 @@ export function AppToast({
     onClose()
   }
 
+  if (!message?.trim()) {
+    return null
+  }
+
   return (
     <Snackbar
-      open={message !== null}
+      open
       autoHideDuration={autoHideDuration}
       onClose={handleClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
