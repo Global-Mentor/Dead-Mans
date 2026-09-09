@@ -104,6 +104,45 @@ public sealed class AuthSessionConsistencyTests
     }
 
     [Fact]
+    public async Task EnsureEffectiveRolesAsync_PermanentOwnerGetsInheritedAdminAndSuperAdmin()
+    {
+        await using var dbContext = CreateDbContext();
+        var expectedTimestamp = new DateTimeOffset(2026, 9, 9, 18, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "987654",
+                Login = "globalmentor",
+                DisplayName = "GlobalMentor",
+                IsActive = true,
+                CreatedAtUtc = expectedTimestamp.UtcDateTime,
+                UpdatedAtUtc = expectedTimestamp.UtcDateTime
+            }
+        );
+        dbContext.Roles.AddRange(CreateRoles(expectedTimestamp.UtcDateTime));
+        await dbContext.SaveChangesAsync();
+        var roleService = new UserRoleService(
+            dbContext,
+            Options.Create(
+                new TwitchAuthOptions { PermanentSuperAdminTwitchUserIds = ["987654"] }
+            ),
+            new FixedTimeProvider(expectedTimestamp),
+            NullLogger<UserRoleService>.Instance
+        );
+
+        var roles = await roleService.EnsureEffectiveRolesAsync(userId, CancellationToken.None);
+
+        Assert.Equal(
+            [AuthRoleCodes.Viewer, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
+            roles
+        );
+        Assert.Equal(3, await dbContext.UserRoles.CountAsync());
+        Assert.Equal(3, await dbContext.UserRoleAuditEvents.CountAsync());
+    }
+
+    [Fact]
     public async Task GetSessionAsync_WhenUserInactive_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
@@ -141,12 +180,12 @@ public sealed class AuthSessionConsistencyTests
         var session = new AuthSession(
             Guid.NewGuid(),
             "Test User",
-            ["viewer", "experimental", "moderator"]
+            ["viewer", "experimental", "moderator", "superadmin"]
         );
 
         var dto = session.ToDto();
 
-        Assert.Equal([AuthRole.Viewer, AuthRole.Moderator], dto.Roles);
+        Assert.Equal([AuthRole.Viewer, AuthRole.Moderator, AuthRole.SuperAdmin], dto.Roles);
     }
 
     [Fact]
@@ -361,6 +400,42 @@ public sealed class AuthSessionConsistencyTests
 
         return new ApplicationDbContext(options);
     }
+
+    private static Role[] CreateRoles(DateTime timestamp) =>
+    [
+        new Role
+        {
+            Id = 1,
+            Code = AuthRoleCodes.Viewer,
+            Name = "Viewer",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 2,
+            Code = AuthRoleCodes.Moderator,
+            Name = "Moderator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 3,
+            Code = AuthRoleCodes.Admin,
+            Name = "Administrator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 4,
+            Code = AuthRoleCodes.SuperAdmin,
+            Name = "Super administrator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        }
+    ];
 
     private sealed class StubUserRoleService : IUserRoleService
     {

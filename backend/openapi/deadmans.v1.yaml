@@ -8,6 +8,108 @@ info:
 servers:
   - url: /api
 paths:
+  /admin/users:
+    get:
+      operationId: getRoleAdministrationUsers
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: Paged users and their effective application roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAdministrationPageDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing super administrator role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/users/{userId}/roles:
+    put:
+      operationId: updateRoleAdministrationUserRoles
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRolesRequestDto'
+      responses:
+        '200':
+          description: Updated user roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAdministrationUserDto'
+        '400':
+          description: Invalid role assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing super administrator role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Permanent super administrator assignment is protected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game:
     get:
       operationId: getCurrentGameBoard
@@ -6906,7 +7008,7 @@ components:
           type: integer
     AuthRole:
       type: string
-      enum: [admin, moderator, viewer]
+      enum: [superadmin, admin, moderator, viewer]
     AuthSessionDto:
       type: object
       required: [userId, displayName, roles]
@@ -6918,6 +7020,53 @@ components:
           type: string
         roles:
           type: array
+          items:
+            $ref: '#/components/schemas/AuthRole'
+    RoleAdministrationUserDto:
+      type: object
+      required: [userId, twitchLogin, displayName, isActive, roles, isPermanentSuperAdmin]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        twitchLogin:
+          type: string
+        displayName:
+          type: string
+        isActive:
+          type: boolean
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AuthRole'
+        isPermanentSuperAdmin:
+          type: boolean
+    RoleAdministrationPageDto:
+      type: object
+      required: [items, page, pageSize, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleAdministrationUserDto'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalCount:
+          type: integer
+          minimum: 0
+    UpdateUserRolesRequestDto:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          uniqueItems: true
           items:
             $ref: '#/components/schemas/AuthRole'
     ErrorResponse:
@@ -6932,6 +7081,9 @@ components:
           description: Stable machine-readable error code.
           enum:
             - auth.api_client_header_required
+            - role_administration.invalid_request
+            - role_administration.user_not_found
+            - role_administration.permanent_superadmin_protected
             - game_board.not_found
             - game_board.cell_not_found
             - game_board.active_team_required

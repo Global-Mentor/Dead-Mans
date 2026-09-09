@@ -23,8 +23,9 @@ public sealed class ProductionBaselineMigrationTests
             await MigrateAsync(connectionString);
 
             await using var db = CreateDbContext(connectionString);
-            Assert.Equal(3, await db.Roles.CountAsync());
+            Assert.Equal(4, await db.Roles.CountAsync());
             Assert.Empty(await db.Users.ToArrayAsync());
+            Assert.Empty(await db.UserRoleAuditEvents.ToArrayAsync());
             Assert.Empty(await db.Games.ToArrayAsync());
             Assert.Empty(await db.ModifierDefinitions.ToArrayAsync());
             Assert.Empty(await db.QuestionDefinitions.ToArrayAsync());
@@ -51,7 +52,7 @@ public sealed class ProductionBaselineMigrationTests
 
             await MigrateAsync(connectionString);
             await using var restoredDb = CreateDbContext(connectionString);
-            Assert.Equal(3, await restoredDb.Roles.CountAsync());
+            Assert.Equal(4, await restoredDb.Roles.CountAsync());
         });
     }
 

@@ -62,6 +62,15 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
                 Description = "Administrator role with full management access.",
                 CreatedAtUtc = seedTime,
                 UpdatedAtUtc = seedTime
+            },
+            new Role
+            {
+                Id = 4,
+                Code = "superadmin",
+                Name = "Super administrator",
+                Description = "Owner role with access to application role management.",
+                CreatedAtUtc = seedTime,
+                UpdatedAtUtc = seedTime
             }
         );
     }

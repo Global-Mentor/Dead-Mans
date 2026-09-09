@@ -4,12 +4,12 @@ type PanelCapability =
   'gameSetup' | 'openGameBoardCell' | 'manageGame' | 'manageGameRounds' | 'startGame' | 'finishGame'
 
 const panelCapabilityRoles: Record<PanelCapability, readonly AuthRole[]> = {
-  gameSetup: ['admin'],
-  openGameBoardCell: ['admin'],
-  manageGame: ['admin', 'moderator'],
-  manageGameRounds: ['admin', 'moderator'],
-  startGame: ['admin'],
-  finishGame: ['admin'],
+  gameSetup: ['admin', 'superadmin'],
+  openGameBoardCell: ['admin', 'superadmin'],
+  manageGame: ['admin', 'superadmin', 'moderator'],
+  manageGameRounds: ['admin', 'superadmin', 'moderator'],
+  startGame: ['admin', 'superadmin'],
+  finishGame: ['admin', 'superadmin'],
 }
 
 export function hasPanelCapability(

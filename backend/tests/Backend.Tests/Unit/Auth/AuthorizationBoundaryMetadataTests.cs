@@ -43,6 +43,16 @@ public sealed class AuthorizationBoundaryMetadataTests
     }
 
     [Fact]
+    public void RoleAdministrationController_RemainsSuperAdminOnly()
+    {
+        AssertEffectiveRoles(
+            typeof(RoleAdministrationController),
+            methodName: null,
+            AuthRoleCodes.SuperAdmin
+        );
+    }
+
+    [Fact]
     public void SensitiveActionsKeepTheirExpectedRoleBoundaries()
     {
         var adminActions = new Dictionary<Type, string[]>

@@ -12,11 +12,14 @@ import {
   catalogModifiersRoute,
   catalogQuestionsRoute,
   gameSetupRoute,
+  hasAccessToPanelRoute,
+  roleAdministrationRoute,
   type PanelRouteDefinition,
 } from '../routes/app-routes.ts'
+import type { AuthRole } from '../shared/api/contracts/index.ts'
 
 const adminMenus: ReadonlyArray<{
-  id: 'game-setup' | 'global-settings'
+  id: 'game-setup' | 'global-settings' | 'system'
   labelKey: Extract<ParseKeys, `navigation.menus.${string}`>
   routes: readonly PanelRouteDefinition[]
 }> = [
@@ -30,14 +33,20 @@ const adminMenus: ReadonlyArray<{
     labelKey: 'navigation.menus.globalSettings',
     routes: [catalogModifiersRoute, catalogQuestionsRoute],
   },
+  {
+    id: 'system',
+    labelKey: 'navigation.menus.system',
+    routes: [roleAdministrationRoute],
+  },
 ]
 
 interface PanelAdminNavigationProps {
   activeRouteId: string | undefined
   layout: 'inline' | 'stacked'
+  roles: readonly AuthRole[]
 }
 
-export function PanelAdminNavigation({ activeRouteId, layout }: PanelAdminNavigationProps) {
+export function PanelAdminNavigation({ activeRouteId, layout, roles }: PanelAdminNavigationProps) {
   const { t } = useTranslation()
   const isStacked = layout === 'stacked'
   const navigationId = useId()
@@ -48,8 +57,15 @@ export function PanelAdminNavigation({ activeRouteId, layout }: PanelAdminNaviga
   const { data: draftState } = useQuery({
     ...gameSetupDraftQueryOptions,
     staleTime: 60_000,
+    enabled: roles.includes('admin') || roles.includes('superadmin'),
   })
   const hasDraftGame = draftState?.snapshot != null
+  const accessibleMenus = adminMenus
+    .map((menu) => ({
+      ...menu,
+      routes: menu.routes.filter((route) => hasAccessToPanelRoute(route, roles)),
+    }))
+    .filter((menu) => menu.routes.length > 0)
 
   const handleMenuOpen =
     (menuId: (typeof adminMenus)[number]['id']) => (event: MouseEvent<HTMLElement>) => {
@@ -76,7 +92,7 @@ export function PanelAdminNavigation({ activeRouteId, layout }: PanelAdminNaviga
           : { display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }
       }
     >
-      {adminMenus.map((menu) => (
+      {accessibleMenus.map((menu) => (
         <AdminNavigationMenu
           key={menu.id}
           triggerId={`${navigationId}-${menu.id}`}

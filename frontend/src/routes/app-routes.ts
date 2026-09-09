@@ -14,6 +14,7 @@ export {
   gameQuizRoute,
   gameSetupRoute,
   panelRootPath,
+  roleAdministrationRoute,
   teamRegistrationsRoute,
   type PanelRouteDefinition,
 } from '../app/panel-route-metadata.ts'

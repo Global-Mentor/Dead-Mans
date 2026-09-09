@@ -25,6 +25,8 @@ public class TwitchAuthOptions
     [Required]
     public string[] Scopes { get; set; } = [];
 
+    public string[] PermanentSuperAdminTwitchUserIds { get; set; } = [];
+
     public static bool IsValidRedirectUri(string? value, bool requireHttps)
     {
         if (string.IsNullOrWhiteSpace(value)
@@ -52,6 +54,26 @@ public class TwitchAuthOptions
             .ToArray();
         return normalized.Length > 0
             && normalized.Length == scopes.Count()
+            && normalized.Distinct(StringComparer.Ordinal).Count() == normalized.Length;
+    }
+
+    public static bool HasValidPermanentSuperAdminTwitchUserIds(
+        IEnumerable<string>? twitchUserIds,
+        bool requireAtLeastOne
+    )
+    {
+        if (twitchUserIds is null)
+        {
+            return !requireAtLeastOne;
+        }
+
+        var normalized = twitchUserIds.Select(id => id?.Trim()).ToArray();
+        return (!requireAtLeastOne || normalized.Length > 0)
+            && normalized.All(id =>
+                !string.IsNullOrWhiteSpace(id)
+                && ulong.TryParse(id, out var numericId)
+                && numericId > 0
+            )
             && normalized.Distinct(StringComparer.Ordinal).Count() == normalized.Length;
     }
 }

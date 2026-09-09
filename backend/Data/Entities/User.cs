@@ -28,6 +28,12 @@ public class User
 
     public ICollection<UserRole> AssignedRoles { get; set; } = new List<UserRole>();
 
+    public ICollection<UserRoleAuditEvent> RoleAuditEvents { get; set; } =
+        new List<UserRoleAuditEvent>();
+
+    public ICollection<UserRoleAuditEvent> PerformedRoleAuditEvents { get; set; } =
+        new List<UserRoleAuditEvent>();
+
     public ICollection<GameModifierActivation> ActivatedGameModifiers { get; set; } =
         new List<GameModifierActivation>();
 

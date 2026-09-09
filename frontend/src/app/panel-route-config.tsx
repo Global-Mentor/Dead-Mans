@@ -88,6 +88,11 @@ const panelPages = {
     'TeamRegistrationsPage',
     [translations.teamRegistrations, translations.gameApplication, translations.gameRegistration],
   ),
+  'role-administration': lazyPanelPage(
+    () => import('../features/role-administration/RoleAdministrationPage.tsx'),
+    'RoleAdministrationPage',
+    [translations.roleAdministration],
+  ),
 } as const satisfies Record<(typeof panelRoutes)[number]['id'], PanelRoutePage>
 
 const panelSyncComponents = {

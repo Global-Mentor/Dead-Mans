@@ -135,7 +135,11 @@ export function PanelNavigation() {
             </Typography>
 
             {isAdminRoute ? (
-              <PanelAdminNavigation activeRouteId={activeRoute?.id} layout="inline" />
+              <PanelAdminNavigation
+                activeRouteId={activeRoute?.id}
+                layout="inline"
+                roles={user.roles}
+              />
             ) : (
               <PanelPrimaryNavigation
                 activeRouteId={activeRoute?.id}
@@ -270,7 +274,11 @@ export function PanelNavigation() {
           </Stack>
 
           {isAdminRoute ? (
-            <PanelAdminNavigation activeRouteId={activeRoute?.id} layout="stacked" />
+            <PanelAdminNavigation
+              activeRouteId={activeRoute?.id}
+              layout="stacked"
+              roles={user.roles}
+            />
           ) : (
             <PanelPrimaryNavigation
               activeRouteId={activeRoute?.id}

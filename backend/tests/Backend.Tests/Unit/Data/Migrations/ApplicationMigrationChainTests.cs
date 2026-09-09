@@ -51,6 +51,8 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("game_finalizations", script, StringComparison.Ordinal);
         Assert.Contains("game_team_final_results", script, StringComparison.Ordinal);
         Assert.Contains("ix_game_finalizations_request_id", script, StringComparison.Ordinal);
+        Assert.Contains("user_role_audit_events", script, StringComparison.Ordinal);
+        Assert.Contains("trg_user_role_audit_events_immutable", script, StringComparison.Ordinal);
         Assert.DoesNotContain("game_quiz_manual_awards", script, StringComparison.Ordinal);
     }
 }

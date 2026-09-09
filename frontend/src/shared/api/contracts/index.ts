@@ -50,6 +50,8 @@ export type UpdateGameQuestionRequest = components['schemas']['UpdateGameQuestio
 
 export type AuthRole = components['schemas']['AuthRole']
 export type AuthSession = components['schemas']['AuthSessionDto']
+export type RoleAdministrationUser = components['schemas']['RoleAdministrationUserDto']
+export type RoleAdministrationPage = components['schemas']['RoleAdministrationPageDto']
 
 export type RegistrationTeam = components['schemas']['RegistrationTeamDto']
 export type RegistrationInvitation = components['schemas']['RegistrationInvitationDto']

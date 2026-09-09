@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<UserRoleAuditEvent> UserRoleAuditEvents => Set<UserRoleAuditEvent>();
     public DbSet<Game> Games => Set<Game>();
     public DbSet<GameBoard> GameBoards => Set<GameBoard>();
     public DbSet<BoardCell> BoardCells => Set<BoardCell>();
@@ -69,14 +70,21 @@ public class ApplicationDbContext : DbContext
 
     private void RejectVersionMutation()
     {
-        var hasMutation = ChangeTracker.Entries()
+        var hasModifierHistoryMutation = ChangeTracker.Entries()
             .Any(entry =>
                 (entry.Entity is ModifierDefinitionVersion
                     || entry.Entity is ModifierDefinitionVersionConflict)
                 && entry.State is EntityState.Modified or EntityState.Deleted);
-        if (hasMutation)
+        if (hasModifierHistoryMutation)
         {
             throw new InvalidOperationException("Modifier revision rows are immutable.");
+        }
+
+        var hasRoleAuditMutation = ChangeTracker.Entries<UserRoleAuditEvent>()
+            .Any(entry => entry.State is EntityState.Modified or EntityState.Deleted);
+        if (hasRoleAuditMutation)
+        {
+            throw new InvalidOperationException("User role audit rows are immutable.");
         }
     }
 
@@ -88,6 +96,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
+        modelBuilder.ApplyConfiguration(new UserRoleAuditEventConfiguration());
         modelBuilder.ApplyConfiguration(new GameConfiguration());
         modelBuilder.ApplyConfiguration(new GameBoardConfiguration());
         modelBuilder.ApplyConfiguration(new BoardCellConfiguration());

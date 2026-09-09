@@ -7,11 +7,12 @@ const authenticatedPanelRoles = [
   'viewer',
   'moderator',
   'admin',
+  'superadmin',
 ] as const satisfies readonly AuthRole[]
 
 type PanelRouteLabelKey = Extract<ParseKeys, `navigation.items.${string}.label`>
 
-type PanelAdminSection = 'current-game' | 'catalog'
+type PanelAdminSection = 'current-game' | 'catalog' | 'system'
 
 type PanelRouteDefinitionInput = {
   id: string
@@ -93,7 +94,7 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'game-setup',
     path: 'game-setup',
     labelKey: 'navigation.items.gameSetup.label',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'superadmin'],
     group: 'admin',
     adminSection: 'current-game',
   }),
@@ -101,7 +102,7 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'admin-modifiers',
     path: 'admin-modifiers',
     labelKey: 'navigation.items.adminModifiers.label',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'superadmin'],
     group: 'admin',
     adminSection: 'current-game',
   }),
@@ -109,7 +110,7 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'admin-questions',
     path: 'admin-questions',
     labelKey: 'navigation.items.adminQuestions.label',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'superadmin'],
     group: 'admin',
     adminSection: 'current-game',
   }),
@@ -117,7 +118,7 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'catalog-modifiers',
     path: 'catalog-modifiers',
     labelKey: 'navigation.items.catalogModifiers.label',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'superadmin'],
     group: 'admin',
     adminSection: 'catalog',
   }),
@@ -125,7 +126,7 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'catalog-questions',
     path: 'catalog-questions',
     labelKey: 'navigation.items.catalogQuestions.label',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'superadmin'],
     group: 'admin',
     adminSection: 'catalog',
   }),
@@ -133,9 +134,17 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'team-registrations',
     path: 'team-registrations',
     labelKey: 'common.entities.teams',
-    allowedRoles: ['admin', 'moderator'],
+    allowedRoles: ['admin', 'superadmin', 'moderator'],
     group: 'admin',
     adminSection: 'current-game',
+  }),
+  createPanelRouteDefinition({
+    id: 'role-administration',
+    path: 'role-administration',
+    labelKey: 'navigation.items.roleAdministration.label',
+    allowedRoles: ['superadmin'],
+    group: 'admin',
+    adminSection: 'system',
   }),
 ])
 
@@ -163,3 +172,4 @@ export const adminQuestionsRoute = requirePanelRoute('admin-questions')
 export const catalogModifiersRoute = requirePanelRoute('catalog-modifiers')
 export const catalogQuestionsRoute = requirePanelRoute('catalog-questions')
 export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
+export const roleAdministrationRoute = requirePanelRoute('role-administration')

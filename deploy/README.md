@@ -5,7 +5,7 @@
 1. Закрыть публичный порт PostgreSQL и подключить к нему постоянный volume. Production-соединение должно использовать TLS с `SSL Mode=VerifyFull`.
 2. Создать в Coolify приложение из образа `ghcr.io/<owner>/<repo>:main`. Назначить приложению домены `https://deadman.bug.community` и `https://bug.community`, внутренний порт — `8080`, health check — `/health/ready`. Приложение само перенаправляет все запросы с корневого домена на `https://deadman.bug.community`, сохраняя путь и query string.
 3. Если GHCR package приватный, добавить в Coolify registry `ghcr.io`, имя GitHub-пользователя и token только с правом `read:packages`.
-4. Перенести переменные из `.env.example` в Coolify. Секреты хранить только в панели.
+4. Перенести переменные из `.env.example` в Coolify. В `TwitchAuth__PermanentSuperAdminTwitchUserIds__0` указать числовой Twitch ID владельца — без него Production намеренно не запустится. Секреты хранить только в панели.
 5. Подключить volume к `/var/lib/deadmans/keys` и CA-сертификат PostgreSQL к `/run/secrets/postgres-ca.crt` в режиме read-only.
 6. В GitHub Environment `production` добавить секреты `COOLIFY_TOKEN`, `COOLIFY_WEBHOOK`, переменную `PRODUCTION_HEALTH_URL=https://deadman.bug.community/health/ready` и переменную репозитория `PRODUCTION_DEPLOY_ENABLED=true`.
 7. Настроить ежедневный backup PostgreSQL в отдельный S3 bucket и проверить восстановление до открытия доступа пользователям.

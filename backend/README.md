@@ -111,6 +111,7 @@ Uploader:
 - `TwitchAuth__RedirectUri`
 - `TwitchAuth__FrontendRedirectUri`
 - `TwitchAuth__Scopes__*`
+- `TwitchAuth__PermanentSuperAdminTwitchUserIds__*` (числовые Twitch ID владельцев; минимум один обязателен в Production)
 
 Backend валидирует auth-конфигурацию и наличие рабочего `ApplicationDbContext` на старте.
 

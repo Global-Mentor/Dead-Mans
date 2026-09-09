@@ -47,6 +47,9 @@ type FeatureTranslations = {
   modifierHistory: TranslationOf<
     typeof import('../features/modifier-history/i18n/modifier-history-translations.ts')
   >
+  roleAdministration: TranslationOf<
+    typeof import('../features/role-administration/i18n/role-administration-translations.ts')
+  >
 }
 
 export type DefaultTranslation = ReturnType<typeof createBaseTranslation> & FeatureTranslations

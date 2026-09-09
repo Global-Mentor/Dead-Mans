@@ -2,6 +2,7 @@ namespace backend.Api.Contracts;
 
 public enum AuthRole
 {
+    SuperAdmin,
     Admin,
     Moderator,
     Viewer

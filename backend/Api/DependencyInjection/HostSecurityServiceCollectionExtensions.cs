@@ -68,6 +68,13 @@ public static class HostSecurityServiceCollectionExtensions
                 "TwitchAuth:Scopes must contain unique, non-empty scopes."
             )
             .Validate(
+                options => TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(
+                    options.PermanentSuperAdminTwitchUserIds,
+                    environment.IsProduction()
+                ),
+                "TwitchAuth:PermanentSuperAdminTwitchUserIds must contain unique positive numeric Twitch user IDs and at least one ID is required in Production."
+            )
+            .Validate(
                 options =>
                     TwitchAuthOptions.IsValidRedirectUri(
                         options.RedirectUri,

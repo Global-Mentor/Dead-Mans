@@ -75,6 +75,10 @@ export const featureTranslationBundles = {
     key: 'modifierHistory',
     load: () => import('../features/modifier-history/i18n/modifier-history-translations.ts'),
   },
+  roleAdministration: {
+    key: 'roleAdministration',
+    load: () => import('../features/role-administration/i18n/role-administration-translations.ts'),
+  },
 } as const satisfies Record<string, FeatureTranslationBundle>
 
 export const allFeatureTranslationBundles = Object.values(featureTranslationBundles)

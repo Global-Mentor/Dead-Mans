@@ -20,6 +20,32 @@ public static partial class ApiContractMapper
         );
     }
 
+    public static RoleAdministrationUserDto ToDto(this RoleAdministrationUser user)
+    {
+        return new RoleAdministrationUserDto(
+            user.UserId,
+            user.TwitchLogin,
+            user.DisplayName,
+            user.IsActive,
+            user.Roles
+                .Select(TryMapAuthRole)
+                .Where(role => role.HasValue)
+                .Select(role => role!.Value)
+                .ToArray(),
+            user.IsPermanentSuperAdmin
+        );
+    }
+
+    public static RoleAdministrationPageDto ToDto(this RoleAdministrationPage page)
+    {
+        return new RoleAdministrationPageDto(
+            page.Items.Select(ToDto).ToArray(),
+            page.Page,
+            page.PageSize,
+            page.TotalCount
+        );
+    }
+
     public static GameSetupDraftUpdate ToUpdateModel(this UpdateGameSetupRequestDto request)
     {
         return new GameSetupDraftUpdate(
@@ -154,6 +180,7 @@ public static partial class ApiContractMapper
     {
         return role switch
         {
+            AuthRoleCodes.SuperAdmin => AuthRole.SuperAdmin,
             AuthRoleCodes.Admin => AuthRole.Admin,
             AuthRoleCodes.Moderator => AuthRole.Moderator,
             AuthRoleCodes.Viewer => AuthRole.Viewer,

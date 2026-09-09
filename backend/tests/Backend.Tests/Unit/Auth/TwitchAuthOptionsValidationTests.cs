@@ -28,4 +28,21 @@ public sealed class TwitchAuthOptionsValidationTests
         Assert.False(TwitchAuthOptions.HasValidScopes(["openid", " "]));
         Assert.False(TwitchAuthOptions.HasValidScopes([]));
     }
+
+    [Fact]
+    public void HasValidPermanentSuperAdminTwitchUserIds_RequiresUniquePositiveNumericIds()
+    {
+        Assert.True(
+            TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(["123456"], true)
+        );
+        Assert.True(TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds([], false));
+        Assert.False(TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds([], true));
+        Assert.False(
+            TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(["123456", "123456"], true)
+        );
+        Assert.False(
+            TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(["GlobalMentor"], true)
+        );
+        Assert.False(TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(["0"], true));
+    }
 }

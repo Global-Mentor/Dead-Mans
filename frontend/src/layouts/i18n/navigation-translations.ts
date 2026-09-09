@@ -7,6 +7,7 @@ const translations = {
       history: 'History',
       gameSetup: 'Game setup',
       globalSettings: 'Global settings',
+      system: 'System',
     },
     profile: 'Profile',
     notifications: 'Notifications',
@@ -34,6 +35,7 @@ const translations = {
     language: 'Interface language',
     logout: 'Log out',
     roles: {
+      superadmin: 'Super administrator',
       admin: 'Administrator',
       moderator: 'Moderator',
       viewer: 'Participant',
@@ -72,6 +74,9 @@ const translations = {
       catalogQuestions: {
         label: 'Question setup',
       },
+      roleAdministration: {
+        label: 'User roles',
+      },
     },
   },
   ru: {
@@ -82,6 +87,7 @@ const translations = {
       history: 'История',
       gameSetup: 'Настройка игры',
       globalSettings: 'Глобальные настройки',
+      system: 'Система',
     },
     profile: 'Профиль',
     notifications: 'Уведомления',
@@ -110,6 +116,7 @@ const translations = {
     language: 'Язык интерфейса',
     logout: 'Выйти',
     roles: {
+      superadmin: 'Суперадминистратор',
       admin: 'Администратор',
       moderator: 'Модератор',
       viewer: 'Участник',
@@ -148,6 +155,9 @@ const translations = {
       catalogQuestions: {
         label: 'Настройка вопросов',
       },
+      roleAdministration: {
+        label: 'Роли пользователей',
+      },
     },
   },
   uk: {
@@ -158,6 +168,7 @@ const translations = {
       history: 'Історія',
       gameSetup: 'Налаштування гри',
       globalSettings: 'Глобальні налаштування',
+      system: 'Система',
     },
     profile: 'Профіль',
     notifications: 'Сповіщення',
@@ -186,6 +197,7 @@ const translations = {
     language: 'Мова інтерфейсу',
     logout: 'Вийти',
     roles: {
+      superadmin: 'Суперадміністратор',
       admin: 'Адміністратор',
       moderator: 'Модератор',
       viewer: 'Учасник',
@@ -224,6 +236,9 @@ const translations = {
       catalogQuestions: {
         label: 'Налаштування питань',
       },
+      roleAdministration: {
+        label: 'Ролі користувачів',
+      },
     },
   },
   pl: {
@@ -234,6 +249,7 @@ const translations = {
       history: 'Historia',
       gameSetup: 'Konfiguracja gry',
       globalSettings: 'Ustawienia globalne',
+      system: 'System',
     },
     profile: 'Profil',
     notifications: 'Powiadomienia',
@@ -262,6 +278,7 @@ const translations = {
     language: 'Język interfejsu',
     logout: 'Wyloguj się',
     roles: {
+      superadmin: 'Superadministrator',
       admin: 'Administrator',
       moderator: 'Moderator',
       viewer: 'Uczestnik',
@@ -299,6 +316,9 @@ const translations = {
       },
       catalogQuestions: {
         label: 'Konfiguracja pytań',
+      },
+      roleAdministration: {
+        label: 'Role użytkowników',
       },
     },
   },

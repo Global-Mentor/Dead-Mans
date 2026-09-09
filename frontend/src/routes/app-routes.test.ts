@@ -15,6 +15,7 @@ import {
   getPanelRouteByPath,
   hasAccessToPanelRoute,
   modifierHistoryRoute,
+  roleAdministrationRoute,
   teamRegistrationsRoute,
 } from './app-routes.ts'
 
@@ -60,6 +61,26 @@ describe('panel route helpers', () => {
       modifierHistoryRoute,
       teamRegistrationsRoute,
     ])
+  })
+
+  it('gives super administrators every admin route plus role administration', () => {
+    expect(getAccessiblePanelRoutes(['superadmin'])).toEqual([
+      gameBoardRoute,
+      gameLeaderboardRoute,
+      gameApplicationRoute,
+      gameModifiersRoute,
+      gameQuizRoute,
+      gameHistoryRoute,
+      modifierHistoryRoute,
+      gameSetupRoute,
+      adminModifiersRoute,
+      adminQuestionsRoute,
+      catalogModifiersRoute,
+      catalogQuestionsRoute,
+      teamRegistrationsRoute,
+      roleAdministrationRoute,
+    ])
+    expect(hasAccessToPanelRoute(roleAdministrationRoute, ['admin'])).toBe(false)
   })
 
   it('resolves nested panel paths to their route metadata', () => {

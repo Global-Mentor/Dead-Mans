@@ -121,6 +121,7 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
     [Theory]
     [InlineData("Cors:AllowedOrigins:0", "http://app.example.com", "must use HTTPS")]
     [InlineData("TwitchAuth:RedirectUri", "http://api.example.com/auth/twitch/callback", "must use HTTPS")]
+    [InlineData("TwitchAuth:PermanentSuperAdminTwitchUserIds:0", "", "positive numeric Twitch user IDs")]
     [InlineData("Storage:PublicBaseUrl", "http://media.example.com", "must use HTTPS")]
     [InlineData("Storage:SecretKey", "", "access and secret keys are required")]
     [InlineData("ForwardedHeaders:TrustedProxies:0", null, "must contain valid IP addresses")]
@@ -158,6 +159,7 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
             ["Cors:AllowedOrigins:1"] = "https://admin.example.com",
             ["TwitchAuth:RedirectUri"] = "https://api.example.com/auth/twitch/callback",
             ["TwitchAuth:FrontendRedirectUri"] = "https://app.example.com/auth/callback",
+            ["TwitchAuth:PermanentSuperAdminTwitchUserIds:0"] = "123456",
             ["Storage:PublicBaseUrl"] = "https://media.example.com",
             ["Storage:ServiceUrl"] = "https://s3.example.com",
             ["Storage:BucketName"] = "deadman-test",

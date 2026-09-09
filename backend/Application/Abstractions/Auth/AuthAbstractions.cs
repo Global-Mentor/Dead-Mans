@@ -4,6 +4,35 @@ public sealed record AuthUserSummary(Guid UserId, string DisplayName, bool IsAct
 
 public sealed record AuthSession(Guid UserId, string DisplayName, IReadOnlyList<string> Roles);
 
+public sealed record RoleAdministrationUser(
+    Guid UserId,
+    string TwitchLogin,
+    string DisplayName,
+    bool IsActive,
+    IReadOnlyList<string> Roles,
+    bool IsPermanentSuperAdmin
+);
+
+public sealed record RoleAdministrationPage(
+    IReadOnlyList<RoleAdministrationUser> Items,
+    int Page,
+    int PageSize,
+    int TotalCount
+);
+
+public enum UpdateUserRolesOutcome
+{
+    Updated,
+    UserNotFound,
+    InvalidRoles,
+    PermanentSuperAdminProtected
+}
+
+public sealed record UpdateUserRolesResult(
+    UpdateUserRolesOutcome Outcome,
+    RoleAdministrationUser? User = null
+);
+
 public sealed record TwitchAuthenticatedUser(
     Guid UserId,
     string TwitchUserId,
@@ -31,6 +60,23 @@ public interface IUserRoleService
     Task<string[]> GetEffectiveRolesAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<string[]> EnsureEffectiveRolesAsync(Guid userId, CancellationToken cancellationToken);
+}
+
+public interface IRoleAdministrationService
+{
+    Task<RoleAdministrationPage> GetUsersAsync(
+        string? search,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken
+    );
+
+    Task<UpdateUserRolesResult> UpdateRolesAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        IReadOnlyCollection<string> roleCodes,
+        CancellationToken cancellationToken
+    );
 }
 
 public interface ITwitchLoginService

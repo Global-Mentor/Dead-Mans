@@ -139,6 +139,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IAuthUserReader, DbAuthUserReader>();
         }
         services.AddScoped<IUserRoleService, UserRoleService>();
+        services.AddScoped<IRoleAdministrationService, RoleAdministrationService>();
         services.AddScoped<IClaimsTransformation, CurrentUserRoleClaimsTransformation>();
         services.AddHttpClient<ITwitchLoginService, TwitchLoginService>(client =>
         {

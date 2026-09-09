@@ -9,6 +9,7 @@ describe('panel capabilities', () => {
 
   it('keeps game setup restricted to admins', () => {
     expect(hasPanelCapability('gameSetup', ['admin'])).toBe(true)
+    expect(hasPanelCapability('gameSetup', ['superadmin'])).toBe(true)
     expect(hasPanelCapability('gameSetup', ['moderator'])).toBe(false)
     expect(hasPanelCapability('gameSetup', ['viewer'])).toBe(false)
   })
@@ -21,6 +22,7 @@ describe('panel capabilities', () => {
 
   it('allows moderators and admins to manage rounds', () => {
     expect(hasPanelCapability('manageGameRounds', ['admin'])).toBe(true)
+    expect(hasPanelCapability('manageGameRounds', ['superadmin'])).toBe(true)
     expect(hasPanelCapability('manageGameRounds', ['moderator'])).toBe(true)
     expect(hasPanelCapability('manageGameRounds', ['viewer'])).toBe(false)
   })
