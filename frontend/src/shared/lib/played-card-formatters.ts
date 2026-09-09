@@ -3,8 +3,7 @@ import type { TFunction } from 'i18next'
 export function formatPlayedCardModifierOutcomeStatus(t: TFunction, status: string) {
   const normalized = normalizePlayedCardModifierOutcomeStatus(status)
   const translationKey = `gameHistory.modifierOutcomeStatus.${normalized}`
-  const translated = t(translationKey)
-  return translated === translationKey ? t('gameHistory.modifierOutcomeStatus.unknown') : translated
+  return t(translationKey, { defaultValue: t('gameHistory.modifierOutcomeStatus.unknown') })
 }
 
 export function getPlayedCardModifierOutcomeColor(

@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useQuery } from '@tanstack/react-query'
@@ -215,7 +216,7 @@ function QuizRoundHistoryItem({
       <Stack spacing={1}>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-            {t('gameQuiz.questionLabel', { order: round.askOrder })}
+            {t('gameQuiz.questionLabel', { order: round.questionCode })}
           </Typography>
           <Chip
             label={getStatusLabel(round.status, t)}
@@ -367,7 +368,7 @@ function getStatusColor(status: RoundStatus): 'default' | 'success' | 'error' | 
   }
 }
 
-function getStatusLabel(status: RoundStatus, t: ReturnType<typeof useTranslation>['t']) {
+function getStatusLabel(status: RoundStatus, t: TFunction) {
   switch (status) {
     case 'asked':
       return t('gameQuiz.statusAsked')

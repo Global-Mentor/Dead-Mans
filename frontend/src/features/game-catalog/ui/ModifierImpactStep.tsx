@@ -1,3 +1,4 @@
+import type { DefaultTranslation } from '../../../locales/index.ts'
 import {
   Alert,
   FormControl,
@@ -38,12 +39,13 @@ export function ModifierImpactStep({
   const eventMaximumKind = useWatch({ control, name: 'eventMaximumKind' })
   const payoutKind = useWatch({ control, name: 'payoutKind' })
   const payoutValue = useWatch({ control, name: 'payoutValue' })
-  const help = (field: string) => t(`gameCatalog.modifiers.wizard.help.${field}`)
+  const help = (field: keyof DefaultTranslation['gameCatalog']['modifiers']['wizard']['help']) =>
+    t(`gameCatalog.modifiers.wizard.help.${field}`)
 
   const cards = <T extends string>(
     values: readonly T[],
     selected: T | null,
-    prefix: string,
+    label: (value: T, part: 'title' | 'description') => string,
     isDisabled = disabled,
   ) =>
     values.map((value) => (
@@ -52,8 +54,8 @@ export function ModifierImpactStep({
         value={value}
         checked={selected === value}
         disabled={isDisabled}
-        title={t(`${prefix}.${value}.title`)}
-        description={t(`${prefix}.${value}.description`)}
+        title={label(value, 'title')}
+        description={label(value, 'description')}
       />
     ))
 
@@ -81,10 +83,8 @@ export function ModifierImpactStep({
                   gap: 1,
                 }}
               >
-                {cards(
-                  modifierMeasurementDomains,
-                  field.value,
-                  'gameCatalog.modifiers.wizard.measurement.domains',
+                {cards(modifierMeasurementDomains, field.value, (value, part) =>
+                  t(`gameCatalog.modifiers.wizard.measurement.domains.${value}.${part}`),
                 )}
               </RadioGroup>
               {fieldState.error ? (
@@ -104,10 +104,8 @@ export function ModifierImpactStep({
                   {t('gameCatalog.modifiers.wizard.measurement.killQuestion')}
                 </FormLabel>
                 <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
-                  {cards(
-                    modifierKillMeasurementModes,
-                    field.value,
-                    'gameCatalog.modifiers.wizard.measurement.killModes',
+                  {cards(modifierKillMeasurementModes, field.value, (value, part) =>
+                    t(`gameCatalog.modifiers.wizard.measurement.killModes.${value}.${part}`),
                   )}
                 </RadioGroup>
               </FormControl>
@@ -125,10 +123,8 @@ export function ModifierImpactStep({
                   {t('gameCatalog.modifiers.wizard.measurement.eventQuestion')}
                 </FormLabel>
                 <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
-                  {cards(
-                    modifierEventMeasurementModes,
-                    field.value,
-                    'gameCatalog.modifiers.wizard.measurement.eventModes',
+                  {cards(modifierEventMeasurementModes, field.value, (value, part) =>
+                    t(`gameCatalog.modifiers.wizard.measurement.eventModes.${value}.${part}`),
                   )}
                 </RadioGroup>
               </FormControl>
@@ -171,10 +167,8 @@ export function ModifierImpactStep({
                       gap: 1,
                     }}
                   >
-                    {cards(
-                      modifierEventMaximumKinds,
-                      field.value,
-                      'gameCatalog.modifiers.wizard.measurement.maximumKinds',
+                    {cards(modifierEventMaximumKinds, field.value, (value, part) =>
+                      t(`gameCatalog.modifiers.wizard.measurement.maximumKinds.${value}.${part}`),
                     )}
                   </RadioGroup>
                 </FormControl>
@@ -225,10 +219,8 @@ export function ModifierImpactStep({
                 }}
                 sx={{ mt: 0.75, gap: 0.75 }}
               >
-                {cards(
-                  modifierPayoutKinds,
-                  field.value,
-                  'gameCatalog.modifiers.wizard.payout.kinds',
+                {cards(modifierPayoutKinds, field.value, (value, part) =>
+                  t(`gameCatalog.modifiers.wizard.payout.kinds.${value}.${part}`),
                 )}
               </RadioGroup>
               {fieldState.error ? (

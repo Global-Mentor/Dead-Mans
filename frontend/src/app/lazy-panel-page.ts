@@ -6,7 +6,7 @@ import {
   type FeatureTranslationBundle,
 } from '../locales/feature-locale-loader.ts'
 
-export function lazyPanelPage<TModule extends Record<string, ComponentType<unknown>>>(
+export function lazyPanelPage<TModule extends Record<string, ComponentType>>(
   loader: () => Promise<TModule>,
   exportName: keyof TModule & string,
   translations: readonly FeatureTranslationBundle[] = [],

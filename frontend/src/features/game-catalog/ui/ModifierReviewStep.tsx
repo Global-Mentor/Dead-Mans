@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { Alert, Box, Chip, LinearProgress, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDraftPreview } from '../../../shared/api/contracts/index.ts'
@@ -78,7 +79,7 @@ export function ModifierReviewStep({
   )
 }
 
-function formatResolutionExample(value: string, t: ReturnType<typeof useTranslation>['t']) {
+function formatResolutionExample(value: string, t: TFunction) {
   return value === 'completed' ||
     value === 'automatic' ||
     value === 'succeeded' ||

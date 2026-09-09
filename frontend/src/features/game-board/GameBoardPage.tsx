@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
@@ -423,7 +424,7 @@ export function GameBoardPage() {
 }
 
 function formatGameBoardTeamName(
-  t: ReturnType<typeof useTranslation>['t'],
+  t: TFunction,
   teamName: string | null | undefined,
   teamSlotIndex: number,
 ) {

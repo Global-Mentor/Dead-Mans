@@ -20,7 +20,13 @@ const translations = {
       final: 'Final round score',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Running total: {{value}}',
-      kind: { kills: 'Kills', bounties: 'Bounties', emptyCardPenalty: 'Empty-card penalty' },
+      kind: {
+        kills: 'Kills',
+        bounties: 'Bounties',
+        emptyCardPenalty: 'Empty-card penalty',
+        modifierBonusKills: 'Modifier bonus kills',
+        modifierPoints: 'Modifier points',
+      },
       formula: {
         units: '{{count}} × {{unit}} = {{result}}',
         emptyPenalty: 'No kills, bounties, or bonus kills: −{{cardValue}}.',
@@ -85,6 +91,8 @@ const translations = {
         kills: 'Убийства',
         bounties: 'Награды',
         emptyCardPenalty: 'Штраф за пустую карточку',
+        modifierBonusKills: 'Бонусные убийства от модификатора',
+        modifierPoints: 'Очки от модификатора',
       },
       formula: {
         units: '{{count}} × {{unit}} = {{result}}',
@@ -150,6 +158,8 @@ const translations = {
         kills: 'Вбивства',
         bounties: 'Нагороди',
         emptyCardPenalty: 'Штраф за порожню картку',
+        modifierBonusKills: 'Бонусні вбивства від модифікатора',
+        modifierPoints: 'Очки від модифікатора',
       },
       formula: {
         units: '{{count}} × {{unit}} = {{result}}',
@@ -211,7 +221,13 @@ const translations = {
       final: 'Końcowy wynik rundy',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Suma częściowa: {{value}}',
-      kind: { kills: 'Zabójstwa', bounties: 'Nagrody', emptyCardPenalty: 'Kara za pustą kartę' },
+      kind: {
+        kills: 'Zabójstwa',
+        bounties: 'Nagrody',
+        emptyCardPenalty: 'Kara za pustą kartę',
+        modifierBonusKills: 'Bonusowe zabójstwa modyfikatora',
+        modifierPoints: 'Punkty modyfikatora',
+      },
       formula: {
         units: '{{count}} × {{unit}} = {{result}}',
         emptyPenalty: 'Brak zabójstw, nagród i zabójstw bonusowych: −{{cardValue}}.',

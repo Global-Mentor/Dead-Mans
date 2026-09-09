@@ -19,7 +19,9 @@ export function fetchModifierHistory(
 ) {
   return unwrapOpenApiData(
     client.GET('/game/modifiers/history', {
-      params: { query: { search: search || undefined, status, cursor, limit: 20 } },
+      params: {
+        query: { ...(search ? { search } : {}), status, ...(cursor ? { cursor } : {}), limit: 20 },
+      },
     }),
   )
 }
@@ -27,7 +29,7 @@ export function fetchModifierHistory(
 export function fetchModifierVersions(modifierId: string, cursor?: string) {
   return unwrapOpenApiData(
     client.GET('/game/modifiers/{modifierId}/versions', {
-      params: { path: { modifierId }, query: { cursor, limit: 20 } },
+      params: { path: { modifierId }, query: { ...(cursor ? { cursor } : {}), limit: 20 } },
     }),
   )
 }
@@ -43,7 +45,10 @@ export function fetchModifierVersion(modifierId: string, revision: number) {
 export function fetchModifierVersionGames(modifierId: string, revision: number, cursor?: string) {
   return unwrapOpenApiData(
     client.GET('/game/modifiers/{modifierId}/versions/{revision}/games', {
-      params: { path: { modifierId, revision }, query: { cursor, limit: 20 } },
+      params: {
+        path: { modifierId, revision },
+        query: { ...(cursor ? { cursor } : {}), limit: 20 },
+      },
     }),
   )
 }

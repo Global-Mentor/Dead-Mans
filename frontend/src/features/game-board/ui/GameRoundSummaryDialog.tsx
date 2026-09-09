@@ -23,6 +23,7 @@ import {
   type CompleteRoundInput,
   type GameRoundPostRoundAction,
   type GameRoundSummaryFormValues,
+  type GameRoundSummaryFormInput,
 } from '../model/game-round-summary-form.ts'
 import { GameRoundContext } from './GameRoundContext.tsx'
 import { GameRoundPostRoundSection } from './GameRoundPostRoundSection.tsx'
@@ -67,7 +68,7 @@ export function GameRoundSummaryDialog({
     handleSubmit,
     reset,
     formState: { isDirty },
-  } = useForm<GameRoundSummaryFormValues>({
+  } = useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>({
     resolver: zodResolver(gameRoundSummaryFormSchema),
     defaultValues,
     mode: 'onChange',

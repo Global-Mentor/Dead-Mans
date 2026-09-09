@@ -1,5 +1,6 @@
 import { Box, Divider, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../api/contracts/generated'
 
@@ -73,33 +74,31 @@ function CalculationRow({ line }: { line: CalculationLine }) {
         {explanation}
       </Typography>
       <Typography variant="caption" color="text.secondary" textAlign="right">
-        {t('common.scoreBreakdown.runningTotal', { value: line.runningTotal })}
+        {t('common.scoreBreakdown.runningTotal', { value: String(line.runningTotal) })}
       </Typography>
     </Stack>
   )
 }
 
-function describeLine(
-  line: CalculationLine,
-  value: Record<string, number>,
-  t: ReturnType<typeof useTranslation>['t'],
-) {
+function describeLine(line: CalculationLine, value: Record<string, number>, t: TFunction) {
   if (line.kind === 'kills') {
     return t('common.scoreBreakdown.formula.units', {
-      count: value.killsCount,
-      unit: value.cardValue,
-      result: line.pointsDelta,
+      count: value.killsCount ?? 0,
+      unit: operandText(value.cardValue),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.kind === 'bounties') {
     return t('common.scoreBreakdown.formula.units', {
-      count: value.bountyCount,
-      unit: value.cardValue,
-      result: line.pointsDelta,
+      count: value.bountyCount ?? 0,
+      unit: operandText(value.cardValue),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.kind === 'emptyCardPenalty') {
-    return t('common.scoreBreakdown.formula.emptyPenalty', { cardValue: value.cardValue })
+    return t('common.scoreBreakdown.formula.emptyPenalty', {
+      cardValue: operandText(value.cardValue),
+    })
   }
   if (
     line.formulaCode === 'growing_kill_value' ||
@@ -107,75 +106,79 @@ function describeLine(
   ) {
     if (value.killsCount === 0) {
       return t('common.scoreBreakdown.formula.growingZero', {
-        penalty: value.zeroKillPenaltyPoints ?? value.zeroCountPenaltyPoints,
-        activations: value.activationCount,
-        result: line.pointsDelta,
+        penalty: operandText(value.zeroKillPenaltyPoints ?? value.zeroCountPenaltyPoints),
+        activations: operandText(value.activationCount),
+        result: operandText(line.pointsDelta),
       })
     }
     return t('common.scoreBreakdown.formula.growing', {
-      increment: value.incrementPointsPerKill ?? value.incrementPointsPerUnit,
-      kills: value.killsCount,
-      activations: value.activationCount,
-      bonusPerKill: value.bonusPerKill,
-      cardValue: value.cardValue,
-      adjustedKillValue: value.adjustedKillValue,
-      adjustedKillsScore: value.adjustedKillsScore,
-      baseKillsScore: value.baseKillsScore,
-      result: line.pointsDelta,
+      increment: operandText(value.incrementPointsPerKill ?? value.incrementPointsPerUnit),
+      kills: operandText(value.killsCount),
+      activations: operandText(value.activationCount),
+      bonusPerKill: operandText(value.bonusPerKill),
+      cardValue: operandText(value.cardValue),
+      adjustedKillValue: operandText(value.adjustedKillValue),
+      adjustedKillsScore: operandText(value.adjustedKillsScore),
+      baseKillsScore: operandText(value.baseKillsScore),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.formulaCode === 'fixed_points_per_unit') {
     return t('common.scoreBreakdown.formula.fixedPoints', {
-      units: value.sourceUnits,
-      points: value.pointsPerUnit,
-      result: line.pointsDelta,
+      units: operandText(value.sourceUnits),
+      points: operandText(value.pointsPerUnit),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.formulaCode === 'card_percent_per_unit') {
     return t('common.scoreBreakdown.formula.cardPercent', {
-      units: value.sourceUnits,
-      cardValue: value.cardValue,
-      rate: (value.rate ?? 0) * 100,
-      result: line.pointsDelta,
+      units: operandText(value.sourceUnits),
+      cardValue: operandText(value.cardValue),
+      rate: operandText((value.rate ?? 0) * 100),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.formulaCode === 'bonus_kills_per_unit') {
     return t('common.scoreBreakdown.formula.bonusKillsPerUnit', {
-      units: value.sourceUnits,
-      bonusPerUnit: value.bonusKillsPerUnit,
-      bonusKills: value.bonusKills,
-      cardValue: value.cardValue,
-      result: line.pointsDelta,
+      units: operandText(value.sourceUnits),
+      bonusPerUnit: operandText(value.bonusKillsPerUnit),
+      bonusKills: operandText(value.bonusKills),
+      cardValue: operandText(value.cardValue),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.formulaCode === 'kill_value_increase_per_unit') {
     return t('common.scoreBreakdown.formula.killValueIncrease', {
-      units: value.sourceUnits,
-      increment: value.incrementPointsPerUnit,
-      kills: value.killsCount,
-      increase: value.killValueIncreasePoints,
-      zeroActivations: value.zeroSourceActivations,
-      zeroPenalty: value.zeroCountPenaltyPoints,
-      penalty: value.zeroSourcePenaltyPoints,
-      result: line.pointsDelta,
+      units: operandText(value.sourceUnits),
+      increment: operandText(value.incrementPointsPerUnit),
+      kills: operandText(value.killsCount),
+      increase: operandText(value.killValueIncreasePoints),
+      zeroActivations: operandText(value.zeroSourceActivations),
+      zeroPenalty: operandText(value.zeroCountPenaltyPoints),
+      penalty: operandText(value.zeroSourcePenaltyPoints),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.kind === 'modifierBonusKills') {
     return t('common.scoreBreakdown.formula.bonusKills', {
-      bonusKills: value.bonusKills,
-      cardValue: value.cardValue,
-      result: line.pointsDelta,
+      bonusKills: operandText(value.bonusKills),
+      cardValue: operandText(value.cardValue),
+      result: operandText(line.pointsDelta),
     })
   }
   if (line.formulaCode === 'window_kill_bonus_points') {
     return t('common.scoreBreakdown.formula.windowBonus', {
       count: value.inputCount ?? 0,
-      cardValue: value.cardValue,
-      rate: (value.bonusRate ?? 0) * 100,
-      result: line.pointsDelta,
+      cardValue: operandText(value.cardValue),
+      rate: operandText((value.bonusRate ?? 0) * 100),
+      result: operandText(line.pointsDelta),
     })
   }
-  return t('common.scoreBreakdown.formula.delta', { result: line.pointsDelta })
+  return t('common.scoreBreakdown.formula.delta', { result: String(line.pointsDelta) })
+}
+
+function operandText(value: number | undefined) {
+  return value === undefined ? '—' : String(value)
 }
 
 function formatSigned(value: number, showPlus = true) {

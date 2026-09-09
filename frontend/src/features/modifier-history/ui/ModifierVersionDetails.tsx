@@ -1,4 +1,5 @@
 import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { ModifierVersionDetail } from '../../../shared/api/contracts/index.ts'
 import { SectionCard } from '../../../shared/ui/index.ts'
@@ -9,8 +10,8 @@ export function ModifierVersionDetails({
   locale,
 }: {
   item: ModifierVersionDetail
-  previous?: ModifierVersionDetail
-  locale?: string
+  previous?: ModifierVersionDetail | undefined
+  locale?: string | undefined
 }) {
   const { t } = useTranslation()
 
@@ -155,11 +156,7 @@ function flattenObject(value: unknown, prefix = ''): Array<[string, string]> {
   )
 }
 
-function formatDiffValue(
-  item: ModifierVersionDetail | undefined,
-  field: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-) {
+function formatDiffValue(item: ModifierVersionDetail | undefined, field: string, t: TFunction) {
   if (!item) return '—'
 
   const values: Record<string, unknown> = {

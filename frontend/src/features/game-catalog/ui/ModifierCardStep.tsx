@@ -1,3 +1,4 @@
+import type { DefaultTranslation } from '../../../locales/index.ts'
 import { MenuItem, Stack } from '@mui/material'
 import type { Control } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +14,8 @@ export function ModifierCardStep({
   disabled: boolean
 }) {
   const { t } = useTranslation()
-  const help = (field: string) => t(`gameCatalog.modifiers.wizard.help.${field}`)
+  const help = (field: keyof DefaultTranslation['gameCatalog']['modifiers']['wizard']['help']) =>
+    t(`gameCatalog.modifiers.wizard.help.${field}`)
   return (
     <Stack spacing={1.5}>
       <FieldWithHelp label={t('gameCatalog.modifiers.wizard.kind')} help={help('kind')}>

@@ -42,14 +42,14 @@ const scoringInstanceSummarySchema = z
     modifierId: z.string().min(1),
     modifierName: z.string().min(1),
     modifierDescription: z.string().nullable(),
-    activationIndex: z.coerce.number().int().min(1),
-    activationCount: z.coerce.number().int().min(1),
+    activationIndex: z.number().int().min(1),
+    activationCount: z.number().int().min(1),
     resolutionKind: z.enum(['boolean', 'nonNegativeCount']),
     isConditionMet: z.boolean().nullable(),
-    countValue: z.coerce.number().int().min(0).nullable(),
+    countValue: z.coerce.number<string | number>().int().min(0).nullable(),
     inputLabel: z.string().nullable(),
     maximumKind: z.enum(['none', 'resolvedKills', 'activations']).nullable(),
-    maximumPerActivation: z.coerce.number().int().min(1).nullable(),
+    maximumPerActivation: z.number().int().min(1).nullable(),
   })
   .superRefine((value, context) => {
     if (value.resolutionKind === 'boolean' && value.isConditionMet === null) {
@@ -75,19 +75,21 @@ const automaticInstanceSummarySchema = z.object({
   modifierId: z.string().min(1),
   modifierName: z.string().min(1),
   modifierDescription: z.string().nullable(),
-  activationIndex: z.coerce.number().int().min(1),
-  activationCount: z.coerce.number().int().min(1),
+  activationIndex: z.number().int().min(1),
+  activationCount: z.number().int().min(1),
 })
 
 export const gameRoundSummaryFormSchema = z.object({
-  killsCount: z.coerce.number().int().min(0),
-  bountyCount: z.coerce.number().int().min(0),
+  killsCount: z.coerce.number<string | number>().int().min(0),
+  bountyCount: z.coerce.number<string | number>().int().min(0),
   notes: z.string().max(2000),
   ruleGroups: z.array(ruleGroupSummarySchema),
   scoringInstances: z.array(scoringInstanceSummarySchema),
   automaticInstances: z.array(automaticInstanceSummarySchema),
   postRoundAction: z.enum(gameRoundPostRoundActions),
 })
+
+export type GameRoundSummaryFormInput = z.input<typeof gameRoundSummaryFormSchema>
 
 export type GameRoundSummaryFormValues = z.infer<typeof gameRoundSummaryFormSchema>
 export type GameRoundPostRoundAction = (typeof gameRoundPostRoundActions)[number]
@@ -127,27 +129,29 @@ export function buildCompleteRoundInput(
     bountyCount: values.bountyCount,
     notes: normalizeOptionalText(values.notes),
     expectedRoundVersion: activeRound.roundVersion,
-    modifierResults: values.scoringInstances.flatMap((instance) => {
-      if (instance.resolutionKind === 'boolean')
-        return [
-          {
-            modifierResultId: instance.modifierResultId,
-            countValue: null,
-            isConditionMet: instance.isConditionMet,
-          },
-        ]
-      const count = instance.countValue ?? 0
-      const distributed = distributeCount(
-        count,
-        instance.memberResultIds.length,
-        instance.maximumKind === 'activations' ? instance.maximumPerActivation : null,
-      )
-      return instance.memberResultIds.map((modifierResultId, index) => ({
-        modifierResultId,
-        countValue: distributed[index] ?? 0,
-        isConditionMet: null,
-      }))
-    }),
+    modifierResults: values.scoringInstances.flatMap<CompleteRoundInput['modifierResults'][number]>(
+      (instance) => {
+        if (instance.resolutionKind === 'boolean')
+          return [
+            {
+              modifierResultId: instance.modifierResultId,
+              countValue: null,
+              isConditionMet: instance.isConditionMet,
+            },
+          ]
+        const count = instance.countValue ?? 0
+        const distributed = distributeCount(
+          count,
+          instance.memberResultIds.length,
+          instance.maximumKind === 'activations' ? instance.maximumPerActivation : null,
+        )
+        return instance.memberResultIds.map((modifierResultId, index) => ({
+          modifierResultId,
+          countValue: distributed[index] ?? 0,
+          isConditionMet: null,
+        }))
+      },
+    ),
     ruleGroups: values.ruleGroups.map((group) => ({
       resolutionGroupId: group.resolutionGroupId,
       memberResultIds: group.memberResultIds,
@@ -208,8 +212,8 @@ function buildScoringInstanceDefaults(results: GameRoundModifierResult[]) {
     const shouldAggregate = aggregateKey !== null
     if (shouldAggregate) {
       const existingIndex = aggregateIndexes.get(aggregateKey)
-      if (existingIndex !== undefined) {
-        const existing = instances[existingIndex]
+      const existing = existingIndex === undefined ? undefined : instances[existingIndex]
+      if (existing) {
         existing.memberResultIds.push(result.modifierResultId)
         existing.memberActivationIds.push(result.activationId)
         existing.activationCount = existing.memberResultIds.length

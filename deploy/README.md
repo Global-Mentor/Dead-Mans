@@ -38,7 +38,7 @@
 
 На GitHub установлен `PRODUCTION_DEPLOY_ENABLED=false`. Production ещё не развёрнут. IPv4, ОС/SSH, адрес панели Coolify, S3-провайдер и ресурсные UUID пока не подтверждены; их нужно вписать сюда после настройки. `main` ещё не обновлён до подготовленной версии приложения.
 
-Локальный gate пройден: backend 552/552, frontend 299/299, browser smoke 3/3, тесты деплоя 6/6; форматирование, typecheck, lint, Release/frontend build, миграции, OpenAPI и аудит зависимостей успешны. Production Docker image собран и запущен non-root (UID 1654) за HTTPS proxy с пустой PostgreSQL 16 и HTTPS S3.
+Локальный gate пройден: backend 552/552, frontend 301/301, browser smoke 3/3, тесты деплоя 6/6; форматирование, typecheck, lint, Release/frontend build, миграции, OpenAPI и аудит зависимостей успешны. Проверка типов запускает `tsc` напрямую для `tsconfig.app.json` и `tsconfig.node.json`: прежний `tsc-files` мог возвращать ложный успех на Windows и удалён. Production Docker image собран и запущен non-root (UID 1654) за HTTPS proxy с пустой PostgreSQL 16 и HTTPS S3.
 
 На этом стенде проверены миграции, TLS 1.3 и отказ с неверными CA/hostname, healthcheck и SHA релиза, canonical redirect, запрет анонимного доступа, CSP callback-страницы, оба SignalR hub по WSS, S3 upload/read/delete и запрет анонимного listing/backup-доступа. Сессия и key ring пережили пересоздание контейнера. Тестовый пользователь получил superadmin, снятие роли отклонено. Backup скачан обратно из отдельного тестового S3 bucket и восстановлен в новую БД с проверкой схемы и контрольной записи. Тестовые секреты в логах приложения не обнаружены.
 

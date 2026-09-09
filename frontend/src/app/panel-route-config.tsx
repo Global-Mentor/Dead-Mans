@@ -3,7 +3,7 @@ import { lazyPanelPage } from './lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import { panelRoutes, type PanelRouteDefinition } from './panel-route-metadata.ts'
 
-type PanelRoutePage = LazyExoticComponent<ComponentType<unknown>>
+type PanelRoutePage = LazyExoticComponent<ComponentType>
 
 type PanelRouteConfigEntry = PanelRouteDefinition & {
   Page: PanelRoutePage

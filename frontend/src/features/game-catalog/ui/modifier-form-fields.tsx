@@ -139,7 +139,7 @@ export function ModifierConflictField({
   modifiers,
 }: {
   control: Control<ModifierFormValues>
-  currentModifierId?: string
+  currentModifierId?: string | undefined
   disabled: boolean
   modifiers: GameModifierDefinition[]
 }) {
@@ -224,6 +224,7 @@ export function ModifierWizardProgress({
   step: number
 }) {
   const { t } = useTranslation()
+  if (step !== 0 && step !== 1 && step !== 2 && step !== 3) return null
   const visibleSteps = kind === 'rule' ? [0, 1, 3] : [0, 1, 2, 3]
   const current = visibleSteps.indexOf(step) + 1
   const total = visibleSteps.length
@@ -234,12 +235,12 @@ export function ModifierWizardProgress({
           {t('gameCatalog.modifiers.wizard.step', { current, total })}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {t(`gameCatalog.modifiers.wizard.steps.${step}`)}
+          {t('gameCatalog.modifiers.wizard.steps', { returnObjects: true })[step]}
         </Typography>
       </Stack>
       <LinearProgress variant="determinate" value={(current / total) * 100} aria-hidden />
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {t(`gameCatalog.modifiers.wizard.stepDescriptions.${step}`)}
+        {t('gameCatalog.modifiers.wizard.stepDescriptions', { returnObjects: true })[step]}
       </Typography>
     </Box>
   )

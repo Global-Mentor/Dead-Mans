@@ -2,10 +2,11 @@ import { Box, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { gameHistoryRoute } from '../../routes/app-routes.ts'
 import {
   AppButton,
+  AppLinkButton,
   AsyncSection,
   PageShell,
   SectionCard,
@@ -112,7 +113,7 @@ export function ModifierHistoryPage() {
                       {item.name}
                     </span>
                     <Typography component="span" variant="caption">
-                      {t('modifierHistory.revision', { revision: item.currentRevision })}
+                      {t('modifierHistory.revision', { revision: String(item.currentRevision) })}
                     </Typography>
                   </Stack>
                 </AppButton>
@@ -150,9 +151,9 @@ export function ModifierHistoryPage() {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {t('modifierHistory.currentState', {
-                        revision: selectedSummary.currentRevision,
-                        versions: selectedSummary.versionCount,
-                        games: selectedSummary.gamesCount,
+                        revision: String(selectedSummary.currentRevision),
+                        versions: String(selectedSummary.versionCount),
+                        games: String(selectedSummary.gamesCount),
                       })}
                     </Typography>
                   </Box>
@@ -208,7 +209,7 @@ export function ModifierHistoryPage() {
                     >
                       <Stack alignItems="flex-start" spacing={0.25}>
                         <strong>
-                          {t('modifierHistory.revision', { revision: item.revision })}
+                          {t('modifierHistory.revision', { revision: String(item.revision) })}
                         </strong>
                         <Typography component="span" variant="caption">
                           {t(`modifierHistory.changeTypes.${item.changeType}`)} ·{' '}
@@ -272,13 +273,12 @@ export function ModifierHistoryPage() {
                       key={game.gameId}
                       sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}
                     >
-                      <AppButton
-                        component={RouterLink}
+                      <AppLinkButton
                         to={`${gameHistoryRoute.fullPath}?gameId=${game.gameId}`}
                         tone="ghost"
                       >
                         {game.gameTitle}
-                      </AppButton>
+                      </AppLinkButton>
                       <Stack direction="row" gap={0.75} flexWrap="wrap">
                         <Chip
                           size="small"

@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
 
 const CATEGORY_LABEL_KEYS = {
@@ -8,7 +8,7 @@ const CATEGORY_LABEL_KEYS = {
 } as const
 
 export function getCategoryLabel(
-  t: ReturnType<typeof useTranslation>['t'],
+  t: TFunction,
   category: GameModifierAvailability['modifier']['category'],
 ): string {
   const translate = t as unknown as (key: string) => string

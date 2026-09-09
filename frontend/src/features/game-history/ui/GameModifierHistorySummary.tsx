@@ -1,11 +1,10 @@
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
 import { modifierHistoryRoute } from '../../../routes/app-routes.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import { formatPlayedCardModifierOutcomeStatus } from '../../../shared/lib/played-card-formatters.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import { AppLinkButton, SectionCard } from '../../../shared/ui/index.ts'
 import { buildGameHistoryModifierSummary } from '../model/game-history-modifier-summary.ts'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -51,8 +50,7 @@ export function GameModifierHistorySummary({
                 key={snapshot.versionId}
                 sx={{ border: 1, borderColor: 'divider', borderRadius: 1.75, p: 1 }}
               >
-                <AppButton
-                  component={RouterLink}
+                <AppLinkButton
                   to={`${modifierHistoryRoute.fullPath}?modifierId=${snapshot.modifierId}&revision=${snapshot.revision}`}
                   tone="ghost"
                   size="small"
@@ -62,7 +60,7 @@ export function GameModifierHistorySummary({
                     name: snapshot.name,
                     revision: snapshot.revision,
                   })}
-                </AppButton>
+                </AppLinkButton>
                 <Stack direction="row" gap={0.5} flexWrap="wrap" sx={{ mt: 0.75 }}>
                   <Chip
                     size="small"

@@ -1,3 +1,4 @@
+import type { DefaultTranslation } from '../../../locales/index.ts'
 import {
   Accordion,
   AccordionDetails,
@@ -34,13 +35,14 @@ export function ModifierActivationStep({
 }: {
   control: Control<ModifierFormValues>
   disabled: boolean
-  initial?: GameModifierDefinition
+  initial?: GameModifierDefinition | undefined
   kind: ModifierFormValues['kind']
   modifiers: GameModifierDefinition[]
   setValue: UseFormSetValue<ModifierFormValues>
 }) {
   const { t } = useTranslation()
-  const help = (field: string) => t(`gameCatalog.modifiers.wizard.help.${field}`)
+  const help = (field: keyof DefaultTranslation['gameCatalog']['modifiers']['wizard']['help']) =>
+    t(`gameCatalog.modifiers.wizard.help.${field}`)
   const durationEnabled = useWatch({ control, name: 'durationEnabled' })
   return (
     <Stack spacing={1.5}>

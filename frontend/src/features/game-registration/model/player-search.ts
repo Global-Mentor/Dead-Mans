@@ -6,7 +6,7 @@ interface RegistrationPlayerSearchOptions {
   limit: number
   includeAllWhenQueryEmpty?: boolean
   rankStartsWith?: boolean
-  locale?: string
+  locale?: string | undefined
 }
 
 function sortRegistrationPlayers(players: readonly RegistrationPlayer[], locale?: string) {

@@ -6,9 +6,12 @@ import { ControlledFormTextField, FormSelect, SectionCard } from '../../../share
 import {
   gameRoundRuleOutcomeStatuses,
   type GameRoundSummaryFormValues,
+  type GameRoundSummaryFormInput,
 } from '../model/game-round-summary-form.ts'
 
-type SummaryControl = ReturnType<typeof useForm<GameRoundSummaryFormValues>>['control']
+type SummaryControl = ReturnType<
+  typeof useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>
+>['control']
 
 export function GameRoundSummarySection({
   title,

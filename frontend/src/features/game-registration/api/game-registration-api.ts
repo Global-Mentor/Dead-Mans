@@ -43,7 +43,10 @@ export function fetchGameRegistrationAdminSnapshot() {
   return unwrapOpenApiDataOrNullOn404(gameRegistrationApiClient.GET('/game/registration/admin'))
 }
 
-export function createGameRegistrationTeam(input: { recruitmentOpen: boolean; name?: string }) {
+export function createGameRegistrationTeam(input: {
+  recruitmentOpen: boolean
+  name?: string | undefined
+}) {
   return unwrapOpenApiData(
     gameRegistrationApiClient.POST('/game/registration/teams', {
       body: {
@@ -56,8 +59,8 @@ export function createGameRegistrationTeam(input: { recruitmentOpen: boolean; na
 
 export function createAdminGameRegistrationTeam(input: {
   recruitmentOpen: boolean
-  teamSlotId?: string
-  name?: string
+  teamSlotId?: string | undefined
+  name?: string | undefined
 }) {
   return unwrapOpenApiData(
     gameRegistrationApiClient.POST('/game/registration/admin/teams', {
@@ -70,7 +73,7 @@ export function createAdminGameRegistrationTeam(input: {
   )
 }
 
-export function updateMyGameRegistrationTeamName(name?: string) {
+export function updateMyGameRegistrationTeamName(name?: string | undefined) {
   return unwrapOpenApiData(
     gameRegistrationApiClient.PATCH('/game/registration/my-team/name', {
       body: {
@@ -80,7 +83,10 @@ export function updateMyGameRegistrationTeamName(name?: string) {
   )
 }
 
-export function updateAdminGameRegistrationTeamName(input: { teamId: string; name?: string }) {
+export function updateAdminGameRegistrationTeamName(input: {
+  teamId: string
+  name?: string | undefined
+}) {
   return unwrapOpenApiData(
     gameRegistrationApiClient.PATCH('/game/registration/admin/teams/{teamId}/name', {
       params: {

@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { Box, Chip, Divider, Drawer, IconButton, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -166,7 +167,7 @@ export function AdminGameLaunchDrawer({
 }
 
 function buildLaunchBlockers(
-  t: ReturnType<typeof useTranslation>['t'],
+  t: TFunction,
   summary: GameRegistrationAdminSnapshot['launchSummary'],
 ) {
   const blockers: string[] = []

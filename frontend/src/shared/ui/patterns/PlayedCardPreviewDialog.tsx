@@ -10,8 +10,8 @@ import { PlayedCardResultPanel } from './PlayedCardResultPanel.tsx'
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
 
 interface PlayedCardPreviewCard {
-  title?: string | null
-  description?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
   cost: number
   media: readonly { url: string }[]
 }
@@ -136,7 +136,7 @@ export function PlayedCardPreviewDialog({
   )
 }
 
-function PlayedCardMediaImage({ url, title }: { url: string; title?: string | null }) {
+function PlayedCardMediaImage({ url, title }: { url: string; title?: string | null | undefined }) {
   const { t } = useTranslation()
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 

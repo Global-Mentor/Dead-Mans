@@ -121,7 +121,9 @@ export function CurrentGameLeaderboardSummary({
           >
             <Chip label={t('gameHistory.currentGameSummaryTitle')} color="warning" size="small" />
             <Chip
-              label={t(`gameHistory.status.${normalizeStatus(status)}`)}
+              label={t(`gameHistory.status.${normalizeStatus(status)}`, {
+                defaultValue: t('gameHistory.notAvailable'),
+              })}
               color={getGameStatusColor(status)}
               variant="outlined"
               size="small"
@@ -239,7 +241,9 @@ export function GameSummaryButton({
           </Typography>
           <Chip
             size="small"
-            label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`)}
+            label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`, {
+              defaultValue: t('gameHistory.notAvailable'),
+            })}
             color={getGameStatusColor(game.gameStatus)}
           />
         </Stack>

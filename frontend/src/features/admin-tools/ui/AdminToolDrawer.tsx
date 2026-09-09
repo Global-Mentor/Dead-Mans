@@ -52,7 +52,8 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
   const selectRelativeTool = (offset: -1 | 1) => {
     if (!hasMultipleTools) return
     const nextIndex = (activeToolIndex + offset + tools.length) % tools.length
-    setActiveToolId(tools[nextIndex].id)
+    const nextTool = tools[nextIndex]
+    if (nextTool) setActiveToolId(nextTool.id)
   }
 
   return (
@@ -149,8 +150,8 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
                   </Typography>
                   <Typography component="span" variant="caption" color="text.secondary">
                     {t('adminTools.toolPosition', {
-                      current: activeToolIndex + 1,
-                      total: tools.length,
+                      current: String(activeToolIndex + 1),
+                      total: String(tools.length),
                     })}
                   </Typography>
                 </Stack>

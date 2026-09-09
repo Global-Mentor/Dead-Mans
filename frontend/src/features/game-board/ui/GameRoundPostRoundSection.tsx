@@ -5,12 +5,15 @@ import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
 import {
   gameRoundPostRoundActions,
   type GameRoundSummaryFormValues,
+  type GameRoundSummaryFormInput,
 } from '../model/game-round-summary-form.ts'
 
 export function GameRoundPostRoundSection({
   control,
 }: {
-  control: ReturnType<typeof useForm<GameRoundSummaryFormValues>>['control']
+  control: ReturnType<
+    typeof useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>
+  >['control']
 }) {
   const { t } = useTranslation()
 

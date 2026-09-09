@@ -44,7 +44,7 @@ export function GameAdminToolsPanel({ initialToolId }: { initialToolId: AdminToo
     return null
   }
 
-  const tools: AdminToolDescriptor[] = [
+  const tools: [AdminToolDescriptor, ...AdminToolDescriptor[]] = [
     {
       id: 'game',
       label: t('adminTools.gameTool'),

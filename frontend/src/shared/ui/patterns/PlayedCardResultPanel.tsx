@@ -1,6 +1,7 @@
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { components } from '../../api/contracts/generated'
 import {
   formatPlayedCardModifierOutcomeStatus,
@@ -312,14 +313,15 @@ function mergeModifierOutcomeStatuses(
   const nextStatuses = [...statuses]
   const existingIndex = nextStatuses.findIndex((item) => item.status === nextStatus)
 
-  if (existingIndex < 0) {
+  const existing = nextStatuses[existingIndex]
+  if (!existing) {
     nextStatuses.push({ status: nextStatus, count: 1 })
     return nextStatuses
   }
 
   nextStatuses[existingIndex] = {
-    ...nextStatuses[existingIndex],
-    count: nextStatuses[existingIndex].count + 1,
+    ...existing,
+    count: existing.count + 1,
   }
   return nextStatuses
 }
@@ -336,7 +338,7 @@ function mergeModifierMultiplierValues(
 }
 
 function formatPlayedCardTeamName(
-  t: ReturnType<typeof useTranslation>['t'],
+  t: TFunction,
   teamName: string | null | undefined,
   teamSlotIndex: number,
 ) {

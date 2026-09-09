@@ -10,7 +10,10 @@ const authenticatedPanelRoles = [
   'superadmin',
 ] as const satisfies readonly AuthRole[]
 
-type PanelRouteLabelKey = Extract<ParseKeys, `navigation.items.${string}.label`>
+type PanelRouteLabelKey = Extract<
+  ParseKeys,
+  `navigation.items.${string}.label` | `common.entities.${string}`
+>
 
 type PanelAdminSection = 'current-game' | 'catalog' | 'system'
 

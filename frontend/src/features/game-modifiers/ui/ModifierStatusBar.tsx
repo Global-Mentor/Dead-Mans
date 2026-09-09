@@ -267,7 +267,7 @@ function StatusMetric({
   value: string
   tooltip: string
   tone?: 'default' | 'success' | 'error'
-  description?: string
+  description?: string | undefined
 }) {
   return (
     <Tooltip title={tooltip} arrow describeChild enterDelay={150} enterTouchDelay={0}>

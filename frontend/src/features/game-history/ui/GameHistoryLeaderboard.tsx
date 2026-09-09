@@ -90,11 +90,11 @@ export function TeamLeaderboardRow({
                     <Typography variant="body1" sx={{ fontWeight: 800 }}>
                       {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
                     </Typography>
-                    {rank <= 3 ? (
+                    {rank === 1 || rank === 2 || rank === 3 ? (
                       <Chip
                         size="small"
                         color={rank === 1 ? 'warning' : rank === 2 ? 'default' : 'secondary'}
-                        label={t(`gameHistory.rank.${rank}`)}
+                        label={t('gameHistory.rank', { returnObjects: true })[rank]}
                       />
                     ) : null}
                     <MiniMetricChip

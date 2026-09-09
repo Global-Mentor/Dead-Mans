@@ -24,7 +24,7 @@ export function buildGameBoardCellPlayResultMap(
   rounds: readonly GameBoardCellPlayResultRound[],
   allowedCellIds?: ReadonlySet<string>,
 ) {
-  const resultsByCellId = new Map<string, GameBoardCellPlayResult>()
+  const resultsByCellId = new Map<string, GameBoardCellPlayResultRound>()
   const latestTimeByCellId = new Map<string, number>()
 
   for (const round of rounds) {

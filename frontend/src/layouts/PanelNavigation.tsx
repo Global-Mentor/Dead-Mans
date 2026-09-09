@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { useCallback, useState, type MouseEvent } from 'react'
 import { Badge, Box, ButtonBase, Container, Menu, MenuItem, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
@@ -326,10 +327,7 @@ function GameNotificationRealtimeSync() {
   return null
 }
 
-function getGameNotificationTitle(
-  t: ReturnType<typeof useTranslation>['t'],
-  notification: GameUserNotification,
-) {
+function getGameNotificationTitle(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemTitle', {
@@ -340,10 +338,7 @@ function getGameNotificationTitle(
   }
 }
 
-function getGameNotificationDescription(
-  t: ReturnType<typeof useTranslation>['t'],
-  notification: GameUserNotification,
-) {
+function getGameNotificationDescription(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemDescription', {

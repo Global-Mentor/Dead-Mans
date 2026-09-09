@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import {
   Box,
   ButtonBase,
@@ -400,9 +401,6 @@ function TeamQueueCard({
   )
 }
 
-function formatTeamQueueName(
-  t: ReturnType<typeof useTranslation>['t'],
-  teamName: string | null | undefined,
-) {
+function formatTeamQueueName(t: TFunction, teamName: string | null | undefined) {
   return formatTeamNameWithFallback(teamName, t('gameBoard.teamQueueUnnamedTeam'))
 }

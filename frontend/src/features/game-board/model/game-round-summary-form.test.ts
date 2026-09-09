@@ -10,6 +10,27 @@ type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ModifierResult = GameRoundDetails['modifierResults'][number]
 
 describe('game-round-summary-form', () => {
+  it('converts numeric text fields into numeric API values before submission', () => {
+    const round = createRound({
+      modifierResults: [createModifier({ resolutionKind: 'nonNegativeCount' })],
+    })
+    const defaults = buildGameRoundSummaryDefaultValues(round)
+    const values = gameRoundSummaryFormSchema.parse({
+      ...defaults,
+      killsCount: '3',
+      bountyCount: '2',
+      scoringInstances: defaults.scoringInstances.map((instance) => ({
+        ...instance,
+        countValue: '4',
+      })),
+    })
+    expect(buildCompleteRoundInput(round, values)).toMatchObject({
+      killsCount: 3,
+      bountyCount: 2,
+      modifierResults: [{ countValue: 4, isConditionMet: null }],
+    })
+  })
+
   it('builds one exact rule resolution unit with every group member', () => {
     const round = createRound({
       modifierResults: [

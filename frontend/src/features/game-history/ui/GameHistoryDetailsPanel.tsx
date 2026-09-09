@@ -54,7 +54,9 @@ export function GameDetailsPanel({
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Chip
-                  label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`)}
+                  label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`, {
+                    defaultValue: t('gameHistory.notAvailable'),
+                  })}
                   color={getGameStatusColor(game.gameStatus)}
                 />
                 <Chip

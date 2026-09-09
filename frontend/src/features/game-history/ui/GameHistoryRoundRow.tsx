@@ -49,7 +49,9 @@ export function RoundHistoryRow({
                 </Typography>
                 <Chip
                   size="small"
-                  label={t(`gameHistory.roundStatus.${normalizeRoundStatus(round.status)}`)}
+                  label={t(`gameHistory.roundStatus.${normalizeRoundStatus(round.status)}`, {
+                    defaultValue: t('gameHistory.notAvailable'),
+                  })}
                   color={getRoundStatusColor(round.status)}
                 />
                 <Chip

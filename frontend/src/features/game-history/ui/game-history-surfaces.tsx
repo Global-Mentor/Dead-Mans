@@ -29,7 +29,7 @@ export function AccordionSurface({
   defaultExpanded = false,
   highlighted = false,
 }: {
-  children: ReactNode
+  children: NonNullable<ReactNode>
   defaultExpanded?: boolean
   highlighted?: boolean
 }) {
