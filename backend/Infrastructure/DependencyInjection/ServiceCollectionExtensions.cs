@@ -30,6 +30,10 @@ public static class ServiceCollectionExtensions
         var requiresHttpsExternalUrls = !environment.IsDevelopment() && !usesInMemoryStorage;
 
         services
+            .AddOptions<DatabaseDeploymentOptions>()
+            .Bind(configuration.GetSection(DatabaseDeploymentOptions.SectionName));
+
+        services
             .AddOptions<StorageOptions>()
             .Bind(configuration.GetSection(StorageOptions.SectionName))
             .ValidateDataAnnotations()
@@ -141,6 +145,7 @@ public static class ServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(20);
             client.MaxResponseContentBufferSize = 1024 * 1024;
         });
+        services.AddHostedService<DatabaseMigrationStartupService>();
         services.AddHostedService<DatabaseConfigurationStartupValidator>();
         services.AddHostedService<AuthPersistenceStartupValidator>();
 

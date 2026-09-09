@@ -447,6 +447,12 @@ public static class AppMessages
         public const string FailedToOpenDatabaseOnStartup =
             "Failed to open database connection during startup validation.";
 
+        public const string DatabaseMigrationStarting =
+            "Applying pending database migrations before accepting traffic.";
+
+        public const string DatabaseMigrationCompleted =
+            "Database migrations are up to date.";
+
         public const string AuthPersistenceValidated =
             "Auth persistence validated: database provider is {ProviderName}.";
 
