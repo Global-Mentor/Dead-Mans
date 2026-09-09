@@ -4518,6 +4518,12 @@ components:
         - $ref: '#/components/schemas/GameModifierPerActivationResolutionV2'
       discriminator:
         propertyName: type
+        mapping:
+          ruleStatus: '#/components/schemas/GameModifierRuleStatusResolutionV2'
+          boolean: '#/components/schemas/GameModifierBooleanResolutionV2'
+          nonNegativeCount: '#/components/schemas/GameModifierNonNegativeCountResolutionV2'
+          automaticRoundMetric: '#/components/schemas/GameModifierAutomaticRoundMetricResolutionV2'
+          perActivation: '#/components/schemas/GameModifierPerActivationResolutionV2'
     GameModifierRuleStatusResolutionV2:
       type: object
       required: [type]
@@ -4585,6 +4591,15 @@ components:
         - $ref: '#/components/schemas/GameModifierKillValueIncreasePerUnitParametersV2'
       discriminator:
         propertyName: type
+        mapping:
+          growingKillValue: '#/components/schemas/GameModifierGrowingKillValueParametersV2'
+          bonusKillOnCondition: '#/components/schemas/GameModifierBonusKillOnConditionParametersV2'
+          bonusKillsByCount: '#/components/schemas/GameModifierBonusKillsByCountParametersV2'
+          windowKillBonusPoints: '#/components/schemas/GameModifierWindowKillBonusPointsParametersV2'
+          fixedPointsPerUnit: '#/components/schemas/GameModifierFixedPointsPerUnitParametersV2'
+          cardPercentPerUnit: '#/components/schemas/GameModifierCardPercentPerUnitParametersV2'
+          bonusKillsPerUnit: '#/components/schemas/GameModifierBonusKillsPerUnitParametersV2'
+          killValueIncreasePerUnit: '#/components/schemas/GameModifierKillValueIncreasePerUnitParametersV2'
     GameModifierGrowingKillValueParametersV2:
       type: object
       required: [type, incrementPointsPerKill, zeroKillPenaltyPoints]
@@ -4751,21 +4766,6 @@ components:
           type: integer
           format: int32
           minimum: 1
-          nullable: true
-        resolutionInputLabel:
-          type: string
-          nullable: true
-        resolutionMaximumKind:
-          type: string
-          enum: [none, resolvedKills, activations]
-          nullable: true
-        resolutionMaximumPerActivation:
-          type: integer
-          format: int32
-          minimum: 1
-          nullable: true
-        formulaCode:
-          type: string
           nullable: true
     GameModifierDefinitionDto:
       type: object
@@ -6724,6 +6724,21 @@ components:
           type: integer
           format: int32
           minimum: 1
+          nullable: true
+        resolutionInputLabel:
+          type: string
+          nullable: true
+        resolutionMaximumKind:
+          type: string
+          enum: [none, resolvedKills, activations]
+          nullable: true
+        resolutionMaximumPerActivation:
+          type: integer
+          format: int32
+          minimum: 1
+          nullable: true
+        formulaCode:
+          type: string
           nullable: true
     GameRoundDetailsDto:
       type: object

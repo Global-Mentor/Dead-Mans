@@ -1698,14 +1698,14 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierRuleStatusResolutionV2";
+            type: "ruleStatus";
         };
         GameModifierBooleanResolutionV2: {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierBooleanResolutionV2";
+            type: "boolean";
             inputLabel?: string | null;
         };
         GameModifierNonNegativeCountResolutionV2: {
@@ -1713,7 +1713,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierNonNegativeCountResolutionV2";
+            type: "nonNegativeCount";
             inputLabel?: string | null;
             /** @enum {string|null} */
             maximumKind?: "none" | "resolvedKills" | "activations" | null;
@@ -1725,7 +1725,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierAutomaticRoundMetricResolutionV2";
+            type: "automaticRoundMetric";
             /** @enum {string} */
             metric: "killsCount" | "bountyCount";
         };
@@ -1734,7 +1734,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierPerActivationResolutionV2";
+            type: "perActivation";
         };
         GameModifierFormulaParametersV2: components["schemas"]["GameModifierGrowingKillValueParametersV2"] | components["schemas"]["GameModifierBonusKillOnConditionParametersV2"] | components["schemas"]["GameModifierBonusKillsByCountParametersV2"] | components["schemas"]["GameModifierWindowKillBonusPointsParametersV2"] | components["schemas"]["GameModifierFixedPointsPerUnitParametersV2"] | components["schemas"]["GameModifierCardPercentPerUnitParametersV2"] | components["schemas"]["GameModifierBonusKillsPerUnitParametersV2"] | components["schemas"]["GameModifierKillValueIncreasePerUnitParametersV2"];
         GameModifierGrowingKillValueParametersV2: {
@@ -1742,7 +1742,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierGrowingKillValueParametersV2";
+            type: "growingKillValue";
             /** Format: int32 */
             incrementPointsPerKill: number;
             /** Format: int32 */
@@ -1753,7 +1753,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierBonusKillOnConditionParametersV2";
+            type: "bonusKillOnCondition";
             /** Format: int32 */
             successBonusKills: number;
         };
@@ -1762,7 +1762,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierBonusKillsByCountParametersV2";
+            type: "bonusKillsByCount";
             /** Format: int32 */
             bonusKillsPerUnit: number;
         };
@@ -1771,7 +1771,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierWindowKillBonusPointsParametersV2";
+            type: "windowKillBonusPoints";
             /** Format: decimal */
             bonusRate: number;
         };
@@ -1780,7 +1780,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierFixedPointsPerUnitParametersV2";
+            type: "fixedPointsPerUnit";
             /** Format: int32 */
             pointsPerUnit: number;
         };
@@ -1789,7 +1789,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierCardPercentPerUnitParametersV2";
+            type: "cardPercentPerUnit";
             /** Format: decimal */
             rate: number;
         };
@@ -1798,7 +1798,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierBonusKillsPerUnitParametersV2";
+            type: "bonusKillsPerUnit";
             /** Format: int32 */
             bonusKillsPerUnit: number;
         };
@@ -1807,7 +1807,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "GameModifierKillValueIncreasePerUnitParametersV2";
+            type: "killValueIncreasePerUnit";
             /** Format: int32 */
             incrementPointsPerUnit: number;
             /** Format: int32 */
@@ -1845,12 +1845,6 @@ export interface components {
             formulaReference?: components["schemas"]["GameModifierFormulaReferenceV2"] | null;
             /** Format: int32 */
             durationSecondsPerActivation?: number | null;
-            resolutionInputLabel?: string | null;
-            /** @enum {string|null} */
-            resolutionMaximumKind?: "none" | "resolvedKills" | "activations" | null;
-            /** Format: int32 */
-            resolutionMaximumPerActivation?: number | null;
-            formulaCode?: string | null;
         };
         GameModifierDefinitionDto: {
             /** Format: uuid */
@@ -2666,6 +2660,12 @@ export interface components {
             stackingPolicy: "aggregateParameters" | "independentInstances";
             /** Format: int32 */
             durationSecondsPerActivation?: number | null;
+            resolutionInputLabel?: string | null;
+            /** @enum {string|null} */
+            resolutionMaximumKind?: "none" | "resolvedKills" | "activations" | null;
+            /** Format: int32 */
+            resolutionMaximumPerActivation?: number | null;
+            formulaCode?: string | null;
         };
         GameRoundDetailsDto: {
             /** Format: uuid */
