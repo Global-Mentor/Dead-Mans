@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
@@ -14,13 +14,28 @@ vi.mock('./use-team-registrations-page.ts', () => ({
 
 function createPageController(data: unknown, overrides: Record<string, unknown> = {}) {
   return {
-    teamsQuery: {
+    adminSnapshotQuery: {
       isLoading: false,
       isError: false,
       data,
     },
+    createAdminTeam: { isPending: false, mutate: vi.fn() },
+    createAdminInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },
+    assignPlayerToTeam: { isPending: false, mutate: vi.fn() },
+    removePlayerFromTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
+    cancelTeamInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },
+    moveTeamToSlot: { isPending: false, mutate: vi.fn() },
     confirmTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
     rejectTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
+    disbandTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
+    updateTeamName: { isPending: false, variables: undefined, mutate: vi.fn() },
+    teamPlayedState: {
+      isUpdatingPlayedState: false,
+      updatingTeamId: null,
+      setTeamPlayedState: vi.fn(),
+      toastMessage: null,
+      dismissToast: vi.fn(),
+    },
     toastMessage: null,
     dismissToast: vi.fn(),
     ...overrides,
@@ -44,7 +59,7 @@ describe('TeamRegistrationsPage', () => {
   it('renders loading and error states', () => {
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController(null, {
-        teamsQuery: { isLoading: true, isError: false, data: undefined },
+        adminSnapshotQuery: { isLoading: true, isError: false, data: undefined },
       }),
     )
     renderWithAppProviders(<TeamRegistrationsPage />)
@@ -53,7 +68,7 @@ describe('TeamRegistrationsPage', () => {
     cleanup()
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController(null, {
-        teamsQuery: { isLoading: false, isError: true, data: undefined },
+        adminSnapshotQuery: { isLoading: false, isError: true, data: undefined },
       }),
     )
     renderWithAppProviders(<TeamRegistrationsPage />)
@@ -64,44 +79,632 @@ describe('TeamRegistrationsPage', () => {
     renderWithAppProviders(<TeamRegistrationsPage />)
 
     expect(screen.getByText('Заявки команд')).toBeInTheDocument()
-    expect(
-      screen.getByText('Приём заявок для игры в статусе ready пока не открыт.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Приём заявок команд пока не открыт.')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('renders both an empty ready state and actionable team rows', () => {
-    pageMocks.useTeamRegistrationsPage.mockReturnValue(createPageController([]))
+  it('renders both an empty ready state and actionable team rows', async () => {
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController({
+        gameId: 'game-1',
+        gameStatus: 'ready',
+        minPlayersPerTeam: 1,
+        maxPlayersPerTeam: 2,
+        teamSlots: [],
+        teams: [],
+        availablePlayers: [],
+      }),
+    )
     renderWithAppProviders(<TeamRegistrationsPage />)
-    expect(screen.getByText('Пока нет зарегистрированных команд.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Пока нет команд. Создайте пустой состав и распределите игроков вручную.'),
+    ).toBeInTheDocument()
 
     cleanup()
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
-      createPageController([
-        {
-          teamId: 'team-1',
-          slotIndex: 2,
-          slotAvailability: 'public',
-          reservedLabel: null,
-          recruitmentOpen: true,
-          status: 'forming',
-          members: [
-            {
-              player: {
-                userId: 'user-1',
-                login: 'player',
-                displayName: 'Player One',
+      createPageController({
+        gameId: 'game-1',
+        gameStatus: 'ready',
+        minPlayersPerTeam: 1,
+        maxPlayersPerTeam: 2,
+        teamSlots: [
+          {
+            teamSlotId: 'slot-1',
+            teamSlotIndex: 2,
+            teamSlotType: 'public',
+            reservedLabel: null,
+            isAvailableForNewTeam: false,
+            teamId: 'team-1',
+            teamStatus: 'forming',
+          },
+        ],
+        teams: [
+          {
+            teamId: 'team-1',
+            teamSlotIndex: 2,
+            teamSlotType: 'public',
+            reservedLabel: null,
+            recruitmentOpen: true,
+            status: 'forming',
+            members: [
+              {
+                player: {
+                  userId: 'user-1',
+                  login: 'player',
+                  displayName: 'Player One',
+                },
+                joinedAtUtc: '2026-06-11T12:00:00Z',
               },
-              joinedAtUtc: '2026-06-11T12:00:00Z',
-            },
-          ],
-        },
-      ]),
+            ],
+            pendingInvitations: [
+              {
+                invitationId: 'inv-1',
+                player: {
+                  userId: 'user-2',
+                  login: 'invited',
+                  displayName: 'Invited Player',
+                },
+                createdAtUtc: '2026-06-11T12:05:00Z',
+              },
+            ],
+          },
+        ],
+        availablePlayers: [],
+      }),
     )
     renderWithAppProviders(<TeamRegistrationsPage />)
 
     expect(screen.getByText('Player One')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeEnabled()
+    expect(screen.getByText('Invited Player')).toBeInTheDocument()
+    expect(screen.getByText('Ожидает подтверждения')).toBeInTheDocument()
+    fireEvent.mouseOver(screen.getByText('Игроков: 1'))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Перед подтверждением дождитесь ответа на приглашения или отмените их.',
+    )
+    expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Отклонить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Название команды' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
     expect(screen.getByRole('button', { name: 'Отклонить' })).toBeEnabled()
+    expect(screen.getByRole('textbox', { name: 'Название команды' })).toBeInTheDocument()
+  })
+
+  it('shows bottom team creation actions without rendering empty slots', () => {
+    const createAdminTeam = { isPending: false, mutate: vi.fn() }
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 1,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: true,
+              teamId: null,
+              teamStatus: null,
+            },
+          ],
+          teams: [],
+          availablePlayers: [],
+        },
+        { createAdminTeam },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    expect(screen.queryByText('Слот свободен')).not.toBeInTheDocument()
+    expect(screen.getByText('Создать команду')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Создать открытую команду' }))
+    expect(createAdminTeam.mutate).toHaveBeenCalledWith({
+      recruitmentOpen: true,
+      teamSlotId: undefined,
+    })
+  })
+
+  it('assigns a dragged free player into a team slot', () => {
+    const assignPlayerToTeam = { isPending: false, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'forming',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: true,
+              status: 'forming',
+              members: [],
+            },
+          ],
+          availablePlayers: [
+            {
+              userId: 'user-77',
+              login: 'freeplayer',
+              displayName: 'Free Player',
+            },
+          ],
+        },
+        {
+          assignPlayerToTeam,
+        },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    const transferStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: 'all',
+      setData: vi.fn((type: string, value: string) => {
+        transferStore.set(type, value)
+      }),
+      getData: vi.fn((type: string) => transferStore.get(type) ?? ''),
+    }
+
+    fireEvent.dragStart(screen.getByTestId('admin-player-user-77'), { dataTransfer })
+    fireEvent.dragOver(screen.getByTestId('admin-slot-2'), { dataTransfer })
+    fireEvent.drop(screen.getByTestId('admin-slot-2'), { dataTransfer })
+
+    expect(assignPlayerToTeam.mutate).toHaveBeenCalledWith({
+      teamId: 'team-1',
+      userId: 'user-77',
+    })
+  })
+
+  it('sends an admin invitation to an available player for a closed team during an active game', () => {
+    const createAdminInvitation = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'active',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'reserved',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'forming',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'reserved',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'forming',
+              members: [],
+              pendingInvitations: [],
+            },
+          ],
+          availablePlayers: [
+            {
+              userId: 'user-77',
+              login: 'candidate',
+              displayName: 'Candidate Player',
+            },
+          ],
+        },
+        {
+          createAdminInvitation,
+        },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Пригласить игрока' }))
+    expect(screen.getByText('Пригласить в команду #2')).toBeInTheDocument()
+    expect(screen.getAllByText('Candidate Player')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Пригласить' }))
+
+    expect(createAdminInvitation.mutate).toHaveBeenCalledWith({
+      teamSlotId: 'slot-1',
+      invitedUserId: 'user-77',
+      teamId: 'team-1',
+    })
+  })
+
+  it('does not allow admin invitations to open teams', () => {
+    const createAdminInvitation = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'forming',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: true,
+              status: 'forming',
+              members: [],
+              pendingInvitations: [],
+            },
+          ],
+          availablePlayers: [
+            {
+              userId: 'user-77',
+              login: 'candidate',
+              displayName: 'Candidate Player',
+            },
+          ],
+        },
+        {
+          createAdminInvitation,
+        },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    expect(screen.queryByRole('button', { name: 'Пригласить игрока' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Пригласить в команду #2')).not.toBeInTheDocument()
+    expect(createAdminInvitation.mutate).not.toHaveBeenCalled()
+  })
+
+  it('asks for confirmation before removing a player from a team', () => {
+    const removePlayerFromTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'confirmed',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'confirmed',
+              members: [
+                {
+                  player: {
+                    userId: 'user-1',
+                    login: 'player',
+                    displayName: 'Player One',
+                  },
+                  joinedAtUtc: '2026-06-11T11:00:00Z',
+                },
+              ],
+              pendingInvitations: [],
+            },
+          ],
+          availablePlayers: [],
+        },
+        { removePlayerFromTeam },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Исключить' }))
+    expect(screen.getByText('Исключить игрока из команды?')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Исключить игрока' }))
+
+    expect(removePlayerFromTeam.mutate).toHaveBeenCalledWith({
+      teamId: 'team-1',
+      userId: 'user-1',
+    })
+  })
+
+  it('cancels a pending invitation from the team roster', () => {
+    const cancelTeamInvitation = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'reserved',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'forming',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'reserved',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'forming',
+              members: [],
+              pendingInvitations: [
+                {
+                  invitationId: 'inv-1',
+                  player: {
+                    userId: 'user-2',
+                    login: 'invited',
+                    displayName: 'Invited Player',
+                  },
+                  createdAtUtc: '2026-06-11T12:05:00Z',
+                },
+              ],
+            },
+          ],
+          availablePlayers: [],
+        },
+        { cancelTeamInvitation },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Отменить приглашение' }))
+
+    expect(cancelTeamInvitation.mutate).toHaveBeenCalledWith({
+      teamId: 'team-1',
+      invitationId: 'inv-1',
+    })
+  })
+
+  it('moves teams up and down to define game order', () => {
+    const moveTeamToSlot = { isPending: false, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 1,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'forming',
+            },
+            {
+              teamSlotId: 'slot-2',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-2',
+              teamStatus: 'forming',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 1,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: true,
+              status: 'forming',
+              members: [],
+            },
+            {
+              teamId: 'team-2',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'forming',
+              members: [],
+            },
+          ],
+          availablePlayers: [],
+        },
+        { moveTeamToSlot },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ниже' })[0])
+
+    expect(moveTeamToSlot.mutate).toHaveBeenCalledWith({
+      teamId: 'team-1',
+      targetTeamSlotId: 'slot-2',
+    })
+  })
+
+  it('shows disband requests and asks for confirmation before disbanding a confirmed team', async () => {
+    const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'confirmed',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'confirmed',
+              disbandRequestedAtUtc: '2026-06-11T12:00:00Z',
+              disbandRequestedByUserId: 'user-1',
+              disbandRequestedByDisplayName: 'Player One',
+              isActiveInGame: false,
+              members: [
+                {
+                  player: {
+                    userId: 'user-1',
+                    login: 'player',
+                    displayName: 'Player One',
+                  },
+                  joinedAtUtc: '2026-06-11T11:00:00Z',
+                },
+              ],
+            },
+          ],
+          availablePlayers: [],
+        },
+        {
+          disbandTeam,
+        },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    expect(screen.getByText('Игроки запросили роспуск команды')).toBeInTheDocument()
+    expect(screen.getByText('Очередь 2 · Player One')).toBeInTheDocument()
+    fireEvent.mouseOver(screen.getByText('Запрос на роспуск'))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /Player One попросил администратора/i,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Распустить команду' }))
+
+    expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1')
+  })
+
+  it('does not allow disbanding the active team in game', () => {
+    const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'game-1',
+          gameStatus: 'active',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 2,
+          teamSlots: [
+            {
+              teamSlotId: 'slot-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              isAvailableForNewTeam: false,
+              teamId: 'team-1',
+              teamStatus: 'confirmed',
+            },
+          ],
+          teams: [
+            {
+              teamId: 'team-1',
+              teamSlotIndex: 2,
+              teamSlotType: 'public',
+              reservedLabel: null,
+              recruitmentOpen: false,
+              status: 'confirmed',
+              isActiveInGame: true,
+              members: [
+                {
+                  player: {
+                    userId: 'user-1',
+                    login: 'player',
+                    displayName: 'Player One',
+                  },
+                  joinedAtUtc: '2026-06-11T11:00:00Z',
+                },
+              ],
+              pendingInvitations: [],
+            },
+          ],
+          availablePlayers: [],
+        },
+        {
+          disbandTeam,
+        },
+      ),
+    )
+
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    expect(screen.getByText('Активный ход')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Распустить' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
+    expect(screen.getByRole('button', { name: 'Распустить' })).toBeDisabled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(disbandTeam.mutate).not.toHaveBeenCalled()
   })
 })

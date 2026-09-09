@@ -51,11 +51,63 @@ public sealed class GameBoardService : IGameBoardService
         );
     }
 
+    public Task<GameTeamQueueResult> GetCurrentTeamQueueAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.GetCurrentTeamQueueAsync(cancellationToken);
+    }
+
+    public Task<SetActiveGameTeamOutcome> SetActiveTeamAsync(
+        Guid? teamId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.SetActiveTeamAsync(teamId, cancellationToken);
+    }
+
+    public Task<SetGameTeamPlayedStateOutcome> SetGameTeamPlayedStateAsync(
+        Guid teamId,
+        bool isPlayed,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.SetGameTeamPlayedStateAsync(teamId, isPlayed, cancellationToken);
+    }
+
+    public Task<bool> CurrentActiveGameHasActiveTeamAsync(CancellationToken cancellationToken = default)
+    {
+        return _repository.CurrentActiveGameHasActiveTeamAsync(cancellationToken);
+    }
+
+    public Task<bool> CurrentActiveGameHasActiveRoundAsync(CancellationToken cancellationToken = default)
+    {
+        return _repository.CurrentActiveGameHasActiveRoundAsync(cancellationToken);
+    }
+
+    public Task<bool> IsCurrentActiveGameCellAsync(
+        Guid cellId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.IsCurrentActiveGameCellAsync(cellId, cancellationToken);
+    }
+
     public async Task<OpenGameCellResult?> TryOpenCellAsync(
         Guid cellId,
         CancellationToken cancellationToken = default
     )
     {
+        if (!await _repository.CurrentActiveGameHasActiveTeamAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        if (await _repository.CurrentActiveGameHasActiveRoundAsync(cancellationToken))
+        {
+            return null;
+        }
+
         var result = await _repository.TryOpenCellAsync(cellId, cancellationToken);
         if (result is null || !result.StateChanged)
         {
@@ -63,9 +115,9 @@ public sealed class GameBoardService : IGameBoardService
         }
 
         await RealtimePublishGuard.TryPublishAsync(
-            () => _eventsPublisher.PublishCellOpenedAsync(
+            publishToken => _eventsPublisher.PublishCellOpenedAsync(
                 new GameCellOpenedEvent(result.GameId, result.Version, result.Cell),
-                cancellationToken
+                publishToken
             ),
             _logger,
             AppMessages.Logs.RealtimeGameCellOpenedPublishFailed,

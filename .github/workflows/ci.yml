@@ -11,12 +11,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       - name: Run backend architecture guardrails
         run: dotnet test backend/tests/Backend.Tests/Backend.Tests.csproj --filter "FullyQualifiedName~Architecture|FullyQualifiedName~DomainErrorHttpPolicyTests"
@@ -25,12 +25,27 @@ jobs:
     runs-on: ubuntu-latest
     needs: backend-architecture
 
+    services:
+      postgres:
+        image: postgres:16.15-alpine3.24@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: deadmans
+          POSTGRES_PASSWORD: deadmans_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U deadmans -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -39,47 +54,83 @@ jobs:
             frontend/package-lock.json
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
 
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
+
+      - name: Install root tooling
+        run: npm ci
+
+      - name: Test production deployment orchestration
+        run: node --test deploy/coolify-deploy.test.mjs
 
       - name: Generate frontend transport artifacts
         run: npm --prefix frontend run generate:transport
 
       - name: Validate OpenAPI contract
-        run: npx --yes swagger-cli validate backend/openapi/deadmans.v1.yaml
+        run: npm run validate:openapi
 
       - name: Verify generated transport artifacts are up to date
         run: git diff --exit-code -- frontend/src/shared/api/contracts frontend/src/shared/realtime/generated.ts
 
+      - name: Restore backend
+        run: dotnet restore backend/backend.slnx
+
+      - name: Verify backend formatting
+        run: dotnet format backend/backend.slnx --no-restore --verify-no-changes
+
       - name: Build backend
-        run: dotnet build backend/backend.slnx
+        run: dotnet build backend/backend.slnx --configuration Release --no-restore
+
+      - name: Verify EF model matches migrations
+        run: >-
+          dotnet tool run dotnet-ef migrations has-pending-model-changes
+          --project backend/backend.csproj
+          --startup-project backend/backend.csproj
+          --configuration Release
+          --no-build
 
       - name: Test backend
-        run: dotnet test backend/backend.slnx --no-build
+        env:
+          DEADMANS_TEST_POSTGRES: Host=localhost;Port=5432;Database=postgres;Username=deadmans;Password=deadmans_dev_password;SSL Mode=Disable
+        run: dotnet test backend/backend.slnx --configuration Release --no-build
 
       - name: Frontend quality gate
         run: npm --prefix frontend run check
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Frontend browser smoke
+        run: npm --prefix frontend run test:e2e
+
+      - name: Verify production Docker packaging before merge
+        if: github.event_name == 'pull_request'
+        run: docker build --pull --build-arg "RELEASE_SHA=$GITHUB_SHA" --tag deadmans-ci:pr .
 
   dependency-audit:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       - name: Audit root npm dependencies
         run: npm audit --audit-level=high
@@ -99,3 +150,94 @@ jobs:
             echo "::error::Vulnerable NuGet packages detected."
             exit 1
           fi
+
+  publish-image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [build, dependency-audit]
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      digest: ${{ steps.publish.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Build production image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: >-
+          docker build --pull
+          --build-arg "RELEASE_SHA=$GITHUB_SHA"
+          --label "org.opencontainers.image.revision=$GITHUB_SHA"
+          --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          --tag "$IMAGE:$GITHUB_SHA"
+          --tag "$IMAGE:main"
+          .
+
+      - name: Publish production image
+        id: publish
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:main"
+          reference="$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA")"
+          digest="${reference##*@}"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  deploy-production:
+    if: vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    needs: publish-image
+    timeout-minutes: 20
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Skip superseded releases
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          if [[ "$head" == "$GITHUB_SHA" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "A newer commit is already on main; skipping this release."
+          fi
+
+      - name: Deploy immutable image and verify the running release
+        if: steps.release.outputs.current == 'true'
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          PRODUCTION_HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL }}
+          IMAGE: ${{ needs.publish-image.outputs.image }}
+          IMAGE_DIGEST: ${{ needs.publish-image.outputs.digest }}
+        run: node deploy/coolify-deploy.mjs

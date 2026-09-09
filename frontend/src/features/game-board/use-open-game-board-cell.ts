@@ -6,11 +6,33 @@ import { useAuth } from '../../shared/auth/use-auth.ts'
 import { hasPanelCapability } from '../../shared/auth/panel-capabilities.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
+import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
+import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { openGameBoardCell } from './api/game-board-data-access.ts'
 import { currentGameBoardQueryOptions } from './api/game-board-queries.ts'
 
 function getOpenCellErrorMessage(error: unknown, t: TFunction<'translation'>) {
   if (error instanceof ApiError) {
+    if (
+      error.status === 409 &&
+      typeof error.details === 'object' &&
+      error.details !== null &&
+      'code' in error.details &&
+      error.details.code === API_ERROR_CODES.gameBoardActiveTeamRequired
+    ) {
+      return t('gameBoard.openActiveTeamRequired')
+    }
+
+    if (
+      error.status === 409 &&
+      typeof error.details === 'object' &&
+      error.details !== null &&
+      'code' in error.details &&
+      error.details.code === API_ERROR_CODES.gameRoundAlreadyInProgress
+    ) {
+      return t('gameBoard.activeTeamRoundInProgress')
+    }
+
     if (error.status === 403) {
       return t('gameBoard.openForbidden')
     }
@@ -23,7 +45,19 @@ function getOpenCellErrorMessage(error: unknown, t: TFunction<'translation'>) {
   return t('gameBoard.openFailed')
 }
 
-export function useOpenGameBoardCell() {
+interface UseOpenGameBoardCellOptions {
+  activeTeamId?: string | null
+  gameStatus?: string | null
+  hasActiveRound?: boolean
+  onCellOpened?: (cell: GameBoardCell) => void
+}
+
+export function useOpenGameBoardCell({
+  activeTeamId,
+  gameStatus,
+  hasActiveRound = false,
+  onCellOpened,
+}: UseOpenGameBoardCellOptions = {}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -34,14 +68,28 @@ export function useOpenGameBoardCell() {
     () => hasPanelCapability('openGameBoardCell', user?.roles),
     [user?.roles],
   )
+  const hasActiveTeam = gameStatus !== 'active' || activeTeamId != null
 
   const openCellMutation = useMutation({
     mutationFn: (cellId: string) => openGameBoardCell(cellId),
-    onSuccess: async () => {
+    onSuccess: async (_data, cellId) => {
+      const optimisticOpenedCell =
+        pendingCell?.id === cellId ? { ...pendingCell, state: 'open' as const } : null
       setToastMessage(t('gameBoard.openSuccess'))
       await queryClient.invalidateQueries({
         queryKey: currentGameBoardQueryOptions.queryKey,
       })
+      await queryClient.invalidateQueries({
+        queryKey: activeGameRoundQueryOptions.queryKey,
+      })
+      const refreshedSnapshot = queryClient.getQueryData(currentGameBoardQueryOptions.queryKey)
+      const refreshedOpenedCell = refreshedSnapshot?.cells.find(
+        (cell) => cell.id === cellId && cell.state === 'open',
+      )
+      const openedCell = refreshedOpenedCell ?? optimisticOpenedCell
+      if (openedCell) {
+        onCellOpened?.(openedCell)
+      }
     },
     onError: (error) => {
       setToastMessage(getOpenCellErrorMessage(error, t))
@@ -52,7 +100,12 @@ export function useOpenGameBoardCell() {
   })
 
   const requestOpenCell = (cell: GameBoardCell) => {
-    if (!canOpenCells || openCellMutation.isPending) {
+    if (cell.state !== 'closed' || !canOpenCells || hasActiveRound || openCellMutation.isPending) {
+      return
+    }
+
+    if (!hasActiveTeam) {
+      setToastMessage(t('gameBoard.openActiveTeamRequired'))
       return
     }
 
@@ -70,7 +123,7 @@ export function useOpenGameBoardCell() {
   return {
     pendingCell,
     toastMessage,
-    canOpenCells: canOpenCells && !openCellMutation.isPending,
+    canOpenCells: canOpenCells && hasActiveTeam && !hasActiveRound && !openCellMutation.isPending,
     isSubmitting: openCellMutation.isPending,
     requestOpenCell,
     confirmOpenCell,

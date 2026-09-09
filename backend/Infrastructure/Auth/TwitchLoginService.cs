@@ -12,10 +12,15 @@ namespace backend.Infrastructure.Auth;
 
 public sealed class TwitchLoginService : ITwitchLoginService
 {
+    private const int MaximumAccessTokenLength = 4096;
+    private const int MaximumProfileImageUrlLength = 1024;
+    private const int MaximumTwitchTypeLength = 32;
+
     private readonly HttpClient _httpClient;
     private readonly TwitchAuthOptions _options;
     private readonly ApplicationDbContext _dbContext;
     private readonly IUserRoleService _userRoleService;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<TwitchLoginService> _logger;
 
     public TwitchLoginService(
@@ -23,6 +28,7 @@ public sealed class TwitchLoginService : ITwitchLoginService
         IOptions<TwitchAuthOptions> options,
         ApplicationDbContext dbContext,
         IUserRoleService userRoleService,
+        TimeProvider timeProvider,
         ILogger<TwitchLoginService> logger
     )
     {
@@ -30,6 +36,7 @@ public sealed class TwitchLoginService : ITwitchLoginService
         _options = options.Value;
         _dbContext = dbContext;
         _userRoleService = userRoleService;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -62,7 +69,7 @@ public sealed class TwitchLoginService : ITwitchLoginService
             var twitchUser = await GetTwitchUserAsync(token.AccessToken, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            var utcNow = DateTime.UtcNow;
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
             var user = await _dbContext.Users
                 .FirstOrDefaultAsync(x => x.TwitchUserId == twitchUser.Id, cancellationToken);
 
@@ -75,8 +82,6 @@ public sealed class TwitchLoginService : ITwitchLoginService
                     TwitchUserId = twitchUser.Id,
                     Login = twitchUser.Login,
                     DisplayName = twitchUser.DisplayName,
-                    Email = twitchUser.Email,
-                    EmailVerified = null,
                     ProfileImageUrl = twitchUser.ProfileImageUrl,
                     BroadcasterType = twitchUser.BroadcasterType,
                     TwitchUserType = twitchUser.Type,
@@ -96,7 +101,6 @@ public sealed class TwitchLoginService : ITwitchLoginService
 
                 user!.Login = twitchUser.Login;
                 user.DisplayName = twitchUser.DisplayName;
-                user.Email = twitchUser.Email;
                 user.ProfileImageUrl = twitchUser.ProfileImageUrl;
                 user.BroadcasterType = twitchUser.BroadcasterType;
                 user.TwitchUserType = twitchUser.Type;
@@ -117,6 +121,10 @@ public sealed class TwitchLoginService : ITwitchLoginService
             );
         }
         catch (InactiveUserLoginException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
@@ -150,19 +158,26 @@ public sealed class TwitchLoginService : ITwitchLoginService
         );
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogWarning(
                 AppMessages.Logs.TwitchTokenExchangeHttpFailed,
                 (int)response.StatusCode
             );
             throw new InvalidOperationException(
-                AppMessages.Exceptions.TwitchTokenExchangeFailed((int)response.StatusCode, error)
+                AppMessages.Exceptions.TwitchTokenExchangeFailed((int)response.StatusCode)
             );
         }
 
         var token =
             await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken)
             ?? throw new InvalidOperationException(AppMessages.Exceptions.TwitchTokenResponseEmpty);
+
+        if (
+            string.IsNullOrWhiteSpace(token.AccessToken)
+            || token.AccessToken.Length > MaximumAccessTokenLength
+        )
+        {
+            throw new InvalidOperationException(AppMessages.Exceptions.TwitchTokenResponseInvalid);
+        }
 
         return token;
     }
@@ -179,27 +194,54 @@ public sealed class TwitchLoginService : ITwitchLoginService
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogWarning(
                 AppMessages.Logs.TwitchHelixUsersRequestFailed,
                 (int)response.StatusCode
             );
             throw new InvalidOperationException(
-                AppMessages.Exceptions.TwitchUserRequestFailed((int)response.StatusCode, error)
+                AppMessages.Exceptions.TwitchUserRequestFailed((int)response.StatusCode)
             );
         }
 
         var payload =
             await response.Content.ReadFromJsonAsync<TwitchUsersResponse>(cancellationToken)
             ?? throw new InvalidOperationException(AppMessages.Exceptions.TwitchUsersResponseEmpty);
-        var user = payload.Data.FirstOrDefault();
-        if (user is null)
+        if (payload.Data is null || payload.Data.Count == 0)
         {
             _logger.LogWarning(AppMessages.Logs.TwitchHelixNoUserEntries);
             throw new InvalidOperationException(AppMessages.Exceptions.TwitchUsersResponseNoUser);
         }
 
-        return user;
+        if (payload.Data.Count != 1 || !HasValidIdentity(payload.Data[0]))
+        {
+            throw new InvalidOperationException(AppMessages.Exceptions.TwitchUsersResponseInvalid);
+        }
+
+        return payload.Data[0];
+    }
+
+    private static bool HasValidIdentity(TwitchUserDto user)
+    {
+        return TwitchIdentityValidator.IsValid(user.Id, user.Login, user.DisplayName)
+            && HasValidProfileImageUrl(user.ProfileImageUrl)
+            && HasValidOptionalValue(user.BroadcasterType, MaximumTwitchTypeLength)
+            && HasValidOptionalValue(user.Type, MaximumTwitchTypeLength);
+    }
+
+    private static bool HasValidOptionalValue(string? value, int maximumLength)
+    {
+        return value is null || value.Length <= maximumLength;
+    }
+
+    private static bool HasValidProfileImageUrl(string? value)
+    {
+        return value is null
+            || (
+                value.Length <= MaximumProfileImageUrlLength
+                && Uri.TryCreate(value, UriKind.Absolute, out var uri)
+                && uri.Scheme == Uri.UriSchemeHttps
+                && string.IsNullOrEmpty(uri.UserInfo)
+            );
     }
 
     private sealed class TwitchTokenResponse
@@ -210,7 +252,7 @@ public sealed class TwitchLoginService : ITwitchLoginService
 
     private sealed class TwitchUsersResponse
     {
-        public List<TwitchUserDto> Data { get; set; } = [];
+        public List<TwitchUserDto>? Data { get; set; } = [];
     }
 
     private sealed class TwitchUserDto
@@ -223,9 +265,6 @@ public sealed class TwitchLoginService : ITwitchLoginService
 
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; } = string.Empty;
-
-        [JsonPropertyName("email")]
-        public string? Email { get; set; }
 
         [JsonPropertyName("profile_image_url")]
         public string? ProfileImageUrl { get; set; }

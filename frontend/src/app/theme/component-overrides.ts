@@ -15,6 +15,14 @@ export const appComponentOverrides: Components<Theme> = {
     styleOverrides: {
       root: {
         borderRadius: appThemeBorderRadius,
+        '&.Mui-disabled': {
+          color: alpha(huntPalette.parchmentMuted, 0.82),
+          borderColor: alpha(huntPalette.parchmentMuted, 0.16),
+          backgroundColor: alpha(huntPalette.soot, 0.18),
+          backgroundImage: 'none',
+          boxShadow: 'none',
+          opacity: 1,
+        },
       },
       containedPrimary: {
         backgroundImage: `linear-gradient(180deg, ${huntPalette.brassLight} 0%, ${huntPalette.brass} 55%, ${huntPalette.brassMuted} 100%)`,

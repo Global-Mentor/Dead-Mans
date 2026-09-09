@@ -6,6 +6,10 @@ public interface IGameRegistrationReadStore
 {
     Task<ReadyGameRegistrationContext?> GetReadyGameAsync(CancellationToken cancellationToken = default);
 
+    Task<ReadyGameRegistrationContext?> GetManageableGameAsync(
+        CancellationToken cancellationToken = default
+    );
+
     Task<bool> UserHasTeamMembershipAsync(
         Guid gameId,
         Guid userId,
@@ -24,12 +28,12 @@ public interface IGameRegistrationReadStore
         CancellationToken cancellationToken = default
     );
 
-    Task<AvailableParticipationSlot?> FindAvailablePublicSlotAsync(
+    Task<AvailableTeamSlot?> FindAvailablePublicSlotAsync(
         Guid gameId,
         CancellationToken cancellationToken = default
     );
 
-    Task<HashSet<Guid>> GetBlockedSlotIdsAsync(
+    Task<HashSet<Guid>> GetBlockedTeamSlotIdsAsync(
         Guid gameId,
         CancellationToken cancellationToken = default
     );
@@ -37,6 +41,11 @@ public interface IGameRegistrationReadStore
     Task<GameRegistrationSnapshot> BuildSnapshotAsync(
         Guid gameId,
         Guid userId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<GameRegistrationAdminSnapshot> BuildAdminSnapshotAsync(
+        Guid gameId,
         CancellationToken cancellationToken = default
     );
 
@@ -62,20 +71,44 @@ public interface IGameRegistrationReadStore
         CancellationToken cancellationToken = default
     );
 
+    Task<TeamAdminLifecycleSnapshot?> GetTeamAdminLifecycleSnapshotAsync(
+        Guid gameId,
+        Guid teamId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<TeamInviteTargetSnapshot?> GetTeamInviteTargetSnapshotAsync(
         Guid gameId,
         Guid teamId,
         CancellationToken cancellationToken = default
     );
 
-    Task<ParticipationSlotSnapshot?> GetParticipationSlotAsync(
+    Task<Guid?> GetActiveTeamIdForUserAsync(
         Guid gameId,
-        Guid slotId,
+        Guid userId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<TeamInviteTargetSnapshot?> GetTeamBySlotAsync(
+        Guid gameId,
+        Guid teamSlotId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<TeamSlotSnapshot?> GetTeamSlotAsync(
+        Guid gameId,
+        Guid teamSlotId,
         CancellationToken cancellationToken = default
     );
 
     Task<bool> ActiveUserExistsAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    static bool IsSlotBlocked(Guid slotId, HashSet<Guid> blockedSlotIds) =>
-        blockedSlotIds.Contains(slotId);
+    Task<bool> TeamHasPendingInvitationAsync(
+        Guid gameId,
+        Guid teamId,
+        CancellationToken cancellationToken = default
+    );
+
+    static bool IsSlotBlocked(Guid teamSlotId, HashSet<Guid> blockedTeamSlotIds) =>
+        blockedTeamSlotIds.Contains(teamSlotId);
 }

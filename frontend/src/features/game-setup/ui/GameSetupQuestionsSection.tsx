@@ -1,4 +1,5 @@
 import { Box, Checkbox, Chip, FormControlLabel, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AppButton,
@@ -7,17 +8,22 @@ import {
   SectionCard,
   SectionHeader,
 } from '../../../shared/ui/index.ts'
+import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { useGameSetupQuestionsCatalog } from '../use-game-setup-questions-catalog.ts'
 
-function toCategoryTitle(category: string) {
-  return category
-    .split('_')
-    .filter((part) => part.length > 0)
-    .map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`)
-    .join(' ')
+interface GameSetupQuestionsSectionProps {
+  draft: GameSetupDraftState
+  onToggle: (questionId: string, enabled: boolean) => void
+  onBulkSetEnabled: (questionIds: readonly string[], enabled: boolean) => void
+  actions?: ReactNode
 }
 
-export function GameSetupQuestionsSection() {
+export function GameSetupQuestionsSection({
+  draft,
+  onToggle,
+  onBulkSetEnabled,
+  actions,
+}: GameSetupQuestionsSectionProps) {
   const { t } = useTranslation()
   const {
     search,
@@ -25,18 +31,24 @@ export function GameSetupQuestionsSection() {
     activeCategory,
     setActiveCategory,
     catalogQuery,
-    toggleQuestionMutation,
-    toggleCategoryMutation,
     categories,
     filteredQuestions,
   } = useGameSetupQuestionsCatalog()
 
+  const enabledQuestionIds = new Set(draft.enabledQuestionIds)
+  const visibleIds = filteredQuestions.map((question) => question.questionId)
+
   return (
-    <SectionCard sx={{ mt: 2 }}>
+    <SectionCard>
       <SectionHeader
         title={t('gameSetup.questions.title')}
-        description={t('gameSetup.questions.description')}
+        description={t('gameSetup.questions.enabledDescription')}
+        actions={actions}
       />
+
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        {t('gameSetup.questions.enabledCount', { count: draft.enabledQuestionIds.length })}
+      </Typography>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
         <FormTextField
@@ -48,44 +60,32 @@ export function GameSetupQuestionsSection() {
 
       <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', rowGap: 1 }}>
         <Chip
-          label={t('gameSetup.questions.categoryAll')}
+          label={t('common.filters.allCategories')}
           color={activeCategory === null ? 'primary' : 'default'}
           onClick={() => setActiveCategory(null)}
         />
         {categories.map((category) => (
           <Chip
             key={category}
-            label={toCategoryTitle(category)}
+            label={category}
             color={activeCategory === category ? 'primary' : 'default'}
             onClick={() => setActiveCategory(category)}
           />
         ))}
       </Stack>
 
-      {activeCategory ? (
-        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-          <AppButton
-            size="small"
-            tone="secondary"
-            disabled={toggleCategoryMutation.isPending}
-            onClick={() =>
-              toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: true })
-            }
-          >
-            {t('gameSetup.questions.enableCategory')}
-          </AppButton>
-          <AppButton
-            size="small"
-            tone="warningGhost"
-            disabled={toggleCategoryMutation.isPending}
-            onClick={() =>
-              toggleCategoryMutation.mutate({ category: activeCategory, isEnabled: false })
-            }
-          >
-            {t('gameSetup.questions.disableCategory')}
-          </AppButton>
-        </Stack>
-      ) : null}
+      <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+        <AppButton size="small" tone="secondary" onClick={() => onBulkSetEnabled(visibleIds, true)}>
+          {t('gameSetup.questions.enableVisible')}
+        </AppButton>
+        <AppButton
+          size="small"
+          tone="warningGhost"
+          onClick={() => onBulkSetEnabled(visibleIds, false)}
+        >
+          {t('gameSetup.questions.disableVisible')}
+        </AppButton>
+      </Stack>
 
       <AsyncSection
         isLoading={catalogQuery.isLoading}
@@ -95,7 +95,7 @@ export function GameSetupQuestionsSection() {
         errorMessage={t('gameSetup.questions.error')}
         emptyMessage={t('gameSetup.questions.empty')}
       >
-        <Stack spacing={0.5} sx={{ mt: 1.5, maxHeight: 360, overflowY: 'auto', pr: 0.5 }}>
+        <Stack spacing={0.5} sx={{ mt: 1.5 }}>
           {filteredQuestions.map((question) => (
             <Box
               key={question.questionId}
@@ -108,14 +108,8 @@ export function GameSetupQuestionsSection() {
               <FormControlLabel
                 control={
                   <Checkbox
-                    checked={question.isEnabled}
-                    onChange={(event) =>
-                      toggleQuestionMutation.mutate({
-                        questionId: question.questionId,
-                        isEnabled: event.target.checked,
-                      })
-                    }
-                    disabled={toggleQuestionMutation.isPending}
+                    checked={enabledQuestionIds.has(question.questionId)}
+                    onChange={(event) => onToggle(question.questionId, event.target.checked)}
                   />
                 }
                 label={
@@ -131,11 +125,12 @@ export function GameSetupQuestionsSection() {
                 sx={{ display: 'block', ml: 4.5 }}
               >
                 {t('gameSetup.questions.meta', {
-                  category: question.category,
+                  category: question.categoryName,
                   reward: question.reward,
                   asked: question.askedTotalCount,
                   correct: question.correctTotalCount,
                 })}
+                {question.isEnabled ? '' : ` · ${t('gameSetup.questions.globallyDisabled')}`}
               </Typography>
             </Box>
           ))}

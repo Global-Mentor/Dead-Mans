@@ -16,8 +16,6 @@
 **/DocumentLayout*.json
 **/*.vsidx
 **/DesignTimeBuild/
-**/copilot-chat/
-**/CopilotIndices/
 **/*.db
 **/*.db-shm
 **/*.db-wal
@@ -25,14 +23,21 @@
 # Logs
 **/logs/
 *.log
+.tmp/
 .build-check/
-/.kombai/canvas/hunt_concepts.canvas
+/tmp_*_stdout.log
+/tmp_*_stderr.log
 
 # Local secrets/config overrides
-.env
-backend/.env
-backend/.env.local
-backend/appsettings.Local.json
+**/.env
+**/.env.*
+!**/.env.example
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+*.key
+*.pem
+*.pfx
+*.p12
 
 # EF Core Migrations snapshot backup (if any)
 *.ide/

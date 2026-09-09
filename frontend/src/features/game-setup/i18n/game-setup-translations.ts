@@ -7,14 +7,13 @@ const translations = {
     empty: 'There is no draft game yet. Create a new one to start setup.',
     draftBadge: 'Draft',
     gameNameLabel: 'Game name',
-    columnLabel: 'Column {{column}}',
-    rowLabel: 'Row {{row}}',
+    columnLabel: 'Column label {{column}}',
+    rowLabel: 'Row label {{row}}',
     imagePlaceholder: 'No image yet',
     cellTitleLabel: 'Card name',
     cellMedia: {
       upload: 'Upload',
       replace: 'Replace',
-      remove: 'Remove',
       uploading: 'Uploading...',
       removing: 'Removing...',
       uploadPrompt: 'Click or drag an image here',
@@ -29,7 +28,7 @@ const translations = {
         deleteFailed: 'Failed to remove the image. Please try again.',
       },
     },
-    cellPriceLabel: 'Price',
+    cellPriceLabel: 'Card value',
     save: 'Save changes',
     saving: 'Saving...',
     persistenceHint:
@@ -45,15 +44,20 @@ const translations = {
     questions: {
       title: 'Question management',
       description:
-        'Temporary admin form to enable/disable questions and categories in the shared vector.',
+        'Manage global question availability and categories before selecting questions for the game.',
       searchLabel: 'Search by question/answer',
-      categoryAll: 'All categories',
       enableCategory: 'Enable category',
       disableCategory: 'Disable category',
       loading: 'Loading question catalog...',
       error: 'Failed to load question catalog.',
       empty: 'No questions match current filters.',
       meta: 'Category: {{category}} · Reward: {{reward}} · Asked: {{asked}} · Correct: {{correct}}',
+      enabledDescription:
+        'Enable the questions this game will draw from. Only enabled questions are asked.',
+      enabledCount: 'Enabled for this game: {{count}}',
+      enableVisible: 'Enable visible',
+      disableVisible: 'Disable visible',
+      globallyDisabled: 'globally disabled',
     },
     reloadFromServer: 'Reload',
     remoteChangeNotice:
@@ -74,7 +78,7 @@ const translations = {
     resetFailed: 'Failed to reset game setup. Please try again.',
     boardTitle: 'Game board',
     boardDescription:
-      'Edit row and column headers and card fields, then click Save. Layout changes save when you confirm them.',
+      'Row and column labels are titles only and do not set card values. Set each card value separately, then click Save.',
     settingsSidebar: {
       overline: 'Setup',
       title: 'Game settings',
@@ -89,7 +93,6 @@ const translations = {
       title: 'Reset draft',
       description:
         'This permanently deletes the current draft, including the game name, board, cards, and all uploaded images in storage. You will create a new draft afterwards.',
-      cancel: 'Cancel',
       confirm: 'Reset draft',
       submitting: 'Resetting...',
     },
@@ -99,7 +102,6 @@ const translations = {
         'Choose an action, target, and position. Changes save to the shared draft after you confirm.',
       actionLabel: 'Action',
       actionAdd: 'Add',
-      actionRemove: 'Remove',
       axisLabel: 'Target',
       axisRow: 'Row',
       axisColumn: 'Column',
@@ -114,8 +116,6 @@ const translations = {
       removeColumnTarget: 'Column {{position}} ({{label}})',
       limitReached: 'This action is not available for the current board size.',
       review: 'Review',
-      back: 'Back',
-      cancel: 'Cancel',
       confirm: 'Confirm',
       confirmAddRow: 'Add a new row: {{target}}?',
       confirmAddColumn: 'Add a new column: {{target}}?',
@@ -125,7 +125,7 @@ const translations = {
         'Remove {{target}}? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
     },
     emptyPanel: {
-      description: 'No draft game in the database yet. Use the dialog to create one.',
+      description: 'No draft game in the database yet. Click the board area to create one.',
     },
     createDialog: {
       promptTitle: 'No draft game yet',
@@ -135,7 +135,6 @@ const translations = {
       title: 'Name the new game',
       detailsDescription: 'Enter a title for the draft. It will be created with a starter board.',
       nameLabel: 'Game name',
-      back: 'Back',
       confirm: 'Create',
       validationRequired: 'Enter a game title.',
       alreadyExists: 'A draft game already exists. Refresh the page.',
@@ -150,14 +149,13 @@ const translations = {
     empty: 'Сейчас нет игры в статусе черновика. Создайте новую, чтобы начать настройку.',
     draftBadge: 'Черновик',
     gameNameLabel: 'Название игры',
-    columnLabel: 'Колонка {{column}}',
-    rowLabel: 'Строка {{row}}',
+    columnLabel: 'Подпись колонки {{column}}',
+    rowLabel: 'Подпись строки {{row}}',
     imagePlaceholder: 'Изображения пока нет',
     cellTitleLabel: 'Название карточки',
     cellMedia: {
       upload: 'Загрузить',
       replace: 'Заменить',
-      remove: 'Удалить',
       uploading: 'Загрузка...',
       removing: 'Удаление...',
       uploadPrompt: 'Нажмите или перетащите изображение',
@@ -173,7 +171,7 @@ const translations = {
         deleteFailed: 'Не удалось удалить изображение. Попробуйте ещё раз.',
       },
     },
-    cellPriceLabel: 'Цена',
+    cellPriceLabel: 'Стоимость карточки',
     save: 'Сохранить изменения',
     saving: 'Сохранение...',
     persistenceHint:
@@ -189,15 +187,20 @@ const translations = {
     questions: {
       title: 'Управление вопросами',
       description:
-        'Временная админ-форма для включения/отключения вопросов и категорий общего вектора.',
+        'Управляйте доступностью вопросов и категориями общего каталога перед выбором вопросов для игры.',
       searchLabel: 'Поиск по вопросу/ответу',
-      categoryAll: 'Все категории',
       enableCategory: 'Включить категорию',
       disableCategory: 'Отключить категорию',
       loading: 'Загрузка каталога вопросов...',
       error: 'Не удалось загрузить каталог вопросов.',
       empty: 'По выбранным фильтрам вопросов нет.',
       meta: 'Категория: {{category}} · Награда: {{reward}} · Задано: {{asked}} · Верно: {{correct}}',
+      enabledDescription:
+        'Включите вопросы, из которых будет идти эта игра. Задаются только включённые вопросы.',
+      enabledCount: 'Включено для этой игры: {{count}}',
+      enableVisible: 'Включить видимые',
+      disableVisible: 'Отключить видимые',
+      globallyDisabled: 'выключен глобально',
     },
     reloadFromServer: 'Обновить',
     remoteChangeNotice:
@@ -219,7 +222,7 @@ const translations = {
     resetFailed: 'Не удалось сбросить настройку игры. Попробуйте ещё раз.',
     boardTitle: 'Игровая таблица',
     boardDescription:
-      'Редактируйте подписи и поля карточек, затем нажмите «Сохранить». Изменения строк и колонок сохраняются после подтверждения в диалоге.',
+      'Подписи строк и колонок — только заголовки и не задают стоимость. Укажите стоимость каждой карточки отдельно, затем нажмите «Сохранить».',
     settingsSidebar: {
       overline: 'Настройка',
       title: 'Настройки игры',
@@ -234,7 +237,6 @@ const translations = {
       title: 'Сбросить черновик',
       description:
         'Текущий черновик будет полностью удалён вместе с названием, таблицей, карточками и всеми загруженными изображениями в storage. После этого нужно будет создать новый черновик.',
-      cancel: 'Отмена',
       confirm: 'Сбросить черновик',
       submitting: 'Сброс...',
     },
@@ -244,7 +246,6 @@ const translations = {
         'Выберите действие, объект и позицию. После подтверждения изменения сохраняются в общий черновик.',
       actionLabel: 'Действие',
       actionAdd: 'Добавить',
-      actionRemove: 'Удалить',
       axisLabel: 'Объект',
       axisRow: 'Строка',
       axisColumn: 'Колонка',
@@ -259,8 +260,6 @@ const translations = {
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Это действие недоступно для текущего размера таблицы.',
       review: 'Проверить',
-      back: 'Назад',
-      cancel: 'Отмена',
       confirm: 'Подтвердить',
       confirmAddRow: 'Добавить новую строку: {{target}}?',
       confirmAddColumn: 'Добавить новую колонку: {{target}}?',
@@ -270,7 +269,7 @@ const translations = {
         'Удалить {{target}}? После синхронизации черновика карточки в этой колонке и их изображения будут удалены с сервера.',
     },
     emptyPanel: {
-      description: 'В базе пока нет черновика. Создайте игру через диалог.',
+      description: 'В базе пока нет черновика. Нажмите на область доски, чтобы создать игру.',
     },
     createDialog: {
       promptTitle: 'Черновика пока нет',
@@ -280,7 +279,6 @@ const translations = {
       title: 'Название новой игры',
       detailsDescription: 'Введите название черновика. Будет создана таблица-заготовка.',
       nameLabel: 'Название игры',
-      back: 'Назад',
       confirm: 'Создать',
       validationRequired: 'Введите название игры.',
       alreadyExists: 'Черновик игры уже существует. Обновите страницу.',
@@ -295,14 +293,13 @@ const translations = {
     empty: 'Наразі немає гри в статусі чернетки. Створіть нову, щоб почати налаштування.',
     draftBadge: 'Чернетка',
     gameNameLabel: 'Назва гри',
-    columnLabel: 'Колонка {{column}}',
-    rowLabel: 'Ряд {{row}}',
+    columnLabel: 'Підпис колонки {{column}}',
+    rowLabel: 'Підпис рядка {{row}}',
     imagePlaceholder: 'Зображення ще немає',
     cellTitleLabel: 'Назва картки',
     cellMedia: {
       upload: 'Завантажити',
       replace: 'Замінити',
-      remove: 'Видалити',
       uploading: 'Завантаження...',
       removing: 'Видалення...',
       uploadPrompt: 'Натисніть або перетягніть зображення',
@@ -318,7 +315,7 @@ const translations = {
         deleteFailed: 'Не вдалося видалити зображення. Спробуйте ще раз.',
       },
     },
-    cellPriceLabel: 'Ціна',
+    cellPriceLabel: 'Вартість картки',
     save: 'Зберегти зміни',
     saving: 'Збереження...',
     persistenceHint:
@@ -334,15 +331,20 @@ const translations = {
     questions: {
       title: 'Керування питаннями',
       description:
-        'Тимчасова адмін-форма для вмикання/вимикання питань і категорій у спільному векторі.',
+        'Керуйте доступністю питань і категоріями глобального каталогу перед вибором питань для гри.',
       searchLabel: 'Пошук за питанням/відповіддю',
-      categoryAll: 'Усі категорії',
       enableCategory: 'Увімкнути категорію',
       disableCategory: 'Вимкнути категорію',
       loading: 'Завантаження каталогу питань...',
       error: 'Не вдалося завантажити каталог питань.',
       empty: 'За поточними фільтрами питань немає.',
       meta: 'Категорія: {{category}} · Нагорода: {{reward}} · Поставлено: {{asked}} · Вірно: {{correct}}',
+      enabledDescription:
+        'Увімкніть питання, з яких складатиметься ця гра. Ставляться лише увімкнені питання.',
+      enabledCount: 'Увімкнено для цієї гри: {{count}}',
+      enableVisible: 'Увімкнути видимі',
+      disableVisible: 'Вимкнути видимі',
+      globallyDisabled: 'вимкнено глобально',
     },
     reloadFromServer: 'Оновити',
     remoteChangeNotice:
@@ -364,7 +366,7 @@ const translations = {
     resetFailed: 'Не вдалося скинути налаштування гри. Спробуйте ще раз.',
     boardTitle: 'Ігрова таблиця',
     boardDescription:
-      'Редагуйте підписи та поля карток, потім натисніть «Зберегти». Зміни рядків і колонок зберігаються після підтвердження в діалозі.',
+      'Підписи рядків і колонок — лише заголовки й не задають вартість. Укажіть вартість кожної картки окремо, потім натисніть «Зберегти».',
     settingsSidebar: {
       overline: 'Налаштування',
       title: 'Налаштування гри',
@@ -379,7 +381,6 @@ const translations = {
       title: 'Скинути чернетку',
       description:
         'Поточну чернетку буде повністю видалено разом із назвою, таблицею, картками та всіма завантаженими зображеннями в storage. Після цього потрібно буде створити нову чернетку.',
-      cancel: 'Скасувати',
       confirm: 'Скинути чернетку',
       submitting: 'Скидання...',
     },
@@ -389,7 +390,6 @@ const translations = {
         'Оберіть дію, об’єкт і позицію. Після підтвердження зміни зберігаються в спільну чернетку.',
       actionLabel: 'Дія',
       actionAdd: 'Додати',
-      actionRemove: 'Видалити',
       axisLabel: 'Об’єкт',
       axisRow: 'Рядок',
       axisColumn: 'Колонка',
@@ -404,8 +404,6 @@ const translations = {
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Ця дія недоступна для поточного розміру таблиці.',
       review: 'Перевірити',
-      back: 'Назад',
-      cancel: 'Скасувати',
       confirm: 'Підтвердити',
       confirmAddRow: 'Додати новий рядок: {{target}}?',
       confirmAddColumn: 'Додати нову колонку: {{target}}?',
@@ -415,7 +413,7 @@ const translations = {
         'Видалити {{target}}? Після синхронізації чернетки картки в цій колонці та їхні зображення будуть видалені з сервера.',
     },
     emptyPanel: {
-      description: 'У базі поки немає чернетки. Створіть гру через діалог.',
+      description: 'У базі поки немає чернетки. Натисніть на область дошки, щоб створити гру.',
     },
     createDialog: {
       promptTitle: 'Чернетки поки немає',
@@ -425,7 +423,6 @@ const translations = {
       title: 'Назва нової гри',
       detailsDescription: 'Введіть назву чернетки. Буде створено таблицю-заготовку.',
       nameLabel: 'Назва гри',
-      back: 'Назад',
       confirm: 'Створити',
       validationRequired: 'Введіть назву гри.',
       alreadyExists: 'Чернетка гри вже існує. Оновіть сторінку.',
@@ -440,14 +437,13 @@ const translations = {
     empty: 'Nie ma jeszcze gry w statusie szkicu. Utwórz nową, aby rozpocząć konfigurację.',
     draftBadge: 'Szkic',
     gameNameLabel: 'Nazwa gry',
-    columnLabel: 'Kolumna {{column}}',
-    rowLabel: 'Wiersz {{row}}',
+    columnLabel: 'Etykieta kolumny {{column}}',
+    rowLabel: 'Etykieta wiersza {{row}}',
     imagePlaceholder: 'Brak obrazu',
     cellTitleLabel: 'Nazwa karty',
     cellMedia: {
       upload: 'Prześlij',
       replace: 'Zamień',
-      remove: 'Usuń',
       uploading: 'Przesyłanie...',
       removing: 'Usuwanie...',
       uploadPrompt: 'Kliknij lub przeciągnij obraz',
@@ -463,7 +459,7 @@ const translations = {
         deleteFailed: 'Nie udało się usunąć obrazu. Spróbuj ponownie.',
       },
     },
-    cellPriceLabel: 'Cena',
+    cellPriceLabel: 'Wartość karty',
     save: 'Zapisz zmiany',
     saving: 'Zapisywanie...',
     persistenceHint:
@@ -479,15 +475,20 @@ const translations = {
     questions: {
       title: 'Zarządzanie pytaniami',
       description:
-        'Tymczasowy formularz admina do włączania/wyłączania pytań i kategorii we wspólnym wektorze.',
+        'Zarządzaj dostępnością pytań i kategoriami katalogu globalnego przed wyborem pytań do gry.',
       searchLabel: 'Szukaj po pytaniu/odpowiedzi',
-      categoryAll: 'Wszystkie kategorie',
       enableCategory: 'Włącz kategorię',
       disableCategory: 'Wyłącz kategorię',
       loading: 'Ładowanie katalogu pytań...',
       error: 'Nie udało się załadować katalogu pytań.',
       empty: 'Brak pytań dla bieżących filtrów.',
       meta: 'Kategoria: {{category}} · Nagroda: {{reward}} · Zadane: {{asked}} · Poprawne: {{correct}}',
+      enabledDescription:
+        'Włącz pytania, z których będzie korzystać ta gra. Zadawane są tylko włączone pytania.',
+      enabledCount: 'Włączono dla tej gry: {{count}}',
+      enableVisible: 'Włącz widoczne',
+      disableVisible: 'Wyłącz widoczne',
+      globallyDisabled: 'wyłączone globalnie',
     },
     reloadFromServer: 'Odśwież',
     remoteChangeNotice:
@@ -509,7 +510,7 @@ const translations = {
     resetFailed: 'Nie udało się zresetować konfiguracji gry. Spróbuj ponownie.',
     boardTitle: 'Plansza gry',
     boardDescription:
-      'Edytuj etykiety i pola kart, potem kliknij Zapisz. Zmiany układu zapisują się po potwierdzeniu w oknie dialogowym.',
+      'Etykiety wierszy i kolumn są tylko nagłówkami i nie określają wartości. Ustaw wartość każdej karty osobno, potem kliknij Zapisz.',
     settingsSidebar: {
       overline: 'Konfiguracja',
       title: 'Ustawienia gry',
@@ -524,7 +525,6 @@ const translations = {
       title: 'Zresetuj szkic',
       description:
         'To trwale usuwa bieżący szkic, w tym nazwę, planszę, karty i wszystkie przesłane obrazy w storage. Następnie trzeba będzie utworzyć nowy szkic.',
-      cancel: 'Anuluj',
       confirm: 'Zresetuj szkic',
       submitting: 'Resetowanie...',
     },
@@ -534,7 +534,6 @@ const translations = {
         'Wybierz czynność, obiekt i pozycję. Po potwierdzeniu zmiany zapisują się do wspólnego szkicu.',
       actionLabel: 'Czynność',
       actionAdd: 'Dodaj',
-      actionRemove: 'Usuń',
       axisLabel: 'Obiekt',
       axisRow: 'Wiersz',
       axisColumn: 'Kolumna',
@@ -549,8 +548,6 @@ const translations = {
       removeColumnTarget: 'Kolumna {{position}} ({{label}})',
       limitReached: 'Ta czynność jest niedostępna dla bieżącego rozmiaru planszy.',
       review: 'Sprawdź',
-      back: 'Wstecz',
-      cancel: 'Anuluj',
       confirm: 'Potwierdź',
       confirmAddRow: 'Dodać nowy wiersz: {{target}}?',
       confirmAddColumn: 'Dodać nową kolumnę: {{target}}?',
@@ -560,7 +557,7 @@ const translations = {
         'Usunąć {{target}}? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
     },
     emptyPanel: {
-      description: 'W bazie nie ma jeszcze szkicu. Utwórz grę w oknie dialogowym.',
+      description: 'W bazie nie ma jeszcze szkicu. Kliknij obszar planszy, aby utworzyć grę.',
     },
     createDialog: {
       promptTitle: 'Brak szkicu gry',
@@ -570,13 +567,12 @@ const translations = {
       title: 'Nazwa nowej gry',
       detailsDescription: 'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',
       nameLabel: 'Nazwa gry',
-      back: 'Wstecz',
       confirm: 'Utwórz',
       validationRequired: 'Wpisz nazwę gry.',
       alreadyExists: 'Szkic gry już istnieje. Odśwież stronę.',
       error: 'Nie udało się utworzyć szkicu gry. Spróbuj ponownie.',
     },
   },
-} as const
+}
 
 export default translations

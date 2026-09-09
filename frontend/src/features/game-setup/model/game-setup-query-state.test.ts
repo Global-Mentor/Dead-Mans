@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient } from '@tanstack/react-query'
+import { gameSetupDraftQueryOptions } from '../api/game-setup-queries.ts'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
 import {
   createLoadedDraftState,
@@ -22,7 +24,8 @@ const snapshot = {
   rowLabels: [],
   colLabels: [],
   cells: [],
-  enabledModifierCodes: [],
+  enabledModifierIds: [],
+  enabledQuestionIds: [],
 } satisfies GameSetupSnapshot
 
 describe('game setup query state', () => {
@@ -32,6 +35,7 @@ describe('game setup query state', () => {
 
   it('creates empty and loaded controller state', () => {
     expect(createLoadedDraftState(null)).toEqual({
+      requestId: 0,
       snapshot: null,
       savedDraft: null,
       initialDraft: null,
@@ -40,6 +44,7 @@ describe('game setup query state', () => {
     const loaded = createLoadedDraftState(snapshot)
     expect(getSnapshotDraftKey(snapshot)).toBe('game-1')
     expect(loaded.snapshot).toBe(snapshot)
+    expect(loaded.requestId).toBe(0)
     expect(loaded.savedDraft).toEqual(loaded.initialDraft)
     expect(loaded.savedDraft?.title).toBe('Draft')
   })
@@ -48,5 +53,17 @@ describe('game setup query state', () => {
     apiMocks.fetchDraftGameSetupSnapshot.mockResolvedValue(snapshot)
 
     await expect(loadGameSetupDraftQueryState()).resolves.toEqual(createLoadedDraftState(snapshot))
+  })
+
+  it('loads through React Query without treating its context as a request id', async () => {
+    apiMocks.fetchDraftGameSetupSnapshot.mockResolvedValue(snapshot)
+    const client = new QueryClient()
+    try {
+      await expect(client.fetchQuery(gameSetupDraftQueryOptions)).resolves.toEqual(
+        createLoadedDraftState(snapshot),
+      )
+    } finally {
+      client.clear()
+    }
   })
 })

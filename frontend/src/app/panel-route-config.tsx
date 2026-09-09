@@ -1,127 +1,123 @@
-import type { ParseKeys } from 'i18next'
 import type { ComponentType, LazyExoticComponent } from 'react'
-import { lazy } from 'react'
-import type { AuthRole } from '../shared/api/contracts/index.ts'
-import { GameBoardRealtimeSync } from '../features/game-board/realtime/GameBoardRealtimeSync.tsx'
-import { GameSetupRealtimeSync } from '../features/game-setup/realtime/GameSetupRealtimeSync.tsx'
+import { lazyPanelPage } from './lazy-panel-page.ts'
+import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
+import { panelRoutes, type PanelRouteDefinition } from './panel-route-metadata.ts'
 
-export const panelRootPath = '/panel'
-
-const authenticatedPanelRoles = [
-  'viewer',
-  'moderator',
-  'admin',
-] as const satisfies readonly AuthRole[]
-
-type PanelRoutePage = LazyExoticComponent<ComponentType<unknown>>
-type PanelRouteLabelKey = Extract<ParseKeys, `navigation.items.${string}.label`>
-
-export type PanelRouteDefinition = {
-  id: string
-  path: string
-  fullPath: string
-  labelKey: PanelRouteLabelKey
-  allowedRoles?: readonly AuthRole[]
-}
-
-type PanelRouteConfigInput = Omit<PanelRouteDefinition, 'fullPath'> & {
-  Page: PanelRoutePage
-  Sync?: ComponentType
-}
+type PanelRoutePage = LazyExoticComponent<ComponentType>
 
 type PanelRouteConfigEntry = PanelRouteDefinition & {
   Page: PanelRoutePage
   Sync?: ComponentType
 }
 
-function createPanelRouteEntry(entry: PanelRouteConfigInput): PanelRouteConfigEntry {
-  return {
-    ...entry,
-    fullPath: `${panelRootPath}/${entry.path}`,
-  }
-}
+const panelPages = {
+  'game-history': lazyPanelPage(
+    () => import('../features/game-history/GameHistoryPage.tsx'),
+    'GameHistoryPage',
+    [translations.gameHistory],
+  ),
+  'modifier-history': lazyPanelPage(
+    () => import('../features/modifier-history/ModifierHistoryPage.tsx'),
+    'ModifierHistoryPage',
+    [translations.modifierHistory],
+  ),
+  'game-leaderboard': lazyPanelPage(
+    () => import('../features/game-history/GameHistoryPage.tsx'),
+    'CurrentGameLeaderboardPage',
+    [translations.gameHistory],
+  ),
+  'game-board': lazyPanelPage(
+    () => import('../features/game-board/GameBoardPage.tsx'),
+    'GameBoardPage',
+    [
+      translations.gameBoard,
+      translations.gameModifiers,
+      translations.gameCatalog,
+      translations.gameHistory,
+      translations.gameRegistration,
+    ],
+  ),
+  'game-application': lazyPanelPage(
+    () => import('../features/game-application/GameApplicationPage.tsx'),
+    'GameApplicationPage',
+    [translations.gameApplication, translations.gameRegistration],
+  ),
+  'game-modifiers': lazyPanelPage(
+    () => import('./panel-pages/GameModifiersRoutePage.tsx'),
+    'GameModifiersRoutePage',
+    [
+      translations.gameModifiers,
+      translations.gameCatalog,
+      translations.gameBoard,
+      translations.gameHistory,
+      translations.gameRegistration,
+    ],
+  ),
+  'game-quiz': lazyPanelPage(
+    () => import('../features/game-quiz/GameQuizPage.tsx'),
+    'GameQuizPage',
+    [translations.gameQuiz],
+  ),
+  'game-setup': lazyPanelPage(
+    () => import('../features/game-setup/GameSetupPage.tsx'),
+    'GameSetupPage',
+    [translations.gameSetup, translations.gameCatalog],
+  ),
+  'admin-modifiers': lazyPanelPage(
+    () => import('../features/game-setup/AdminGameModifiersPage.tsx'),
+    'AdminGameModifiersPage',
+    [translations.gameSetup, translations.gameCatalog],
+  ),
+  'admin-questions': lazyPanelPage(
+    () => import('../features/game-setup/AdminGameQuestionsPage.tsx'),
+    'AdminGameQuestionsPage',
+    [translations.gameSetup, translations.gameCatalog],
+  ),
+  'catalog-modifiers': lazyPanelPage(
+    () => import('../features/game-catalog/CatalogModifiersPage.tsx'),
+    'CatalogModifiersPage',
+    [translations.gameCatalog],
+  ),
+  'catalog-questions': lazyPanelPage(
+    () => import('../features/game-catalog/CatalogQuestionsPage.tsx'),
+    'CatalogQuestionsPage',
+    [translations.gameCatalog],
+  ),
+  'team-registrations': lazyPanelPage(
+    () => import('../features/team-registrations/TeamRegistrationsPage.tsx'),
+    'TeamRegistrationsPage',
+    [translations.teamRegistrations, translations.gameApplication, translations.gameRegistration],
+  ),
+  'role-administration': lazyPanelPage(
+    () => import('../features/role-administration/RoleAdministrationPage.tsx'),
+    'RoleAdministrationPage',
+    [translations.roleAdministration],
+  ),
+} as const satisfies Record<(typeof panelRoutes)[number]['id'], PanelRoutePage>
 
-function definePanelRouteConfig<const T extends readonly PanelRouteConfigEntry[]>(config: T): T {
-  return config
-}
+const panelSyncComponents = {
+  'game-board': lazyPanelPage(
+    () => import('../features/game-board/realtime/GameBoardRealtimeSync.tsx'),
+    'GameBoardRealtimeSync',
+  ),
+  'game-modifiers': lazyPanelPage(
+    () => import('../features/game-modifiers/realtime/GameModifiersRealtimeSync.tsx'),
+    'GameModifiersRealtimeSync',
+  ),
+  'game-quiz': lazyPanelPage(
+    () => import('../features/game-quiz/GameQuizRealtimeSync.tsx'),
+    'GameQuizRealtimeSync',
+  ),
+  'game-setup': lazyPanelPage(
+    () => import('../features/game-setup/realtime/GameSetupRealtimeSync.tsx'),
+    'GameSetupRealtimeSync',
+  ),
+} as const satisfies Partial<Record<(typeof panelRoutes)[number]['id'], ComponentType>>
 
-export const panelRouteConfig = definePanelRouteConfig([
-  createPanelRouteEntry({
-    id: 'game-board',
-    path: 'game-board',
-    labelKey: 'navigation.items.gameBoard.label',
-    allowedRoles: authenticatedPanelRoles,
-    Page: lazy(() =>
-      import('../features/game-board/GameBoardPage.tsx').then((module) => ({
-        default: module.GameBoardPage,
-      })),
-    ),
-    Sync: GameBoardRealtimeSync,
-  }),
-  createPanelRouteEntry({
-    id: 'game-application',
-    path: 'game-application',
-    labelKey: 'navigation.items.gameApplication.label',
-    allowedRoles: authenticatedPanelRoles,
-    Page: lazy(() =>
-      import('../features/game-application/GameApplicationPage.tsx').then((module) => ({
-        default: module.GameApplicationPage,
-      })),
-    ),
-  }),
-  createPanelRouteEntry({
-    id: 'game-setup',
-    path: 'game-setup',
-    labelKey: 'navigation.items.gameSetup.label',
-    allowedRoles: ['admin'],
-    Page: lazy(() =>
-      import('../features/game-setup/GameSetupPage.tsx').then((module) => ({
-        default: module.GameSetupPage,
-      })),
-    ),
-    Sync: GameSetupRealtimeSync,
-  }),
-  createPanelRouteEntry({
-    id: 'team-registrations',
-    path: 'team-registrations',
-    labelKey: 'navigation.items.teamRegistrations.label',
-    allowedRoles: ['admin'],
-    Page: lazy(() =>
-      import('../features/team-registrations/TeamRegistrationsPage.tsx').then((module) => ({
-        default: module.TeamRegistrationsPage,
-      })),
-    ),
-  }),
-])
-
-type PanelRouteId = (typeof panelRouteConfig)[number]['id']
-
-type PanelRouteMetadata = Omit<PanelRouteConfigEntry, 'Page' | 'Sync'> & {
-  id: PanelRouteId
-}
-
-function toPanelRouteMetadata(entry: (typeof panelRouteConfig)[number]): PanelRouteMetadata {
-  return {
-    id: entry.id,
-    path: entry.path,
-    fullPath: entry.fullPath,
-    labelKey: entry.labelKey,
-    ...(entry.allowedRoles ? { allowedRoles: entry.allowedRoles } : {}),
-  }
-}
-
-export const panelRoutes = panelRouteConfig.map(toPanelRouteMetadata)
-
-function requirePanelRoute(routeId: PanelRouteId): PanelRouteMetadata {
-  const route = panelRoutes.find(({ id }) => id === routeId)
-  if (!route) {
-    throw new Error(`Panel route "${routeId}" is not configured`)
-  }
-
-  return route
-}
-
-export const gameBoardRoute = requirePanelRoute('game-board')
-export const gameApplicationRoute = requirePanelRoute('game-application')
-export const gameSetupRoute = requirePanelRoute('game-setup')
-export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
+export const panelRouteConfig = panelRoutes.map((definition) => ({
+  ...definition,
+  Page: panelPages[definition.id as keyof typeof panelPages],
+  ...(definition.id in panelSyncComponents
+    ? { Sync: panelSyncComponents[definition.id as keyof typeof panelSyncComponents] }
+    : {}),
+})) satisfies readonly PanelRouteConfigEntry[]

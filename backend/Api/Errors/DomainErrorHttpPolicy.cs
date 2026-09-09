@@ -36,7 +36,9 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamNotFound,
                 AppMessages.ErrorCodes.GameRegistrationTeamNotFound
             ),
-            GameRegistrationErrorCode.TeamNotJoinable or GameRegistrationErrorCode.TeamFull => new(
+            GameRegistrationErrorCode.TeamNotJoinable
+                or GameRegistrationErrorCode.TeamFull
+                or GameRegistrationErrorCode.TargetTeamSameAsSource => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationTeamNotJoinable,
                 AppMessages.ErrorCodes.GameRegistrationTeamNotJoinable
@@ -72,6 +74,26 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationPendingInvitationExists,
                 AppMessages.ErrorCodes.GameRegistrationPendingInvitation
             ),
+            GameRegistrationErrorCode.PendingOutgoingInvitation => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationPendingOutgoingInvitation,
+                AppMessages.ErrorCodes.GameRegistrationPendingOutgoingInvitation
+            ),
+            GameRegistrationErrorCode.TeamInviteNotAllowed => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamInviteNotAllowed,
+                AppMessages.ErrorCodes.GameRegistrationTeamInviteNotAllowed
+            ),
+            GameRegistrationErrorCode.TeamActiveInGame => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamActiveInGame,
+                AppMessages.ErrorCodes.GameRegistrationTeamActiveInGame
+            ),
+            GameRegistrationErrorCode.InvalidTeamName => new(
+                StatusCodes.Status400BadRequest,
+                AppMessages.Client.GameRegistrationInvalidTeamName,
+                AppMessages.ErrorCodes.GameRegistrationInvalidTeamName
+            ),
             GameRegistrationErrorCode.OperationFailed => new(
                 StatusCodes.Status500InternalServerError,
                 AppMessages.Client.GameRegistrationOperationFailed,
@@ -97,22 +119,27 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameNotReadyForStart,
                 AppMessages.ErrorCodes.GameLifecycleGameNotReady
             ),
+            GameLifecycleErrorCode.ModifierVersionBindingMissing => new(
+                StatusCodes.Status409Conflict,
+                "An enabled modifier cannot be bound to an immutable revision.",
+                AppMessages.ErrorCodes.GameModifierVersionBindingMissing
+            ),
             GameLifecycleErrorCode.GameNotActive => new(
                 StatusCodes.Status404NotFound,
                 AppMessages.Client.GameNotActiveForFinish,
                 AppMessages.ErrorCodes.GameLifecycleGameNotActive
             ),
-            GameLifecycleErrorCode.ReadyGameAlreadyExists => new(
+            GameLifecycleErrorCode.CurrentGameAlreadyExists => new(
                 StatusCodes.Status409Conflict,
-                AppMessages.Client.ReadyGameAlreadyExists,
-                AppMessages.ErrorCodes.GameLifecycleReadyAlreadyExists
+                AppMessages.Client.CurrentGameAlreadyExists,
+                AppMessages.ErrorCodes.GameLifecycleCurrentAlreadyExists
             ),
             GameLifecycleErrorCode.ActiveGameAlreadyExists => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.ActiveGameAlreadyExists,
                 AppMessages.ErrorCodes.GameLifecycleActiveAlreadyExists
             ),
-            GameLifecycleErrorCode.NoParticipationSlots => new(
+            GameLifecycleErrorCode.NoTeamSlots => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationSlotsRequired,
                 AppMessages.ErrorCodes.GameLifecycleRegistrationSlotsRequired
@@ -122,15 +149,70 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationInvalidTeamSizeLimits,
                 AppMessages.ErrorCodes.GameLifecycleInvalidTeamSizeLimits
             ),
+            GameLifecycleErrorCode.NoConfirmedTeams => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleNoConfirmedTeams,
+                AppMessages.ErrorCodes.GameLifecycleNoConfirmedTeams
+            ),
+            GameLifecycleErrorCode.UnconfirmedTeams => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleUnconfirmedTeams,
+                AppMessages.ErrorCodes.GameLifecycleUnconfirmedTeams
+            ),
+            GameLifecycleErrorCode.PendingInvitations => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecyclePendingInvitations,
+                AppMessages.ErrorCodes.GameLifecyclePendingInvitations
+            ),
+            GameLifecycleErrorCode.PendingDisbandRequests => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecyclePendingDisbandRequests,
+                AppMessages.ErrorCodes.GameLifecyclePendingDisbandRequests
+            ),
+            GameLifecycleErrorCode.InvalidConfirmedTeamRoster => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleInvalidConfirmedTeamRoster,
+                AppMessages.ErrorCodes.GameLifecycleInvalidConfirmedTeamRoster
+            ),
             GameLifecycleErrorCode.DraftDeleteNotAllowed => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.DraftGameDeleteNotAllowed,
                 AppMessages.ErrorCodes.GameLifecycleDraftDeleteNotAllowed
             ),
+            GameLifecycleErrorCode.GameArchiveNotAllowed => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameArchiveNotAllowed,
+                AppMessages.ErrorCodes.GameLifecycleArchiveNotAllowed
+            ),
             GameLifecycleErrorCode.GameNotFound => new(
                 StatusCodes.Status404NotFound,
                 AppMessages.Client.GameLifecycleGameNotFound,
                 AppMessages.ErrorCodes.GameLifecycleGameNotFound
+            ),
+            GameLifecycleErrorCode.FinishRoundInProgress => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishRoundInProgress,
+                AppMessages.ErrorCodes.GameFinishRoundInProgress
+            ),
+            GameLifecycleErrorCode.FinishStaleVersion => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishStaleVersion,
+                AppMessages.ErrorCodes.GameFinishStaleVersion
+            ),
+            GameLifecycleErrorCode.FinishWarningsNotAcknowledged => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishWarningsNotAcknowledged,
+                AppMessages.ErrorCodes.GameFinishWarningsNotAcknowledged
+            ),
+            GameLifecycleErrorCode.FinishModifierStateInvalid => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishModifierStateInvalid,
+                AppMessages.ErrorCodes.GameFinishModifierStateInvalid
+            ),
+            GameLifecycleErrorCode.FinishInvalidRequest => new(
+                StatusCodes.Status400BadRequest,
+                AppMessages.Client.GameFinishInvalidRequest,
+                AppMessages.ErrorCodes.GameFinishInvalidRequest
             )
         };
 #pragma warning restore CS8524

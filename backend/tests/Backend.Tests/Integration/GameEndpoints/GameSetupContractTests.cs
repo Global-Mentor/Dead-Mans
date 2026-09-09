@@ -29,6 +29,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
     public GameSetupContractTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
+        _factory.ResetDatabase();
         _client = factory.CreateClient();
     }
 
@@ -41,18 +42,14 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
     }
 
     [Fact]
-    public async Task GetSetup_WhenAdminAndNoDraft_ReturnsNotFound()
+    public async Task GetSetup_WhenAdminAndNoDraft_ReturnsNoContent()
     {
         await ClearGamesAsync();
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
 
         var response = await adminClient.GetAsync("/api/game/setup");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        Assert.NotNull(payload);
-        Assert.Equal(AppMessages.Client.NoDraftGameForSetup, payload.Error);
-        Assert.Equal(AppMessages.ErrorCodes.GameSetupNoDraft, payload.Code);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -141,7 +138,7 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
 
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
         var getResponse = await adminClient.GetAsync("/api/game/setup");
-        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, getResponse.StatusCode);
     }
 
     [Fact]
@@ -460,8 +457,8 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        dbContext.GameActiveModifiers.RemoveRange(dbContext.GameActiveModifiers);
-        dbContext.GameModifierSelections.RemoveRange(dbContext.GameModifierSelections);
+        dbContext.GameModifierActivations.RemoveRange(dbContext.GameModifierActivations);
+        dbContext.GameEnabledModifiers.RemoveRange(dbContext.GameEnabledModifiers);
         dbContext.BoardCellMedia.RemoveRange(dbContext.BoardCellMedia);
         dbContext.BoardCells.RemoveRange(dbContext.BoardCells);
         dbContext.GameBoards.RemoveRange(dbContext.GameBoards);

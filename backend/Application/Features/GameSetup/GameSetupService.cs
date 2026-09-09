@@ -13,6 +13,7 @@ public sealed class GameSetupService : IGameSetupService
 {
     private readonly IGameSetupRepository _repository;
     private readonly IGameModifierRepository _gameModifierRepository;
+    private readonly IGameQuestionRepository _gameQuestionRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly IGameSetupEventsPublisher _eventsPublisher;
     private readonly MediaStorageSettings _storageSettings;
@@ -21,6 +22,7 @@ public sealed class GameSetupService : IGameSetupService
     public GameSetupService(
         IGameSetupRepository repository,
         IGameModifierRepository gameModifierRepository,
+        IGameQuestionRepository gameQuestionRepository,
         IObjectStorage objectStorage,
         IGameSetupEventsPublisher eventsPublisher,
         IOptions<MediaStorageSettings> storageSettings,
@@ -29,6 +31,7 @@ public sealed class GameSetupService : IGameSetupService
     {
         _repository = repository;
         _gameModifierRepository = gameModifierRepository;
+        _gameQuestionRepository = gameQuestionRepository;
         _objectStorage = objectStorage;
         _eventsPublisher = eventsPublisher;
         _storageSettings = storageSettings.Value;
@@ -61,7 +64,7 @@ public sealed class GameSetupService : IGameSetupService
             return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.DraftAlreadyExists);
         }
 
-        await PublishDraftChangedBestEffortAsync(cancellationToken);
+        await PublishDraftChangedBestEffortAsync();
         return new CreateDraftGameSetupResult(CreateDraftGameSetupOutcome.Created, snapshot);
     }
 
@@ -95,20 +98,36 @@ public sealed class GameSetupService : IGameSetupService
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidCells);
         }
 
-        if (!GameSetupDraftValidator.TryNormalizeEnabledModifierCodes(
-                update.EnabledModifierCodes,
-                out var normalizedEnabledModifierCodes
+        if (!GameSetupDraftValidator.TryNormalizeEnabledModifierIds(
+                update.EnabledModifierIds,
+                out var normalizedEnabledModifierIds
             ))
         {
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledModifiers);
         }
 
-        if (!await _gameModifierRepository.ModifierCodesExistAsync(
-                normalizedEnabledModifierCodes,
+        if (!await _gameModifierRepository.ModifierIdsExistAsync(
+                normalizedEnabledModifierIds,
                 cancellationToken
             ))
         {
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledModifiers);
+        }
+
+        if (!GameSetupDraftValidator.TryNormalizeEnabledQuestionIds(
+                update.EnabledQuestionIds,
+                out var normalizedEnabledQuestionIds
+            ))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledQuestions);
+        }
+
+        if (!await _gameQuestionRepository.QuestionIdsExistAsync(
+                normalizedEnabledQuestionIds,
+                cancellationToken
+            ))
+        {
+            return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledQuestions);
         }
 
         var normalizedUpdate = new GameSetupDraftUpdate(
@@ -117,7 +136,8 @@ public sealed class GameSetupService : IGameSetupService
             normalizedRowLabels,
             normalizedColumnLabels,
             normalizedCells,
-            normalizedEnabledModifierCodes
+            normalizedEnabledModifierIds,
+            normalizedEnabledQuestionIds
         );
 
         var saveResult = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);
@@ -132,7 +152,7 @@ public sealed class GameSetupService : IGameSetupService
 
         if (result.Outcome == UpdateDraftGameSetupOutcome.Updated)
         {
-            await PublishDraftChangedBestEffortAsync(cancellationToken);
+            await PublishDraftChangedBestEffortAsync();
         }
 
         return result;
@@ -156,14 +176,14 @@ public sealed class GameSetupService : IGameSetupService
             cancellationToken
         );
 
-        await PublishDraftChangedBestEffortAsync(cancellationToken);
+        await PublishDraftChangedBestEffortAsync();
         return new DeleteDraftGameSetupResult(DeleteDraftGameSetupOutcome.Deleted);
     }
 
-    private Task PublishDraftChangedBestEffortAsync(CancellationToken cancellationToken)
+    private Task PublishDraftChangedBestEffortAsync()
     {
         return RealtimePublishGuard.TryPublishAsync(
-            () => _eventsPublisher.PublishDraftChangedAsync(cancellationToken),
+            publishToken => _eventsPublisher.PublishDraftChangedAsync(publishToken),
             _logger,
             AppMessages.Logs.RealtimeGameSetupDraftChangedPublishFailed
         );

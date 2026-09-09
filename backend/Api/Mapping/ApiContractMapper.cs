@@ -1,10 +1,11 @@
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Application.Contracts;
+using backend.Domain.GameModifiers;
 
 namespace backend.Api.Mapping;
 
-public static class ApiContractMapper
+public static partial class ApiContractMapper
 {
     public static AuthSessionDto ToDto(this AuthSession session)
     {
@@ -19,6 +20,32 @@ public static class ApiContractMapper
         );
     }
 
+    public static RoleAdministrationUserDto ToDto(this RoleAdministrationUser user)
+    {
+        return new RoleAdministrationUserDto(
+            user.UserId,
+            user.TwitchLogin,
+            user.DisplayName,
+            user.IsActive,
+            user.Roles
+                .Select(TryMapAuthRole)
+                .Where(role => role.HasValue)
+                .Select(role => role!.Value)
+                .ToArray(),
+            user.IsPermanentSuperAdmin
+        );
+    }
+
+    public static RoleAdministrationPageDto ToDto(this RoleAdministrationPage page)
+    {
+        return new RoleAdministrationPageDto(
+            page.Items.Select(ToDto).ToArray(),
+            page.Page,
+            page.PageSize,
+            page.TotalCount
+        );
+    }
+
     public static GameSetupDraftUpdate ToUpdateModel(this UpdateGameSetupRequestDto request)
     {
         return new GameSetupDraftUpdate(
@@ -29,7 +56,12 @@ public static class ApiContractMapper
             request.Cells
                 .Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost))
                 .ToArray(),
-            request.EnabledModifierCodes ?? Array.Empty<string>()
+            (request.EnabledModifierIds ?? Array.Empty<string>())
+                .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
+                .ToArray(),
+            (request.EnabledQuestionIds ?? Array.Empty<string>())
+                .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
+                .ToArray()
         );
     }
 
@@ -46,7 +78,8 @@ public static class ApiContractMapper
             snapshot.RowLabels.ToArray(),
             snapshot.ColLabels.ToArray(),
             snapshot.Cells.Select(ToDto).ToArray(),
-            snapshot.EnabledModifierCodes.ToArray()
+            snapshot.EnabledModifierIds.Select(id => id.ToString()).ToArray(),
+            snapshot.EnabledQuestionIds.ToArray()
         );
     }
 
@@ -68,138 +101,64 @@ public static class ApiContractMapper
             snapshot.RowLabels.ToArray(),
             snapshot.ColLabels.ToArray(),
             snapshot.Cells.Select(ToDto).ToArray(),
-            snapshot.EnabledModifierCodes.ToArray(),
-            snapshot.ActiveModifiers.Select(ToDto).ToArray()
+            snapshot.EnabledModifierIds.Select(id => id.ToString()).ToArray(),
+            snapshot.ActiveModifiers.Select(ToDto).ToArray(),
+            snapshot.ActiveTeamId
+        );
+    }
+
+    public static GameUserNotificationDto ToDto(this GameUserNotification notification)
+    {
+        return new GameUserNotificationDto(
+            notification.NotificationId.ToString(),
+            notification.Type,
+            notification.CreatedAtUtc,
+            notification.ModifierName,
+            notification.ActorDisplayName,
+            notification.QuizPointsDelta
+        );
+    }
+
+    public static GameTeamQueueItemDto ToDto(this GameTeamQueueItem item)
+    {
+        return new GameTeamQueueItemDto(
+            item.TeamId.ToString(),
+            item.TeamName,
+            item.TeamSlotIndex,
+            item.IsPlayed,
+            item.PlayedAtUtc,
+            item.Participants
+                .Select(
+                    participant =>
+                        new GameTeamQueueParticipantDto(
+                            participant.UserId.ToString(),
+                            participant.DisplayName
+                        )
+                )
+                .ToArray()
+        );
+    }
+
+    public static GameTeamQueueSummaryDto ToDto(this GameTeamQueueSummary summary)
+    {
+        return new GameTeamQueueSummaryDto(
+            summary.TotalTeams,
+            summary.PlayedTeams,
+            summary.RemainingTeams
+        );
+    }
+
+    public static GameTeamQueueResultDto ToDto(this GameTeamQueueResult result)
+    {
+        return new GameTeamQueueResultDto(
+            result.Summary.ToDto(),
+            result.Teams.Select(x => x.ToDto()).ToArray()
         );
     }
 
     public static GameCellOpenedEventDto ToDto(this GameCellOpenedEvent @event)
     {
         return new GameCellOpenedEventDto(@event.GameId, @event.Version, ToDto(@event.Cell));
-    }
-
-    public static GameModifierDefinitionDto ToDto(this GameModifierDefinition definition)
-    {
-        return new GameModifierDefinitionDto(
-            definition.Code,
-            definition.Kind,
-            definition.Category,
-            definition.ScoringType,
-            definition.Tier,
-            definition.Name,
-            definition.Description,
-            definition.ActivationCost,
-            definition.DefaultLimitPerGame,
-            definition.IconEmoji,
-            definition.ActivationCommand
-        );
-    }
-
-    public static GameModifierActivationDto ToDto(this GameModifierActivation activation)
-    {
-        return new GameModifierActivationDto(
-            activation.ModifierCode,
-            activation.ActivatedByUserId,
-            activation.ActivatedAtUtc
-        );
-    }
-
-    public static GameModifierActivatedEventDto ToDto(this GameModifierActivatedEvent @event)
-    {
-        return new GameModifierActivatedEventDto(@event.GameId, @event.Version, @event.Activation.ToDto());
-    }
-
-    public static GameQuestionCatalogItemDto ToDto(this GameQuestionCatalogItem item)
-    {
-        return new GameQuestionCatalogItemDto(
-            item.QuestionId.ToString(),
-            item.VectorCode,
-            item.QuestionCode,
-            item.Category,
-            item.Text,
-            item.Answer,
-            item.Reward,
-            item.IsEnabled,
-            item.AskedTotalCount,
-            item.CorrectTotalCount,
-            item.LastAskedAtUtc
-        );
-    }
-
-    public static AskedGameQuestionDto ToDto(this AskedGameQuestion question)
-    {
-        return new AskedGameQuestionDto(
-            question.RoundId.ToString(),
-            question.GameId.ToString(),
-            question.AskOrder,
-            question.QuestionId.ToString(),
-            question.VectorCode,
-            question.QuestionCode,
-            question.Category,
-            question.Text,
-            question.Reward,
-            question.AskedAtUtc
-        );
-    }
-
-    public static GameQuestionRoundSummaryDto ToDto(this GameQuestionRoundSummary round)
-    {
-        return new GameQuestionRoundSummaryDto(
-            round.RoundId.ToString(),
-            round.GameId.ToString(),
-            round.AskOrder,
-            round.QuestionId.ToString(),
-            round.QuestionText,
-            round.Category,
-            round.Reward,
-            round.Status,
-            round.AskedAtUtc,
-            round.AnsweredAtUtc,
-            round.AnsweredByDisplayName,
-            round.AnsweredByUserId?.ToString(),
-            round.AnsweredForUserId?.ToString(),
-            round.SubmittedAnswer,
-            round.IsCorrect,
-            round.AwardedPoints
-        );
-    }
-
-    public static UserGameHistoryItemDto ToDto(this UserGameHistoryItem item)
-    {
-        return new UserGameHistoryItemDto(
-            item.GameId.ToString(),
-            item.GameTitle,
-            item.GameStatus,
-            item.CreatedAtUtc,
-            item.StartedAtUtc,
-            item.FinishedAtUtc,
-            item.ModifierActivations.Select(ToDto).ToArray(),
-            item.QuestionAnswers.Select(ToDto).ToArray()
-        );
-    }
-
-    public static UserGameModifierActivationHistoryItemDto ToDto(
-        this UserGameModifierActivationHistoryItem item
-    )
-    {
-        return new UserGameModifierActivationHistoryItemDto(item.ModifierCode, item.ActivatedAtUtc);
-    }
-
-    public static UserGameQuestionAnswerHistoryItemDto ToDto(
-        this UserGameQuestionAnswerHistoryItem item
-    )
-    {
-        return new UserGameQuestionAnswerHistoryItemDto(
-            item.RoundId.ToString(),
-            item.QuestionId.ToString(),
-            item.QuestionText,
-            item.Category,
-            item.AnsweredAtUtc,
-            item.IsCorrect,
-            item.AwardedPoints,
-            item.SubmittedAnswer,
-            item.AnsweredByUserId?.ToString()
-        );
     }
 
     private static GameBoardCellDto ToDto(GameBoardCell cell)
@@ -221,6 +180,7 @@ public static class ApiContractMapper
     {
         return role switch
         {
+            AuthRoleCodes.SuperAdmin => AuthRole.SuperAdmin,
             AuthRoleCodes.Admin => AuthRole.Admin,
             AuthRoleCodes.Moderator => AuthRole.Moderator,
             AuthRoleCodes.Viewer => AuthRole.Viewer,

@@ -3,7 +3,11 @@ import { Box, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/mater
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { gameSetupRoute, teamRegistrationsRoute } from '../routes/app-routes.ts'
+import {
+  gameSetupRoute,
+  roleAdministrationRoute,
+  teamRegistrationsRoute,
+} from '../routes/app-routes.ts'
 import type { AuthContextValue, AuthUser } from '../shared/auth/auth-context.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
@@ -14,16 +18,12 @@ interface PanelProfileMenuProps {
   onLogout: AuthContextValue['logout']
 }
 
-/**
- * Profile trigger plus its dropdown menu. Owns the menu anchor state and the
- * admin-only administration links; the menu itself is portalled, so rendering
- * it next to the trigger does not affect the header layout.
- */
 export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfileMenuProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null)
-  const canAdminister = user.roles.includes('admin')
+  const canAdminister = user.roles.includes('admin') || user.roles.includes('superadmin')
+  const canManageRoles = user.roles.includes('superadmin')
 
   const closeProfile = () => setProfileAnchor(null)
 
@@ -95,6 +95,16 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
             {t('navigation.administration')}
           </Typography>
         ) : null}
+        {canManageRoles ? (
+          <MenuItem
+            component={RouterLink}
+            to={roleAdministrationRoute.fullPath}
+            selected={activeRouteId === roleAdministrationRoute.id}
+            onClick={closeProfile}
+          >
+            {t(roleAdministrationRoute.labelKey)}
+          </MenuItem>
+        ) : null}
         {canAdminister ? (
           <MenuItem
             component={RouterLink}
@@ -102,7 +112,7 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
             selected={activeRouteId === gameSetupRoute.id}
             onClick={closeProfile}
           >
-            {t(gameSetupRoute.labelKey)}
+            {t('navigation.menus.gameSetup')}
           </MenuItem>
         ) : null}
         {canAdminister ? (

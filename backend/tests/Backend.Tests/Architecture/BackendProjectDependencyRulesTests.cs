@@ -35,7 +35,6 @@ public sealed class BackendProjectDependencyRulesTests
             backendRoot,
             "backend.Infrastructure.csproj",
             [
-                "backend.Api.csproj",
                 "backend.Application.csproj",
                 "backend.Data.csproj",
                 "backend.Domain.csproj"
@@ -48,10 +47,23 @@ public sealed class BackendProjectDependencyRulesTests
                 "backend.Api.csproj",
                 "backend.Application.csproj",
                 "backend.Data.csproj",
-                "backend.Domain.csproj",
                 "backend.Infrastructure.csproj"
             ]
         );
+    }
+
+    [Fact]
+    public void ExecutableHost_ShouldCompileOnlyCompositionRoot()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var document = XDocument.Load(Path.Combine(backendRoot, "backend.csproj"));
+        var compileItems = document
+            .Descendants("Compile")
+            .Select(element => element.Attribute("Include")?.Value)
+            .OfType<string>()
+            .ToArray();
+
+        Assert.Equal(["Program.cs"], compileItems);
     }
 
     [Fact]
@@ -93,7 +105,11 @@ public sealed class BackendProjectDependencyRulesTests
         );
         AssertNoForbiddenUsings(
             Path.Combine(backendRoot, "Infrastructure"),
-            ["using backend.Controllers"]
+            [
+                "using backend.Api",
+                "using backend.Controllers",
+                "using Microsoft.AspNetCore.Cors"
+            ]
         );
     }
 
@@ -196,7 +212,7 @@ public sealed class BackendProjectDependencyRulesTests
     public void Controllers_ShouldUseApiErrorResultHelpersInsteadOfErrorResponseFactory()
     {
         var backendRoot = ResolveBackendRoot();
-        var controllersRoot = Path.Combine(backendRoot, "Controllers");
+        var controllersRoot = Path.Combine(backendRoot, "Api", "Controllers");
 
         var violations = Directory
             .EnumerateFiles(controllersRoot, "*.cs", SearchOption.AllDirectories)
@@ -235,7 +251,7 @@ public sealed class BackendProjectDependencyRulesTests
     public void Controllers_ShouldNotCatchGenericException_ForRequestPipelineErrors()
     {
         var backendRoot = ResolveBackendRoot();
-        var controllersRoot = Path.Combine(backendRoot, "Controllers");
+        var controllersRoot = Path.Combine(backendRoot, "Api", "Controllers");
 
         var violations = Directory
             .EnumerateFiles(controllersRoot, "*.cs", SearchOption.AllDirectories)
@@ -290,6 +306,68 @@ public sealed class BackendProjectDependencyRulesTests
     }
 
     [Fact]
+    public void ProductionProjects_ShouldEnforceRecommendedAnalyzersAndWarningsAsErrors()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var propsPath = Path.Combine(backendRoot, "Directory.Build.props");
+        var document = XDocument.Load(propsPath);
+
+        Assert.Equal(
+            "latest-recommended",
+            Assert.Single(document.Descendants("AnalysisLevel")).Value
+        );
+        Assert.Equal(
+            "true",
+            Assert.Single(document.Descendants("EnforceCodeStyleInBuild")).Value
+        );
+        Assert.Equal(
+            "true",
+            Assert.Single(document.Descendants("MSBuildTreatWarningsAsErrors")).Value
+        );
+        Assert.Equal(
+            "true",
+            Assert.Single(document.Descendants("TreatWarningsAsErrors")).Value
+        );
+    }
+
+    [Fact]
+    public void BackendProjects_ShouldUseCentralPackageVersionCatalog()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var catalogPath = Path.Combine(backendRoot, "Directory.Packages.props");
+        var catalog = XDocument.Load(catalogPath);
+
+        Assert.Equal(
+            "true",
+            Assert.Single(catalog.Descendants("ManagePackageVersionsCentrally")).Value
+        );
+
+        var violations = Directory
+            .EnumerateFiles(backendRoot, "*.csproj", SearchOption.AllDirectories)
+            .Where(path => !IsGeneratedProjectPath(backendRoot, path))
+            .SelectMany(path =>
+                XDocument
+                    .Load(path)
+                    .Descendants("PackageReference")
+                    .Where(reference =>
+                        reference.Attribute("Version") is not null
+                        || reference.Attribute("VersionOverride") is not null
+                    )
+                    .Select(reference =>
+                        $"{Path.GetRelativePath(backendRoot, path)} -> {reference.Attribute("Include")?.Value}"
+                    )
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Package versions must be declared only in Directory.Packages.props:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
     public void DomainErrorHttpPolicy_ShouldAvoidDefaultSwitchBranch()
     {
         var backendRoot = ResolveBackendRoot();
@@ -297,6 +375,838 @@ public sealed class BackendProjectDependencyRulesTests
         var content = File.ReadAllText(policyPath);
 
         Assert.DoesNotContain("_ =>", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CoreAndControllers_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = new[] { "Domain", "Application", Path.Combine("Api", "Controllers") }
+            .SelectMany(directory =>
+                Directory.EnumerateFiles(
+                    Path.Combine(backendRoot, directory),
+                    "*.cs",
+                    SearchOption.AllDirectories
+                )
+            )
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Core/application code must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void AuthenticationInfrastructure_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var authRoot = Path.Combine(backendRoot, "Infrastructure", "Auth");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = Directory
+            .EnumerateFiles(authRoot, "*.cs", SearchOption.AllDirectories)
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Authentication infrastructure must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameRegistrationPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceRoot = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = Directory
+            .EnumerateFiles(
+                persistenceRoot,
+                "DbGameRegistrationPersistence*.cs",
+                SearchOption.TopDirectoryOnly
+            )
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game registration persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameRegistrationPersistence_ShouldKeepResponsibilitiesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "DbGameRegistrationPersistence.cs",
+            "DbGameRegistrationPersistence.AdminTeams.cs",
+            "DbGameRegistrationPersistence.Invitations.cs",
+            "DbGameRegistrationPersistence.InvitationValidation.cs",
+            "DbGameRegistrationPersistence.TeamOperations.cs",
+            "DbGameRegistrationPersistence.Teams.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "DbGameRegistrationPersistence*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(
+                lineCount <= 500,
+                $"{fileName} grew to {lineCount} lines; split its persistence responsibility before adding more behavior."
+            );
+        }
+    }
+
+    [Fact]
+    public void GameModifierPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceRoot = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = Directory
+            .EnumerateFiles(
+                persistenceRoot,
+                "DbGameModifierRepository*.cs",
+                SearchOption.TopDirectoryOnly
+            )
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game modifier persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameModifierRepository_ShouldKeepPersistenceResponsibilitiesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "DbGameModifierRepository.cs",
+            "DbGameModifierRepository.Activations.cs",
+            "DbGameModifierRepository.ActivationSupport.cs",
+            "DbGameModifierRepository.Catalog.cs",
+            "DbGameModifierRepository.CatalogSupport.cs",
+            "DbGameModifierRepository.History.cs",
+            "DbGameModifierRepository.State.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "DbGameModifierRepository*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(
+                lineCount <= 500,
+                $"{fileName} grew to {lineCount} lines; split its persistence responsibility before adding more behavior."
+            );
+        }
+    }
+
+    [Fact]
+    public void GameLifecyclePersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceRoot = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var persistenceFiles = Directory.EnumerateFiles(
+            persistenceRoot,
+            "DbGameLifecyclePersistence*.cs",
+            SearchOption.TopDirectoryOnly
+        ).Append(Path.Combine(persistenceRoot, "GameTeamSlotInitializer.cs"));
+        var violations = persistenceFiles
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game lifecycle persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameQuestionPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var path = Path.Combine(
+            backendRoot,
+            "Infrastructure",
+            "Persistence",
+            "DbGameQuestionRepository.cs"
+        );
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = File.ReadAllLines(path)
+            .Select(
+                (line, index) => new
+                {
+                    Line = line.Trim(),
+                    LineNumber = index + 1
+                }
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game question persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameBoardPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var path = Path.Combine(
+            backendRoot,
+            "Infrastructure",
+            "Persistence",
+            "DbGameBoardRepository.cs"
+        );
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = File.ReadAllLines(path)
+            .Select(
+                (line, index) => new
+                {
+                    Line = line.Trim(),
+                    LineNumber = index + 1
+                }
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game board persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameRoundPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceRoot = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = Directory
+            .EnumerateFiles(
+                persistenceRoot,
+                "DbGameRoundRepository*.cs",
+                SearchOption.TopDirectoryOnly
+            )
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game round persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameRoundRepository_ShouldKeepWorkflowResponsibilitiesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "DbGameRoundRepository.cs",
+            "DbGameRoundRepository.ModifierScoring.cs",
+            "DbGameRoundRepository.ModifierScoringSupport.cs",
+            "DbGameRoundRepository.Projection.cs",
+            "DbGameRoundRepository.Queries.cs",
+            "DbGameRoundRepository.ScoringWorkflow.cs",
+            "DbGameRoundRepository.Support.cs",
+            "DbGameRoundRepository.Transitions.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "DbGameRoundRepository*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(
+                lineCount <= 450,
+                $"{fileName} grew to {lineCount} lines; split its workflow responsibility before adding more behavior."
+            );
+        }
+    }
+
+    [Fact]
+    public void GameSetupPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceRoot = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var paths = new[]
+        {
+            Path.Combine(persistenceRoot, "DbGameSetupRepository.cs"),
+            Path.Combine(persistenceRoot, "DbGameSetupCellMediaRepository.cs")
+        };
+        var violations = paths
+            .SelectMany(path =>
+                File.ReadAllLines(path).Select(
+                    (line, index) => new
+                    {
+                        Path = path,
+                        Line = line.Trim(),
+                        LineNumber = index + 1
+                    }
+                )
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, item.Path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game setup persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameNotificationPersistence_ShouldUseInjectedClock()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var path = Path.Combine(
+            backendRoot,
+            "Infrastructure",
+            "Persistence",
+            "DbGameNotificationRepository.cs"
+        );
+        var forbiddenClockAccess = new[]
+        {
+            "DateTime.UtcNow",
+            "DateTime.Now",
+            "DateTimeOffset.UtcNow",
+            "DateTimeOffset.Now"
+        };
+        var violations = File.ReadAllLines(path)
+            .Select(
+                (line, index) => new
+                {
+                    Line = line.Trim(),
+                    LineNumber = index + 1
+                }
+            )
+            .Where(item =>
+                forbiddenClockAccess.Any(value =>
+                    item.Line.Contains(value, StringComparison.Ordinal)
+                )
+            )
+            .Select(item =>
+                $"{Path.GetRelativePath(backendRoot, path)}:{item.LineNumber} -> {item.Line}"
+            )
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Game notification persistence must use injected TimeProvider:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, violations)
+        );
+    }
+
+    [Fact]
+    public void GameRegistrationService_ShouldKeepUseCasesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var featureDirectory = Path.Combine(
+            backendRoot,
+            "Application",
+            "Features",
+            "GameRegistration"
+        );
+        var expectedFiles = new[]
+        {
+            "GameRegistrationService.cs",
+            "GameRegistrationService.AdminTeams.cs",
+            "GameRegistrationService.Invitations.cs",
+            "GameRegistrationService.Queries.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(featureDirectory, "GameRegistrationService*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(featureDirectory, fileName)).Count();
+            Assert.True(lineCount <= 450, $"{fileName} grew to {lineCount} lines; split its use cases before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameModifierService_ShouldKeepUseCasesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var featureDirectory = Path.Combine(
+            backendRoot,
+            "Application",
+            "Features",
+            "GameModifiers"
+        );
+        var expectedFiles = new[]
+        {
+            "GameModifierService.cs",
+            "GameModifierService.Activations.cs",
+            "GameModifierService.Catalog.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(featureDirectory, "GameModifierService*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(featureDirectory, fileName)).Count();
+            Assert.True(
+                lineCount <= 350,
+                $"{fileName} grew to {lineCount} lines; split its use cases before adding more behavior."
+            );
+        }
+    }
+
+    [Fact]
+    public void GameRegistrationReadStore_ShouldKeepQueriesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "GameRegistrationReadStore.cs",
+            "GameRegistrationReadStore.Snapshots.cs",
+            "GameRegistrationReadStore.TeamProjections.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "GameRegistrationReadStore*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(lineCount <= 400, $"{fileName} grew to {lineCount} lines; split its query responsibility before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameQuestionRepository_ShouldKeepCatalogResponsibilitiesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "DbGameQuestionRepository.cs",
+            "DbGameQuestionRepository.Catalog.cs",
+            "DbGameQuestionRepository.Categories.cs",
+            "DbGameQuestionRepository.Import.cs",
+            "DbGameQuestionRepository.Questions.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "DbGameQuestionRepository*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(lineCount <= 350, $"{fileName} grew to {lineCount} lines; split its catalog responsibility before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void ModifierDomainEngine_ShouldKeepRegistryValidationAndCalculationSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var modifierDirectory = Path.Combine(backendRoot, "Domain", "GameModifiers");
+        var expectedFiles = new[]
+        {
+            "ModifierBehaviorValidator.cs",
+            "ModifierCalculationModels.cs",
+            "ModifierDomainEngine.cs",
+            "ModifierFormulaRegistry.cs"
+        };
+
+        foreach (var fileName in expectedFiles)
+        {
+            var path = Path.Combine(modifierDirectory, fileName);
+            Assert.True(File.Exists(path), $"Missing modifier domain responsibility file: {fileName}.");
+
+            var lineCount = File.ReadLines(path).Count();
+            Assert.True(
+                lineCount <= 450,
+                $"{fileName} grew to {lineCount} lines; split its domain responsibility before adding more behavior."
+            );
+        }
+    }
+
+    [Fact]
+    public void GameSetupRepository_ShouldKeepDraftResponsibilitiesSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var persistenceDirectory = Path.Combine(backendRoot, "Infrastructure", "Persistence");
+        var expectedFiles = new[]
+        {
+            "DbGameSetupRepository.cs",
+            "DbGameSetupRepository.Create.cs",
+            "DbGameSetupRepository.Delete.cs",
+            "DbGameSetupRepository.Queries.cs",
+            "DbGameSetupRepository.Update.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(persistenceDirectory, "DbGameSetupRepository*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(persistenceDirectory, fileName)).Count();
+            Assert.True(lineCount <= 350, $"{fileName} grew to {lineCount} lines; split its draft responsibility before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameModifierController_ShouldKeepEndpointGroupsSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersDirectory = Path.Combine(backendRoot, "Api", "Controllers");
+        var expectedFiles = new[]
+        {
+            "GameModifierController.cs",
+            "GameModifierController.Activations.cs",
+            "GameModifierController.AdminCatalog.cs",
+            "GameModifierController.Catalog.cs",
+            "GameModifierController.State.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(controllersDirectory, "GameModifierController*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(controllersDirectory, fileName)).Count();
+            Assert.True(lineCount <= 400, $"{fileName} grew to {lineCount} lines; split its endpoint group before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameQuestionController_ShouldKeepEndpointGroupsSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersDirectory = Path.Combine(backendRoot, "Api", "Controllers");
+        var expectedFiles = new[]
+        {
+            "GameQuestionController.cs",
+            "GameQuestionController.Catalog.cs",
+            "GameQuestionController.Categories.cs",
+            "GameQuestionController.Import.cs",
+            "GameQuestionController.Questions.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(controllersDirectory, "GameQuestionController*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(controllersDirectory, fileName)).Count();
+            Assert.True(lineCount <= 300, $"{fileName} grew to {lineCount} lines; split its endpoint group before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameRoundController_ShouldKeepEndpointGroupsSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersDirectory = Path.Combine(backendRoot, "Api", "Controllers");
+        var expectedFiles = new[]
+        {
+            "GameRoundController.cs",
+            "GameRoundController.Queries.cs",
+            "GameRoundController.Scoring.cs",
+            "GameRoundController.Start.cs",
+            "GameRoundController.Transitions.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(controllersDirectory, "GameRoundController*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(controllersDirectory, fileName)).Count();
+            Assert.True(lineCount <= 300, $"{fileName} grew to {lineCount} lines; split its endpoint group before adding more behavior.");
+        }
+    }
+
+    [Fact]
+    public void GameRegistrationController_ShouldKeepEndpointGroupsSeparated()
+    {
+        var backendRoot = ResolveBackendRoot();
+        var controllersDirectory = Path.Combine(backendRoot, "Api", "Controllers");
+        var expectedFiles = new[]
+        {
+            "GameRegistrationController.cs",
+            "GameRegistrationController.AdminTeams.cs",
+            "GameRegistrationController.Invitations.cs",
+            "GameRegistrationController.PlayerTeams.cs"
+        };
+
+        var actualFiles = Directory
+            .EnumerateFiles(controllersDirectory, "GameRegistrationController*.cs")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedFiles.OrderBy(name => name, StringComparer.Ordinal), actualFiles);
+        foreach (var fileName in expectedFiles)
+        {
+            var lineCount = File.ReadLines(Path.Combine(controllersDirectory, fileName)).Count();
+            Assert.True(lineCount <= 300, $"{fileName} grew to {lineCount} lines; split its endpoint group before adding more behavior.");
+        }
     }
 
     private static void AssertProjectReferences(
@@ -317,6 +1227,17 @@ public sealed class BackendProjectDependencyRulesTests
 
         var expected = expectedReferences.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         Assert.Equal(expected, actualReferences);
+    }
+
+    private static bool IsGeneratedProjectPath(string backendRoot, string path)
+    {
+        var relativePath = Path.GetRelativePath(backendRoot, path);
+        var segments = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return segments.Any(segment =>
+            segment.Equals("bin", StringComparison.OrdinalIgnoreCase)
+            || segment.Equals("obj", StringComparison.OrdinalIgnoreCase)
+            || segment.Equals(".tmp", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     private static string ResolveBackendRoot()

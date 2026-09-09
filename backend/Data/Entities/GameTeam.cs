@@ -8,7 +8,13 @@ public class GameTeam
 
     public Guid SlotId { get; set; }
 
+    public string? Name { get; set; }
+
     public bool RecruitmentOpen { get; set; }
+
+    public bool IsPlayed { get; set; }
+
+    public DateTime? PlayedAtUtc { get; set; }
 
     public string Status { get; set; } = string.Empty;
 
@@ -28,9 +34,15 @@ public class GameTeam
 
     public DateTime? DisbandedAtUtc { get; set; }
 
+    public Guid? DisbandedByUserId { get; set; }
+
+    public DateTime? DisbandRequestedAtUtc { get; set; }
+
+    public Guid? DisbandRequestedByUserId { get; set; }
+
     public Game? Game { get; set; }
 
-    public GameParticipationSlot? Slot { get; set; }
+    public GameTeamSlot? Slot { get; set; }
 
     public ICollection<GameTeamMember> Members { get; set; } = new List<GameTeamMember>();
 }

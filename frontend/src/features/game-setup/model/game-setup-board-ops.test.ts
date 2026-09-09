@@ -16,7 +16,8 @@ function createDraft(): GameSetupDraftState {
     title: 'Draft',
     rowLabels: ['100', '200'],
     colLabels: ['A', 'B'],
-    enabledModifierCodes: [],
+    enabledModifierIds: [],
+    enabledQuestionIds: [],
     cells: [
       { id: 'a', row: 0, col: 0, title: 'A', cost: 100 },
       { id: 'b', row: 0, col: 1, title: 'B', cost: 100 },

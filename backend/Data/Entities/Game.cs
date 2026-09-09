@@ -26,16 +26,27 @@ public class Game
 
     public short MinPlayersPerTeam { get; set; } = 1;
 
-    public short MaxPlayersPerTeam { get; set; } = 3;
+    public short MaxPlayersPerTeam { get; set; } = 2;
+
+    public int QuizAnswerDurationSeconds { get; set; } = 60;
+
+    public Guid? ActiveTeamId { get; set; }
+
+    public GameTeam? ActiveTeam { get; set; }
 
     public GameBoard? Board { get; set; }
 
-    public ICollection<GameParticipationSlot> ParticipationSlots { get; set; } =
-        new List<GameParticipationSlot>();
+    public ICollection<GameTeamSlot> TeamSlots { get; set; } =
+        new List<GameTeamSlot>();
 
-    public ICollection<GameModifierSelection> EnabledModifiers { get; set; } =
-        new List<GameModifierSelection>();
+    public ICollection<GameEnabledModifier> EnabledModifiers { get; set; } =
+        new List<GameEnabledModifier>();
 
-    public ICollection<GameActiveModifier> ActiveModifiers { get; set; } =
-        new List<GameActiveModifier>();
+    public ICollection<GameModifierActivation> ModifierActivations { get; set; } =
+        new List<GameModifierActivation>();
+
+    public ICollection<GameEnabledQuestion> EnabledQuestions { get; set; } =
+        new List<GameEnabledQuestion>();
+
+    public GameFinalization? Finalization { get; set; }
 }

@@ -1,7 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Api.Contracts;
 
 public enum AuthRole
 {
+    [JsonStringEnumMemberName("superadmin")]
+    SuperAdmin,
     Admin,
     Moderator,
     Viewer

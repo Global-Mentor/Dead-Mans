@@ -1,14 +1,12 @@
 using backend.Application.Contracts;
+using backend.Domain.Persistence;
 
 namespace backend.Application.Features.GameSetup;
 
 internal static class GameSetupDraftValidator
 {
     public const int MaxTitleLength = 200;
-    public const int MaxRowLabelLength = 100;
-    public const int MaxColumnLabelLength = 100;
     public const int MaxCellTitleLength = 200;
-    public const int MaxModifierCodeLength = 64;
 
     public static bool TryNormalizeTitle(string title, out string normalizedTitle)
     {
@@ -24,9 +22,10 @@ internal static class GameSetupDraftValidator
     {
         normalizedRowLabels = rowLabels.Select(label => label.Trim()).ToArray();
 
-        return normalizedRowLabels.Length is >= GameSetupBoardLimits.MinRows and <= GameSetupBoardLimits.MaxRows
+        return normalizedRowLabels.Length is >= GameBoardPersistence.MinRows and <= GameBoardPersistence.MaxRows
             && normalizedRowLabels.All(
-                label => !string.IsNullOrWhiteSpace(label) && label.Length <= MaxRowLabelLength
+                label => !string.IsNullOrWhiteSpace(label)
+                    && label.Length <= GameBoardPersistence.MaxLabelLength
             );
     }
 
@@ -39,9 +38,10 @@ internal static class GameSetupDraftValidator
             .Select(label => label.Trim())
             .ToArray();
 
-        return normalizedColumnLabels.Length is >= GameSetupBoardLimits.MinCols and <= GameSetupBoardLimits.MaxCols
+        return normalizedColumnLabels.Length is >= GameBoardPersistence.MinColumns and <= GameBoardPersistence.MaxColumns
             && normalizedColumnLabels.All(
-                label => !string.IsNullOrWhiteSpace(label) && label.Length <= MaxColumnLabelLength
+                label => !string.IsNullOrWhiteSpace(label)
+                    && label.Length <= GameBoardPersistence.MaxLabelLength
             );
     }
 
@@ -112,28 +112,47 @@ internal static class GameSetupDraftValidator
         return true;
     }
 
-    public static bool TryNormalizeEnabledModifierCodes(
-        IReadOnlyList<string> enabledModifierCodes,
-        out string[] normalizedCodes
+    public static bool TryNormalizeEnabledQuestionIds(
+        IReadOnlyList<Guid> enabledQuestionIds,
+        out Guid[] normalizedIds
     )
     {
-        var uniqueCodes = new HashSet<string>(StringComparer.Ordinal);
-        var normalized = new List<string>(enabledModifierCodes.Count);
-        foreach (var rawCode in enabledModifierCodes)
+        var uniqueIds = new HashSet<Guid>();
+        var normalized = new List<Guid>(enabledQuestionIds.Count);
+        foreach (var id in enabledQuestionIds)
         {
-            var normalizedCode = rawCode.Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(normalizedCode)
-                || normalizedCode.Length > MaxModifierCodeLength
-                || !uniqueCodes.Add(normalizedCode))
+            if (id == Guid.Empty || !uniqueIds.Add(id))
             {
-                normalizedCodes = Array.Empty<string>();
+                normalizedIds = Array.Empty<Guid>();
                 return false;
             }
 
-            normalized.Add(normalizedCode);
+            normalized.Add(id);
         }
 
-        normalizedCodes = normalized.ToArray();
+        normalizedIds = normalized.ToArray();
+        return true;
+    }
+
+    public static bool TryNormalizeEnabledModifierIds(
+        IReadOnlyList<Guid> enabledModifierIds,
+        out Guid[] normalizedIds
+    )
+    {
+        var uniqueIds = new HashSet<Guid>();
+        var normalized = new List<Guid>(enabledModifierIds.Count);
+        foreach (var modifierId in enabledModifierIds)
+        {
+            if (modifierId == Guid.Empty || !uniqueIds.Add(modifierId))
+            {
+                normalizedIds = Array.Empty<Guid>();
+                return false;
+            }
+
+            normalized.Add(modifierId);
+        }
+
+        normalizedIds = normalized.ToArray();
         return true;
     }
 }

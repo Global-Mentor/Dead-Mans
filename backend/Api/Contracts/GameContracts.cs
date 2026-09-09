@@ -25,6 +25,33 @@ public sealed record GameBoardSnapshotDto(
     IReadOnlyList<string> RowLabels,
     IReadOnlyList<string> ColLabels,
     IReadOnlyList<GameBoardCellDto> Cells,
-    IReadOnlyList<string> EnabledModifierCodes,
-    IReadOnlyList<GameModifierActivationDto> ActiveModifiers
+    IReadOnlyList<string> EnabledModifierIds,
+    IReadOnlyList<GameModifierActivationDto> ActiveModifiers,
+    string? ActiveTeamId
+);
+
+public sealed record SetActiveGameTeamRequestDto(string? TeamId);
+
+public sealed record SetGameTeamPlayedStateRequestDto(bool IsPlayed);
+
+public sealed record GameTeamQueueParticipantDto(string UserId, string DisplayName);
+
+public sealed record GameTeamQueueItemDto(
+    string TeamId,
+    string? TeamName,
+    int TeamSlotIndex,
+    bool IsPlayed,
+    DateTime? PlayedAtUtc,
+    IReadOnlyList<GameTeamQueueParticipantDto> Participants
+);
+
+public sealed record GameTeamQueueSummaryDto(
+    int TotalTeams,
+    int PlayedTeams,
+    int RemainingTeams
+);
+
+public sealed record GameTeamQueueResultDto(
+    GameTeamQueueSummaryDto Summary,
+    IReadOnlyList<GameTeamQueueItemDto> Teams
 );

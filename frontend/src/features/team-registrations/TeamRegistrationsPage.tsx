@@ -1,22 +1,28 @@
-import { Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { AppToast, PageShell, PageStatePanel, SectionHeader } from '../../shared/ui/index.ts'
 import { useTranslation } from 'react-i18next'
-import { formatRegistrationTeamStatus } from '../game-registration/index.ts'
+import { AdminRegistrationPanel } from '../game-registration/index.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
-import {
-  AppButton,
-  AppToast,
-  PageShell,
-  PageStatePanel,
-  SectionCard,
-  SectionHeader,
-} from '../../shared/ui/index.ts'
 
 export function TeamRegistrationsPage() {
   const { t } = useTranslation()
-  const { teamsQuery, confirmTeam, rejectTeam, toastMessage, dismissToast } =
-    useTeamRegistrationsPage()
+  const {
+    adminSnapshotQuery,
+    createAdminTeam,
+    createAdminInvitation,
+    assignPlayerToTeam,
+    removePlayerFromTeam,
+    cancelTeamInvitation,
+    moveTeamToSlot,
+    confirmTeam,
+    rejectTeam,
+    disbandTeam,
+    teamPlayedState,
+    updateTeamName,
+    toastMessage,
+    dismissToast,
+  } = useTeamRegistrationsPage()
 
-  if (teamsQuery.isLoading) {
+  if (adminSnapshotQuery.isLoading) {
     return (
       <PageStatePanel
         title={t('teamRegistrations.title')}
@@ -26,7 +32,7 @@ export function TeamRegistrationsPage() {
     )
   }
 
-  if (teamsQuery.isError) {
+  if (adminSnapshotQuery.isError) {
     return (
       <PageStatePanel
         title={t('teamRegistrations.title')}
@@ -36,9 +42,9 @@ export function TeamRegistrationsPage() {
     )
   }
 
-  if (teamsQuery.data == null) {
+  if (adminSnapshotQuery.data == null) {
     return (
-      <PageShell>
+      <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
         <PageStatePanel
           title={t('teamRegistrations.title')}
           message={t('teamRegistrations.notOpen')}
@@ -47,73 +53,74 @@ export function TeamRegistrationsPage() {
     )
   }
 
-  const teams = teamsQuery.data
-
   return (
-    <PageShell>
+    <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
       <SectionHeader
         title={t('teamRegistrations.title')}
         description={t('teamRegistrations.description')}
       />
 
-      {teams.length === 0 ? (
-        <Typography variant="body2">{t('teamRegistrations.empty')}</Typography>
-      ) : (
-        <SectionCard sx={{ overflowX: 'auto', p: 0 }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('teamRegistrations.slot')}</TableCell>
-                <TableCell>{t('teamRegistrations.status')}</TableCell>
-                <TableCell>{t('teamRegistrations.players')}</TableCell>
-                <TableCell align="right">{t('teamRegistrations.actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {teams.map((team) => (
-                <TableRow key={team.teamId}>
-                  <TableCell>{team.slotIndex}</TableCell>
-                  <TableCell>{formatRegistrationTeamStatus(team.status, t)}</TableCell>
-                  <TableCell>
-                    {team.members.map((member) => member.player.displayName).join(', ')}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <AppButton
-                        size="small"
-                        disabled={
-                          team.status !== 'forming' ||
-                          (confirmTeam.isPending && confirmTeam.variables === team.teamId)
-                        }
-                        onClick={() => confirmTeam.mutate(team.teamId)}
-                      >
-                        {t('teamRegistrations.confirm')}
-                      </AppButton>
-                      <AppButton
-                        size="small"
-                        tone="warningGhost"
-                        disabled={
-                          team.status !== 'forming' ||
-                          (rejectTeam.isPending && rejectTeam.variables === team.teamId)
-                        }
-                        onClick={() => rejectTeam.mutate(team.teamId)}
-                      >
-                        {t('teamRegistrations.reject')}
-                      </AppButton>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </SectionCard>
-      )}
+      <AdminRegistrationPanel
+        snapshot={adminSnapshotQuery.data}
+        isCreatingTeam={createAdminTeam.isPending}
+        isCreatingInvitation={(teamId) =>
+          createAdminInvitation.isPending && createAdminInvitation.variables?.teamId === teamId
+        }
+        isAssigningPlayer={assignPlayerToTeam.isPending}
+        isRemovingPlayer={(teamId, userId) =>
+          removePlayerFromTeam.isPending &&
+          removePlayerFromTeam.variables?.teamId === teamId &&
+          removePlayerFromTeam.variables.userId === userId
+        }
+        isCancellingTeamInvitation={(teamId, invitationId) =>
+          cancelTeamInvitation.isPending &&
+          cancelTeamInvitation.variables?.teamId === teamId &&
+          cancelTeamInvitation.variables.invitationId === invitationId
+        }
+        isMovingTeam={moveTeamToSlot.isPending}
+        isConfirmingTeam={(teamId) => confirmTeam.isPending && confirmTeam.variables === teamId}
+        isRejectingTeam={(teamId) => rejectTeam.isPending && rejectTeam.variables === teamId}
+        isDisbandingTeam={(teamId) => disbandTeam.isPending && disbandTeam.variables === teamId}
+        isTogglingPlayedState={(teamId) =>
+          teamPlayedState.isUpdatingPlayedState && teamPlayedState.updatingTeamId === teamId
+        }
+        isUpdatingTeamName={(teamId) =>
+          updateTeamName.isPending && updateTeamName.variables?.teamId === teamId
+        }
+        onCreateTeam={(recruitmentOpen, teamSlotId) =>
+          createAdminTeam.mutate({ recruitmentOpen, teamSlotId })
+        }
+        onCreateInvitation={(teamSlotId, invitedUserId, teamId) =>
+          createAdminInvitation.mutate({ teamSlotId, invitedUserId, teamId })
+        }
+        onAssignPlayer={(teamId, userId) => assignPlayerToTeam.mutate({ teamId, userId })}
+        onRemovePlayer={(teamId, userId) => removePlayerFromTeam.mutate({ teamId, userId })}
+        onCancelTeamInvitation={(teamId, invitationId) =>
+          cancelTeamInvitation.mutate({ teamId, invitationId })
+        }
+        onMoveTeam={(teamId, targetTeamSlotId) =>
+          moveTeamToSlot.mutate({ teamId, targetTeamSlotId })
+        }
+        onConfirmTeam={(teamId) => confirmTeam.mutate(teamId)}
+        onRejectTeam={(teamId) => rejectTeam.mutate(teamId)}
+        onDisbandTeam={(teamId) => disbandTeam.mutate(teamId)}
+        onTogglePlayedState={(teamId, isPlayed) =>
+          teamPlayedState.setTeamPlayedState({ teamId, isPlayed })
+        }
+        onUpdateTeamName={(teamId, name) => updateTeamName.mutate({ teamId, name })}
+      />
 
       <AppToast
         message={toastMessage}
         onClose={dismissToast}
         severity="error"
         autoHideDuration={5000}
+      />
+      <AppToast
+        message={teamPlayedState.toastMessage}
+        onClose={teamPlayedState.dismissToast}
+        severity="info"
+        autoHideDuration={3000}
       />
     </PageShell>
   )

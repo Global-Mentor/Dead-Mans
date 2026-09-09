@@ -1,13 +1,47 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { logger } from '../../lib/logger.ts'
 import { ApiError } from '../errors/ApiError.ts'
-import { ensureOpenApiSuccess, unwrapOpenApiData } from './openApiClient.ts'
+
+const { createClientMock } = vi.hoisted(() => ({
+  createClientMock: vi.fn(() => ({})),
+}))
+
+vi.mock('openapi-fetch', () => ({
+  default: createClientMock,
+}))
+
+import {
+  createApiClient,
+  createBackendApiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+  unwrapOpenApiDataOrNullOn401,
+  unwrapOpenApiDataOrNullOn404,
+  unwrapOpenApiDataOrNullOnNoContent,
+} from './openApiClient.ts'
 
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
 describe('openApiClient result handling', () => {
+  it('configures every API client with credentials and the CSRF request header', () => {
+    createApiClient<Record<string, never>>()
+    createBackendApiClient<Record<string, never>>()
+
+    expect(createClientMock).toHaveBeenCalledTimes(2)
+    for (const [options] of createClientMock.mock.calls) {
+      expect(options).toEqual(
+        expect.objectContaining({
+          credentials: 'include',
+          headers: {
+            'X-Dead-Mans-Api-Client': '1',
+          },
+        }),
+      )
+    }
+  })
+
   it('returns typed JSON data from a successful response', async () => {
     const data = { id: 'game-1' }
 
@@ -51,6 +85,51 @@ describe('openApiClient result handling', () => {
         details,
       }),
     )
+  })
+
+  it('returns null for expected 404 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOn404(
+        Promise.resolve({
+          error: { code: 'game_setup.no_draft' },
+          response: new Response(null, { status: 404 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns null for expected 401 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOn401(
+        Promise.resolve({
+          error: { code: 'auth.unauthorized' },
+          response: new Response(null, { status: 401 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns null for expected 204 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOnNoContent(
+        Promise.resolve({
+          data: undefined,
+          response: new Response(null, { status: 204 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
   })
 
   it('rejects an empty success when JSON data is required', async () => {

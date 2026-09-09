@@ -14,7 +14,8 @@ const snapshot: GameSetupSnapshot = {
   rowLabels: ['100'],
   colLabels: ['A'],
   cells: [],
-  enabledModifierCodes: [],
+  enabledModifierIds: [],
+  enabledQuestionIds: [],
 }
 
 describe('game setup realtime model', () => {
@@ -33,5 +34,19 @@ describe('game setup realtime model', () => {
     const stale = createLoadedDraftState({ ...snapshot, version: 1 })
 
     expect(selectNewerGameSetupState(current, stale)).toBe(current)
+  })
+
+  it('ignores an older realtime request even when it resolves to null', () => {
+    const current = createLoadedDraftState(snapshot, 2)
+    const staleRemoval = createLoadedDraftState(null, 1)
+
+    expect(selectNewerGameSetupState(current, staleRemoval)).toBe(current)
+  })
+
+  it('accepts a newer removal result from the latest realtime request', () => {
+    const current = createLoadedDraftState(snapshot, 1)
+    const removed = createLoadedDraftState(null, 2)
+
+    expect(selectNewerGameSetupState(current, removed)).toBe(removed)
   })
 })

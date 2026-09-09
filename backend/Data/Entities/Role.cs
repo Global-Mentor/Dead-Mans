@@ -15,4 +15,7 @@ public class Role
     public DateTime UpdatedAtUtc { get; set; }
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    public ICollection<UserRoleAuditEvent> AuditEvents { get; set; } =
+        new List<UserRoleAuditEvent>();
 }

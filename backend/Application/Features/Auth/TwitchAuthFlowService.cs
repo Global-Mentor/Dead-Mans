@@ -47,6 +47,10 @@ public sealed class TwitchAuthFlowService : ITwitchAuthFlowService
                 BuildFrontendRedirect("error", "account_inactive")
             );
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, AppMessages.Logs.TwitchAuthCallbackFailed);
@@ -78,7 +82,7 @@ public sealed class TwitchAuthFlowService : ITwitchAuthFlowService
             .Replace('/', '_');
     }
 
-    private static string AddQueryString(string uri, IReadOnlyDictionary<string, string?> queryParameters)
+    private static string AddQueryString(string uri, Dictionary<string, string?> queryParameters)
     {
         if (queryParameters.Count == 0)
         {

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { AuthSession } from '../api/contracts/index.ts'
 
-const authRoleSchema = z.enum(['admin', 'moderator', 'viewer'])
+const authRoleSchema = z.enum(['superadmin', 'admin', 'moderator', 'viewer'])
 
 export const authSessionSchema: z.ZodType<AuthSession> = z
   .object({

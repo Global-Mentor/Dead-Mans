@@ -2,39 +2,32 @@ namespace backend.Data.Entities;
 
 public class ModifierDefinition
 {
-    public string Code { get; set; } = string.Empty;
+    public Guid Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
-
-    public string Description { get; set; } = string.Empty;
-
-    public string Kind { get; set; } = string.Empty;
-
-    public string Category { get; set; } = string.Empty;
-
-    public string ScoringType { get; set; } = string.Empty;
-
-    public string Tier { get; set; } = string.Empty;
-
-    public string? IconEmoji { get; set; }
-
-    public string? ActivationCommand { get; set; }
-
-    public int ActivationCost { get; set; }
-
-    public int? DefaultLimitPerGame { get; set; }
-
-    public string? MetadataJson { get; set; }
+    public Guid? CurrentVersionId { get; set; }
 
     public bool IsArchived { get; set; }
 
+    public Guid? CreatedByUserId { get; set; }
+
+    public DateTime? ArchivedAtUtc { get; set; }
+
+    public Guid? ArchivedByUserId { get; set; }
+
     public DateTime CreatedAtUtc { get; set; }
 
-    public DateTime UpdatedAtUtc { get; set; }
+    public ModifierDefinitionVersion? CurrentVersion { get; set; }
 
-    public ICollection<GameModifierSelection> GameSelections { get; set; } =
-        new List<GameModifierSelection>();
+    public User? CreatedByUser { get; set; }
 
-    public ICollection<GameActiveModifier> GameActivations { get; set; } =
-        new List<GameActiveModifier>();
+    public User? ArchivedByUser { get; set; }
+
+    public ICollection<ModifierDefinitionVersion> Versions { get; set; } =
+        new List<ModifierDefinitionVersion>();
+
+    public ICollection<GameEnabledModifier> EnabledInGames { get; set; } =
+        new List<GameEnabledModifier>();
+
+    public ICollection<GameModifierActivation> GameActivations { get; set; } =
+        new List<GameModifierActivation>();
 }

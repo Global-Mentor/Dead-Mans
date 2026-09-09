@@ -3,13 +3,6 @@ import { useGameSetupCellMedia } from './use-game-setup-cell-media.ts'
 import { useGameSetupDraft } from './use-game-setup-draft.ts'
 import { useGameSetupSave } from './use-game-setup-save.ts'
 
-/**
- * Composition root for the admin game-setup page. It wires the three focused
- * orchestration hooks — draft state ({@link useGameSetupDraft}), persistence and
- * conflicts ({@link useGameSetupSave}), and cell media ({@link useGameSetupCellMedia})
- * — into the single surface the page renders against. Draft lifecycle actions
- * are wrapped here so they also reconcile save status.
- */
 export function useGameSetupPage() {
   const draft = useGameSetupDraft()
   const save = useGameSetupSave({
@@ -46,18 +39,49 @@ export function useGameSetupPage() {
     save.resetToSaved()
   }
 
-  const toggleModifier = (modifierCode: string, enabled: boolean) => {
+  const toggleModifier = (modifierId: string, enabled: boolean) => {
     updateDraft((current) => {
-      const currentCodes = current.enabledModifierCodes
-      const nextCodes = enabled
-        ? currentCodes.includes(modifierCode)
-          ? currentCodes
-          : [...currentCodes, modifierCode]
-        : currentCodes.filter((code) => code !== modifierCode)
+      const currentIds = current.enabledModifierIds
+      const nextIds = enabled
+        ? currentIds.includes(modifierId)
+          ? currentIds
+          : [...currentIds, modifierId]
+        : currentIds.filter((id) => id !== modifierId)
 
       return {
         ...current,
-        enabledModifierCodes: nextCodes,
+        enabledModifierIds: nextIds,
+      }
+    })
+  }
+
+  const toggleQuestion = (questionId: string, enabled: boolean) => {
+    updateDraft((current) => {
+      const currentIds = current.enabledQuestionIds
+      const nextIds = enabled
+        ? currentIds.includes(questionId)
+          ? currentIds
+          : [...currentIds, questionId]
+        : currentIds.filter((id) => id !== questionId)
+
+      return {
+        ...current,
+        enabledQuestionIds: nextIds,
+      }
+    })
+  }
+
+  const setQuestionsEnabled = (questionIds: readonly string[], enabled: boolean) => {
+    updateDraft((current) => {
+      if (enabled) {
+        const merged = new Set([...current.enabledQuestionIds, ...questionIds])
+        return { ...current, enabledQuestionIds: [...merged] }
+      }
+
+      const removed = new Set(questionIds)
+      return {
+        ...current,
+        enabledQuestionIds: current.enabledQuestionIds.filter((id) => !removed.has(id)),
       }
     })
   }
@@ -67,7 +91,6 @@ export function useGameSetupPage() {
     draft: draft.draft,
     isLoading: draft.isLoading,
     isError: draft.isError,
-    isEmpty: draft.isEmpty,
     isDirty: draft.isDirty,
     syncStatus: save.syncStatus,
     remoteChangeNotice: draft.remoteChangeNotice,
@@ -81,6 +104,8 @@ export function useGameSetupPage() {
     createDraft,
     deleteDraft,
     toggleModifier,
+    toggleQuestion,
+    setQuestionsEnabled,
     isCreating: draft.isCreating,
     isResetting: draft.isResetting,
     isSaving: save.isSaving,

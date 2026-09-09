@@ -1,0 +1,49 @@
+using backend.Data.Entities;
+using backend.Domain.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace backend.Data.Configurations;
+
+public class GameTeamSlotConfiguration : IEntityTypeConfiguration<GameTeamSlot>
+{
+    public void Configure(EntityTypeBuilder<GameTeamSlot> builder)
+    {
+        builder.ToTable(
+            "game_team_slots",
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_team_slots_slot_type",
+                    TeamSlotTypeValue.CheckSqlAllowed
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_team_slots_slot_index_positive",
+                    "slot_index > 0"
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_team_slots_reserved_label_semantics",
+                    "(slot_type = 'public' AND reserved_label IS NULL) OR "
+                    + "(slot_type = 'reserved' AND reserved_label IS NOT NULL "
+                    + "AND length(trim(reserved_label)) > 0)"
+                );
+            }
+        );
+
+        builder.HasKey(x => x.Id);
+        builder.HasAlternateKey(x => new { x.GameId, x.Id });
+        builder.Property(x => x.SlotIndex).IsRequired();
+        builder.Property(x => x.SlotType).HasColumnName("slot_type").HasMaxLength(16).IsRequired();
+        builder.Property(x => x.ReservedLabel).HasMaxLength(200);
+        builder.Property(x => x.CreatedAtUtc).IsRequired();
+
+        builder.HasIndex(x => new { x.GameId, x.SlotIndex }).IsUnique();
+        builder.HasIndex(x => new { x.GameId, x.SlotType });
+
+        builder
+            .HasOne(x => x.Game)
+            .WithMany(x => x.TeamSlots)
+            .HasForeignKey(x => x.GameId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

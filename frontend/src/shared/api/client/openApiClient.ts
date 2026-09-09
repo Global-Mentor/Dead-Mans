@@ -1,5 +1,4 @@
 import createClient from 'openapi-fetch'
-import type { paths } from '../contracts/generated.ts'
 import { getApiBaseUrl, getBackendOrigin } from '../config.ts'
 import { ApiError } from '../errors/ApiError.ts'
 import { logger } from '../../lib/logger.ts'
@@ -17,8 +16,8 @@ type OpenApiResult<TData> =
       response: Response
     }
 
-function createOpenApiClient(baseUrl: string) {
-  return createClient<paths>({
+function createOpenApiClient<TPaths extends object>(baseUrl: string) {
+  return createClient<TPaths>({
     baseUrl,
     credentials: 'include',
     headers: {
@@ -27,8 +26,13 @@ function createOpenApiClient(baseUrl: string) {
   })
 }
 
-export const apiClient = createOpenApiClient(getApiBaseUrl())
-export const backendApiClient = createOpenApiClient(getBackendOrigin())
+export function createApiClient<TPaths extends object>() {
+  return createOpenApiClient<TPaths>(getApiBaseUrl())
+}
+
+export function createBackendApiClient<TPaths extends object>() {
+  return createOpenApiClient<TPaths>(getBackendOrigin())
+}
 
 function throwOpenApiError<TData>(
   result: OpenApiResult<TData>,
@@ -55,6 +59,66 @@ export async function unwrapOpenApiData<TData>(
   request: Promise<OpenApiResult<TData>>,
 ): Promise<Exclude<TData, undefined>> {
   const result = await request
+  throwOpenApiError(result)
+
+  if (!isDefined(result.data)) {
+    throw new ApiError('API returned an empty response where JSON data was expected', {
+      status: result.response.status,
+    })
+  }
+
+  return result.data
+}
+
+export async function unwrapOpenApiDataOrNullOn404<TData>(
+  request: Promise<OpenApiResult<TData>>,
+): Promise<Exclude<TData, undefined> | null> {
+  const result = await request
+
+  if (result.response.status === 404) {
+    return null
+  }
+
+  throwOpenApiError(result)
+
+  if (!isDefined(result.data)) {
+    throw new ApiError('API returned an empty response where JSON data was expected', {
+      status: result.response.status,
+    })
+  }
+
+  return result.data
+}
+
+export async function unwrapOpenApiDataOrNullOn401<TData>(
+  request: Promise<OpenApiResult<TData>>,
+): Promise<Exclude<TData, undefined> | null> {
+  const result = await request
+
+  if (result.response.status === 401) {
+    return null
+  }
+
+  throwOpenApiError(result)
+
+  if (!isDefined(result.data)) {
+    throw new ApiError('API returned an empty response where JSON data was expected', {
+      status: result.response.status,
+    })
+  }
+
+  return result.data
+}
+
+export async function unwrapOpenApiDataOrNullOnNoContent<TData>(
+  request: Promise<OpenApiResult<TData>>,
+): Promise<Exclude<TData, undefined> | null> {
+  const result = await request
+
+  if (result.response.status === 204) {
+    return null
+  }
+
   throwOpenApiError(result)
 
   if (!isDefined(result.data)) {

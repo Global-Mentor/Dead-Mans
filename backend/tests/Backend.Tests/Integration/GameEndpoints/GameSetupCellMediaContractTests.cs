@@ -6,6 +6,7 @@ using System.Text.Encodings.Web;
 using backend.Api.Contracts;
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
+using backend.Application.Features.GameSetup;
 using backend.Data;
 using backend.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ using backend.Data.Entities;
 using backend.Domain.Models;
 using backend.Domain.Persistence;
 using Backend.Tests.Support;
+using backend.Messaging;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +32,7 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
     public GameSetupCellMediaContractTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
+        _factory.ResetDatabase();
         _client = factory.CreateClient();
     }
 
@@ -38,7 +41,8 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
     {
         await ClearGamesAsync();
         var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
-        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        using var authenticatedFactory = CreateAuthenticatedFactory([AuthRoleCodes.Admin]);
+        using var adminClient = authenticatedFactory.CreateClient();
         using var content = CreatePngUploadContent();
 
         var response = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", content);
@@ -46,12 +50,22 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<GameBoardCellMediaDto>();
         Assert.NotNull(payload);
+        Guid mediaAssetId;
+        using (var scope = authenticatedFactory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            mediaAssetId = await db.BoardCellMedia
+                .Where(link => link.CellId == cellId)
+                .Select(link => link.MediaAssetId)
+                .SingleAsync();
+        }
         var expectedObjectKey = GameMediaObjectKeyFormat.BuildCardImageKey(
             "games",
             gameId,
             "cards",
             rowIndex: 0,
             colIndex: 0,
+            mediaAssetId,
             ".png"
         );
         Assert.Contains(expectedObjectKey, payload!.Url, StringComparison.OrdinalIgnoreCase);
@@ -60,6 +74,61 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         var setup = await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
         Assert.NotNull(setup);
         Assert.Contains(setup!.Cells, cell => cell.Id == cellId.ToString() && cell.Media.Count == 1);
+    }
+
+    [Fact]
+    public async Task UploadCellMedia_WhenReplacingSameType_PreservesOnlyNewObject()
+    {
+        await ClearGamesAsync();
+        var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
+        using var authenticatedFactory = CreateAuthenticatedFactory([AuthRoleCodes.Admin]);
+        using var adminClient = authenticatedFactory.CreateClient();
+
+        using (var firstContent = CreatePngUploadContent())
+        {
+            var firstResponse = await adminClient.PostAsync(
+                $"/api/game/setup/cells/{cellId}/media",
+                firstContent
+            );
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        }
+
+        string firstObjectKey;
+        using (var scope = authenticatedFactory.Services.CreateScope())
+        {
+            var storage = Assert.IsType<InMemoryObjectStorage>(
+                scope.ServiceProvider.GetRequiredService<IObjectStorage>()
+            );
+            firstObjectKey = Assert.Single(
+                storage.ListObjectKeys("deadman-test", $"games/{gameId}/")
+            );
+        }
+
+        using (var replacementContent = CreatePngUploadContent())
+        {
+            var replacementResponse = await adminClient.PostAsync(
+                $"/api/game/setup/cells/{cellId}/media",
+                replacementContent
+            );
+            Assert.Equal(HttpStatusCode.OK, replacementResponse.StatusCode);
+        }
+
+        using (var scope = authenticatedFactory.Services.CreateScope())
+        {
+            var storage = Assert.IsType<InMemoryObjectStorage>(
+                scope.ServiceProvider.GetRequiredService<IObjectStorage>()
+            );
+            var replacementObjectKey = Assert.Single(
+                storage.ListObjectKeys("deadman-test", $"games/{gameId}/")
+            );
+            Assert.NotEqual(firstObjectKey, replacementObjectKey);
+
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var persistedObjectKey = await db.MediaAssets
+                .Select(asset => asset.ObjectKey)
+                .SingleAsync();
+            Assert.Equal(replacementObjectKey, persistedObjectKey);
+        }
     }
 
     [Fact]
@@ -116,7 +185,7 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         }
 
         var getSetupResponse = await adminClient.GetAsync("/api/game/setup");
-        Assert.Equal(HttpStatusCode.NotFound, getSetupResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, getSetupResponse.StatusCode);
     }
 
     [Fact]
@@ -129,6 +198,44 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         );
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadCellMedia_WhenFileExceedsLimit_ReturnsBadRequest()
+    {
+        await ClearGamesAsync();
+        var (_, cellId) = await SeedDraftWithSingleCellAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        using var content = CreateUploadContent(
+            new byte[GameSetupCellMediaLimits.MaxUploadBytes + 1],
+            "image/png",
+            "oversized.png"
+        );
+
+        var response = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+    }
+
+    [Fact]
+    public async Task UploadCellMedia_WhenDeclaredMimeDoesNotMatchContent_ReturnsBadRequest()
+    {
+        await ClearGamesAsync();
+        var (_, cellId) = await SeedDraftWithSingleCellAsync();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        using var content = CreateUploadContent(
+            "this-is-not-a-png"u8.ToArray(),
+            "image/png",
+            "spoofed.png"
+        );
+
+        var response = await adminClient.PostAsync($"/api/game/setup/cells/{cellId}/media", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameSetupInvalidCellMediaUpload, payload.Code);
     }
 
     private async Task<(Guid GameId, Guid CellId)> SeedDraftWithSingleCellAsync()
@@ -183,10 +290,19 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         var bytes = Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
         );
+        return CreateUploadContent(bytes, "image/png", "cell.png");
+    }
+
+    private static MultipartFormDataContent CreateUploadContent(
+        byte[] bytes,
+        string contentType,
+        string fileName
+    )
+    {
         var content = new MultipartFormDataContent();
         var fileContent = new ByteArrayContent(bytes);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        content.Add(fileContent, "file", "cell.png");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        content.Add(fileContent, "file", fileName);
         return content;
     }
 

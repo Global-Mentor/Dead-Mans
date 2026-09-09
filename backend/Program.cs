@@ -1,24 +1,35 @@
+using backend.Api.Auth;
+using backend.Api.Configuration;
 using backend.Api.Contracts;
+using backend.Api.DependencyInjection;
 using backend.Api.Http;
+using backend.Api.Realtime;
 using backend.Application.Abstractions.Auth;
-using backend.Infrastructure.Auth;
+using backend.Application.DependencyInjection;
+using backend.Data;
 using backend.Messaging;
-using backend.Infrastructure.Configuration;
 using backend.Infrastructure.DependencyInjection;
-using backend.Infrastructure.Http;
-using backend.Infrastructure.Realtime;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using backend.Infrastructure.Health;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
-using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
     var isDevelopment = builder.Environment.IsDevelopment();
+    var isTesting = builder.Environment.IsEnvironment("Testing");
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.AddServerHeader = false;
+        options.Limits.MaxRequestBodySize = 6 * 1024 * 1024;
+    });
+    builder.Services.AddHsts(options =>
+    {
+        options.MaxAge = TimeSpan.FromDays(180);
+    });
     builder.Host.UseSerilog(
         (context, services, loggerConfiguration) =>
         {
@@ -28,9 +39,17 @@ try
                 .Enrich.FromLogContext();
         }
     );
-    builder.Configuration
-        .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-        .AddEnvironmentVariables();
+    if (isDevelopment)
+    {
+        builder.Configuration.AddJsonFile(
+            "appsettings.Local.json",
+            optional: true,
+            reloadOnChange: true
+        );
+    }
+
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Services.AddDeadMansHostSecurity(builder.Configuration, builder.Environment);
     builder.Services
         .AddControllers()
         .AddJsonOptions(options =>
@@ -39,142 +58,65 @@ try
                 new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
             );
         });
-    builder.Services
-        .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie(options =>
-        {
-            options.Cookie.Name = AuthCookieNames.Authentication;
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.SecurePolicy = isDevelopment
-                ? CookieSecurePolicy.SameAsRequest
-                : CookieSecurePolicy.Always;
-            options.SlidingExpiration = true;
-            options.Events = new CookieAuthenticationEvents
-            {
-                OnRedirectToLogin = async context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api")
-                        || context.Request.Path.StartsWithSegments("/auth"))
-                    {
-                        await WriteErrorResponseAsync(
-                            context.Response,
-                            StatusCodes.Status401Unauthorized,
-                            AppMessages.Client.AuthenticationRequired
-                        );
-                        return;
-                    }
-
-                    context.Response.Redirect(context.RedirectUri);
-                },
-                OnRedirectToAccessDenied = async context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api")
-                        || context.Request.Path.StartsWithSegments("/auth"))
-                    {
-                        await WriteErrorResponseAsync(
-                            context.Response,
-                            StatusCodes.Status403Forbidden,
-                            AppMessages.Client.AccessDenied
-                        );
-                        return;
-                    }
-
-                    context.Response.Redirect(context.RedirectUri);
-                }
-            };
-        });
-    builder.Services.AddAuthorization();
+    builder.Services.AddDeadMansAuthentication(builder.Environment);
+    builder.Services.AddDeadMansApplication();
     builder.Services.AddDeadMansInfrastructure(builder.Configuration, builder.Environment);
-    builder.Services.AddDeadMansHealthChecks();
-    builder.Services.AddDeadMansRateLimiting(builder.Configuration, builder.Environment);
-    builder.Services.AddDeadMansCors(builder.Configuration);
-    builder.Services
-        .AddOptions<ForwardedHeadersSecurityOptions>()
-        .Bind(builder.Configuration.GetSection(ForwardedHeadersSecurityOptions.SectionName))
-        .ValidateDataAnnotations()
-        .Validate(
-            options =>
-                !options.Enabled
-                || options.TrustedProxies.All(proxy => IPAddress.TryParse(proxy, out _)),
-            "ForwardedHeaders:TrustedProxies must contain valid IP addresses."
-        )
-        .Validate(
-            options =>
-                !options.Enabled
-                || options.TrustedNetworks.All(network => TryParseCidrNetwork(network, out _)),
-            "ForwardedHeaders:TrustedNetworks must contain valid CIDR values."
-        )
-        .ValidateOnStart();
-    var forwardedHeadersSecurityOptions = builder.Configuration
-        .GetSection(ForwardedHeadersSecurityOptions.SectionName)
-        .Get<ForwardedHeadersSecurityOptions>()
-        ?? new ForwardedHeadersSecurityOptions();
-    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    builder.Services.AddDeadMansRealtime();
+    var healthChecks = builder.Services
+        .AddHealthChecks()
+        .AddDbContextCheck<ApplicationDbContext>(
+            name: HealthCheckContracts.Names.Database,
+            tags: [HealthCheckContracts.Tags.Ready]
+        );
+    if (!isTesting)
     {
-        if (!forwardedHeadersSecurityOptions.Enabled)
-        {
-            return;
-        }
-
-        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        if (isDevelopment && forwardedHeadersSecurityOptions.TrustAllProxiesInDevelopment)
-        {
-            options.KnownNetworks.Clear();
-            options.KnownProxies.Clear();
-            return;
-        }
-
-        if (
-            forwardedHeadersSecurityOptions.TrustedProxies.Length == 0
-            && forwardedHeadersSecurityOptions.TrustedNetworks.Length == 0
-        )
-        {
-            return;
-        }
-
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
-
-        foreach (var trustedProxy in forwardedHeadersSecurityOptions.TrustedProxies)
-        {
-            if (!IPAddress.TryParse(trustedProxy, out var parsedIp))
-            {
-                throw new InvalidOperationException(
-                    $"ForwardedHeaders:TrustedProxies contains invalid IP address '{trustedProxy}'."
-                );
-            }
-
-            options.KnownProxies.Add(parsedIp);
-        }
-
-        foreach (var trustedNetwork in forwardedHeadersSecurityOptions.TrustedNetworks)
-        {
-            if (!TryParseCidrNetwork(trustedNetwork, out var network))
-            {
-                throw new InvalidOperationException(
-                    $"ForwardedHeaders:TrustedNetworks contains invalid CIDR '{trustedNetwork}'."
-                );
-            }
-
-            options.KnownNetworks.Add(network);
-        }
-    });
-    builder.Services
-        .AddOptions<TwitchAuthOptions>()
-        .Bind(builder.Configuration.GetSection(TwitchAuthOptions.SectionName))
-        .ValidateDataAnnotations()
-        .Validate(
-            options => options.Scopes.Length > 0,
-            "TwitchAuth:Scopes must contain at least one scope."
-        )
-        .ValidateOnStart();
+        healthChecks.AddCheck<ObjectStorageHealthCheck>(
+            name: HealthCheckContracts.Names.ObjectStorage,
+            tags: [HealthCheckContracts.Tags.Ready]
+        );
+    }
+    builder.Services.AddDeadMansRateLimiting(builder.Configuration, builder.Environment);
+    builder.Services.AddDeadMansCors(builder.Configuration, builder.Environment);
+    builder.Services.AddDeadMansForwardedHeaders(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
+    var releaseShaPath = Path.Combine(app.Environment.ContentRootPath, "release-sha");
+    var releaseSha = File.Exists(releaseShaPath) ? File.ReadAllText(releaseShaPath).Trim() : null;
 
+    app.UseForwardedHeaders();
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments(HealthCheckContracts.PathPrefix))
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            if (!string.IsNullOrEmpty(releaseSha))
+            {
+                context.Response.Headers["X-Release-Sha"] = releaseSha;
+            }
+        }
+
+        await next(context);
+    });
     app.UseSerilogRequestLogging();
     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+        app.UseWhen(
+            context => !context.Request.Path.StartsWithSegments(HealthCheckContracts.PathPrefix),
+            branch => branch.UseHttpsRedirection()
+        );
+    }
     app.UseMiddleware<SecurityHeadersMiddleware>();
+    if (app.Environment.IsProduction())
+    {
+        app.UseMiddleware<CanonicalHostRedirectMiddleware>();
+    }
+    if (!isDevelopment && !isTesting)
+    {
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+    }
     if (app.Environment.IsDevelopment())
     {
         app.UseSwaggerUI(c =>
@@ -184,29 +126,24 @@ try
         });
     }
 
-    if (forwardedHeadersSecurityOptions.Enabled)
-    {
-        app.UseForwardedHeaders();
-    }
     app.UseCors(CorsPolicyNames.Default);
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseHsts();
-        app.UseHttpsRedirection();
-    }
-
     app.UseAuthentication();
     app.UseMiddleware<ActiveUserMiddleware>();
+    app.UseMiddleware<ApiClientRequestValidationMiddleware>();
     app.UseAuthorization();
     app.UseRateLimiter();
 
-    app.MapGet(
+    var openApiEndpoint = app.MapGet(
         "/openapi/deadmans.v1.yaml",
         () => Results.File(
             Path.Combine(app.Environment.ContentRootPath, "openapi", "deadmans.v1.yaml"),
             "application/yaml"
         )
     );
+    if (app.Environment.IsProduction())
+    {
+        openApiEndpoint.RequireAuthorization(policy => policy.RequireRole(AuthRoleCodes.Admin));
+    }
     app.MapHealthChecks(
         HealthCheckContracts.LivenessPath,
         new HealthCheckOptions { Predicate = _ => false }
@@ -221,6 +158,12 @@ try
     app.MapHub<GameBoardHub>(RealtimeHubContracts.GameBoard.HubPath);
     app.MapHub<GameSetupHub>(RealtimeHubContracts.GameSetup.HubPath);
     app.MapControllers();
+    if (!isDevelopment && !isTesting)
+    {
+        app.MapFallbackToFile("/auth/callback", "index.html");
+        app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html")
+            .RequireAuthorization();
+    }
 
     app.Run();
 }
@@ -244,44 +187,6 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-static Task WriteErrorResponseAsync(HttpResponse response, int statusCode, string message)
-{
-    ApiErrorMetrics.Record(statusCode, null, "auth");
-    return ErrorResponseFactory.WriteAsync(response, statusCode, message);
-}
-
-static bool TryParseCidrNetwork(
-    string cidr,
-    out Microsoft.AspNetCore.HttpOverrides.IPNetwork network
-)
-{
-    network = default!;
-    var parts = cidr.Split('/', 2, StringSplitOptions.TrimEntries);
-    if (parts.Length != 2)
-    {
-        return false;
-    }
-
-    if (!IPAddress.TryParse(parts[0], out var address))
-    {
-        return false;
-    }
-
-    if (!int.TryParse(parts[1], out var prefixLength))
-    {
-        return false;
-    }
-
-    var maxPrefixLength = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 32 : 128;
-    if (prefixLength < 0 || prefixLength > maxPrefixLength)
-    {
-        return false;
-    }
-
-    network = new Microsoft.AspNetCore.HttpOverrides.IPNetwork(address, prefixLength);
-    return true;
 }
 
 public partial class Program;

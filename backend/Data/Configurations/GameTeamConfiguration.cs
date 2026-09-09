@@ -14,23 +14,58 @@ public class GameTeamConfiguration : IEntityTypeConfiguration<GameTeam>
             tableBuilder =>
             {
                 tableBuilder.HasCheckConstraint(
-                    "CK_game_teams_status_allowed",
+                    "ck_game_teams_status_allowed",
                     TeamStatusValue.CheckSqlAllowedStatuses
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_teams_status_timestamp_semantics",
+                    "((status = 'forming') AND confirmed_at_utc IS NULL AND rejected_at_utc IS NULL AND disbanded_at_utc IS NULL AND disband_requested_at_utc IS NULL) "
+                    + "OR ((status = 'confirmed') AND confirmed_at_utc IS NOT NULL AND confirmed_by_user_id IS NOT NULL AND rejected_at_utc IS NULL AND disbanded_at_utc IS NULL) "
+                    + "OR ((status = 'rejected') AND rejected_at_utc IS NOT NULL AND rejected_by_user_id IS NOT NULL AND disbanded_at_utc IS NULL AND disband_requested_at_utc IS NULL) "
+                    + "OR ((status = 'disbanded') AND disbanded_at_utc IS NOT NULL AND disbanded_by_user_id IS NOT NULL AND disband_requested_at_utc IS NULL)"
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_teams_disband_request_user_pair",
+                    "(disband_requested_at_utc IS NULL AND disband_requested_by_user_id IS NULL) OR (disband_requested_at_utc IS NOT NULL AND disband_requested_by_user_id IS NOT NULL)"
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_teams_played_timestamp_semantics",
+                    "(is_played = true AND played_at_utc IS NOT NULL) OR (is_played = false AND played_at_utc IS NULL)"
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_teams_content_and_timestamps",
+                    "(name IS NULL OR length(trim(name)) > 0) "
+                    + "AND updated_at_utc >= created_at_utc "
+                    + "AND (played_at_utc IS NULL OR played_at_utc >= created_at_utc) "
+                    + "AND (confirmed_at_utc IS NULL OR confirmed_at_utc >= created_at_utc) "
+                    + "AND (rejected_at_utc IS NULL OR rejected_at_utc >= created_at_utc) "
+                    + "AND (disbanded_at_utc IS NULL OR disbanded_at_utc >= created_at_utc) "
+                    + "AND (disband_requested_at_utc IS NULL OR disband_requested_at_utc >= created_at_utc)"
+                );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_teams_terminal_recruitment_closed",
+                    "status NOT IN ('rejected','disbanded') OR recruitment_open = FALSE"
                 );
             }
         );
 
         builder.HasKey(x => x.Id);
         builder.HasAlternateKey(x => new { x.GameId, x.Id });
+        builder.Property(x => x.Name).HasMaxLength(TeamNameValue.MaxLength);
         builder.Property(x => x.RecruitmentOpen).IsRequired();
+        builder.Property(x => x.IsPlayed).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.PlayedAtUtc);
         builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
 
         builder
-            .HasIndex(x => x.SlotId, "UX_game_teams_active_slot")
+            .HasIndex(x => x.SlotId, "ux_game_teams_active_slot")
             .IsUnique()
             .HasFilter(TeamStatusValue.CheckSqlOccupyingStatuses);
+        builder
+            .HasIndex(x => new { x.GameId, x.SlotId })
+            .HasDatabaseName("ix_game_teams_game_slot");
         builder.HasIndex(x => new { x.GameId, x.Status });
 
         builder
@@ -56,12 +91,24 @@ public class GameTeamConfiguration : IEntityTypeConfiguration<GameTeam>
             .HasOne<User>()
             .WithMany()
             .HasForeignKey(x => x.ConfirmedByUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .HasOne<User>()
             .WithMany()
             .HasForeignKey(x => x.RejectedByUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(x => x.DisbandedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(x => x.DisbandRequestedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

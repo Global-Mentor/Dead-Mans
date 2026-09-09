@@ -2,25 +2,30 @@ using backend.Application.Abstractions;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
-using backend.Application.Realtime;
-using backend.Messaging;
+using backend.Domain.GameModifiers;
 
 namespace backend.Application.Features.GameModifiers;
 
-public sealed class GameModifierService : IGameModifierService
+public sealed partial class GameModifierService : IGameModifierService
 {
     private readonly IGameModifierRepository _repository;
+    private readonly IGameNotificationService _notificationService;
     private readonly IGameBoardEventsPublisher _eventsPublisher;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<GameModifierService> _logger;
 
     public GameModifierService(
         IGameModifierRepository repository,
+        IGameNotificationService notificationService,
         IGameBoardEventsPublisher eventsPublisher,
+        TimeProvider timeProvider,
         ILogger<GameModifierService> logger
     )
     {
         _repository = repository;
+        _notificationService = notificationService;
         _eventsPublisher = eventsPublisher;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -31,71 +36,85 @@ public sealed class GameModifierService : IGameModifierService
         return _repository.GetCatalogAsync(cancellationToken);
     }
 
-    public async Task<ActivateGameModifierResult> ActivateAsync(
-        string modifierCode,
-        Guid? activatedByUserId,
+    public Task<GetGameModifierStateResult> GetStateAsync(
+        Guid? userId,
         CancellationToken cancellationToken = default
     )
     {
-        var normalizedCode = modifierCode.Trim().ToLowerInvariant();
-        if (!await _repository.ModifierCodeExistsAsync(normalizedCode, cancellationToken))
+        return userId.HasValue
+            ? GetStateCoreAsync(userId.Value, cancellationToken)
+            : Task.FromResult(new GetGameModifierStateResult(
+                GetGameModifierStateOutcome.GameNotActive));
+    }
+
+    private async Task<GetGameModifierStateResult> GetStateCoreAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _repository.GetStateAsync(userId, cancellationToken);
+        return result.Outcome switch
         {
-            return new ActivateGameModifierResult(ActivateGameModifierOutcome.UnknownModifierCode);
+            GetGameModifierStateRepositoryOutcome.Loaded when result.State is not null =>
+                new(GetGameModifierStateOutcome.Loaded, result.State),
+            GetGameModifierStateRepositoryOutcome.VersionBindingMissing =>
+                new(GetGameModifierStateOutcome.VersionBindingMissing),
+            _ => new(GetGameModifierStateOutcome.GameNotActive)
+        };
+    }
+
+    public Task<GameModifierAdminPlayersResult> GetAdminPlayersAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _repository.GetAdminPlayersAsync(cancellationToken);
+    }
+
+    public async Task<GetAdminGameModifierStateResult> GetAdminStateAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!await _repository.HasActiveGameAsync(cancellationToken))
+        {
+            return new GetAdminGameModifierStateResult(GetAdminGameModifierStateOutcome.GameNotActive);
         }
 
-        if (activatedByUserId is null)
+        if (!await _repository.AdminPlayerExistsAsync(userId, cancellationToken))
         {
-            return new ActivateGameModifierResult(ActivateGameModifierOutcome.UserNotResolved);
+            return new GetAdminGameModifierStateResult(GetAdminGameModifierStateOutcome.PlayerNotFound);
         }
 
-        var activationResult = await _repository.ActivateModifierAsync(
-            normalizedCode,
-            activatedByUserId.Value,
+        var result = await _repository.GetStateAsync(userId, cancellationToken);
+        return result.Outcome switch
+        {
+            GetGameModifierStateRepositoryOutcome.Loaded when result.State is not null =>
+                new(GetAdminGameModifierStateOutcome.Loaded, result.State),
+            GetGameModifierStateRepositoryOutcome.VersionBindingMissing =>
+                new(GetAdminGameModifierStateOutcome.VersionBindingMissing),
+            _ => new(GetAdminGameModifierStateOutcome.GameNotActive)
+        };
+    }
+
+    public async Task<GetAdminActiveGameModifierActivationsResult> GetAdminActiveActivationsAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var activeGame = await _repository.HasActiveGameAsync(cancellationToken);
+        if (!activeGame)
+        {
+            return new GetAdminActiveGameModifierActivationsResult(false, []);
+        }
+
+        var gameId = await _repository.GetActiveGameIdAsync(cancellationToken);
+        if (!gameId.HasValue)
+        {
+            return new GetAdminActiveGameModifierActivationsResult(false, []);
+        }
+
+        var activations = await _repository.GetActiveModifiersForGameAsync(
+            gameId.Value,
             cancellationToken
         );
-
-        var result = activationResult.Status switch
-        {
-            ActivateGameModifierRepositoryStatus.Activated
-                when activationResult.GameId is not null
-                    && activationResult.Version.HasValue
-                    && activationResult.Activation is not null =>
-                new ActivateGameModifierResult(
-                    ActivateGameModifierOutcome.Activated,
-                    new GameModifierActivatedEvent(
-                        activationResult.GameId,
-                        activationResult.Version.Value,
-                        activationResult.Activation
-                    )
-                ),
-            ActivateGameModifierRepositoryStatus.UnknownModifierCode =>
-                new ActivateGameModifierResult(ActivateGameModifierOutcome.UnknownModifierCode),
-            ActivateGameModifierRepositoryStatus.GameNotActive => new ActivateGameModifierResult(
-                ActivateGameModifierOutcome.GameNotActive
-            ),
-            ActivateGameModifierRepositoryStatus.ModifierNotEnabled => new ActivateGameModifierResult(
-                ActivateGameModifierOutcome.ModifierNotEnabled
-            ),
-            ActivateGameModifierRepositoryStatus.ModifierConflictActive =>
-                new ActivateGameModifierResult(ActivateGameModifierOutcome.ModifierConflictActive),
-            ActivateGameModifierRepositoryStatus.ModifierLimitReached => new ActivateGameModifierResult(
-                ActivateGameModifierOutcome.ModifierLimitReached
-            ),
-            _ => new ActivateGameModifierResult(ActivateGameModifierOutcome.GameNotActive)
-        };
-
-        if (result.Outcome != ActivateGameModifierOutcome.Activated || result.Event is null)
-        {
-            return result;
-        }
-
-        await RealtimePublishGuard.TryPublishAsync(
-            () => _eventsPublisher.PublishModifierActivatedAsync(result.Event, cancellationToken),
-            _logger,
-            AppMessages.Logs.RealtimeGameModifierActivatedPublishFailed,
-            result.Event.Activation.ModifierCode
-        );
-
-        return result;
+        return new GetAdminActiveGameModifierActivationsResult(true, activations);
     }
 }

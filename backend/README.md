@@ -6,7 +6,8 @@ Backend поддерживает auth, game board, game setup (admin draft), mod
 
 - `Controllers/` — auth, game board, modifiers, questions, history, game setup, registration и lifecycle.
 - `Application/` — use-case сервисы (`GameBoard`, `GameModifiers`, `GameQuestions`, `GameHistory`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
-- `Infrastructure/` — Twitch auth, EF repositories (`DbGame*Repository`), SignalR publishers.
+- `Api/` — transport contracts, mapping, HTTP middleware, rate limiting and SignalR hubs/publishers.
+- `Infrastructure/` — Twitch auth, EF repositories (`DbGame*Repository`) and object storage.
 - `Data/` — `ApplicationDbContext`, entities, configurations, migrations.
 - `openapi/deadmans.v1.yaml` — канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
 - `Api/Contracts/RealtimeHubContracts.cs` — hub paths и event names (синхронно с OpenAPI).
@@ -37,16 +38,26 @@ Guardrails:
 ## Актуальные endpoint'ы
 
 - `GET /api/game`, `POST /api/game/cells/{cellId}/open`
-- `GET /api/game/modifiers/catalog`, `POST /api/game/modifiers/{modifierCode}/activate`
-- `GET /api/game/questions/catalog`, `PATCH /api/game/questions/{questionId}/enabled`, `PATCH /api/game/questions/categories/{category}/enabled`
-- `POST /api/game/questions/ask-next`, `POST /api/game/questions/rounds/{roundId}/answer`, `GET /api/game/questions/games/{gameId}/history`
+- `GET /api/game/modifiers/catalog`, `POST /api/game/modifiers/{modifierId}/activate`
+- `POST /api/game/modifiers`, `PUT /api/game/modifiers/{modifierId}`,
+  `DELETE /api/game/modifiers/{modifierId}?expectedRevision=...` (admin-only immutable revisions/archive)
+- `GET /api/game/modifiers/history`, `GET /api/game/modifiers/{modifierId}/versions`,
+  version detail and related-game endpoints (all authenticated roles, keyset pagination)
+- `GET /api/game/questions/catalog`, `GET /api/game/questions/categories`, `POST /api/game/questions/categories`
+- `PATCH /api/game/questions/{questionId}/enabled`, `PATCH /api/game/questions/categories/{categoryId}/enabled`
+- `POST /api/game/quiz/questions/ask-next`, `POST /api/game/quiz/rounds/{roundId}/answer`
 - `DELETE /api/game/questions/{questionId}` (admin): soft-delete вопроса из каталога
 - `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
 - `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`
-- `GET /api/game/registration/teams` (admin), confirm/reject, invitations
-- `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered question rounds)
-- `POST /api/game/lifecycle/open-registration`, `/start`, `/finish`, `DELETE /api/game/lifecycle/games/{gameId}` (admin lifecycle + non-draft archive workflow)
+- `GET /api/game/registration/teams` (moderator/admin), confirm/reject/disband, disband requests, invitations
+- `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered quiz rounds)
+- `POST /api/game/lifecycle/open-registration`, `/start`, `GET /api/game/lifecycle/games/{gameId}/finish-preview`, `POST /api/game/lifecycle/games/{gameId}/finish`, `DELETE /api/game/lifecycle/games/{gameId}` (admin lifecycle, immutable final result + non-draft archive workflow)
 - `GET /auth/me`, `POST /auth/logout`, Twitch login/callback
+
+Quiz application port distinguishes manual delivery/answers from Twitch delivery/answers. A future
+bot can call the application service directly with provider channel/message identity; only the first
+correct answer is persisted. Its Twitch principal is created without a login timestamp, and OAuth
+later reuses that same `twitch_user_id` row.
 
 ## Локальный запуск
 
@@ -84,7 +95,12 @@ Uploader:
 - `tools/SeedTestGameBoardMedia/`
 - `backend/scripts/upload-test-game-board-media.ps1`
 
-Migration создает тестовую игру и записи `media_assets` / `board_cell_media`, а uploader заливает в bucket `deadman` реальные PNG-файлы с теми же object key (`games/{gameId}/cards/{col}-{row}.png`).
+Локальные тестовые данные:
+
+- `backend/scripts/seed-local-test-data.ps1`
+- `backend/scripts/seed-local-test-data.sql`
+
+`setup-local.ps1` применяет миграции, заливает PNG-файлы в bucket `deadman`, затем идемпотентно пересоздает локальную активную тестовую игру `c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a` с `media_assets` / `board_cell_media`, командами, quiz questions, enabled catalog selections, quiz points и несколькими активными модификаторами.
 
 ## Twitch auth
 
@@ -95,8 +111,37 @@ Migration создает тестовую игру и записи `media_assets
 - `TwitchAuth__RedirectUri`
 - `TwitchAuth__FrontendRedirectUri`
 - `TwitchAuth__Scopes__*`
+- `TwitchAuth__PermanentSuperAdminTwitchUserIds__*` (числовые Twitch ID владельцев; минимум один обязателен в Production)
 
 Backend валидирует auth-конфигурацию и наличие рабочего `ApplicationDbContext` на старте.
+
+В production соединение PostgreSQL обязано использовать `SSL Mode=VerifyFull`. Режимы
+`Disable`, `Allow`, `Prefer`, `Require` и `VerifyCA` не проходят стартовую проверку: только
+`VerifyFull` одновременно шифрует соединение, проверяет сертификат и имя хоста.
+
+`Storage:PublicBaseUrl` принимается только как чистый `http`/`https` origin без credentials,
+query string и fragment. В production используйте HTTPS URL и не публикуйте MinIO admin console.
+Readiness endpoint `/health/ready` проверяет и PostgreSQL, и возможность прочитать bucket object
+storage; liveness endpoint `/health/live` не зависит от внешних сервисов.
+
+Для любого общего/stage/prod-окружения обязательно задайте явный список допустимых host names
+через `AllowedHosts` (в переменной окружения значения разделяются `;`). Значение `*` не используйте:
+оно отключает фильтрацию заголовка `Host`. Локальный default разрешает только `localhost` и
+`127.0.0.1`.
+
+В production `AllowedHosts` проходит строгую стартовую проверку: wildcard, `localhost` и loopback
+адреса запрещены. Также задайте абсолютный путь `DataProtection__KeysDirectory` и смонтируйте его
+как постоянный каталог с доступом только для процесса backend. Иначе ключи auth-cookie не переживут
+пересоздание контейнера; production-запуск без этого параметра блокируется.
+
+Все изменяющие cookie-authenticated запросы `/api/*` должны содержать
+`X-Dead-Mans-Api-Client: 1`. Общий frontend API client добавляет его автоматически; проверка на
+backend является CSRF-границей и не должна отключаться для отдельных mutation endpoint-ов.
+
+Глобальный rate limiter раздельно ограничивает `/auth`, читающие `/api` запросы и изменения
+`/api`, а также realtime transport `/hubs`. Лимиты задаются в `RateLimiting:Auth`,
+`RateLimiting:Reads`, `RateLimiting:Mutations` и `RateLimiting:Realtime`; полностью отключать их
+допустимо только в изолированном тестовом окружении.
 
 ## Forwarded headers (proxy)
 

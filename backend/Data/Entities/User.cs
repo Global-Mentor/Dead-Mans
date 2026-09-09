@@ -10,10 +10,6 @@ public class User
 
     public string DisplayName { get; set; } = string.Empty;
 
-    public string? Email { get; set; }
-
-    public bool? EmailVerified { get; set; }
-
     public string? ProfileImageUrl { get; set; }
 
     public string? BroadcasterType { get; set; }
@@ -32,15 +28,24 @@ public class User
 
     public ICollection<UserRole> AssignedRoles { get; set; } = new List<UserRole>();
 
-    public ICollection<GameActiveModifier> ActivatedGameModifiers { get; set; } =
-        new List<GameActiveModifier>();
+    public ICollection<UserRoleAuditEvent> RoleAuditEvents { get; set; } =
+        new List<UserRoleAuditEvent>();
 
-    public ICollection<GameQuestionRound> AskedGameQuestionRounds { get; set; } =
-        new List<GameQuestionRound>();
+    public ICollection<UserRoleAuditEvent> PerformedRoleAuditEvents { get; set; } =
+        new List<UserRoleAuditEvent>();
 
-    public ICollection<GameQuestionRound> AnsweredGameQuestionRounds { get; set; } =
-        new List<GameQuestionRound>();
+    public ICollection<GameModifierActivation> ActivatedGameModifiers { get; set; } =
+        new List<GameModifierActivation>();
 
-    public ICollection<GameQuestionRound> CreditedGameQuestionRounds { get; set; } =
-        new List<GameQuestionRound>();
+    public ICollection<GameQuizRound> AskedGameQuizRounds { get; set; } =
+        new List<GameQuizRound>();
+
+    public ICollection<GameUserNotification> GameNotifications { get; set; } =
+        new List<GameUserNotification>();
+
+    public ICollection<GameQuizCorrectAnswer> CorrectQuizAnswers { get; set; } =
+        new List<GameQuizCorrectAnswer>();
+
+    public ICollection<GameQuizPointLedgerEntry> QuizPointLedgerEntries { get; set; } =
+        new List<GameQuizPointLedgerEntry>();
 }

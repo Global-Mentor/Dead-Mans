@@ -47,7 +47,8 @@ const snapshot: GameSetupSnapshot = {
       media: [],
     },
   ],
-  enabledModifierCodes: [],
+  enabledModifierIds: [],
+  enabledQuestionIds: [],
 }
 
 function createQueryWrapper() {

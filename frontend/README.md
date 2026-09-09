@@ -20,10 +20,10 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - восстановление сессии через `/auth/me`;
 - защищённая панель под `/panel` с role-aware navigation;
 - страница `game-board`, которая читает данные из `GET /api/game`, позволяет admin-пользователям открывать ячейки через `POST /api/game/cells/{cellId}/open` и получает realtime-обновления через SignalR;
-- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierCodes`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
-- каталог модификаторов в `game-setup`: администратор выбирает доступные для игры модификаторы; runtime activation UI пока не входит в frontend;
+- страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierIds`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
+- полный контур модификаторов: выбор каталога в `game-setup`, runtime activation, versioned lifecycle раунда, server-authoritative preview/finalize, итоговый breakdown и frozen history;
 - блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
-- страницы регистрации: `game-application` (игроки) и `team-registrations` (admin) — HTTP через `src/features/game-registration/api/`.
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; confirmed-команды нельзя покинуть напрямую, игрок отправляет заявку на роспуск, а модератор или администратор видит заметное уведомление и подтверждает роспуск в панели команд.
 
 ## Структура API-слоя
 
@@ -37,7 +37,8 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
 - `src/features/game-modifiers/index.ts` — public API modifiers feature;
-- `src/app/panel-route-config.tsx` — единый источник panel routes (метаданные, lazy-страницы, optional realtime-sync);
+- `src/app/panel-route-metadata.ts` — metadata/source of truth for route ids, paths, labels and access;
+- `src/app/panel-route-config.tsx` — lazy page wiring and optional realtime-sync on top of route metadata;
 - `src/app/AppRoutes.tsx` + `src/app/app-route-tree.tsx` — дерево маршрутов (`useRoutes`);
 - `src/routes/app-routes.ts` — re-export метаданных, guards и access helpers;
 - `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigation` + `PanelPrimaryNavigation`/`PanelProfileMenu`);
@@ -57,7 +58,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - Интерактивные ячейки game-setup draft остаются controlled React state: это редактор, а не одна transactional-форма.
 - Локальное UI-state остаётся в React. Zustand добавляется только при реальном cross-tree client-state, а не заранее.
 - MUI + Emotion и `AppToast` остаются единым UI/feedback baseline. Иконки, Framer Motion, SVG-компоненты и брендовые icon packs добавляются вместе с использующей их фичей.
-- Весь user-facing текст проходит через feature-owned i18n resources. Module augmentation i18next проверяет ключи в TypeScript, а `check:locales` сохраняет parity `en/ru/uk/pl`.
+- Весь user-facing текст проходит через feature-owned или общий i18n resource. Module augmentation i18next проверяет ключи в TypeScript, а `check:i18n` сохраняет parity `en/ru/uk/pl` и не пропускает новые литералы интерфейса.
 - TypeScript работает с `noUncheckedIndexedAccess` и `exactOptionalPropertyTypes`; optional-поля не заполняются явным `undefined`, а индексный доступ требует проверки.
 - Vitest покрывает setup draft/save/conflict, registration mutations, realtime models, route access и ключевые loading/error/empty/success состояния страниц. Coverage thresholds применяются к критичным модулям по отдельности, а не как формальная глобальная цель.
 
@@ -97,9 +98,15 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 ## Локализация
 
 - каждая фича хранит переводы в собственном `i18n/*-translations.ts`;
-- `src/locales/index.ts` только собирает feature resources в общий i18next resource;
+- повторно используемые действия, форматы и доменные подписи хранятся в `src/shared/i18n/common-translations.ts`; одинаковый текст с разной семантикой остаётся в feature resource, чтобы языки могли переводить его независимо;
+- `src/locales/index.ts` синхронно собирает только базовые ресурсы auth/layout/shared;
+- `src/locales/feature-locale-loader.ts` загружает игровые словари вместе с lazy-route до
+  отображения экрана и регистрирует сразу все поддерживаемые языки для последующего переключения;
 - `src/i18next.d.ts` связывает английский resource с `CustomTypeOptions`, поэтому неизвестные ключи ломают TypeScript-check;
 - `npm run check:locales` рекурсивно проверяет одинаковый набор ключей `en/ru/uk/pl` в каждом feature module.
+- `npm run check:hardcoded-ui` анализирует production TS/TSX и запрещает непереведённый JSX, пользовательские `label`/`title`/`message`/`placeholder`/ARIA-строки и locale-sensitive форматирование без выбранной локали;
+- `npm run check:i18n` объединяет обе обязательные проверки, а `npm run audit:i18n-duplicates` выводит кандидатов на безопасное объединение переводов для ручного semantic review;
+- клиент показывает локализованные сообщения по стабильному API error code и не выводит английский текст backend как fallback.
 
 ## Источник контрактов
 
@@ -130,7 +137,12 @@ Frontend использует `openapi-fetch` поверх generated `paths`.
 - в `dev` можно не задавать (используется `http://localhost:5285`);
 - вне `dev` рекомендуется задать явно;
 - значение должно быть абсолютным origin (например, `https://api.example.com`, без пути);
+- production origin обязан использовать HTTPS;
 - если не задан, frontend использует `window.location.origin` (same-origin deployment).
+
+`VITE_API_BASE_URL` по умолчанию равен `/api`. Явное значение должно быть либо абсолютным
+same-origin path, либо `https://` URL без query/fragment; абсолютный `http://` допустим только в
+development.
 
 ## Локальный запуск
 
@@ -162,10 +174,11 @@ V8 coverage для критичных модулей, неиспользуемы
 production-сборку. Отдельный локальный прогон coverage: `npm run test:coverage`. CI
 устанавливает зависимости через `npm ci` и запускает тот же quality gate.
 
-Playwright пока не входит в обязательный frontend gate. Следующий e2e-этап — добавить 3–5
-стабильных smoke-сценариев для auth/panel routing, game board, game setup save/conflict и
-registration flow после подготовки управляемых test data и auth fixture.
+Playwright входит в CI smoke gate и проверяет anonymous redirect, role-based routing и
+доступ администратора к каталогу вопросов без внешнего Twitch или тестовой БД. Следующий
+e2e-этап — добавить стабильные сценарии для game board, game setup save/conflict и registration
+flow после подготовки управляемых test data и auth fixture.
 
 ## Ограничение текущего скоупа
 
-На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup и registration UI. Lifecycle-кнопки, runtime activation UI модификаторов, admin invite UI и форма registration settings пока не реализованы; будущие задачи описываются в документации и issue tracker, а не в production-интерфейсе.
+На текущем этапе frontend содержит Twitch auth, panel shell, role-aware routing, game board, admin game setup, полный runtime/lifecycle UI модификаторов и registration UI. Вне текущего скоупа остаются admin invite UI и форма registration settings; будущие задачи описываются в документации и issue tracker, а не в production-интерфейсе.
