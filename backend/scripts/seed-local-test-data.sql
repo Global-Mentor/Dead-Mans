@@ -1,3 +1,14 @@
+SELECT EXISTS (
+  SELECT 1
+  FROM games
+  WHERE id = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid
+) AS deadmans_local_seed_exists \gset
+
+\if :deadmans_local_seed_exists
+\echo 'Local test game already exists; seed skipped.'
+\quit
+\endif
+
 BEGIN;
 
 CREATE OR REPLACE FUNCTION pg_temp.deadmans_seed_uuid(seed text)
@@ -112,36 +123,31 @@ SET
   name = EXCLUDED.name,
   updated_at_utc = EXCLUDED.updated_at_utc;
 
-WITH questions(id, external_code, category_id, text, answer, normalized_answer, reward, priority) AS (
+WITH questions(id, external_code, category_id, text, reward, priority) AS (
   VALUES
-    ('60000000-0000-0000-0000-000000000001'::uuid, 'local-pz-001', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой навык отвечает за скрытное перемещение?', 'Скрытность', 'скрытность', 3, 50),
-    ('60000000-0000-0000-0000-000000000002'::uuid, 'local-pz-002', '50000000-0000-0000-0000-000000000001'::uuid, 'Как называется состояние персонажа при заражении зомби-вирусом?', 'Заражен', 'заражен', 4, 45),
-    ('60000000-0000-0000-0000-000000000003'::uuid, 'local-pz-003', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой предмет чаще всего нужен для обработки глубокого пореза?', 'Бинт', 'бинт', 2, 40),
-    ('60000000-0000-0000-0000-000000000004'::uuid, 'local-pz-004', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой транспортный ресурс расходуется при езде на машине?', 'Бензин', 'бензин', 3, 38),
-    ('60000000-0000-0000-0000-000000000005'::uuid, 'local-dm-001', '50000000-0000-0000-0000-000000000002'::uuid, 'Что получает команда за каждое убийство на карточке стоимостью 100?', '100 очков', '100 очков', 5, 60),
-    ('60000000-0000-0000-0000-000000000006'::uuid, 'local-dm-002', '50000000-0000-0000-0000-000000000002'::uuid, 'Как называется модификатор с нарастающим бонусом за убийства?', 'Жажда', 'жажда', 5, 55),
-    ('60000000-0000-0000-0000-000000000007'::uuid, 'local-dm-003', '50000000-0000-0000-0000-000000000002'::uuid, 'Сколько очков даёт одна вынесенная награда на карточке 150?', '150', '150', 4, 48),
-    ('60000000-0000-0000-0000-000000000008'::uuid, 'local-dm-004', '50000000-0000-0000-0000-000000000002'::uuid, 'Какой этап идёт перед ручным подведением итогов раунда?', 'Игра карточки', 'игра карточки', 4, 42),
-    ('60000000-0000-0000-0000-000000000009'::uuid, 'local-survival-001', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой базовый ресурс нужен персонажу для восстановления выносливости?', 'Отдых', 'отдых', 2, 36),
-    ('60000000-0000-0000-0000-00000000000a'::uuid, 'local-survival-002', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой инструмент помогает рубить деревья быстрее всего?', 'Топор', 'топор', 3, 34),
-    ('60000000-0000-0000-0000-00000000000b'::uuid, 'local-survival-003', '50000000-0000-0000-0000-000000000003'::uuid, 'Что обычно снижает риск паники ночью?', 'Свет', 'свет', 2, 32),
-    ('60000000-0000-0000-0000-00000000000c'::uuid, 'local-survival-004', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой предмет нужен для кипячения воды на костре?', 'Кастрюля', 'кастрюля', 3, 30)
+    ('60000000-0000-0000-0000-000000000001'::uuid, 'local-pz-001', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой навык отвечает за скрытное перемещение?', 3, 50),
+    ('60000000-0000-0000-0000-000000000002'::uuid, 'local-pz-002', '50000000-0000-0000-0000-000000000001'::uuid, 'Как называется состояние персонажа при заражении зомби-вирусом?', 4, 45),
+    ('60000000-0000-0000-0000-000000000003'::uuid, 'local-pz-003', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой предмет чаще всего нужен для обработки глубокого пореза?', 2, 40),
+    ('60000000-0000-0000-0000-000000000004'::uuid, 'local-pz-004', '50000000-0000-0000-0000-000000000001'::uuid, 'Какой транспортный ресурс расходуется при езде на машине?', 3, 38),
+    ('60000000-0000-0000-0000-000000000005'::uuid, 'local-dm-001', '50000000-0000-0000-0000-000000000002'::uuid, 'Что получает команда за каждое убийство на карточке стоимостью 100?', 5, 60),
+    ('60000000-0000-0000-0000-000000000006'::uuid, 'local-dm-002', '50000000-0000-0000-0000-000000000002'::uuid, 'Как называется модификатор с нарастающим бонусом за убийства?', 5, 55),
+    ('60000000-0000-0000-0000-000000000007'::uuid, 'local-dm-003', '50000000-0000-0000-0000-000000000002'::uuid, 'Сколько очков даёт одна вынесенная награда на карточке 150?', 4, 48),
+    ('60000000-0000-0000-0000-000000000008'::uuid, 'local-dm-004', '50000000-0000-0000-0000-000000000002'::uuid, 'Какой этап идёт перед ручным подведением итогов раунда?', 4, 42),
+    ('60000000-0000-0000-0000-000000000009'::uuid, 'local-survival-001', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой базовый ресурс нужен персонажу для восстановления выносливости?', 2, 36),
+    ('60000000-0000-0000-0000-00000000000a'::uuid, 'local-survival-002', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой инструмент помогает рубить деревья быстрее всего?', 3, 34),
+    ('60000000-0000-0000-0000-00000000000b'::uuid, 'local-survival-003', '50000000-0000-0000-0000-000000000003'::uuid, 'Что обычно снижает риск паники ночью?', 2, 32),
+    ('60000000-0000-0000-0000-00000000000c'::uuid, 'local-survival-004', '50000000-0000-0000-0000-000000000003'::uuid, 'Какой предмет нужен для кипячения воды на костре?', 3, 30)
 )
 INSERT INTO question_definitions (
   id,
   external_code,
   category_id,
   text,
-  answer,
-  normalized_answer,
   reward,
   is_enabled,
   is_deleted,
   deleted_at_utc,
   priority,
-  asked_total_count,
-  correct_total_count,
-  last_asked_at_utc,
   created_at_utc,
   updated_at_utc
 )
@@ -150,16 +156,11 @@ SELECT
   external_code,
   category_id,
   text,
-  answer,
-  normalized_answer,
   reward,
   true,
   false,
   NULL,
   priority,
-  0,
-  0,
-  NULL,
   TIMESTAMPTZ '2026-08-07 00:00:00+00',
   TIMESTAMPTZ '2026-08-07 00:00:00+00'
 FROM questions
@@ -167,14 +168,53 @@ ON CONFLICT (external_code) DO UPDATE
 SET
   category_id = EXCLUDED.category_id,
   text = EXCLUDED.text,
-  answer = EXCLUDED.answer,
-  normalized_answer = EXCLUDED.normalized_answer,
   reward = EXCLUDED.reward,
   is_enabled = true,
   is_deleted = false,
   deleted_at_utc = NULL,
   priority = EXCLUDED.priority,
   updated_at_utc = EXCLUDED.updated_at_utc;
+
+DELETE FROM question_accepted_answers AS accepted_answer
+USING question_definitions AS question
+WHERE accepted_answer.question_id = question.id
+  AND question.external_code LIKE 'local-%';
+
+WITH answers(external_code, answer_text, normalized_answer) AS (
+  VALUES
+    ('local-pz-001', 'Скрытность', 'скрытность'),
+    ('local-pz-002', 'Заражен', 'заражен'),
+    ('local-pz-003', 'Бинт', 'бинт'),
+    ('local-pz-004', 'Бензин', 'бензин'),
+    ('local-dm-001', '100 очков', '100 очков'),
+    ('local-dm-002', 'Жажда', 'жажда'),
+    ('local-dm-003', '150', '150'),
+    ('local-dm-004', 'Игра карточки', 'игра карточки'),
+    ('local-survival-001', 'Отдых', 'отдых'),
+    ('local-survival-002', 'Топор', 'топор'),
+    ('local-survival-003', 'Свет', 'свет'),
+    ('local-survival-004', 'Кастрюля', 'кастрюля')
+)
+INSERT INTO question_accepted_answers (
+  id,
+  question_id,
+  answer_text,
+  normalized_answer,
+  is_primary,
+  sort_order,
+  created_at_utc
+)
+SELECT
+  pg_temp.deadmans_seed_uuid('local-test-question-answer-' || answers.external_code),
+  question.id,
+  answers.answer_text,
+  answers.normalized_answer,
+  true,
+  0,
+  TIMESTAMPTZ '2026-08-07 00:00:00+00'
+FROM answers
+JOIN question_definitions AS question
+  ON question.external_code = answers.external_code;
 
 UPDATE games
 SET active_team_id = NULL
@@ -222,11 +262,11 @@ INSERT INTO games (
 VALUES (
   'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
   'Dead Mans Local Test Game',
-  'Локальная тестовая игра с заполненной доской, командами, модификаторами и викторинами.',
-  'active',
+  'Локальная тестовая игра с заполненной доской, командами и вопросами викторины.',
+  'draft',
   TIMESTAMPTZ '2026-08-07 00:00:00+00',
-  TIMESTAMPTZ '2026-08-07 00:05:00+00',
-  TIMESTAMPTZ '2026-08-07 00:10:00+00',
+  NULL,
+  NULL,
   NULL,
   false,
   NULL,
@@ -251,8 +291,8 @@ VALUES (
   1,
   5,
   6,
-  '["Разминка","Риск","Тактика","Хардкор","Финал"]'::jsonb,
-  '["Бомбардир","Пиромант","Токсик","Вампир","Аватар","Всё могу x2"]'::jsonb,
+  ARRAY['Разминка','Риск','Тактика','Хардкор','Финал']::text[],
+  ARRAY['Бомбардир','Пиромант','Токсик','Вампир','Аватар','Всё могу x2']::text[],
   TIMESTAMPTZ '2026-08-07 00:10:00+00'
 );
 
@@ -279,8 +319,8 @@ WITH team_seed(team_id, slot_index, team_name, recruitment_open, is_played, play
   VALUES
     ('40000000-0000-0000-0000-000000000001'::uuid, 1, 'Северный ветер', false, false, NULL::timestamptz),
     ('40000000-0000-0000-0000-000000000002'::uuid, 2, 'Красные лисы', false, false, NULL::timestamptz),
-    ('40000000-0000-0000-0000-000000000003'::uuid, 3, 'Тихая гавань', false, true, TIMESTAMPTZ '2026-08-07 01:15:00+00'),
-    ('40000000-0000-0000-0000-000000000004'::uuid, 4, 'Стримеры', false, true, TIMESTAMPTZ '2026-08-07 00:55:00+00')
+    ('40000000-0000-0000-0000-000000000003'::uuid, 3, 'Тихая гавань', false, false, NULL::timestamptz),
+    ('40000000-0000-0000-0000-000000000004'::uuid, 4, 'Стримеры', false, false, NULL::timestamptz)
 )
 INSERT INTO game_teams (
   id,
@@ -395,7 +435,7 @@ SELECT
   'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6b'::uuid,
   row_index,
   col_index,
-  CASE WHEN row_index = 0 AND col_index < 3 THEN 'open' ELSE 'closed' END,
+  'closed',
   'tile',
   col_label || ': ' || row_label,
   cost,
@@ -422,8 +462,6 @@ INSERT INTO media_assets (
   object_key,
   mime_type,
   size_bytes,
-  scope,
-  status,
   created_at_utc
 )
 SELECT
@@ -431,16 +469,13 @@ SELECT
   'deadman',
   object_key,
   'image/png',
-  0,
-  'private',
-  'active',
+  1,
   TIMESTAMPTZ '2026-08-07 00:20:00+00'
 FROM media_rows
 ON CONFLICT (bucket, object_key) DO UPDATE
 SET
   mime_type = EXCLUDED.mime_type,
-  scope = EXCLUDED.scope,
-  status = EXCLUDED.status;
+  size_bytes = EXCLUDED.size_bytes;
 
 WITH rows(row_index) AS (
   VALUES (0), (1), (2), (3), (4)
@@ -473,13 +508,76 @@ SET
   media_asset_id = EXCLUDED.media_asset_id,
   role = EXCLUDED.role;
 
+INSERT INTO game_enabled_questions (
+  game_id,
+  question_id,
+  enabled_at_utc,
+  question_revision_snapshot,
+  question_code_snapshot,
+  category_name_snapshot,
+  question_text_snapshot,
+  accepted_answers_snapshot,
+  normalized_answers_snapshot,
+  reward_snapshot,
+  priority_snapshot,
+  snapshot_at_utc
+)
+SELECT
+  'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
+  question.id,
+  TIMESTAMPTZ '2026-08-07 00:25:00+00',
+  question.revision,
+  question.external_code::text,
+  category.name::text,
+  question.text,
+  answers.accepted,
+  answers.normalized,
+  question.reward,
+  question.priority,
+  TIMESTAMPTZ '2026-08-07 00:30:00+00'
+FROM question_definitions AS question
+JOIN question_categories AS category
+  ON category.id = question.category_id
+JOIN LATERAL (
+  SELECT
+    array_agg(answer.answer_text::text ORDER BY answer.is_primary DESC, answer.sort_order) AS accepted,
+    array_agg(answer.normalized_answer::text ORDER BY answer.is_primary DESC, answer.sort_order) AS normalized
+  FROM question_accepted_answers AS answer
+  WHERE answer.question_id = question.id
+) AS answers ON true
+WHERE question.is_deleted = false
+  AND question.is_enabled = true;
+
+UPDATE games
+SET
+  status = 'ready',
+  ready_at_utc = TIMESTAMPTZ '2026-08-07 00:30:00+00'
+WHERE id = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid;
+
+UPDATE games
+SET
+  status = 'active',
+  started_at_utc = TIMESTAMPTZ '2026-08-07 00:30:00+00'
+WHERE id = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid;
+
+UPDATE game_board_cells AS cell
+SET state = 'open'
+FROM game_boards AS board
+WHERE board.id = cell.board_id
+  AND board.game_id = 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid
+  AND cell.row_index = 0
+  AND cell.col_index < 3;
+
 INSERT INTO game_rounds (
   id,
   game_id,
+  board_id,
   board_cell_id,
   team_id,
   status,
-  started_at_utc,
+  prepared_at_utc,
+  gameplay_started_at_utc,
+  reviewed_at_utc,
   finished_at_utc,
   base_score,
   final_score,
@@ -501,10 +599,13 @@ VALUES
   (
     '80000000-0000-0000-0000-000000000001'::uuid,
     'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
+    'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6b'::uuid,
     pg_temp.deadmans_seed_uuid('local-test-cell-2-1.png'),
     '40000000-0000-0000-0000-000000000004'::uuid,
     'completed',
     TIMESTAMPTZ '2026-08-07 00:40:00+00',
+    TIMESTAMPTZ '2026-08-07 00:40:00+00',
+    TIMESTAMPTZ '2026-08-07 00:55:00+00',
     TIMESTAMPTZ '2026-08-07 00:55:00+00',
     105,
     -105,
@@ -525,10 +626,13 @@ VALUES
   (
     '80000000-0000-0000-0000-000000000002'::uuid,
     'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
+    'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6b'::uuid,
     pg_temp.deadmans_seed_uuid('local-test-cell-1-1.png'),
     '40000000-0000-0000-0000-000000000003'::uuid,
     'completed',
     TIMESTAMPTZ '2026-08-07 01:00:00+00',
+    TIMESTAMPTZ '2026-08-07 01:00:00+00',
+    TIMESTAMPTZ '2026-08-07 01:15:00+00',
     TIMESTAMPTZ '2026-08-07 01:15:00+00',
     100,
     345,
@@ -549,10 +653,13 @@ VALUES
   (
     '80000000-0000-0000-0000-000000000003'::uuid,
     'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
+    'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6b'::uuid,
     pg_temp.deadmans_seed_uuid('local-test-cell-3-1.png'),
     '40000000-0000-0000-0000-000000000001'::uuid,
     'awaiting_modifiers',
-    TIMESTAMPTZ '2026-08-07 01:20:00+00',
+    NULL,
+    NULL,
+    NULL,
     NULL,
     110,
     NULL,
@@ -570,6 +677,24 @@ VALUES
     TIMESTAMPTZ '2026-08-07 01:20:00+00',
     TIMESTAMPTZ '2026-08-07 01:20:00+00'
   );
+
+SET CONSTRAINTS trg_game_rounds_origin_consistency IMMEDIATE;
+
+UPDATE game_teams
+SET
+  is_played = true,
+  played_at_utc = CASE id
+    WHEN '40000000-0000-0000-0000-000000000003'::uuid THEN TIMESTAMPTZ '2026-08-07 01:15:00+00'
+    WHEN '40000000-0000-0000-0000-000000000004'::uuid THEN TIMESTAMPTZ '2026-08-07 00:55:00+00'
+  END,
+  updated_at_utc = CASE id
+    WHEN '40000000-0000-0000-0000-000000000003'::uuid THEN TIMESTAMPTZ '2026-08-07 01:15:00+00'
+    WHEN '40000000-0000-0000-0000-000000000004'::uuid THEN TIMESTAMPTZ '2026-08-07 00:55:00+00'
+  END
+WHERE id IN (
+  '40000000-0000-0000-0000-000000000003'::uuid,
+  '40000000-0000-0000-0000-000000000004'::uuid
+);
 
 INSERT INTO game_round_participants (
   id,
@@ -603,64 +728,50 @@ WITH round_media(round_id, filename, created_at_utc) AS (
     ('80000000-0000-0000-0000-000000000002'::uuid, '1-1.png', TIMESTAMPTZ '2026-08-07 01:00:00+00'),
     ('80000000-0000-0000-0000-000000000003'::uuid, '3-1.png', TIMESTAMPTZ '2026-08-07 01:20:00+00')
 )
-INSERT INTO game_round_cell_media (id, round_id, url, sort_order, created_at_utc)
+INSERT INTO game_round_cell_media (
+  id,
+  round_id,
+  bucket,
+  object_key,
+  mime_type,
+  size_bytes,
+  role,
+  sort_order,
+  created_at_utc
+)
 SELECT
   pg_temp.deadmans_seed_uuid('local-test-round-media-' || round_id::text),
   round_id,
-  'http://localhost:9000/deadman/games/c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a/cards/' || filename,
+  'deadman',
+  'games/c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a/cards/' || filename,
+  'image/png',
+  1,
+  'content',
   0,
   created_at_utc
 FROM round_media;
 
-INSERT INTO game_enabled_modifiers (
-  game_id,
-  modifier_id,
-  modifier_version_id,
-  version_pinned_at_utc,
-  enabled_at_utc
-)
-SELECT
-  'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
-  id,
-  current_version_id,
-  TIMESTAMPTZ '2026-08-07 00:30:00+00',
-  TIMESTAMPTZ '2026-08-07 00:25:00+00'
-FROM modifier_definitions
-WHERE is_archived = false
-  AND current_version_id IS NOT NULL
-ON CONFLICT (game_id, modifier_id) DO NOTHING;
-
-INSERT INTO game_enabled_questions (game_id, question_id, enabled_at_utc)
-SELECT
-  'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
-  id,
-  TIMESTAMPTZ '2026-08-07 00:25:00+00'
-FROM question_definitions
-WHERE is_deleted = false
-  AND is_enabled = true
-ON CONFLICT (game_id, question_id) DO NOTHING;
-
-INSERT INTO game_quiz_manual_awards (
+INSERT INTO game_quiz_point_ledger_entries (
   id,
   game_id,
-  awarded_to_user_id,
-  awarded_by_user_id,
-  operation_type,
-  points,
-  request_id,
+  user_id,
+  entry_type,
+  points_delta,
+  manual_request_id,
+  created_by_user_id,
   reason,
   available_points_before,
   available_points_after,
-  awarded_at_utc
+  occurred_at_utc
 )
 SELECT
   pg_temp.deadmans_seed_uuid('local-test-award-' || id::text),
   'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
   id,
-  '0f000000-0000-0000-0000-000000000001'::uuid,
-  'award',
+  'manual_adjustment',
   CASE WHEN twitch_user_id LIKE 'deadmans-local-test-user-%' THEN 30 ELSE 50 END AS points,
   pg_temp.deadmans_seed_uuid('local-test-award-request-' || id::text),
+  '0f000000-0000-0000-0000-000000000001'::uuid,
   'Стартовый локальный баланс для проверки модификаторов.',
   0,
   CASE WHEN twitch_user_id LIKE 'deadmans-local-test-user-%' THEN 30 ELSE 50 END,
@@ -668,194 +779,32 @@ SELECT
 FROM users
 WHERE is_active = true;
 
-INSERT INTO game_quiz_manual_awards (
+INSERT INTO game_quiz_point_ledger_entries (
   id,
   game_id,
-  awarded_to_user_id,
-  awarded_by_user_id,
-  operation_type,
-  points,
-  request_id,
+  user_id,
+  entry_type,
+  points_delta,
+  manual_request_id,
+  created_by_user_id,
   reason,
   available_points_before,
   available_points_after,
-  awarded_at_utc
+  occurred_at_utc
 )
 VALUES (
   pg_temp.deadmans_seed_uuid('local-test-deduction-anna'),
   'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
   '4f00c7f1-08e2-4d2e-b27d-7a943b5740c1'::uuid,
-  '0f000000-0000-0000-0000-000000000001'::uuid,
-  'deduct',
+  'manual_adjustment',
   -5,
   pg_temp.deadmans_seed_uuid('local-test-deduction-request-anna'),
+  '0f000000-0000-0000-0000-000000000001'::uuid,
   'Тестовое исправление ошибочного начисления.',
   30,
   25,
   TIMESTAMPTZ '2026-08-07 00:31:00+00'
 );
-
-WITH activations(
-  id,
-  round_id,
-  modifier_id,
-  activated_by_user_id,
-  initiated_by_user_id,
-  activated_at_utc,
-  status,
-  archived_at_utc
-) AS (
-  VALUES
-    (
-      '70000000-0000-0000-0000-000000000005'::uuid,
-      '80000000-0000-0000-0000-000000000002'::uuid,
-      '10000000-0000-0000-0000-000000000002'::uuid,
-      'ac84f417-6828-43e3-9294-2eb9bb9156c6'::uuid,
-      '0f000000-0000-0000-0000-000000000001'::uuid,
-      TIMESTAMPTZ '2026-08-07 01:01:00+00',
-      'consumed',
-      TIMESTAMPTZ '2026-08-07 01:15:00+00'
-    ),
-    (
-      '70000000-0000-0000-0000-000000000001'::uuid,
-      '80000000-0000-0000-0000-000000000003'::uuid,
-      '10000000-0000-0000-0000-000000000002'::uuid,
-      '2dc6119a-2693-4449-8fbf-2b77c9c69bf5'::uuid,
-      '2dc6119a-2693-4449-8fbf-2b77c9c69bf5'::uuid,
-      TIMESTAMPTZ '2026-08-07 01:22:00+00',
-      'active',
-      NULL::timestamptz
-    ),
-    (
-      '70000000-0000-0000-0000-000000000002'::uuid,
-      '80000000-0000-0000-0000-000000000003'::uuid,
-      '10000000-0000-0000-0000-000000000002'::uuid,
-      '672bd1cc-4e79-4d3c-a35f-f0ce0b3779b0'::uuid,
-      '0f000000-0000-0000-0000-000000000001'::uuid,
-      TIMESTAMPTZ '2026-08-07 01:23:00+00',
-      'active',
-      NULL::timestamptz
-    ),
-    (
-      '70000000-0000-0000-0000-000000000003'::uuid,
-      '80000000-0000-0000-0000-000000000003'::uuid,
-      '10000000-0000-0000-0000-000000000001'::uuid,
-      '59a208a4-22ac-4afb-b7ab-9186bb25d788'::uuid,
-      '59a208a4-22ac-4afb-b7ab-9186bb25d788'::uuid,
-      TIMESTAMPTZ '2026-08-07 01:24:00+00',
-      'active',
-      NULL::timestamptz
-    ),
-    (
-      '70000000-0000-0000-0000-000000000004'::uuid,
-      '80000000-0000-0000-0000-000000000003'::uuid,
-      '10000000-0000-0000-0000-000000000006'::uuid,
-      'e0b67312-f6d7-44d9-a0f9-9d8e53810b86'::uuid,
-      '0f000000-0000-0000-0000-000000000001'::uuid,
-      TIMESTAMPTZ '2026-08-07 01:25:00+00',
-      'active',
-      NULL::timestamptz
-    )
-)
-INSERT INTO game_modifier_activations (
-  id,
-  game_id,
-  round_id,
-  modifier_id,
-  modifier_version_id,
-  activated_by_user_id,
-  initiated_by_user_id,
-  activation_cost_snapshot,
-  definition_revision_snapshot,
-  modifier_name_snapshot,
-  modifier_description_snapshot,
-  modifier_category_snapshot,
-  modifier_icon_emoji_snapshot,
-  activation_command_snapshot,
-  normalized_tags_snapshot,
-  behavior_v2_snapshot_json,
-  activated_at_utc,
-  status,
-  archived_at_utc,
-  refund_amount
-)
-SELECT
-  activations.id,
-  'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid,
-  activations.round_id,
-  activations.modifier_id,
-  modifier_version.id,
-  activations.activated_by_user_id,
-  activations.initiated_by_user_id,
-  modifier_version.activation_cost,
-  modifier_version.revision,
-  modifier_version.name,
-  modifier_version.description,
-  modifier_version.category,
-  modifier_version.icon_emoji,
-  modifier_version.activation_command,
-  modifier_version.normalized_tags,
-  modifier_version.behavior_v2_json,
-  activations.activated_at_utc,
-  activations.status,
-  activations.archived_at_utc,
-  0
-FROM activations
-JOIN modifier_definitions AS modifier
-  ON modifier.id = activations.modifier_id
-JOIN modifier_definition_versions AS modifier_version
-  ON modifier_version.id = modifier.current_version_id
- AND modifier_version.modifier_id = modifier.id;
-
-INSERT INTO game_round_modifier_results (
-  id,
-  round_id,
-  modifier_activation_id,
-  modifier_id,
-  modifier_name_snapshot,
-  modifier_category_snapshot,
-  modifier_description_snapshot,
-  definition_revision_snapshot,
-  modifier_activation_command_snapshot,
-  modifier_normalized_tags_snapshot,
-  modifier_behavior_v2_snapshot_json,
-  outcome_status,
-  score_delta,
-  kill_delta,
-  multiplier_applied,
-  resolution_data_json,
-  resolution_kind,
-  calculation_breakdown_json,
-  resolved_by_user_id,
-  resolved_at_utc,
-  created_at_utc,
-  updated_at_utc
-)
-SELECT
-  pg_temp.deadmans_seed_uuid('local-test-zhazhda-result'),
-  activation.round_id,
-  activation.id,
-  activation.modifier_id,
-  activation.modifier_name_snapshot,
-  activation.modifier_category_snapshot,
-  activation.modifier_description_snapshot,
-  activation.definition_revision_snapshot,
-  activation.activation_command_snapshot,
-  activation.normalized_tags_snapshot,
-  activation.behavior_v2_snapshot_json,
-  'calculated',
-  45,
-  0,
-  NULL,
-  '{"type":"automaticRoundMetric"}'::jsonb,
-  'automaticRoundMetric',
-  '{"schemaVersion":2,"formulaCode":"growing_kill_value","formulaVersion":1,"pointsDelta":45,"bonusKillsDelta":0,"ruleOutcome":null,"countInput":null,"booleanInput":null}'::jsonb,
-  '0f000000-0000-0000-0000-000000000001'::uuid,
-  TIMESTAMPTZ '2026-08-07 01:15:00+00',
-  TIMESTAMPTZ '2026-08-07 01:15:00+00',
-  TIMESTAMPTZ '2026-08-07 01:15:00+00'
-FROM game_modifier_activations AS activation
-WHERE activation.id = '70000000-0000-0000-0000-000000000005'::uuid;
 
 UPDATE games
 SET active_team_id = '40000000-0000-0000-0000-000000000001'::uuid
@@ -886,17 +835,13 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1
-    FROM game_quiz_manual_awards
+    FROM game_quiz_point_ledger_entries
     WHERE game_id = test_game_id
-      AND operation_type = 'deduct'
-      AND points = -5
+      AND entry_type = 'manual_adjustment'
+      AND points_delta = -5
       AND available_points_after = 25
   ) THEN
     RAISE EXCEPTION 'Local seed verification failed: audited quiz deduction is missing.';
-  END IF;
-
-  IF (SELECT count(*) FROM game_modifier_activations WHERE game_id = test_game_id AND status = 'active') <> 4 THEN
-    RAISE EXCEPTION 'Local seed verification failed: expected four active modifier activations.';
   END IF;
 END $$;
 
