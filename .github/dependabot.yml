@@ -1,0 +1,68 @@
+version: 2
+
+# Routine version upgrades are handled deliberately so they can be tested together.
+# Dependabot only opens pull requests when GitHub reports a vulnerable dependency.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
+    commit-message:
+      prefix: "fix(deps)"
+    groups:
+      root-security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    labels: [dependencies, security, frontend]
+    commit-message:
+      prefix: "fix(deps)"
+    groups:
+      frontend-security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    labels: [dependencies, security, backend]
+    commit-message:
+      prefix: "fix(deps)"
+    groups:
+      backend-security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    labels: [dependencies, security, infrastructure]
+    commit-message:
+      prefix: "fix(deps)"
+    groups:
+      container-security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

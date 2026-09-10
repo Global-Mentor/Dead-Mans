@@ -1,0 +1,59 @@
+const translations = {
+  en: {
+    title: 'Team registrations',
+    loading: 'Loading teams...',
+    errorLoading: 'Failed to load teams.',
+    notOpen: 'Team registration is not open yet.',
+    description: 'Manage team slots, move players between rosters, and confirm the ready teams.',
+    empty: 'No teams have registered yet.',
+    slot: 'Team slot',
+    status: 'Status',
+    actions: 'Actions',
+    confirm: 'Confirm',
+    reject: 'Reject',
+  },
+  ru: {
+    title: 'Заявки команд',
+    loading: 'Загрузка команд...',
+    errorLoading: 'Не удалось загрузить команды.',
+    notOpen: 'Приём заявок команд пока не открыт.',
+    description:
+      'Управляйте слотами команд, переносите игроков между составами и подтверждайте готовые команды.',
+    empty: 'Пока нет зарегистрированных команд.',
+    slot: 'Место команды',
+    status: 'Статус',
+    actions: 'Действия',
+    confirm: 'Подтвердить',
+    reject: 'Отклонить',
+  },
+  uk: {
+    title: 'Заявки команд',
+    loading: 'Завантаження команд...',
+    errorLoading: 'Не вдалося завантажити команди.',
+    notOpen: 'Прийом заявок команд ще не відкритий.',
+    description:
+      'Керуйте слотами команд, переносіть гравців між складами та підтверджуйте готові команди.',
+    empty: 'Ще немає зареєстрованих команд.',
+    slot: 'Місце команди',
+    status: 'Статус',
+    actions: 'Дії',
+    confirm: 'Підтвердити',
+    reject: 'Відхилити',
+  },
+  pl: {
+    title: 'Zgłoszenia drużyn',
+    loading: 'Ładowanie drużyn...',
+    errorLoading: 'Nie udało się załadować drużyn.',
+    notOpen: 'Rejestracja drużyn nie jest jeszcze otwarta.',
+    description:
+      'Zarządzaj slotami drużyn, przenoś graczy między składami i zatwierdzaj gotowe drużyny.',
+    empty: 'Brak zarejestrowanych drużyn.',
+    slot: 'Miejsce drużyny',
+    status: 'Status',
+    actions: 'Akcje',
+    confirm: 'Zatwierdź',
+    reject: 'Odrzuć',
+  },
+}
+
+export default translations

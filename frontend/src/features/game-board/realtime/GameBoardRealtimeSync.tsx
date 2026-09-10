@@ -1,0 +1,150 @@
+import { useCallback } from 'react'
+import type { HubConnection } from '@microsoft/signalr'
+import { useQueryClient } from '@tanstack/react-query'
+import type {
+  GameBoardSnapshot,
+  GameLifecycleChangedEvent,
+} from '../../../shared/api/contracts/index.ts'
+import { logger } from '../../../shared/lib/logger.ts'
+import { realtimeHubs, useSignalrHubLifecycle } from '../../../shared/realtime/index.ts'
+import { activeGameRoundQueryOptions } from '../../game-rounds/api/game-rounds-queries.ts'
+import { gameHistoryQueryKeys } from '../../game-history/api/game-history-queries.ts'
+import { gameModifierQueryKeys } from '../../game-modifiers/api/game-modifier-queries.ts'
+import { gameRegistrationQueryKeys } from '../../game-registration/api/game-registration-queries.ts'
+import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
+import { currentGameBoardQueryOptions } from '../api/game-board-queries.ts'
+import { gameFinishQueryKeys } from '../api/game-finish-queries.ts'
+import {
+  applyCellOpenedEvent,
+  applyModifierActivationCancelledEvent,
+  applyModifierActivatedEvent,
+  selectNewerGameBoardSnapshot,
+  type CellOpenedEvent,
+  type ModifierActivationCancelledEvent,
+  type ModifierActivatedEvent,
+} from './game-board-realtime-model.ts'
+
+const CELL_OPENED_EVENT = realtimeHubs.gameBoard.events.cellOpened
+const ROUND_STATE_CHANGED_EVENT = realtimeHubs.gameBoard.events.roundStateChanged
+const MODIFIER_ACTIVATED_EVENT = realtimeHubs.gameBoard.events.modifierActivated
+const MODIFIER_CANCELLED_EVENT = realtimeHubs.gameBoard.events.modifierActivationCancelled
+const GAME_LIFECYCLE_CHANGED_EVENT = realtimeHubs.gameBoard.events.gameLifecycleChanged
+
+export function GameBoardRealtimeSync() {
+  const queryClient = useQueryClient()
+
+  const syncFromServerIfNewer = useCallback(async () => {
+    const freshSnapshot = await fetchCurrentGameBoardSnapshot().catch((error) => {
+      logger.warn('Game board realtime resync failed', error)
+      return null
+    })
+    if (!freshSnapshot) {
+      return
+    }
+
+    queryClient.setQueryData<GameBoardSnapshot | null>(
+      currentGameBoardQueryOptions.queryKey,
+      (current) => selectNewerGameBoardSnapshot(current, freshSnapshot),
+    )
+  }, [queryClient])
+
+  const registerEventHandlers = useCallback(
+    (connection: HubConnection) => {
+      const handleCellOpened = (event: CellOpenedEvent) => {
+        logger.debug('Game board realtime event received', event)
+        void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
+        queryClient.setQueryData<GameBoardSnapshot | null>(
+          currentGameBoardQueryOptions.queryKey,
+          (current) => {
+            const patchResult = applyCellOpenedEvent(current, event)
+            if (patchResult.requiresResync) {
+              void syncFromServerIfNewer()
+            }
+
+            return patchResult.nextSnapshot ?? null
+          },
+        )
+      }
+
+      const handleRoundStateChanged = () => {
+        logger.debug('Game board round state realtime event received')
+        void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
+      }
+
+      const handleModifierActivated = (event: ModifierActivatedEvent) => {
+        logger.debug('Game board modifier realtime event received', event)
+        void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
+        queryClient.setQueryData<GameBoardSnapshot | null>(
+          currentGameBoardQueryOptions.queryKey,
+          (current) => {
+            const patchResult = applyModifierActivatedEvent(current, event)
+            if (patchResult.requiresResync) {
+              void syncFromServerIfNewer()
+            }
+
+            return patchResult.nextSnapshot ?? null
+          },
+        )
+      }
+
+      const handleModifierCancelled = (event: ModifierActivationCancelledEvent) => {
+        logger.debug('Game board modifier cancel realtime event received', event)
+        void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
+        queryClient.setQueryData<GameBoardSnapshot | null>(
+          currentGameBoardQueryOptions.queryKey,
+          (current) => {
+            const patchResult = applyModifierActivationCancelledEvent(current, event)
+            if (patchResult.requiresResync) {
+              void syncFromServerIfNewer()
+            }
+
+            return patchResult.nextSnapshot ?? null
+          },
+        )
+      }
+
+      const handleGameLifecycleChanged = (event: GameLifecycleChangedEvent) => {
+        logger.debug('Game lifecycle realtime event received', event)
+        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameRegistrationQueryKeys.all })
+        void queryClient.invalidateQueries({ queryKey: gameFinishQueryKeys.all })
+      }
+
+      connection.on(CELL_OPENED_EVENT, handleCellOpened)
+      connection.on(ROUND_STATE_CHANGED_EVENT, handleRoundStateChanged)
+      connection.on(MODIFIER_ACTIVATED_EVENT, handleModifierActivated)
+      connection.on(MODIFIER_CANCELLED_EVENT, handleModifierCancelled)
+      connection.on(GAME_LIFECYCLE_CHANGED_EVENT, handleGameLifecycleChanged)
+
+      return () => {
+        connection.off(CELL_OPENED_EVENT, handleCellOpened)
+        connection.off(ROUND_STATE_CHANGED_EVENT, handleRoundStateChanged)
+        connection.off(MODIFIER_ACTIVATED_EVENT, handleModifierActivated)
+        connection.off(MODIFIER_CANCELLED_EVENT, handleModifierCancelled)
+        connection.off(GAME_LIFECYCLE_CHANGED_EVENT, handleGameLifecycleChanged)
+      }
+    },
+    [queryClient, syncFromServerIfNewer],
+  )
+
+  useSignalrHubLifecycle({
+    hub: 'gameBoard',
+    logLabel: 'Game board',
+    onConnected: syncFromServerIfNewer,
+    registerEventHandlers,
+  })
+
+  return null
+}

@@ -1,0 +1,19 @@
+import { z } from 'zod'
+
+interface QuestionFormSchemaMessages {
+  required: string
+  number: string
+}
+
+export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
+  return z.object({
+    categoryId: z.string().trim().min(1, messages.required),
+    text: z.string().trim().min(1, messages.required).max(2000, messages.required),
+    answer: z.string().trim().min(1, messages.required).max(500, messages.required),
+    reward: z.string().regex(/^\d+$/, messages.number),
+    priority: z.string().regex(/^-?\d+$/, messages.number),
+    isEnabled: z.boolean(),
+  })
+}
+
+export type QuestionFormValues = z.infer<ReturnType<typeof createQuestionFormSchema>>

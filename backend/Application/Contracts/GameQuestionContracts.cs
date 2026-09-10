@@ -1,0 +1,239 @@
+using backend.Domain.Persistence;
+
+namespace backend.Application.Contracts;
+
+public sealed record GameQuestionCatalogItem(
+    Guid QuestionId,
+    string QuestionCode,
+    Guid CategoryId,
+    string CategoryName,
+    string Text,
+    string Answer,
+    int Reward,
+    int Priority,
+    bool IsEnabled,
+    int AskedTotalCount,
+    int CorrectTotalCount,
+    DateTime? LastAskedAtUtc
+);
+
+public sealed record GameQuestionCategoryItem(
+    Guid Id,
+    string Name,
+    int QuestionCount,
+    bool IsProtected
+);
+
+public sealed record CreateGameQuestionInput(
+    string? ExternalCode,
+    Guid CategoryId,
+    string Text,
+    string Answer,
+    int Reward,
+    bool IsEnabled,
+    int Priority
+);
+
+public sealed record ImportGameQuestionInput(
+    int RowNumber,
+    Guid CategoryId,
+    string? Text,
+    string? Answer,
+    int? Reward,
+    string? ExternalCode,
+    bool? IsEnabled,
+    int? Priority,
+    ImportGameQuestionSource SourceQuestion
+);
+
+public sealed record ImportGameQuestionSource(
+    string? Text,
+    string? Answer,
+    int? Reward,
+    string? CategoryId,
+    string? ExternalCode,
+    bool? IsEnabled,
+    int? Priority
+);
+
+public sealed record ImportGameQuestionCandidate(
+    int RowNumber,
+    string QuestionText,
+    CreateGameQuestionInput Question,
+    ImportGameQuestionSource SourceQuestion
+);
+
+public sealed record ImportGameQuestionSkippedItem(
+    int RowNumber,
+    string? QuestionText,
+    string ReasonCode,
+    string Reason,
+    ImportGameQuestionSource? SourceQuestion = null
+);
+
+public sealed record UpdateGameQuestionInput(
+    Guid CategoryId,
+    string Text,
+    string Answer,
+    int Reward,
+    bool IsEnabled,
+    int Priority
+);
+
+public sealed record AskedQuizQuestion(
+    Guid RoundId,
+    Guid GameId,
+    int AskOrder,
+    Guid QuestionId,
+    string QuestionCode,
+    string CategoryName,
+    string Text,
+    int Reward,
+    DateTime AskedAtUtc,
+    DateTime ClosesAtUtc
+);
+
+public abstract record GameQuizQuestionDelivery;
+
+public sealed record ManualGameQuizQuestionDelivery(Guid AskedByUserId)
+    : GameQuizQuestionDelivery;
+
+public sealed record TwitchGameQuizQuestionDelivery(
+    string SourceChannelId,
+    string? SourceMessageId = null
+) : GameQuizQuestionDelivery;
+
+public abstract record GameQuizAnswerSource;
+
+public sealed record ManualGameQuizAnswerSource(
+    Guid CapturedByUserId,
+    Guid AwardedToUserId,
+    string? ReportedDisplayName
+) : GameQuizAnswerSource;
+
+public sealed record TwitchGameQuizAnswerSource(
+    string TwitchUserId,
+    string Login,
+    string DisplayName,
+    string SourceChannelId,
+    string SourceMessageId
+) : GameQuizAnswerSource;
+
+public sealed record SubmitGameQuizAnswerInput(
+    string SubmittedAnswer,
+    GameQuizAnswerSource Source
+);
+
+public sealed record GameQuizRoundSummary(
+    Guid RoundId,
+    Guid GameId,
+    int AskOrder,
+    Guid QuestionId,
+    string QuestionText,
+    string CategoryName,
+    int Reward,
+    string Status,
+    DateTime AskedAtUtc,
+    DateTime ClosesAtUtc,
+    DateTime? AnsweredAtUtc,
+    string? AnsweredByDisplayName,
+    Guid? AnsweredByUserId,
+    Guid? AnsweredForUserId,
+    string? SubmittedAnswer,
+    bool? IsCorrect,
+    int? AwardedPoints
+);
+
+public sealed record ManualQuizAwardInput(
+    Guid AwardedToUserId,
+    string OperationType,
+    int Points,
+    string Reason,
+    Guid RequestId
+);
+
+public sealed record ManualQuizAwardPlayer(
+    Guid UserId,
+    string Login,
+    string DisplayName,
+    int EarnedQuizPoints,
+    int SpentQuizPoints,
+    int AvailableQuizPoints
+);
+
+public sealed record ManualQuizAwardSummary(
+    Guid AwardId,
+    Guid GameId,
+    Guid AwardedToUserId,
+    string AwardedToDisplayName,
+    Guid AwardedByUserId,
+    string AwardedByDisplayName,
+    string OperationType,
+    int PointsDelta,
+    string Reason,
+    int AvailablePointsBefore,
+    int AvailablePointsAfter,
+    Guid RequestId,
+    DateTime AwardedAtUtc
+);
+
+public static class GameQuizStateChangeKinds
+{
+    public const string QuestionAsked = "question_asked";
+    public const string QuestionAnswered = "question_answered";
+    public const string ManualAdjustmentApplied = "manual_adjustment_applied";
+}
+
+public sealed record GameQuizStateChangedEvent(
+    Guid GameId,
+    string ChangeKind,
+    DateTime OccurredAtUtc
+);
+
+public static class GameQuizRoundSummaryFactory
+{
+    public static GameQuizRoundSummary Create(
+        Guid roundId,
+        Guid gameId,
+        int askOrder,
+        Guid questionId,
+        string questionText,
+        string categoryName,
+        int reward,
+        string status,
+        DateTime askedAtUtc,
+        DateTime closesAtUtc,
+        DateTime? answeredAtUtc,
+        string? answeredByDisplayName,
+        Guid? answeredByUserId,
+        Guid? answeredForUserId,
+        string? submittedAnswer,
+        bool? isCorrect,
+        int? awardedPoints
+    )
+    {
+        var normalizedStatus = string.IsNullOrWhiteSpace(status)
+            ? GameQuizRoundStatusValue.Asked
+            : status;
+
+        return new GameQuizRoundSummary(
+            roundId,
+            gameId,
+            askOrder,
+            questionId,
+            questionText,
+            categoryName,
+            reward,
+            normalizedStatus,
+            askedAtUtc,
+            closesAtUtc,
+            answeredAtUtc,
+            answeredByDisplayName,
+            answeredByUserId,
+            answeredForUserId,
+            submittedAnswer,
+            isCorrect,
+            awardedPoints
+        );
+    }
+}

@@ -1,0 +1,480 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using backend.Api.Contracts;
+using backend.Api.Mapping;
+using backend.Application.Abstractions.Auth;
+using backend.Application.Features.Auth;
+using backend.Data;
+using backend.Data.Entities;
+using backend.Infrastructure.Auth;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+namespace Backend.Tests.Unit.Auth;
+
+public sealed class AuthSessionConsistencyTests
+{
+    [Fact]
+    public async Task GetSessionAsync_DoesNotPersistViewerRoleOnRead()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "twitch-user-1",
+                Login = "viewer1",
+                DisplayName = "Viewer One",
+                IsActive = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        dbContext.Roles.Add(
+            new Role
+            {
+                Id = 1,
+                Code = "viewer",
+                Name = "Viewer",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        await dbContext.SaveChangesAsync();
+
+        var authUserReader = new DbAuthUserReader(dbContext, NullLogger<DbAuthUserReader>.Instance);
+        var roleService = new UserRoleService(
+            dbContext,
+            TimeProvider.System,
+            NullLogger<UserRoleService>.Instance
+        );
+        var sessionService = new AuthSessionService(authUserReader, roleService);
+
+        var session = await sessionService.GetSessionAsync(userId, CancellationToken.None);
+
+        Assert.NotNull(session);
+        Assert.Equal(["viewer"], session.Roles);
+        Assert.Empty(await dbContext.UserRoles.ToListAsync());
+    }
+
+    [Fact]
+    public async Task EnsureEffectiveRolesAsync_UsesInjectedClockForViewerAssignment()
+    {
+        await using var dbContext = CreateDbContext();
+        var expectedTimestamp = new DateTimeOffset(2026, 9, 8, 13, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "clock-user",
+                Login = "clock-user",
+                DisplayName = "Clock User",
+                IsActive = true,
+                CreatedAtUtc = expectedTimestamp.UtcDateTime,
+                UpdatedAtUtc = expectedTimestamp.UtcDateTime
+            }
+        );
+        dbContext.Roles.Add(
+            new Role
+            {
+                Id = 1,
+                Code = AuthRoleCodes.Viewer,
+                Name = "Viewer",
+                CreatedAtUtc = expectedTimestamp.UtcDateTime,
+                UpdatedAtUtc = expectedTimestamp.UtcDateTime
+            }
+        );
+        await dbContext.SaveChangesAsync();
+        var roleService = new UserRoleService(
+            dbContext,
+            new FixedTimeProvider(expectedTimestamp),
+            NullLogger<UserRoleService>.Instance
+        );
+
+        var roles = await roleService.EnsureEffectiveRolesAsync(userId, CancellationToken.None);
+
+        Assert.Equal([AuthRoleCodes.Viewer], roles);
+        var assignment = await dbContext.UserRoles.SingleAsync();
+        Assert.Equal(expectedTimestamp.UtcDateTime, assignment.AssignedAtUtc);
+    }
+
+    [Fact]
+    public async Task EnsureEffectiveRolesAsync_PermanentOwnerGetsInheritedAdminAndSuperAdmin()
+    {
+        await using var dbContext = CreateDbContext();
+        var expectedTimestamp = new DateTimeOffset(2026, 9, 9, 18, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "987654",
+                Login = "globalmentor",
+                DisplayName = "GlobalMentor",
+                IsActive = true,
+                CreatedAtUtc = expectedTimestamp.UtcDateTime,
+                UpdatedAtUtc = expectedTimestamp.UtcDateTime
+            }
+        );
+        dbContext.Roles.AddRange(CreateRoles(expectedTimestamp.UtcDateTime));
+        await dbContext.SaveChangesAsync();
+        var roleService = new UserRoleService(
+            dbContext,
+            Options.Create(
+                new TwitchAuthOptions { PermanentSuperAdminTwitchUserIds = ["987654"] }
+            ),
+            new FixedTimeProvider(expectedTimestamp),
+            NullLogger<UserRoleService>.Instance
+        );
+
+        var roles = await roleService.EnsureEffectiveRolesAsync(userId, CancellationToken.None);
+
+        Assert.Equal(
+            [AuthRoleCodes.Viewer, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
+            roles
+        );
+        Assert.Equal(3, await dbContext.UserRoles.CountAsync());
+        Assert.Equal(3, await dbContext.UserRoleAuditEvents.CountAsync());
+    }
+
+    [Fact]
+    public async Task GetSessionAsync_WhenUserInactive_ReturnsNull()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "inactive-user-session",
+                Login = "inactive-session",
+                DisplayName = "Inactive Session User",
+                IsActive = false,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        await dbContext.SaveChangesAsync();
+
+        var authUserReader = new DbAuthUserReader(dbContext, NullLogger<DbAuthUserReader>.Instance);
+        var roleService = new UserRoleService(
+            dbContext,
+            TimeProvider.System,
+            NullLogger<UserRoleService>.Instance
+        );
+        var sessionService = new AuthSessionService(authUserReader, roleService);
+
+        var session = await sessionService.GetSessionAsync(userId, CancellationToken.None);
+
+        Assert.Null(session);
+    }
+
+    [Fact]
+    public void ToDto_FiltersUnsupportedRoles()
+    {
+        var session = new AuthSession(
+            Guid.NewGuid(),
+            "Test User",
+            ["viewer", "experimental", "moderator", "superadmin"]
+        );
+
+        var dto = session.ToDto();
+
+        Assert.Equal([AuthRole.Viewer, AuthRole.Moderator, AuthRole.SuperAdmin], dto.Roles);
+    }
+
+    [Fact]
+    public async Task TransformAsync_ReplacesCookieRoleClaimsWithCurrentDatabaseRoles()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "twitch-user-2",
+                Login = "moderator1",
+                DisplayName = "Moderator One",
+                IsActive = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        dbContext.Roles.AddRange(
+            new Role
+            {
+                Id = 1,
+                Code = "viewer",
+                Name = "Viewer",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            },
+            new Role
+            {
+                Id = 2,
+                Code = "moderator",
+                Name = "Moderator",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        dbContext.UserRoles.Add(
+            new UserRole
+            {
+                UserId = userId,
+                RoleId = 2,
+                AssignedAtUtc = DateTime.UtcNow
+            }
+        );
+        await dbContext.SaveChangesAsync();
+
+        var transformer = new CurrentUserRoleClaimsTransformation(
+            new DbAuthUserReader(dbContext, NullLogger<DbAuthUserReader>.Instance),
+            new UserRoleService(
+                dbContext,
+                TimeProvider.System,
+                NullLogger<UserRoleService>.Instance
+            ),
+            NullLogger<CurrentUserRoleClaimsTransformation>.Instance
+        );
+        var principal = new ClaimsPrincipal(
+            [
+                new ClaimsIdentity(
+                    [
+                        new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                        new Claim(ClaimTypes.Name, "Moderator One"),
+                        new Claim(ClaimTypes.Role, "admin")
+                    ],
+                    "test"
+                ),
+                new ClaimsIdentity(
+                    [new Claim("external-role", "admin")],
+                    authenticationType: null,
+                    nameType: ClaimTypes.Name,
+                    roleType: "external-role"
+                )
+            ]
+        );
+
+        var transformed = await transformer.TransformAsync(principal);
+        var roleClaims = transformed.FindAll(ClaimTypes.Role).Select(claim => claim.Value).ToArray();
+
+        Assert.Equal(["viewer", "moderator"], roleClaims);
+        Assert.False(transformed.IsInRole("admin"));
+    }
+
+    [Fact]
+    public async Task TransformAsync_WhenUserMissing_RemovesStaleRoleClaims()
+    {
+        await using var dbContext = CreateDbContext();
+        var transformer = new CurrentUserRoleClaimsTransformation(
+            new DbAuthUserReader(dbContext, NullLogger<DbAuthUserReader>.Instance),
+            new UserRoleService(
+                dbContext,
+                TimeProvider.System,
+                NullLogger<UserRoleService>.Instance
+            ),
+            NullLogger<CurrentUserRoleClaimsTransformation>.Instance
+        );
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.Role, "admin")
+                ],
+                "test"
+            )
+        );
+
+        var transformed = await transformer.TransformAsync(principal);
+
+        Assert.Empty(transformed.FindAll(ClaimTypes.Role));
+    }
+
+    [Fact]
+    public async Task TransformAsync_WhenPrincipalIsAnonymous_RemovesInjectedRoleClaims()
+    {
+        await using var dbContext = CreateDbContext();
+        var transformer = new CurrentUserRoleClaimsTransformation(
+            new DbAuthUserReader(dbContext, NullLogger<DbAuthUserReader>.Instance),
+            new UserRoleService(
+                dbContext,
+                TimeProvider.System,
+                NullLogger<UserRoleService>.Instance
+            ),
+            NullLogger<CurrentUserRoleClaimsTransformation>.Instance
+        );
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity([new Claim(ClaimTypes.Role, "admin")])
+        );
+
+        var transformed = await transformer.TransformAsync(principal);
+
+        Assert.False(transformed.Identity?.IsAuthenticated);
+        Assert.Empty(transformed.FindAll(ClaimTypes.Role));
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_WhenUserIsInactive_ThrowsInactiveUserLoginException()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(
+            new User
+            {
+                Id = Guid.NewGuid(),
+                TwitchUserId = "123456",
+                Login = "inactive-user",
+                DisplayName = "Inactive User",
+                IsActive = false,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            }
+        );
+        await dbContext.SaveChangesAsync();
+
+        var httpClient = new HttpClient(
+            new StubHttpMessageHandler(
+                [
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = JsonContent.Create(new { access_token = "token-123" })
+                    },
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = JsonContent.Create(
+                            new
+                            {
+                                data = new[]
+                                {
+                                    new
+                                    {
+                                        id = "123456",
+                                        login = "inactive-user",
+                                        display_name = "Inactive User",
+                                        profile_image_url = (string?)null,
+                                        broadcaster_type = (string?)null,
+                                        type = (string?)null
+                                    }
+                                }
+                            }
+                        )
+                    }
+                ]
+            )
+        );
+
+        var service = new TwitchLoginService(
+            httpClient,
+            Options.Create(
+                new TwitchAuthOptions
+                {
+                    ClientId = "client-id",
+                    ClientSecret = "client-secret-12345",
+                    RedirectUri = "https://example.com/auth/twitch/callback",
+                    FrontendRedirectUri = "https://example.com/auth/callback",
+                    Scopes = ["openid"]
+                }
+            ),
+            dbContext,
+            new StubUserRoleService(),
+            TimeProvider.System,
+            NullLogger<TwitchLoginService>.Instance
+        );
+
+        await Assert.ThrowsAsync<InactiveUserLoginException>(
+            () => service.AuthenticateAsync("code-123", CancellationToken.None)
+        );
+    }
+
+    private static ApplicationDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase($"auth-session-tests-{Guid.NewGuid():N}")
+            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
+
+        return new ApplicationDbContext(options);
+    }
+
+    private static Role[] CreateRoles(DateTime timestamp) =>
+    [
+        new Role
+        {
+            Id = 1,
+            Code = AuthRoleCodes.Viewer,
+            Name = "Viewer",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 2,
+            Code = AuthRoleCodes.Moderator,
+            Name = "Moderator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 3,
+            Code = AuthRoleCodes.Admin,
+            Name = "Administrator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        },
+        new Role
+        {
+            Id = 4,
+            Code = AuthRoleCodes.SuperAdmin,
+            Name = "Super administrator",
+            CreatedAtUtc = timestamp,
+            UpdatedAtUtc = timestamp
+        }
+    ];
+
+    private sealed class StubUserRoleService : IUserRoleService
+    {
+        public Task<string[]> GetEffectiveRolesAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<string[]>([AuthRoleCodes.Viewer]);
+        }
+
+        public Task<string[]> EnsureEffectiveRolesAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<string[]>([AuthRoleCodes.Viewer]);
+        }
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
+    private sealed class StubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Queue<HttpResponseMessage> _responses;
+
+        public StubHttpMessageHandler(IEnumerable<HttpResponseMessage> responses)
+        {
+            _responses = new Queue<HttpResponseMessage>(responses);
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            if (_responses.Count == 0)
+            {
+                throw new InvalidOperationException("No stub response configured for HTTP call.");
+            }
+
+            return Task.FromResult(_responses.Dequeue());
+        }
+    }
+}

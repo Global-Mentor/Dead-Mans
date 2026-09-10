@@ -1,0 +1,403 @@
+using backend.Application.Contracts;
+using backend.Application.Features.GameRegistration;
+using backend.Data;
+using backend.Data.Entities;
+using backend.Domain.Persistence;
+using backend.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Backend.Tests.Unit.Infrastructure.Persistence;
+
+public sealed class DbGameRegistrationRepositoryTests
+{
+    [Fact]
+    public async Task PersistCreateTeamAsync_UsesInjectedClock()
+    {
+        await using var db = CreateDbContext();
+        var timestamp = new DateTimeOffset(2035, 4, 5, 6, 7, 8, TimeSpan.Zero);
+        var gameId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Ready game",
+                Status = GameStatusValue.Ready,
+                CreatedAtUtc = timestamp.UtcDateTime,
+                ReadyAtUtc = timestamp.UtcDateTime,
+                MinPlayersPerTeam = 1,
+                MaxPlayersPerTeam = 3
+            }
+        );
+        db.GameTeamSlots.Add(
+            new GameTeamSlot
+            {
+                Id = slotId,
+                GameId = gameId,
+                SlotIndex = 1,
+                SlotType = TeamSlotTypeValue.Public,
+                CreatedAtUtc = timestamp.UtcDateTime
+            }
+        );
+        db.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "clock-user",
+                Login = "clock-user",
+                DisplayName = "Clock User",
+                IsActive = true,
+                CreatedAtUtc = timestamp.UtcDateTime,
+                UpdatedAtUtc = timestamp.UtcDateTime
+            }
+        );
+        await db.SaveChangesAsync();
+
+        var reads = new GameRegistrationReadStore(db);
+        var persistence = new DbGameRegistrationPersistence(
+            db,
+            reads,
+            NullLogger<DbGameRegistrationPersistence>.Instance,
+            new FixedTimeProvider(timestamp)
+        );
+
+        var result = await persistence.PersistCreateTeamAsync(
+            gameId,
+            userId,
+            slotId,
+            recruitmentOpen: true,
+            name: "Clock Team"
+        );
+
+        Assert.True(result.Success);
+        var team = await db.GameTeams.SingleAsync();
+        var member = await db.GameTeamMembers.SingleAsync();
+        Assert.Equal(timestamp.UtcDateTime, team.CreatedAtUtc);
+        Assert.Equal(timestamp.UtcDateTime, team.UpdatedAtUtc);
+        Assert.Equal(timestamp.UtcDateTime, member.JoinedAtUtc);
+    }
+
+    [Fact]
+    public async Task RejectTeam_ClosesMembershipAndPreservesHistory_SoUserCanCreateNewTeam()
+    {
+        await using var db = CreateDbContext();
+        var gameId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var utc = DateTime.UtcNow;
+
+        db.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "100",
+                Login = "player",
+                DisplayName = "Player",
+                IsActive = true,
+                CreatedAtUtc = utc,
+                UpdatedAtUtc = utc
+            }
+        );
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Ready game",
+                Status = GameStatusValue.Ready,
+                CreatedAtUtc = utc,
+                ReadyAtUtc = utc,
+                MinPlayersPerTeam = 1,
+                MaxPlayersPerTeam = 3
+            }
+        );
+        db.GameTeamSlots.Add(
+            new GameTeamSlot
+            {
+                Id = slotId,
+                GameId = gameId,
+                SlotIndex = 1,
+                SlotType = TeamSlotTypeValue.Public,
+                CreatedAtUtc = utc
+            }
+        );
+        db.GameTeams.Add(
+            new GameTeam
+            {
+                Id = teamId,
+                GameId = gameId,
+                SlotId = slotId,
+                RecruitmentOpen = true,
+                Status = TeamStatusValue.Forming,
+                CreatedAtUtc = utc,
+                UpdatedAtUtc = utc
+            }
+        );
+        db.GameTeamMembers.Add(
+            new GameTeamMember
+            {
+                Id = Guid.NewGuid(),
+                GameId = gameId,
+                TeamId = teamId,
+                UserId = userId,
+                JoinedAtUtc = utc
+            }
+        );
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+        var reject = await service.RejectTeamAsync(adminId, teamId);
+        Assert.True(reject.Success);
+
+        var rejectedTeam = await db.GameTeams.SingleAsync(team => team.Id == teamId);
+        Assert.Equal(TeamStatusValue.Rejected, rejectedTeam.Status);
+        Assert.Equal(adminId, rejectedTeam.RejectedByUserId);
+        Assert.NotNull(rejectedTeam.RejectedAtUtc);
+
+        var historicalMember = await db.GameTeamMembers.SingleAsync(member => member.TeamId == teamId);
+        Assert.NotNull(historicalMember.LeftAtUtc);
+
+        var create = await service.CreateTeamAsync(userId, recruitmentOpen: true);
+        Assert.True(create.Success);
+        Assert.NotNull(create.Value);
+        Assert.Equal(1, create.Value!.TeamSlotIndex);
+    }
+
+    [Fact]
+    public async Task RejectTeam_WhenConfirmed_ReturnsTeamNotJoinable()
+    {
+        await using var db = CreateDbContext();
+        var gameId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var utc = DateTime.UtcNow;
+
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Ready game",
+                Status = GameStatusValue.Ready,
+                CreatedAtUtc = utc,
+                ReadyAtUtc = utc,
+                MinPlayersPerTeam = 1,
+                MaxPlayersPerTeam = 3
+            }
+        );
+        db.GameTeamSlots.Add(
+            new GameTeamSlot
+            {
+                Id = slotId,
+                GameId = gameId,
+                SlotIndex = 1,
+                SlotType = TeamSlotTypeValue.Public,
+                CreatedAtUtc = utc
+            }
+        );
+        db.GameTeams.Add(
+            new GameTeam
+            {
+                Id = teamId,
+                GameId = gameId,
+                SlotId = slotId,
+                RecruitmentOpen = false,
+                Status = TeamStatusValue.Confirmed,
+                CreatedAtUtc = utc,
+                UpdatedAtUtc = utc,
+                ConfirmedAtUtc = utc,
+                ConfirmedByUserId = adminId
+            }
+        );
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+        var reject = await service.RejectTeamAsync(adminId, teamId);
+
+        Assert.False(reject.Success);
+        Assert.Equal(GameRegistrationErrorCode.TeamNotJoinable, reject.Error);
+        Assert.Single(await db.GameTeams.Where(team => team.Id == teamId).ToListAsync());
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_WhenTeamMissing_ReturnsTeamNotFound()
+    {
+        await using var db = CreateDbContext();
+        var gameId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var invitationId = Guid.NewGuid();
+        var utc = DateTime.UtcNow;
+
+        db.Users.Add(
+            new User
+            {
+                Id = userId,
+                TwitchUserId = "200",
+                Login = "invitee",
+                DisplayName = "Invitee",
+                IsActive = true,
+                CreatedAtUtc = utc,
+                UpdatedAtUtc = utc
+            }
+        );
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Ready game",
+                Status = GameStatusValue.Ready,
+                CreatedAtUtc = utc,
+                ReadyAtUtc = utc,
+                MinPlayersPerTeam = 1,
+                MaxPlayersPerTeam = 3
+            }
+        );
+        db.GameTeamSlots.Add(
+            new GameTeamSlot
+            {
+                Id = slotId,
+                GameId = gameId,
+                SlotIndex = 1,
+                SlotType = TeamSlotTypeValue.Public,
+                CreatedAtUtc = utc
+            }
+        );
+        db.GameTeamInvitations.Add(
+            new GameTeamInvitation
+            {
+                Id = invitationId,
+                GameId = gameId,
+                SlotId = slotId,
+                TeamId = teamId,
+                InvitedUserId = userId,
+                InvitedByKind = InvitedByKindValue.Admin,
+                Status = TeamInvitationStatusValue.Pending,
+                CreatedAtUtc = utc
+            }
+        );
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+        var accept = await service.AcceptInvitationAsync(userId, invitationId);
+
+        Assert.False(accept.Success);
+        Assert.Equal(GameRegistrationErrorCode.TeamNotFound, accept.Error);
+    }
+
+    [Fact]
+    public async Task PersistAcceptInvitation_WhenCommandGameDoesNotMatchInvitation_RejectsWithoutMutation()
+    {
+        await using var db = CreateDbContext();
+        var gameId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var invitationId = Guid.NewGuid();
+        var utc = DateTime.UtcNow;
+        db.Games.Add(
+            new Game
+            {
+                Id = gameId,
+                Title = "Ready game",
+                Status = GameStatusValue.Ready,
+                CreatedAtUtc = utc,
+                ReadyAtUtc = utc,
+                MinPlayersPerTeam = 1,
+                MaxPlayersPerTeam = 3
+            }
+        );
+        db.GameTeamSlots.Add(
+            new GameTeamSlot
+            {
+                Id = slotId,
+                GameId = gameId,
+                SlotIndex = 1,
+                SlotType = TeamSlotTypeValue.Public,
+                CreatedAtUtc = utc
+            }
+        );
+        db.GameTeams.Add(
+            new GameTeam
+            {
+                Id = teamId,
+                GameId = gameId,
+                SlotId = slotId,
+                RecruitmentOpen = false,
+                Status = TeamStatusValue.Forming,
+                CreatedAtUtc = utc,
+                UpdatedAtUtc = utc
+            }
+        );
+        db.GameTeamInvitations.Add(
+            new GameTeamInvitation
+            {
+                Id = invitationId,
+                GameId = gameId,
+                SlotId = slotId,
+                TeamId = teamId,
+                InvitedUserId = userId,
+                InvitedByKind = InvitedByKindValue.Admin,
+                Status = TeamInvitationStatusValue.Pending,
+                CreatedAtUtc = utc
+            }
+        );
+        await db.SaveChangesAsync();
+        var reads = new GameRegistrationReadStore(db);
+        var persistence = new DbGameRegistrationPersistence(
+            db,
+            reads,
+            NullLogger<DbGameRegistrationPersistence>.Instance,
+            TimeProvider.System
+        );
+
+        var result = await persistence.PersistAcceptInvitationAsync(
+            new AcceptInvitationCommand(
+                invitationId,
+                userId,
+                Guid.NewGuid(),
+                slotId,
+                teamId,
+                3
+            )
+        );
+
+        Assert.False(result.Success);
+        Assert.Equal(GameRegistrationErrorCode.InvitationNotFound, result.Error);
+        Assert.Equal(
+            TeamInvitationStatusValue.Pending,
+            (await db.GameTeamInvitations.SingleAsync()).Status
+        );
+        Assert.Empty(db.GameTeamMembers);
+    }
+
+    private static GameRegistrationService CreateService(ApplicationDbContext db)
+    {
+        var reads = new GameRegistrationReadStore(db);
+        var persistence = new DbGameRegistrationPersistence(
+            db,
+            reads,
+            NullLogger<DbGameRegistrationPersistence>.Instance,
+            TimeProvider.System
+        );
+        return new GameRegistrationService(reads, persistence);
+    }
+
+    private static ApplicationDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new ApplicationDbContext(options);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+}

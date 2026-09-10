@@ -1,0 +1,43 @@
+**/node_modules/
+# .NET build output
+**/bin/
+**/obj/
+
+# Visual Studio / Rider / VS Code metadata
+.vs/
+**/.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+**/.dtbcache.v2
+**/.futdcache.v2
+**/DocumentLayout*.json
+**/*.vsidx
+**/DesignTimeBuild/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Logs
+**/logs/
+*.log
+.tmp/
+.build-check/
+/tmp_*_stdout.log
+/tmp_*_stderr.log
+
+# Local secrets/config overrides
+**/.env
+**/.env.*
+!**/.env.example
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+*.key
+*.pem
+*.pfx
+*.p12
+
+# EF Core Migrations snapshot backup (if any)
+*.ide/

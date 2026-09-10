@@ -1,0 +1,145 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { logger } from '../../lib/logger.ts'
+import { ApiError } from '../errors/ApiError.ts'
+
+const { createClientMock } = vi.hoisted(() => ({
+  createClientMock: vi.fn(() => ({})),
+}))
+
+vi.mock('openapi-fetch', () => ({
+  default: createClientMock,
+}))
+
+import {
+  createApiClient,
+  createBackendApiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+  unwrapOpenApiDataOrNullOn401,
+  unwrapOpenApiDataOrNullOn404,
+  unwrapOpenApiDataOrNullOnNoContent,
+} from './openApiClient.ts'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+describe('openApiClient result handling', () => {
+  it('configures every API client with credentials and the CSRF request header', () => {
+    createApiClient<Record<string, never>>()
+    createBackendApiClient<Record<string, never>>()
+
+    expect(createClientMock).toHaveBeenCalledTimes(2)
+    for (const [options] of createClientMock.mock.calls) {
+      expect(options).toEqual(
+        expect.objectContaining({
+          credentials: 'include',
+          headers: {
+            'X-Dead-Mans-Api-Client': '1',
+          },
+        }),
+      )
+    }
+  })
+
+  it('returns typed JSON data from a successful response', async () => {
+    const data = { id: 'game-1' }
+
+    await expect(
+      unwrapOpenApiData(
+        Promise.resolve({
+          data,
+          response: new Response(null, { status: 200 }),
+        }),
+      ),
+    ).resolves.toEqual(data)
+  })
+
+  it('accepts successful responses without content', async () => {
+    await expect(
+      ensureOpenApiSuccess(
+        Promise.resolve({
+          data: undefined,
+          response: new Response(null, { status: 204 }),
+        }),
+      ),
+    ).resolves.toBeUndefined()
+  })
+
+  it('converts OpenAPI errors to ApiError with response details', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+    const details = { code: 'game_setup_stale_version' }
+
+    const request = unwrapOpenApiData(
+      Promise.resolve({
+        error: details,
+        response: new Response(null, { status: 409 }),
+      }),
+    )
+
+    await expect(request).rejects.toEqual(
+      expect.objectContaining<ApiError>({
+        name: 'ApiError',
+        message: 'HTTP 409',
+        status: 409,
+        details,
+      }),
+    )
+  })
+
+  it('returns null for expected 404 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOn404(
+        Promise.resolve({
+          error: { code: 'game_setup.no_draft' },
+          response: new Response(null, { status: 404 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns null for expected 401 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOn401(
+        Promise.resolve({
+          error: { code: 'auth.unauthorized' },
+          response: new Response(null, { status: 401 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns null for expected 204 responses without logging an error', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined)
+
+    await expect(
+      unwrapOpenApiDataOrNullOnNoContent(
+        Promise.resolve({
+          data: undefined,
+          response: new Response(null, { status: 204 }),
+        }),
+      ),
+    ).resolves.toBeNull()
+
+    expect(loggerSpy).not.toHaveBeenCalled()
+  })
+
+  it('rejects an empty success when JSON data is required', async () => {
+    await expect(
+      unwrapOpenApiData(
+        Promise.resolve({
+          data: undefined,
+          response: new Response(null, { status: 200 }),
+        }),
+      ),
+    ).rejects.toThrow('API returned an empty response where JSON data was expected')
+  })
+})
