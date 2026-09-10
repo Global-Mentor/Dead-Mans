@@ -17,6 +17,12 @@ public sealed partial class DbGameSetupRepository
     {
         try
         {
+            var shouldVacatePositions = _dbContext.Database.IsRelational();
+            await using var transaction = shouldVacatePositions
+                ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+            await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+
             var draftGame = await _dbContext.Games
                 .Include(game => game.Board!)
                 .ThenInclude(board => board.Cells)
@@ -58,11 +64,6 @@ public sealed partial class DbGameSetupRepository
             var cellsToRemove = existingCells
                 .Where(cell => !retainedUpdates.ContainsKey(cell.Id))
                 .ToList();
-
-            var shouldVacatePositions = _dbContext.Database.IsRelational();
-            await using var transaction = shouldVacatePositions
-                ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
-                : null;
 
             var retainedCells = existingCells
                 .Where(cell => retainedUpdates.ContainsKey(cell.Id))

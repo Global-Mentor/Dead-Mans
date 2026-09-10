@@ -18,7 +18,8 @@ public interface IGameSetupCellMediaRepository
 
     Task<StoredCellMedia?> GetCellMediaAsync(Guid cellId, CancellationToken cancellationToken = default);
 
-    Task<GameBoardCellMedia> AttachMediaAsync(
+    // Null means the cell no longer belongs to an editable draft.
+    Task<GameBoardCellMedia?> AttachMediaAsync(
         Guid cellId,
         Guid mediaAssetId,
         string bucket,

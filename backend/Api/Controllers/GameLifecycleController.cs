@@ -25,11 +25,15 @@ public sealed class GameLifecycleController : ControllerBase
 
     [HttpPost("open-registration")]
     [ProducesResponseType(typeof(GameLifecycleStateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> OpenRegistration(CancellationToken cancellationToken)
+    public async Task<IActionResult> OpenRegistration(
+        [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] OpenGameRegistrationRequestDto? request,
+        CancellationToken cancellationToken)
     {
-        var result = await _lifecycleService.OpenRegistrationAsync(cancellationToken);
+        var input = request is null ? null : new OpenGameRegistrationInput(request.GameId, request.ExpectedVersion);
+        var result = await _lifecycleService.OpenRegistrationAsync(input, cancellationToken);
         return ToActionResult(result, GameLifecycleStatuses.Ready);
     }
 

@@ -31,7 +31,7 @@ vi.mock('../api/game-board-data-access.ts', () => ({
 describe('GameBoardRealtimeSync', () => {
   afterEach(() => vi.clearAllMocks())
 
-  it('invalidates every completion-sensitive view on lifecycle change', async () => {
+  it('refreshes board-specific completion views without repeating the shared lifecycle invalidation', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
     render(
@@ -58,15 +58,15 @@ describe('GameBoardRealtimeSync', () => {
     })
 
     for (const queryKey of [
-      ['gameBoard', 'currentSnapshot'],
       ['gameRounds', 'active'],
       ['gameHistory'],
       ['gameModifiers'],
-      ['gameRegistration'],
       ['gameFinish'],
     ]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey })
     }
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['gameRegistration'] })
 
     unregister()
     expect(connection.off).toHaveBeenCalledWith('gameLifecycleChanged', expect.any(Function))

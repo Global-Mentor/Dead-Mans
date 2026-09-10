@@ -95,7 +95,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
                 cancellationToken
             );
 
-            GameBoardCellMedia media;
+            GameBoardCellMedia? media;
             try
             {
                 media = await _cellMediaRepository.AttachMediaAsync(
@@ -113,6 +113,14 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
             {
                 await TryDeleteStorageObjectAsync(bucket, objectKey, cellId, attachEx, cancellationToken);
                 throw;
+            }
+
+            if (media is null)
+            {
+                // The draft was published/deleted while storage accepted the upload.
+                await TryDeleteDetachedObjectAsync(
+                    new StoredCellMedia(mediaAssetId, bucket, objectKey), cellId, cancellationToken);
+                return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.CellNotFound);
             }
 
             if (existingMedia is not null)

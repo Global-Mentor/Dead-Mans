@@ -2533,9 +2533,30 @@ paths:
   /game/lifecycle/open-registration:
     post:
       operationId: openGameRegistration
+      description: Opens registration for the saved draft. Quiz questions are optional. Send the reviewed game ID and version to reject stale or replaced drafts; an empty body remains supported for existing clients.
       security:
         - cookieAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameId, expectedVersion]
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                expectedVersion:
+                  type: integer
+                  minimum: 1
       responses:
+        '400':
+          description: Invalid publication request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '200':
           description: Draft moved to ready; registration open
           content:
@@ -2561,7 +2582,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Ready/active game already exists or invalid team slot configuration
+          description: Stale draft version, ready/active game already exists, or invalid registration configuration
           content:
             application/json:
               schema:

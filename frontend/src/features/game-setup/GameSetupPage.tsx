@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { GameSetupRegistrationPanel } from './ui/GameSetupRegistrationPanel.tsx'
 import { Alert, Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { PageShell, PageStatePanel, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
@@ -10,6 +12,7 @@ import { useGameSetupPage } from './use-game-setup-page.ts'
 
 export function GameSetupPage() {
   const { t } = useTranslation()
+  const [isPublishing, setIsPublishing] = useState(false)
   const {
     snapshot,
     draft,
@@ -32,6 +35,7 @@ export function GameSetupPage() {
     isSaving,
     cellMediaDisplayByCellId,
     isCellMediaBusy,
+    hasPendingMedia,
     cellMediaErrorKey,
     uploadCellMedia,
     deleteCellMedia,
@@ -70,62 +74,76 @@ export function GameSetupPage() {
   }
 
   return (
-    <PageShell variant="split">
-      <GameSetupSettingsSidebar
-        draft={draft}
-        onDraftChange={updateDraft}
-        onLayoutChange={applyLayoutChange}
-        isResetting={isResetting}
-        onReset={deleteDraft}
-      />
-
-      <SectionCard
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <SectionHeader
-          title={t('gameSetup.boardTitle')}
-          description={t('gameSetup.boardDescription')}
-          actions={
-            <GameSetupSyncActions
-              syncStatus={syncStatus}
-              isDirty={isDirty}
-              isSaving={isSaving}
-              onSave={() => void saveDraft()}
-            />
-          }
-        />
-
-        <Alert severity="info" sx={{ mt: 2 }}>
-          {t('gameSetup.persistenceHint')}
-        </Alert>
-
-        <GameSetupBoardNotices
-          remoteChangeNotice={remoteChangeNotice}
-          onDismissRemoteChange={dismissRemoteChangeNotice}
-          onReloadFromServer={() => void reloadFromServer()}
-          saveErrorMessage={saveErrorMessage}
-          resetErrorMessage={resetErrorMessage}
-          cellMediaErrorKey={cellMediaErrorKey}
-          onDismissCellMediaError={dismissCellMediaError}
-        />
-
-        <Box sx={{ mt: 3, flex: 1, minHeight: 0 }}>
-          <GameSetupGrid
+    <Box component="fieldset" disabled={isPublishing} sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}>
+      <PageShell variant="split">
+        <GameSetupSettingsSidebar
+          draft={draft}
+          onDraftChange={updateDraft}
+          onLayoutChange={applyLayoutChange}
+          isResetting={isResetting}
+          onReset={deleteDraft}
+        >
+          <GameSetupRegistrationPanel
+            key={`${snapshot.gameId}:${snapshot.version}`}
             snapshot={snapshot}
-            draft={draft}
-            onDraftChange={updateDraft}
-            cellMediaDisplayByCellId={cellMediaDisplayByCellId}
-            isCellMediaBusy={isCellMediaBusy}
-            onUploadCellMedia={(cellId, file) => void uploadCellMedia(cellId, file)}
-            onDeleteCellMedia={deleteCellMedia}
+            isDirty={isDirty}
+            isSaving={isSaving}
+            isResetting={isResetting}
+            remoteChangeNotice={remoteChangeNotice}
+            hasPendingMedia={hasPendingMedia}
+            onReloadFromServer={reloadFromServer}
+            onBusyChange={setIsPublishing}
           />
-        </Box>
-      </SectionCard>
-    </PageShell>
+        </GameSetupSettingsSidebar>
+
+        <SectionCard
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <SectionHeader
+            title={t('gameSetup.boardTitle')}
+            description={t('gameSetup.boardDescription')}
+            actions={
+              <GameSetupSyncActions
+                syncStatus={syncStatus}
+                isDirty={isDirty}
+                isSaving={isSaving}
+                onSave={() => void saveDraft()}
+              />
+            }
+          />
+
+          <Alert severity="info" sx={{ mt: 2 }}>
+            {t('gameSetup.persistenceHint')}
+          </Alert>
+
+          <GameSetupBoardNotices
+            remoteChangeNotice={remoteChangeNotice}
+            onDismissRemoteChange={dismissRemoteChangeNotice}
+            onReloadFromServer={() => void reloadFromServer()}
+            saveErrorMessage={saveErrorMessage}
+            resetErrorMessage={resetErrorMessage}
+            cellMediaErrorKey={cellMediaErrorKey}
+            onDismissCellMediaError={dismissCellMediaError}
+          />
+
+          <Box sx={{ mt: 3, flex: 1, minHeight: 0 }}>
+            <GameSetupGrid
+              snapshot={snapshot}
+              draft={draft}
+              onDraftChange={updateDraft}
+              cellMediaDisplayByCellId={cellMediaDisplayByCellId}
+              isCellMediaBusy={isCellMediaBusy}
+              onUploadCellMedia={(cellId, file) => void uploadCellMedia(cellId, file)}
+              onDeleteCellMedia={deleteCellMedia}
+            />
+          </Box>
+        </SectionCard>
+      </PageShell>
+    </Box>
   )
 }

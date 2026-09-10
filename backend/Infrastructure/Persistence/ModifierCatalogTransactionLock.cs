@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Infrastructure.Persistence;
 
 /// <summary>
-/// Serializes catalog mutations and ready-to-active pinning in PostgreSQL.
+/// Serializes catalog mutations, draft writes and publication/start in PostgreSQL.
 /// The lock is transaction-scoped and must only be acquired inside the owning transaction.
 /// </summary>
 internal static class ModifierCatalogTransactionLock

@@ -10,7 +10,6 @@ import { realtimeHubs, useSignalrHubSubscription } from '../../../shared/realtim
 import { activeGameRoundQueryOptions } from '../../game-rounds/api/game-rounds-queries.ts'
 import { gameHistoryQueryKeys } from '../../game-history/api/game-history-queries.ts'
 import { gameModifierQueryKeys } from '../../game-modifiers/api/game-modifier-queries.ts'
-import { gameRegistrationQueryKeys } from '../../game-registration/api/game-registration-queries.ts'
 import { fetchCurrentGameBoardSnapshot } from '../api/game-board-data-access.ts'
 import { currentGameBoardQueryOptions } from '../api/game-board-queries.ts'
 import { gameFinishQueryKeys } from '../api/game-finish-queries.ts'
@@ -114,11 +113,10 @@ export function GameBoardRealtimeSync() {
 
       const handleGameLifecycleChanged = (event: GameLifecycleChangedEvent) => {
         logger.debug('Game lifecycle realtime event received', event)
-        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+        // MainLayout's lifecycle subscription owns shared board/registration invalidation.
         void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
         void queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
         void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
-        void queryClient.invalidateQueries({ queryKey: gameRegistrationQueryKeys.all })
         void queryClient.invalidateQueries({ queryKey: gameFinishQueryKeys.all })
       }
 

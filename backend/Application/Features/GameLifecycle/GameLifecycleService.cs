@@ -11,6 +11,7 @@ public sealed class GameLifecycleService : IGameLifecycleService
     private readonly IGameLifecycleReadStore _reads;
     private readonly IGameLifecyclePersistence _persistence;
     private readonly IGameBoardEventsPublisher _eventsPublisher;
+    private readonly IGameSetupEventsPublisher _setupEventsPublisher;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<GameLifecycleService> _logger;
 
@@ -18,6 +19,7 @@ public sealed class GameLifecycleService : IGameLifecycleService
         IGameLifecycleReadStore reads,
         IGameLifecyclePersistence persistence,
         IGameBoardEventsPublisher eventsPublisher,
+        IGameSetupEventsPublisher setupEventsPublisher,
         TimeProvider timeProvider,
         ILogger<GameLifecycleService> logger
     )
@@ -25,14 +27,15 @@ public sealed class GameLifecycleService : IGameLifecycleService
         _reads = reads;
         _persistence = persistence;
         _eventsPublisher = eventsPublisher;
+        _setupEventsPublisher = setupEventsPublisher;
         _timeProvider = timeProvider;
         _logger = logger;
     }
 
-    public async Task<GameLifecycleResult> OpenRegistrationAsync(CancellationToken cancellationToken = default)
+    public async Task<GameLifecycleResult> OpenRegistrationAsync(OpenGameRegistrationInput? input = null, CancellationToken cancellationToken = default)
     {
         var draft = await _reads.GetLatestDraftForOpenAsync(cancellationToken);
-        if (draft is null)
+        if (draft is null || (input is not null && input.GameId != draft.GameId))
         {
             return new GameLifecycleResult(false, null, GameLifecycleErrorCode.DraftNotFound);
         }
@@ -56,7 +59,17 @@ public sealed class GameLifecycleService : IGameLifecycleService
             );
         }
 
-        return await _persistence.OpenRegistrationAsync(draft.GameId, cancellationToken);
+        var result = await _persistence.OpenRegistrationAsync(draft.GameId, input?.ExpectedVersion, cancellationToken);
+        if (result.Success)
+        {
+            await PublishTransitionAsync(result, "ready");
+            await RealtimePublishGuard.TryPublishAsync(
+                token => _setupEventsPublisher.PublishDraftChangedAsync(token),
+                _logger,
+                "Realtime draft publication notification failed."
+            );
+        }
+        return result;
     }
 
     public async Task<GameLifecycleResult> StartGameAsync(CancellationToken cancellationToken = default)
@@ -85,8 +98,22 @@ public sealed class GameLifecycleService : IGameLifecycleService
             return new GameLifecycleResult(false, readyGameId, startValidationError);
         }
 
-        return await _persistence.StartGameAsync(readyGameId.Value, cancellationToken);
+        var result = await _persistence.StartGameAsync(readyGameId.Value, cancellationToken);
+        if (result.Success)
+        {
+            await PublishTransitionAsync(result, "active");
+        }
+        return result;
     }
+
+    private Task PublishTransitionAsync(GameLifecycleResult result, string status) =>
+        RealtimePublishGuard.TryPublishAsync(
+            token => _eventsPublisher.PublishGameLifecycleChangedAsync(
+                new GameLifecycleChangedEvent(result.GameId!.Value, status, result.BoardVersion, _timeProvider.GetUtcNow().UtcDateTime),
+                token),
+            _logger,
+            "Realtime game lifecycle publish failed for game {GameId}.",
+            result.GameId);
 
     public Task<GameFinishPreviewResult> GetFinishPreviewAsync(
         Guid gameId,

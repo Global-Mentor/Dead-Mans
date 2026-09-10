@@ -1,5 +1,5 @@
 import { Box, Divider, Stack, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
 import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
@@ -14,6 +14,7 @@ interface GameSetupSettingsSidebarProps {
   onLayoutChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
   onReset: () => void | Promise<void>
   isResetting: boolean
+  children?: ReactNode
 }
 
 export function GameSetupSettingsSidebar({
@@ -22,6 +23,7 @@ export function GameSetupSettingsSidebar({
   onLayoutChange,
   onReset,
   isResetting,
+  children,
 }: GameSetupSettingsSidebarProps) {
   const { t } = useTranslation()
   const [isLayoutDialogOpen, setIsLayoutDialogOpen] = useState(false)
@@ -71,6 +73,14 @@ export function GameSetupSettingsSidebar({
           <AppButton tone="secondary" fullWidth onClick={() => setIsLayoutDialogOpen(true)}>
             {t('gameSetup.settingsSidebar.manageLayout')}
           </AppButton>
+
+          {children ? (
+            <>
+              <Divider />
+              {children}
+            </>
+          ) : null}
+          <Divider />
 
           <AppButton
             tone="dangerSecondary"

@@ -10,6 +10,12 @@ public sealed partial class DbGameSetupRepository
     {
         try
         {
+            await using var transaction = _dbContext.Database.IsRelational()
+                ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+            // Publication and draft writes must decide the lifecycle state under the same lock.
+            await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+
             var draftGame = await _dbContext.Games
                 .Where(game => game.Status == GameStatusValue.Draft && !game.IsDeleted)
                 .OrderByDescending(game => game.CreatedAtUtc)
@@ -23,6 +29,11 @@ public sealed partial class DbGameSetupRepository
             await RemoveDraftBoardMediaAsync(gameId, cancellationToken);
             _dbContext.Games.Remove(draftGame);
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
 
             _logger.LogInformation(AppMessages.Logs.GameSetupDraftDeleted, gameId);
             return gameId;

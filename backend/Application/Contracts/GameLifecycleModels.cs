@@ -8,10 +8,13 @@ public sealed record DraftGameLifecycleContext(
     short MaxPlayersPerTeam
 );
 
+public sealed record OpenGameRegistrationInput(Guid GameId, int ExpectedVersion);
+
 public enum GameLifecycleErrorCode
 {
     None,
     DraftNotFound,
+    DraftStaleVersion,
     CurrentGameAlreadyExists,
     ActiveGameAlreadyExists,
     GameNotReady,
@@ -34,7 +37,7 @@ public enum GameLifecycleErrorCode
     FinishInvalidRequest,
 }
 
-public sealed record GameLifecycleResult(bool Success, Guid? GameId, GameLifecycleErrorCode Error);
+public sealed record GameLifecycleResult(bool Success, Guid? GameId, GameLifecycleErrorCode Error, int BoardVersion = 0);
 
 public static class GameFinishWarningCodes
 {

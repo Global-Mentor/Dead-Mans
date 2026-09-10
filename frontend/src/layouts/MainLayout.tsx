@@ -5,6 +5,7 @@ import { useAuth } from '../shared/auth/use-auth.ts'
 import { SignalrConnectionProvider } from '../shared/realtime/index.ts'
 import { uiTokens } from '../shared/theme/tokens.ts'
 import { PanelNavigation } from './PanelNavigation.tsx'
+import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
 
 export function MainLayout() {
   const { user } = useAuth()
@@ -21,6 +22,7 @@ function MainLayoutContent() {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PanelNavigation />
       <ModifierCatalogRealtimeSync />
+      <GameLifecycleRealtimeSync />
 
       <Box
         component="main"
