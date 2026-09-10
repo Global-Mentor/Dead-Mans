@@ -313,6 +313,45 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                 && x.ModifierId == ModifierId));
     }
 
+    [Fact]
+    public async Task Rename_WhenReciprocalSnapshotIsLockedByActiveGame_ReturnsConflictWithoutPartialWrites()
+    {
+        await _database.ResetAsync();
+        var game = await SeedReadyGameAsync();
+        var actor = new ModifierChangeActor(game.UserId, "Concurrency Admin");
+        GameModifierDefinition target;
+        await using (var db = _database.CreateDbContext())
+        {
+            var created = await new DbGameModifierRepository(db, TimeProvider.System).CreateModifierAsync(
+                new CreateGameModifierInput("External modifier", "Not enabled in the active game",
+                    GameModifierCategories.Round, 1, new GameModifierActivationLimit(1), [ModifierId],
+                    null, "!test", [],
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior), actor);
+            target = Assert.IsType<GameModifierDefinition>(created.Modifier);
+        }
+        await using (var db = _database.CreateDbContext())
+        {
+            var started = await new DbGameLifecyclePersistence(db,
+                NullLogger<DbGameLifecyclePersistence>.Instance, TimeProvider.System).StartGameAsync(game.GameId);
+            Assert.True(started.Success);
+        }
+        await using (var db = _database.CreateDbContext())
+        {
+            var updated = await new DbGameModifierRepository(db, TimeProvider.System).UpdateModifierAsync(
+                target.Id, new UpdateGameModifierInput("Renamed", target.Description, target.Category,
+                    target.ActivationCost, target.ActivationLimit, [ModifierId], target.IconEmoji,
+                    target.ActivationCommand, target.NormalizedTags, target.BehaviorV2, target.Revision), actor);
+            Assert.Equal(UpdateGameModifierRepositoryStatus.CompatibilityLocked, updated.Status);
+            Assert.Null(updated.Changes);
+        }
+        await using var assertDb = _database.CreateDbContext();
+        Assert.Equal(1, await assertDb.ModifierDefinitionVersions.CountAsync(x => x.ModifierId == target.Id));
+        Assert.Equal(2, await assertDb.ModifierDefinitionVersions.CountAsync(x => x.ModifierId == ModifierId));
+        Assert.Equal("External modifier", await assertDb.ModifierDefinitionVersionConflicts
+            .Where(x => x.ConflictingModifierId == target.Id)
+            .Select(x => x.ConflictingModifierNameSnapshot).SingleAsync());
+    }
+
     private async Task<GameFixture> SeedReadyGameAsync()
     {
         var now = DateTime.UtcNow;

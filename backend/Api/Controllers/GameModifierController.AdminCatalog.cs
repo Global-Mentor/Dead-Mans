@@ -43,7 +43,7 @@ public sealed partial class GameModifierController
             CreateGameModifierOutcome.Created when result.Modifier is not null =>
                 CreatedAtAction(nameof(GetCatalog), null, result.Modifier.ToDto()),
             CreateGameModifierOutcome.CompatibilityLocked => this.ConflictError(
-                AppMessages.Client.GameModifierContentLocked,
+                AppMessages.Client.GameModifierCompatibilityLocked,
                 AppMessages.ErrorCodes.GameModifierCompatibilityLocked
             ),
             _ => this.BadRequestError(
@@ -100,6 +100,7 @@ public sealed partial class GameModifierController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
         Guid modifierId,
         [FromBody] UpdateGameModifierRequestDto? request,
@@ -138,7 +139,7 @@ public sealed partial class GameModifierController
                 AppMessages.ErrorCodes.GameModifierContentLocked
             ),
             UpdateGameModifierOutcome.CompatibilityLocked => this.ConflictError(
-                AppMessages.Client.GameModifierContentLocked, AppMessages.ErrorCodes.GameModifierCompatibilityLocked),
+                AppMessages.Client.GameModifierCompatibilityLocked, AppMessages.ErrorCodes.GameModifierCompatibilityLocked),
             UpdateGameModifierOutcome.Stale => this.ConflictError(
                 "The modifier revision is stale.", AppMessages.ErrorCodes.GameModifierRevisionStale),
             UpdateGameModifierOutcome.Archived => this.ConflictError(

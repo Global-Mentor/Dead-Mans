@@ -197,7 +197,12 @@ public sealed partial class DbGameModifierRepository : IGameModifierRepository
 
         var changedCompatibilityIds = existingConflictIds
             .Except(desiredIds).Concat(desiredIds.Except(existingConflictIds)).Distinct().ToArray();
-        var affectedIds = changedCompatibilityIds.Append(modifierId).Distinct().ToArray();
+        // Current reciprocal versions also store the modifier's name. A rename must
+        // refresh those snapshots through new revisions, including archived neighbors.
+        var cascadeIds = changedCompatibilityIds
+            .Concat(existingContent.Name != incomingContent.Name ? desiredIds : [])
+            .Distinct().ToArray();
+        var affectedIds = cascadeIds.Append(modifierId).ToArray();
         var lockedIds = await GetContentLockedIdsAsync(affectedIds, cancellationToken);
         if (lockedIds.Contains(modifierId))
         {
@@ -225,7 +230,7 @@ public sealed partial class DbGameModifierRepository : IGameModifierRepository
         };
         var affectedDefinitions = await _dbContext.ModifierDefinitions
             .Include(x => x.CurrentVersion)
-            .Where(x => changedCompatibilityIds.Contains(x.Id))
+            .Where(x => cascadeIds.Contains(x.Id))
             .ToArrayAsync(cancellationToken);
         if (affectedDefinitions.Any(x => x.CurrentVersion is null))
         {

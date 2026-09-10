@@ -146,6 +146,8 @@ public static class AppMessages
             "The modifier example cannot be calculated.";
         public const string GameModifierContentLocked =
             "Modifier content is locked while it is included in the active game.";
+        public const string GameModifierCompatibilityLocked =
+            "A linked modifier is included in the active game. This change must wait until the game ends.";
         public const string GameModifierEmergencyDisabled =
             "Modifier has been disabled for new activations in the active game.";
         public const string GameModifierNotFound = "Requested modifier was not found.";
