@@ -3231,7 +3231,7 @@ paths:
             format: uuid
       responses:
         '204':
-          description: Confirmed team disbanded by moderator/admin
+          description: Forming or confirmed team disbanded by moderator/admin; active and played teams cannot be disbanded
         '401':
           description: Not authenticated
           content:
@@ -3251,7 +3251,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Only confirmed teams can be disbanded through this action
+          description: Team is active, has played, or is no longer available for disbanding
           content:
             application/json:
               schema:
@@ -7169,6 +7169,7 @@ components:
             - game_registration.already_on_team
             - game_registration.team_not_found
             - game_registration.team_not_joinable
+            - game_registration.team_roster_locked
             - game_registration.not_team_member
             - game_registration.invitation_invalid
             - game_registration.slot_not_found
@@ -7178,6 +7179,7 @@ components:
             - game_registration.pending_outgoing_invitation
             - game_registration.team_invite_not_allowed
             - game_registration.team_active_in_game
+            - game_registration.team_already_played
             - game_registration.invalid_team_name
             - game_registration.operation_failed
             - game_modifier.game_not_active

@@ -100,7 +100,7 @@ public interface IGameRegistrationService
         CancellationToken cancellationToken = default
     );
 
-    Task<GameRegistrationResult<bool>> DisbandConfirmedTeamAsync(
+    Task<GameRegistrationResult<bool>> DisbandTeamAsync(
         Guid adminUserId,
         Guid teamId,
         CancellationToken cancellationToken = default

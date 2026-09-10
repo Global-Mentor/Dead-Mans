@@ -15,7 +15,7 @@ export {
   useConfirmGameRegistrationTeamMutation,
   useCreateGameRegistrationTeamMutation,
   useDeclineGameRegistrationInvitationMutation,
-  useDisbandConfirmedGameRegistrationTeamMutation,
+  useDisbandGameRegistrationTeamMutation,
   useJoinGameRegistrationTeamMutation,
   useLeaveGameRegistrationTeamMutation,
   useMoveGameRegistrationTeamToSlotMutation,

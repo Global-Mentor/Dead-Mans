@@ -17,7 +17,7 @@ vi.mock('../game-registration/index.ts', async (importOriginal) => {
     useConfirmGameRegistrationTeamMutation: mutation,
     useCreateAdminGameRegistrationInvitationMutation: mutation,
     useCreateAdminGameRegistrationTeamMutation: mutation,
-    useDisbandConfirmedGameRegistrationTeamMutation: mutation,
+    useDisbandGameRegistrationTeamMutation: mutation,
     useGameRegistrationToast: () => ({
       toastMessage: null,
       onMutationError: vi.fn(),

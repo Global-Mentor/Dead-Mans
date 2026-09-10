@@ -41,7 +41,8 @@ public sealed record CalculatedGameTeamResult(
 
 public static class GameTeamResultCalculator
 {
-    public const int CalculationVersion = 1;
+    // Version 2 finalizations include only teams that opened a card, including cancelled rounds.
+    public const int CalculationVersion = 2;
 
     public static IReadOnlyList<CalculatedGameTeamResult> Calculate(
         IEnumerable<GameTeamResultCalculationInput> teams

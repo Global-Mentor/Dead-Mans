@@ -392,65 +392,75 @@ describe('TeamRegistrationsPage', () => {
     expect(createAdminInvitation.mutate).not.toHaveBeenCalled()
   })
 
-  it('asks for confirmation before removing a player from a team', () => {
-    const removePlayerFromTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+  it.each(['forming', 'confirmed'])(
+    'only allows removing players from a forming roster (%s)',
+    (status) => {
+      const removePlayerFromTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
 
-    pageMocks.useTeamRegistrationsPage.mockReturnValue(
-      createPageController(
-        {
-          gameId: 'game-1',
-          gameStatus: 'ready',
-          minPlayersPerTeam: 1,
-          maxPlayersPerTeam: 2,
-          teamSlots: [
-            {
-              teamSlotId: 'slot-1',
-              teamSlotIndex: 2,
-              teamSlotType: 'public',
-              reservedLabel: null,
-              isAvailableForNewTeam: false,
-              teamId: 'team-1',
-              teamStatus: 'confirmed',
-            },
-          ],
-          teams: [
-            {
-              teamId: 'team-1',
-              teamSlotIndex: 2,
-              teamSlotType: 'public',
-              reservedLabel: null,
-              recruitmentOpen: false,
-              status: 'confirmed',
-              members: [
-                {
-                  player: {
-                    userId: 'user-1',
-                    login: 'player',
-                    displayName: 'Player One',
+      pageMocks.useTeamRegistrationsPage.mockReturnValue(
+        createPageController(
+          {
+            gameId: 'game-1',
+            gameStatus: 'ready',
+            minPlayersPerTeam: 1,
+            maxPlayersPerTeam: 2,
+            teamSlots: [
+              {
+                teamSlotId: 'slot-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                reservedLabel: null,
+                isAvailableForNewTeam: false,
+                teamId: 'team-1',
+                teamStatus: status,
+              },
+            ],
+            teams: [
+              {
+                teamId: 'team-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                reservedLabel: null,
+                recruitmentOpen: false,
+                status,
+                members: [
+                  {
+                    player: {
+                      userId: 'user-1',
+                      login: 'player',
+                      displayName: 'Player One',
+                    },
+                    joinedAtUtc: '2026-06-11T11:00:00Z',
                   },
-                  joinedAtUtc: '2026-06-11T11:00:00Z',
-                },
-              ],
-              pendingInvitations: [],
-            },
-          ],
-          availablePlayers: [],
-        },
-        { removePlayerFromTeam },
-      ),
-    )
+                ],
+                pendingInvitations: [],
+              },
+            ],
+            availablePlayers: [],
+          },
+          { removePlayerFromTeam },
+        ),
+      )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+      renderWithAppProviders(<TeamRegistrationsPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Исключить' }))
-    expect(screen.getByText('Исключить игрока из команды?')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Исключить игрока' }))
+      if (status === 'confirmed') {
+        expect(screen.queryByRole('button', { name: 'Исключить' })).not.toBeInTheDocument()
+        expect(screen.getByTestId('admin-player-user-1')).toHaveAttribute('draggable', 'false')
+        expect(removePlayerFromTeam.mutate).not.toHaveBeenCalled()
+        return
+      }
 
-    expect(removePlayerFromTeam.mutate).toHaveBeenCalledWith({
-      teamId: 'team-1',
-      userId: 'user-1',
-    })
-  })
+      fireEvent.click(screen.getByRole('button', { name: 'Исключить' }))
+      expect(screen.getByText('Исключить игрока из команды?')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Исключить игрока' }))
+
+      expect(removePlayerFromTeam.mutate).toHaveBeenCalledWith({
+        teamId: 'team-1',
+        userId: 'user-1',
+      })
+    },
+  )
 
   it('cancels a pending invitation from the team roster', () => {
     const cancelTeamInvitation = { isPending: false, variables: undefined, mutate: vi.fn() }
@@ -646,7 +656,18 @@ describe('TeamRegistrationsPage', () => {
     expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1')
   })
 
-  it('does not allow disbanding the active team in game', () => {
+  it.each([
+    {
+      isActiveInGame: true,
+      isPlayed: false,
+      message: 'Нельзя распустить команду, чей ход сейчас активен.',
+    },
+    {
+      isActiveInGame: false,
+      isPlayed: true,
+      message: 'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
+    },
+  ])('explains why disbanding is blocked ($message)', ({ isActiveInGame, isPlayed, message }) => {
     const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
 
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
@@ -675,7 +696,8 @@ describe('TeamRegistrationsPage', () => {
               reservedLabel: null,
               recruitmentOpen: false,
               status: 'confirmed',
-              isActiveInGame: true,
+              isActiveInGame,
+              isPlayed,
               members: [
                 {
                   player: {
@@ -699,12 +721,81 @@ describe('TeamRegistrationsPage', () => {
 
     renderWithAppProviders(<TeamRegistrationsPage />)
 
-    expect(screen.getByText('Активный ход')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Распустить' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
-    expect(screen.getByRole('button', { name: 'Распустить' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
+    expect(screen.getByRole('alert')).toHaveTextContent(message)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(disbandTeam.mutate).not.toHaveBeenCalled()
   })
+
+  it.each([
+    { status: 'forming', gameStatus: 'ready', empty: true },
+    { status: 'forming', gameStatus: 'ready', empty: false },
+    { status: 'confirmed', gameStatus: 'active', empty: false },
+  ])(
+    'disbands an eligible team without a player request ($status, $gameStatus, empty=$empty)',
+    ({ status, gameStatus, empty }) => {
+      const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+      const assignPlayerToTeam = { isPending: false, mutate: vi.fn() }
+      pageMocks.useTeamRegistrationsPage.mockReturnValue(
+        createPageController(
+          {
+            gameId: 'game-1',
+            gameStatus,
+            minPlayersPerTeam: 1,
+            maxPlayersPerTeam: 2,
+            teamSlots: [
+              {
+                teamSlotId: 'slot-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                isAvailableForNewTeam: false,
+                teamId: 'team-1',
+                teamStatus: status,
+              },
+            ],
+            teams: [
+              {
+                teamId: 'team-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                status,
+                recruitmentOpen: true,
+                isActiveInGame: false,
+                isPlayed: false,
+                pendingInvitations: [],
+                members: empty
+                  ? []
+                  : [
+                      {
+                        player: { userId: 'user-1', login: 'player', displayName: 'Player One' },
+                        joinedAtUtc: '2026-06-11T11:00:00Z',
+                      },
+                    ],
+              },
+            ],
+            availablePlayers: [],
+          },
+          { disbandTeam, assignPlayerToTeam },
+        ),
+      )
+      renderWithAppProviders(<TeamRegistrationsPage />)
+
+      if (status === 'confirmed') {
+        fireEvent.drop(screen.getByTestId('admin-slot-2'), {
+          dataTransfer: {
+            getData: () => JSON.stringify({ kind: 'player', userId: 'free-player' }),
+          },
+        })
+        expect(assignPlayerToTeam.mutate).not.toHaveBeenCalled()
+      }
+      fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Распустить команду' }))
+      expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1')
+    },
+  )
 })

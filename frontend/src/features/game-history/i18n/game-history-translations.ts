@@ -29,7 +29,7 @@ const translations = {
     finalResultTitle: 'Official final result',
     finalResultMeta: 'Finished by {{admin}} · {{date}}',
     finalResultNote: 'Public comment',
-    finalResultDidNotPlay: 'Did not play',
+    finalResultDidNotPlay: 'No completed rounds',
     unknownValue: 'Unknown',
     archiveTitle: 'Game archive',
     archiveDescription:
@@ -230,7 +230,7 @@ const translations = {
     finalResultTitle: 'Официальный итог игры',
     finalResultMeta: 'Завершил: {{admin}} · {{date}}',
     finalResultNote: 'Публичный комментарий',
-    finalResultDidNotPlay: 'Не играла',
+    finalResultDidNotPlay: 'Нет завершённых раундов',
     unknownValue: 'Неизвестно',
     archiveTitle: 'Архив игр',
     archiveDescription:
@@ -432,7 +432,7 @@ const translations = {
     finalResultTitle: 'Офіційний підсумок гри',
     finalResultMeta: 'Завершив: {{admin}} · {{date}}',
     finalResultNote: 'Публічний коментар',
-    finalResultDidNotPlay: 'Не грала',
+    finalResultDidNotPlay: 'Немає завершених раундів',
     unknownValue: 'Невідомо',
     archiveTitle: 'Архів ігор',
     archiveDescription:
@@ -633,7 +633,7 @@ const translations = {
     finalResultTitle: 'Oficjalny wynik końcowy',
     finalResultMeta: 'Zakończył(a): {{admin}} · {{date}}',
     finalResultNote: 'Komentarz publiczny',
-    finalResultDidNotPlay: 'Nie grała',
+    finalResultDidNotPlay: 'Brak ukończonych rund',
     unknownValue: 'Nieznane',
     archiveTitle: 'Archiwum gier',
     archiveDescription:

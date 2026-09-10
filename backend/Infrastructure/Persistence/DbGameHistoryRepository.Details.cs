@@ -463,7 +463,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             )
             .ToArray();
 
-        var finalResult = await LoadFinalResultAsync(gameId, cancellationToken);
+        var finalResult = await LoadFinalResultAsync(gameId, teamIds.ToHashSet(), cancellationToken);
 
         return new GameHistoryGameDetails(
             game.GameId,
@@ -541,6 +541,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
 
     private async Task<GameFinishSummary?> LoadFinalResultAsync(
         Guid gameId,
+        HashSet<Guid> teamsWithOpenedCards,
         CancellationToken cancellationToken
     )
     {
@@ -573,6 +574,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             0,
             finalization.SkippedQuizQuestionCount,
             finalization.TeamResults
+                .Where(x => teamsWithOpenedCards.Contains(x.TeamId))
                 .OrderBy(x => x.Placement ?? int.MaxValue)
                 .ThenByDescending(x => x.FinalScore)
                 .ThenByDescending(x => x.BestScore)

@@ -11,6 +11,8 @@ const translations = {
       alreadyOnTeam: 'You are already on a team for this game.',
       teamNotFound: 'Team was not found.',
       teamNotJoinable: 'This team cannot be joined or confirmed in its current state.',
+      teamRosterLocked:
+        'A confirmed team’s roster cannot be changed. You can disband the entire team.',
       notTeamMember: 'You are not on a team for this game.',
       invitationInvalid: 'Invitation was not found or is no longer pending.',
       userNotFound: 'The selected user was not found or is inactive.',
@@ -18,6 +20,8 @@ const translations = {
       slotNotAvailable: 'Team slot is not available.',
       pendingInvitation: 'This player already has a pending invitation for this game.',
       teamActiveInGame: 'The active team cannot be disbanded while it is taking its turn.',
+      teamAlreadyPlayed:
+        'A team that has opened a card or is marked as played cannot be disbanded.',
       invalidTeamName: 'Team name must be 48 characters or less.',
       operationFailed: 'The registration operation could not be completed.',
       noConfirmedTeams: 'Confirm at least one team before starting the game.',
@@ -46,6 +50,8 @@ const translations = {
       teamNotFound: 'Команда не найдена.',
       teamNotJoinable:
         'К этой команде нельзя присоединиться или подтвердить её в текущем состоянии.',
+      teamRosterLocked:
+        'Состав подтверждённой команды менять нельзя. Можно распустить команду целиком.',
       notTeamMember: 'Вы не состоите в команде на эту игру.',
       invitationInvalid: 'Приглашение не найдено или уже не активно.',
       userNotFound: 'Выбранный пользователь не найден или деактивирован.',
@@ -53,6 +59,8 @@ const translations = {
       slotNotAvailable: 'Слот команды недоступен.',
       pendingInvitation: 'У этого игрока уже есть ожидающее приглашение на эту игру.',
       teamActiveInGame: 'Нельзя распустить команду, чей ход сейчас активен.',
+      teamAlreadyPlayed:
+        'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
       invalidTeamName: 'Название команды должно быть не длиннее 48 символов.',
       operationFailed: 'Не удалось выполнить операцию регистрации.',
       noConfirmedTeams: 'Перед запуском подтвердите хотя бы одну команду.',
@@ -80,6 +88,8 @@ const translations = {
       alreadyOnTeam: 'Ви вже в команді на цю гру.',
       teamNotFound: 'Команду не знайдено.',
       teamNotJoinable: 'До цієї команди не можна приєднатися або підтвердити її в поточному стані.',
+      teamRosterLocked:
+        'Склад підтвердженої команди змінювати не можна. Можна розформувати всю команду.',
       notTeamMember: 'Ви не в команді на цю гру.',
       invitationInvalid: 'Запрошення не знайдено або вже не активне.',
       userNotFound: 'Вибраного користувача не знайдено або його деактивовано.',
@@ -87,6 +97,8 @@ const translations = {
       slotNotAvailable: 'Слот команди недоступний.',
       pendingInvitation: 'У цього гравця вже є очікуване запрошення на цю гру.',
       teamActiveInGame: 'Не можна розформувати команду, чий хід зараз активний.',
+      teamAlreadyPlayed:
+        'Команда вже відкривала картку або позначена як зіграна. Розформувати її не можна.',
       invalidTeamName: 'Назва команди має бути не довшою за 48 символів.',
       operationFailed: 'Не вдалося виконати операцію реєстрації.',
       noConfirmedTeams: 'Перед запуском підтвердьте хоча б одну команду.',
@@ -114,6 +126,8 @@ const translations = {
       alreadyOnTeam: 'Już jesteś w drużynie w tej grze.',
       teamNotFound: 'Nie znaleziono drużyny.',
       teamNotJoinable: 'Do tej drużyny nie można dołączyć ani jej potwierdzić w tym stanie.',
+      teamRosterLocked:
+        'Nie można zmieniać składu zatwierdzonej drużyny. Można rozwiązać całą drużynę.',
       notTeamMember: 'Nie jesteś w drużynie w tej grze.',
       invitationInvalid: 'Zaproszenie nie zostało znalezione lub nie jest już aktywne.',
       userNotFound: 'Wybrany użytkownik nie został znaleziony lub jest nieaktywny.',
@@ -121,6 +135,8 @@ const translations = {
       slotNotAvailable: 'Slot drużyny jest niedostępny.',
       pendingInvitation: 'Ten gracz ma już oczekujące zaproszenie w tej grze.',
       teamActiveInGame: 'Nie można rozwiązać drużyny, która ma aktywną turę.',
+      teamAlreadyPlayed:
+        'Nie można rozwiązać drużyny, która otworzyła kartę lub jest oznaczona jako rozegrana.',
       invalidTeamName: 'Nazwa drużyny może mieć maksymalnie 48 znaków.',
       operationFailed: 'Nie udało się wykonać operacji rejestracji.',
       noConfirmedTeams: 'Przed startem zatwierdź co najmniej jedną drużynę.',

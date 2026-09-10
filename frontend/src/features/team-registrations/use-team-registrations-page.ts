@@ -6,7 +6,7 @@ import {
   useConfirmGameRegistrationTeamMutation,
   useCreateAdminGameRegistrationInvitationMutation,
   useCreateAdminGameRegistrationTeamMutation,
-  useDisbandConfirmedGameRegistrationTeamMutation,
+  useDisbandGameRegistrationTeamMutation,
   useGameRegistrationToast,
   useMoveGameRegistrationTeamToSlotMutation,
   useRejectGameRegistrationTeamMutation,
@@ -26,7 +26,7 @@ export function useTeamRegistrationsPage() {
   const moveTeamToSlot = useMoveGameRegistrationTeamToSlotMutation(onMutationError)
   const confirmTeam = useConfirmGameRegistrationTeamMutation(onMutationError)
   const rejectTeam = useRejectGameRegistrationTeamMutation(onMutationError)
-  const disbandTeam = useDisbandConfirmedGameRegistrationTeamMutation(onMutationError)
+  const disbandTeam = useDisbandGameRegistrationTeamMutation(onMutationError)
   const teamPlayedState = useGameTeamPlayedState()
   const updateTeamName = useUpdateAdminGameRegistrationTeamNameMutation(onMutationError)
   const gameBoardQuery = useQuery(currentGameBoardQueryOptions)

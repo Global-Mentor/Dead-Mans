@@ -517,7 +517,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
     }
 
     [Fact]
-    public async Task AssignPlayer_WhenPlayerIsMovedFromConfirmedTeam_DemotesSourceAndAddsMemberToTarget()
+    public async Task AssignPlayer_WhenPlayerIsMovedFromConfirmedTeam_ReturnsConflictAndKeepsBothRosters()
     {
         await ClearRegistrationDataAsync();
         await SeedReadyGameAsync();
@@ -544,21 +544,17 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             new AssignRegistrationPlayerRequestDto(movedUserId)
         );
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<RegistrationTeamDto>();
-        Assert.NotNull(payload);
-        Assert.Equal(targetTeamId, payload.TeamId);
-        Assert.Equal(2, payload.Members.Count);
-        Assert.Contains(payload.Members, member => member.Player.UserId == movedUserId);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var snapshotResponse = await adminClient.GetAsync("/api/game/registration/admin");
         Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
         var snapshot = await snapshotResponse.Content.ReadFromJsonAsync<GameRegistrationAdminSnapshotDto>();
         Assert.NotNull(snapshot);
         var sourceTeam = Assert.Single(snapshot.Teams, team => team.TeamId == sourceTeamId);
-        Assert.Equal("forming", sourceTeam.Status);
-        Assert.Single(sourceTeam.Members);
-        Assert.DoesNotContain(sourceTeam.Members, member => member.Player.UserId == movedUserId);
+        Assert.Equal("confirmed", sourceTeam.Status);
+        Assert.Equal(2, sourceTeam.Members.Count);
+        Assert.Contains(sourceTeam.Members, member => member.Player.UserId == movedUserId);
+        Assert.Single(Assert.Single(snapshot.Teams, team => team.TeamId == targetTeamId).Members);
     }
 
     [Fact]
@@ -644,8 +640,10 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamNotJoinable, payload.Code);
     }
 
-    [Fact]
-    public async Task RemovePlayerFromTeam_WhenAdmin_RemovesMemberAndDemotesConfirmedTeam()
+    [Theory]
+    [InlineData(TeamStatusValue.Forming)]
+    [InlineData(TeamStatusValue.Confirmed)]
+    public async Task RemovePlayerFromTeam_WhenAdmin_OnlyAllowsFormingRoster(string status)
     {
         await ClearRegistrationDataAsync();
         await SeedReadyGameAsync();
@@ -656,7 +654,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             recruitmentOpen: false,
             slotIndex: 2,
             memberUserIds: [ownerId, removedUserId],
-            status: TeamStatusValue.Confirmed
+            status: status
         );
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
 
@@ -665,7 +663,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             content: null
         );
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(status == TeamStatusValue.Forming ? HttpStatusCode.NoContent : HttpStatusCode.Conflict, response.StatusCode);
 
         var snapshotResponse = await adminClient.GetAsync("/api/game/registration/admin");
         Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
@@ -673,11 +671,20 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             await snapshotResponse.Content.ReadFromJsonAsync<GameRegistrationAdminSnapshotDto>();
         Assert.NotNull(snapshot);
         var team = Assert.Single(snapshot.Teams, candidate => candidate.TeamId == teamId);
-        Assert.Equal("forming", team.Status);
-        Assert.Single(team.Members);
+        Assert.Equal(status, team.Status);
         Assert.Contains(team.Members, member => member.Player.UserId == ownerId);
-        Assert.DoesNotContain(team.Members, member => member.Player.UserId == removedUserId);
-        Assert.Contains(snapshot.AvailablePlayers, player => player.UserId == removedUserId);
+        if (status == TeamStatusValue.Forming)
+        {
+            Assert.Single(team.Members);
+            Assert.DoesNotContain(team.Members, member => member.Player.UserId == removedUserId);
+            Assert.Contains(snapshot.AvailablePlayers, player => player.UserId == removedUserId);
+        }
+        else
+        {
+            Assert.Equal(2, team.Members.Count);
+            Assert.Contains(team.Members, member => member.Player.UserId == removedUserId);
+            Assert.DoesNotContain(snapshot.AvailablePlayers, player => player.UserId == removedUserId);
+        }
     }
 
     [Fact]
@@ -723,6 +730,69 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             await inviteeSnapshotResponse.Content.ReadFromJsonAsync<GameRegistrationSnapshotDto>();
         Assert.NotNull(inviteeSnapshot);
         Assert.Empty(inviteeSnapshot.MyPendingInvitations);
+    }
+
+    [Fact]
+    public async Task RemoveLastPlayer_AutomaticallyDisbandsTeamAndFreesSlot()
+    {
+        await ClearRegistrationDataAsync();
+        await SeedReadyGameAsync();
+        var playerId = Guid.NewGuid();
+        var teamId = await SeedTeamAsync(playerId, recruitmentOpen: true, slotIndex: 2, memberUserIds: [playerId]);
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+
+        var response = await adminClient.PostAsync(
+            $"/api/game/registration/admin/teams/{teamId}/members/{playerId}/remove", content: null
+        );
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var snapshot = await adminClient.GetFromJsonAsync<GameRegistrationAdminSnapshotDto>("/api/game/registration/admin");
+        Assert.NotNull(snapshot);
+        Assert.DoesNotContain(snapshot.Teams, team => team.TeamId == teamId);
+        Assert.Contains(snapshot.AvailablePlayers, player => player.UserId == playerId);
+        Assert.True(Assert.Single(snapshot.TeamSlots, slot => slot.TeamSlotIndex == 2).IsAvailableForNewTeam);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DisbandAfterGameStart_RejectsPlayedTeamWithSpecificReason(bool played)
+    {
+        await ClearRegistrationDataAsync();
+        await SeedReadyGameAsync();
+        var playerId = Guid.NewGuid();
+        var teamId = await SeedTeamAsync(playerId, recruitmentOpen: true, slotIndex: 2,
+            memberUserIds: [playerId], status: TeamStatusValue.Confirmed);
+        await SetReadyGameActiveAsync();
+        if (played)
+        {
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var team = await db.GameTeams.SingleAsync(candidate => candidate.Id == teamId);
+            team.IsPlayed = true;
+            team.PlayedAtUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var response = await adminClient.PostAsync($"/api/game/registration/teams/{teamId}/disband", content: null);
+        Assert.Equal(played ? HttpStatusCode.Conflict : HttpStatusCode.NoContent, response.StatusCode);
+        if (played)
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            Assert.NotNull(payload);
+            Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamAlreadyPlayed, payload.Code);
+            Assert.Equal(AppMessages.Client.GameRegistrationTeamAlreadyPlayed, payload.Error);
+        }
+    }
+
+    [Fact]
+    public async Task DisbandEmptyFormingTeam_ReturnsNoContent()
+    {
+        await ClearRegistrationDataAsync();
+        await SeedReadyGameAsync();
+        var teamId = await SeedTeamAsync(Guid.NewGuid(), recruitmentOpen: true, slotIndex: 2, memberUserIds: []);
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var response = await adminClient.PostAsync($"/api/game/registration/teams/{teamId}/disband", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -886,8 +956,8 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(payload);
-        Assert.Equal(AppMessages.Client.GameRegistrationTeamNotJoinable, payload.Error);
-        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamNotJoinable, payload.Code);
+        Assert.Equal(AppMessages.Client.GameRegistrationTeamRosterLocked, payload.Error);
+        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamRosterLocked, payload.Code);
 
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -965,8 +1035,10 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         Assert.Null(team.DisbandRequestedByUserId);
     }
 
-    [Fact]
-    public async Task DisbandConfirmedTeam_WhenConfirmedTeam_ReturnsNoContentAndClosesTeam()
+    [Theory]
+    [InlineData(TeamStatusValue.Forming)]
+    [InlineData(TeamStatusValue.Confirmed)]
+    public async Task DisbandTeam_WhenFormingOrConfirmed_ReturnsNoContentAndClosesTeam(string status)
     {
         await ClearRegistrationDataAsync();
         await SeedReadyGameAsync();
@@ -979,7 +1051,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
             recruitmentOpen: false,
             slotIndex: 2,
             memberUserIds: [ownerId, teammateId],
-            status: TeamStatusValue.Confirmed
+            status: status
         );
         await SeedUserAsync(invitedUserId, "invited-player");
         var invitationId = await SeedPlayerInvitationAsync(teamId, ownerId, invitedUserId);
@@ -1022,7 +1094,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
     }
 
     [Fact]
-    public async Task DisbandConfirmedTeam_WhenTeamIsActiveInGame_ReturnsConflictAndKeepsTeam()
+    public async Task DisbandTeam_WhenTeamIsActiveInGame_ReturnsConflictAndKeepsTeam()
     {
         await ClearRegistrationDataAsync();
         await SeedReadyGameAsync();

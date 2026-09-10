@@ -206,7 +206,7 @@ public sealed partial class DbGameLifecyclePersistence
 
         return new FinishGameResult(
             GameLifecycleErrorCode.None,
-            MapPersistedSummary(game, finalization, pendingQuizQuestionCount: 0),
+            MapPersistedSummary(game, finalization, preview.Summary.Teams.Select(x => x.TeamId).ToHashSet(), pendingQuizQuestionCount: 0),
             false
         );
     }
@@ -301,8 +301,11 @@ public sealed partial class DbGameLifecyclePersistence
                     .ToArray()
             );
 
+        // Opening a card creates a round, even when that round is later cancelled.
+        var teamsWithOpenedCards = rounds.Select(round => round.TeamId).ToHashSet();
         var calculatedTeams = GameTeamResultCalculator.Calculate(
-            teams.Select(team => new GameTeamResultCalculationInput(
+            teams.Where(team => teamsWithOpenedCards.Contains(team.Id))
+                .Select(team => new GameTeamResultCalculationInput(
                 team.Id,
                 team.Name,
                 team.TeamSlotIndex,
@@ -394,14 +397,22 @@ public sealed partial class DbGameLifecyclePersistence
             .ThenInclude(x => x.Board)
             .Include(x => x.TeamResults)
             .FirstOrDefaultAsync(x => x.GameId == gameId && !x.Game.IsDeleted, cancellationToken);
-        return finalization is null
-            ? null
-            : MapPersistedSummary(finalization.Game, finalization, pendingQuizQuestionCount: 0);
+        if (finalization is null)
+        {
+            return null;
+        }
+        var teamsWithOpenedCards = (await _dbContext.GameRounds.AsNoTracking()
+            .Where(round => round.GameId == gameId)
+            .Select(round => round.TeamId)
+            .Distinct()
+            .ToArrayAsync(cancellationToken)).ToHashSet();
+        return MapPersistedSummary(finalization.Game, finalization, teamsWithOpenedCards, pendingQuizQuestionCount: 0);
     }
 
     private static GameFinishSummary MapPersistedSummary(
         Game game,
         GameFinalization finalization,
+        HashSet<Guid> teamsWithOpenedCards,
         int pendingQuizQuestionCount
     ) =>
         new(
@@ -422,6 +433,7 @@ public sealed partial class DbGameLifecyclePersistence
             pendingQuizQuestionCount,
             finalization.SkippedQuizQuestionCount,
             finalization.TeamResults
+                .Where(x => teamsWithOpenedCards.Contains(x.TeamId))
                 .OrderBy(x => x.Placement ?? int.MaxValue)
                 .ThenByDescending(x => x.FinalScore)
                 .ThenByDescending(x => x.BestScore)

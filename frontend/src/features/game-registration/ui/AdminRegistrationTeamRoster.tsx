@@ -31,6 +31,7 @@ export function AdminRegistrationTeamRoster({
 }: AdminRegistrationTeamRosterProps) {
   const { t } = useTranslation()
   const pendingInvitations = team.pendingInvitations ?? []
+  const canEditRoster = team.status === 'forming'
 
   return (
     <Stack
@@ -65,29 +66,35 @@ export function AdminRegistrationTeamRoster({
           compact
           testId={`admin-player-${member.player.userId}`}
           actions={
-            <AppButton
-              size="small"
-              tone="warningGhost"
-              sx={teamActionButtonSx}
-              disabled={isRemovingPlayer(team.teamId, member.player.userId)}
-              onClick={() =>
-                onRequestRemove({
-                  teamId: team.teamId,
-                  teamSlotIndex: team.teamSlotIndex,
-                  player: member.player,
-                })
-              }
-            >
-              {t('gameApplication.adminPanel.removePlayer')}
-            </AppButton>
+            canEditRoster ? (
+              <AppButton
+                size="small"
+                tone="warningGhost"
+                sx={teamActionButtonSx}
+                disabled={isRemovingPlayer(team.teamId, member.player.userId)}
+                onClick={() =>
+                  onRequestRemove({
+                    teamId: team.teamId,
+                    teamSlotIndex: team.teamSlotIndex,
+                    player: member.player,
+                  })
+                }
+              >
+                {t('gameApplication.adminPanel.removePlayer')}
+              </AppButton>
+            ) : undefined
           }
-          onDragStart={(event) => {
-            const payload: RegistrationDragPayload = {
-              kind: 'player',
-              userId: member.player.userId,
-            }
-            onPlayerDragStart(event, payload)
-          }}
+          {...(canEditRoster
+            ? {
+                onDragStart: (event: DragEvent<HTMLElement>) => {
+                  const payload: RegistrationDragPayload = {
+                    kind: 'player',
+                    userId: member.player.userId,
+                  }
+                  onPlayerDragStart(event, payload)
+                },
+              }
+            : {})}
           onDragEnd={onPlayerDragEnd}
         />
       ))}

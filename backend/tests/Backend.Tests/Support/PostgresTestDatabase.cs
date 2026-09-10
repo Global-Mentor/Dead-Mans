@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
 
@@ -70,7 +71,7 @@ public sealed class PostgresTestDatabase : IAsyncLifetime
         await drop.ExecuteNonQueryAsync();
     }
 
-    public ApplicationDbContext CreateDbContext()
+    public ApplicationDbContext CreateDbContext(params IInterceptor[] interceptors)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseNpgsql(
@@ -78,6 +79,7 @@ public sealed class PostgresTestDatabase : IAsyncLifetime
                 npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history")
             )
             .ReplaceService<IHistoryRepository, SnakeCaseNpgsqlHistoryRepository>()
+            .AddInterceptors(interceptors)
             .Options;
 
         return new ApplicationDbContext(options);

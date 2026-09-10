@@ -10,6 +10,7 @@ const REGISTRATION_ERROR_I18N_KEYS: Partial<Record<NonNullable<ErrorResponse['co
     [API_ERROR_CODES.gameRegistrationAlreadyOnTeam]: 'gameRegistration.errors.alreadyOnTeam',
     [API_ERROR_CODES.gameRegistrationTeamNotFound]: 'gameRegistration.errors.teamNotFound',
     [API_ERROR_CODES.gameRegistrationTeamNotJoinable]: 'gameRegistration.errors.teamNotJoinable',
+    [API_ERROR_CODES.gameRegistrationTeamRosterLocked]: 'gameRegistration.errors.teamRosterLocked',
     [API_ERROR_CODES.gameRegistrationNotTeamMember]: 'gameRegistration.errors.notTeamMember',
     [API_ERROR_CODES.gameRegistrationInvitationInvalid]:
       'gameRegistration.errors.invitationInvalid',
@@ -19,6 +20,8 @@ const REGISTRATION_ERROR_I18N_KEYS: Partial<Record<NonNullable<ErrorResponse['co
     [API_ERROR_CODES.gameRegistrationPendingInvitation]:
       'gameRegistration.errors.pendingInvitation',
     [API_ERROR_CODES.gameRegistrationTeamActiveInGame]: 'gameRegistration.errors.teamActiveInGame',
+    [API_ERROR_CODES.gameRegistrationTeamAlreadyPlayed]:
+      'gameRegistration.errors.teamAlreadyPlayed',
     [API_ERROR_CODES.gameRegistrationInvalidTeamName]: 'gameRegistration.errors.invalidTeamName',
     [API_ERROR_CODES.gameRegistrationOperationFailed]: 'gameRegistration.errors.operationFailed',
     [API_ERROR_CODES.gameLifecycleNoConfirmedTeams]: 'gameRegistration.errors.noConfirmedTeams',

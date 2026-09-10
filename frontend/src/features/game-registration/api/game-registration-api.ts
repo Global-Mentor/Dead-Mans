@@ -195,7 +195,7 @@ export function rejectGameRegistrationTeam(teamId: string) {
   )
 }
 
-export function disbandConfirmedGameRegistrationTeam(teamId: string) {
+export function disbandGameRegistrationTeam(teamId: string) {
   return ensureOpenApiSuccess(
     gameRegistrationApiClient.POST('/game/registration/teams/{teamId}/disband', {
       params: {

@@ -22,7 +22,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         {
             if (_dbContext.Database.IsRelational())
             {
-                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                await using var transaction = await BeginRosterChangeAsync(gameId, cancellationToken);
                 await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                     $"""SELECT 1 FROM game_teams WHERE id = {teamId} FOR UPDATE""",
                     cancellationToken
@@ -87,7 +87,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     {
         if (_dbContext.Database.IsRelational())
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await BeginRosterChangeAsync(gameId, cancellationToken);
             await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                 $"""SELECT 1 FROM game_teams WHERE id = {teamId} FOR UPDATE""",
                 cancellationToken
@@ -146,6 +146,17 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+        if (transaction is not null)
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM game_teams WHERE id = {teamId} FOR UPDATE",
+                cancellationToken
+            );
+        }
+
         var membership = await _dbContext.GameTeamMembers
             .Include(member => member.Team)
             .FirstOrDefaultAsync(
@@ -162,56 +173,19 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         }
 
         var team = membership.Team;
-        if (team.Status != TeamStatusValue.Forming && team.Status != TeamStatusValue.Confirmed)
+        if (team.Status != TeamStatusValue.Forming)
         {
-            return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
+            return Fail<bool>(team.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        membership.LeftAtUtc = utcNow;
-
-        var remainingMembers = await _dbContext.GameTeamMembers.CountAsync(
-            member =>
-                member.TeamId == team.Id
-                && member.LeftAtUtc == null
-                && member.Id != membership.Id,
-            cancellationToken
-        );
-
-        if (remainingMembers == 0)
-        {
-            team.Status = TeamStatusValue.Disbanded;
-            team.DisbandedAtUtc = utcNow;
-            team.DisbandedByUserId = adminUserId;
-            team.ConfirmedAtUtc = null;
-            team.ConfirmedByUserId = null;
-            team.DisbandRequestedAtUtc = null;
-            team.DisbandRequestedByUserId = null;
-
-            var pendingInvitations = await _dbContext.GameTeamInvitations
-                .Where(
-                    invitation =>
-                        invitation.TeamId == team.Id
-                        && invitation.Status == TeamInvitationStatusValue.Pending
-                )
-                .ToListAsync(cancellationToken);
-            foreach (var invitation in pendingInvitations)
-            {
-                invitation.Status = TeamInvitationStatusValue.Cancelled;
-                invitation.RespondedAtUtc = utcNow;
-            }
-        }
-        else if (team.Status == TeamStatusValue.Confirmed)
-        {
-            team.Status = TeamStatusValue.Forming;
-            team.ConfirmedAtUtc = null;
-            team.ConfirmedByUserId = null;
-            team.DisbandRequestedAtUtc = null;
-            team.DisbandRequestedByUserId = null;
-        }
-
-        team.UpdatedAtUtc = utcNow;
+        await CloseMembershipAsync(membership, team, adminUserId, utcNow, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         _logger.LogInformation(
             "Admin {AdminUserId} removed player {UserId} from team {TeamId} in game {GameId}.",
@@ -232,6 +206,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
         var invitation = await _dbContext.GameTeamInvitations.FirstOrDefaultAsync(
             candidate =>
                 candidate.Id == invitationId
@@ -264,6 +242,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         _logger.LogInformation(
             "Admin {AdminUserId} cancelled invitation {InvitationId} for team {TeamId} in game {GameId}.",
             adminUserId,
@@ -286,7 +269,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     {
         if (_dbContext.Database.IsRelational())
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await BeginRosterChangeAsync(gameId, cancellationToken);
             await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                 $"""SELECT 1 FROM game_teams WHERE id = {teamId} FOR UPDATE""",
                 cancellationToken
@@ -377,6 +360,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
         var team = await _dbContext.GameTeams
             .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
         if (team is null)
@@ -399,23 +386,19 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         }
 
         team.Status = TeamStatusValue.Rejected;
+        team.RecruitmentOpen = false;
         team.RejectedAtUtc = utcNow;
         team.RejectedByUserId = adminUserId;
         team.UpdatedAtUtc = utcNow;
 
-        var pendingInvitations = await _dbContext.GameTeamInvitations
-            .Where(
-                invitation => invitation.TeamId == team.Id
-                    && invitation.Status == TeamInvitationStatusValue.Pending
-            )
-            .ToListAsync(cancellationToken);
-        foreach (var invitation in pendingInvitations)
-        {
-            invitation.Status = TeamInvitationStatusValue.Cancelled;
-            invitation.RespondedAtUtc = utcNow;
-        }
+        await CancelPendingTeamInvitationsAsync(team.Id, utcNow, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         _logger.LogInformation(
             "Team {TeamId} rejected by admin {AdminUserId}.",
@@ -426,60 +409,5 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
     }
 
-    public async Task<GameRegistrationResult<bool>> PersistDisbandConfirmedTeamAsync(
-        Guid gameId,
-        Guid adminUserId,
-        Guid teamId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var team = await _dbContext.GameTeams
-            .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
-        if (team is null)
-        {
-            return Fail<bool>(GameRegistrationErrorCode.TeamNotFound);
-        }
-
-        if (team.Status != TeamStatusValue.Confirmed)
-        {
-            return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
-        }
-
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var members = await _dbContext.GameTeamMembers
-            .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
-            .ToListAsync(cancellationToken);
-        foreach (var member in members)
-        {
-            member.LeftAtUtc = utcNow;
-        }
-
-        team.Status = TeamStatusValue.Disbanded;
-        team.DisbandedAtUtc = utcNow;
-        team.DisbandedByUserId = adminUserId;
-        team.UpdatedAtUtc = utcNow;
-
-        var pendingInvitations = await _dbContext.GameTeamInvitations
-            .Where(
-                invitation => invitation.TeamId == team.Id
-                    && invitation.Status == TeamInvitationStatusValue.Pending
-            )
-            .ToListAsync(cancellationToken);
-        foreach (var invitation in pendingInvitations)
-        {
-            invitation.Status = TeamInvitationStatusValue.Cancelled;
-            invitation.RespondedAtUtc = utcNow;
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation(
-            "Confirmed team {TeamId} disbanded by admin {AdminUserId}.",
-            teamId,
-            adminUserId
-        );
-
-        return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
-    }
 
 }

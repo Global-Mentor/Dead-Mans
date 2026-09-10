@@ -10,7 +10,7 @@ import {
   createPlayerGameRegistrationInvitationMutationOptions,
   createGameRegistrationTeamMutationOptions,
   declineGameRegistrationInvitationMutationOptions,
-  disbandConfirmedGameRegistrationTeamMutationOptions,
+  disbandGameRegistrationTeamMutationOptions,
   type GameRegistrationMutationErrorHandler,
   joinGameRegistrationTeamMutationOptions,
   leaveGameRegistrationTeamMutationOptions,
@@ -119,11 +119,11 @@ export function useRejectGameRegistrationTeamMutation(
   return useMutation(rejectGameRegistrationTeamMutationOptions(queryClient, onError))
 }
 
-export function useDisbandConfirmedGameRegistrationTeamMutation(
+export function useDisbandGameRegistrationTeamMutation(
   onError: GameRegistrationMutationErrorHandler,
 ) {
   const queryClient = useQueryClient()
-  return useMutation(disbandConfirmedGameRegistrationTeamMutationOptions(queryClient, onError))
+  return useMutation(disbandGameRegistrationTeamMutationOptions(queryClient, onError))
 }
 
 export function useAssignGameRegistrationPlayerToTeamMutation(

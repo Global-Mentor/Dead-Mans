@@ -11,7 +11,7 @@ import {
   createAdminGameRegistrationTeam,
   createGameRegistrationTeam,
   declineGameRegistrationInvitation,
-  disbandConfirmedGameRegistrationTeam,
+  disbandGameRegistrationTeam,
   joinGameRegistrationTeam,
   leaveGameRegistrationTeam,
   moveGameRegistrationTeamToSlot,
@@ -185,12 +185,12 @@ export function rejectGameRegistrationTeamMutationOptions(
   })
 }
 
-export function disbandConfirmedGameRegistrationTeamMutationOptions(
+export function disbandGameRegistrationTeamMutationOptions(
   queryClient: QueryClient,
   onError: GameRegistrationMutationErrorHandler,
 ) {
   return mutationOptions({
-    mutationFn: disbandConfirmedGameRegistrationTeam,
+    mutationFn: disbandGameRegistrationTeam,
     ...registrationMutationHandlers(queryClient, onError),
   })
 }

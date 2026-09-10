@@ -14,7 +14,7 @@ using Npgsql;
 
 namespace Backend.Tests.Integration.Postgres;
 
-public sealed class PostgresPersistenceBoundaryTests : IClassFixture<PostgresTestDatabase>
+public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<PostgresTestDatabase>
 {
     private static readonly string RuleBehaviorJson = ModifierBehaviorV2Json.Serialize(
         BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior

@@ -25,9 +25,9 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
         }
 
-        if (targetTeam.Status != TeamStatusValue.Forming && targetTeam.Status != TeamStatusValue.Confirmed)
+        if (targetTeam.Status != TeamStatusValue.Forming)
         {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+            return Fail<RegistrationTeamDto>(targetTeam.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
         var targetMemberCount = await _dbContext.GameTeamMembers.CountAsync(
@@ -47,6 +47,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TargetTeamSameAsSource);
         }
 
+        if (activeMembership is not null && activeMembership.Team?.Status != TeamStatusValue.Forming)
+        {
+            return Fail<RegistrationTeamDto>(activeMembership.Team?.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
         if (activeMembership is null && targetMemberCount >= maxPlayersPerTeam)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamFull);
@@ -60,48 +65,9 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
                 return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamFull);
             }
 
-            activeMembership.LeftAtUtc = utcNow;
-
-            if (activeMembership.Team is not null)
-            {
-                var remainingSourceMembers = await _dbContext.GameTeamMembers.CountAsync(
-                    member =>
-                        member.TeamId == activeMembership.TeamId
-                        && member.LeftAtUtc == null
-                        && member.Id != activeMembership.Id,
-                    cancellationToken
-                );
-
-                if (remainingSourceMembers == 0)
-                {
-                    activeMembership.Team.Status = TeamStatusValue.Disbanded;
-                    activeMembership.Team.DisbandedAtUtc = utcNow;
-                    activeMembership.Team.DisbandedByUserId = userId;
-                    activeMembership.Team.ConfirmedAtUtc = null;
-                    activeMembership.Team.ConfirmedByUserId = null;
-
-                    var pendingInvitations = await _dbContext.GameTeamInvitations
-                        .Where(
-                            invitation =>
-                                invitation.TeamId == activeMembership.TeamId
-                                && invitation.Status == TeamInvitationStatusValue.Pending
-                        )
-                        .ToListAsync(cancellationToken);
-                    foreach (var invitation in pendingInvitations)
-                    {
-                        invitation.Status = TeamInvitationStatusValue.Cancelled;
-                        invitation.RespondedAtUtc = utcNow;
-                    }
-                }
-                else if (activeMembership.Team.Status == TeamStatusValue.Confirmed)
-                {
-                    activeMembership.Team.Status = TeamStatusValue.Forming;
-                    activeMembership.Team.ConfirmedAtUtc = null;
-                    activeMembership.Team.ConfirmedByUserId = null;
-                }
-
-                activeMembership.Team.UpdatedAtUtc = utcNow;
-            }
+            await CloseMembershipAsync(
+                activeMembership, activeMembership.Team!, adminUserId, utcNow, cancellationToken
+            );
         }
 
         _dbContext.GameTeamMembers.Add(
@@ -114,13 +80,6 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
                 JoinedAtUtc = utcNow
             }
         );
-
-        if (targetTeam.Status == TeamStatusValue.Confirmed)
-        {
-            targetTeam.Status = TeamStatusValue.Forming;
-            targetTeam.ConfirmedAtUtc = null;
-            targetTeam.ConfirmedByUserId = null;
-        }
 
         targetTeam.UpdatedAtUtc = utcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -144,6 +103,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken
     )
     {
+        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
         var sourceTeam = await _dbContext.GameTeams
             .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
         if (sourceTeam is null)

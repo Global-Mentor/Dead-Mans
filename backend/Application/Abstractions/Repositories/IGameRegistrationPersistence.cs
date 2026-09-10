@@ -99,7 +99,7 @@ public interface IGameRegistrationPersistence
         CancellationToken cancellationToken = default
     );
 
-    Task<GameRegistrationResult<bool>> PersistDisbandConfirmedTeamAsync(
+    Task<GameRegistrationResult<bool>> PersistDisbandTeamAsync(
         Guid gameId,
         Guid adminUserId,
         Guid teamId,

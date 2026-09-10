@@ -23,7 +23,7 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierIds`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
 - полный контур модификаторов: выбор каталога в `game-setup`, runtime activation, versioned lifecycle раунда, server-authoritative preview/finalize, итоговый breakdown и frozen history;
 - блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
-- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; confirmed-команды нельзя покинуть напрямую, игрок отправляет заявку на роспуск, а модератор или администратор видит заметное уведомление и подтверждает роспуск в панели команд.
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; состав confirmed-команд нельзя менять, а роспуск целиком доступен в панели команд без обязательной заявки игрока. Активную команду, команду с открытой ранее карточкой или отмеченную отыгравшей распустить нельзя; причина отказа показывается в уведомлении.
 
 ## Структура API-слоя
 
