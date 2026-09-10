@@ -6,7 +6,7 @@ import type {
   GameLifecycleChangedEvent,
 } from '../../../shared/api/contracts/index.ts'
 import { logger } from '../../../shared/lib/logger.ts'
-import { realtimeHubs, useSignalrHubLifecycle } from '../../../shared/realtime/index.ts'
+import { realtimeHubs, useSignalrHubSubscription } from '../../../shared/realtime/index.ts'
 import { activeGameRoundQueryOptions } from '../../game-rounds/api/game-rounds-queries.ts'
 import { gameHistoryQueryKeys } from '../../game-history/api/game-history-queries.ts'
 import { gameModifierQueryKeys } from '../../game-modifiers/api/game-modifier-queries.ts'
@@ -139,7 +139,7 @@ export function GameBoardRealtimeSync() {
     [queryClient, syncFromServerIfNewer],
   )
 
-  useSignalrHubLifecycle({
+  useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game board',
     onConnected: syncFromServerIfNewer,

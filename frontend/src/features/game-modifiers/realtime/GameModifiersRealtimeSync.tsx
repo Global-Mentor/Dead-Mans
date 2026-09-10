@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { logger } from '../../../shared/lib/logger.ts'
-import { realtimeHubs, useSignalrHubLifecycle } from '../../../shared/realtime/index.ts'
+import { realtimeHubs, useSignalrHubSubscription } from '../../../shared/realtime/index.ts'
 import { currentGameBoardQueryOptions } from '../../game-board/index.ts'
 import { activeGameRoundQueryOptions } from '../../game-rounds/api/game-rounds-queries.ts'
 import { gameModifierQueryKeys } from '../api/game-modifier-queries.ts'
@@ -76,7 +76,7 @@ export function GameModifiersRealtimeSync() {
     [syncAll],
   )
 
-  useSignalrHubLifecycle({
+  useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game modifiers',
     onConnected: syncAll,

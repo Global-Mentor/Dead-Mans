@@ -6,7 +6,7 @@ import {
   currentGameBoardQueryOptions,
   manualGameQuizAwardPlayersQueryOptions,
 } from '../game-board/index.ts'
-import { realtimeHubs, useSignalrHubLifecycle } from '../../shared/realtime/index.ts'
+import { realtimeHubs, useSignalrHubSubscription } from '../../shared/realtime/index.ts'
 
 const QUIZ_STATE_CHANGED_EVENT = realtimeHubs.gameBoard.events.quizStateChanged
 
@@ -38,7 +38,7 @@ export function GameQuizRealtimeSync() {
     [syncQuizState],
   )
 
-  useSignalrHubLifecycle({
+  useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game quiz',
     onConnected: syncQuizState,

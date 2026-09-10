@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ModifierCatalogRealtimeSync } from './ModifierCatalogRealtimeSync.tsx'
 
 const realtimeMocks = vi.hoisted(() => ({
-  useSignalrHubLifecycle: vi.fn(),
+  useSignalrHubSubscription: vi.fn(),
 }))
 
 vi.mock('../../shared/realtime/index.ts', () => ({
@@ -13,7 +13,7 @@ vi.mock('../../shared/realtime/index.ts', () => ({
       events: { modifierCatalogChanged: 'modifierCatalogChanged' },
     },
   },
-  useSignalrHubLifecycle: realtimeMocks.useSignalrHubLifecycle,
+  useSignalrHubSubscription: realtimeMocks.useSignalrHubSubscription,
 }))
 
 describe('ModifierCatalogRealtimeSync', () => {
@@ -28,7 +28,7 @@ describe('ModifierCatalogRealtimeSync', () => {
       </QueryClientProvider>,
     )
 
-    const options = realtimeMocks.useSignalrHubLifecycle.mock.calls[0]?.[0]
+    const options = realtimeMocks.useSignalrHubSubscription.mock.calls[0]?.[0]
     const handlers = new Map<string, () => void>()
     const connection = {
       on: vi.fn((event: string, handler: () => void) => handlers.set(event, handler)),

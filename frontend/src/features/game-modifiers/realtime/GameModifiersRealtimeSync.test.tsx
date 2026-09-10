@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GameModifiersRealtimeSync } from './GameModifiersRealtimeSync.tsx'
 
 const realtimeMocks = vi.hoisted(() => ({
-  useSignalrHubLifecycle: vi.fn(),
+  useSignalrHubSubscription: vi.fn(),
 }))
 
 vi.mock('../../../shared/realtime/index.ts', () => ({
@@ -19,7 +19,7 @@ vi.mock('../../../shared/realtime/index.ts', () => ({
       },
     },
   },
-  useSignalrHubLifecycle: realtimeMocks.useSignalrHubLifecycle,
+  useSignalrHubSubscription: realtimeMocks.useSignalrHubSubscription,
 }))
 
 function createQueryClient() {
@@ -48,7 +48,7 @@ describe('GameModifiersRealtimeSync', () => {
       </QueryClientProvider>,
     )
 
-    const options = realtimeMocks.useSignalrHubLifecycle.mock.calls[0]?.[0]
+    const options = realtimeMocks.useSignalrHubSubscription.mock.calls[0]?.[0]
     expect(options).toBeDefined()
 
     await act(async () => {

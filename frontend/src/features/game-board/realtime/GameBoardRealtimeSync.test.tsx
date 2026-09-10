@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GameBoardRealtimeSync } from './GameBoardRealtimeSync.tsx'
 
 const mocks = vi.hoisted(() => ({
-  useSignalrHubLifecycle: vi.fn(),
+  useSignalrHubSubscription: vi.fn(),
   fetchSnapshot: vi.fn(),
 }))
 
@@ -20,7 +20,7 @@ vi.mock('../../../shared/realtime/index.ts', () => ({
       },
     },
   },
-  useSignalrHubLifecycle: mocks.useSignalrHubLifecycle,
+  useSignalrHubSubscription: mocks.useSignalrHubSubscription,
 }))
 
 vi.mock('../api/game-board-data-access.ts', () => ({
@@ -39,7 +39,7 @@ describe('GameBoardRealtimeSync', () => {
         <GameBoardRealtimeSync />
       </QueryClientProvider>,
     )
-    const options = mocks.useSignalrHubLifecycle.mock.calls[0]?.[0]
+    const options = mocks.useSignalrHubSubscription.mock.calls[0]?.[0]
     const handlers = new Map<string, (event: unknown) => void>()
     const connection = {
       on: vi.fn((name: string, handler: (event: unknown) => void) => handlers.set(name, handler)),
