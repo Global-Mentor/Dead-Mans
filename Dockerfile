@@ -33,7 +33,7 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_EnableDiagnostics=0
 
-RUN apk add --no-cache krb5-libs \
+RUN apk add --no-cache curl krb5-libs \
     && mkdir -p /var/lib/deadmans/keys \
     && chown -R app:app /var/lib/deadmans \
     && printf '%s' "$RELEASE_SHA" > /app/release-sha
