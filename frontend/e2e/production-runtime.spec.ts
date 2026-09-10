@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
-import { expect, test, type Page, type Route } from '@playwright/test'
+import { expect, test, type Page, type Route, type WebSocketRoute } from '@playwright/test'
 
 const origin = 'https://deadmans.test'
 const dist = resolve('dist')
@@ -79,4 +79,72 @@ test('production authentication and lazy form validation work under strict CSP',
   await expect(page.getByText('This field is required.').first()).toBeVisible()
   expect(errors).toEqual([])
   expect(violations).toEqual([])
+})
+
+test('a shared hub reconnects after an abnormal close and refreshes an empty board', async ({
+  page,
+}) => {
+  const sockets: WebSocketRoute[] = []
+  const failures: string[] = []
+  let boardRequests = 0
+  let published = false
+  await page.routeWebSocket(`${origin.replace('https:', 'wss:')}/hubs/game-board*`, (socket) => {
+    sockets.push(socket)
+    socket.onMessage((message) => {
+      if (String(message).includes('"protocol":"json"')) socket.send('{}\u001e')
+    })
+  })
+  page.on('pageerror', (error) => failures.push(error.message))
+  page.on('response', (response) => {
+    if (response.status() >= 400) failures.push(`${response.status()} ${response.url()}`)
+  })
+  await serveProductionApp(page, async (route) => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/hubs/game-board/negotiate') {
+      await route.fulfill({
+        json: {
+          negotiateVersion: 1,
+          connectionId: 'runtime-test',
+          connectionToken: 'runtime-token',
+          availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text'] }],
+        },
+      })
+    } else if (path === '/api/game') {
+      boardRequests += 1
+      await route.fulfill(
+        published
+          ? {
+              json: {
+                gameId: '3f93a420-ef68-4cb0-9c39-5fa46c921001',
+                title: 'Reconnected game',
+                status: 'ready',
+                version: 1,
+                rows: 1,
+                cols: 1,
+                rowLabels: ['A'],
+                colLabels: ['1'],
+                cells: [],
+              },
+            }
+          : { status: 204 },
+      )
+    } else if (path === '/api/game/team-queue') {
+      await route.fulfill({
+        json: { teams: [], summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 } },
+      })
+    } else {
+      await route.fulfill({ status: 204 })
+    }
+  })
+  await page.goto(`${origin}/panel/game-board`)
+  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+  await expect.poll(() => sockets.length).toBe(1)
+  const beforeReconnect = boardRequests
+  published = true
+  await sockets[0]!.close({ code: 1006 })
+  await expect.poll(() => sockets.length).toBe(2)
+  await expect.poll(() => boardRequests).toBeGreaterThan(beforeReconnect)
+  await expect(page.getByText('No current game board is available yet.')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Reconnected game', exact: true })).toBeVisible()
+  expect(failures).toEqual([])
 })

@@ -29,11 +29,11 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 - `src/shared/api/client/openApiClient.ts` — `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
 - `src/shared/api/contracts/` — generated transport types;
-- `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
+- `GET /api/game` возвращает `204 No Content`, если доступной доски нет; `unwrapOpenApiDataOrNullOnNoContent` преобразует этот ответ в штатное пустое состояние;
 - `src/shared/api/parse-api-response.ts` — единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
 - `src/features/*/api/*-queries.ts` — feature-local query keys и `queryOptions`;
 - feature mutation modules используют `mutationOptions` для общих invalidation/error policies;
-- `src/shared/realtime/use-signalr-hub-lifecycle.ts` — общий connect/reconnect/start/stop lifecycle; event handlers остаются в `features/*/realtime/`;
+- `src/shared/realtime/signalr-connection-manager.ts` — одно общее соединение на hub в пределах сессии, reconnect/start/stop и повторная синхронизация подписчиков; event handlers остаются в `features/*/realtime/`;
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
 - `src/features/game-modifiers/index.ts` — public API modifiers feature;
@@ -53,7 +53,7 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 включая проверку сессии и лениво загружаемые формы. ESLint проверяет этот порядок
 импортов через запрет прямого runtime-импорта Zod. `npm run test:e2e` сначала собирает
 приложение; production-сценарии проверяют собранные chunks под фактической CSP сервера,
-работу авторизации и валидации лениво загружаемых форм.
+пустую доску и восстановление после обрыва WebSocket 1006.
 
 - TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
 - Query keys и `queryOptions` принадлежат фиче-владельцу данных. Повторяемые mutation policies оформляются через `mutationOptions`, а не копируются между hooks.

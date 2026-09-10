@@ -139,6 +139,17 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetGame_WhenNoBoardExists_ReturnsNoContent()
+    {
+        using var authenticatedClient = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+
+        var response = await authenticatedClient.GetAsync("/api/game");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(string.Empty, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Repository_WhenNoBoardsExist_ReturnsNull()
     {
         using var scope = _factory.Services.CreateScope();

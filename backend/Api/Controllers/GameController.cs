@@ -25,8 +25,8 @@ public sealed class GameController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(GameBoardSnapshotDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
@@ -34,10 +34,7 @@ public sealed class GameController : ControllerBase
         if (board is null)
         {
             _logger.LogInformation(AppMessages.Logs.GameNoBoardForGet);
-            return this.NotFoundError(
-                AppMessages.Client.NoCurrentGameBoard,
-                AppMessages.ErrorCodes.GameBoardNotFound
-            );
+            return NoContent();
         }
 
         return Ok(board.ToDto());

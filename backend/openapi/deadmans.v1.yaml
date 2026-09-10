@@ -122,14 +122,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameBoardSnapshotDto'
+        '204':
+          description: No active, ready, or finished game available
         '401':
           description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: No active, ready, or finished game available
           content:
             application/json:
               schema:
@@ -7120,7 +7116,6 @@ components:
             - role_administration.invalid_request
             - role_administration.user_not_found
             - role_administration.permanent_superadmin_protected
-            - game_board.not_found
             - game_board.cell_not_found
             - game_board.active_team_required
             - game_board.active_team_no_active_game

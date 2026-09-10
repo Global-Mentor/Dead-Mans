@@ -3,7 +3,7 @@ import {
   createApiClient,
   ensureOpenApiSuccess,
   unwrapOpenApiData,
-  unwrapOpenApiDataOrNullOn404,
+  unwrapOpenApiDataOrNullOnNoContent,
 } from '../../../shared/api/client/openApiClient.ts'
 import type { paths } from '../../../shared/api/contracts/generated'
 
@@ -20,7 +20,7 @@ const gameBoardApiClient =
   >()
 
 export async function fetchCurrentGameBoardSnapshot() {
-  return unwrapOpenApiDataOrNullOn404(gameBoardApiClient.GET('/game'))
+  return unwrapOpenApiDataOrNullOnNoContent(gameBoardApiClient.GET('/game'))
 }
 
 export async function fetchCurrentGameTeamQueue(): Promise<GameTeamQueueResult> {

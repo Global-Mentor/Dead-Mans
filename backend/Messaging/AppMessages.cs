@@ -127,7 +127,6 @@ public static class AppMessages
         public const string GameRegistrationInvalidTeamName =
             "Team name must be 48 characters or less.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
-        public const string NoCurrentGameBoard = "No current game board was found.";
         public const string GameModifierGameNotActive = "No active game is available for modifier activation.";
         public const string GameModifierNotEnabled =
             "Requested game modifier is not enabled for the current game.";
@@ -222,7 +221,6 @@ public static class AppMessages
         public const string RoleAdministrationUserNotFound = "role_administration.user_not_found";
         public const string PermanentSuperAdminProtected =
             "role_administration.permanent_superadmin_protected";
-        public const string GameBoardNotFound = "game_board.not_found";
         public const string GameBoardCellNotFound = "game_board.cell_not_found";
         public const string GameBoardActiveTeamRequired = "game_board.active_team_required";
         public const string GameBoardActiveTeamNoActiveGame = "game_board.active_team_no_active_game";

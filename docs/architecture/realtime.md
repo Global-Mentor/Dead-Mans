@@ -15,6 +15,9 @@ Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie
 
 After a successful DB write, SignalR publish is **best-effort** (`RealtimePublishGuard` in Application): failures are logged but do not fail the HTTP response. PostgreSQL and `GET /api/game` / `GET /api/game/setup` remain the source of truth; clients can refetch if an event is missed.
 
+`GET /api/game` returns `204 No Content` when no active, ready or finished board is
+available. Clients render the normal empty state; a missing board is not an HTTP error.
+
 `gameLifecycleChanged` is emitted only after a successful game-finalization commit and
 contains `gameId`, terminal `status`, the incremented `boardVersion` and
 `occurredAtUtc`. Consumers invalidate completion-sensitive queries and resync from HTTP;
@@ -30,7 +33,7 @@ they never apply the event as an authoritative local mutation.
 - Backend: `backend/Api/Contracts/RealtimeHubContracts.cs` (paths + event names; must match OpenAPI).
 - Frontend: `npm --prefix frontend run generate:realtime` → `frontend/src/shared/realtime/generated.ts`.
 - HTTP payload types: `GameCellOpenedEventDto` and `GameModifierActivatedEventDto` in generated OpenAPI types (`npm run generate:transport`).
-- Shared frontend lifecycle: `frontend/src/shared/realtime/use-signalr-hub-lifecycle.ts` owns connection creation, credentials, automatic reconnect, start/stop and cleanup.
+- Shared frontend lifecycle: `frontend/src/shared/realtime/SignalrConnectionProvider.tsx` owns a `SignalrConnectionManager` for the authenticated session. Subscribers share one connection per hub, with credentials, automatic reconnect, bounded retry delays, resync after reconnect and cleanup after the final subscriber leaves.
 - Feature realtime modules register only their generated event names, event payload handling and source-of-truth resync logic.
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.
