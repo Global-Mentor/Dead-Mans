@@ -11,7 +11,18 @@ import type {
 import type { paths } from '../../../shared/api/contracts/generated'
 
 const gameSetupApiClient =
-  createApiClient<Pick<paths, '/game/setup' | '/game/setup/cells/{cellId}/media'>>()
+  createApiClient<
+    Pick<
+      paths,
+      '/game/setup' | '/game/setup/cells/{cellId}/media' | '/game/lifecycle/open-registration'
+    >
+  >()
+
+export function openDraftGameRegistration(input: { gameId: string; expectedVersion: number }) {
+  return unwrapOpenApiData(
+    gameSetupApiClient.POST('/game/lifecycle/open-registration', { body: input }),
+  )
+}
 
 export function fetchDraftGameSetupSnapshot() {
   return unwrapOpenApiDataOrNullOnNoContent(gameSetupApiClient.GET('/game/setup'))

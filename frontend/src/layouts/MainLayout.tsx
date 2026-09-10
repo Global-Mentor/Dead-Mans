@@ -1,14 +1,28 @@
 import { Box } from '@mui/material'
 import { Outlet } from 'react-router-dom'
 import { ModifierCatalogRealtimeSync } from '../features/modifier-history/ModifierCatalogRealtimeSync.tsx'
+import { useAuth } from '../shared/auth/use-auth.ts'
+import { SignalrConnectionProvider } from '../shared/realtime/index.ts'
 import { uiTokens } from '../shared/theme/tokens.ts'
 import { PanelNavigation } from './PanelNavigation.tsx'
+import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
 
 export function MainLayout() {
+  const { user } = useAuth()
+
+  return (
+    <SignalrConnectionProvider key={user?.id ?? 'anonymous'}>
+      <MainLayoutContent />
+    </SignalrConnectionProvider>
+  )
+}
+
+function MainLayoutContent() {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PanelNavigation />
       <ModifierCatalogRealtimeSync />
+      <GameLifecycleRealtimeSync />
 
       <Box
         component="main"

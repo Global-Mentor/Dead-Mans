@@ -568,6 +568,156 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         Assert.DoesNotContain(HttpStatusCode.InternalServerError, statuses);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OpenRegistration_WithReviewedDraftWithoutQuestions_CanStartEvenWhenRealtimeFails(bool failRealtime)
+    {
+        await ClearGamesAsync();
+        var events = new RecordingPublicationEvents(failRealtime);
+        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<backend.Application.Abstractions.Realtime.IGameBoardEventsPublisher>();
+            services.RemoveAll<backend.Application.Abstractions.Realtime.IGameSetupEventsPublisher>();
+            services.AddSingleton<backend.Application.Abstractions.Realtime.IGameBoardEventsPublisher>(events);
+            services.AddSingleton<backend.Application.Abstractions.Realtime.IGameSetupEventsPublisher>(events);
+        }));
+        using var admin = TestAuthClientFactory.CreateClient(factory, [AuthRoleCodes.Admin]);
+        var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("No quiz required"));
+        var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        Assert.Empty(draft.EnabledQuestionIds);
+        var draftEventsBefore = events.DraftChanges;
+
+        var opened = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration",
+            new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+        Assert.Equal(HttpStatusCode.OK, opened.StatusCode);
+        Assert.Equal(draftEventsBefore + 1, events.DraftChanges);
+        Assert.Contains(events.Lifecycle, e => e.GameId == Guid.Parse(draft.GameId) && e.Status == GameStatusValue.Ready && e.BoardVersion == draft.Version);
+
+        await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
+        var started = await admin.PostAsync("/api/game/lifecycle/start", null);
+        Assert.Equal(HttpStatusCode.OK, started.StatusCode);
+        Assert.Contains(events.Lifecycle, e => e.GameId == Guid.Parse(draft.GameId) && e.Status == GameStatusValue.Active);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.GameEnabledQuestions.AnyAsync(x => x.GameId == Guid.Parse(draft.GameId)));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OpenRegistration_RejectsStaleOrReplacedReviewedDraft(bool staleVersion)
+    {
+        await ClearGamesAsync();
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Reviewed draft"));
+        var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        var request = new OpenGameRegistrationRequestDto(staleVersion ? Guid.Parse(draft.GameId) : Guid.NewGuid(), draft.Version);
+        if (staleVersion)
+        {
+            using var editScope = _factory.Services.CreateScope();
+            var editDb = editScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var board = await editDb.GameBoards.SingleAsync(x => x.GameId == Guid.Parse(draft.GameId));
+            board.Version++;
+            await editDb.SaveChangesAsync();
+        }
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
+        Assert.Equal(staleVersion ? HttpStatusCode.Conflict : HttpStatusCode.NotFound, response.StatusCode);
+        var error = (await response.Content.ReadFromJsonAsync<ErrorResponse>())!;
+        Assert.Equal(staleVersion ? AppMessages.ErrorCodes.GameSetupDraftVersionConflict : AppMessages.ErrorCodes.GameLifecycleDraftNotFound, error.Code);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(GameStatusValue.Draft, (await db.Games.SingleAsync(x => x.Id == Guid.Parse(draft.GameId))).Status);
+    }
+
+    [Theory]
+    [InlineData("ready")]
+    [InlineData("active")]
+    public async Task OpenRegistration_RejectsAnExistingCurrentGame(string currentStatus)
+    {
+        await ClearGamesAsync();
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Next game"));
+        var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Games.Add(new Game { Id = Guid.NewGuid(), Title = "Current game", Status = currentStatus, CreatedAtUtc = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleCurrentAlreadyExists, (await response.Content.ReadFromJsonAsync<ErrorResponse>())!.Code);
+    }
+
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(3, 2)]
+    public async Task OpenRegistration_RejectsInvalidTeamLimits(short min, short max)
+    {
+        await ClearGamesAsync();
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Invalid limits"));
+        var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var game = await db.Games.SingleAsync(x => x.Id == Guid.Parse(draft.GameId));
+        game.MinPlayersPerTeam = min;
+        game.MaxPlayersPerTeam = max;
+        await db.SaveChangesAsync();
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleInvalidTeamSizeLimits, (await response.Content.ReadFromJsonAsync<ErrorResponse>())!.Code);
+    }
+
+    [Fact]
+    public async Task OpenRegistration_WhenModerator_ReturnsForbidden()
+    {
+        using var moderator = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Moderator]);
+        var response = await moderator.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.NewGuid(), 1));
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task OpenRegistration_WithInvalidReviewedVersion_ReturnsBadRequest(int version)
+    {
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration",
+            new OpenGameRegistrationRequestDto(Guid.NewGuid(), version));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task OpenRegistration_WithMissingReviewedGameId_ReturnsBadRequest()
+    {
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new { expectedVersion = 1 });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private sealed class RecordingPublicationEvents(bool failRealtime) : backend.Application.Abstractions.Realtime.IGameBoardEventsPublisher, backend.Application.Abstractions.Realtime.IGameSetupEventsPublisher
+    {
+        public List<GameLifecycleChangedEvent> Lifecycle { get; } = [];
+        public int DraftChanges { get; private set; }
+        public Task PublishDraftChangedAsync(CancellationToken cancellationToken = default)
+        {
+            DraftChanges++;
+            return failRealtime ? Task.FromException(new InvalidOperationException("Realtime unavailable")) : Task.CompletedTask;
+        }
+        public Task PublishGameLifecycleChangedAsync(GameLifecycleChangedEvent payload, CancellationToken cancellationToken = default)
+        {
+            Lifecycle.Add(payload);
+            return failRealtime ? Task.FromException(new InvalidOperationException("Realtime unavailable")) : Task.CompletedTask;
+        }
+        public Task PublishCellOpenedAsync(GameCellOpenedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishModifierActivatedAsync(GameModifierActivatedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishModifierActivationCancelledAsync(GameModifierActivationCancelledEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishModifierAvailabilityChangedAsync(GameModifierAvailabilityChangedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishRoundStateChangedAsync(GameRoundStateChangedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishQuizStateChangedAsync(GameQuizStateChangedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PublishUserNotificationCreatedAsync(GameUserNotificationCreatedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
     private async Task<(HttpClient Client, GameBoardSnapshotDto Board)> CreateActiveGameAsync(
         string title
     )
@@ -889,7 +1039,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
 
     private sealed class ThrowingGameLifecycleService : IGameLifecycleService
     {
-        public Task<GameLifecycleResult> OpenRegistrationAsync(CancellationToken cancellationToken = default) =>
+        public Task<GameLifecycleResult> OpenRegistrationAsync(OpenGameRegistrationInput? input = null, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated lifecycle failure.");
 
         public Task<GameLifecycleResult> StartGameAsync(CancellationToken cancellationToken = default) =>

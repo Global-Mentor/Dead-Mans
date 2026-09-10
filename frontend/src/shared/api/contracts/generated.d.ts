@@ -909,6 +909,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Opens registration for the saved draft. Quiz questions are optional. Send the reviewed game ID and version to reject stale or replaced drafts; an empty body remains supported for existing clients. */
         post: operations["openGameRegistration"];
         delete?: never;
         options?: never;
@@ -6375,7 +6376,15 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    gameId: string;
+                    expectedVersion: number;
+                };
+            };
+        };
         responses: {
             /** @description Draft moved to ready; registration open */
             200: {
@@ -6384,6 +6393,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GameLifecycleStateDto"];
+                };
+            };
+            /** @description Invalid publication request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not authenticated */
@@ -6413,7 +6431,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Ready/active game already exists or invalid team slot configuration */
+            /** @description Stale draft version, ready/active game already exists, or invalid registration configuration */
             409: {
                 headers: {
                     [name: string]: unknown;

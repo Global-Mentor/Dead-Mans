@@ -14,6 +14,12 @@ public sealed class DbGameSetupCellMediaRepositoryTimingTests
         await using var dbContext = CreateDbContext();
         var cellId = Guid.NewGuid();
         var mediaId = Guid.NewGuid();
+        var gameId = Guid.NewGuid();
+        var boardId = Guid.NewGuid();
+        dbContext.Games.Add(new Game { Id = gameId, Title = "Draft", Status = "draft" });
+        dbContext.GameBoards.Add(new GameBoard { Id = boardId, GameId = gameId, Version = 1, Rows = 1, Cols = 1 });
+        dbContext.BoardCells.Add(new BoardCell { Id = cellId, BoardId = boardId });
+        await dbContext.SaveChangesAsync();
         var repository = new DbGameSetupCellMediaRepository(
             dbContext,
             new FixedTimeProvider(timestamp)

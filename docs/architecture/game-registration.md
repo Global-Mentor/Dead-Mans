@@ -10,6 +10,7 @@
 Admin transitions (`POST`, admin role):
 
 - `/api/game/lifecycle/open-registration` — draft → ready
+- Opening registration accepts an optional `{ gameId, expectedVersion }` body. The setup UI sends the reviewed draft identity and board version; stale drafts return `409` and replaced drafts return `404`. Empty-body requests remain supported for existing clients.
 - `/api/game/lifecycle/start` — ready → active
 - `GET /api/game/lifecycle/games/{gameId}/finish-preview` — authoritative completion preview
 - `POST /api/game/lifecycle/games/{gameId}/finish` — active → finished with optimistic board versioning and an immutable result snapshot
@@ -51,6 +52,10 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - `/panel/team-registrations` — dedicated moderator/admin registration workspace backed by the same registration snapshot and actions
 
 ## Current UI behavior
+
+- Admins open registration from the game setup sidebar after saving the draft. The panel blocks unsaved edits, in-flight media operations, known remote changes and an existing ready/active game, then asks for publication confirmation and opens team management.
+- Quiz questions are optional for both `draft → ready` and `ready → active`. A game with no selected questions can be published and started normally after its teams meet the start requirements.
+- Draft saves, resets, media attachment/removal and publication share the catalog transaction lock. Storage uploads finish outside the transaction; attachment rechecks that the draft is still editable and cleans up the uploaded object if publication/reset won the race. Publication pins modifier revisions and question snapshots; opening registration and starting the game broadcast lifecycle changes so navigation and registration views refresh across the panel.
 
 - Players choose between an open team and a closed team with clearer intent text.
 - Open team means any eligible player can join until the configured team size is reached.

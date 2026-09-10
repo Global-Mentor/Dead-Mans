@@ -35,6 +35,7 @@ function createPageController(overrides: Record<string, unknown> = {}) {
     isSaving: false,
     cellMediaDisplayByCellId: {},
     isCellMediaBusy: vi.fn(() => false),
+    hasPendingMedia: false,
     cellMediaErrorKey: null,
     uploadCellMedia: vi.fn(),
     deleteCellMedia: vi.fn(),

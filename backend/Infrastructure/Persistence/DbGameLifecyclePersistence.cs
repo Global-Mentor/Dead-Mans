@@ -28,6 +28,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
 
     public async Task<GameLifecycleResult> OpenRegistrationAsync(
         Guid draftGameId,
+        int? expectedVersion = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -40,6 +41,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
 
         var draft = await _dbContext.Games
             .Include(game => game.TeamSlots)
+            .Include(game => game.Board)
             .FirstOrDefaultAsync(
                 game => game.Id == draftGameId && !game.IsDeleted,
                 cancellationToken
@@ -64,6 +66,15 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
                 ? GameLifecycleErrorCode.CurrentGameAlreadyExists
                 : GameLifecycleErrorCode.DraftNotFound;
             return new GameLifecycleResult(false, draft.Id, error);
+        }
+
+        if (expectedVersion.HasValue && draft.Board?.Version != expectedVersion.Value)
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.DraftStaleVersion);
+        }
+        if (draft.MinPlayersPerTeam < 1 || draft.MinPlayersPerTeam > draft.MaxPlayersPerTeam)
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.InvalidTeamSizeLimits);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -161,7 +172,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
         }
 
         _logger.LogInformation("Game {GameId} moved to ready for registration.", draft.Id);
-        return new GameLifecycleResult(true, draft.Id, GameLifecycleErrorCode.None);
+        return new GameLifecycleResult(true, draft.Id, GameLifecycleErrorCode.None, draft.Board?.Version ?? 0);
     }
 
     public async Task<GameLifecycleResult> StartGameAsync(
@@ -179,6 +190,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
         await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
 
         var ready = await _dbContext.Games
+            .Include(game => game.Board)
             .FirstOrDefaultAsync(
                 game => game.Id == readyGameId && !game.IsDeleted,
                 cancellationToken
@@ -239,7 +251,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
         }
 
         _logger.LogInformation("Game {GameId} started.", ready.Id);
-        return new GameLifecycleResult(true, ready.Id, GameLifecycleErrorCode.None);
+        return new GameLifecycleResult(true, ready.Id, GameLifecycleErrorCode.None, ready.Board?.Version ?? 0);
     }
 
     public async Task<GameLifecycleResult> ArchiveGameAsync(

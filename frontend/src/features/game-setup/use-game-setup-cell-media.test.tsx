@@ -52,7 +52,10 @@ function renderMediaHook() {
 
   return {
     queryClient,
-    ...renderHook(() => useGameSetupCellMedia(snapshot), { wrapper: QueryWrapper }),
+    ...renderHook((currentSnapshot) => useGameSetupCellMedia(currentSnapshot), {
+      wrapper: QueryWrapper,
+      initialProps: snapshot,
+    }),
   }
 }
 
@@ -122,5 +125,29 @@ describe('useGameSetupCellMedia', () => {
       expect(cached?.snapshot?.cells[0]?.media).toEqual([{ url: '/media/original.png' }])
       expect(result.current.cellMediaErrorKey).toBe('deleteFailed')
     })
+  })
+
+  it('keeps publication blocked while an upload outlives the snapshot version it started with', async () => {
+    let resolveUpload!: (media: { url: string }) => void
+    apiMocks.uploadDraftGameSetupCellMedia.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpload = resolve
+        }),
+    )
+    const { result, rerender } = renderMediaHook()
+    await act(async () => {
+      await result.current.uploadCellMedia(
+        'cell-1',
+        new File(['image'], 'cell.png', { type: 'image/png' }),
+      )
+    })
+    await waitFor(() => expect(result.current.hasPendingMedia).toBe(true))
+    rerender({ ...snapshot, version: 2 })
+    expect(result.current.hasPendingMedia).toBe(true)
+    await act(async () => {
+      resolveUpload({ url: '/media/new.png' })
+    })
+    await waitFor(() => expect(result.current.hasPendingMedia).toBe(false))
   })
 })

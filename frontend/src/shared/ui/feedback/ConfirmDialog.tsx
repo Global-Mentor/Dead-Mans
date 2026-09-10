@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   cancelLabel: string
   confirmTone?: 'primary' | 'danger'
   isBusy?: boolean
+  confirmDisabled?: boolean
   onClose: () => void
   onConfirm: () => void | Promise<void>
 }
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   cancelLabel,
   confirmTone = 'primary',
   isBusy = false,
+  confirmDisabled = false,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -39,7 +41,7 @@ export function ConfirmDialog({
           <AppButton
             tone={confirmTone === 'danger' ? 'danger' : 'primary'}
             onClick={() => void onConfirm()}
-            disabled={isBusy}
+            disabled={isBusy || confirmDisabled}
           >
             {confirmLabel}
           </AppButton>

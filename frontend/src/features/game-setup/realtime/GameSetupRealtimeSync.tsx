@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { logger } from '../../../shared/lib/logger.ts'
-import { realtimeHubs, useSignalrHubLifecycle } from '../../../shared/realtime/index.ts'
+import { realtimeHubs, useSignalrHubSubscription } from '../../../shared/realtime/index.ts'
 import { gameSetupDraftQueryOptions } from '../api/game-setup-queries.ts'
 import {
   loadGameSetupDraftQueryState,
@@ -50,7 +50,7 @@ export function GameSetupRealtimeSync() {
     [syncFromServer],
   )
 
-  useSignalrHubLifecycle({
+  useSignalrHubSubscription({
     hub: 'gameSetup',
     logLabel: 'Game setup',
     onConnected: syncFromServer,

@@ -114,6 +114,11 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.NoDraftGameForSetup,
                 AppMessages.ErrorCodes.GameLifecycleDraftNotFound
             ),
+            GameLifecycleErrorCode.DraftStaleVersion => new(
+                StatusCodes.Status409Conflict,
+                "The draft has changed. Reload it before opening registration.",
+                AppMessages.ErrorCodes.GameSetupDraftVersionConflict
+            ),
             GameLifecycleErrorCode.GameNotReady => new(
                 StatusCodes.Status404NotFound,
                 AppMessages.Client.GameNotReadyForStart,

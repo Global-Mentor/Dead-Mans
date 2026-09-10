@@ -6,6 +6,7 @@ public interface IGameLifecyclePersistence
 {
     Task<GameLifecycleResult> OpenRegistrationAsync(
         Guid draftGameId,
+        int? expectedVersion = null,
         CancellationToken cancellationToken = default
     );
 

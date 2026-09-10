@@ -24,7 +24,7 @@ import {
 } from '../routes/app-routes.ts'
 import type { GameUserNotification } from '../shared/api/contracts/index.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
-import { realtimeHubs, useSignalrHubLifecycle } from '../shared/realtime/index.ts'
+import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
 import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
@@ -317,7 +317,7 @@ function GameNotificationRealtimeSync() {
     [syncNotifications],
   )
 
-  useSignalrHubLifecycle({
+  useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game notifications',
     onConnected: syncNotifications,

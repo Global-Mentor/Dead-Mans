@@ -1,5 +1,40 @@
 const translations = {
   en: {
+    registration: {
+      title: 'Open registration',
+      description: 'Publish the saved draft so players can create teams and join the game.',
+      summary: 'Cards: {{cards}} · Modifiers: {{modifiers}} · Questions: {{questions}}',
+      questionsOptional:
+        'Quiz questions are optional. You can open registration and start the game without them.',
+      open: 'Open registration',
+      confirmTitle: 'Publish the game?',
+      confirmDescription:
+        'Open registration for “{{title}}”? The saved board, modifiers and questions will be fixed for this game. Draft editing will close; the game itself starts later, after teams are confirmed.',
+      confirm: 'Publish and open registration',
+      cancel: 'Cancel',
+      retry: 'Check again',
+      blockers: {
+        checking: 'Checking the current game…',
+        checkFailed: 'Could not check whether another game is running. Try again.',
+        currentGame:
+          'A game is already accepting registrations or running. Finish it before publishing this draft.',
+        busy: 'Wait for saving and image uploads to finish.',
+        remoteChanges:
+          'Another administrator changed the draft. Reload and review it before publishing.',
+        unsaved: 'Save your changes before opening registration.',
+      },
+      errors: {
+        stale: 'The draft changed after you reviewed it. Reload and review the latest version.',
+        currentGame: 'Another game is already ready or active. Finish it first.',
+        teamSize: 'The team size limits are invalid.',
+        slots: 'There are no team slots available.',
+        modifiers:
+          'An enabled modifier is archived or has no published version. Review the selected modifiers.',
+        missingDraft: 'This draft is no longer available. Reload the page.',
+        forbidden: 'Only an administrator can open registration.',
+        failed: 'Could not open registration. Check your connection and try again.',
+      },
+    },
     title: 'Game setup',
     description: 'Draft game for configuring the title, board layout, card fields, and images.',
     loading: 'Loading game setup...',
@@ -62,7 +97,7 @@ const translations = {
     reloadFromServer: 'Reload',
     remoteChangeNotice:
       'Another administrator changed this draft. Reload to discard your unsaved edits and show the server version.',
-    draftRemovedNotice: 'Another administrator reset the draft. Your unsaved edits were discarded.',
+    draftRemovedNotice: 'The draft was published or deleted. Your unsaved edits were discarded.',
     sync: {
       pending: 'Pending sync',
       saving: 'Saving…',
@@ -142,6 +177,42 @@ const translations = {
     },
   },
   ru: {
+    registration: {
+      title: 'Открытие регистрации',
+      description:
+        'Опубликуйте сохранённый черновик, чтобы игроки могли создавать команды и подавать заявки.',
+      summary: 'Карточек: {{cards}} · Модификаторов: {{modifiers}} · Вопросов: {{questions}}',
+      questionsOptional:
+        'Вопросы викторины необязательны. Без них можно открыть регистрацию и начать игру.',
+      open: 'Открыть регистрацию',
+      confirmTitle: 'Опубликовать игру?',
+      confirmDescription:
+        'Открыть регистрацию на «{{title}}»? Сохранённое поле, модификаторы и вопросы будут зафиксированы для этой игры. Редактирование черновика закроется; сама игра начнётся позже, после подтверждения команд.',
+      confirm: 'Опубликовать и открыть регистрацию',
+      cancel: 'Отмена',
+      retry: 'Проверить снова',
+      blockers: {
+        checking: 'Проверяем текущую игру…',
+        checkFailed: 'Не удалось проверить наличие текущей игры. Повторите попытку.',
+        currentGame:
+          'Уже идёт регистрация или игра. Завершите её перед публикацией этого черновика.',
+        busy: 'Дождитесь завершения сохранения и загрузки изображений.',
+        remoteChanges:
+          'Другой администратор изменил черновик. Загрузите и проверьте актуальную версию.',
+        unsaved: 'Сохраните изменения перед открытием регистрации.',
+      },
+      errors: {
+        stale: 'Черновик изменился после проверки. Загрузите и проверьте актуальную версию.',
+        currentGame: 'Другая игра уже готова или запущена. Сначала завершите её.',
+        teamSize: 'Некорректные ограничения размера команды.',
+        slots: 'Нет доступных слотов команд.',
+        modifiers:
+          'Выбранный модификатор архивирован или не имеет опубликованной версии. Проверьте набор модификаторов.',
+        missingDraft: 'Этот черновик больше недоступен. Обновите страницу.',
+        forbidden: 'Открыть регистрацию может только администратор.',
+        failed: 'Не удалось открыть регистрацию. Проверьте соединение и повторите попытку.',
+      },
+    },
     title: 'Настройка игры',
     description: 'Черновик игры для настройки названия, таблицы, полей карточек и изображений.',
     loading: 'Загрузка настройки игры...',
@@ -205,8 +276,7 @@ const translations = {
     reloadFromServer: 'Обновить',
     remoteChangeNotice:
       'Другой администратор изменил черновик. Нажмите «Обновить», чтобы сбросить несохранённые правки и показать версию с сервера.',
-    draftRemovedNotice:
-      'Другой администратор сбросил черновик. Ваши несохранённые правки были отменены.',
+    draftRemovedNotice: 'Черновик опубликован или удалён. Ваши несохранённые правки были отменены.',
     sync: {
       pending: 'Ожидает синхронизации',
       saving: 'Сохранение…',
@@ -286,6 +356,41 @@ const translations = {
     },
   },
   uk: {
+    registration: {
+      title: 'Відкриття реєстрації',
+      description:
+        'Опублікуйте збережену чернетку, щоб гравці могли створювати команди й подавати заявки.',
+      summary: 'Карток: {{cards}} · Модифікаторів: {{modifiers}} · Запитань: {{questions}}',
+      questionsOptional:
+        'Запитання вікторини необов’язкові. Без них можна відкрити реєстрацію й почати гру.',
+      open: 'Відкрити реєстрацію',
+      confirmTitle: 'Опублікувати гру?',
+      confirmDescription:
+        'Відкрити реєстрацію на «{{title}}»? Збережене поле, модифікатори й запитання буде зафіксовано для цієї гри. Редагування чернетки закриється; сама гра почнеться пізніше, після підтвердження команд.',
+      confirm: 'Опублікувати й відкрити реєстрацію',
+      cancel: 'Скасувати',
+      retry: 'Перевірити знову',
+      blockers: {
+        checking: 'Перевіряємо поточну гру…',
+        checkFailed: 'Не вдалося перевірити наявність поточної гри. Спробуйте ще раз.',
+        currentGame: 'Уже триває реєстрація або гра. Завершіть її перед публікацією цієї чернетки.',
+        busy: 'Дочекайтеся завершення збереження й завантаження зображень.',
+        remoteChanges:
+          'Інший адміністратор змінив чернетку. Завантажте й перевірте актуальну версію.',
+        unsaved: 'Збережіть зміни перед відкриттям реєстрації.',
+      },
+      errors: {
+        stale: 'Чернетка змінилася після перевірки. Завантажте й перевірте актуальну версію.',
+        currentGame: 'Інша гра вже готова або запущена. Спочатку завершіть її.',
+        teamSize: 'Некоректні обмеження розміру команди.',
+        slots: 'Немає доступних слотів команд.',
+        modifiers:
+          'Вибраний модифікатор архівований або не має опублікованої версії. Перевірте набір модифікаторів.',
+        missingDraft: 'Ця чернетка більше недоступна. Оновіть сторінку.',
+        forbidden: 'Відкрити реєстрацію може лише адміністратор.',
+        failed: 'Не вдалося відкрити реєстрацію. Перевірте з’єднання й спробуйте ще раз.',
+      },
+    },
     title: 'Налаштування гри',
     description: 'Чернетка гри для налаштування назви, таблиці, полів карток і зображень.',
     loading: 'Завантаження налаштування гри...',
@@ -350,7 +455,7 @@ const translations = {
     remoteChangeNotice:
       'Інший адміністратор змінив чернетку. Натисніть «Оновити», щоб скинути незбережені правки й показати версію з сервера.',
     draftRemovedNotice:
-      'Інший адміністратор скинув чернетку. Ваші незбережені правки було скасовано.',
+      'Чернетку опубліковано або видалено. Ваші незбережені правки було скасовано.',
     sync: {
       pending: 'Очікує синхронізації',
       saving: 'Збереження…',
@@ -430,6 +535,40 @@ const translations = {
     },
   },
   pl: {
+    registration: {
+      title: 'Otwarcie zapisów',
+      description:
+        'Opublikuj zapisany szkic, aby gracze mogli tworzyć drużyny i zgłaszać się do gry.',
+      summary: 'Karty: {{cards}} · Modyfikatory: {{modifiers}} · Pytania: {{questions}}',
+      questionsOptional:
+        'Pytania quizowe są opcjonalne. Bez nich można otworzyć zapisy i rozpocząć grę.',
+      open: 'Otwórz zapisy',
+      confirmTitle: 'Opublikować grę?',
+      confirmDescription:
+        'Otworzyć zapisy do „{{title}}”? Zapisana plansza, modyfikatory i pytania zostaną utrwalone dla tej gry. Edycja szkicu zostanie zamknięta; gra rozpocznie się później, po zatwierdzeniu drużyn.',
+      confirm: 'Opublikuj i otwórz zapisy',
+      cancel: 'Anuluj',
+      retry: 'Sprawdź ponownie',
+      blockers: {
+        checking: 'Sprawdzanie bieżącej gry…',
+        checkFailed: 'Nie udało się sprawdzić bieżącej gry. Spróbuj ponownie.',
+        currentGame: 'Zapisy lub gra już trwają. Zakończ ją przed publikacją tego szkicu.',
+        busy: 'Poczekaj na zakończenie zapisu i przesyłania obrazów.',
+        remoteChanges: 'Inny administrator zmienił szkic. Wczytaj i sprawdź aktualną wersję.',
+        unsaved: 'Zapisz zmiany przed otwarciem zapisów.',
+      },
+      errors: {
+        stale: 'Szkic zmienił się po sprawdzeniu. Wczytaj i sprawdź aktualną wersję.',
+        currentGame: 'Inna gra jest już gotowa lub trwa. Najpierw ją zakończ.',
+        teamSize: 'Limity wielkości drużyny są nieprawidłowe.',
+        slots: 'Brak dostępnych miejsc dla drużyn.',
+        modifiers:
+          'Wybrany modyfikator jest zarchiwizowany lub nie ma opublikowanej wersji. Sprawdź wybrane modyfikatory.',
+        missingDraft: 'Ten szkic nie jest już dostępny. Odśwież stronę.',
+        forbidden: 'Tylko administrator może otworzyć zapisy.',
+        failed: 'Nie udało się otworzyć zapisów. Sprawdź połączenie i spróbuj ponownie.',
+      },
+    },
     title: 'Konfiguracja gry',
     description: 'Szkic gry do konfiguracji nazwy, układu planszy, pól kart i obrazów.',
     loading: 'Ładowanie konfiguracji gry...',
@@ -494,7 +633,7 @@ const translations = {
     remoteChangeNotice:
       'Inny administrator zmienił szkic. Kliknij Odśwież, aby odrzucić niezapisane zmiany i pokazać wersję z serwera.',
     draftRemovedNotice:
-      'Inny administrator zresetował szkic. Twoje niezapisane zmiany zostały odrzucone.',
+      'Szkic został opublikowany lub usunięty. Twoje niezapisane zmiany zostały odrzucone.',
     sync: {
       pending: 'Oczekuje synchronizacji',
       saving: 'Zapisywanie…',

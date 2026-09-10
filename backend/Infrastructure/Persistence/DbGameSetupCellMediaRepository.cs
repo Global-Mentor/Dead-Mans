@@ -70,7 +70,7 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<GameBoardCellMedia> AttachMediaAsync(
+    public async Task<GameBoardCellMedia?> AttachMediaAsync(
         Guid cellId,
         Guid mediaAssetId,
         string bucket,
@@ -81,6 +81,16 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+        // Uploading to object storage happens outside the transaction. Recheck after it finishes.
+        if (await FindDraftCellAsync(cellId, cancellationToken) is null)
+        {
+            return null;
+        }
+
         var existingLinks = await _dbContext.BoardCellMedia
             .Where(link => link.CellId == cellId)
             .Include(link => link.MediaAsset)
@@ -115,6 +125,11 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
         _dbContext.BoardCellMedia.Add(link);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return new GameBoardCellMedia(GameBoardMediaUrlBuilder.Build(publicBaseUrl, bucket, objectKey));
     }
 
@@ -123,6 +138,15 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+        if (await FindDraftCellAsync(cellId, cancellationToken) is null)
+        {
+            return null;
+        }
+
         var existingLinks = await _dbContext.BoardCellMedia
             .Where(link => link.CellId == cellId)
             .Include(link => link.MediaAsset)
@@ -138,6 +162,10 @@ public sealed class DbGameSetupCellMediaRepository : IGameSetupCellMediaReposito
         _dbContext.BoardCellMedia.RemoveRange(existingLinks);
         _dbContext.MediaAssets.RemoveRange(assets);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
         return stored;
     }
 

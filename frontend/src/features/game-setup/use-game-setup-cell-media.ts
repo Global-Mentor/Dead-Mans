@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useIsMutating, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import type { GameBoardCellMedia, GameSetupSnapshot } from '../../shared/api/contracts/index.ts'
@@ -61,6 +61,9 @@ export function useGameSetupCellMedia(
 ) {
   const { flushDraftSave } = options
   const queryClient = useQueryClient()
+  // A save can change the snapshot version while an upload is still in flight.
+  const mediaMutationKey = ['gameSetup', 'cellMedia', snapshot?.gameId]
+  const hasPendingMedia = useIsMutating({ mutationKey: mediaMutationKey }) > 0
   const [displayBySnapshotKey, setDisplayBySnapshotKey] = useState<
     Record<string, Record<string, GameSetupCellMediaDisplayState>>
   >({})
@@ -162,6 +165,7 @@ export function useGameSetupCellMedia(
   )
 
   const { mutate: upload } = useMutation({
+    mutationKey: mediaMutationKey,
     mutationFn: ({ cellId, file }: { cellId: string; file: File }) =>
       uploadDraftGameSetupCellMedia(cellId, file),
     onSuccess: (media, { cellId }) => {
@@ -183,6 +187,7 @@ export function useGameSetupCellMedia(
   })
 
   const { mutate: deleteMedia } = useMutation({
+    mutationKey: mediaMutationKey,
     mutationFn: (cellId: string) => deleteDraftGameSetupCellMedia(cellId),
     onMutate: (cellId) => {
       const previousData = queryClient.getQueryData<LoadedGameSetupDraftState>(
@@ -293,6 +298,7 @@ export function useGameSetupCellMedia(
   )
 
   return {
+    hasPendingMedia,
     cellMediaDisplayByCellId: displayByCellId,
     isCellMediaBusy,
     cellMediaErrorKey: errorKey,

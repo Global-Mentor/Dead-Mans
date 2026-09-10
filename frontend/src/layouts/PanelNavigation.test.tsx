@@ -33,7 +33,7 @@ vi.mock('../shared/realtime/index.ts', () => ({
       },
     },
   },
-  useSignalrHubLifecycle: vi.fn(),
+  useSignalrHubSubscription: vi.fn(),
 }))
 
 beforeAll(async () => {

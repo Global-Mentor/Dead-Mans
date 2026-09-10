@@ -131,6 +131,53 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UploadCellMedia_WhenDraftDisappearsDuringUpload_RejectsAttachmentAndCleansStorage(bool publish)
+    {
+        await ClearGamesAsync();
+        var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
+        var storage = new InMemoryObjectStorage();
+        using var admin = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        var interruptedStorage = new LifecycleDuringUploadStorage(storage, async () =>
+        {
+            using var transition = publish
+                ? await admin.PostAsync("/api/game/lifecycle/open-registration", null)
+                : await admin.DeleteAsync("/api/game/setup");
+            transition.EnsureSuccessStatusCode();
+        });
+        using var authenticatedFactory = CreateAuthenticatedFactory([AuthRoleCodes.Admin]);
+        using var factory = authenticatedFactory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IObjectStorage>();
+            services.AddSingleton<IObjectStorage>(interruptedStorage);
+        }));
+        using var client = factory.CreateClient();
+        using var content = CreatePngUploadContent();
+        var response = await client.PostAsync($"/api/game/setup/cells/{cellId}/media", content);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Empty(storage.ListObjectKeys("deadman-test", $"games/{gameId}/"));
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Empty(await db.BoardCellMedia.ToArrayAsync());
+        Assert.Empty(await db.MediaAssets.ToArrayAsync());
+        Assert.Equal(publish ? GameStatusValue.Ready : null, await db.Games.Where(game => game.Id == gameId).Select(game => game.Status).SingleOrDefaultAsync());
+    }
+
+    private sealed class LifecycleDuringUploadStorage(InMemoryObjectStorage inner, Func<Task> transition) : IObjectStorage
+    {
+        public async Task PutObjectAsync(string bucketName, string objectKey, Stream content, string contentType, CancellationToken cancellationToken = default)
+        {
+            await inner.PutObjectAsync(bucketName, objectKey, content, contentType, cancellationToken);
+            await transition();
+        }
+        public Task DeleteObjectAsync(string bucketName, string objectKey, CancellationToken cancellationToken = default) =>
+            inner.DeleteObjectAsync(bucketName, objectKey, cancellationToken);
+        public Task DeleteObjectsByPrefixAsync(string bucketName, string keyPrefix, CancellationToken cancellationToken = default) =>
+            inner.DeleteObjectsByPrefixAsync(bucketName, keyPrefix, cancellationToken);
+    }
+
     [Fact]
     public async Task DeleteCellMedia_WhenAdminAndMediaExists_ReturnsNoContent()
     {

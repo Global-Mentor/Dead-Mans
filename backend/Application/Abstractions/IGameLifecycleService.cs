@@ -4,7 +4,7 @@ namespace backend.Application.Abstractions;
 
 public interface IGameLifecycleService
 {
-    Task<GameLifecycleResult> OpenRegistrationAsync(CancellationToken cancellationToken = default);
+    Task<GameLifecycleResult> OpenRegistrationAsync(OpenGameRegistrationInput? input = null, CancellationToken cancellationToken = default);
 
     Task<GameLifecycleResult> StartGameAsync(CancellationToken cancellationToken = default);
 
