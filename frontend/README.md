@@ -48,6 +48,13 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 
 ## Инженерный baseline
 
+Production CSP запрещает inline JavaScript и `eval`. Конструкторы схем импортируются
+из `src/shared/validation/zod.ts`: там `jitless` включается до создания любой схемы,
+включая проверку сессии и лениво загружаемые формы. ESLint проверяет этот порядок
+импортов через запрет прямого runtime-импорта Zod. `npm run test:e2e` сначала собирает
+приложение; production-сценарии проверяют собранные chunks под фактической CSP сервера,
+работу авторизации и валидации лениво загружаемых форм.
+
 - TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
 - Query keys и `queryOptions` принадлежат фиче-владельцу данных. Повторяемые mutation policies оформляются через `mutationOptions`, а не копируются между hooks.
 - `@tanstack/eslint-plugin-query` в strict recommended режиме проверяет стабильность dependencies и использование query options.

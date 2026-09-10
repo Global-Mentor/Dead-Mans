@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '../../../shared/validation/zod.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from './game-setup-limits.ts'
 
 interface CreateGameSetupFormSchemaMessages {
