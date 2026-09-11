@@ -3,6 +3,7 @@ import { Box, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/mater
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { DevNotesDialog } from '../features/dev-notes/ui/DevNotesDialog.tsx'
 import {
   gameSetupRoute,
   roleAdministrationRoute,
@@ -22,6 +23,7 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null)
+  const [notesOpen, setNotesOpen] = useState(false)
   const canAdminister = user.roles.includes('admin') || user.roles.includes('superadmin')
   const canManageRoles = user.roles.includes('superadmin')
 
@@ -85,6 +87,15 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
             {user.roles.map((role) => t(`navigation.roles.${role}`)).join(', ')}
           </Typography>
         </Box>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            closeProfile()
+            setNotesOpen(true)
+          }}
+        >
+          {t('navigation.devNotes.menuItem')}
+        </MenuItem>
 
         {canAdminister ? <Divider /> : null}
         {canAdminister ? (
@@ -136,6 +147,7 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
         <Divider />
         <MenuItem onClick={() => void handleLogout()}>{t('navigation.logout')}</MenuItem>
       </Menu>
+      <DevNotesDialog open={notesOpen} onClose={() => setNotesOpen(false)} />
     </>
   )
 }

@@ -354,6 +354,32 @@ describe('PanelNavigation', () => {
     expect(screen.queryByRole('menuitem', { name: 'Подать заявку' })).not.toBeInTheDocument()
   })
 
+  it('opens site updates from the profile nickname menu', () => {
+    renderNavigation({
+      id: 'viewer-1',
+      displayName: 'Player',
+      roles: ['viewer'],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Player/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Обновления' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Обновления' })
+    const dialogText = dialog.textContent ?? ''
+
+    expect(dialog).toBeInTheDocument()
+    expect(dialogText.indexOf('Исключение игроков из команды')).toBeGreaterThan(-1)
+    expect(dialogText.indexOf('Исключение игроков из команды')).toBeLessThan(
+      dialogText.indexOf('Закрытое тестирование'),
+    )
+    expect(screen.getByText('Объявление')).toBeInTheDocument()
+    expect(screen.getByText('Фикс')).toBeInTheDocument()
+    expect(screen.getByTestId('dev-notes-list')).toHaveStyle({
+      overflowY: 'auto',
+      maxHeight: 'min(52vh, 420px)',
+    })
+  })
+
   it('keeps admin entry points inside the admin profile menu', () => {
     renderNavigation({
       id: 'admin-1',
