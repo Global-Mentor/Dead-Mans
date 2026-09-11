@@ -35,8 +35,11 @@ best completed-round result before penalties
 = final score
 ```
 
-Cancelled rounds are excluded. A team without a completed round has a null score and
-placement and is displayed as "Did not play". Equal final scores share a competition
+Cancelled rounds do not contribute to scores. Only teams that opened a card enter the
+finish preview, final results and history; opening creates a round. Teams with only
+cancelled rounds remain in history with no scored rounds or placement. Marking a team
+played without opening any card does not add it to history. A completed round with a
+zero score still counts. Registration audit records remain available. Equal final scores share a competition
 placement (`1, 1, 3`); the existing best/total/latest/slot ordering is only a stable
 display order inside a tie. Quiz points are reported separately and never enter team
 placement.
@@ -53,7 +56,7 @@ in one transaction:
 
 1. validates round and modifier state and warning acknowledgements;
 2. closes an `asked` quiz round as `skipped` if its timer is still live, otherwise as `timeout`;
-3. writes one `game_finalizations` row plus team rows in `game_team_final_results`;
+3. writes one `game_finalizations` row plus results for teams that opened a card in `game_team_final_results`;
 4. clears `games.active_team_id`;
 5. sets `games.status = finished` and `finished_at_utc`;
 6. increments the board version.
@@ -62,6 +65,10 @@ The stored result includes the finisher identity/display-name snapshot, note, al
 version, aggregate counts and immutable team/roster/result snapshots. `request_id` is
 unique. Repeating a finish command for a game that already has a snapshot returns the
 existing snapshot without replacing its note or numbers.
+
+Calculation version 2 excludes teams that never opened a card. Database validation still
+recognizes version 1 snapshots; readers omit their unplayed teams without rewriting them.
+Finishing after every eligible team has been disbanded is allowed, with no team results.
 
 The production baseline is empty, so every persisted `finished` game must have this snapshot.
 Deferred PostgreSQL checks reject a finish without it, incomplete team coverage, open runtime

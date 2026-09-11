@@ -6,6 +6,14 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
+const zodImportRestrictions = [
+  {
+    regex: '^zod(?:/|$)',
+    allowTypeImports: true,
+    message: 'Import schema builders from shared/validation/zod.ts to preserve strict CSP.',
+  },
+]
+
 export default defineConfig([
   globalIgnores(['coverage', 'dist']),
   ...pluginQuery.configs['flat/recommended-strict'],
@@ -23,12 +31,21 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/shared/validation/zod.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: zodImportRestrictions }],
+    },
+  },
+  {
     files: ['src/shared/**/*.{ts,tsx}'],
+    ignores: ['src/shared/validation/zod.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
+            ...zodImportRestrictions,
             {
               group: ['**/features/**'],
               message: 'shared layer must not depend on feature modules',

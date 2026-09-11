@@ -61,6 +61,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
         var invitation = await _dbContext.GameTeamInvitations.FirstOrDefaultAsync(
             candidate =>
                 candidate.Id == invitationId
@@ -82,6 +86,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         invitation.Status = TeamInvitationStatusValue.Cancelled;
         invitation.RespondedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
     }
 
@@ -98,7 +107,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     {
         if (_dbContext.Database.IsRelational())
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await BeginRosterChangeAsync(gameId, cancellationToken);
             await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                 $"""SELECT 1 FROM game_team_slots WHERE id = {slotId} FOR UPDATE""",
                 cancellationToken
@@ -225,7 +234,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     {
         if (_dbContext.Database.IsRelational())
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await BeginRosterChangeAsync(command.GameId, cancellationToken);
             var acceptResult = await AcceptInvitationCoreAsync(command, cancellationToken);
             if (!acceptResult.Success)
             {
@@ -258,10 +267,6 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         {
             if (_dbContext.Database.IsRelational())
             {
-                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-                    $"""SELECT 1 FROM games WHERE id = {command.GameId} FOR UPDATE""",
-                    cancellationToken
-                );
                 await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                     $"""SELECT 1 FROM game_team_slots WHERE id = {command.TeamSlotId} AND game_id = {command.GameId} FOR UPDATE""",
                     cancellationToken
@@ -442,6 +447,19 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        var gameId = await _dbContext.GameTeamInvitations.AsNoTracking()
+            .Where(candidate => candidate.Id == invitationId)
+            .Select(candidate => (Guid?)candidate.GameId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!gameId.HasValue)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.InvitationNotFound);
+        }
+
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId.Value, cancellationToken)
+            : null;
+
         var invitation = await _dbContext.GameTeamInvitations
             .FirstOrDefaultAsync(candidate => candidate.Id == invitationId, cancellationToken);
         if (invitation is null)
@@ -458,6 +476,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         invitation.Status = TeamInvitationStatusValue.Declined;
         invitation.RespondedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
     }

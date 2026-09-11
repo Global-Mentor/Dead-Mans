@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '../../../shared/validation/zod.ts'
 
 interface QuestionFormSchemaMessages {
   required: string

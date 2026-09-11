@@ -23,17 +23,17 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierIds`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
 - полный контур модификаторов: выбор каталога в `game-setup`, runtime activation, versioned lifecycle раунда, server-authoritative preview/finalize, итоговый breakdown и frozen history;
 - блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
-- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; confirmed-команды нельзя покинуть напрямую, игрок отправляет заявку на роспуск, а модератор или администратор видит заметное уведомление и подтверждает роспуск в панели команд.
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; состав confirmed-команд нельзя менять, а роспуск целиком доступен в панели команд без обязательной заявки игрока. Активную команду, команду с открытой ранее карточкой или отмеченную отыгравшей распустить нельзя; причина отказа показывается в уведомлении.
 
 ## Структура API-слоя
 
 - `src/shared/api/client/openApiClient.ts` — `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
 - `src/shared/api/contracts/` — generated transport types;
-- `src/shared/api/fetch-not-found-as-null.ts` — 404 → `null` для snapshot-read endpoints;
+- `GET /api/game` возвращает `204 No Content`, если доступной доски нет; `unwrapOpenApiDataOrNullOnNoContent` преобразует этот ответ в штатное пустое состояние;
 - `src/shared/api/parse-api-response.ts` — единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
 - `src/features/*/api/*-queries.ts` — feature-local query keys и `queryOptions`;
 - feature mutation modules используют `mutationOptions` для общих invalidation/error policies;
-- `src/shared/realtime/use-signalr-hub-lifecycle.ts` — общий connect/reconnect/start/stop lifecycle; event handlers остаются в `features/*/realtime/`;
+- `src/shared/realtime/signalr-connection-manager.ts` — одно общее соединение на hub в пределах сессии, reconnect/start/stop и повторная синхронизация подписчиков; event handlers остаются в `features/*/realtime/`;
 - `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
 - `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
 - `src/features/game-modifiers/index.ts` — public API modifiers feature;
@@ -47,6 +47,13 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - Крупные экраны раскладываются на section-компоненты в `features/<feature>/ui/` (например, `game-application/ui/*`, `game-setup/ui/GameSetupSyncActions|BoardNotices|EmptyState`), а крупные orchestration-хуки делятся на focused hooks по одной зоне ответственности (`game-setup`: `use-game-setup-draft` / `use-game-setup-save` / `use-game-setup-cell-media`, собранные тонким `use-game-setup-page`). Одноразовые компоненты не оборачиваются в абстракции.
 
 ## Инженерный baseline
+
+Production CSP запрещает inline JavaScript и `eval`. Конструкторы схем импортируются
+из `src/shared/validation/zod.ts`: там `jitless` включается до создания любой схемы,
+включая проверку сессии и лениво загружаемые формы. ESLint проверяет этот порядок
+импортов через запрет прямого runtime-импорта Zod. `npm run test:e2e` сначала собирает
+приложение; production-сценарии проверяют собранные chunks под фактической CSP сервера,
+пустую доску и восстановление после обрыва WebSocket 1006.
 
 - TanStack Query владеет server state. Ответы запросов не дублируются в context/Zustand; обновления проходят через invalidation или `setQueryData`.
 - Query keys и `queryOptions` принадлежат фиче-владельцу данных. Повторяемые mutation policies оформляются через `mutationOptions`, а не копируются между hooks.

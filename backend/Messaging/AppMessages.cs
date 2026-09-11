@@ -95,6 +95,8 @@ public static class AppMessages
         public const string GameRegistrationTeamNotFound = "Team was not found.";
         public const string GameRegistrationTeamNotJoinable =
             "This team cannot be joined or confirmed in its current state.";
+        public const string GameRegistrationTeamRosterLocked =
+            "A confirmed team's roster cannot be changed. Disband the entire team instead.";
         public const string GameRegistrationNotTeamMember = "You are not on a team for this game.";
         public const string GameRegistrationInvitationInvalid =
             "Invitation was not found or is no longer pending.";
@@ -120,10 +122,11 @@ public static class AppMessages
             "You cannot invite players from this team in its current state.";
         public const string GameRegistrationTeamActiveInGame =
             "The active team cannot be disbanded while it is taking its turn.";
+        public const string GameRegistrationTeamAlreadyPlayed =
+            "A team that has opened a card or is marked as played cannot be disbanded.";
         public const string GameRegistrationInvalidTeamName =
             "Team name must be 48 characters or less.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
-        public const string NoCurrentGameBoard = "No current game board was found.";
         public const string GameModifierGameNotActive = "No active game is available for modifier activation.";
         public const string GameModifierNotEnabled =
             "Requested game modifier is not enabled for the current game.";
@@ -142,6 +145,8 @@ public static class AppMessages
             "The modifier example cannot be calculated.";
         public const string GameModifierContentLocked =
             "Modifier content is locked while it is included in the active game.";
+        public const string GameModifierCompatibilityLocked =
+            "A linked modifier is included in the active game. This change must wait until the game ends.";
         public const string GameModifierEmergencyDisabled =
             "Modifier has been disabled for new activations in the active game.";
         public const string GameModifierNotFound = "Requested modifier was not found.";
@@ -216,7 +221,6 @@ public static class AppMessages
         public const string RoleAdministrationUserNotFound = "role_administration.user_not_found";
         public const string PermanentSuperAdminProtected =
             "role_administration.permanent_superadmin_protected";
-        public const string GameBoardNotFound = "game_board.not_found";
         public const string GameBoardCellNotFound = "game_board.cell_not_found";
         public const string GameBoardActiveTeamRequired = "game_board.active_team_required";
         public const string GameBoardActiveTeamNoActiveGame = "game_board.active_team_no_active_game";
@@ -282,6 +286,7 @@ public static class AppMessages
         public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
         public const string GameRegistrationTeamNotFound = "game_registration.team_not_found";
         public const string GameRegistrationTeamNotJoinable = "game_registration.team_not_joinable";
+        public const string GameRegistrationTeamRosterLocked = "game_registration.team_roster_locked";
         public const string GameRegistrationNotTeamMember = "game_registration.not_team_member";
         public const string GameRegistrationInvitationInvalid = "game_registration.invitation_invalid";
         public const string GameRegistrationSlotNotFound = "game_registration.slot_not_found";
@@ -294,6 +299,8 @@ public static class AppMessages
             "game_registration.team_invite_not_allowed";
         public const string GameRegistrationTeamActiveInGame =
             "game_registration.team_active_in_game";
+        public const string GameRegistrationTeamAlreadyPlayed =
+            "game_registration.team_already_played";
         public const string GameRegistrationInvalidTeamName =
             "game_registration.invalid_team_name";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";

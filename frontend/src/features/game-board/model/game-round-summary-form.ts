@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '../../../shared/validation/zod.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']

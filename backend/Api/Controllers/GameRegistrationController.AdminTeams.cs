@@ -241,7 +241,7 @@ public sealed partial class GameRegistrationController
     [HttpPost("teams/{teamId:guid}/disband")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> DisbandConfirmedTeam(Guid teamId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DisbandTeam(Guid teamId, CancellationToken cancellationToken)
     {
         var adminId = RequireUserId();
         if (adminId is null)
@@ -249,7 +249,7 @@ public sealed partial class GameRegistrationController
             return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
         }
 
-        var result = await _registrationService.DisbandConfirmedTeamAsync(
+        var result = await _registrationService.DisbandTeamAsync(
             adminId.Value,
             teamId,
             cancellationToken

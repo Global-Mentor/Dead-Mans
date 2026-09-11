@@ -6,7 +6,7 @@ import type {
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, ConfirmDialog, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, AppToast, ConfirmDialog, SectionCard } from '../../../shared/ui/index.ts'
 import { AdminInvitePlayerDialog, type AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
 import { AdminAvailablePlayersPanel } from './AdminAvailablePlayersPanel.tsx'
 import { AdminRegistrationTeamsList } from './AdminRegistrationTeamsList.tsx'
@@ -66,6 +66,9 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
     useState<RegistrationDragPayload | null>(null)
   const [inviteDialog, setInviteDialog] = useState<AdminInviteTeamTarget | null>(null)
   const [pendingDisbandTeam, setPendingDisbandTeam] = useState<RegistrationTeam | null>(null)
+  const [disbandError, setDisbandError] = useState<'teamActiveInGame' | 'teamAlreadyPlayed' | null>(
+    null,
+  )
   const [pendingRemovePlayer, setPendingRemovePlayer] = useState<{
     teamId: string
     teamSlotIndex: number
@@ -128,6 +131,12 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
   return (
     <>
       <Stack spacing={2}>
+        <AppToast
+          message={disbandError ? t(`gameRegistration.errors.${disbandError}`) : null}
+          severity="error"
+          onClose={() => setDisbandError(null)}
+          autoHideDuration={5000}
+        />
         <AdminRegistrationOperationalStatus
           readyTeamsCount={readyTeamsCount}
           availablePlayersCount={snapshot.availablePlayers.length}
@@ -216,7 +225,17 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                 writeRegistrationDragPayload(event, payload)
               }}
               onInvite={setInviteDialog}
-              onRequestDisband={setPendingDisbandTeam}
+              onRequestDisband={(team) => {
+                const reason = team.isActiveInGame
+                  ? 'teamActiveInGame'
+                  : team.isPlayed
+                    ? 'teamAlreadyPlayed'
+                    : null
+                setDisbandError(reason)
+                if (!reason) {
+                  setPendingDisbandTeam(team)
+                }
+              }}
               onRequestRemove={setPendingRemovePlayer}
             />
 

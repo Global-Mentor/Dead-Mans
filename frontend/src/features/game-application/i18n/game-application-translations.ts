@@ -155,7 +155,8 @@ const translations = {
       moveTeamUp: 'Up',
       moveTeamDown: 'Down',
       teamReadyHint: 'This roster meets the player limit and can be confirmed.',
-      teamConfirmedHint: 'This roster is confirmed. Roster changes require confirmation again.',
+      teamConfirmedHint:
+        'This roster is confirmed and cannot be changed. You can disband the team.',
       teamPendingInvitesHint: 'Resolve pending invitations before confirming this roster.',
       teamNeedsPlayersHint:
         'Keep the roster between {{min}} and {{max}} players before confirming it.',
@@ -178,7 +179,7 @@ const translations = {
       removePlayer: 'Remove',
       removePlayerConfirmTitle: 'Remove player from team?',
       removePlayerConfirmDescription:
-        '{{player}} will be removed from team #{{slot}} and become available again. If this team was confirmed, it will need confirmation again.',
+        '{{player}} will be removed from team #{{slot}} and become available again. An empty team is automatically disbanded.',
       removePlayerConfirmCancel: 'Keep player',
       removePlayerConfirmAction: 'Remove player',
       disbandRequestedChip: 'Disband requested',
@@ -186,7 +187,7 @@ const translations = {
       disbandRequestDescription:
         '{{player}} asked an administrator to disband this confirmed roster.',
       disbandTeam: 'Disband',
-      disbandConfirmTitle: 'Disband confirmed team?',
+      disbandConfirmTitle: 'Disband team?',
       disbandConfirmDescription:
         'Team #{{slot}} has {{count}} player(s). Disbanding closes the roster, removes players from it, cancels pending invitations, and frees its place in the queue.',
       disbandConfirmCancel: 'Keep team',
@@ -379,7 +380,7 @@ const translations = {
       moveTeamDown: 'Ниже',
       teamReadyHint: 'Состав подходит по лимиту игроков и готов к подтверждению.',
       teamConfirmedHint:
-        'Состав подтверждён. После изменения игроков его потребуется подтвердить заново.',
+        'Состав подтверждён и не может быть изменён. Можно распустить команду целиком.',
       teamPendingInvitesHint:
         'Перед подтверждением дождитесь ответа на приглашения или отмените их.',
       teamNeedsPlayersHint:
@@ -403,7 +404,7 @@ const translations = {
       removePlayer: 'Исключить',
       removePlayerConfirmTitle: 'Исключить игрока из команды?',
       removePlayerConfirmDescription:
-        '{{player}} будет убран из команды #{{slot}} и снова станет свободным игроком. Если команда была подтверждена, её нужно будет подтвердить заново.',
+        '{{player}} будет убран из команды #{{slot}} и снова станет свободным игроком. Пустая команда автоматически распускается.',
       removePlayerConfirmCancel: 'Оставить игрока',
       removePlayerConfirmAction: 'Исключить игрока',
       disbandRequestedChip: 'Запрос на роспуск',
@@ -411,7 +412,7 @@ const translations = {
       disbandRequestDescription:
         '{{player}} попросил администратора распустить этот подтверждённый состав.',
       disbandTeam: 'Распустить',
-      disbandConfirmTitle: 'Распустить подтверждённую команду?',
+      disbandConfirmTitle: 'Распустить команду?',
       disbandConfirmDescription:
         'В команде #{{slot}} игроков: {{count}}. Роспуск закроет состав, уберёт из него игроков, отменит ожидающие приглашения и освободит место в очереди.',
       disbandConfirmCancel: 'Оставить команду',
@@ -602,7 +603,7 @@ const translations = {
       moveTeamDown: 'Нижче',
       teamReadyHint: 'Склад відповідає ліміту гравців і готовий до підтвердження.',
       teamConfirmedHint:
-        'Склад підтверджено. Після зміни гравців його потрібно буде підтвердити знову.',
+        'Склад підтверджено і його не можна змінювати. Можна розформувати всю команду.',
       teamPendingInvitesHint:
         'Перед підтвердженням дочекайтеся відповіді на запрошення або скасуйте їх.',
       teamNeedsPlayersHint:
@@ -625,7 +626,7 @@ const translations = {
       removePlayer: 'Виключити',
       removePlayerConfirmTitle: 'Виключити гравця з команди?',
       removePlayerConfirmDescription:
-        '{{player}} буде прибраний з команди #{{slot}} і знову стане вільним гравцем. Якщо команда була підтверджена, її потрібно буде підтвердити заново.',
+        '{{player}} буде прибраний з команди #{{slot}} і знову стане вільним гравцем. Порожня команда автоматично розформовується.',
       removePlayerConfirmCancel: 'Залишити гравця',
       removePlayerConfirmAction: 'Виключити гравця',
       disbandRequestedChip: 'Запит на розформування',
@@ -633,7 +634,7 @@ const translations = {
       disbandRequestDescription:
         '{{player}} попросив адміністратора розформувати цей підтверджений склад.',
       disbandTeam: 'Розформувати',
-      disbandConfirmTitle: 'Розформувати підтверджену команду?',
+      disbandConfirmTitle: 'Розформувати команду?',
       disbandConfirmDescription:
         'У команді #{{slot}} гравців: {{count}}. Розформування закриє склад, прибере з нього гравців, скасує очікувані запрошення та звільнить місце в черзі.',
       disbandConfirmCancel: 'Залишити команду',
@@ -828,7 +829,7 @@ const translations = {
       moveTeamDown: 'Niżej',
       teamReadyHint: 'Ten skład spełnia limit graczy i może zostać zatwierdzony.',
       teamConfirmedHint:
-        'Skład jest zatwierdzony. Po zmianie graczy trzeba będzie zatwierdzić go ponownie.',
+        'Skład jest zatwierdzony i nie można go zmieniać. Można rozwiązać całą drużynę.',
       teamPendingInvitesHint:
         'Przed zatwierdzeniem poczekaj na odpowiedzi lub anuluj oczekujące zaproszenia.',
       teamNeedsPlayersHint:
@@ -852,7 +853,7 @@ const translations = {
       removePlayer: 'Usuń',
       removePlayerConfirmTitle: 'Usunąć gracza z drużyny?',
       removePlayerConfirmDescription:
-        '{{player}} zostanie usunięty z drużyny #{{slot}} i znów będzie wolnym graczem. Jeśli drużyna była zatwierdzona, trzeba będzie zatwierdzić ją ponownie.',
+        '{{player}} zostanie usunięty z drużyny #{{slot}} i znów będzie wolnym graczem. Pusta drużyna zostanie automatycznie rozwiązana.',
       removePlayerConfirmCancel: 'Zostaw gracza',
       removePlayerConfirmAction: 'Usuń gracza',
       disbandRequestedChip: 'Prośba o rozwiązanie',
@@ -860,7 +861,7 @@ const translations = {
       disbandRequestDescription:
         '{{player}} poprosił administratora o rozwiązanie tego zatwierdzonego składu.',
       disbandTeam: 'Rozwiąż',
-      disbandConfirmTitle: 'Rozwiązać zatwierdzoną drużynę?',
+      disbandConfirmTitle: 'Rozwiązać drużynę?',
       disbandConfirmDescription:
         'Drużyna #{{slot}} ma {{count}} graczy. Rozwiązanie zamknie skład, usunie z niego graczy, anuluje oczekujące zaproszenia i zwolni miejsce w kolejce.',
       disbandConfirmCancel: 'Zostaw drużynę',

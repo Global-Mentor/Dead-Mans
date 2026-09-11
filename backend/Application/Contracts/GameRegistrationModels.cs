@@ -17,7 +17,8 @@ public sealed record TeamAdminActionSnapshot(string Status, int MemberCount);
 public sealed record TeamAdminLifecycleSnapshot(
     string Status,
     int MemberCount,
-    bool IsActiveInGame
+    bool IsActiveInGame,
+    bool IsPlayed
 );
 
 public sealed record TeamInviteTargetSnapshot(
@@ -138,6 +139,7 @@ public enum GameRegistrationErrorCode
     NoAvailableSlot,
     TeamNotFound,
     TeamNotJoinable,
+    TeamRosterLocked,
     TeamFull,
     NotTeamMember,
     InvitationNotFound,
@@ -150,6 +152,7 @@ public enum GameRegistrationErrorCode
     TeamInviteNotAllowed,
     TargetTeamSameAsSource,
     TeamActiveInGame,
+    TeamAlreadyPlayed,
     InvalidTeamName,
     OperationFailed,
 }

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '../validation/zod.ts'
 import type { AuthSession } from '../api/contracts/index.ts'
 
 const authRoleSchema = z.enum(['superadmin', 'admin', 'moderator', 'viewer'])

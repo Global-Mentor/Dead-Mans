@@ -36,6 +36,11 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamNotFound,
                 AppMessages.ErrorCodes.GameRegistrationTeamNotFound
             ),
+            GameRegistrationErrorCode.TeamRosterLocked => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamRosterLocked,
+                AppMessages.ErrorCodes.GameRegistrationTeamRosterLocked
+            ),
             GameRegistrationErrorCode.TeamNotJoinable
                 or GameRegistrationErrorCode.TeamFull
                 or GameRegistrationErrorCode.TargetTeamSameAsSource => new(
@@ -93,6 +98,11 @@ public static class DomainErrorHttpPolicy
                 StatusCodes.Status400BadRequest,
                 AppMessages.Client.GameRegistrationInvalidTeamName,
                 AppMessages.ErrorCodes.GameRegistrationInvalidTeamName
+            ),
+            GameRegistrationErrorCode.TeamAlreadyPlayed => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamAlreadyPlayed,
+                AppMessages.ErrorCodes.GameRegistrationTeamAlreadyPlayed
             ),
             GameRegistrationErrorCode.OperationFailed => new(
                 StatusCodes.Status500InternalServerError,

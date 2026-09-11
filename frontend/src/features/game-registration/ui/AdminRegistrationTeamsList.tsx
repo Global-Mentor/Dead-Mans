@@ -71,6 +71,7 @@ export function AdminRegistrationTeamsList({
     onTogglePlayedState,
     onUpdateTeamName,
   } = controls
+  const canReorderTeams = snapshot.gameStatus === 'ready'
 
   return (
     <>
@@ -86,10 +87,16 @@ export function AdminRegistrationTeamsList({
           !hasPendingInvitations &&
           membersCount >= snapshot.minPlayersPerTeam &&
           membersCount <= snapshot.maxPlayersPerTeam
-        const canShowInvitePlayer = !team.recruitmentOpen
+        const canShowInvitePlayer = !team.recruitmentOpen && team.status === 'forming'
+        const canAssignPlayer = (userId: string) =>
+          team.status === 'forming' &&
+          !snapshot.teams.some(
+            (source) =>
+              source.status !== 'forming' &&
+              source.members.some((member) => member.player.userId === userId),
+          )
         const canInvitePlayer =
           canShowInvitePlayer &&
-          team.status === 'forming' &&
           reservedPlayersCount < snapshot.maxPlayersPerTeam &&
           snapshot.availablePlayers.length > 0
         const isTeamSlotDropActive = activeDropTeamSlotId === slot.teamSlotId
@@ -132,7 +139,11 @@ export function AdminRegistrationTeamsList({
                 return
               }
 
-              if (payload.kind === 'team' && team.teamId === payload.teamId) {
+              if (payload.kind === 'team' && (!canReorderTeams || team.teamId === payload.teamId)) {
+                return
+              }
+
+              if (payload.kind === 'player' && !canAssignPlayer(payload.userId)) {
                 return
               }
 
@@ -162,11 +173,14 @@ export function AdminRegistrationTeamsList({
               }
 
               if (payload.kind === 'player') {
+                if (!canAssignPlayer(payload.userId)) {
+                  return
+                }
                 onAssignPlayer(team.teamId, payload.userId)
                 return
               }
 
-              if (payload.kind === 'team' && payload.teamId !== team.teamId) {
+              if (payload.kind === 'team' && canReorderTeams && payload.teamId !== team.teamId) {
                 onMoveTeam(payload.teamId, slot.teamSlotId)
               }
             }}
@@ -230,7 +244,7 @@ export function AdminRegistrationTeamsList({
                       <AdminRegistrationTeamReorderButton
                         label={t('gameApplication.adminPanel.moveTeamUp')}
                         direction="up"
-                        disabled={!previousEntry || isMovingTeam}
+                        disabled={!canReorderTeams || !previousEntry || isMovingTeam}
                         onClick={() =>
                           previousEntry
                             ? onMoveTeam(team.teamId, previousEntry.slot.teamSlotId)
@@ -240,7 +254,7 @@ export function AdminRegistrationTeamsList({
                       <AdminRegistrationTeamReorderButton
                         label={t('gameApplication.adminPanel.moveTeamDown')}
                         direction="down"
-                        disabled={!nextEntry || isMovingTeam}
+                        disabled={!canReorderTeams || !nextEntry || isMovingTeam}
                         onClick={() =>
                           nextEntry ? onMoveTeam(team.teamId, nextEntry.slot.teamSlotId) : undefined
                         }
@@ -289,11 +303,7 @@ export function AdminRegistrationTeamsList({
                         size="small"
                         tone="warningGhost"
                         sx={teamActionButtonSx}
-                        disabled={
-                          team.status !== 'confirmed' ||
-                          team.isActiveInGame ||
-                          isDisbandingTeam(team.teamId)
-                        }
+                        disabled={isDisbandingTeam(team.teamId)}
                         onClick={() => onRequestDisband(team)}
                       >
                         {t('gameApplication.adminPanel.disbandTeam')}
@@ -349,12 +359,12 @@ export function AdminRegistrationTeamsList({
                             {t('teamRegistrations.reject')}
                           </AppButton>
                         ) : null}
-                        {team.status === 'confirmed' && !team.disbandRequestedAtUtc ? (
+                        {!team.disbandRequestedAtUtc ? (
                           <AppButton
                             size="small"
                             tone="warningGhost"
                             sx={teamActionButtonSx}
-                            disabled={team.isActiveInGame || isDisbandingTeam(team.teamId)}
+                            disabled={isDisbandingTeam(team.teamId)}
                             onClick={() => onRequestDisband(team)}
                           >
                             {t('gameApplication.adminPanel.disbandTeam')}

@@ -139,6 +139,17 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetGame_WhenNoBoardExists_ReturnsNoContent()
+    {
+        using var authenticatedClient = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+
+        var response = await authenticatedClient.GetAsync("/api/game");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(string.Empty, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Repository_WhenNoBoardsExist_ReturnsNull()
     {
         using var scope = _factory.Services.CreateScope();
@@ -968,7 +979,15 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var rightVersions = await viewerClient.GetFromJsonAsync<
             ModifierHistoryPageDto<ModifierVersionSummaryDto>
         >($"/api/game/modifiers/{right.Id}/versions");
-        Assert.Equal([2, 1], rightVersions!.Items.Select(x => x.Revision));
+        Assert.Equal([3, 2, 1], rightVersions!.Items.Select(x => x.Revision));
+        var historicalRight = await viewerClient.GetFromJsonAsync<ModifierVersionDetailDto>(
+            $"/api/game/modifiers/{right.Id}/versions/2");
+        var currentRight = await viewerClient.GetFromJsonAsync<ModifierVersionDetailDto>(
+            $"/api/game/modifiers/{right.Id}/versions/3");
+        Assert.Contains(historicalRight!.Conflicts, x => x.ModifierId == left.Id && x.Name == left.Name);
+        Assert.Contains(currentRight!.Conflicts,
+            x => x.ModifierId == left.Id && x.Name == left.Name + " renamed");
+        Assert.Equal("compatibility_cascade", currentRight.ChangeType);
     }
 
     [Fact]
@@ -989,10 +1008,12 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.Equal(
             AppMessages.ErrorCodes.GameModifierCompatibilityLocked,
-            (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Code
+            error?.Code
         );
+        Assert.Equal(AppMessages.Client.GameModifierCompatibilityLocked, error?.Error);
         var history = await viewerClient.GetFromJsonAsync<
             ModifierHistoryPageDto<ModifierHistorySummaryDto>
         >($"/api/game/modifiers/history?search={Uri.EscapeDataString(name)}");

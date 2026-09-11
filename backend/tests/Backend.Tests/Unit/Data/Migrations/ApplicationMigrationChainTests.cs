@@ -21,7 +21,8 @@ public sealed class ApplicationMigrationChainTests
 
         Assert.Equal(
             [
-                "20260908003848_ProductionBaseline"
+                "20260908003848_ProductionBaseline",
+                "20260910171900_AllowAdminTeamDisband"
             ],
             migrations
         );

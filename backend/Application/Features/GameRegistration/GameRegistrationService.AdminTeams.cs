@@ -120,9 +120,9 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
         }
 
-        if (team.Status != TeamStatusValue.Forming && team.Status != TeamStatusValue.Confirmed)
+        if (team.Status != TeamStatusValue.Forming)
         {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+            return Fail<RegistrationTeamDto>(team.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
         if (!await _reads.ActiveUserExistsAsync(userId, cancellationToken))
@@ -134,6 +134,19 @@ public sealed partial class GameRegistrationService
         if (sourceTeamId.HasValue && sourceTeamId.Value == teamId)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TargetTeamSameAsSource);
+        }
+
+        if (sourceTeamId.HasValue)
+        {
+            var sourceTeam = await _reads.GetTeamAdminActionSnapshotAsync(
+                game.GameId,
+                sourceTeamId.Value,
+                cancellationToken
+            );
+            if (sourceTeam?.Status != TeamStatusValue.Forming)
+            {
+                return Fail<RegistrationTeamDto>(sourceTeam?.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
+            }
         }
 
         return await _persistence.PersistAssignPlayerAsync(
@@ -165,9 +178,9 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamNotFound);
         }
 
-        if (team.Status != TeamStatusValue.Forming && team.Status != TeamStatusValue.Confirmed)
+        if (team.Status != TeamStatusValue.Forming)
         {
-            return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
+            return Fail<bool>(team.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
         return await _persistence.PersistRemovePlayerFromTeamAsync(
@@ -335,7 +348,7 @@ public sealed partial class GameRegistrationService
         return await _persistence.PersistRejectTeamAsync(game.GameId, adminUserId, teamId, cancellationToken);
     }
 
-    public async Task<GameRegistrationResult<bool>> DisbandConfirmedTeamAsync(
+    public async Task<GameRegistrationResult<bool>> DisbandTeamAsync(
         Guid adminUserId,
         Guid teamId,
         CancellationToken cancellationToken = default
@@ -358,12 +371,17 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamActiveInGame);
         }
 
-        if (team.Status != TeamStatusValue.Confirmed)
+        if (team.IsPlayed)
+        {
+            return Fail<bool>(GameRegistrationErrorCode.TeamAlreadyPlayed);
+        }
+
+        if (team.Status != TeamStatusValue.Forming && team.Status != TeamStatusValue.Confirmed)
         {
             return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistDisbandConfirmedTeamAsync(
+        return await _persistence.PersistDisbandTeamAsync(
             game.GameId,
             adminUserId,
             teamId,

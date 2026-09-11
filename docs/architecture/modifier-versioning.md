@@ -40,6 +40,9 @@ bindings, and every referenced conflict target.
   `409 game_modifier_revision_stale`.
 - Compatibility is symmetric. A change inserts the initiating `edited` revision and a
   `compatibility_cascade` revision for every affected definition in one transaction.
+  Renaming also creates cascade revisions for retained conflict neighbors, including
+  archived definitions, so their current name snapshots stay consistent. Historical
+  versions and game pins retain the previous name. These cascades obey the same active-game locks.
 - If the initiating definition is used by an active game, the operation returns
   `game_modifier_content_locked`. If another cascade side is used, it returns
   `game_modifier_compatibility_locked`. Any error rolls back all sides.

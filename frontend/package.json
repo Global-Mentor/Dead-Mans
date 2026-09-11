@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "test:watch": "vitest",
     "check:locales": "node scripts/check-locale-keys.mjs",
     "check:hardcoded-ui": "node scripts/check-hardcoded-ui-text.mjs",

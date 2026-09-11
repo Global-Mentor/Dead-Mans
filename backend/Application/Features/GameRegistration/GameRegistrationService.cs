@@ -160,7 +160,7 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             );
             if (team?.Status == TeamStatusValue.Confirmed)
             {
-                return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
+                return Fail<bool>(GameRegistrationErrorCode.TeamRosterLocked);
             }
         }
 

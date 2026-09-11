@@ -133,15 +133,68 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         Assert.Equal(GameStatusValue.Finished, payload.Summary.GameStatus);
         Assert.Equal("Official result", payload.Summary.PublicNote);
         Assert.Equal(board.Version + 1, payload.Summary.BoardVersion);
-        Assert.Single(payload.Summary.Teams);
-        Assert.Null(payload.Summary.Teams[0].Placement);
+        Assert.Empty(preview.Summary.Teams);
+        Assert.Empty(payload.Summary.Teams);
 
         var history = await adminClient.GetFromJsonAsync<GameHistoryGameDetailsDto>(
             $"/api/game/history/games/{board.GameId}"
         );
         Assert.NotNull(history?.FinalResult);
         Assert.Equal("Official result", history.FinalResult.PublicNote);
-        Assert.Null(Assert.Single(history.FinalResult.Teams).FinalScore);
+        Assert.Empty(history.FinalResult.Teams);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData(GameRoundStatusValue.Cancelled, false)]
+    [InlineData(GameRoundStatusValue.Completed, false)]
+    public async Task Finish_OnlySnapshotsTeamsThatOpenedACard(string? roundStatus, bool markedPlayed)
+    {
+        await ClearGamesAsync();
+        var (adminClient, board) = await CreateActiveGameAsync("history-eligibility");
+        using (adminClient)
+        {
+            var gameId = Guid.Parse(board.GameId);
+            if (roundStatus is not null)
+            {
+                await SeedTerminalRoundAsync(gameId, roundStatus, 0, false, 0);
+            }
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var team = await db.GameTeams.SingleAsync(x => x.GameId == gameId);
+                team.IsPlayed = markedPlayed;
+                team.PlayedAtUtc = markedPlayed ? DateTime.UtcNow : null;
+                await db.SaveChangesAsync();
+            }
+
+            var preview = await adminClient.GetFromJsonAsync<GameFinishPreviewDto>(
+                $"/api/game/lifecycle/games/{board.GameId}/finish-preview"
+            );
+            Assert.NotNull(preview);
+            var expectedTeamCount = roundStatus is null ? 0 : 1;
+            Assert.Equal(expectedTeamCount, preview.Summary.Teams.Count);
+            var response = await adminClient.PostAsJsonAsync(
+                $"/api/game/lifecycle/games/{board.GameId}/finish",
+                new FinishGameRequestDto(board.Version, Guid.NewGuid(), preview.Warnings.Select(x => x.Code).ToArray(), null)
+            );
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var finished = await response.Content.ReadFromJsonAsync<FinishGameResponseDto>();
+            Assert.NotNull(finished);
+            Assert.Equal(expectedTeamCount, finished.Summary.Teams.Count);
+
+            var history = await adminClient.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+                $"/api/game/history/games/{board.GameId}"
+            );
+            Assert.NotNull(history?.FinalResult);
+            Assert.Equal(expectedTeamCount, history.FinalResult.Teams.Count);
+            using var verifyScope = _factory.Services.CreateScope();
+            var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.Equal(expectedTeamCount, await verifyDb.GameTeamFinalResults.CountAsync(x => x.GameId == gameId));
+            // Excluding an unplayed team from results does not erase registration audit records.
+            Assert.True(await verifyDb.GameTeams.AnyAsync(x => x.GameId == gameId));
+        }
     }
 
     [Theory]

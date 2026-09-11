@@ -15,7 +15,8 @@ const translations = {
       notFound: 'The entry was not found. It may have been removed.',
       invalidRequest: 'Some fields are invalid. Check the form and try again.',
       contentLocked: 'This modifier is locked because it is included in the active game.',
-      compatibilityLocked: 'A compatibility change is locked by the active game.',
+      compatibilityLocked:
+        'A linked modifier is included in the active game. This change must wait until the game ends.',
       revisionStale: 'A newer modifier revision already exists.',
       archived: 'This modifier has already been archived.',
       categoryNotFound: 'The question category was not found. It may have been removed.',
@@ -514,7 +515,8 @@ const translations = {
       notFound: 'Запись не найдена. Возможно, она была удалена.',
       invalidRequest: 'Некоторые поля заполнены неверно. Проверьте форму и повторите.',
       contentLocked: 'Модификатор заблокирован, потому что он включён в активную игру.',
-      compatibilityLocked: 'Изменение совместимости заблокировано активной игрой.',
+      compatibilityLocked:
+        'Связанный модификатор включён в активную игру. Это изменение возможно после её завершения.',
       revisionStale: 'На сервере уже существует более новая редакция модификатора.',
       archived: 'Модификатор уже находится в архиве.',
       categoryNotFound: 'Категория вопросов не найдена. Возможно, она была удалена.',
@@ -1022,7 +1024,8 @@ const translations = {
       notFound: 'Запис не знайдено. Можливо, його було видалено.',
       invalidRequest: 'Деякі поля заповнені неправильно. Перевірте форму та повторіть.',
       contentLocked: 'Модифікатор заблоковано, тому що його включено до активної гри.',
-      compatibilityLocked: 'Зміну сумісності заблоковано активною грою.',
+      compatibilityLocked:
+        'Пов’язаний модифікатор включено до активної гри. Ця зміна можлива після її завершення.',
       revisionStale: 'На сервері вже існує новіша редакція модифікатора.',
       archived: 'Модифікатор уже перебуває в архіві.',
       categoryNotFound: 'Категорію запитань не знайдено. Можливо, її було видалено.',
@@ -1522,7 +1525,8 @@ const translations = {
       notFound: 'Nie znaleziono wpisu. Mógł zostać usunięty.',
       invalidRequest: 'Niektóre pola są nieprawidłowe. Sprawdź formularz i spróbuj ponownie.',
       contentLocked: 'Modyfikator jest zablokowany, ponieważ należy do aktywnej gry.',
-      compatibilityLocked: 'Zmiana zgodności jest zablokowana przez aktywną grę.',
+      compatibilityLocked:
+        'Powiązany modyfikator jest używany w aktywnej grze. Ta zmiana jest możliwa po jej zakończeniu.',
       revisionStale: 'Na serwerze istnieje już nowsza rewizja modyfikatora.',
       archived: 'Modyfikator został już zarchiwizowany.',
       categoryNotFound: 'Nie znaleziono kategorii pytań. Mogła zostać usunięta.',

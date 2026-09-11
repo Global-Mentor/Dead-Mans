@@ -18,6 +18,15 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
+        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var team = new GameTeam
         {
@@ -53,6 +62,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationUniqueViolationMapper.Map(ex));
         }
 
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return await LoadTeamResultAsync(team.Id, cancellationToken);
     }
 
@@ -65,6 +79,15 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
+        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var team = new GameTeam
         {
@@ -94,6 +117,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationUniqueViolationMapper.Map(ex));
         }
 
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return await LoadTeamResultAsync(team.Id, cancellationToken);
     }
 
@@ -104,6 +132,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
         var team = await _dbContext.GameTeams
             .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
         if (team is null)
@@ -119,6 +151,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         team.Name = TeamNameValue.Normalize(name);
         team.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         return await LoadTeamResultAsync(team.Id, cancellationToken);
     }
@@ -142,7 +179,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         {
             if (_dbContext.Database.IsRelational())
             {
-                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                await using var transaction = await BeginRosterChangeAsync(gameId, cancellationToken);
                 await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                     $"""SELECT 1 FROM game_teams WHERE id = {team.Id} FOR UPDATE""",
                     cancellationToken
@@ -181,6 +218,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
         var membership = await _dbContext.GameTeamMembers
             .Include(member => member.Team)
             .FirstOrDefaultAsync(
@@ -192,34 +233,26 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<bool>(GameRegistrationErrorCode.NotTeamMember);
         }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var team = membership.Team;
-        var memberCount = await _dbContext.GameTeamMembers.CountAsync(
-            member => member.TeamId == team.Id && member.LeftAtUtc == null,
-            cancellationToken
-        );
-        membership.LeftAtUtc = utcNow;
-
-        if (memberCount <= 1)
+        if (team.Status != TeamStatusValue.Forming)
         {
-            team.Status = TeamStatusValue.Disbanded;
-            team.DisbandedAtUtc = utcNow;
-            team.DisbandedByUserId = userId;
-            team.UpdatedAtUtc = utcNow;
-        }
-        else
-        {
-            if (team.Status == TeamStatusValue.Confirmed)
-            {
-                team.Status = TeamStatusValue.Forming;
-                team.ConfirmedAtUtc = null;
-                team.ConfirmedByUserId = null;
-            }
-
-            team.UpdatedAtUtc = utcNow;
+            return Fail<bool>(team.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
+        // Recheck under the same lock as invitation creation and team confirmation.
+        if (await _reads.TeamHasPendingInvitationAsync(gameId, team.Id, cancellationToken))
+        {
+            return Fail<bool>(GameRegistrationErrorCode.PendingOutgoingInvitation);
+        }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        await CloseMembershipAsync(membership, team, userId, utcNow, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
     }
 
@@ -230,6 +263,15 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await BeginRosterChangeAsync(gameId, cancellationToken)
+            : null;
+
+        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
         var team = await _dbContext.GameTeams
             .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
         if (team is null)
@@ -262,6 +304,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             team.DisbandRequestedByUserId = userId;
             team.UpdatedAtUtc = utcNow;
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
         }
 
         return await LoadTeamResultAsync(team.Id, cancellationToken);

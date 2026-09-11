@@ -92,7 +92,7 @@ describe('GameFinishDialog', () => {
     renderDialog(onFinish)
 
     expect(await screen.findByText('Bravo')).toBeVisible()
-    expect(screen.getByText('Не играла')).toBeVisible()
+    expect(screen.getByText('Нет завершённых раундов')).toBeVisible()
     const submit = screen.getByRole('button', { name: 'Завершить игру навсегда' })
     expect(submit).toBeDisabled()
 
