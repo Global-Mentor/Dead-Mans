@@ -1,6 +1,23 @@
 {
   "notes": [
     {
+      "id": "2026-09-11-multiple-answers",
+      "publishedAt": "2026-09-11T16:00:00.000Z",
+      "status": "feature",
+      "title": {
+        "en": "Several correct answers",
+        "ru": "Несколько правильных ответов",
+        "uk": "Кілька правильних відповідей",
+        "pl": "Kilka poprawnych odpowiedzi"
+      },
+      "body": {
+        "en": "A catalog question can now have up to ten accepted answers. The quiz counts any of them as correct, and duplicate variants are not saved.",
+        "ru": "В каталоге у вопроса можно задать до десяти правильных ответов. Викторина засчитывает любой из них, повторы не сохраняются.",
+        "uk": "У каталозі для питання можна задати до десяти правильних відповідей. Вікторина зараховує будь-яку з них, повтори не зберігаються.",
+        "pl": "Pytanie w katalogu może mieć do dziesięciu poprawnych odpowiedzi. Quiz zalicza każdą z nich, a duplikaty nie są zapisywane."
+      }
+    },
+    {
       "id": "2026-09-10-remove-player",
       "publishedAt": "2026-09-10T19:01:21.000Z",
       "status": "fix",

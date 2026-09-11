@@ -98,6 +98,11 @@ public sealed partial class DbGameQuestionRepository
                     .Where(answer => answer.IsPrimary)
                     .Select(answer => answer.AnswerText)
                     .FirstOrDefault() ?? string.Empty,
+                x.AcceptedAnswers
+                    .OrderByDescending(answer => answer.IsPrimary)
+                    .ThenBy(answer => answer.SortOrder)
+                    .Select(answer => answer.AnswerText)
+                    .ToArray(),
                 x.Reward,
                 x.Priority,
                 x.IsEnabled,

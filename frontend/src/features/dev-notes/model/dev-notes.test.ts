@@ -4,6 +4,7 @@ import { loadDevNotes, parseDevNotes, resolveDevNoteText } from './dev-notes.ts'
 describe('dev notes', () => {
   it('loads and sorts the committed changelog newest first', () => {
     expect(loadDevNotes().map((note) => note.id)).toEqual([
+      '2026-09-11-multiple-answers',
       '2026-09-10-remove-player',
       '2026-09-10-closed-testing',
     ])

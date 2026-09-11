@@ -5321,6 +5321,7 @@ components:
         - categoryName
         - text
         - answer
+        - answers
         - reward
         - priority
         - isEnabled
@@ -5342,6 +5343,12 @@ components:
           type: string
         answer:
           type: string
+        answers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5422,6 +5429,13 @@ components:
         answer:
           type: string
           nullable: true
+        answers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
+          nullable: true
         reward:
           type: integer
           minimum: 0
@@ -5463,6 +5477,12 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        answers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5495,6 +5515,12 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        answers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5546,6 +5572,12 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        answers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0

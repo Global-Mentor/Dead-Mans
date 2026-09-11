@@ -17,6 +17,7 @@ public static partial class ApiContractMapper
             categoryId,
             request.Text,
             request.Answer,
+            request.Answers ?? Array.Empty<string>(),
             request.Reward,
             request.IsEnabled,
             request.Priority
@@ -34,6 +35,7 @@ public static partial class ApiContractMapper
             categoryId,
             request.Text,
             request.Answer,
+            request.Answers ?? Array.Empty<string>(),
             request.Reward,
             request.ExternalCode,
             request.IsEnabled,
@@ -47,6 +49,7 @@ public static partial class ApiContractMapper
         return new ImportGameQuestionSource(
             request.Text,
             request.Answer,
+            request.Answers,
             request.Reward,
             request.CategoryId,
             request.ExternalCode,
@@ -64,6 +67,7 @@ public static partial class ApiContractMapper
             categoryId,
             request.Text,
             request.Answer,
+            request.Answers ?? Array.Empty<string>(),
             request.Reward,
             request.IsEnabled,
             request.Priority
@@ -79,6 +83,7 @@ public static partial class ApiContractMapper
             item.CategoryName,
             item.Text,
             item.Answer,
+            item.Answers?.ToArray() ?? Array.Empty<string>(),
             item.Reward,
             item.Priority,
             item.IsEnabled,
@@ -130,6 +135,7 @@ public static partial class ApiContractMapper
         return new ImportGameQuestionSourceDto(
             source.Text,
             source.Answer,
+            source.Answers?.ToArray(),
             source.Reward,
             source.CategoryId,
             source.ExternalCode,

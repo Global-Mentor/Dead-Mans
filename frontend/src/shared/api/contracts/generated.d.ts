@@ -2084,6 +2084,7 @@ export interface components {
             categoryName: string;
             text: string;
             answer: string;
+            answers: string[];
             reward: number;
             priority: number;
             isEnabled: boolean;
@@ -2117,6 +2118,7 @@ export interface components {
             categoryId?: string | null;
             text?: string | null;
             answer?: string | null;
+            answers?: string[] | null;
             reward?: number | null;
             externalCode?: string | null;
             isEnabled?: boolean | null;
@@ -2133,6 +2135,7 @@ export interface components {
             categoryId: string;
             text: string;
             answer: string;
+            answers?: string[];
             reward: number;
             externalCode?: string | null;
             /** @default true */
@@ -2148,6 +2151,7 @@ export interface components {
             categoryId?: string | null;
             text: string;
             answer: string;
+            answers?: string[];
             reward: number;
             externalCode?: string | null;
             /**
@@ -2172,6 +2176,7 @@ export interface components {
             categoryId: string;
             text: string;
             answer: string;
+            answers?: string[];
             reward: number;
             /** @default true */
             isEnabled: boolean;

@@ -169,6 +169,7 @@ public sealed class GameQuestionService : IGameQuestionService
                 input.CategoryId,
                 input.Text ?? string.Empty,
                 input.Answer ?? string.Empty,
+                input.Answers,
                 input.Reward ?? -1,
                 input.IsEnabled ?? false,
                 input.Priority ?? 0

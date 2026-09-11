@@ -368,10 +368,14 @@ describe('PanelNavigation', () => {
     const dialogText = dialog.textContent ?? ''
 
     expect(dialog).toBeInTheDocument()
-    expect(dialogText.indexOf('Исключение игроков из команды')).toBeGreaterThan(-1)
+    expect(dialogText.indexOf('Несколько правильных ответов')).toBeGreaterThan(-1)
+    expect(dialogText.indexOf('Несколько правильных ответов')).toBeLessThan(
+      dialogText.indexOf('Исключение игроков из команды'),
+    )
     expect(dialogText.indexOf('Исключение игроков из команды')).toBeLessThan(
       dialogText.indexOf('Закрытое тестирование'),
     )
+    expect(screen.getByText('Новая фича')).toBeInTheDocument()
     expect(screen.getByText('Объявление')).toBeInTheDocument()
     expect(screen.getByText('Фикс')).toBeInTheDocument()
     expect(screen.getByTestId('dev-notes-list')).toHaveStyle({

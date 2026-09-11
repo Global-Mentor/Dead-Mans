@@ -177,7 +177,10 @@ test('production profile changelog is bundled and works under strict CSP', async
   const dialog = page.getByRole('dialog', { name: "What's new" })
   await expect(dialog).toBeVisible()
   const dialogText = await dialog.innerText()
-  expect(dialogText.indexOf('Removing players from a team')).toBeGreaterThan(-1)
+  expect(dialogText.indexOf('Several correct answers')).toBeGreaterThan(-1)
+  expect(dialogText.indexOf('Several correct answers')).toBeLessThan(
+    dialogText.indexOf('Removing players from a team'),
+  )
   expect(dialogText.indexOf('Removing players from a team')).toBeLessThan(
     dialogText.indexOf('Closed testing'),
   )
