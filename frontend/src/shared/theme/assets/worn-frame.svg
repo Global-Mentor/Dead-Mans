@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="100" viewBox="0 0 240 100">
+  <defs>
+    <filter id="wear" x="-5%" y="-10%" width="110%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".07 .36" numOctaves="3" seed="17" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="#b2afa6" filter="url(#wear)">
+    <path d="M2 3L237 2L238 97L3 98Z" stroke-width="1.4" opacity=".8"/>
+    <path d="M1 7L14 7M6 1L6 13M225 94L239 94M234 87L234 100" stroke-width="1" opacity=".45"/>
+  </g>
+</svg>

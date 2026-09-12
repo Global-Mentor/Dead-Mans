@@ -1,12 +1,13 @@
 import type { PaletteOptions } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import { huntPalette } from '../../shared/theme/hunt-palette.ts'
+import { huntPaperTexture } from '../../shared/theme/hunt-materials.ts'
 
-const panelSurface = `linear-gradient(180deg, ${alpha(huntPalette.leather, 0.98)} 0%, ${alpha(huntPalette.bark, 0.98)} 100%)`
-const panelAccent = `linear-gradient(180deg, ${alpha(huntPalette.moss, 0.92)} 0%, ${alpha(huntPalette.bark, 0.98)} 100%)`
-const panelAccentSoft = `linear-gradient(180deg, ${alpha(huntPalette.mossDeep, 0.88)} 0%, ${alpha(huntPalette.charcoal, 0.96)} 100%)`
-const authCard = `radial-gradient(circle at top, ${alpha(huntPalette.brass, 0.14)} 0, transparent 55%), ${panelSurface}`
-const appBackdrop = `radial-gradient(ellipse 120% 80% at 50% -10%, ${alpha(huntPalette.murk, 0.45)} 0%, transparent 55%), linear-gradient(180deg, ${huntPalette.charcoal} 0%, ${huntPalette.soot} 100%)`
+const panelSurface = `linear-gradient(125deg, ${alpha(huntPalette.charcoal, 0.3)}, ${alpha(huntPalette.soot, 0.58)}), ${huntPaperTexture}`
+const panelAccent = `linear-gradient(135deg, ${alpha(huntPalette.leather, 0.15)}, ${alpha(huntPalette.charcoal, 0.4)}), ${huntPaperTexture}`
+const panelAccentSoft = `linear-gradient(180deg, ${alpha(huntPalette.charcoal, 0.96)}, ${alpha(huntPalette.soot, 0.96)})`
+const authCard = panelSurface
+const appBackdrop = `linear-gradient(180deg, ${alpha(huntPalette.soot, 0.52)}, ${huntPalette.soot} 85%), ${huntPaperTexture}`
 
 export const appThemeGradients = {
   panelSurface,
@@ -32,13 +33,13 @@ export const appPalette: PaletteOptions = {
   },
   background: {
     default: huntPalette.soot,
-    paper: huntPalette.leather,
+    paper: huntPalette.charcoal,
   },
   text: {
     primary: huntPalette.parchment,
     secondary: huntPalette.parchmentMuted,
   },
-  divider: alpha(huntPalette.brassMuted, 0.45),
+  divider: alpha(huntPalette.parchment, 0.16),
   error: {
     main: huntPalette.blood,
     contrastText: huntPalette.parchment,
@@ -49,7 +50,7 @@ export const appPalette: PaletteOptions = {
   },
   success: {
     main: huntPalette.fern,
-    contrastText: huntPalette.parchment,
+    contrastText: huntPalette.soot,
   },
   info: {
     main: huntPalette.murk,

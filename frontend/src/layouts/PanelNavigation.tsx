@@ -1,6 +1,16 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useState, type MouseEvent } from 'react'
-import { Badge, Box, ButtonBase, Container, Menu, MenuItem, Stack, Typography } from '@mui/material'
+import {
+  Badge,
+  Box,
+  ButtonBase,
+  Container,
+  Menu,
+  MenuItem,
+  Stack,
+  SvgIcon,
+  Typography,
+} from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -107,9 +117,9 @@ export function PanelNavigation() {
           position: 'sticky',
           top: 0,
           zIndex: theme.zIndex.appBar,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+          borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.16)}`,
           backgroundImage: theme.custom.gradients.panelAccentSoft,
-          boxShadow: `0 10px 28px ${alpha(theme.palette.common.black, 0.35)}`,
+          boxShadow: 'none',
           backdropFilter: 'blur(12px)',
         })}
       >
@@ -118,8 +128,8 @@ export function PanelNavigation() {
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            spacing={2}
-            sx={{ minHeight: 64 }}
+            spacing={{ xs: 1, sm: 2 }}
+            sx={{ minHeight: 76 }}
           >
             <Typography
               component={RouterLink}
@@ -127,10 +137,13 @@ export function PanelNavigation() {
               variant="h6"
               sx={{
                 ...huntBrassTitleSx,
-                color: 'primary.main',
+                color: 'text.primary',
+                fontSize: { xs: 18, sm: 26 },
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 textDecoration: 'none',
                 whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                minWidth: 0,
               }}
             >
               {t('appTitle')}
@@ -150,7 +163,7 @@ export function PanelNavigation() {
               />
             )}
 
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
               <ButtonBase
                 aria-controls={notificationAnchor ? 'notification-menu' : undefined}
                 aria-expanded={notificationAnchor ? 'true' : undefined}
@@ -158,12 +171,12 @@ export function PanelNavigation() {
                 aria-label={t('navigation.openNotifications')}
                 onClick={openNotificationMenu}
                 sx={(theme) => ({
-                  width: 42,
+                  width: { xs: 36, sm: 42 },
                   height: 42,
-                  borderRadius: 999,
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+                  borderRadius: 0,
+                  border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
                   backgroundColor: alpha(theme.palette.common.black, 0.16),
-                  color: 'primary.main',
+                  color: 'text.secondary',
                   '&:hover': {
                     borderColor: alpha(theme.palette.primary.main, 0.55),
                     backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -171,9 +184,16 @@ export function PanelNavigation() {
                 })}
               >
                 <Badge color="warning" badgeContent={totalNotificationsCount} max={9}>
-                  <Typography component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
-                    🔔
-                  </Typography>
+                  <SvgIcon sx={{ fontSize: 20 }}>
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </SvgIcon>
                 </Badge>
               </ButtonBase>
 

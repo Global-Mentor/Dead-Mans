@@ -1,101 +1,171 @@
-import { Chip, Stack, Typography } from '@mui/material'
+import { Checkbox, FormControlLabel, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { huntWornFrame } from '../../../shared/theme/hunt-materials.ts'
+import { isTeamJoinable } from '../model/team-availability.ts'
 import { TeamSummary } from './TeamSummary.tsx'
+import { ApplicationSection } from './ApplicationSection.tsx'
 
 interface OpenTeamsSectionProps {
   teams: RegistrationTeam[]
+  capacity: number
+  myTeamId?: string | undefined
   canJoinTeams: boolean
+  disabled: boolean
   onJoin: (teamId: string) => void
   joiningTeamId: string | undefined
 }
 
 export function OpenTeamsSection({
   teams,
+  capacity,
+  myTeamId,
   canJoinTeams,
+  disabled,
   onJoin,
   joiningTeamId,
 }: OpenTeamsSectionProps) {
-  const { t } = useTranslation()
-  const sortedTeams = [...teams].sort((left, right) => left.teamSlotIndex - right.teamSlotIndex)
-  const joinableTeamsCount = sortedTeams.filter(
-    (team) => team.status === 'forming' && team.recruitmentOpen,
-  ).length
+  const { t, i18n } = useTranslation()
+  const searchId = useId()
+  const [query, setQuery] = useState('')
+  const [onlyOpen, setOnlyOpen] = useState(false)
+  const normalizedQuery = query.trim().toLocaleLowerCase(i18n.resolvedLanguage)
+  const visibleTeams = teams
+    .filter((team) => {
+      const name = team.name?.trim() || t('common.teamWithSlot', { slot: team.teamSlotIndex })
+      const searchText = [
+        name,
+        ...team.members.flatMap(({ player }) => [player.displayName, player.login]),
+      ]
+        .join(' ')
+        .toLocaleLowerCase(i18n.resolvedLanguage)
+      return (!onlyOpen || isTeamJoinable(team, capacity)) && searchText.includes(normalizedQuery)
+    })
+    .sort(
+      (left, right) =>
+        Number(isTeamJoinable(right, capacity)) - Number(isTeamJoinable(left, capacity)) ||
+        left.teamSlotIndex - right.teamSlotIndex,
+    )
 
   return (
-    <SectionCard sx={{ height: '100%' }}>
-      <Stack spacing={2.5}>
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography variant="subtitle1">{t('gameApplication.createdTeamsTitle')}</Typography>
-            <Chip
-              size="small"
-              label={t('gameApplication.teamsCountChip', { count: teams.length })}
+    <ApplicationSection
+      title={t('gameApplication.createdTeamsTitle')}
+      summary={
+        <Typography variant="caption" color="text.secondary" role="status">
+          {t('gameApplication.filteredTeams', {
+            visible: visibleTeams.length,
+            total: teams.length,
+          })}
+        </Typography>
+      }
+      controls={
+        teams.length > 0 ? (
+          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} alignItems={{ lg: 'center' }}>
+            <FormTextField
+              id={searchId}
+              sx={{ flex: 1, minWidth: 0 }}
+              type="search"
+              label={t('gameApplication.searchTeams')}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
             />
-            <Chip
-              size="small"
-              color={joinableTeamsCount > 0 ? 'success' : 'default'}
-              label={t('gameApplication.joinableTeamsChip', { count: joinableTeamsCount })}
-            />
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              flexWrap="wrap"
+              sx={{ flexShrink: 0 }}
+            >
+              <FormControlLabel
+                sx={{ mr: 0, ml: 0 }}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={onlyOpen}
+                    onChange={(_, checked) => setOnlyOpen(checked)}
+                  />
+                }
+                label={
+                  <Typography variant="body2">{t('gameApplication.onlyOpenTeams')}</Typography>
+                }
+              />
+            </Stack>
           </Stack>
-          <Typography variant="body2" color="text.secondary">
-            {canJoinTeams
-              ? t('gameApplication.createdTeamsDescription')
-              : t('gameApplication.createdTeamsReadOnlyDescription')}
-          </Typography>
-        </Stack>
-
-        <Stack spacing={1.5}>
-          {sortedTeams.length === 0 ? (
-            <SectionCard inset variantStyle="dashed">
-              <Typography variant="body2" color="text.secondary">
-                {t('gameApplication.noCreatedTeams')}
-              </Typography>
-            </SectionCard>
-          ) : (
-            sortedTeams.map((team) => {
-              const canJoinTeam = canJoinTeams && team.status === 'forming' && team.recruitmentOpen
-
-              return (
-                <SectionCard
-                  key={team.teamId}
-                  inset
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
-                    gap: 1.5,
-                    alignItems: { xs: 'stretch', md: 'center' },
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <TeamSummary team={team} />
-                  {canJoinTeam ? (
-                    <AppButton
-                      fullWidth={false}
-                      disabled={joiningTeamId === team.teamId}
-                      onClick={() => onJoin(team.teamId)}
-                      sx={{ alignSelf: { xs: 'stretch', md: 'center' }, minWidth: 132 }}
-                    >
-                      {t('gameApplication.joinTeam')}
-                    </AppButton>
-                  ) : (
-                    <Chip
-                      size="small"
-                      label={
-                        team.recruitmentOpen && team.status !== 'forming'
-                          ? t('gameApplication.joinUnavailableChip')
-                          : t('gameApplication.joinNotAvailableChip')
-                      }
-                      sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}
-                    />
-                  )}
-                </SectionCard>
-              )
-            })
-          )}
-        </Stack>
+        ) : null
+      }
+    >
+      <Stack spacing={0.75}>
+        {visibleTeams.length === 0 ? (
+          <SectionCard inset sx={{ py: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              {t(
+                teams.length === 0
+                  ? 'gameApplication.noCreatedTeams'
+                  : 'gameApplication.noMatchingTeams',
+              )}
+            </Typography>
+            {teams.length > 0 ? (
+              <AppButton
+                tone="secondary"
+                sx={{ mt: 1 }}
+                onClick={() => {
+                  setQuery('')
+                  setOnlyOpen(false)
+                }}
+              >
+                {t('gameApplication.resetFilters')}
+              </AppButton>
+            ) : null}
+          </SectionCard>
+        ) : (
+          visibleTeams.map((team) => {
+            const isMine = team.teamId === myTeamId
+            const canJoin = canJoinTeams && isTeamJoinable(team, capacity)
+            return (
+              <SectionCard
+                component="article"
+                aria-label={
+                  team.name?.trim() || t('common.teamWithSlot', { slot: team.teamSlotIndex })
+                }
+                key={team.teamId}
+                sx={(theme) => ({
+                  p: 1.5,
+                  borderColor: isMine ? 'primary.main' : 'divider',
+                  backgroundColor: 'background.paper',
+                  backgroundImage: `linear-gradient(110deg, ${alpha(theme.palette.primary.dark, isMine ? 0.26 : canJoin ? 0.1 : 0)}, transparent 70%), ${theme.custom.gradients.panelSurface}`,
+                  backgroundSize: 'auto, auto, 640px auto',
+                  ...(isMine ? huntWornFrame : {}),
+                })}
+              >
+                <TeamSummary
+                  team={team}
+                  capacity={capacity}
+                  action={
+                    canJoin ? (
+                      <AppButton
+                        tone="secondary"
+                        disabled={disabled}
+                        loading={joiningTeamId === team.teamId}
+                        onClick={() => onJoin(team.teamId)}
+                        sx={{ minWidth: 100, px: 1.5 }}
+                      >
+                        {t('gameApplication.joinTeam')}
+                      </AppButton>
+                    ) : isMine ? (
+                      <Typography variant="caption" color="primary.light">
+                        {t('gameApplication.myTeamTitle')}
+                      </Typography>
+                    ) : null
+                  }
+                />
+              </SectionCard>
+            )
+          })
+        )}
       </Stack>
-    </SectionCard>
+    </ApplicationSection>
   )
 }

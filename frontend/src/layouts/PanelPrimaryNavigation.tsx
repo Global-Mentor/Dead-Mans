@@ -4,6 +4,7 @@ import { ButtonBase, Menu, MenuItem, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
+import { huntTypography } from '../shared/theme/tokens.ts'
 import {
   gameApplicationRoute,
   gameBoardRoute,
@@ -80,7 +81,7 @@ export function PanelPrimaryNavigation({
     <Stack
       component="nav"
       aria-label={t('navigation.primary')}
-      direction={isStacked ? 'column' : 'row'}
+      direction="row"
       spacing={isStacked ? 1.5 : 2}
       sx={
         isStacked
@@ -143,13 +144,14 @@ function PrimaryNavigationMenu({
         onClick={onOpen}
         sx={(theme) => ({
           position: 'relative',
-          width: fullWidth ? '100%' : 'auto',
-          minHeight: 42,
+          flex: fullWidth ? 1 : undefined,
+          minWidth: 0,
+          minHeight: fullWidth ? 44 : 76,
           px: { xs: 1, sm: 2 },
-          borderRadius: 1,
-          color: isActive ? 'primary.light' : 'text.secondary',
+          borderRadius: 0,
+          color: isActive ? 'text.primary' : 'text.secondary',
           fontFamily: theme.typography.button.fontFamily,
-          fontWeight: 700,
+          fontWeight: 500,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
           justifyContent: fullWidth ? 'space-between' : 'center',
@@ -158,10 +160,10 @@ function PrimaryNavigationMenu({
             content: '""',
             position: 'absolute',
             right: 10,
-            bottom: 2,
+            bottom: 0,
             left: 10,
             height: 2,
-            backgroundColor: isActive ? 'primary.main' : 'transparent',
+            backgroundColor: isActive ? 'text.primary' : 'transparent',
             transition: 'background-color 0.15s ease',
           },
           '&:hover': {
@@ -170,7 +172,16 @@ function PrimaryNavigationMenu({
           },
         })}
       >
-        <Typography component="span" variant="button" noWrap>
+        <Typography
+          component="span"
+          variant="button"
+          sx={{
+            whiteSpace: fullWidth ? 'normal' : 'nowrap',
+            fontFamily: huntTypography.display,
+            fontSize: { xs: 18, sm: 20 },
+            fontWeight: huntTypography.displayWeight,
+          }}
+        >
           {label}
         </Typography>
         <Typography component="span" variant="button" aria-hidden>

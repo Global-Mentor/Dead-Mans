@@ -5,15 +5,14 @@ import { huntTypography } from './tokens.ts'
 
 export const huntBrassTitleSx: SxProps<Theme> = {
   fontFamily: huntTypography.display,
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'primary.main',
+  fontWeight: huntTypography.displayWeight,
+  letterSpacing: '-0.015em',
+  color: 'text.primary',
 }
 
 export const huntOverlineSx: SxProps<Theme> = {
-  fontFamily: huntTypography.display,
-  letterSpacing: '0.18em',
+  fontFamily: huntTypography.body,
+  letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: 'text.secondary',
 }
@@ -51,16 +50,18 @@ export function huntAuthCardSx(theme: Theme) {
 
 export function huntPanelSx(theme: Theme): SystemStyleObject<Theme> {
   return {
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.32)}`,
-    boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.12)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.45)}`,
+    border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
+    boxShadow: 'none',
     backgroundImage: theme.custom.gradients.panelSurface,
+    backgroundSize: 'auto, 640px auto',
   }
 }
 
 export function huntInsetSurfaceSx(theme: Theme): SystemStyleObject<Theme> {
   return {
     backgroundColor: alpha(theme.palette.common.black, 0.22),
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-    boxShadow: `inset 0 2px 8px ${alpha(theme.palette.common.black, 0.35)}`,
+    border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+    backgroundImage: 'none',
+    boxShadow: 'none',
   }
 }

@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { Chip, Stack, TextField, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type {
   RegistrationInvitation,
@@ -7,16 +6,15 @@ import type {
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
 import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
-import { searchRegistrationPlayers } from '../../game-registration/model/player-search.ts'
-import { formatRegistrationTeamStatus } from '../../game-registration/model/registration-team-status.ts'
-import { RegistrationTeamNameEditor } from '../../game-registration/ui/RegistrationTeamNameEditor.tsx'
+import { InviteTeammateSection } from './InviteTeammateSection.tsx'
+import { RegistrationTeamNameEditor } from '../../game-registration/index.ts'
 import { TeamSummary } from './TeamSummary.tsx'
-
-const minimumInviteSearchLength = 3
-const maximumInviteSearchResults = 6
+import { ApplicationSection } from './ApplicationSection.tsx'
 
 interface MyTeamSectionProps {
   team: RegistrationTeam
+  capacity: number
+  disabled: boolean
   canInvitePlayers: boolean
   invitablePlayers: RegistrationPlayer[]
   outgoingInvitations: RegistrationInvitation[]
@@ -34,6 +32,8 @@ interface MyTeamSectionProps {
 
 export function MyTeamSection({
   team,
+  capacity,
+  disabled,
   canInvitePlayers,
   invitablePlayers,
   outgoingInvitations,
@@ -48,231 +48,89 @@ export function MyTeamSection({
   onUpdateName,
   isUpdatingName,
 }: MyTeamSectionProps) {
-  const { t, i18n } = useTranslation()
-  const locale = i18n.resolvedLanguage
-  const [inviteQuery, setInviteQuery] = useState('')
+  const { t } = useTranslation()
   const isClosedTeam = !team.recruitmentOpen
   const isConfirmedTeam = team.status === 'confirmed'
   const canEditName = team.status === 'forming'
   const hasDisbandRequest = team.disbandRequestedAtUtc != null
   const pendingOutgoingInvitation = outgoingInvitations[0] ?? null
   const isLeaveBlocked = pendingOutgoingInvitation !== null || isConfirmedTeam
-  const inviteSearch = useMemo(
-    () =>
-      searchRegistrationPlayers(invitablePlayers, {
-        query: inviteQuery,
-        minQueryLength: minimumInviteSearchLength,
-        limit: maximumInviteSearchResults,
-        rankStartsWith: true,
-        locale,
-      }),
-    [inviteQuery, invitablePlayers, locale],
-  )
-  const inviteSearchReady =
-    inviteSearch.normalizedQuery.length >= minimumInviteSearchLength && !inviteSearch.isTooShort
-  const filteredPlayers = inviteSearch.visible
-  const hiddenMatchesCount = inviteSearch.hiddenCount
-
-  const inviteSearchState = useMemo(() => {
-    if (!inviteSearchReady) {
-      return 'idle'
-    }
-
-    if (filteredPlayers.length === 0) {
-      return 'empty'
-    }
-
-    return 'results'
-  }, [inviteSearchReady, filteredPlayers.length])
 
   return (
-    <SectionCard
-      sx={{
-        height: '100%',
-        background: 'linear-gradient(180deg, rgba(95, 196, 150, 0.12) 0%, rgba(0,0,0,0.08) 100%)',
-      }}
+    <ApplicationSection
+      title={t('gameApplication.myTeamTitle')}
+      description={t('gameApplication.myTeamDescription')}
     >
-      <Stack spacing={2.5}>
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography variant="subtitle1">{t('gameApplication.myTeamTitle')}</Typography>
-            <Chip size="small" color="success" label={t('gameApplication.myTeamChip')} />
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            {t('gameApplication.myTeamDescription')}
-          </Typography>
-        </Stack>
+      <SectionCard sx={{ p: 1.5, borderColor: 'divider' }}>
+        <Stack spacing={1.5}>
+          <TeamSummary team={team} capacity={capacity} />
 
-        <TeamSummary team={team} />
+          {canEditName ? (
+            <Box sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+              <RegistrationTeamNameEditor
+                value={team.name}
+                canEdit={canEditName}
+                isSaving={isUpdatingName || disabled}
+                onSave={onUpdateName}
+                buttonSx={{ mt: { md: 0.35 }, minWidth: 112 }}
+              />
+            </Box>
+          ) : null}
 
-        <SectionCard inset>
-          <RegistrationTeamNameEditor
-            value={team.name}
-            canEdit={canEditName}
-            isSaving={isUpdatingName}
-            onSave={onUpdateName}
-            buttonSx={{ mt: { md: 0.35 }, minWidth: 112 }}
-          />
-        </SectionCard>
+          {isClosedTeam && !isConfirmedTeam ? (
+            <InviteTeammateSection
+              canInvitePlayers={canInvitePlayers}
+              invitablePlayers={invitablePlayers}
+              pendingOutgoingInvitation={pendingOutgoingInvitation}
+              disabled={disabled}
+              isInvitingPlayer={isInvitingPlayer}
+              isCancellingInvitation={isCancellingInvitation}
+              onInvitePlayer={onInvitePlayer}
+              onCancelInvitation={onCancelInvitation}
+            />
+          ) : null}
 
-        {isClosedTeam ? (
-          <SectionCard inset>
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2">
-                {t('gameApplication.inviteTeammateTitle')}
-              </Typography>
+          <Box sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Stack spacing={1}>
               <Typography variant="body2" color="text.secondary">
-                {canInvitePlayers
-                  ? t('gameApplication.inviteTeammateDescription')
+                {isConfirmedTeam
+                  ? hasDisbandRequest
+                    ? t('gameApplication.disbandRequestPendingHelper')
+                    : t('gameApplication.confirmedTeamLeaveHelper')
                   : pendingOutgoingInvitation
-                    ? t('gameApplication.invitePendingDescription', {
-                        player:
-                          pendingOutgoingInvitation.invitedUserDisplayName ??
-                          t('gameApplication.unknownPlayer'),
-                      })
-                    : t('gameApplication.inviteUnavailableDescription')}
+                    ? t('gameApplication.leaveTeamBlockedHelper')
+                    : t('gameApplication.leaveTeamHelper')}
               </Typography>
-
-              {canInvitePlayers ? (
-                <Stack spacing={1.25}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t('common.entities.player')}
-                    placeholder={t('gameApplication.inviteTeammatePlaceholder')}
-                    value={inviteQuery}
-                    onChange={(event) => setInviteQuery(event.target.value)}
-                  />
-
-                  <Typography variant="caption" color="text.secondary">
-                    {t('gameApplication.inviteSearchHint', {
-                      count: invitablePlayers.length,
-                      min: minimumInviteSearchLength,
-                    })}
-                  </Typography>
-
-                  <SectionCard inset variantStyle="dashed" sx={{ p: 1.25 }}>
-                    <Stack spacing={1}>
-                      {inviteSearchState === 'idle' ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {t('gameApplication.inviteSearchStartTyping', {
-                            min: minimumInviteSearchLength,
-                          })}
-                        </Typography>
-                      ) : null}
-
-                      {inviteSearchState === 'results'
-                        ? filteredPlayers.map((player) => (
-                            <Stack
-                              key={player.userId}
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={1}
-                              alignItems={{ sm: 'center' }}
-                              justifyContent="space-between"
-                            >
-                              <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                                <Typography variant="body2" fontWeight={700} noWrap>
-                                  {player.displayName}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap>
-                                  @{player.login}
-                                </Typography>
-                              </Stack>
-                              <AppButton
-                                size="small"
-                                disabled={isInvitingPlayer}
-                                onClick={() => onInvitePlayer(player.userId)}
-                                sx={{ minWidth: { sm: 140 } }}
-                              >
-                                {t('gameApplication.inviteTeammateAction')}
-                              </AppButton>
-                            </Stack>
-                          ))
-                        : null}
-
-                      {inviteSearchState === 'empty' ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {t('gameApplication.inviteNoPlayersFound')}
-                        </Typography>
-                      ) : null}
-
-                      {inviteSearchState === 'results' && hiddenMatchesCount > 0 ? (
-                        <Typography variant="caption" color="text.secondary">
-                          {t('gameApplication.inviteSearchTooManyResults', {
-                            count: hiddenMatchesCount,
-                          })}
-                        </Typography>
-                      ) : null}
-                    </Stack>
-                  </SectionCard>
-                </Stack>
-              ) : null}
-
-              {pendingOutgoingInvitation ? (
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={1}
-                  alignItems={{ sm: 'center' }}
+              {isConfirmedTeam ? (
+                <AppButton
+                  tone="danger"
+                  disabled={disabled || hasDisbandRequest}
+                  loading={isRequestingDisband}
+                  onClick={onRequestDisband}
+                  sx={{ alignSelf: 'flex-start' }}
                 >
-                  <Chip
-                    size="small"
-                    color="warning"
-                    label={t('gameApplication.invitePendingChip', {
-                      player:
-                        pendingOutgoingInvitation.invitedUserDisplayName ??
-                        t('gameApplication.unknownPlayer'),
-                    })}
-                    sx={{ alignSelf: 'flex-start' }}
-                  />
-                  <AppButton
-                    size="small"
-                    tone="secondary"
-                    disabled={isCancellingInvitation}
-                    onClick={() => onCancelInvitation(pendingOutgoingInvitation.invitationId)}
-                  >
-                    {t('gameApplication.cancelInvitation')}
-                  </AppButton>
-                </Stack>
+                  {hasDisbandRequest
+                    ? t('gameApplication.disbandRequestPending')
+                    : t('gameApplication.requestDisband')}
+                </AppButton>
               ) : null}
             </Stack>
-          </SectionCard>
-        ) : null}
+          </Box>
 
-        <SectionCard inset variantStyle="dashed">
-          <Stack spacing={1}>
-            <Typography variant="body2" color="text.secondary">
-              {isConfirmedTeam
-                ? hasDisbandRequest
-                  ? t('gameApplication.disbandRequestPendingHelper')
-                  : t('gameApplication.confirmedTeamLeaveHelper')
-                : pendingOutgoingInvitation
-                  ? t('gameApplication.leaveTeamBlockedHelper')
-                  : t('gameApplication.leaveTeamHelper')}
-            </Typography>
-            {isConfirmedTeam ? (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+            {!isConfirmedTeam ? (
               <AppButton
-                tone="warningGhost"
-                disabled={isRequestingDisband || hasDisbandRequest}
-                onClick={onRequestDisband}
-                sx={{ alignSelf: 'flex-start' }}
+                tone="danger"
+                disabled={disabled || isLeaveBlocked}
+                loading={isLeaving}
+                onClick={onLeave}
               >
-                {hasDisbandRequest
-                  ? t('gameApplication.disbandRequestPending')
-                  : t('gameApplication.requestDisband')}
+                {t('gameApplication.leaveTeam')}
               </AppButton>
             ) : null}
           </Stack>
-        </SectionCard>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
-          <Chip size="small" label={formatRegistrationTeamStatus(team.status, t)} />
-          {!isConfirmedTeam ? (
-            <AppButton tone="warningGhost" disabled={isLeaving || isLeaveBlocked} onClick={onLeave}>
-              {t('gameApplication.leaveTeam')}
-            </AppButton>
-          ) : null}
         </Stack>
-      </Stack>
-    </SectionCard>
+      </SectionCard>
+    </ApplicationSection>
   )
 }

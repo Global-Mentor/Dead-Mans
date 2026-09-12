@@ -1,6 +1,40 @@
 {
   "notes": [
     {
+      "id": "2026-09-12-game-application-ui",
+      "publishedAt": "2026-09-12T15:10:15.000Z",
+      "status": "change",
+      "title": {
+        "en": "New UI: game application",
+        "ru": "Новый UI: заявка на игру",
+        "uk": "Новий UI: заявка на гру",
+        "pl": "Nowy interfejs: zgłoszenie do gry"
+      },
+      "body": {
+        "en": "We are updating the interface one tab at a time, starting with Game application. This first stage brings a calmer Hunt: Showdown-inspired palette, new fonts, textured buttons, a compact team list, search and recruitment filters.\n\nThe layout adapts to desktop and mobile screens. The design and usability work is ongoing; other tabs will follow.",
+        "ru": "Начали поэтапно обновлять интерфейс приложения. Сейчас работаем над вкладкой «Заявка на игру»: спокойная палитра в духе Hunt: Showdown, новые шрифты, фактурные кнопки, компактный список команд, поиск и фильтр открытого набора.\n\nКомпоновка адаптируется к компьютерам и телефонам. Продолжаем дорабатывать оформление и удобство этой вкладки, затем перейдём к остальным.",
+        "uk": "Почали поетапно оновлювати інтерфейс застосунку. Зараз працюємо над вкладкою «Заявка на гру»: спокійна палітра в дусі Hunt: Showdown, нові шрифти, фактурні кнопки, компактний список команд, пошук і фільтр відкритого набору.\n\nКомпонування адаптується до комп’ютерів і телефонів. Продовжуємо вдосконалювати оформлення та зручність цієї вкладки, а потім перейдемо до інших.",
+        "pl": "Odświeżamy interfejs aplikacji po jednej zakładce. Zaczynamy od zgłoszenia do gry: spokojniejsza paleta inspirowana Hunt: Showdown, nowe fonty, teksturowane przyciski, zwarta lista drużyn, wyszukiwanie i filtr otwartej rekrutacji.\n\nUkład dostosowuje się do komputerów i telefonów. Nadal dopracowujemy wygląd i wygodę tej zakładki, a później przejdziemy do kolejnych."
+      }
+    },
+    {
+      "id": "2026-09-12-empty-teams-preview",
+      "publishedAt": "2026-09-12T15:10:14.000Z",
+      "status": "fix",
+      "title": {
+        "en": "Empty teams in the UI preview",
+        "ru": "Пустые команды в превью интерфейса",
+        "uk": "Порожні команди в прев’ю інтерфейсу",
+        "pl": "Puste drużyny w podglądzie interfejsu"
+      },
+      "body": {
+        "en": "Fixed a bug in the new UI test preview: a team remained in the list after its last player left. The empty team now disappears and its slot becomes available again. Teams with remaining players are kept.",
+        "ru": "Исправили баг в тестовом превью нового интерфейса: после выхода последнего игрока пустая команда оставалась в списке. Теперь она исчезает, а её слот снова доступен. Если в составе остаются другие игроки, команда сохраняется.",
+        "uk": "Виправили баг у тестовому прев’ю нового інтерфейсу: після виходу останнього гравця порожня команда залишалася у списку. Тепер вона зникає, а її слот знову доступний. Якщо у складі залишаються інші гравці, команда зберігається.",
+        "pl": "Naprawiliśmy błąd w testowym podglądzie nowego interfejsu: po wyjściu ostatniego gracza pusta drużyna pozostawała na liście. Teraz znika, a jej slot jest ponownie dostępny. Drużyna pozostaje, jeśli są w niej inni gracze."
+      }
+    },
+    {
       "id": "2026-09-11-multiple-answers",
       "publishedAt": "2026-09-11T16:00:00.000Z",
       "status": "feature",

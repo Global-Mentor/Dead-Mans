@@ -2,8 +2,9 @@ import type { Theme } from '@mui/material/styles'
 import { huntPalette } from './hunt-palette.ts'
 
 export const huntTypography = {
-  display: '"Cinzel", "Source Serif 4", Georgia, serif',
-  body: '"Source Serif 4", Georgia, "Times New Roman", serif',
+  display: '"Cormorant SC", Georgia, "Times New Roman", serif',
+  displayWeight: 500,
+  body: '"Roboto Condensed Variable", "Arial Narrow", Arial, sans-serif',
 } as const
 
 export const uiTokens = {

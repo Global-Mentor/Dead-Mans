@@ -35,7 +35,11 @@ export function useGameApplicationPage() {
     data: isRegistrationOpen ? registrationSnapshotQuery.data : null,
     isLoading:
       gameBoardQuery.isLoading || (isRegistrationOpen && registrationSnapshotQuery.isLoading),
-    isError: gameBoardQuery.isError || registrationSnapshotQuery.isError,
+    isError: gameBoardQuery.isError || (isRegistrationOpen && registrationSnapshotQuery.isError),
+    refetch: async () => {
+      await gameBoardQuery.refetch()
+      if (isRegistrationOpen) await registrationSnapshotQuery.refetch()
+    },
   }
 
   return {
