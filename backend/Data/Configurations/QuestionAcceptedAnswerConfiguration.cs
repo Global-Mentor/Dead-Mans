@@ -25,6 +25,7 @@ public sealed class QuestionAcceptedAnswerConfiguration
         );
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.AnswerText).HasMaxLength(500).IsRequired();
         builder.Property(x => x.NormalizedAnswer).HasMaxLength(500).IsRequired();
         builder.Property(x => x.IsPrimary).IsRequired();
@@ -33,10 +34,6 @@ public sealed class QuestionAcceptedAnswerConfiguration
 
         builder.HasIndex(x => new { x.QuestionId, x.NormalizedAnswer }).IsUnique();
         builder.HasIndex(x => new { x.QuestionId, x.SortOrder }).IsUnique();
-        builder
-            .HasIndex(x => x.QuestionId, "ux_question_accepted_answers_one_primary")
-            .IsUnique()
-            .HasFilter("is_primary = TRUE");
         builder
             .HasIndex(x => x.AnswerText, "ix_question_accepted_answers_text_trgm")
             .HasMethod("gin")

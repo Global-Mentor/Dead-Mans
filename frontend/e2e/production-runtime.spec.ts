@@ -50,6 +50,88 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
 })
 
+test('catalog answer editing preserves variants and validates duplicates under production CSP', async ({
+  page,
+}) => {
+  const failures: string[] = []
+  page.on('pageerror', (error) => failures.push(error.message))
+  const questionId = '80a7024d-1aef-46ae-9ca4-efb51db520a6'
+  const categoryId = '098956eb-7adb-4f14-8300-7e846bf60747'
+  let question = {
+    questionId,
+    categoryId,
+    questionCode: 'capital',
+    categoryName: 'Geography',
+    text: 'Capital?',
+    answer: 'Paris',
+    answers: ['Paris', 'Париж'],
+    reward: 1,
+    priority: 0,
+    isEnabled: true,
+    askedTotalCount: 0,
+    correctTotalCount: 0,
+    lastAskedAtUtc: null,
+  }
+  const saved: unknown[] = []
+  await serveProductionApp(page, async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    if (path === '/api/game/questions/categories') {
+      await route.fulfill({
+        json: [{ id: categoryId, name: 'Geography', questionCount: 1, isProtected: false }],
+      })
+    } else if (path === '/api/game/questions/catalog') {
+      await route.fulfill({ json: [question] })
+    } else if (path === `/api/game/questions/${questionId}` && request.method() === 'PUT') {
+      const body = request.postDataJSON() as { answer: string; answers: string[] }
+      saved.push(body)
+      question = { ...question, ...body }
+      await route.fulfill({ json: question })
+    } else {
+      await route.fulfill({ status: 204 })
+    }
+  })
+  await page.goto(`${origin}/panel/catalog-questions`)
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(
+    dialog.getByRole('textbox', { name: 'Alternative answer 1', exact: true }),
+  ).toHaveValue('Париж')
+  await dialog.getByRole('button', { name: 'Add answer', exact: true }).click()
+  await dialog.getByRole('textbox', { name: 'Alternative answer 2', exact: true }).fill(' paris ')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(dialog.getByText('This answer variant is already added.')).toBeVisible()
+  expect(saved).toHaveLength(0)
+  await dialog
+    .getByRole('textbox', { name: 'Alternative answer 2', exact: true })
+    .fill('City of Light')
+  await dialog.getByRole('button', { name: 'Remove answer', exact: true }).first().click()
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  expect(saved).toEqual([
+    expect.objectContaining({ answer: 'Париж', answers: ['Париж', 'City of Light'] }),
+  ])
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(dialog.getByRole('textbox', { name: 'Answer', exact: true })).toHaveValue('Париж')
+  await expect(
+    dialog.getByRole('textbox', { name: 'Alternative answer 1', exact: true }),
+  ).toHaveValue('City of Light')
+  const longAnswer = 'a'.repeat(500)
+  await dialog.getByRole('textbox', { name: 'Alternative answer 1', exact: true }).fill(longAnswer)
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await page.setViewportSize({ width: 390, height: 844 })
+  const answerChip = page.getByText(`Answer: ${longAnswer}`, { exact: true })
+  await expect(answerChip).toBeVisible()
+  expect(await answerChip.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  )
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  expect(failures).toEqual([])
+})
+
 test('production authentication and lazy form validation work under strict CSP', async ({
   page,
 }) => {
@@ -147,4 +229,44 @@ test('a shared hub reconnects after an abnormal close and refreshes an empty boa
   await expect(page.getByText('No current game board is available yet.')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Reconnected game', exact: true })).toBeVisible()
   expect(failures).toEqual([])
+})
+
+test('production profile changelog is bundled and works under strict CSP', async ({ page }) => {
+  const violations: string[] = []
+  const errors: string[] = []
+  const noteFileRequests: string[] = []
+  await page.exposeFunction('recordCspViolation', (directive: string) => violations.push(directive))
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (event) => {
+      void (
+        window as unknown as { recordCspViolation: (value: string) => Promise<void> }
+      ).recordCspViolation(`${event.effectiveDirective}: ${event.blockedURI}`)
+    })
+  })
+  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('request', (request) => {
+    if (request.url().includes('dev-notes')) {
+      noteFileRequests.push(request.url())
+    }
+  })
+  await serveProductionApp(page, async (route) => {
+    await route.fulfill({ status: 204 })
+  })
+  await page.goto(`${origin}/panel/game-board`)
+  await page.getByRole('button', { name: /Administrator/ }).click()
+  await page.getByRole('menuitem', { name: "What's new" }).click()
+
+  const dialog = page.getByRole('dialog', { name: "What's new" })
+  await expect(dialog).toBeVisible()
+  const dialogText = await dialog.innerText()
+  expect(dialogText.indexOf('Several correct answers')).toBeGreaterThan(-1)
+  expect(dialogText.indexOf('Several correct answers')).toBeLessThan(
+    dialogText.indexOf('Removing players from a team'),
+  )
+  expect(dialogText.indexOf('Removing players from a team')).toBeLessThan(
+    dialogText.indexOf('Closed testing'),
+  )
+  expect(errors).toEqual([])
+  expect(violations).toEqual([])
+  expect(noteFileRequests).toEqual([])
 })

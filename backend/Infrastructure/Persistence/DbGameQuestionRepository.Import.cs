@@ -89,7 +89,6 @@ public sealed partial class DbGameQuestionRepository
             }
 
             var questionId = Guid.NewGuid();
-            var normalizedAnswer = QuestionAnswerNormalizer.Normalize(input.Question.Answer);
             entities.Add(
                 new QuestionDefinition
                 {
@@ -105,19 +104,7 @@ public sealed partial class DbGameQuestionRepository
                     Priority = input.Question.Priority,
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now,
-                    AcceptedAnswers =
-                    [
-                        new QuestionAcceptedAnswer
-                        {
-                            Id = Guid.NewGuid(),
-                            QuestionId = questionId,
-                            AnswerText = input.Question.Answer,
-                            NormalizedAnswer = normalizedAnswer,
-                            IsPrimary = true,
-                            SortOrder = 0,
-                            CreatedAtUtc = now
-                        }
-                    ]
+                    AcceptedAnswers = [.. BuildAcceptedAnswers(questionId, input.Question.Answers, now)]
                 }
             );
         }

@@ -78,6 +78,17 @@ const translations = {
         label: 'User roles',
       },
     },
+    devNotes: {
+      menuItem: "What's new",
+      dialogTitle: "What's new",
+      empty: 'No updates yet.',
+      statuses: {
+        fix: 'Fix',
+        feature: 'New feature',
+        change: 'Change',
+        notice: 'Notice',
+      },
+    },
   },
   ru: {
     primary: 'Основная навигация',
@@ -157,6 +168,17 @@ const translations = {
       },
       roleAdministration: {
         label: 'Роли пользователей',
+      },
+    },
+    devNotes: {
+      menuItem: 'Обновления',
+      dialogTitle: 'Обновления',
+      empty: 'Пока нет обновлений.',
+      statuses: {
+        fix: 'Фикс',
+        feature: 'Новая фича',
+        change: 'Изменение',
+        notice: 'Объявление',
       },
     },
   },
@@ -240,6 +262,17 @@ const translations = {
         label: 'Ролі користувачів',
       },
     },
+    devNotes: {
+      menuItem: 'Оновлення',
+      dialogTitle: 'Оновлення',
+      empty: 'Поки що немає оновлень.',
+      statuses: {
+        fix: 'Виправлення',
+        feature: 'Нова функція',
+        change: 'Зміна',
+        notice: 'Оголошення',
+      },
+    },
   },
   pl: {
     primary: 'Główna nawigacja',
@@ -319,6 +352,17 @@ const translations = {
       },
       roleAdministration: {
         label: 'Role użytkowników',
+      },
+    },
+    devNotes: {
+      menuItem: 'Aktualności',
+      dialogTitle: 'Aktualności',
+      empty: 'Na razie brak aktualności.',
+      statuses: {
+        fix: 'Poprawka',
+        feature: 'Nowa funkcja',
+        change: 'Zmiana',
+        notice: 'Ogłoszenie',
       },
     },
   },

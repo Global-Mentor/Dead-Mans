@@ -95,9 +95,13 @@ public sealed partial class DbGameQuestionRepository
                 x.CategoryDefinition != null ? x.CategoryDefinition.Name : string.Empty,
                 x.Text,
                 x.AcceptedAnswers
-                    .Where(answer => answer.IsPrimary)
+                    .OrderBy(answer => answer.SortOrder)
                     .Select(answer => answer.AnswerText)
                     .FirstOrDefault() ?? string.Empty,
+                x.AcceptedAnswers
+                    .OrderBy(answer => answer.SortOrder)
+                    .Select(answer => answer.AnswerText)
+                    .ToArray(),
                 x.Reward,
                 x.Priority,
                 x.IsEnabled,

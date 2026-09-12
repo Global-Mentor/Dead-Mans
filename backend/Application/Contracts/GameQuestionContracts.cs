@@ -9,6 +9,7 @@ public sealed record GameQuestionCatalogItem(
     string CategoryName,
     string Text,
     string Answer,
+    IReadOnlyList<string> Answers,
     int Reward,
     int Priority,
     bool IsEnabled,
@@ -29,6 +30,7 @@ public sealed record CreateGameQuestionInput(
     Guid CategoryId,
     string Text,
     string Answer,
+    IReadOnlyList<string> Answers,
     int Reward,
     bool IsEnabled,
     int Priority
@@ -39,6 +41,7 @@ public sealed record ImportGameQuestionInput(
     Guid CategoryId,
     string? Text,
     string? Answer,
+    IReadOnlyList<string> Answers,
     int? Reward,
     string? ExternalCode,
     bool? IsEnabled,
@@ -49,6 +52,7 @@ public sealed record ImportGameQuestionInput(
 public sealed record ImportGameQuestionSource(
     string? Text,
     string? Answer,
+    IReadOnlyList<string>? Answers,
     int? Reward,
     string? CategoryId,
     string? ExternalCode,
@@ -75,6 +79,7 @@ public sealed record UpdateGameQuestionInput(
     Guid CategoryId,
     string Text,
     string Answer,
+    IReadOnlyList<string> Answers,
     int Reward,
     bool IsEnabled,
     int Priority

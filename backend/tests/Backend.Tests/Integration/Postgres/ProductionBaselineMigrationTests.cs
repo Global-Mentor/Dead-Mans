@@ -726,7 +726,7 @@ public sealed class ProductionBaselineMigrationTests
     }
 
     [Fact]
-    public async Task QuestionCatalog_RequiresExactlyOnePrimaryAcceptedAnswer()
+    public async Task QuestionCatalog_RequiresAtLeastOneAcceptedAnswer()
     {
         await WithDatabaseAsync(async connectionString =>
         {
@@ -772,6 +772,63 @@ public sealed class ProductionBaselineMigrationTests
                 exception,
                 "ck_question_accepted_answers_complete_set"
             );
+        });
+    }
+
+    [Fact]
+    public async Task QuestionCatalog_AllowsEquivalentAnswersWithoutAPrimaryFlag()
+    {
+        await WithDatabaseAsync(async connectionString =>
+        {
+            await MigrateAsync(connectionString);
+            var now = DateTime.UtcNow;
+            var category = new QuestionCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "География",
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+
+            var question = CreateQuestion(category.Id, now);
+            question.AcceptedAnswers.Add(
+                new QuestionAcceptedAnswer
+                {
+                    Id = Guid.NewGuid(),
+                    QuestionId = question.Id,
+                    AnswerText = "Warsaw",
+                    NormalizedAnswer = "warsaw",
+                    IsPrimary = false,
+                    SortOrder = 0,
+                    CreatedAtUtc = now
+                }
+            );
+            question.AcceptedAnswers.Add(
+                new QuestionAcceptedAnswer
+                {
+                    Id = Guid.NewGuid(),
+                    QuestionId = question.Id,
+                    AnswerText = "Варшава",
+                    NormalizedAnswer = "варшава",
+                    IsPrimary = false,
+                    SortOrder = 1,
+                    CreatedAtUtc = now
+                }
+            );
+
+            await using var db = CreateDbContext(connectionString);
+            db.QuestionCategories.Add(category);
+            db.QuestionDefinitions.Add(question);
+            await db.SaveChangesAsync();
+
+            var stored = await db.QuestionAcceptedAnswers
+                .AsNoTracking()
+                .Where(answer => answer.QuestionId == question.Id)
+                .OrderBy(answer => answer.SortOrder)
+                .ToArrayAsync();
+            Assert.Equal(["Warsaw", "Варшава"], stored.Select(answer => answer.AnswerText).ToArray());
+            Assert.False(stored[0].IsPrimary);
+            Assert.False(stored[1].IsPrimary);
         });
     }
 
@@ -1032,6 +1089,78 @@ public sealed class ProductionBaselineMigrationTests
                 JoinedAtUtc = now
             }
         );
+    }
+
+    [Fact]
+    public async Task EquivalentAnswersMigration_PreservesExistingAnswersAndGuardsRollback()
+    {
+        await WithDatabaseAsync(async connectionString =>
+        {
+            const string previousMigration = "20260910171900_AllowAdminTeamDisband";
+            await using (var previousDb = CreateDbContext(connectionString))
+            {
+                await previousDb.GetService<IMigrator>().MigrateAsync(previousMigration);
+            }
+
+            var now = DateTime.UtcNow;
+            var category = new QuestionCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "Migration answers",
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+            var question = CreateQuestion(category.Id, now);
+            var primaryId = Guid.NewGuid();
+            var alternativeId = Guid.NewGuid();
+            question.AcceptedAnswers =
+            [
+                new QuestionAcceptedAnswer
+                {
+                    Id = primaryId, QuestionId = question.Id, AnswerText = "Warsaw", NormalizedAnswer = "warsaw",
+                    IsPrimary = true, SortOrder = 0, CreatedAtUtc = now
+                },
+                new QuestionAcceptedAnswer
+                {
+                    Id = alternativeId, QuestionId = question.Id, AnswerText = "Варшава", NormalizedAnswer = "варшава",
+                    IsPrimary = false, SortOrder = 1, CreatedAtUtc = now
+                }
+            ];
+            await using (var seedDb = CreateDbContext(connectionString))
+            {
+                seedDb.AddRange(category, question);
+                await seedDb.SaveChangesAsync();
+            }
+
+            await MigrateAsync(connectionString);
+            await using (var verifyDb = CreateDbContext(connectionString))
+            {
+                var answers = await verifyDb.QuestionAcceptedAnswers.OrderBy(item => item.SortOrder).ToArrayAsync();
+                Assert.Equal([primaryId, alternativeId], answers.Select(item => item.Id).ToArray());
+                Assert.Equal(["Warsaw", "Варшава"], answers.Select(item => item.AnswerText).ToArray());
+                // Data compatible with the old rules can still round-trip without loss.
+                await verifyDb.GetService<IMigrator>().MigrateAsync(previousMigration);
+            }
+            await MigrateAsync(connectionString);
+
+            await using (var editDb = CreateDbContext(connectionString))
+            {
+                var primary = await editDb.QuestionAcceptedAnswers.SingleAsync(item => item.Id == primaryId);
+                primary.IsPrimary = false;
+                await editDb.SaveChangesAsync();
+            }
+
+            await using (var downDb = CreateDbContext(connectionString))
+            {
+                var exception = await Assert.ThrowsAnyAsync<Exception>(
+                    () => downDb.GetService<IMigrator>().MigrateAsync(previousMigration));
+                AssertSqlState(exception, "55000");
+            }
+            await using var finalDb = CreateDbContext(connectionString);
+            Assert.Contains("20260911162438_AllowEquivalentQuestionAnswers", await finalDb.Database.GetAppliedMigrationsAsync());
+            Assert.Equal(2, await finalDb.QuestionAcceptedAnswers.CountAsync());
+            Assert.False(await finalDb.QuestionAcceptedAnswers.AnyAsync(item => item.IsPrimary));
+        });
     }
 
     private static QuestionDefinition CreateQuestion(Guid categoryId, DateTime now) => new()

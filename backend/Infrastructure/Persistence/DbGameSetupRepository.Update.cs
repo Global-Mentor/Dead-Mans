@@ -187,13 +187,11 @@ public sealed partial class DbGameSetupRepository
                         : string.Empty,
                     question.Text,
                     question.AcceptedAnswers
-                        .OrderByDescending(answer => answer.IsPrimary)
-                        .ThenBy(answer => answer.SortOrder)
+                        .OrderBy(answer => answer.SortOrder)
                         .Select(answer => answer.AnswerText)
                         .ToArray(),
                     question.AcceptedAnswers
-                        .OrderByDescending(answer => answer.IsPrimary)
-                        .ThenBy(answer => answer.SortOrder)
+                        .OrderBy(answer => answer.SortOrder)
                         .Select(answer => answer.NormalizedAnswer)
                         .ToArray(),
                     question.Reward,

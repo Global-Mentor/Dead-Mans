@@ -1,0 +1,55 @@
+{
+  "notes": [
+    {
+      "id": "2026-09-11-multiple-answers",
+      "publishedAt": "2026-09-11T16:00:00.000Z",
+      "status": "feature",
+      "title": {
+        "en": "Several correct answers",
+        "ru": "Несколько правильных ответов",
+        "uk": "Кілька правильних відповідей",
+        "pl": "Kilka poprawnych odpowiedzi"
+      },
+      "body": {
+        "en": "A catalog question can now have up to ten accepted answers. The quiz counts any of them as correct, and duplicate variants are not saved.",
+        "ru": "В каталоге у вопроса можно задать до десяти правильных ответов. Викторина засчитывает любой из них, повторы не сохраняются.",
+        "uk": "У каталозі для питання можна задати до десяти правильних відповідей. Вікторина зараховує будь-яку з них, повтори не зберігаються.",
+        "pl": "Pytanie w katalogu może mieć do dziesięciu poprawnych odpowiedzi. Quiz zalicza każdą z nich, a duplikaty nie są zapisywane."
+      }
+    },
+    {
+      "id": "2026-09-10-remove-player",
+      "publishedAt": "2026-09-10T19:01:21.000Z",
+      "status": "fix",
+      "title": {
+        "en": "Removing players from a team",
+        "ru": "Исключение игроков из команды",
+        "uk": "Виключення гравців з команди",
+        "pl": "Usuwanie graczy z drużyny"
+      },
+      "body": {
+        "en": "Removing a player used to require the team to stay at full size. That broke when the last player was taken out: the team could not be left empty, and roster history was corrupted.\n\nThe player’s membership is now closed instead of erased. If nobody is left, the team is marked disbanded, the queue slot is freed, and the roster and game history are kept.",
+        "ru": "При исключении игрока система требовала, чтобы состав оставался полным. Из-за этого запрос ломался, если убирали последнего человека: команда не могла остаться пустой, а история состава портилась.\n\nТеперь участие закрывается, а не стирается. Если в команде никого не осталось, она помечается распущенной, место в очереди освобождается, состав и история игры сохраняются.",
+        "uk": "При виключенні гравця система вимагала, щоб склад залишався повним. Через це запит ламався, якщо прибирали останню людину: команда не могла лишитися порожньою, а історія складу псувалася.\n\nТепер участь закривається, а не стирається. Якщо в команді нікого не лишилося, вона позначається розпущеною, місце в черзі звільняється, склад і історія гри зберігаються.",
+        "pl": "Usunięcie gracza wymagało, by skład drużyny pozostał pełny. Dlatego operacja psuła się przy usunięciu ostatniej osoby: drużyna nie mogła zostać pusta, a historia składu ulegała uszkodzeniu.\n\nCzłonkostwo jest teraz zamykane, a nie kasowane. Jeśli nikt nie zostanie, drużyna jest oznaczana jako rozwiązana, slot w kolejce się zwalnia, a skład i historia gry zostają zachowane."
+      }
+    },
+    {
+      "id": "2026-09-10-closed-testing",
+      "publishedAt": "2026-09-10T00:53:21.000Z",
+      "status": "notice",
+      "title": {
+        "en": "Closed testing",
+        "ru": "Закрытое тестирование",
+        "uk": "Закрите тестування",
+        "pl": "Testy zamknięte"
+      },
+      "body": {
+        "en": "The app is now in closed testing.",
+        "ru": "Приложение запущено в закрытое тестирование.",
+        "uk": "Застосунок запущено в закрите тестування.",
+        "pl": "Aplikacja została uruchomiona w trybie zamkniętych testów."
+      }
+    }
+  ]
+}

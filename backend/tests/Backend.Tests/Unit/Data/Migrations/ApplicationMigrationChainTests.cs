@@ -22,7 +22,8 @@ public sealed class ApplicationMigrationChainTests
         Assert.Equal(
             [
                 "20260908003848_ProductionBaseline",
-                "20260910171900_AllowAdminTeamDisband"
+                "20260910171900_AllowAdminTeamDisband",
+                "20260911162438_AllowEquivalentQuestionAnswers"
             ],
             migrations
         );
@@ -54,6 +55,12 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("ix_game_finalizations_request_id", script, StringComparison.Ordinal);
         Assert.Contains("user_role_audit_events", script, StringComparison.Ordinal);
         Assert.Contains("trg_user_role_audit_events_immutable", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "20260911162438_AllowEquivalentQuestionAnswers",
+            script,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("at least one accepted answer", script, StringComparison.Ordinal);
         Assert.DoesNotContain("game_quiz_manual_awards", script, StringComparison.Ordinal);
     }
 }

@@ -70,7 +70,6 @@ public sealed partial class DbGameQuestionRepository
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var normalizedAnswer = QuestionAnswerNormalizer.Normalize(input.Answer);
         var entity = new QuestionDefinition
         {
             Id = Guid.NewGuid(),
@@ -86,18 +85,11 @@ public sealed partial class DbGameQuestionRepository
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
-        entity.AcceptedAnswers.Add(
-            new QuestionAcceptedAnswer
-            {
-                Id = Guid.NewGuid(),
-                QuestionId = entity.Id,
-                AnswerText = input.Answer,
-                NormalizedAnswer = normalizedAnswer,
-                IsPrimary = true,
-                SortOrder = 0,
-                CreatedAtUtc = now
-            }
-        );
+        var acceptedAnswers = BuildAcceptedAnswers(entity.Id, input.Answers, now);
+        foreach (var acceptedAnswer in acceptedAnswers)
+        {
+            entity.AcceptedAnswers.Add(acceptedAnswer);
+        }
 
         _dbContext.QuestionDefinitions.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -110,6 +102,19 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        if (transaction is not null)
+        {
+            // Lock the aggregate before loading its replaceable children. This also
+            // follows the question-before-answers lock order used by publication.
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM question_definitions WHERE id = {questionId} FOR UPDATE",
+                cancellationToken
+            );
+        }
+
         var entity = await _dbContext.QuestionDefinitions
             .Include(question => question.AcceptedAnswers)
             .FirstOrDefaultAsync(
@@ -122,7 +127,6 @@ public sealed partial class DbGameQuestionRepository
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var normalizedAnswer = QuestionAnswerNormalizer.Normalize(input.Answer);
         entity.CategoryId = input.CategoryId;
         entity.Text = input.Text;
         entity.Reward = input.Reward;
@@ -131,29 +135,41 @@ public sealed partial class DbGameQuestionRepository
         entity.Revision += 1;
         entity.UpdatedAtUtc = now;
 
-        var primaryAnswer = entity.AcceptedAnswers.SingleOrDefault(answer => answer.IsPrimary);
-        if (primaryAnswer is null)
+        var existingAnswers = entity.AcceptedAnswers.ToList();
+        var nextAnswers = BuildAcceptedAnswers(entity.Id, input.Answers, now);
+        _dbContext.QuestionAcceptedAnswers.RemoveRange(existingAnswers);
+        foreach (var answer in nextAnswers)
         {
-            entity.AcceptedAnswers.Add(
-                new QuestionAcceptedAnswer
-                {
-                    Id = Guid.NewGuid(),
-                    QuestionId = entity.Id,
-                    AnswerText = input.Answer,
-                    NormalizedAnswer = normalizedAnswer,
-                    IsPrimary = true,
-                    SortOrder = 0,
-                    CreatedAtUtc = now
-                }
-            );
-        }
-        else
-        {
-            primaryAnswer.AnswerText = input.Answer;
-            primaryAnswer.NormalizedAnswer = normalizedAnswer;
+            entity.AcceptedAnswers.Add(answer);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return await LoadCatalogItemAsync(entity.Id, cancellationToken);
+
+        var result = await LoadCatalogItemAsync(entity.Id, cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+        return result;
+    }
+
+    private static List<QuestionAcceptedAnswer> BuildAcceptedAnswers(
+        Guid questionId,
+        IReadOnlyList<string> answers,
+        DateTime createdAt
+    )
+    {
+        return answers
+            .Select((answer, index) => new QuestionAcceptedAnswer
+            {
+                Id = Guid.NewGuid(),
+                QuestionId = questionId,
+                AnswerText = answer,
+                NormalizedAnswer = QuestionAnswerNormalizer.Normalize(answer),
+                IsPrimary = index == 0,
+                SortOrder = index,
+                CreatedAtUtc = createdAt
+            })
+            .ToList();
     }
 }

@@ -11,6 +11,7 @@ import {
   SectionCard,
   SectionHeader,
 } from '../../../shared/ui/index.ts'
+import { getQuestionDisplayAnswers } from '../model/question-answer-normalize.ts'
 
 interface QuestionCatalogListProps {
   search: string
@@ -71,43 +72,17 @@ export function QuestionCatalogList({
                 borderRadius: 1,
                 p: 1.25,
                 display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
                 gap: 1,
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
               }}
             >
               <Box sx={{ minWidth: 0 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
                   {question.text}
                 </Typography>
-                <Stack
-                  direction="row"
-                  spacing={0.75}
-                  sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}
-                >
-                  <Chip
-                    color="info"
-                    label={t('gameCatalog.questions.categoryMeta', {
-                      category: question.categoryName,
-                    })}
-                  />
-                  <Chip
-                    color="warning"
-                    label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
-                  />
-                  <Chip
-                    color="success"
-                    label={t('gameCatalog.questions.answerMeta', { answer: question.answer })}
-                  />
-                  <Chip
-                    label={t('gameCatalog.questions.askedMeta', {
-                      asked: question.askedTotalCount,
-                    })}
-                  />
-                  {question.isEnabled ? null : (
-                    <Chip color="error" label={t('gameCatalog.questions.disabledBadge')} />
-                  )}
-                </Stack>
+                <QuestionCatalogMetaChips question={question} />
               </Box>
               <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
                 <AppButton size="small" tone="secondary" onClick={() => onEdit(question)}>
@@ -122,5 +97,45 @@ export function QuestionCatalogList({
         </Stack>
       </AsyncSection>
     </SectionCard>
+  )
+}
+
+function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogItem }) {
+  const { t } = useTranslation()
+  const answers = getQuestionDisplayAnswers(question)
+
+  return (
+    <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}>
+      <Chip
+        color="info"
+        label={t('gameCatalog.questions.categoryMeta', {
+          category: question.categoryName,
+        })}
+      />
+      <Chip
+        color="warning"
+        label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
+      />
+      {answers.map((answer, index) => (
+        <Chip
+          key={`${question.questionId}-answer-${index}`}
+          color="success"
+          label={t('gameCatalog.questions.answerMeta', { answer })}
+          sx={{
+            maxWidth: '100%',
+            height: 'auto',
+            '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: 0.5 },
+          }}
+        />
+      ))}
+      <Chip
+        label={t('gameCatalog.questions.askedMeta', {
+          asked: question.askedTotalCount,
+        })}
+      />
+      {question.isEnabled ? null : (
+        <Chip color="error" label={t('gameCatalog.questions.disabledBadge')} />
+      )}
+    </Stack>
   )
 }

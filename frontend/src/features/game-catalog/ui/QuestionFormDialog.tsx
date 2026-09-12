@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Alert, FormControlLabel, Stack, Switch } from '@mui/material'
 import { useEffect } from 'react'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import {
   AppButton,
@@ -14,10 +14,19 @@ import type {
   GameQuestionCategoryItem,
   GameQuestionCatalogItem,
 } from '../../../shared/api/contracts/index.ts'
-import { createQuestionFormSchema, type QuestionFormValues } from '../model/question-form-schema.ts'
+import { getQuestionDisplayAnswers } from '../model/question-answer-normalize.ts'
+import {
+  createQuestionFormSchema,
+  maxQuestionAnswers,
+  type QuestionFormValues,
+} from '../model/question-form-schema.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 
 const questionFormId = 'catalog-question-form'
+
+function toAnswerFields(values: readonly string[]): QuestionFormValues['answers'] {
+  return values.map((value) => ({ value }))
+}
 
 function toDefaultValues(
   initial: GameQuestionCatalogItem | undefined,
@@ -27,17 +36,19 @@ function toDefaultValues(
     return {
       categoryId: categories[0]?.id ?? '',
       text: '',
-      answer: '',
+      answers: toAnswerFields(['']),
       reward: '0',
       priority: '0',
       isEnabled: true,
     }
   }
 
+  const answers = getQuestionDisplayAnswers(initial)
+
   return {
     categoryId: initial.categoryId,
     text: initial.text,
-    answer: initial.answer,
+    answers: toAnswerFields(answers.length > 0 ? answers : [initial.answer]),
     reward: String(initial.reward),
     priority: String(initial.priority ?? 0),
     isEnabled: initial.isEnabled,
@@ -45,10 +56,12 @@ function toDefaultValues(
 }
 
 function toRequest(values: QuestionFormValues): CreateGameQuestionRequest {
+  const normalizedAnswers = values.answers.map((item) => item.value)
   return {
     categoryId: values.categoryId,
     text: values.text.trim(),
-    answer: values.answer.trim(),
+    answer: normalizedAnswers[0] ?? '',
+    answers: normalizedAnswers,
     reward: Number.parseInt(values.reward, 10),
     isEnabled: values.isEnabled,
     priority: Number.parseInt(values.priority, 10),
@@ -77,12 +90,21 @@ function QuestionFormDialogBody({
   const schema = createQuestionFormSchema({
     required: t('gameCatalog.validation.required'),
     number: t('gameCatalog.validation.number'),
+    tooLong: t('gameCatalog.validation.tooLong'),
+    maxAnswers: t('gameCatalog.validation.answerLimit'),
+    duplicateAnswers: t('gameCatalog.validation.duplicateAnswers'),
   })
+
   const { control, handleSubmit, setError, setValue, formState } = useForm<QuestionFormValues>({
     defaultValues: toDefaultValues(initial, categories),
     resolver: zodResolver(schema),
   })
   const categoryValue = useWatch({ control, name: 'categoryId' }) ?? ''
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'answers',
+  })
 
   useEffect(() => {
     const firstCategory = categories[0]
@@ -91,12 +113,16 @@ function QuestionFormDialogBody({
     }
   }, [categories, categoryValue, setValue])
 
+  const hasCategories = categories.length > 0
+  const canAddAnswer = fields.length < maxQuestionAnswers
+
   const categoryOptions = categories.map((category) => ({
     value: category.id,
     label: category.name,
   }))
 
-  const hasCategories = categoryOptions.length > 0
+  const answersRootError =
+    formState.errors.answers?.root?.message ?? formState.errors.answers?.message
 
   const submit = handleSubmit(async (values) => {
     if (!hasCategories) {
@@ -139,6 +165,11 @@ function QuestionFormDialogBody({
           {formState.errors.root.message}
         </Alert>
       ) : null}
+      {answersRootError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {answersRootError}
+        </Alert>
+      ) : null}
       {!hasCategories ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
           {t('gameCatalog.questions.noCategories')}
@@ -169,12 +200,47 @@ function QuestionFormDialogBody({
             minRows={2}
             disabled={isBusy}
           />
-          <ControlledFormTextField
-            control={control}
-            name="answer"
-            label={t('gameCatalog.questions.fields.answer')}
-            disabled={isBusy}
-          />
+          <Stack spacing={1}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              justifyContent="space-between"
+            >
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <span>{t('gameCatalog.questions.fields.answers')}</span>
+                <AppButton
+                  tone="secondary"
+                  type="button"
+                  disabled={isBusy || !canAddAnswer}
+                  onClick={() => append({ value: '' })}
+                >
+                  {t('gameCatalog.questions.fields.addAnswer')}
+                </AppButton>
+              </Stack>
+            </Stack>
+            {fields.map((field, index) => (
+              <Stack key={field.id} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <ControlledFormTextField
+                  control={control}
+                  name={`answers.${index}.value`}
+                  label={
+                    index === 0
+                      ? t('gameCatalog.questions.fields.answer')
+                      : `${t('gameCatalog.questions.fields.answerAlternative')} ${index}`
+                  }
+                  disabled={isBusy}
+                />
+                <AppButton
+                  tone="ghost"
+                  type="button"
+                  onClick={() => void remove(index)}
+                  disabled={isBusy || fields.length <= 1}
+                >
+                  {t('gameCatalog.questions.fields.removeAnswer')}
+                </AppButton>
+              </Stack>
+            ))}
+          </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <ControlledFormTextField
               control={control}

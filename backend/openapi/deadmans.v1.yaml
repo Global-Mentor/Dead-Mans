@@ -5321,6 +5321,7 @@ components:
         - categoryName
         - text
         - answer
+        - answers
         - reward
         - priority
         - isEnabled
@@ -5342,6 +5343,15 @@ components:
           type: string
         answer:
           type: string
+        answers:
+          type: array
+          description: Accepted answers in display order; answer is the first entry for compatibility.
+          minItems: 1
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5422,6 +5432,13 @@ components:
         answer:
           type: string
           nullable: true
+        answers:
+          type: array
+          description: Original unvalidated values, preserved so a rejected row can be corrected and retried.
+          items:
+            type: string
+            nullable: true
+          nullable: true
         reward:
           type: integer
           minimum: 0
@@ -5450,7 +5467,11 @@ components:
           type: boolean
     CreateGameQuestionRequestDto:
       type: object
-      required: [categoryId, text, answer, reward]
+      description: >
+        Supply answers or the legacy answer field. Blank array items are ignored and duplicate
+        normalized answers are saved once. A nonempty cleaned answers array takes precedence;
+        otherwise answer is used. At least one nonblank answer is required.
+      required: [categoryId, text, reward]
       properties:
         categoryId:
           type: string
@@ -5461,8 +5482,15 @@ components:
           maxLength: 2000
         answer:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 500
+        answers:
+          type: array
+          nullable: true
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5478,7 +5506,10 @@ components:
           default: 0
     ImportGameQuestionRequestDto:
       type: object
-      required: [text, answer, reward]
+      description: >
+        Uses the same answer normalization and fallback rules as CreateGameQuestionRequestDto.
+        Supply up to ten answer entries, each up to 500 characters after trimming.
+      required: [text, reward]
       properties:
         categoryId:
           type: string
@@ -5493,8 +5524,15 @@ components:
           maxLength: 2000
         answer:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 500
+        answers:
+          type: array
+          nullable: true
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
@@ -5533,7 +5571,10 @@ components:
           maxLength: 64
     UpdateGameQuestionRequestDto:
       type: object
-      required: [categoryId, text, answer, reward]
+      description: >
+        Replaces the full accepted-answer set using the same normalization and fallback rules
+        as CreateGameQuestionRequestDto. Published games retain their pinned answer snapshots.
+      required: [categoryId, text, reward]
       properties:
         categoryId:
           type: string
@@ -5544,8 +5585,15 @@ components:
           maxLength: 2000
         answer:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 500
+        answers:
+          type: array
+          nullable: true
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 500
         reward:
           type: integer
           minimum: 0
