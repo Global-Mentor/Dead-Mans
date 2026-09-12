@@ -2084,6 +2084,7 @@ export interface components {
             categoryName: string;
             text: string;
             answer: string;
+            /** @description Accepted answers in display order; answer is the first entry for compatibility. */
             answers: string[];
             reward: number;
             priority: number;
@@ -2118,7 +2119,8 @@ export interface components {
             categoryId?: string | null;
             text?: string | null;
             answer?: string | null;
-            answers?: string[] | null;
+            /** @description Original unvalidated values, preserved so a rejected row can be corrected and retried. */
+            answers?: (string | null)[] | null;
             reward?: number | null;
             externalCode?: string | null;
             isEnabled?: boolean | null;
@@ -2130,12 +2132,13 @@ export interface components {
         SetGameQuestionCategoryEnabledRequestDto: {
             isEnabled: boolean;
         };
+        /** @description Supply answers or the legacy answer field. Blank array items are ignored and duplicate normalized answers are saved once. A nonempty cleaned answers array takes precedence; otherwise answer is used. At least one nonblank answer is required. */
         CreateGameQuestionRequestDto: {
             /** Format: uuid */
             categoryId: string;
             text: string;
-            answer: string;
-            answers?: string[];
+            answer?: string | null;
+            answers?: string[] | null;
             reward: number;
             externalCode?: string | null;
             /** @default true */
@@ -2143,6 +2146,7 @@ export interface components {
             /** @default 0 */
             priority: number;
         };
+        /** @description Uses the same answer normalization and fallback rules as CreateGameQuestionRequestDto. Supply up to ten answer entries, each up to 500 characters after trimming. */
         ImportGameQuestionRequestDto: {
             /**
              * Format: uuid
@@ -2150,8 +2154,8 @@ export interface components {
              */
             categoryId?: string | null;
             text: string;
-            answer: string;
-            answers?: string[];
+            answer?: string | null;
+            answers?: string[] | null;
             reward: number;
             externalCode?: string | null;
             /**
@@ -2171,12 +2175,13 @@ export interface components {
         CreateGameQuestionCategoryRequestDto: {
             name: string;
         };
+        /** @description Replaces the full accepted-answer set using the same normalization and fallback rules as CreateGameQuestionRequestDto. Published games retain their pinned answer snapshots. */
         UpdateGameQuestionRequestDto: {
             /** Format: uuid */
             categoryId: string;
             text: string;
-            answer: string;
-            answers?: string[];
+            answer?: string | null;
+            answers?: string[] | null;
             reward: number;
             /** @default true */
             isEnabled: boolean;

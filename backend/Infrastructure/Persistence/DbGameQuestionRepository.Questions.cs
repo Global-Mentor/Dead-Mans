@@ -102,6 +102,19 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        if (transaction is not null)
+        {
+            // Lock the aggregate before loading its replaceable children. This also
+            // follows the question-before-answers lock order used by publication.
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM question_definitions WHERE id = {questionId} FOR UPDATE",
+                cancellationToken
+            );
+        }
+
         var entity = await _dbContext.QuestionDefinitions
             .Include(question => question.AcceptedAnswers)
             .FirstOrDefaultAsync(
@@ -122,66 +135,22 @@ public sealed partial class DbGameQuestionRepository
         entity.Revision += 1;
         entity.UpdatedAtUtc = now;
 
-        await using var transaction = _dbContext.Database.IsRelational()
-            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
-            : null;
-
-        var existingAnswers = entity.AcceptedAnswers
-            .OrderByDescending(answer => answer.IsPrimary)
-            .ThenBy(answer => answer.SortOrder)
-            .ToList();
+        var existingAnswers = entity.AcceptedAnswers.ToList();
         var nextAnswers = BuildAcceptedAnswers(entity.Id, input.Answers, now);
-
-        if (transaction is not null && existingAnswers.Count > 0)
+        _dbContext.QuestionAcceptedAnswers.RemoveRange(existingAnswers);
+        foreach (var answer in nextAnswers)
         {
-            VacateAcceptedAnswerUniqueness(existingAnswers);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            entity.AcceptedAnswers.Add(answer);
         }
 
-        ApplyAcceptedAnswerReplacements(entity, existingAnswers, nextAnswers);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var result = await LoadCatalogItemAsync(entity.Id, cancellationToken);
         if (transaction is not null)
         {
             await transaction.CommitAsync(cancellationToken);
         }
-
-        return await LoadCatalogItemAsync(entity.Id, cancellationToken);
-    }
-
-    private static void VacateAcceptedAnswerUniqueness(List<QuestionAcceptedAnswer> existingAnswers)
-    {
-        for (var index = 0; index < existingAnswers.Count; index++)
-        {
-            existingAnswers[index].IsPrimary = false;
-            existingAnswers[index].SortOrder = index + 1000;
-            existingAnswers[index].NormalizedAnswer = $"~{Guid.NewGuid():N}";
-        }
-    }
-
-    private static void ApplyAcceptedAnswerReplacements(
-        QuestionDefinition entity,
-        List<QuestionAcceptedAnswer> existingAnswers,
-        List<QuestionAcceptedAnswer> nextAnswers
-    )
-    {
-        var sharedCount = Math.Min(existingAnswers.Count, nextAnswers.Count);
-        for (var index = 0; index < sharedCount; index++)
-        {
-            existingAnswers[index].AnswerText = nextAnswers[index].AnswerText;
-            existingAnswers[index].NormalizedAnswer = nextAnswers[index].NormalizedAnswer;
-            existingAnswers[index].IsPrimary = nextAnswers[index].IsPrimary;
-            existingAnswers[index].SortOrder = nextAnswers[index].SortOrder;
-        }
-
-        for (var index = existingAnswers.Count - 1; index >= sharedCount; index--)
-        {
-            entity.AcceptedAnswers.Remove(existingAnswers[index]);
-        }
-
-        for (var index = sharedCount; index < nextAnswers.Count; index++)
-        {
-            entity.AcceptedAnswers.Add(nextAnswers[index]);
-        }
+        return result;
     }
 
     private static List<QuestionAcceptedAnswer> BuildAcceptedAnswers(

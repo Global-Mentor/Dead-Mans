@@ -27,7 +27,7 @@ internal static class GameQuestionValidator
         var externalCode = (input.ExternalCode ?? string.Empty).Trim();
 
         if (input.CategoryId == Guid.Empty
-            || !IsSharedValid(text, answers, input.Reward)
+            || !IsSharedValid(text, input.Reward)
             || externalCode.Length > MaxExternalCodeLength)
         {
             return false;
@@ -60,7 +60,7 @@ internal static class GameQuestionValidator
         }
 
         if (input.CategoryId == Guid.Empty
-            || !IsSharedValid(text, answers, input.Reward))
+            || !IsSharedValid(text, input.Reward))
         {
             return false;
         }
@@ -77,56 +77,44 @@ internal static class GameQuestionValidator
         return true;
     }
 
-    private static bool IsSharedValid(string text, IReadOnlyList<string> answers, int reward)
+    private static bool IsSharedValid(string text, int reward)
     {
         return text.Length is > 0 and <= MaxTextLength
-            && answers.Count is > 0 and <= MaxAnswers
-            && answers.All(item => item.Length is > 0 and <= MaxAnswerLength)
             && reward >= 0;
     }
 
     private static bool TryNormalizeAnswers(
         string? answer,
         IReadOnlyList<string>? answers,
-        out string primaryAnswer,
+        out string firstAnswer,
         out IReadOnlyList<string> normalizedAnswers
     )
     {
-        var normalizedList = NormalizeAnswers(answer, answers);
-        primaryAnswer = normalizedList.Count > 0 ? normalizedList[0] : string.Empty;
-        normalizedAnswers = normalizedList;
-        return normalizedList.Count > 0
-            && normalizedList.Count <= MaxAnswers
-            && normalizedList.All(item => item.Length is > 0 and <= MaxAnswerLength);
-    }
-
-    private static List<string> NormalizeAnswers(string? answer, IReadOnlyList<string>? answers)
-    {
-        var fromAnswers = CollectUniqueAnswers(answers ?? Array.Empty<string>());
-        if (fromAnswers.Count > 0)
+        firstAnswer = string.Empty;
+        normalizedAnswers = Array.Empty<string>();
+        // Bound the raw payload before allocating normalized strings or deduplicating.
+        // Otherwise oversized duplicates can bypass the per-answer length limit.
+        if (answers is { Count: > MaxAnswers })
         {
-            return fromAnswers;
+            return false;
         }
 
-        return CollectUniqueAnswers(
-            string.IsNullOrWhiteSpace(answer) ? Array.Empty<string>() : [answer]
-        );
-    }
-
-    private static List<string> CollectUniqueAnswers(IEnumerable<string?> items)
-    {
         var result = new List<string>();
         var normalizedSet = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var item in items)
+        foreach (var item in answers ?? Array.Empty<string>())
         {
             var trimmed = (item ?? string.Empty).Trim();
+            if (trimmed.Length > MaxAnswerLength)
+            {
+                return false;
+            }
             if (trimmed.Length == 0)
             {
                 continue;
             }
 
             var normalized = QuestionAnswerNormalizer.Normalize(trimmed);
-            if (normalized.Length == 0 || !normalizedSet.Add(normalized))
+            if (!normalizedSet.Add(normalized))
             {
                 continue;
             }
@@ -134,6 +122,18 @@ internal static class GameQuestionValidator
             result.Add(trimmed);
         }
 
-        return result;
+        if (result.Count == 0)
+        {
+            var fallback = (answer ?? string.Empty).Trim();
+            if (fallback.Length is 0 or > MaxAnswerLength)
+            {
+                return false;
+            }
+            result.Add(fallback);
+        }
+
+        firstAnswer = result[0];
+        normalizedAnswers = result;
+        return true;
     }
 }

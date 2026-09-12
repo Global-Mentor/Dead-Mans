@@ -7,7 +7,7 @@ public sealed record GameQuestionCatalogItemDto(
     string CategoryName,
     string Text,
     string Answer,
-    string[]? Answers,
+    string[] Answers,
     int Reward,
     int Priority,
     bool IsEnabled,
@@ -30,7 +30,7 @@ public sealed record SetGameQuestionCategoryEnabledRequestDto(bool IsEnabled);
 public sealed record CreateGameQuestionRequestDto(
     string CategoryId,
     string Text,
-    string Answer,
+    string? Answer,
     string[]? Answers,
     int Reward,
     string? ExternalCode = null,
@@ -78,7 +78,7 @@ public sealed record ImportGameQuestionsResultDto(
 public sealed record UpdateGameQuestionRequestDto(
     string CategoryId,
     string Text,
-    string Answer,
+    string? Answer,
     string[]? Answers,
     int Reward,
     bool IsEnabled = true,

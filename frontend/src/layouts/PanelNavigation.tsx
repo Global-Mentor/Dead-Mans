@@ -129,7 +129,8 @@ export function PanelNavigation() {
                 ...huntBrassTitleSx,
                 color: 'primary.main',
                 textDecoration: 'none',
-                whiteSpace: 'nowrap',
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                minWidth: 0,
               }}
             >
               {t('appTitle')}

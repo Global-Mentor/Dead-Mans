@@ -72,13 +72,14 @@ export function QuestionCatalogList({
                 borderRadius: 1,
                 p: 1.25,
                 display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
                 gap: 1,
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
               }}
             >
               <Box sx={{ minWidth: 0 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
                   {question.text}
                 </Typography>
                 <QuestionCatalogMetaChips question={question} />
@@ -101,9 +102,7 @@ export function QuestionCatalogList({
 
 function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogItem }) {
   const { t } = useTranslation()
-  const displayAnswers = getQuestionDisplayAnswers(question)
-  const primaryAnswer = displayAnswers[0] ?? question.answer
-  const alternativeAnswers = displayAnswers.slice(1)
+  const answers = getQuestionDisplayAnswers(question)
 
   return (
     <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}>
@@ -117,16 +116,16 @@ function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogI
         color="warning"
         label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
       />
-      <Chip
-        color="success"
-        label={t('gameCatalog.questions.answerMeta', { answer: primaryAnswer })}
-      />
-      {alternativeAnswers.map((answer, index) => (
+      {answers.map((answer, index) => (
         <Chip
-          key={`${question.questionId}-alt-${index}`}
+          key={`${question.questionId}-answer-${index}`}
           color="success"
-          variant="outlined"
-          label={t('gameCatalog.questions.answersMeta', { answers: answer })}
+          label={t('gameCatalog.questions.answerMeta', { answer })}
+          sx={{
+            maxWidth: '100%',
+            height: 'auto',
+            '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: 0.5 },
+          }}
         />
       ))}
       <Chip

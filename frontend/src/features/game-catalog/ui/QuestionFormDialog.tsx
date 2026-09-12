@@ -14,12 +14,15 @@ import type {
   GameQuestionCategoryItem,
   GameQuestionCatalogItem,
 } from '../../../shared/api/contracts/index.ts'
-import { uniqueTrimmedAnswers } from '../model/question-answer-normalize.ts'
-import { createQuestionFormSchema, type QuestionFormValues } from '../model/question-form-schema.ts'
+import { getQuestionDisplayAnswers } from '../model/question-answer-normalize.ts'
+import {
+  createQuestionFormSchema,
+  maxQuestionAnswers,
+  type QuestionFormValues,
+} from '../model/question-form-schema.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 
 const questionFormId = 'catalog-question-form'
-const maxAnswers = 10
 
 function toAnswerFields(values: readonly string[]): QuestionFormValues['answers'] {
   return values.map((value) => ({ value }))
@@ -40,10 +43,7 @@ function toDefaultValues(
     }
   }
 
-  const rawAnswers = (initial.answers?.length ? initial.answers : [initial.answer]).map((answer) =>
-    answer.trim(),
-  )
-  const answers = uniqueTrimmedAnswers(rawAnswers)
+  const answers = getQuestionDisplayAnswers(initial)
 
   return {
     categoryId: initial.categoryId,
@@ -55,10 +55,8 @@ function toDefaultValues(
   }
 }
 
-function toRequest(
-  values: QuestionFormValues,
-  normalizedAnswers: string[],
-): CreateGameQuestionRequest {
+function toRequest(values: QuestionFormValues): CreateGameQuestionRequest {
+  const normalizedAnswers = values.answers.map((item) => item.value)
   return {
     categoryId: values.categoryId,
     text: values.text.trim(),
@@ -116,7 +114,7 @@ function QuestionFormDialogBody({
   }, [categories, categoryValue, setValue])
 
   const hasCategories = categories.length > 0
-  const canAddAnswer = fields.length < maxAnswers
+  const canAddAnswer = fields.length < maxQuestionAnswers
 
   const categoryOptions = categories.map((category) => ({
     value: category.id,
@@ -124,9 +122,7 @@ function QuestionFormDialogBody({
   }))
 
   const answersRootError =
-    formState.errors.answers && !Array.isArray(formState.errors.answers)
-      ? formState.errors.answers.message
-      : null
+    formState.errors.answers?.root?.message ?? formState.errors.answers?.message
 
   const submit = handleSubmit(async (values) => {
     if (!hasCategories) {
@@ -137,25 +133,8 @@ function QuestionFormDialogBody({
       return
     }
 
-    const normalizedAnswers = uniqueTrimmedAnswers(values.answers.map((item) => item.value))
-    if (normalizedAnswers.length === 0) {
-      setError('answers', {
-        type: 'manual',
-        message: t('gameCatalog.validation.required'),
-      })
-      return
-    }
-
-    if (normalizedAnswers.length > maxAnswers) {
-      setError('answers', {
-        type: 'manual',
-        message: t('gameCatalog.validation.answerLimit'),
-      })
-      return
-    }
-
     try {
-      await onSubmit(toRequest(values, normalizedAnswers))
+      await onSubmit(toRequest(values))
     } catch (error) {
       setError('root', { type: 'server', message: resolveCatalogErrorMessage(error, t) })
     }

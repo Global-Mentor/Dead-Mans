@@ -182,7 +182,7 @@ public sealed class GameQuestionService : IGameQuestionService
                         input.RowNumber,
                         input.Text?.Trim(),
                         AppMessages.ErrorCodes.GameQuestionImportInvalidFields,
-                        "Missing or invalid required fields. Each question must include text, answer, and a non-negative reward.",
+                        "Missing or invalid fields. Include text, a non-negative reward, and at least one answer in answer or answers (up to 10 entries, each up to 500 characters).",
                         input.SourceQuestion
                     )
                 );

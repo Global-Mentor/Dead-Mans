@@ -1,7 +1,19 @@
+// Match .NET Char.IsWhiteSpace/String.Trim: U+0085 is whitespace, U+FEFF is not.
+export function trimQuestionAnswer(value: string): string {
+  return value.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, '')
+}
+
 export function normalizeQuestionAnswer(value: string): string {
   const yo = String.fromCodePoint(0x0451)
   const ye = String.fromCodePoint(0x0435)
-  const input = value.trim().toLocaleLowerCase('en-US').replaceAll(yo, ye)
+  // .NET uses simple invariant casing, without final-sigma context or the
+  // multi-character expansion of U+0130 performed by JavaScript string casing.
+  const input = Array.from(trimQuestionAnswer(value), (character) => {
+    const lower = character.toLowerCase()
+    return Array.from(lower).length === 1 ? lower : character
+  })
+    .join('')
+    .replaceAll(yo, ye)
   if (input.length === 0) {
     return ''
   }
@@ -26,29 +38,7 @@ export function normalizeQuestionAnswer(value: string): string {
 }
 
 function isWhiteSpace(character: string): boolean {
-  return character.trim() === ''
-}
-
-export function uniqueTrimmedAnswers(rawAnswers: readonly string[]): string[] {
-  const seen = new Set<string>()
-  const result: string[] = []
-
-  for (const rawAnswer of rawAnswers) {
-    const answer = rawAnswer.trim()
-    if (answer.length === 0) {
-      continue
-    }
-
-    const normalizedAnswer = normalizeQuestionAnswer(answer)
-    if (!normalizedAnswer || seen.has(normalizedAnswer)) {
-      continue
-    }
-
-    seen.add(normalizedAnswer)
-    result.push(answer)
-  }
-
-  return result
+  return /\p{White_Space}/u.test(character)
 }
 
 export function getQuestionDisplayAnswers(question: {
@@ -56,6 +46,6 @@ export function getQuestionDisplayAnswers(question: {
   answers?: readonly string[] | null
 }): string[] {
   const rawAnswers = question.answers?.length ? question.answers : [question.answer]
-  const trimmed = rawAnswers.map((answer) => answer.trim()).filter((answer) => answer.length > 0)
+  const trimmed = rawAnswers.map(trimQuestionAnswer).filter((answer) => answer.length > 0)
   return trimmed.length > 0 ? trimmed : [question.answer]
 }

@@ -1,5 +1,7 @@
 import { z } from '../../../shared/validation/zod.ts'
-import { normalizeQuestionAnswer } from './question-answer-normalize.ts'
+import { normalizeQuestionAnswer, trimQuestionAnswer } from './question-answer-normalize.ts'
+
+export const maxQuestionAnswers = 10
 
 interface QuestionFormSchemaMessages {
   required: string
@@ -10,7 +12,10 @@ interface QuestionFormSchemaMessages {
 }
 
 export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
-  const answerValueSchema = z.string().trim().min(1, messages.required).max(500, messages.tooLong)
+  const answerValueSchema = z
+    .string()
+    .transform(trimQuestionAnswer)
+    .pipe(z.string().min(1, messages.required).max(500, messages.tooLong))
 
   return z.object({
     categoryId: z.string().trim().min(1, messages.required),
@@ -18,7 +23,7 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
     answers: z
       .array(z.object({ value: answerValueSchema }))
       .min(1, messages.required)
-      .max(10, messages.maxAnswers)
+      .max(maxQuestionAnswers, messages.maxAnswers)
       .superRefine((answers, context) => {
         const seen = new Set<string>()
         for (let index = 0; index < answers.length; index += 1) {

@@ -1,10 +1,43 @@
 using backend.Application.Contracts;
 using backend.Application.Features.GameQuestions;
+using backend.Domain.Persistence;
 
 namespace Backend.Tests.Unit.Features.GameQuestions;
 
 public sealed class GameQuestionValidatorTests
 {
+    [Theory]
+    [InlineData("\u0085Paris\u0085", "paris")]
+    [InlineData("Paris\u0085France", "paris france")]
+    [InlineData("\uFEFFParis\uFEFF", "\uFEFFparis\uFEFF")]
+    [InlineData("ΟΣ", "οσ")]
+    [InlineData("İ", "İ")]
+    public void AnswerNormalization_PreservesTheExistingUnicodeContract(string input, string expected)
+    {
+        Assert.Equal(expected, QuestionAnswerNormalizer.Normalize(input));
+    }
+
+    [Fact]
+    public void TryNormalizeCreate_RejectsOversizedDuplicatesBeforeNormalization()
+    {
+        var input = CreateInput("fallback", ["a b", "a" + new string(' ', 500) + "b"]);
+        Assert.False(GameQuestionValidator.TryNormalizeCreate(input, out _));
+    }
+
+    [Fact]
+    public void TryNormalizeCreate_RejectsOversizedRawAnswerArrayEvenIfAllItemsAreDuplicates()
+    {
+        var input = CreateInput("fallback", Enumerable.Repeat("Paris", 11).ToArray());
+        Assert.False(GameQuestionValidator.TryNormalizeCreate(input, out _));
+    }
+
+    [Fact]
+    public void TryNormalizeCreate_RejectsMissingAnswersAndAcceptsNullImportItems()
+    {
+        Assert.False(GameQuestionValidator.TryNormalizeCreate(CreateInput("", ["", null!]), out _));
+        Assert.True(GameQuestionValidator.TryNormalizeCreate(CreateInput("", [null!, "Paris"]), out var normalized));
+        Assert.Equal(["Paris"], normalized.Answers);
+    }
     [Fact]
     public void TryNormalizeCreate_UsesAnswerWhenAnswersAreBlank()
     {
@@ -18,7 +51,7 @@ public sealed class GameQuestionValidatorTests
     }
 
     [Fact]
-    public void TryNormalizeCreate_UsesAnswersWhenPresentAndKeepsPrimaryFirst()
+    public void TryNormalizeCreate_UsesAnswersWhenPresentAndKeepsTheFirstAsLegacyAnswer()
     {
         var input = CreateInput(answer: "Paris", answers: ["  Париж ", "Paris"]);
 

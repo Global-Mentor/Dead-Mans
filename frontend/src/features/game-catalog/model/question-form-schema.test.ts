@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getQuestionDisplayAnswers,
-  normalizeQuestionAnswer,
-  uniqueTrimmedAnswers,
-} from './question-answer-normalize.ts'
+import { getQuestionDisplayAnswers, normalizeQuestionAnswer } from './question-answer-normalize.ts'
 import { createQuestionFormSchema } from './question-form-schema.ts'
 
 const messages = {
@@ -26,21 +22,35 @@ function values(answers: string[]) {
 }
 
 describe('question answer normalize', () => {
+  it.each([
+    ['\u0085Paris\u0085', 'paris'],
+    ['Paris\u0085France', 'paris france'],
+    ['\uFEFFParis\uFEFF', '\uFEFFparis\uFEFF'],
+    ['ΟΣ', 'οσ'],
+    ['İ', 'İ'],
+  ])('uses server-compatible Unicode normalization for %s', (input, expected) => {
+    expect(normalizeQuestionAnswer(input)).toBe(expected)
+  })
   it('collapses whitespace and maps yo to ye like the backend', () => {
     expect(normalizeQuestionAnswer('  Ёлки   зелёные  ')).toBe('елки зеленые')
   })
 
-  it('keeps the first display form when normalized values collide', () => {
-    expect(uniqueTrimmedAnswers(['Paris', '  paris ', 'Париж'])).toEqual(['Paris', 'Париж'])
-  })
-
-  it('falls back to the primary answer when the answers array is blank', () => {
+  it('falls back to the answer field when the answers array is blank', () => {
     expect(getQuestionDisplayAnswers({ answer: 'Paris', answers: ['', '  '] })).toEqual(['Paris'])
   })
 })
 
 describe('question form schema', () => {
-  it('accepts a primary answer and unique alternatives', () => {
+  it('preserves distinct server answers when opening and submitting the form', () => {
+    const parsed = createQuestionFormSchema(messages).safeParse(values(['Paris', '\uFEFFParis']))
+    expect(parsed.success).toBe(true)
+    if (parsed.success) expect(parsed.data.answers[1]?.value).toBe('\uFEFFParis')
+  })
+
+  it('rejects server-equivalent Greek answers', () => {
+    expect(createQuestionFormSchema(messages).safeParse(values(['ΟΣ', 'οσ'])).success).toBe(false)
+  })
+  it('accepts several unique equivalent answers', () => {
     const parsed = createQuestionFormSchema(messages).safeParse(values(['Paris', 'Париж']))
     expect(parsed.success).toBe(true)
   })

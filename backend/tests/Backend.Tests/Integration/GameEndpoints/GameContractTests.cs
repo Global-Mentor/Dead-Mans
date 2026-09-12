@@ -2242,7 +2242,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("// Required fields for each question: text, answer, reward.", content);
+        Assert.Contains("// Required fields: text, reward and at least one answer in answer or answers.", content);
         Assert.Contains("// Available categories:", content);
         Assert.Contains("(БЕЗ КАТЕГОРИИ)", content);
         Assert.Contains($"({categoryName})", content);
@@ -2260,7 +2260,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("// Шаблон JSONC для массового импорта вопросов.", content);
-        Assert.Contains("// Обязательные поля у вопроса: text, answer, reward.", content);
+        Assert.Contains("// Обязательные поля у вопроса: text, reward и хотя бы один ответ в answer или answers.", content);
         Assert.Contains(QuestionCatalogDefaults.UncategorizedCategoryName, content);
     }
 
@@ -2311,7 +2311,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             payload.SkippedQuestions[0].ReasonCode
         );
         Assert.Equal(
-            "Missing or invalid required fields. Each question must include text, answer, and a non-negative reward.",
+            "Missing or invalid fields. Include text, a non-negative reward, and at least one answer in answer or answers (up to 10 entries, each up to 500 characters).",
             payload.SkippedQuestions[0].Reason
         );
         var skippedSourceQuestion = Assert.IsType<ImportGameQuestionSourceDto>(

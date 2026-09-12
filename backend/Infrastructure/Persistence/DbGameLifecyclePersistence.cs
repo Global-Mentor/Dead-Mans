@@ -136,13 +136,11 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             enabledQuestion.CategoryNameSnapshot = question.CategoryDefinition?.Name ?? string.Empty;
             enabledQuestion.QuestionTextSnapshot = question.Text;
             enabledQuestion.AcceptedAnswersSnapshot = question.AcceptedAnswers
-                .OrderByDescending(answer => answer.IsPrimary)
-                .ThenBy(answer => answer.SortOrder)
+                .OrderBy(answer => answer.SortOrder)
                 .Select(answer => answer.AnswerText)
                 .ToArray();
             enabledQuestion.NormalizedAnswersSnapshot = question.AcceptedAnswers
-                .OrderByDescending(answer => answer.IsPrimary)
-                .ThenBy(answer => answer.SortOrder)
+                .OrderBy(answer => answer.SortOrder)
                 .Select(answer => answer.NormalizedAnswer)
                 .ToArray();
             enabledQuestion.RewardSnapshot = question.Reward;

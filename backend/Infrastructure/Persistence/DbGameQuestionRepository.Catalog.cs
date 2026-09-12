@@ -95,12 +95,11 @@ public sealed partial class DbGameQuestionRepository
                 x.CategoryDefinition != null ? x.CategoryDefinition.Name : string.Empty,
                 x.Text,
                 x.AcceptedAnswers
-                    .Where(answer => answer.IsPrimary)
+                    .OrderBy(answer => answer.SortOrder)
                     .Select(answer => answer.AnswerText)
                     .FirstOrDefault() ?? string.Empty,
                 x.AcceptedAnswers
-                    .OrderByDescending(answer => answer.IsPrimary)
-                    .ThenBy(answer => answer.SortOrder)
+                    .OrderBy(answer => answer.SortOrder)
                     .Select(answer => answer.AnswerText)
                     .ToArray(),
                 x.Reward,

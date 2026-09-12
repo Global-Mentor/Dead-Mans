@@ -16,7 +16,7 @@ public static partial class ApiContractMapper
             request.ExternalCode,
             categoryId,
             request.Text,
-            request.Answer,
+            request.Answer ?? string.Empty,
             request.Answers ?? Array.Empty<string>(),
             request.Reward,
             request.IsEnabled,
@@ -66,7 +66,7 @@ public static partial class ApiContractMapper
         return new UpdateGameQuestionInput(
             categoryId,
             request.Text,
-            request.Answer,
+            request.Answer ?? string.Empty,
             request.Answers ?? Array.Empty<string>(),
             request.Reward,
             request.IsEnabled,

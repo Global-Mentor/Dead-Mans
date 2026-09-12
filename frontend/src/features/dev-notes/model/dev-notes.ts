@@ -32,7 +32,7 @@ const devNotesFileSchema = z.object({
 type DevNote = z.infer<typeof devNoteSchema>
 type DevNoteLocalizedText = z.infer<typeof localizedTextSchema>
 
-export function sortDevNotes(notes: readonly DevNote[]): DevNote[] {
+function sortDevNotes(notes: readonly DevNote[]): DevNote[] {
   return [...notes].sort((left, right) => {
     const byDate = Date.parse(right.publishedAt) - Date.parse(left.publishedAt)
     if (byDate !== 0) {
