@@ -47,11 +47,12 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
         aria-expanded={profileAnchor ? 'true' : undefined}
         onClick={handleProfileOpen}
         sx={(theme) => ({
-          maxWidth: { xs: 140, sm: 220 },
-          px: 1.5,
+          maxWidth: { xs: 96, sm: 220 },
+          px: { xs: 1, sm: 1.5 },
           py: 1,
-          borderRadius: 1,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+          minHeight: 42,
+          borderRadius: 0,
+          border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
           backgroundColor: alpha(theme.palette.common.black, 0.16),
           '&:hover': {
             borderColor: alpha(theme.palette.primary.main, 0.55),

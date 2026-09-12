@@ -885,8 +885,10 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
         Assert.Equal(AppMessages.ErrorCodes.GameRegistrationTeamNotJoinable, payload.Code);
     }
 
-    [Fact]
-    public async Task LeaveTeam_WhenMember_ReturnsOk()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task LeaveTeam_WhenLastMember_DisbandsTeamAndReleasesSlot(bool recruitmentOpen)
     {
         await ClearRegistrationDataAsync();
         var userId = Guid.NewGuid();
@@ -900,13 +902,75 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
 
         var createResponse = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(true)
+            new CreateRegistrationTeamRequestDto(recruitmentOpen)
         );
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var createdTeam = await createResponse.Content.ReadFromJsonAsync<RegistrationTeamDto>();
+        Assert.NotNull(createdTeam);
 
         var response = await viewerClient.PostAsync("/api/game/registration/teams/leave", content: null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var snapshot = await viewerClient.GetFromJsonAsync<GameRegistrationSnapshotDto>(
+            "/api/game/registration"
+        );
+        Assert.NotNull(snapshot);
+        Assert.Null(snapshot.MyTeam);
+        Assert.DoesNotContain(snapshot.Teams, team => team.TeamId == createdTeam.TeamId);
+        var releasedSlot = Assert.Single(snapshot.TeamSlots);
+        Assert.True(releasedSlot.IsAvailableForNewTeam);
+        Assert.Null(releasedSlot.TeamId);
+
+        using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var adminSnapshot = await adminClient.GetFromJsonAsync<GameRegistrationAdminSnapshotDto>(
+            "/api/game/registration/admin"
+        );
+        Assert.NotNull(adminSnapshot);
+        Assert.DoesNotContain(adminSnapshot.Teams, team => team.TeamId == createdTeam.TeamId);
+
+        var replacementResponse = await viewerClient.PostAsJsonAsync(
+            "/api/game/registration/teams",
+            new CreateRegistrationTeamRequestDto(recruitmentOpen)
+        );
+        Assert.Equal(HttpStatusCode.Created, replacementResponse.StatusCode);
+        var replacement = await replacementResponse.Content.ReadFromJsonAsync<RegistrationTeamDto>();
+        Assert.NotNull(replacement);
+        Assert.NotEqual(createdTeam.TeamId, replacement.TeamId);
+        Assert.Equal(createdTeam.TeamSlotIndex, replacement.TeamSlotIndex);
+    }
+
+    [Fact]
+    public async Task LeaveTeam_WhenOtherMemberRemains_KeepsTeamAndSlotOccupied()
+    {
+        await ClearRegistrationDataAsync();
+        await SeedReadyGameAsync();
+        var ownerId = Guid.NewGuid();
+        var remainingUserId = Guid.NewGuid();
+        var teamId = await SeedTeamAsync(
+            ownerId,
+            recruitmentOpen: true,
+            slotIndex: 2,
+            memberUserIds: [ownerId, remainingUserId]
+        );
+        using var ownerClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Viewer],
+            ownerId
+        );
+
+        var response = await ownerClient.PostAsync("/api/game/registration/teams/leave", content: null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var snapshot = await ownerClient.GetFromJsonAsync<GameRegistrationSnapshotDto>(
+            "/api/game/registration"
+        );
+        Assert.NotNull(snapshot);
+        Assert.Null(snapshot.MyTeam);
+        var remainingTeam = Assert.Single(snapshot.Teams, team => team.TeamId == teamId);
+        Assert.Equal(TeamStatusValue.Forming, remainingTeam.Status);
+        Assert.Equal(remainingUserId, Assert.Single(remainingTeam.Members).Player.UserId);
+        var occupiedSlot = Assert.Single(snapshot.TeamSlots, slot => slot.TeamId == teamId);
+        Assert.False(occupiedSlot.IsAvailableForNewTeam);
     }
 
     [Fact]

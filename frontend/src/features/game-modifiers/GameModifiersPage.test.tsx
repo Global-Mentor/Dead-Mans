@@ -1,9 +1,11 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { alpha } from '@mui/material/styles'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { AuthContext, type AuthContextValue } from '../../shared/auth/auth-context.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
+import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { GameModifiersPage } from './GameModifiersPage.tsx'
@@ -493,7 +495,7 @@ describe('GameModifiersPage', () => {
     const orderingDescription = within(orderingAlert).getByText(
       'Сейчас не фаза заказа модификаторов.',
     )
-    expect(orderingDescription).toHaveStyle({ color: 'rgba(232, 220, 200, 0.84)' })
+    expect(orderingDescription).toHaveStyle({ color: alpha(huntPalette.parchment, 0.84) })
     expect(
       screen.queryAllByText('Заказ закрыт: сейчас не фаза заказа модификаторов.'),
     ).toHaveLength(0)

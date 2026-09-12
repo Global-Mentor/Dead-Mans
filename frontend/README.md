@@ -79,6 +79,9 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 - `src/app/theme/palette.ts` — MUI palette и app gradients;
 - `src/app/theme/typography.ts` — typography options;
 - `src/app/theme/component-overrides.ts` — глобальные MUI component overrides;
+- `src/app/theme/button-overrides.ts` — размеры, состояния и материалы кнопок; `input-overrides.ts` — отдельные настройки полей, включая фокус, ошибки и disabled;
+- `src/shared/ui/primitives/ChoiceCard.tsx` — карточка выбора внутри `RadioGroup`, с нативной навигацией стрелками; не заменять её стили глобальными селекторами для всех `ButtonBase`;
+- `src/shared/theme/hunt-materials.ts` — фактура и рамка; фактурный слой основных кнопок настраивается в `button-overrides.ts`, цвет основы — через палитру;
 - `src/app/theme/appTheme.ts` — тонкая композиция theme modules и `theme.custom.gradients`;
 - feature-local presets живут в `features/<feature>/theme/`:
   - `game-board/theme/board-cell-sx.ts`

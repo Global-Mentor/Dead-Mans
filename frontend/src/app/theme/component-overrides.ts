@@ -2,60 +2,13 @@ import type { Components, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { huntTypography } from '../../shared/theme/tokens.ts'
+import { buttonOverrides } from './button-overrides.ts'
+import { inputOverrides } from './input-overrides.ts'
 import { appThemeGradients } from './palette.ts'
 import { appThemeBorderRadius } from './theme-constants.ts'
 
-const filmGrain = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")`
-
 export const appComponentOverrides: Components<Theme> = {
-  MuiButton: {
-    defaultProps: {
-      disableElevation: true,
-    },
-    styleOverrides: {
-      root: {
-        borderRadius: appThemeBorderRadius,
-        '&.Mui-disabled': {
-          color: alpha(huntPalette.parchmentMuted, 0.82),
-          borderColor: alpha(huntPalette.parchmentMuted, 0.16),
-          backgroundColor: alpha(huntPalette.soot, 0.18),
-          backgroundImage: 'none',
-          boxShadow: 'none',
-          opacity: 1,
-        },
-      },
-      containedPrimary: {
-        backgroundImage: `linear-gradient(180deg, ${huntPalette.brassLight} 0%, ${huntPalette.brass} 55%, ${huntPalette.brassMuted} 100%)`,
-        color: huntPalette.soot,
-        border: `1px solid ${alpha(huntPalette.brassLight, 0.65)}`,
-        '&:hover': {
-          backgroundImage: `linear-gradient(180deg, ${alpha(huntPalette.brassLight, 0.95)} 0%, ${huntPalette.brass} 100%)`,
-        },
-      },
-      containedSuccess: {
-        backgroundImage: `linear-gradient(180deg, ${alpha(huntPalette.fern, 0.95)} 0%, ${alpha(huntPalette.fern, 0.75)} 100%)`,
-        border: `1px solid ${alpha(huntPalette.fern, 0.65)}`,
-      },
-      containedError: {
-        backgroundImage: `linear-gradient(180deg, ${alpha(huntPalette.blood, 0.95)} 0%, ${alpha(huntPalette.blood, 0.8)} 100%)`,
-        border: `1px solid ${alpha(huntPalette.blood, 0.55)}`,
-      },
-      outlinedPrimary: {
-        borderColor: alpha(huntPalette.brass, 0.55),
-        color: huntPalette.brassLight,
-      },
-      outlinedError: {
-        borderColor: alpha(huntPalette.blood, 0.55),
-        color: huntPalette.parchment,
-      },
-      textPrimary: {
-        color: huntPalette.brassLight,
-      },
-      textWarning: {
-        color: huntPalette.amber,
-      },
-    },
-  },
+  ...buttonOverrides,
   MuiButtonBase: {
     styleOverrides: {
       root: {
@@ -72,34 +25,14 @@ export const appComponentOverrides: Components<Theme> = {
       root: {
         borderRadius: appThemeBorderRadius,
         backgroundImage: appThemeGradients.panelSurface,
+        backgroundSize: 'auto, 640px auto',
       },
       outlined: {
         borderColor: alpha(huntPalette.brassMuted, 0.5),
       },
     },
   },
-  MuiTextField: {
-    defaultProps: {
-      size: 'small',
-      fullWidth: true,
-    },
-  },
-  MuiOutlinedInput: {
-    styleOverrides: {
-      root: {
-        backgroundColor: alpha(huntPalette.soot, 0.35),
-        '& .MuiOutlinedInput-notchedOutline': {
-          borderColor: alpha(huntPalette.brassMuted, 0.45),
-        },
-        '&:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: alpha(huntPalette.brass, 0.55),
-        },
-        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-          borderColor: huntPalette.brass,
-        },
-      },
-    },
-  },
+  ...inputOverrides,
   MuiCheckbox: {
     styleOverrides: {
       root: {
@@ -249,7 +182,7 @@ export const appComponentOverrides: Components<Theme> = {
       },
       filledSuccess: {
         backgroundColor: alpha(huntPalette.fern, 0.82),
-        color: huntPalette.parchment,
+        color: huntPalette.soot,
       },
       filledInfo: {
         backgroundColor: alpha(huntPalette.murk, 0.88),
@@ -274,7 +207,7 @@ export const appComponentOverrides: Components<Theme> = {
   MuiDivider: {
     styleOverrides: {
       root: {
-        borderColor: alpha(huntPalette.brassMuted, 0.35),
+        borderColor: alpha(huntPalette.parchment, 0.16),
       },
     },
   },
@@ -298,22 +231,12 @@ export const appComponentOverrides: Components<Theme> = {
   MuiCssBaseline: {
     styleOverrides: {
       body: {
-        minWidth: 320,
+        minWidth: 0,
         minHeight: '100vh',
         backgroundColor: huntPalette.soot,
         backgroundImage: appThemeGradients.appBackdrop,
         backgroundAttachment: 'fixed',
-        '&::after': {
-          content: '""',
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          opacity: 0.035,
-          zIndex: 9999,
-          backgroundImage: filmGrain,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '180px',
-        },
+        backgroundSize: 'auto, 900px auto',
       },
       '#root': {
         minHeight: '100vh',

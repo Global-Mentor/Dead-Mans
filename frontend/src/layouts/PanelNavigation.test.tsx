@@ -368,6 +368,13 @@ describe('PanelNavigation', () => {
     const dialogText = dialog.textContent ?? ''
 
     expect(dialog).toBeInTheDocument()
+    expect(dialogText.indexOf('Новый UI: заявка на игру')).toBeGreaterThan(-1)
+    expect(dialogText.indexOf('Новый UI: заявка на игру')).toBeLessThan(
+      dialogText.indexOf('Пустые команды в превью интерфейса'),
+    )
+    expect(dialogText.indexOf('Пустые команды в превью интерфейса')).toBeLessThan(
+      dialogText.indexOf('Несколько правильных ответов'),
+    )
     expect(dialogText.indexOf('Несколько правильных ответов')).toBeGreaterThan(-1)
     expect(dialogText.indexOf('Несколько правильных ответов')).toBeLessThan(
       dialogText.indexOf('Исключение игроков из команды'),
@@ -377,7 +384,7 @@ describe('PanelNavigation', () => {
     )
     expect(screen.getByText('Новая фича')).toBeInTheDocument()
     expect(screen.getByText('Объявление')).toBeInTheDocument()
-    expect(screen.getByText('Фикс')).toBeInTheDocument()
+    expect(screen.getAllByText('Фикс')).toHaveLength(2)
     expect(screen.getByTestId('dev-notes-list')).toHaveStyle({
       overflowY: 'auto',
       maxHeight: 'min(52vh, 420px)',

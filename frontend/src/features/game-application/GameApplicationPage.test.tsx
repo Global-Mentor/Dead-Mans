@@ -4,6 +4,47 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { GameApplicationPage } from './GameApplicationPage.tsx'
+import { CreateTeamSection } from './ui/CreateTeamSection.tsx'
+
+describe('CreateTeamSection', () => {
+  it('submits an open team with an optional empty name', () => {
+    const onCreate = vi.fn()
+    renderWithAppProviders(<CreateTeamSection onCreate={onCreate} isCreating={false} />)
+
+    expect(screen.getByRole('radio', { name: /^Открытая команда/ })).toBeChecked()
+    fireEvent.click(screen.getByRole('button', { name: 'Создать команду' }))
+
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith(true, undefined)
+  })
+
+  it('waits for submission before creating the selected private team', () => {
+    const onCreate = vi.fn()
+    renderWithAppProviders(<CreateTeamSection onCreate={onCreate} isCreating={false} />)
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Название команды' }), {
+      target: { value: '  Ночной дозор  ' },
+    })
+    fireEvent.click(screen.getByRole('radio', { name: /^Закрытая команда/ }))
+    expect(onCreate).not.toHaveBeenCalled()
+    fireEvent.submit(screen.getByRole('button', { name: 'Создать команду' }).closest('form')!)
+
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith(false, 'Ночной дозор')
+  })
+
+  it('locks the form and prevents duplicate submissions while creating', () => {
+    const onCreate = vi.fn()
+    renderWithAppProviders(<CreateTeamSection onCreate={onCreate} isCreating />)
+
+    expect(screen.getByRole('textbox', { name: 'Название команды' })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /^Открытая команда/ })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /^Закрытая команда/ })).toBeDisabled()
+    const submit = screen.getByRole('button', { name: /Создать команду/ })
+    expect(submit).toBeDisabled()
+    fireEvent.submit(submit.closest('form')!)
+
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+})
 
 const pageMocks = vi.hoisted(() => ({
   useGameApplicationPage: vi.fn(),
@@ -73,7 +114,7 @@ describe('GameApplicationPage', () => {
         gameStatus: 'ready',
         minPlayersPerTeam: 1,
         maxPlayersPerTeam: 4,
-        teamSlots: [],
+        teamSlots: [{ teamSlotType: 'public', isAvailableForNewTeam: true }],
         teams: [
           {
             teamId: 'team-1',
@@ -118,11 +159,12 @@ describe('GameApplicationPage', () => {
     renderPage()
 
     expect(screen.getAllByText('Приглашения')).not.toHaveLength(0)
-    expect(screen.getByText('Как хотите собрать команду?')).toBeInTheDocument()
-    expect(screen.getByText('Созданные команды')).toBeInTheDocument()
+    expect(screen.getByText('Собрать свою команду')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Созданные команды' })).toBeInTheDocument()
     expect(screen.getByText('Pending Player · ожидает подтверждения')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Принять' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Открытая команда' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /^Открытая команда/ })).toBeChecked()
+    expect(screen.getByRole('button', { name: 'Создать команду' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Вступить' })).toBeInTheDocument()
   })
 
@@ -162,9 +204,9 @@ describe('GameApplicationPage', () => {
 
     renderPage()
 
-    expect(screen.queryByText('Как хотите собрать команду?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Собрать свою команду')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Выйти из команды' })).toBeInTheDocument()
-    expect(screen.getByText('Созданные команды')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Созданные команды' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Вступить' })).not.toBeInTheDocument()
   })
 

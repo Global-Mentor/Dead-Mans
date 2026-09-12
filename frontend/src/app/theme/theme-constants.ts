@@ -1,1 +1,1 @@
-export const appThemeBorderRadius = 4
+export const appThemeBorderRadius = 0
