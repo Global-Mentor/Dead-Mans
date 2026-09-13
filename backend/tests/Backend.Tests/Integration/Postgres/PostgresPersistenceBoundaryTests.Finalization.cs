@@ -169,11 +169,18 @@ public sealed partial class PostgresPersistenceBoundaryTests
 
         if (!hasCompletedRound)
         {
-            // Restoring old rules would make this valid new state inconsistent. Refuse atomically.
-            var error = await Record.ExceptionAsync(() => db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline"));
-            Assert.NotNull(error);
-            Assert.Equal("55000", Assert.IsType<PostgresException>(error.GetBaseException()).SqlState);
-            Assert.Contains("20260910171900_AllowAdminTeamDisband", await db.Database.GetAppliedMigrationsAsync());
+            try
+            {
+                // The incompatible migration is refused, but newer migrations may already be reverted.
+                var error = await Record.ExceptionAsync(() => db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline"));
+                Assert.NotNull(error);
+                Assert.Equal("55000", Assert.IsType<PostgresException>(error.GetBaseException()).SqlState);
+                Assert.Contains("20260910171900_AllowAdminTeamDisband", await db.Database.GetAppliedMigrationsAsync());
+            }
+            finally
+            {
+                await db.Database.MigrateAsync();
+            }
         }
     }
 
@@ -182,10 +189,11 @@ public sealed partial class PostgresPersistenceBoundaryTests
     {
         await _database.ResetAsync();
         await using var db = _database.CreateDbContext();
-        await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
+        // Seed with the current model before removing columns absent from the legacy schema.
+        var seeded = await SeedPlayableRoundGraphAsync(db);
         try
         {
-            var seeded = await SeedPlayableRoundGraphAsync(db);
+            await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
             var game = await db.Games.SingleAsync();
             var now = DateTime.UtcNow;
             game.Status = GameStatusValue.Finished;

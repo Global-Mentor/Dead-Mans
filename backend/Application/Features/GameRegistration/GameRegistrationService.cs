@@ -111,6 +111,26 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
         ));
     }
 
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> SetMyReadinessAsync(
+        Guid userId,
+        bool isReady,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var game = await _reads.GetReadyGameAsync(cancellationToken);
+        if (game is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
+        return await CompleteMutationAsync(_persistence.PersistSetMemberReadinessAsync(
+            game.GameId,
+            userId,
+            isReady,
+            cancellationToken
+        ));
+    }
+
     public async Task<GameRegistrationResult<RegistrationTeamDto>> JoinTeamAsync(
         Guid userId,
         Guid teamId,

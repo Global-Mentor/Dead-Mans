@@ -2901,6 +2901,50 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/registration/my-team/readiness:
+    patch:
+      operationId: updateMyRegistrationReadiness
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRegistrationReadinessRequestDto'
+      responses:
+        '200':
+          description: Current player readiness updated for the forming team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationTeamDto'
+        '400':
+          description: Missing or invalid isReady boolean
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Registration or current team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Team is locked, unnamed, or not full
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/registration/admin:
     get:
       operationId: getGameRegistrationAdminSnapshot
@@ -3208,7 +3252,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Team cannot be confirmed (wrong status or roster size)
+          description: Team cannot be confirmed (wrong status, missing name, or roster size)
           content:
             application/json:
               schema:
@@ -4123,6 +4167,10 @@ components:
         joinedAtUtc:
           type: string
           format: date-time
+        readyAtUtc:
+          type: string
+          format: date-time
+          nullable: true
     RegistrationTeamPendingInvitationDto:
       type: object
       required: [invitationId, player, createdAtUtc]
@@ -4145,6 +4193,7 @@ components:
         - status
         - isPlayed
         - isActiveInGame
+        - isReady
         - members
         - pendingInvitations
       properties:
@@ -4181,6 +4230,8 @@ components:
           type: string
           nullable: true
         isActiveInGame:
+          type: boolean
+        isReady:
           type: boolean
         members:
           type: array
@@ -4389,6 +4440,12 @@ components:
           type: string
           maxLength: 18
           nullable: true
+    UpdateRegistrationReadinessRequestDto:
+      type: object
+      required: [isReady]
+      properties:
+        isReady:
+          type: boolean
     AssignRegistrationPlayerRequestDto:
       type: object
       required: [userId]
@@ -7264,6 +7321,8 @@ components:
             - game_registration.team_already_played
             - game_registration.invalid_team_name
             - game_registration.team_name_taken
+            - game_registration.team_name_required
+            - game_registration.team_not_full
             - game_registration.disband_request_not_owned
             - game_registration.operation_failed
             - game_modifier.game_not_active

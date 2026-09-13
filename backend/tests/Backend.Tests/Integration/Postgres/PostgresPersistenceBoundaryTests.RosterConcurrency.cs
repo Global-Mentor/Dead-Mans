@@ -23,6 +23,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var game = CreateGame(GameStatusValue.Draft, now);
         var slot = CreateSlot(game.Id, 1, now);
         var team = CreateTeam(game.Id, slot.Id, now, TeamStatusValue.Forming);
+        team.Name = "Concurrent team";
         var member = new backend.Data.Entities.GameTeamMember
         {
             Id = Guid.NewGuid(),

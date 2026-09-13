@@ -32,6 +32,13 @@ public interface IGameRegistrationPersistence
         CancellationToken cancellationToken = default
     );
 
+    Task<GameRegistrationResult<RegistrationTeamDto>> PersistSetMemberReadinessAsync(
+        Guid gameId,
+        Guid userId,
+        bool isReady,
+        CancellationToken cancellationToken = default
+    );
+
     Task<GameRegistrationResult<RegistrationTeamDto>> PersistJoinTeamAsync(
         Guid gameId,
         Guid userId,

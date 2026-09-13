@@ -82,6 +82,8 @@ function createPageController(data: unknown) {
     cancelTeamDisbandRequest: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
     canCancelDisbandRequest: false,
     updateTeamName: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
+    updateReadiness: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
+    currentUserId: undefined,
     createPlayerInvitation: { isPending: false, mutate: vi.fn() },
     cancelPlayerInvitation: { isPending: false, mutate: vi.fn() },
     acceptInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },

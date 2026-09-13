@@ -22,6 +22,7 @@ function team(teamId: string, overrides: Partial<RegistrationTeam> = {}): Regist
     status: 'forming',
     isPlayed: false,
     isActiveInGame: false,
+    isReady: false,
     pendingInvitations: [],
     members: [
       {
@@ -70,6 +71,8 @@ function controller(data = snapshot()) {
     cancelTeamDisbandRequest: mutation(),
     canCancelDisbandRequest: false,
     updateTeamName: mutation(),
+    updateReadiness: mutation(),
+    currentUserId: 'one',
     toastMessage: null,
     dismissToast: vi.fn(),
   }
@@ -100,6 +103,86 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('Application decisions', () => {
+  it('blocks readiness for a full unnamed team', () => {
+    const mine = team('unnamed', { name: null })
+    const value = controller(snapshot({ myTeam: mine, teams: [mine], maxPlayersPerTeam: 1 }))
+    render(value)
+    expect(screen.getByRole('button', { name: 'Я готов' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Я готов' }))
+    expect(value.updateReadiness.mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('keeps readiness after a failed withdrawal and allows retry without an unhandled rejection', async () => {
+    const mine = team('Ночной дозор')
+    mine.members[0]!.readyAtUtc = '2026-09-12T10:05:00Z'
+    const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
+    value.updateReadiness.mutateAsync.mockRejectedValueOnce(new Error('Network unavailable'))
+    render(value)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Снять готовность' }))
+    })
+    expect(screen.getByText('Готовы: 1 / 1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Снять готовность' })).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Снять готовность' }))
+    expect(value.updateReadiness.mutateAsync).toHaveBeenCalledTimes(2)
+  })
+
+  it('disables competing actions while readiness is being saved', () => {
+    const mine = team('Ночной дозор')
+    const value = controller(snapshot({ myTeam: mine, teams: [mine], maxPlayersPerTeam: 1 }))
+    value.updateReadiness.isPending = true
+    render(value)
+    expect(screen.getByRole('button', { name: 'Я готов' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Изменить название команды' })).toBeDisabled()
+  })
+
+  it('lets a player mark only their own readiness once the named roster is full', () => {
+    const mine = team('Ночной дозор', {
+      members: [
+        {
+          player: { userId: 'one', login: 'raven', displayName: 'Ворон' },
+          joinedAtUtc: '2026-09-12T10:00:00Z',
+          readyAtUtc: null,
+        },
+        {
+          player: { userId: 'two', login: 'owl', displayName: 'Сова' },
+          joinedAtUtc: '2026-09-12T10:01:00Z',
+          readyAtUtc: null,
+        },
+      ],
+    })
+    const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
+    render(value)
+
+    expect(screen.getByText('Готовы: 0 / 2')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Я готов' }))
+
+    expect(value.updateReadiness.mutateAsync).toHaveBeenCalledExactlyOnceWith(true)
+  })
+
+  it('allows withdrawing readiness but blocks marking ready for an incomplete roster', () => {
+    const incomplete = team('Ночной дозор')
+    const incompleteValue = controller(snapshot({ myTeam: incomplete, teams: [incomplete] }))
+    const view = render(incompleteValue)
+    expect(screen.getByRole('button', { name: 'Я готов' })).toBeDisabled()
+
+    view.unmount()
+    const readyMember = team('Ночной дозор', {
+      members: [
+        {
+          player: { userId: 'one', login: 'raven', displayName: 'Ворон' },
+          joinedAtUtc: '2026-09-12T10:00:00Z',
+          readyAtUtc: '2026-09-12T10:05:00Z',
+        },
+      ],
+    })
+    const readyValue = controller(snapshot({ myTeam: readyMember, teams: [readyMember] }))
+    render(readyValue)
+    fireEvent.click(screen.getByRole('button', { name: 'Снять готовность' }))
+
+    expect(readyValue.updateReadiness.mutateAsync).toHaveBeenCalledExactlyOnceWith(false)
+  })
+
   it('uses concise copy for team creation and incoming invitations', () => {
     render(controller(snapshot({ myPendingInvitations: [invitation] })))
     expect(screen.queryByText('Готовый состав подтвердит администратор.')).not.toBeInTheDocument()
@@ -188,15 +271,12 @@ describe('Application decisions', () => {
     const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
     render(value)
 
-    const leavePoint = screen.getByText(
-      'На этом этапе вы можете выйти и вступить в другую команду.',
-    )
-    const confirmationPoint = screen.getByText(
-      'Если вы готовы, ожидайте подтверждения администратора.',
-    )
     expect(
-      leavePoint.compareDocumentPosition(confirmationPoint) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+      screen.getByText('На этом этапе вы можете выйти и вступить в другую команду.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Если вы готовы, ожидайте подтверждения администратора.'),
+    ).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Выйти из команды' }))
     expect(value.leaveTeam.mutateAsync).not.toHaveBeenCalled()
@@ -357,6 +437,7 @@ describe('Application decisions', () => {
       ),
     )
     expect(screen.getByText('Состав подтверждён')).toBeInTheDocument()
+    expect(screen.getByText('Ваш состав утверждён. Ожидайте начала игры.')).toBeInTheDocument()
     expect(
       within(screen.getByRole('heading', { name: 'Ваша команда' }).closest('header')!).getByText(
         'Состав подтверждён',

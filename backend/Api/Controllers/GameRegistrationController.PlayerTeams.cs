@@ -78,6 +78,27 @@ public sealed partial class GameRegistrationController
         return ToTeamResult(result, StatusCodes.Status200OK);
     }
 
+    [HttpPatch("my-team/readiness")]
+    [ProducesResponseType(typeof(ApiContracts.RegistrationTeamDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateMyReadiness(
+        [FromBody] ApiContracts.UpdateRegistrationReadinessRequestDto request,
+        CancellationToken cancellationToken
+    )
+    {
+        var userId = RequireUserId();
+        if (userId is null)
+        {
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
+        }
+
+        var result = await _registrationService.SetMyReadinessAsync(
+            userId.Value,
+            request.IsReady,
+            cancellationToken
+        );
+        return ToTeamResult(result, StatusCodes.Status200OK);
+    }
+
     [HttpPost("teams/{teamId:guid}/join")]
     [ProducesResponseType(typeof(ApiContracts.RegistrationTeamDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> JoinTeam(Guid teamId, CancellationToken cancellationToken)

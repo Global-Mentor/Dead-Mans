@@ -26,6 +26,8 @@ const translations = {
       teamAlreadyPlayed:
         'A team that has opened a card or is marked as played cannot be disbanded.',
       invalidTeamName: 'Enter a team name of 3 to 18 characters.',
+      teamNameRequired: 'Give the team a name before marking ready or confirming it.',
+      teamNotFull: 'The team must be full before you can mark ready.',
       operationFailed: 'The registration operation could not be completed.',
       noConfirmedTeams: 'Confirm at least one team before starting the game.',
       unconfirmedTeams: 'Resolve all forming teams before starting the game.',
@@ -67,6 +69,8 @@ const translations = {
       teamAlreadyPlayed:
         'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
       invalidTeamName: 'Введите название команды длиной от 3 до 18 символов.',
+      teamNameRequired: 'Укажите название команды перед готовностью или подтверждением.',
+      teamNotFull: 'Чтобы отметить готовность, команда должна быть полностью заполнена.',
       operationFailed: 'Не удалось выполнить операцию регистрации.',
       noConfirmedTeams: 'Перед запуском подтвердите хотя бы одну команду.',
       unconfirmedTeams: 'Перед запуском обработайте все команды в формировании.',
@@ -107,6 +111,8 @@ const translations = {
       teamAlreadyPlayed:
         'Команда вже відкривала картку або позначена як зіграна. Розформувати її не можна.',
       invalidTeamName: 'Введіть назву команди завдовжки від 3 до 18 символів.',
+      teamNameRequired: 'Укажіть назву команди перед готовністю або підтвердженням.',
+      teamNotFull: 'Щоб позначити готовність, команда має бути повністю заповнена.',
       operationFailed: 'Не вдалося виконати операцію реєстрації.',
       noConfirmedTeams: 'Перед запуском підтвердьте хоча б одну команду.',
       unconfirmedTeams: 'Перед запуском опрацюйте всі команди у формуванні.',
@@ -148,6 +154,8 @@ const translations = {
       teamAlreadyPlayed:
         'Nie można rozwiązać drużyny, która otworzyła kartę lub jest oznaczona jako rozegrana.',
       invalidTeamName: 'Wpisz nazwę drużyny o długości od 3 do 18 znaków.',
+      teamNameRequired: 'Nadaj drużynie nazwę przed gotowością lub zatwierdzeniem.',
+      teamNotFull: 'Drużyna musi być pełna, zanim oznaczysz gotowość.',
       operationFailed: 'Nie udało się wykonać operacji rejestracji.',
       noConfirmedTeams: 'Przed startem zatwierdź co najmniej jedną drużynę.',
       unconfirmedTeams: 'Przed startem rozwiąż wszystkie drużyny w trakcie formowania.',

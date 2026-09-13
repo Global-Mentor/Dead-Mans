@@ -20,6 +20,7 @@ import {
   rejectGameRegistrationTeamMutationOptions,
   removeGameRegistrationPlayerFromTeamMutationOptions,
   startGameFromRegistrationMutationOptions,
+  updateMyGameRegistrationReadinessMutationOptions,
 } from './game-registration-mutation-options.ts'
 import {
   acceptGameRegistrationInvitation,
@@ -40,6 +41,7 @@ import {
   rejectGameRegistrationTeam,
   removeGameRegistrationPlayerFromTeam,
   startGameFromRegistration,
+  updateMyGameRegistrationReadiness,
 } from './game-registration-api.ts'
 import { gameRegistrationQueryKeys } from './game-registration-queries.ts'
 
@@ -47,6 +49,7 @@ describe('game registration mutation options', () => {
   it.each([
     [createGameRegistrationTeamMutationOptions, createGameRegistrationTeam],
     [joinGameRegistrationTeamMutationOptions, joinGameRegistrationTeam],
+    [updateMyGameRegistrationReadinessMutationOptions, updateMyGameRegistrationReadiness],
     [createAdminGameRegistrationTeamMutationOptions, createAdminGameRegistrationTeam],
     [leaveGameRegistrationTeamMutationOptions, leaveGameRegistrationTeam],
     [requestMyGameRegistrationTeamDisbandMutationOptions, requestMyGameRegistrationTeamDisband],

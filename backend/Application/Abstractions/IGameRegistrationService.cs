@@ -22,6 +22,12 @@ public interface IGameRegistrationService
         CancellationToken cancellationToken = default
     );
 
+    Task<GameRegistrationResult<RegistrationTeamDto>> SetMyReadinessAsync(
+        Guid userId,
+        bool isReady,
+        CancellationToken cancellationToken = default
+    );
+
     Task<GameRegistrationResult<RegistrationTeamDto>> JoinTeamAsync(
         Guid userId,
         Guid teamId,

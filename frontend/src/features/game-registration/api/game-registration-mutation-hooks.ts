@@ -22,6 +22,7 @@ import {
   startGameFromRegistrationMutationOptions,
   updateAdminGameRegistrationTeamNameMutationOptions,
   updateMyGameRegistrationTeamNameMutationOptions,
+  updateMyGameRegistrationReadinessMutationOptions,
 } from './game-registration-mutation-options.ts'
 
 export function useCreateGameRegistrationTeamMutation(
@@ -48,6 +49,13 @@ export function useUpdateMyGameRegistrationTeamNameMutation(
 ) {
   const queryClient = useQueryClient()
   return useMutation(updateMyGameRegistrationTeamNameMutationOptions(queryClient, onError))
+}
+
+export function useUpdateMyGameRegistrationReadinessMutation(
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  const queryClient = useQueryClient()
+  return useMutation(updateMyGameRegistrationReadinessMutationOptions(queryClient, onError))
 }
 
 export function useUpdateAdminGameRegistrationTeamNameMutation(

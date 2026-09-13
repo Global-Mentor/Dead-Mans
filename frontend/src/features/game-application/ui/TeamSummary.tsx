@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Chip, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
@@ -13,6 +13,7 @@ interface TeamSummaryProps {
   showStatus?: boolean
   emphasizeName?: boolean
   capacityBelowName?: boolean
+  showReadiness?: boolean
 }
 
 export function TeamSummary({
@@ -23,6 +24,7 @@ export function TeamSummary({
   showStatus = true,
   emphasizeName = false,
   capacityBelowName = false,
+  showReadiness = false,
 }: TeamSummaryProps) {
   const { t } = useTranslation()
   const pending = team.pendingInvitations ?? []
@@ -131,11 +133,21 @@ export function TeamSummary({
               },
             }}
           >
-            {team.members.map(({ player }) => (
+            {team.members.map(({ player, readyAtUtc }) => (
               <Box component="li" key={player.userId}>
                 <Typography component="span" variant="body2">
                   {player.displayName}
                 </Typography>
+                {showReadiness && team.status === 'forming' ? (
+                  <Chip
+                    size="small"
+                    color={readyAtUtc ? 'success' : 'default'}
+                    variant={readyAtUtc ? 'filled' : 'outlined'}
+                    label={t(
+                      readyAtUtc ? 'gameApplication.playerReady' : 'gameApplication.playerNotReady',
+                    )}
+                  />
+                ) : null}
               </Box>
             ))}
             {pending.map((invitation) => (

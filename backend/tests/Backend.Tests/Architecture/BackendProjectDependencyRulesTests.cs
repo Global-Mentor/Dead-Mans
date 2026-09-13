@@ -527,6 +527,7 @@ public sealed class BackendProjectDependencyRulesTests
             "DbGameRegistrationPersistence.TeamOperations.cs",
             "DbGameRegistrationPersistence.Teams.cs",
             "DbGameRegistrationPersistence.TeamNames.cs",
+            "DbGameRegistrationPersistence.Readiness.cs",
             "DbGameRegistrationPersistence.DisbandRequests.cs"
         };
 

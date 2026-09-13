@@ -184,6 +184,16 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         }
 
         team.Name = TeamNameValue.Normalize(name);
+        if (team.Name is null)
+        {
+            var members = await _dbContext.GameTeamMembers
+                .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
+                .ToListAsync(cancellationToken);
+            foreach (var member in members)
+            {
+                member.ReadyAtUtc = null;
+            }
+        }
         team.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
         await _dbContext.SaveChangesAsync(cancellationToken);
 

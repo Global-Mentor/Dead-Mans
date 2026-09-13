@@ -52,6 +52,12 @@ public sealed partial class GameRegistrationReadStore
             return Array.Empty<RegistrationTeamDto>();
         }
 
+        var maxPlayersPerTeam = await _dbContext.Games
+            .AsNoTracking()
+            .Where(game => game.Id == gameId)
+            .Select(game => game.MaxPlayersPerTeam)
+            .SingleAsync(cancellationToken);
+
         var loadedTeamIds = teams.Select(team => team.Id).ToList();
         var membersByTeamId = await LoadMembersByTeamIdAsync(loadedTeamIds, cancellationToken);
         var pendingInvitationsByTeamId = await LoadPendingInvitationsByTeamIdAsync(
@@ -92,10 +98,11 @@ public sealed partial class GameRegistrationReadStore
                         : null;
                 return MapTeamDto(
                     team,
-                    members ?? (IReadOnlyList<RegistrationTeamMemberDto>)[],
+                    members ?? [],
                     pendingInvitations ?? (IReadOnlyList<RegistrationTeamPendingInvitationDto>)[],
                     disbandRequestedByDisplayName,
-                    activeTeamId == team.Id
+                    activeTeamId == team.Id,
+                    maxPlayersPerTeam
                 );
             })
             .ToList();
@@ -212,7 +219,8 @@ public sealed partial class GameRegistrationReadStore
                         member.TeamId,
                         Dto = new RegistrationTeamMemberDto(
                             new RegistrationPlayerDto(user.Id, user.Login, user.DisplayName),
-                            member.JoinedAtUtc
+                            member.JoinedAtUtc,
+                            member.ReadyAtUtc
                         )
                     }
             )
@@ -265,10 +273,11 @@ public sealed partial class GameRegistrationReadStore
 
     private static RegistrationTeamDto MapTeamDto(
         GameTeam team,
-        IReadOnlyList<RegistrationTeamMemberDto> members,
+        List<RegistrationTeamMemberDto> members,
         IReadOnlyList<RegistrationTeamPendingInvitationDto> pendingInvitations,
         string? disbandRequestedByDisplayName,
-        bool isActiveInGame
+        bool isActiveInGame,
+        short maxPlayersPerTeam
     ) =>
         new(
             team.Id,
@@ -283,6 +292,10 @@ public sealed partial class GameRegistrationReadStore
             team.DisbandRequestedByUserId,
             disbandRequestedByDisplayName,
             isActiveInGame,
+            team.Status == TeamStatusValue.Forming
+                && TeamNameValue.Normalize(team.Name) is not null
+                && members.Count == maxPlayersPerTeam
+                && members.All(member => member.ReadyAtUtc.HasValue),
             members,
             pendingInvitations
         );

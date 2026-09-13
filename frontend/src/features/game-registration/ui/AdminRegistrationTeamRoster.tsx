@@ -67,21 +67,33 @@ export function AdminRegistrationTeamRoster({
           testId={`admin-player-${member.player.userId}`}
           actions={
             canEditRoster ? (
-              <AppButton
-                size="small"
-                tone="warningGhost"
-                sx={teamActionButtonSx}
-                disabled={isRemovingPlayer(team.teamId, member.player.userId)}
-                onClick={() =>
-                  onRequestRemove({
-                    teamId: team.teamId,
-                    teamSlotIndex: team.teamSlotIndex,
-                    player: member.player,
-                  })
-                }
-              >
-                {t('gameApplication.adminPanel.removePlayer')}
-              </AppButton>
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <Chip
+                  size="small"
+                  color={member.readyAtUtc ? 'success' : 'default'}
+                  variant={member.readyAtUtc ? 'filled' : 'outlined'}
+                  label={t(
+                    member.readyAtUtc
+                      ? 'gameApplication.playerReady'
+                      : 'gameApplication.playerNotReady',
+                  )}
+                />
+                <AppButton
+                  size="small"
+                  tone="warningGhost"
+                  sx={teamActionButtonSx}
+                  disabled={isRemovingPlayer(team.teamId, member.player.userId)}
+                  onClick={() =>
+                    onRequestRemove({
+                      teamId: team.teamId,
+                      teamSlotIndex: team.teamSlotIndex,
+                      player: member.player,
+                    })
+                  }
+                >
+                  {t('gameApplication.adminPanel.removePlayer')}
+                </AppButton>
+              </Stack>
             ) : undefined
           }
           {...(canEditRoster

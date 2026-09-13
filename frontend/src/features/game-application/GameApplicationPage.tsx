@@ -35,6 +35,8 @@ export function GameApplicationPage() {
     cancelTeamDisbandRequest,
     canCancelDisbandRequest,
     updateTeamName,
+    updateReadiness,
+    currentUserId,
     acceptInvitation,
     declineInvitation,
     toastMessage,
@@ -98,6 +100,7 @@ export function GameApplicationPage() {
     requestTeamDisband,
     cancelTeamDisbandRequest,
     updateTeamName,
+    updateReadiness,
   ].some((mutation) => mutation.isPending)
   const hasAvailableSlot = snapshot.teamSlots.some(
     (slot) => slot.teamSlotType === 'public' && slot.isAvailableForNewTeam,
@@ -273,6 +276,9 @@ export function GameApplicationPage() {
                 isRequestingDisband={requestTeamDisband.isPending}
                 onUpdateName={(name) => updateTeamName.mutateAsync(name)}
                 isUpdatingName={updateTeamName.isPending}
+                currentUserId={currentUserId}
+                onUpdateReadiness={(isReady) => updateReadiness.mutateAsync(isReady)}
+                isUpdatingReadiness={updateReadiness.isPending}
               />
             ) : (
               <CreateTeamSection

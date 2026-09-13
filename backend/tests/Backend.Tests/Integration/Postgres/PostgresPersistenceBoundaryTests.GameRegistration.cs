@@ -19,13 +19,15 @@ public sealed partial class PostgresPersistenceBoundaryTests
     {
         await _database.ResetAsync();
         await using var db = _database.CreateDbContext();
-        await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
+        // Seed with the current model before removing columns absent from the legacy schema.
+        var seeded = await SeedPlayableRoundGraphAsync(db);
         try
         {
-            var seeded = await SeedPlayableRoundGraphAsync(db);
+            await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
             var memberCount = await db.GameTeamMembers.CountAsync();
             await db.Database.MigrateAsync();
             Assert.Equal(memberCount, await db.GameTeamMembers.CountAsync());
+            Assert.All(await db.GameTeamMembers.AsNoTracking().ToListAsync(), member => Assert.Null(member.ReadyAtUtc));
             var repository = new DbGameRegistrationPersistence(
                 db, new GameRegistrationReadStore(db),
                 NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System

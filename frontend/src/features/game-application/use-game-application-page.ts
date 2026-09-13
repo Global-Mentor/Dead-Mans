@@ -13,6 +13,7 @@ import {
   useRequestMyGameRegistrationTeamDisbandMutation,
   useCancelMyGameRegistrationTeamDisbandRequestMutation,
   useUpdateMyGameRegistrationTeamNameMutation,
+  useUpdateMyGameRegistrationReadinessMutation,
 } from '../game-registration/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 
@@ -30,6 +31,7 @@ export function useGameApplicationPage() {
     useCancelMyGameRegistrationTeamDisbandRequestMutation(onMutationError)
   const requestTeamDisband = useRequestMyGameRegistrationTeamDisbandMutation(onMutationError)
   const updateTeamName = useUpdateMyGameRegistrationTeamNameMutation(onMutationError)
+  const updateReadiness = useUpdateMyGameRegistrationReadinessMutation(onMutationError)
   const gameBoardQuery = useQuery(currentGameBoardQueryOptions)
   const isRegistrationOpen = gameBoardQuery.data?.status === 'ready'
   const registrationSnapshotQuery = useQuery({
@@ -61,6 +63,8 @@ export function useGameApplicationPage() {
     canCancelDisbandRequest:
       user != null && snapshotQuery.data?.myTeam?.disbandRequestedByUserId === user.id,
     updateTeamName,
+    updateReadiness,
+    currentUserId: user?.id,
     toastMessage,
     dismissToast,
   }

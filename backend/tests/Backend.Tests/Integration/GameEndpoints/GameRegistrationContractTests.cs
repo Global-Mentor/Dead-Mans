@@ -1577,6 +1577,7 @@ public sealed partial class GameRegistrationContractTests : IClassFixture<TestWe
                 Id = teamId,
                 GameId = gameId,
                 SlotId = slotId,
+                Name = $"Team {slotIndex}",
                 RecruitmentOpen = recruitmentOpen,
                 Status = status,
                 CreatedByUserId = createdByUserId,

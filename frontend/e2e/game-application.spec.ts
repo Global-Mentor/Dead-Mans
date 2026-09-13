@@ -32,6 +32,7 @@ for (const viewport of [
       status: 'forming',
       isPlayed: false,
       isActiveInGame: false,
+      isReady: false,
       members: [
         {
           player: { userId, login: 'raven', displayName: 'Ворон' },
@@ -86,6 +87,7 @@ for (const viewport of [
     let handshaken = false
     let posts = 0
     let deletes = 0
+    const readinessUpdates: boolean[] = []
     await page.routeWebSocket(/\/hubs\/game-board(?:\?|$)/, (ws) => {
       socket = ws
       ws.onMessage((message) => {
@@ -133,6 +135,14 @@ for (const viewport of [
           state.myTeam = mine
           state.teams.unshift(mine)
           return route.fulfill({ status: 201, json: mine })
+        }
+        if (path === '/api/game/registration/my-team/readiness') {
+          expect(route.request().method()).toBe('PATCH')
+          const { isReady } = route.request().postDataJSON() as { isReady: boolean }
+          readinessUpdates.push(isReady)
+          mine.members[0]!.readyAtUtc = isReady ? '2026-09-13T00:05:00Z' : null
+          mine.isReady = mine.members.every((member) => member.readyAtUtc != null)
+          return route.fulfill({ json: mine })
         }
         if (path === '/api/game/registration/my-team/disband-request') {
           if (route.request().method() === 'POST') {
@@ -216,6 +226,42 @@ for (const viewport of [
     await leaveDialog.getByRole('button', { name: 'Отмена' }).click()
     await expect(leaveDialog).toHaveCount(0)
     expect(creates).toBe(1)
+    await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeDisabled()
+    mine.members.push({
+      player: { userId: 'teammate', displayName: 'Напарник', login: 'teammate' },
+      joinedAtUtc: '2026-09-13T00:00:00Z',
+      readyAtUtc: null,
+    })
+    const publishRegistration = () =>
+      socket!.send(
+        JSON.stringify({ type: 1, target: 'registrationChanged', arguments: [] }) + '\u001e',
+      )
+    publishRegistration()
+    await page.getByRole('button', { name: 'Я готов', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Снять готовность' })).toBeEnabled()
+    await expect(page.getByText('Готовы: 1 / 2', { exact: true })).toBeVisible()
+    mine.members[1]!.readyAtUtc = '2026-09-13T00:05:00Z'
+    mine.isReady = true
+    publishRegistration()
+    await expect(page.getByText('Вся команда готова', { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-readiness-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await page.getByRole('button', { name: 'Снять готовность' }).click()
+    await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
+    expect(readinessUpdates).toEqual([true, false])
+    mine.name = null
+    mine.members.forEach((member) => {
+      member.readyAtUtc = null
+    })
+    publishRegistration()
+    await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeDisabled()
+    mine.name = 'Ночной дозор'
+    publishRegistration()
+    await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
     await page.screenshot({
       path: `../.tmp/ui-audit/after/application-forming-${suffix}.png`,
       fullPage: true,
