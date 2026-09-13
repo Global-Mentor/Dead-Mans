@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 import { AppButton } from '../primitives/AppButton.tsx'
+import type { AppButtonTone } from '../primitives/app-button-tone.ts'
 import { AppDialog } from './AppDialog.tsx'
 
 interface ConfirmDialogProps {
@@ -9,6 +10,9 @@ interface ConfirmDialogProps {
   confirmLabel: string
   cancelLabel: string
   confirmTone?: 'primary' | 'danger'
+  cancelTone?: AppButtonTone
+  dividers?: boolean
+  accented?: boolean
   isBusy?: boolean
   confirmDisabled?: boolean
   onClose: () => void
@@ -22,6 +26,9 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   confirmTone = 'primary',
+  cancelTone = 'ghost',
+  dividers = false,
+  accented = false,
   isBusy = false,
   confirmDisabled = false,
   onClose,
@@ -33,9 +40,11 @@ export function ConfirmDialog({
       onClose={isBusy ? undefined : onClose}
       title={title}
       description={description}
+      dividers={dividers}
+      accented={accented}
       actions={
         <>
-          <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>
+          <AppButton tone={cancelTone} onClick={onClose} disabled={isBusy}>
             {cancelLabel}
           </AppButton>
           <AppButton
