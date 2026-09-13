@@ -59,17 +59,17 @@ export function InviteTeammateSection({
         <Typography component="h3" variant="subtitle2">
           {t('gameApplication.inviteTeammateTitle')}
         </Typography>
-        <Typography variant="body2" color="text.secondary" role="status">
-          {canInvitePlayers
-            ? t('gameApplication.inviteTeammateDescription')
-            : pendingOutgoingInvitation
+        {!canInvitePlayers ? (
+          <Typography variant="body2" color="text.secondary" role="status">
+            {pendingOutgoingInvitation
               ? t('gameApplication.invitePendingDescription', {
                   player:
                     pendingOutgoingInvitation.invitedUserDisplayName ??
                     t('gameApplication.unknownPlayer'),
                 })
               : t('gameApplication.inviteUnavailableDescription')}
-        </Typography>
+          </Typography>
+        ) : null}
 
         {canInvitePlayers ? (
           <Stack spacing={1.25}>
@@ -85,83 +85,65 @@ export function InviteTeammateSection({
             />
 
             <Typography variant="caption" color="text.secondary">
-              {t('gameApplication.inviteSearchHint', {
-                count: invitablePlayers.length,
+              {t('gameApplication.inviteSearchInstruction', {
                 min: minimumInviteSearchLength,
               })}
             </Typography>
 
-            <Box sx={{ py: 1 }}>
-              <Stack spacing={1}>
-                {inviteSearchState === 'idle' ? (
-                  <Typography variant="body2" color="text.secondary">
-                    {t('gameApplication.inviteSearchStartTyping', {
-                      min: minimumInviteSearchLength,
-                    })}
-                  </Typography>
-                ) : null}
-
-                {inviteSearchState === 'results'
-                  ? filteredPlayers.map((player) => (
-                      <Stack
-                        key={player.userId}
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={1}
-                        alignItems={{ sm: 'center' }}
-                        justifyContent="space-between"
-                      >
-                        <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                          <Typography variant="body2" fontWeight={700} noWrap>
-                            {player.displayName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap>
-                            @{player.login}
-                          </Typography>
-                        </Stack>
-                        <AppButton
-                          size="small"
-                          disabled={disabled}
-                          loading={isInvitingPlayer}
-                          onClick={() => onInvitePlayer(player.userId)}
-                          sx={{ minWidth: { sm: 140 } }}
+            {inviteSearchState !== 'idle' ? (
+              <Box sx={{ py: 1 }}>
+                <Stack spacing={1}>
+                  {inviteSearchState === 'results'
+                    ? filteredPlayers.map((player) => (
+                        <Stack
+                          key={player.userId}
+                          direction={{ xs: 'column', sm: 'row' }}
+                          spacing={1}
+                          alignItems={{ sm: 'center' }}
+                          justifyContent="space-between"
                         >
-                          {t('gameApplication.inviteTeammateAction')}
-                        </AppButton>
-                      </Stack>
-                    ))
-                  : null}
+                          <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={700} noWrap>
+                              {player.displayName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              @{player.login}
+                            </Typography>
+                          </Stack>
+                          <AppButton
+                            size="small"
+                            disabled={disabled}
+                            loading={isInvitingPlayer}
+                            onClick={() => onInvitePlayer(player.userId)}
+                            sx={{ minWidth: { sm: 140 } }}
+                          >
+                            {t('gameApplication.inviteTeammateAction')}
+                          </AppButton>
+                        </Stack>
+                      ))
+                    : null}
 
-                {inviteSearchState === 'empty' ? (
-                  <Typography variant="body2" color="text.secondary">
-                    {t('gameApplication.inviteNoPlayersFound')}
-                  </Typography>
-                ) : null}
+                  {inviteSearchState === 'empty' ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('gameApplication.inviteNoPlayersFound')}
+                    </Typography>
+                  ) : null}
 
-                {inviteSearchState === 'results' && hiddenMatchesCount > 0 ? (
-                  <Typography variant="caption" color="text.secondary">
-                    {t('gameApplication.inviteSearchTooManyResults', {
-                      count: hiddenMatchesCount,
-                    })}
-                  </Typography>
-                ) : null}
-              </Stack>
-            </Box>
+                  {inviteSearchState === 'results' && hiddenMatchesCount > 0 ? (
+                    <Typography variant="caption" color="text.secondary">
+                      {t('gameApplication.inviteSearchTooManyResults', {
+                        count: hiddenMatchesCount,
+                      })}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              </Box>
+            ) : null}
           </Stack>
         ) : null}
 
         {pendingOutgoingInvitation ? (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
-            <Typography
-              variant="body2"
-              color="primary.light"
-              sx={{ overflowWrap: 'anywhere', minWidth: 0 }}
-            >
-              {t('gameApplication.invitePendingChip', {
-                player:
-                  pendingOutgoingInvitation.invitedUserDisplayName ??
-                  t('gameApplication.unknownPlayer'),
-              })}
-            </Typography>
             <AppButton
               size="small"
               tone="danger"

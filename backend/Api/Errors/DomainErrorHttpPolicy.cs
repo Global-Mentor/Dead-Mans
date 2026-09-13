@@ -94,6 +94,16 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamActiveInGame,
                 AppMessages.ErrorCodes.GameRegistrationTeamActiveInGame
             ),
+            GameRegistrationErrorCode.TeamNameTaken => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNameTaken,
+                AppMessages.ErrorCodes.GameRegistrationTeamNameTaken
+            ),
+            GameRegistrationErrorCode.DisbandRequestNotOwned => new(
+                StatusCodes.Status403Forbidden,
+                AppMessages.Client.GameRegistrationDisbandRequestNotOwned,
+                AppMessages.ErrorCodes.GameRegistrationDisbandRequestNotOwned
+            ),
             GameRegistrationErrorCode.InvalidTeamName => new(
                 StatusCodes.Status400BadRequest,
                 AppMessages.Client.GameRegistrationInvalidTeamName,

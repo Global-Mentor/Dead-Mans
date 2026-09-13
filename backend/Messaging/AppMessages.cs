@@ -127,7 +127,11 @@ public static class AppMessages
         public const string GameRegistrationTeamAlreadyPlayed =
             "A team that has opened a card or is marked as played cannot be disbanded.";
         public const string GameRegistrationInvalidTeamName =
-            "Team name must be 48 characters or less.";
+            "Enter a team name of 3 to 48 characters.";
+        public const string GameRegistrationTeamNameTaken =
+            "A team with this name already exists in this game. Names ignore case and whitespace.";
+        public const string GameRegistrationDisbandRequestNotOwned =
+            "Only the player who requested disbanding can withdraw the request.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
         public const string GameModifierGameNotActive = "No active game is available for modifier activation.";
         public const string GameModifierNotEnabled =
@@ -306,6 +310,8 @@ public static class AppMessages
             "game_registration.team_already_played";
         public const string GameRegistrationInvalidTeamName =
             "game_registration.invalid_team_name";
+        public const string GameRegistrationTeamNameTaken = "game_registration.team_name_taken";
+        public const string GameRegistrationDisbandRequestNotOwned = "game_registration.disband_request_not_owned";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
         public const string GameModifierGameNotActive = "game_modifier.game_not_active";
         public const string GameModifierNotEnabled = "game_modifier.not_enabled";

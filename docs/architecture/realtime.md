@@ -4,12 +4,25 @@ Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and paylo
 
 ## Hubs
 
-| Hub        | Path               | Auth                                         | Server → client events                                                                         |
-| ---------- | ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | board, round, modifier, quiz, notification and `gameLifecycleChanged` events |
-| game-setup | `/hubs/game-setup` | Cookie session, admin only                   | `draftChanged` → no body; refetch `GET /api/game/setup`                                        |
+| Hub        | Path               | Auth                                         | Server → client events                                                        |
+| ---------- | ------------------ | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | board, round, modifier, quiz, notification and `gameLifecycleChanged` events  |
+| game-setup | `/hubs/game-setup` | Cookie session, admin only                   | `draftChanged` → no body; refetch `GET /api/game/setup` and question catalogs |
 
 Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
+
+`registrationChanged` is sent to authenticated game-board clients, without a body,
+after a successful registration write: creating/renaming/joining/leaving a team,
+invitations, confirmation, rejection, disbanding, and disband requests/withdrawals.
+`GameLifecycleRealtimeSync` refreshes each client's authorized registration snapshot,
+the admin snapshot when active, and the team queue. The shared subscription works
+on the application page and admin pages; reconnect also refreshes registration state.
+No private invitation details are broadcast. Publish failures do not undo committed writes.
+
+Question catalog edits also emit `draftChanged` after commit. Disabling or deleting
+questions removes draft selections and increments affected board versions atomically.
+Setup clients invalidate question catalogs on the event and on reconnect; local unsaved
+fields are preserved while unavailable question IDs are removed from the selection.
 
 ## Publish failures
 

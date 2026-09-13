@@ -154,6 +154,8 @@ public enum GameRegistrationErrorCode
     TeamActiveInGame,
     TeamAlreadyPlayed,
     InvalidTeamName,
+    TeamNameTaken,
+    DisbandRequestNotOwned,
     OperationFailed,
 }
 

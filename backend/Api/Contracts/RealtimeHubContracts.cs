@@ -14,6 +14,7 @@ public static class RealtimeHubContracts
         public const string UserNotificationCreatedEvent = "userNotificationCreated";
         public const string GameLifecycleChangedEvent = "gameLifecycleChanged";
         public const string ModifierCatalogChangedEvent = "modifierCatalogChanged";
+        public const string RegistrationChangedEvent = "registrationChanged";
     }
 
     public static class GameSetup

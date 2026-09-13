@@ -525,7 +525,9 @@ public sealed class BackendProjectDependencyRulesTests
             "DbGameRegistrationPersistence.InvitationValidation.cs",
             "DbGameRegistrationPersistence.RosterChanges.cs",
             "DbGameRegistrationPersistence.TeamOperations.cs",
-            "DbGameRegistrationPersistence.Teams.cs"
+            "DbGameRegistrationPersistence.Teams.cs",
+            "DbGameRegistrationPersistence.TeamNames.cs",
+            "DbGameRegistrationPersistence.DisbandRequests.cs"
         };
 
         var actualFiles = Directory

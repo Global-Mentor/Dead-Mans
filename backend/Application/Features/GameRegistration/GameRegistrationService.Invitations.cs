@@ -77,7 +77,7 @@ public sealed partial class GameRegistrationService
             inviteTeamId = team.TeamId;
         }
 
-        return await _persistence.PersistCreateAdminInvitationAsync(
+        return await CompleteMutationAsync(_persistence.PersistCreateAdminInvitationAsync(
             game.GameId,
             adminUserId,
             slot.TeamSlotId,
@@ -85,7 +85,7 @@ public sealed partial class GameRegistrationService
             invitedUserId,
             inviteTeamId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationInvitationDto>> CreatePlayerInvitationAsync(
@@ -126,7 +126,7 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationInvitationDto>(GameRegistrationErrorCode.SlotNotFound);
         }
 
-        return await _persistence.PersistCreatePlayerInvitationAsync(
+        return await CompleteMutationAsync(_persistence.PersistCreatePlayerInvitationAsync(
             game.GameId,
             userId,
             slot.TeamSlotId,
@@ -134,7 +134,7 @@ public sealed partial class GameRegistrationService
             invitedUserId,
             team.TeamId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> CancelPlayerInvitationAsync(
@@ -166,13 +166,13 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamInviteNotAllowed);
         }
 
-        return await _persistence.PersistCancelPlayerInvitationAsync(
+        return await CompleteMutationAsync(_persistence.PersistCancelPlayerInvitationAsync(
             game.GameId,
             userId,
             team.TeamId,
             invitationId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> AcceptInvitationAsync(
@@ -229,7 +229,7 @@ public sealed partial class GameRegistrationService
             }
         }
 
-        return await _persistence.PersistAcceptInvitationAsync(
+        return await CompleteMutationAsync(_persistence.PersistAcceptInvitationAsync(
             new AcceptInvitationCommand(
                 invitation.InvitationId,
                 userId,
@@ -239,7 +239,7 @@ public sealed partial class GameRegistrationService
                 game.MaxPlayersPerTeam
             ),
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> DeclineInvitationAsync(
@@ -260,6 +260,6 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.GameNotInReady);
         }
 
-        return await _persistence.PersistDeclineInvitationAsync(userId, invitationId, cancellationToken);
+        return await CompleteMutationAsync(_persistence.PersistDeclineInvitationAsync(userId, invitationId, cancellationToken));
     }
 }

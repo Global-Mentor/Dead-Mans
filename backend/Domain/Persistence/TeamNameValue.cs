@@ -4,6 +4,7 @@ namespace backend.Domain.Persistence;
 
 public static partial class TeamNameValue
 {
+    public const int MinLength = 3;
     public const int MaxLength = 48;
 
     public static string? Normalize(string? value)
@@ -20,8 +21,11 @@ public static partial class TeamNameValue
     public static bool IsValid(string? value)
     {
         var normalized = Normalize(value);
-        return normalized is null || normalized.Length <= MaxLength;
+        return normalized is null || normalized.Length is >= MinLength and <= MaxLength;
     }
+
+    public static string? UniquenessKey(string? value) =>
+        Normalize(value) is { } name ? WhitespaceRegex().Replace(name, "").ToUpperInvariant() : null;
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();

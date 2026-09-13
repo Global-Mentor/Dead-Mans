@@ -1,3 +1,4 @@
+import { useAuth } from '../../shared/auth/use-auth.ts'
 import { useQuery } from '@tanstack/react-query'
 import {
   gameRegistrationSnapshotQueryOptions,
@@ -10,11 +11,13 @@ import {
   useJoinGameRegistrationTeamMutation,
   useLeaveGameRegistrationTeamMutation,
   useRequestMyGameRegistrationTeamDisbandMutation,
+  useCancelMyGameRegistrationTeamDisbandRequestMutation,
   useUpdateMyGameRegistrationTeamNameMutation,
 } from '../game-registration/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 
 export function useGameApplicationPage() {
+  const { user } = useAuth()
   const { toastMessage, onMutationError, dismissToast } = useGameRegistrationToast()
   const createTeam = useCreateGameRegistrationTeamMutation(onMutationError)
   const joinTeam = useJoinGameRegistrationTeamMutation(onMutationError)
@@ -23,6 +26,8 @@ export function useGameApplicationPage() {
   const declineInvitation = useDeclineGameRegistrationInvitationMutation(onMutationError)
   const createPlayerInvitation = useCreatePlayerGameRegistrationInvitationMutation(onMutationError)
   const cancelPlayerInvitation = useCancelPlayerGameRegistrationInvitationMutation(onMutationError)
+  const cancelTeamDisbandRequest =
+    useCancelMyGameRegistrationTeamDisbandRequestMutation(onMutationError)
   const requestTeamDisband = useRequestMyGameRegistrationTeamDisbandMutation(onMutationError)
   const updateTeamName = useUpdateMyGameRegistrationTeamNameMutation(onMutationError)
   const gameBoardQuery = useQuery(currentGameBoardQueryOptions)
@@ -52,6 +57,9 @@ export function useGameApplicationPage() {
     createPlayerInvitation,
     cancelPlayerInvitation,
     requestTeamDisband,
+    cancelTeamDisbandRequest,
+    canCancelDisbandRequest:
+      user != null && snapshotQuery.data?.myTeam?.disbandRequestedByUserId === user.id,
     updateTeamName,
     toastMessage,
     dismissToast,

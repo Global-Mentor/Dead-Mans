@@ -9,9 +9,17 @@ interface TeamSummaryProps {
   team: RegistrationTeam
   capacity: number
   action?: ReactNode
+  showStatus?: boolean
+  showNameLabel?: boolean
 }
 
-export function TeamSummary({ team, capacity, action }: TeamSummaryProps) {
+export function TeamSummary({
+  team,
+  capacity,
+  action,
+  showStatus = true,
+  showNameLabel = false,
+}: TeamSummaryProps) {
   const { t } = useTranslation()
   const pending = team.pendingInvitations ?? []
   const freePlaces = getTeamFreePlaces(team, capacity)
@@ -40,7 +48,7 @@ export function TeamSummary({ team, capacity, action }: TeamSummaryProps) {
         minWidth: 0,
       }}
     >
-      <Stack spacing={0.35} sx={{ minWidth: 0 }}>
+      <Stack spacing={1} sx={{ minWidth: 0 }}>
         <Stack
           direction="row"
           spacing={1}
@@ -54,7 +62,14 @@ export function TeamSummary({ team, capacity, action }: TeamSummaryProps) {
             variant="h6"
             sx={{ fontSize: 24, lineHeight: 1.15, overflowWrap: 'anywhere' }}
           >
-            {team.name?.trim() || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
+            {showNameLabel ? (
+              <Typography component="span" variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                {t('gameApplication.teamNameLabel')}
+              </Typography>
+            ) : null}
+            <Box component="span" sx={{ color: showNameLabel ? 'primary.light' : 'inherit' }}>
+              {team.name?.trim() || t('gameApplication.unnamedTeam')}
+            </Box>
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
             {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
@@ -74,11 +89,25 @@ export function TeamSummary({ team, capacity, action }: TeamSummaryProps) {
               m: 0,
               p: 0,
               listStyle: 'none',
-              display: 'flex',
-              flexWrap: 'wrap',
-              columnGap: 0.75,
-              '& > li + li::before': { content: '"·"', mr: 0.75, color: 'text.secondary' },
-              '& > li': { minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere' },
+              display: 'grid',
+              gap: 0.75,
+              '& > li': {
+                display: 'flex',
+                gap: 1.25,
+                alignItems: 'flex-start',
+                minWidth: 0,
+                maxWidth: '100%',
+                overflowWrap: 'anywhere',
+              },
+              '& > li::before': {
+                content: '""',
+                width: 5,
+                height: 5,
+                mt: '0.6em',
+                flexShrink: 0,
+                transform: 'rotate(45deg)',
+                bgcolor: 'primary.main',
+              },
             }}
           >
             {team.members.map(({ player }) => (
@@ -106,12 +135,11 @@ export function TeamSummary({ team, capacity, action }: TeamSummaryProps) {
             ) : null}
           </Box>
           <Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap" useFlexGap>
-            <Typography variant="caption" color="text.secondary">
-              {t('gameApplication.teamSlotChip', { slot: team.teamSlotIndex })}
-            </Typography>
-            <Typography variant="caption" color={isOpen ? 'primary.light' : 'text.secondary'}>
-              {state}
-            </Typography>
+            {showStatus ? (
+              <Typography variant="caption" color={isOpen ? 'primary.light' : 'text.secondary'}>
+                {state}
+              </Typography>
+            ) : null}
           </Stack>
         </Stack>
       </Stack>

@@ -38,6 +38,18 @@ describe('RegistrationTeamNameEditor', () => {
     expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
   })
 
+  it('rejects a nonempty name shorter than three characters', () => {
+    const onSave = vi.fn()
+    renderWithAppProviders(
+      <RegistrationTeamNameEditor value="Night Watch" canEdit isSaving={false} onSave={onSave} />,
+    )
+
+    fireEvent.change(screen.getByLabelText('Название команды'), { target: { value: 'ab' } })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Введите минимум 3 символа.')
+    expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
+  })
+
   it('syncs the field when the external value changes', () => {
     const onSave = vi.fn()
 

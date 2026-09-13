@@ -54,14 +54,14 @@ public sealed partial class GameRegistrationService
             resolvedTeamSlotId = slot.TeamSlotId;
         }
 
-        return await _persistence.PersistCreateEmptyTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistCreateEmptyTeamAsync(
             game.GameId,
             adminUserId,
             resolvedTeamSlotId,
             recruitmentOpen,
             normalizedName,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> UpdateTeamNameAsync(
@@ -93,12 +93,13 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistUpdateTeamNameAsync(
+        return await CompleteMutationAsync(_persistence.PersistUpdateTeamNameAsync(
             game.GameId,
             teamId,
             normalizedName,
+            actingPlayerId: null,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> AssignPlayerAsync(
@@ -149,14 +150,14 @@ public sealed partial class GameRegistrationService
             }
         }
 
-        return await _persistence.PersistAssignPlayerAsync(
+        return await CompleteMutationAsync(_persistence.PersistAssignPlayerAsync(
             game.GameId,
             adminUserId,
             teamId,
             userId,
             game.MaxPlayersPerTeam,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> RemovePlayerFromTeamAsync(
@@ -183,13 +184,13 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(team.Status == TeamStatusValue.Confirmed ? GameRegistrationErrorCode.TeamRosterLocked : GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistRemovePlayerFromTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistRemovePlayerFromTeamAsync(
             game.GameId,
             adminUserId,
             teamId,
             userId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> CancelTeamInvitationAsync(
@@ -216,13 +217,13 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistCancelTeamInvitationAsync(
+        return await CompleteMutationAsync(_persistence.PersistCancelTeamInvitationAsync(
             game.GameId,
             adminUserId,
             teamId,
             invitationId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> MoveTeamToSlotAsync(
@@ -270,13 +271,13 @@ public sealed partial class GameRegistrationService
             }
         }
 
-        return await _persistence.PersistMoveTeamToSlotAsync(
+        return await CompleteMutationAsync(_persistence.PersistMoveTeamToSlotAsync(
             game.GameId,
             adminUserId,
             teamId,
             targetTeamSlotId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> ConfirmTeamAsync(
@@ -312,14 +313,14 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.PendingOutgoingInvitation);
         }
 
-        return await _persistence.PersistConfirmTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistConfirmTeamAsync(
             game.GameId,
             adminUserId,
             teamId,
             game.MinPlayersPerTeam,
             game.MaxPlayersPerTeam,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> RejectTeamAsync(
@@ -345,7 +346,7 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistRejectTeamAsync(game.GameId, adminUserId, teamId, cancellationToken);
+        return await CompleteMutationAsync(_persistence.PersistRejectTeamAsync(game.GameId, adminUserId, teamId, cancellationToken));
     }
 
     public async Task<GameRegistrationResult<bool>> DisbandTeamAsync(
@@ -381,11 +382,11 @@ public sealed partial class GameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistDisbandTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistDisbandTeamAsync(
             game.GameId,
             adminUserId,
             teamId,
             cancellationToken
-        );
+        ));
     }
 }

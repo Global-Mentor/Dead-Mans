@@ -2,6 +2,8 @@ using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
 using backend.Domain.Persistence;
+using backend.Application.Abstractions.Realtime;
+using backend.Application.Realtime;
 
 namespace backend.Application.Features.GameRegistration;
 
@@ -9,14 +11,20 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
 {
     private readonly IGameRegistrationReadStore _reads;
     private readonly IGameRegistrationPersistence _persistence;
+    private readonly IGameRegistrationEventsPublisher _events;
+    private readonly ILogger<GameRegistrationService> _logger;
 
     public GameRegistrationService(
         IGameRegistrationReadStore reads,
-        IGameRegistrationPersistence persistence
+        IGameRegistrationPersistence persistence,
+        IGameRegistrationEventsPublisher events,
+        ILogger<GameRegistrationService> logger
     )
     {
         _reads = reads;
         _persistence = persistence;
+        _events = events;
+        _logger = logger;
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> CreateTeamAsync(
@@ -27,7 +35,7 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
     )
     {
         var normalizedName = TeamNameValue.Normalize(name);
-        if (!TeamNameValue.IsValid(normalizedName))
+        if (normalizedName is null || !TeamNameValue.IsValid(normalizedName))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.InvalidTeamName);
         }
@@ -49,14 +57,14 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NoAvailableSlot);
         }
 
-        return await _persistence.PersistCreateTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistCreateTeamAsync(
             game.GameId,
             userId,
             slot.TeamSlotId,
             recruitmentOpen,
             normalizedName,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> UpdateMyTeamNameAsync(
@@ -66,7 +74,7 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
     )
     {
         var normalizedName = TeamNameValue.Normalize(name);
-        if (!TeamNameValue.IsValid(normalizedName))
+        if (normalizedName is null || !TeamNameValue.IsValid(normalizedName))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.InvalidTeamName);
         }
@@ -94,12 +102,13 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistUpdateTeamNameAsync(
+        return await CompleteMutationAsync(_persistence.PersistUpdateTeamNameAsync(
             game.GameId,
             teamId.Value,
             normalizedName,
+            userId,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> JoinTeamAsync(
@@ -130,13 +139,13 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistJoinTeamAsync(
+        return await CompleteMutationAsync(_persistence.PersistJoinTeamAsync(
             game.GameId,
             userId,
             teamId,
             game.MaxPlayersPerTeam,
             cancellationToken
-        );
+        ));
     }
 
     public async Task<GameRegistrationResult<bool>> LeaveTeamAsync(
@@ -170,7 +179,7 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<bool>(GameRegistrationErrorCode.PendingOutgoingInvitation);
         }
 
-        return await _persistence.PersistLeaveTeamAsync(game.GameId, userId, cancellationToken);
+        return await CompleteMutationAsync(_persistence.PersistLeaveTeamAsync(game.GameId, userId, cancellationToken));
     }
 
     public async Task<GameRegistrationResult<RegistrationTeamDto>> RequestMyTeamDisbandAsync(
@@ -205,14 +214,37 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
-        return await _persistence.PersistRequestTeamDisbandAsync(
+        return await CompleteMutationAsync(_persistence.PersistRequestTeamDisbandAsync(
             game.GameId,
             userId,
             activeTeamId.Value,
             cancellationToken
-        );
+        ));
     }
 
     private static GameRegistrationResult<T> Fail<T>(GameRegistrationErrorCode error) =>
         new(false, default, error);
+
+    public async Task<GameRegistrationResult<RegistrationTeamDto>> CancelMyTeamDisbandRequestAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var game = await _reads.GetReadyGameAsync(cancellationToken);
+        if (game is null) return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        var teamId = await _reads.GetActiveTeamIdForUserAsync(game.GameId, userId, cancellationToken);
+        if (teamId is null) return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NotTeamMember);
+        return await CompleteMutationAsync(_persistence.PersistCancelTeamDisbandRequestAsync(
+            game.GameId, userId, teamId.Value, cancellationToken));
+    }
+
+    private async Task<GameRegistrationResult<T>> CompleteMutationAsync<T>(Task<GameRegistrationResult<T>> mutation)
+    {
+        var result = await mutation;
+        if (result.Success)
+        {
+            await RealtimePublishGuard.TryPublishAsync(
+                token => _events.PublishRegistrationChangedAsync(token), _logger,
+                "Registration changed event could not be published after a successful write.");
+        }
+        return result;
+    }
 }

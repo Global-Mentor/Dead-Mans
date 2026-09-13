@@ -1,4 +1,6 @@
 export const API_ERROR_CODES = {
+  gameRegistrationTeamNameTaken: 'game_registration.team_name_taken',
+  gameRegistrationDisbandRequestNotOwned: 'game_registration.disband_request_not_owned',
   invalidGameSetupTitle: 'game_setup.invalid_title',
   gameSetupStaleVersion: 'game_setup.stale_version',
   gameRegistrationNotOpen: 'game_registration.not_open',

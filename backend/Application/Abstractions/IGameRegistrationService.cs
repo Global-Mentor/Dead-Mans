@@ -38,6 +38,9 @@ public interface IGameRegistrationService
         CancellationToken cancellationToken = default
     );
 
+    Task<GameRegistrationResult<RegistrationTeamDto>> CancelMyTeamDisbandRequestAsync(
+        Guid userId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<RegistrationTeamDto>?> ListTeamsAsync(
         CancellationToken cancellationToken = default
     );

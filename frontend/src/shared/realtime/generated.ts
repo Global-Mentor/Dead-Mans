@@ -5,6 +5,7 @@ export const realtimeHubs = {
   gameBoard: {
     path: '/hubs/game-board',
     events: {
+      registrationChanged: 'registrationChanged',
       cellOpened: 'cellOpened',
       modifierActivated: 'modifierActivated',
       modifierActivationCancelled: 'modifierActivationCancelled',

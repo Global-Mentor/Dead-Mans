@@ -33,10 +33,23 @@ export function GameLifecycleRealtimeSync() {
       off: (name: string, handler: () => void) => void
     }) => {
       const handler = () => void invalidate()
+      const registrationHandler = () => {
+        void Promise.all(
+          [
+            gameRegistrationSnapshotQueryOptions,
+            gameRegistrationAdminSnapshotQueryOptions,
+            currentGameTeamQueueQueryOptions,
+          ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
+        )
+      }
       connection.on(eventName, handler)
-      return () => connection.off(eventName, handler)
+      connection.on(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+      return () => {
+        connection.off(eventName, handler)
+        connection.off(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+      }
     },
-    [invalidate],
+    [invalidate, queryClient],
   )
   useSignalrHubSubscription({
     hub: 'gameBoard',

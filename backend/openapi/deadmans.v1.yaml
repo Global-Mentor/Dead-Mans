@@ -3094,6 +3094,43 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: cancelMyRegistrationTeamDisbandRequest
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Disband request withdrawn; team remains confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationTeamDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only the author may withdraw a pending disband request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not on a team or registration not open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The team is no longer confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/registration/teams/{teamId}/join:
     post:
       operationId: joinRegistrationTeam
@@ -4322,14 +4359,15 @@ components:
           minimum: 0
     CreateRegistrationTeamRequestDto:
       type: object
-      required: [recruitmentOpen]
+      required: [recruitmentOpen, name]
       properties:
         recruitmentOpen:
           type: boolean
         name:
           type: string
           maxLength: 48
-          nullable: true
+          minLength: 3
+          description: Required; 3–48 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace.
     CreateAdminRegistrationTeamRequestDto:
       type: object
       required: [recruitmentOpen]
@@ -7225,6 +7263,8 @@ components:
             - game_registration.team_active_in_game
             - game_registration.team_already_played
             - game_registration.invalid_team_name
+            - game_registration.team_name_taken
+            - game_registration.disband_request_not_owned
             - game_registration.operation_failed
             - game_modifier.game_not_active
             - game_modifier.not_enabled
@@ -7415,6 +7455,10 @@ components:
       properties:
         notification:
           $ref: '#/components/schemas/GameUserNotificationDto'
+    GameRegistrationChangedEventDto:
+      type: object
+      description: Registration changed after commit. No JSON body; authenticated clients refetch their own registration snapshot.
+      additionalProperties: false
     GameSetupDraftChangedEventDto:
       type: object
       description: >
@@ -7434,6 +7478,10 @@ x-signalr:
       authorization:
         summary: Any authenticated panel user.
       serverEvents:
+        registrationChanged:
+          summary: Teams, invitations, confirmation or disband requests changed; clients resync their authorized snapshots.
+          payload:
+            $ref: '#/components/schemas/GameRegistrationChangedEventDto'
         cellOpened:
           summary: A board cell was opened by an admin.
           payload:

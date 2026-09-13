@@ -6,6 +6,9 @@ const translations = {
       disbanded: 'Disbanded',
     },
     errors: {
+      teamNameTaken:
+        'A team with this name already exists. Case and whitespace do not distinguish names.',
+      disbandRequestNotOwned: 'Only the player who sent the request can withdraw it.',
       notOpen: 'Registration is not open right now.',
       noSlots: 'No team slots are available.',
       alreadyOnTeam: 'You are already on a team for this game.',
@@ -22,7 +25,7 @@ const translations = {
       teamActiveInGame: 'The active team cannot be disbanded while it is taking its turn.',
       teamAlreadyPlayed:
         'A team that has opened a card or is marked as played cannot be disbanded.',
-      invalidTeamName: 'Team name must be 48 characters or less.',
+      invalidTeamName: 'Enter a team name of 3 to 48 characters.',
       operationFailed: 'The registration operation could not be completed.',
       noConfirmedTeams: 'Confirm at least one team before starting the game.',
       unconfirmedTeams: 'Resolve all forming teams before starting the game.',
@@ -44,6 +47,8 @@ const translations = {
       disbanded: 'Расформирована',
     },
     errors: {
+      teamNameTaken: 'Команда с таким названием уже существует. Регистр и пробелы не учитываются.',
+      disbandRequestNotOwned: 'Отозвать запрос может только отправивший его игрок.',
       notOpen: 'Приём заявок сейчас не открыт.',
       noSlots: 'Нет свободных слотов для команд.',
       alreadyOnTeam: 'Вы уже состоите в команде на эту игру.',
@@ -61,7 +66,7 @@ const translations = {
       teamActiveInGame: 'Нельзя распустить команду, чей ход сейчас активен.',
       teamAlreadyPlayed:
         'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
-      invalidTeamName: 'Название команды должно быть не длиннее 48 символов.',
+      invalidTeamName: 'Введите название команды длиной от 3 до 48 символов.',
       operationFailed: 'Не удалось выполнить операцию регистрации.',
       noConfirmedTeams: 'Перед запуском подтвердите хотя бы одну команду.',
       unconfirmedTeams: 'Перед запуском обработайте все команды в формировании.',
@@ -83,6 +88,8 @@ const translations = {
       disbanded: 'Розформована',
     },
     errors: {
+      teamNameTaken: 'Команда з такою назвою вже існує. Регістр і пробіли не враховуються.',
+      disbandRequestNotOwned: 'Відкликати запит може лише гравець, який його надіслав.',
       notOpen: 'Прийом заявок зараз не відкритий.',
       noSlots: 'Немає вільних слотів для команд.',
       alreadyOnTeam: 'Ви вже в команді на цю гру.',
@@ -99,7 +106,7 @@ const translations = {
       teamActiveInGame: 'Не можна розформувати команду, чий хід зараз активний.',
       teamAlreadyPlayed:
         'Команда вже відкривала картку або позначена як зіграна. Розформувати її не можна.',
-      invalidTeamName: 'Назва команди має бути не довшою за 48 символів.',
+      invalidTeamName: 'Введіть назву команди завдовжки від 3 до 48 символів.',
       operationFailed: 'Не вдалося виконати операцію реєстрації.',
       noConfirmedTeams: 'Перед запуском підтвердьте хоча б одну команду.',
       unconfirmedTeams: 'Перед запуском опрацюйте всі команди у формуванні.',
@@ -121,6 +128,9 @@ const translations = {
       disbanded: 'Rozwiązana',
     },
     errors: {
+      teamNameTaken:
+        'Drużyna o tej nazwie już istnieje. Wielkość liter i odstępy nie mają znaczenia.',
+      disbandRequestNotOwned: 'Tylko gracz, który wysłał prośbę, może ją wycofać.',
       notOpen: 'Rejestracja nie jest teraz otwarta.',
       noSlots: 'Brak wolnych slotów drużynowych.',
       alreadyOnTeam: 'Już jesteś w drużynie w tej grze.',
@@ -137,7 +147,7 @@ const translations = {
       teamActiveInGame: 'Nie można rozwiązać drużyny, która ma aktywną turę.',
       teamAlreadyPlayed:
         'Nie można rozwiązać drużyny, która otworzyła kartę lub jest oznaczona jako rozegrana.',
-      invalidTeamName: 'Nazwa drużyny może mieć maksymalnie 48 znaków.',
+      invalidTeamName: 'Wpisz nazwę drużyny o długości od 3 do 48 znaków.',
       operationFailed: 'Nie udało się wykonać operacji rejestracji.',
       noConfirmedTeams: 'Przed startem zatwierdź co najmniej jedną drużynę.',
       unconfirmedTeams: 'Przed startem rozwiąż wszystkie drużyny w trakcie formowania.',
