@@ -127,7 +127,7 @@ public static class AppMessages
         public const string GameRegistrationTeamAlreadyPlayed =
             "A team that has opened a card or is marked as played cannot be disbanded.";
         public const string GameRegistrationInvalidTeamName =
-            "Enter a team name of 3 to 48 characters.";
+            "Enter a team name of 3 to 18 characters.";
         public const string GameRegistrationTeamNameTaken =
             "A team with this name already exists in this game. Names ignore case and whitespace.";
         public const string GameRegistrationDisbandRequestNotOwned =

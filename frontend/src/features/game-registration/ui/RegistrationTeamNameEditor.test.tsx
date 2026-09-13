@@ -50,6 +50,21 @@ describe('RegistrationTeamNameEditor', () => {
     expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
   })
 
+  it('limits a team name to 18 characters', () => {
+    const onSave = vi.fn()
+    renderWithAppProviders(
+      <RegistrationTeamNameEditor value="Night Watch" canEdit isSaving={false} onSave={onSave} />,
+    )
+
+    const input = screen.getByLabelText('Название команды')
+    expect(input).toHaveAttribute('maxlength', '18')
+
+    fireEvent.change(input, { target: { value: '1234567890123456789' } })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Введите не более 18 символов.')
+    expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
+  })
+
   it('syncs the field when the external value changes', () => {
     const onSave = vi.fn()
 

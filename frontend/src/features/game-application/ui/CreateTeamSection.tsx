@@ -38,9 +38,11 @@ export function CreateTeamSection({
     ? 'gameApplication.teamNameRequired'
     : normalizedName.length < TEAM_NAME_MIN_LENGTH
       ? 'gameApplication.teamNameTooShort'
-      : isTeamNameTaken(teamName, existingNames)
-        ? 'gameApplication.teamNameTaken'
-        : null
+      : normalizedName.length > TEAM_NAME_MAX_LENGTH
+        ? 'gameApplication.teamNameTooLong'
+        : isTeamNameTaken(teamName, existingNames)
+          ? 'gameApplication.teamNameTaken'
+          : null
   const isDisabled = disabled || isCreating || !hasAvailableSlot
 
   return (

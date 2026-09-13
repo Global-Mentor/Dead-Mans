@@ -86,9 +86,11 @@ export function MyTeamSection({
     ? 'gameApplication.teamNameRequired'
     : normalizedNameDraft.length < TEAM_NAME_MIN_LENGTH
       ? 'gameApplication.teamNameTooShort'
-      : isTeamNameTaken(nameDraft, existingTeamNames)
-        ? 'gameApplication.teamNameTaken'
-        : null
+      : normalizedNameDraft.length > TEAM_NAME_MAX_LENGTH
+        ? 'gameApplication.teamNameTooLong'
+        : isTeamNameTaken(nameDraft, existingTeamNames)
+          ? 'gameApplication.teamNameTaken'
+          : null
   const canSaveName =
     canEditName && isNameChanged && !isUpdatingName && !disabled && nameError === null
   const closeNameEditor = () => {

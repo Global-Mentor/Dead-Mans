@@ -1610,7 +1610,7 @@ export interface components {
         };
         CreateRegistrationTeamRequestDto: {
             recruitmentOpen: boolean;
-            /** @description Required; 3–48 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace. */
+            /** @description Required; 3–18 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace. */
             name: string;
         };
         CreateAdminRegistrationTeamRequestDto: {

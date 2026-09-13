@@ -43,9 +43,11 @@ export function RegistrationTeamNameEditor({
       ? 'gameApplication.teamNameRequired'
       : normalizedName.length > 0 && normalizedName.length < TEAM_NAME_MIN_LENGTH
         ? 'gameApplication.teamNameTooShort'
-        : isTeamNameTaken(name, existingNames)
-          ? 'gameApplication.teamNameTaken'
-          : null
+        : normalizedName.length > TEAM_NAME_MAX_LENGTH
+          ? 'gameApplication.teamNameTooLong'
+          : isTeamNameTaken(name, existingNames)
+            ? 'gameApplication.teamNameTaken'
+            : null
 
   return (
     <Stack

@@ -278,7 +278,7 @@ for (const viewport of [
       fullPage: true,
       animations: 'disabled',
     })
-    await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое название')
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое имя')
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Сохранить' })).toHaveClass(
       /MuiButton-containedPrimary/,
     )
@@ -295,7 +295,7 @@ for (const viewport of [
       page.getByRole('article', { name: 'Тихая охота', includeHidden: true }),
     ).toContainText('Напарник')
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveValue(
-      'Несохранённое название',
+      'Несохранённое имя',
     )
     mine.status = 'confirmed'
     socket!.send(
