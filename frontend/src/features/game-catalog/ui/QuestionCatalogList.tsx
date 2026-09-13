@@ -39,6 +39,7 @@ export function QuestionCatalogList({
   return (
     <SectionCard sx={{ height: '100%' }}>
       <SectionHeader
+        headingLevel="h1"
         title={t('gameCatalog.questions.title')}
         description={
           selectedCategory

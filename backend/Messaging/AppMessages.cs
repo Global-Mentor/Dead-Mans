@@ -80,6 +80,8 @@ public static class AppMessages
         public const string GameArchiveNotAllowed =
             "Only a fully finished game can be archived.";
         public const string GameLifecycleGameNotFound = "Requested game was not found.";
+        public const string GameLifecycleQuestionsUnavailable =
+            "A selected question is disabled or deleted. Enable it in the catalog or remove it from the draft before publishing.";
         public const string GameFinishRoundInProgress =
             "Finish or technically cancel the active round before finishing the game.";
         public const string GameFinishStaleVersion =
@@ -125,7 +127,11 @@ public static class AppMessages
         public const string GameRegistrationTeamAlreadyPlayed =
             "A team that has opened a card or is marked as played cannot be disbanded.";
         public const string GameRegistrationInvalidTeamName =
-            "Team name must be 48 characters or less.";
+            "Enter a team name of 3 to 48 characters.";
+        public const string GameRegistrationTeamNameTaken =
+            "A team with this name already exists in this game. Names ignore case and whitespace.";
+        public const string GameRegistrationDisbandRequestNotOwned =
+            "Only the player who requested disbanding can withdraw the request.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
         public const string GameModifierGameNotActive = "No active game is available for modifier activation.";
         public const string GameModifierNotEnabled =
@@ -252,6 +258,7 @@ public static class AppMessages
             "game_lifecycle.current_already_exists";
         public const string GameLifecycleActiveAlreadyExists = "game_lifecycle.active_already_exists";
         public const string GameLifecycleGameNotReady = "game_lifecycle.game_not_ready";
+        public const string GameLifecycleQuestionsUnavailable = "game_lifecycle.questions_unavailable";
         public const string GameLifecycleGameNotActive = "game_lifecycle.game_not_active";
         public const string GameLifecycleRegistrationSlotsRequired =
             "game_lifecycle.registration_slots_required";
@@ -303,6 +310,8 @@ public static class AppMessages
             "game_registration.team_already_played";
         public const string GameRegistrationInvalidTeamName =
             "game_registration.invalid_team_name";
+        public const string GameRegistrationTeamNameTaken = "game_registration.team_name_taken";
+        public const string GameRegistrationDisbandRequestNotOwned = "game_registration.disband_request_not_owned";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
         public const string GameModifierGameNotActive = "game_modifier.game_not_active";
         public const string GameModifierNotEnabled = "game_modifier.not_enabled";

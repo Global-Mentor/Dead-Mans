@@ -1,4 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectUnifiedTypography } from './typography-assertions.ts'
+
+test.afterEach(async ({ page }) => {
+  await expectUnifiedTypography(page)
+})
 
 async function openTeamManagement(page: Page, state: 'eligible' | 'active' | 'stale') {
   const teamId = '76528fbb-cd51-492f-b8e6-a4330c2528ba'

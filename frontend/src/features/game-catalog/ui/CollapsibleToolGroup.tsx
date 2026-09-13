@@ -1,6 +1,6 @@
 import { Box, ButtonBase, Collapse, Stack, Typography } from '@mui/material'
 import { useState, type ReactNode } from 'react'
-import { huntInsetSurfaceSx } from '../../../shared/theme/surface-sx.ts'
+import { getAppSurfaceSx } from '../../../shared/theme/surface-sx.ts'
 
 interface CollapsibleToolGroupProps {
   panelId: string
@@ -26,7 +26,7 @@ export function CollapsibleToolGroup({
   return (
     <Box
       sx={[
-        (theme) => huntInsetSurfaceSx(theme),
+        (theme) => getAppSurfaceSx(theme, 'inset'),
         (theme) => ({
           borderRadius: 1,
           p: 1.25,

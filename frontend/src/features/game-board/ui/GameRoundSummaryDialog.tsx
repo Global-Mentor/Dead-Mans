@@ -222,7 +222,7 @@ export function GameRoundSummaryDialog({
 
             <GameRoundContext activeRound={activeRound} />
 
-            <SectionCard inset>
+            <SectionCard surface="inset">
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
                   {t('gameBoard.roundSummaryResultTitle')}
@@ -283,7 +283,7 @@ export function GameRoundSummaryDialog({
             {defaultValues.automaticInstances.length > 0 ? (
               <GameRoundSummarySection title={t('gameBoard.roundSummaryAutomaticTitle')}>
                 {defaultValues.automaticInstances.map((instance) => (
-                  <SectionCard key={instance.modifierResultId} inset>
+                  <SectionCard key={instance.modifierResultId} surface="inset">
                     <GameRoundModifierHeading
                       name={instance.modifierName}
                       index={instance.activationIndex}
@@ -298,7 +298,7 @@ export function GameRoundSummaryDialog({
             ) : null}
 
             {activeRound.modifierResults.length === 0 ? (
-              <SectionCard inset>
+              <SectionCard surface="inset">
                 <Typography variant="body2" color="text.secondary">
                   {t('gameBoard.roundSummaryNoModifiers')}
                 </Typography>

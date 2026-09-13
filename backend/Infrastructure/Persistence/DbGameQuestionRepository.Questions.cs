@@ -14,6 +14,10 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         var question = await _dbContext.QuestionDefinitions.FirstOrDefaultAsync(
             x => x.Id == questionId && !x.IsDeleted,
             cancellationToken
@@ -25,7 +29,15 @@ public sealed partial class DbGameQuestionRepository
 
         question.IsEnabled = isEnabled;
         question.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        if (!isEnabled)
+        {
+            await RemoveDraftQuestionSelectionsAsync(item => item.Id == questionId, cancellationToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
         return true;
     }
 
@@ -34,6 +46,10 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         var question = await _dbContext.QuestionDefinitions.FirstOrDefaultAsync(
             x => x.Id == questionId && !x.IsDeleted,
             cancellationToken
@@ -48,7 +64,12 @@ public sealed partial class DbGameQuestionRepository
         question.DeletedAtUtc = now;
         question.IsEnabled = false;
         question.UpdatedAtUtc = now;
+        await RemoveDraftQuestionSelectionsAsync(item => item.Id == questionId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
         return true;
     }
 
@@ -105,6 +126,7 @@ public sealed partial class DbGameQuestionRepository
         await using var transaction = _dbContext.Database.IsRelational()
             ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
             : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         if (transaction is not null)
         {
             // Lock the aggregate before loading its replaceable children. This also
@@ -143,6 +165,10 @@ public sealed partial class DbGameQuestionRepository
             entity.AcceptedAnswers.Add(answer);
         }
 
+        if (!entity.IsEnabled)
+        {
+            await RemoveDraftQuestionSelectionsAsync(item => item.Id == questionId, cancellationToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var result = await LoadCatalogItemAsync(entity.Id, cancellationToken);

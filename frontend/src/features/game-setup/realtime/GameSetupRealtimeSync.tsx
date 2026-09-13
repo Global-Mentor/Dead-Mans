@@ -3,6 +3,7 @@ import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { logger } from '../../../shared/lib/logger.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../../../shared/realtime/index.ts'
+import { gameQuestionQueryKeys } from '../../game-questions/index.ts'
 import { gameSetupDraftQueryOptions } from '../api/game-setup-queries.ts'
 import {
   loadGameSetupDraftQueryState,
@@ -20,6 +21,9 @@ export function GameSetupRealtimeSync() {
     const requestId = latestRequestIdRef.current + 1
     latestRequestIdRef.current = requestId
 
+    void queryClient.invalidateQueries({ queryKey: gameQuestionQueryKeys.all }).catch((error) => {
+      logger.warn('Game setup question catalog resync failed', error)
+    })
     const loaded = await loadGameSetupDraftQueryState(requestId).catch((error) => {
       logger.warn('Game setup realtime resync failed', error)
       return null

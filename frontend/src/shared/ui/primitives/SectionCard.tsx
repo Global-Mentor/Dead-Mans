@@ -1,40 +1,35 @@
 import { Paper } from '@mui/material'
 import type { PaperProps } from '@mui/material'
-import { huntInsetSurfaceSx, huntPanelSx } from '../../theme/surface-sx.ts'
+import { mergeSx } from '../../theme/merge-sx.ts'
+import { getAppSurfaceSx } from '../../theme/surface-sx.ts'
+import type { AppSurface } from '../../theme/surface-sx.ts'
 import { uiTokens } from '../../theme/tokens.ts'
 
-interface SectionCardProps extends PaperProps {
-  inset?: boolean
-  variantStyle?: 'default' | 'inset' | 'dashed'
+interface SectionCardProps extends Omit<PaperProps, 'elevation' | 'variant'> {
+  surface?: AppSurface
+  borderStyle?: 'solid' | 'dashed'
 }
 
 export function SectionCard({
-  inset = false,
-  variantStyle = 'default',
+  surface = 'panel',
+  borderStyle = 'solid',
   sx,
   ...props
 }: SectionCardProps) {
-  const isInset = inset || variantStyle === 'inset'
-  const isDashed = variantStyle === 'dashed'
-
   return (
     <Paper
-      variant="outlined"
       {...props}
-      sx={[
+      elevation={0}
+      sx={mergeSx(
         (theme) => ({
           p: uiTokens.spacing.section,
           borderRadius: theme.shape.borderRadius,
-          ...(isInset ? huntInsetSurfaceSx(theme) : huntPanelSx(theme)),
+          ...getAppSurfaceSx(theme, surface),
+          borderStyle,
         }),
-        isDashed
-          ? {
-              borderStyle: 'dashed',
-              opacity: 0.94,
-            }
-          : null,
-        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-      ]}
+        borderStyle === 'dashed' ? { opacity: 0.94 } : null,
+        sx,
+      )}
     />
   )
 }

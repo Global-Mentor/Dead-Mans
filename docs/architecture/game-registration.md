@@ -28,6 +28,37 @@ Full finalization rules, warnings, ranking and idempotency are documented in
 
 Partial unique indexes: one `draft`, one `ready`, one `active` game at a time; one occupying team (`forming`/`confirmed`) per team slot; one active membership per player/game.
 
+## Team names and application display
+
+Player-created teams require a name of 3–48 characters after whitespace normalization; players cannot
+clear an existing name. All creation and rename paths, including admin actions, reject
+names equivalent to another forming/confirmed team in the same game. Comparison removes
+all whitespace and ignores case; display names retain normalized word spacing. The
+check runs inside the existing game roster row lock, preventing concurrent duplicates.
+Rejected/disbanded historical names do not block reuse. Admin-created empty rosters may
+remain unnamed until edited; no existing or historical teams are renamed automatically.
+
+Renaming rechecks game state and, for player actions, current membership after acquiring
+the game roster lock. A player who left or was removed while the request waited cannot
+rename the former team. Player edits require open registration; administrators retain
+access to forming teams in ready or active games.
+
+The application separates confirmed teams from forming rosters. Its summary counts
+confirmed + forming open + forming private = total. Slot numbers are hidden in this
+player view. The player's own row has a stronger gradient, and roster status is shown
+beside its actions. Registration changes resync through SignalR without a page reload.
+
+Forming rosters appear first; the ready-to-participate group sits below them in a
+collapsed disclosure with a localized team count. Creation/own-roster and team-list
+panels have independent frames aligned at the top. A button above the player's team
+name opens the name editor in a dialog until confirmation; cancelling discards the
+draft, and a realtime confirmation closes the editor. Shared form fields display
+styled validation hints and focus the first invalid field instead of using native
+browser validation bubbles.
+
+Leaving requires confirmation. The dialog stays open while the request is pending and
+after a failed request, allowing a retry; it closes only after success or cancellation.
+
 ## Registration API
 
 - `GET /api/game/registration` — snapshot for the ready game
@@ -35,6 +66,7 @@ Partial unique indexes: one `draft`, one `ready`, one `active` game at a time; o
 - `POST /api/game/registration/teams/{teamId}/join` — open team only
 - `POST /api/game/registration/teams/leave` — while game is ready; confirmed teams cannot be left directly
 - `POST /api/game/registration/my-team/disband-request` — confirmed team member asks an admin to disband the team
+- `DELETE /api/game/registration/my-team/disband-request` — only the requesting player may withdraw it while still a member and registration remains open; the team remains confirmed. Another member receives `403 game_registration.disband_request_not_owned`. The player UI confirms both actions in a dialog.
 - `GET /api/game/registration/teams` — compact team list for registration screens
 - `GET /api/game/registration/admin` — moderator/admin workspace snapshot with available players
 - `POST /api/game/registration/admin/teams` — moderator/admin creates an empty open or closed team on the first free queue position, or on an explicit team slot when needed by tooling
@@ -71,7 +103,6 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 
 ## Known future work
 
-- player-to-player invitations for closed teams;
 - explicit registration settings in the game setup/global settings UI;
 - clearer read-only history and audit presentation after registration closes.
 

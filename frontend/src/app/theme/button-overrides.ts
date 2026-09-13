@@ -2,7 +2,7 @@ import type { Components, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { huntPaperTexture, huntWornFrame } from '../../shared/theme/hunt-materials.ts'
-import { appThemeGradients } from './palette.ts'
+import { uiTokens } from '../../shared/theme/tokens.ts'
 import { appThemeBorderRadius } from './theme-constants.ts'
 
 const texturedActionSurface = {
@@ -18,7 +18,7 @@ const texturedActionSurface = {
     inset: 0,
     zIndex: -1,
     backgroundImage: huntPaperTexture,
-    backgroundSize: '360px auto',
+    backgroundSize: uiTokens.texture.actionSize,
     backgroundPosition: 'center',
     filter: 'brightness(3) contrast(1.6)',
     mixBlendMode: 'luminosity',
@@ -35,8 +35,16 @@ export const buttonOverrides: Components<Theme> = {
     styleOverrides: {
       root: {
         borderRadius: appThemeBorderRadius,
-        minHeight: 44,
+        minHeight: uiTokens.control.height.standard,
         paddingInline: 18,
+        transition:
+          'background-color 120ms ease, border-color 120ms ease, color 120ms ease, filter 120ms ease',
+        '&:active:not(.Mui-disabled)': {
+          filter: 'brightness(0.96)',
+        },
+        '&.MuiButton-loading': {
+          cursor: 'progress',
+        },
         '&.Mui-disabled': {
           color: alpha(huntPalette.parchmentMuted, 0.82),
           borderColor: alpha(huntPalette.parchmentMuted, 0.16),
@@ -47,6 +55,15 @@ export const buttonOverrides: Components<Theme> = {
           opacity: 1,
           '&::before': { display: 'none' },
         },
+      },
+      sizeSmall: {
+        minHeight: uiTokens.control.height.compact,
+        paddingInline: 14,
+        fontSize: '0.875rem',
+      },
+      sizeLarge: {
+        minHeight: uiTokens.control.height.large,
+        paddingInline: 22,
       },
       containedPrimary: {
         ...texturedActionSurface,
@@ -62,6 +79,7 @@ export const buttonOverrides: Components<Theme> = {
         backgroundImage: 'none',
         color: huntPalette.soot,
         border: `1px solid ${alpha(huntPalette.fern, 0.65)}`,
+        '&:hover': { filter: 'brightness(1.1)' },
       },
       containedError: {
         ...texturedActionSurface,
@@ -70,14 +88,25 @@ export const buttonOverrides: Components<Theme> = {
         '&:hover': { backgroundColor: huntPalette.bloodDeep, filter: 'brightness(1.12)' },
       },
       outlinedPrimary: {
-        borderColor: alpha(huntPalette.parchment, 0.22),
-        color: huntPalette.parchment,
-        backgroundImage: appThemeGradients.panelSurface,
-        backgroundSize: 'auto, 400px auto',
+        ...texturedActionSurface,
+        backgroundColor: alpha(huntPalette.soot, 0.28),
+        boxShadow: `inset 0 1px 0 ${alpha(huntPalette.parchment, 0.08)}`,
+        '&::before': {
+          ...texturedActionSurface['&::before'],
+          opacity: 0.42,
+        },
+        '&:hover': {
+          backgroundColor: alpha(huntPalette.mossDeep, 0.42),
+        },
       },
       outlinedError: {
         borderColor: alpha(huntPalette.blood, 0.55),
         color: huntPalette.parchment,
+        backgroundColor: alpha(huntPalette.bloodDeep, 0.1),
+        '&:hover': {
+          borderColor: huntPalette.blood,
+          backgroundColor: alpha(huntPalette.bloodDeep, 0.24),
+        },
       },
       textPrimary: {
         color: huntPalette.parchment,

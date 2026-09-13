@@ -107,6 +107,7 @@ export function CatalogModifiersPage() {
         <Box sx={{ minWidth: 0 }}>
           <SectionCard sx={{ height: '100%' }}>
             <SectionHeader
+              headingLevel="h1"
               title={t('gameCatalog.modifiers.title')}
               description={
                 selectedCategory

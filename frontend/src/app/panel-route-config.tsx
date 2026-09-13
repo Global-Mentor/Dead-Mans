@@ -95,6 +95,11 @@ const panelPages = {
   ),
 } as const satisfies Record<(typeof panelRoutes)[number]['id'], PanelRoutePage>
 
+const gameSetupRealtimeSync = lazyPanelPage(
+  () => import('../features/game-setup/realtime/GameSetupRealtimeSync.tsx'),
+  'GameSetupRealtimeSync',
+)
+
 const panelSyncComponents = {
   'game-board': lazyPanelPage(
     () => import('../features/game-board/realtime/GameBoardRealtimeSync.tsx'),
@@ -108,10 +113,9 @@ const panelSyncComponents = {
     () => import('../features/game-quiz/GameQuizRealtimeSync.tsx'),
     'GameQuizRealtimeSync',
   ),
-  'game-setup': lazyPanelPage(
-    () => import('../features/game-setup/realtime/GameSetupRealtimeSync.tsx'),
-    'GameSetupRealtimeSync',
-  ),
+  'game-setup': gameSetupRealtimeSync,
+  'admin-questions': gameSetupRealtimeSync,
+  'admin-modifiers': gameSetupRealtimeSync,
 } as const satisfies Partial<Record<(typeof panelRoutes)[number]['id'], ComponentType>>
 
 export const panelRouteConfig = panelRoutes.map((definition) => ({

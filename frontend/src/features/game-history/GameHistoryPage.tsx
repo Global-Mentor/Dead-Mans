@@ -113,12 +113,17 @@ export function GameHistoryPage({
         width: '100%',
       }}
     >
-      {activeBoard === 'history' ? (
-        <SectionHeader
-          title={t('gameHistory.archivePageTitle')}
-          description={t('gameHistory.archivePageDescription')}
-        />
-      ) : null}
+      <SectionHeader
+        headingLevel="h1"
+        title={t(
+          activeBoard === 'history' ? 'gameHistory.archivePageTitle' : 'gameHistory.realtimeTitle',
+        )}
+        description={t(
+          activeBoard === 'history'
+            ? 'gameHistory.archivePageDescription'
+            : 'gameHistory.realtimeDescription',
+        )}
+      />
 
       {isBoardSwitcherVisible ? (
         <SectionCard sx={{ mt: 1.5 }}>

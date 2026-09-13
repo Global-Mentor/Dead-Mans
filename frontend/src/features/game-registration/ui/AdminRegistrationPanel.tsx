@@ -239,7 +239,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
               onRequestRemove={setPendingRemovePlayer}
             />
 
-            <SectionCard inset sx={{ p: 1.25 }}>
+            <SectionCard surface="inset" sx={{ p: 1.25 }}>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={1}

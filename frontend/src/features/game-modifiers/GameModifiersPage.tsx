@@ -192,7 +192,7 @@ export function GameModifiersPage() {
         px: { xs: 0, sm: 0 },
       }}
     >
-      <SectionHeader title={t('common.entities.modifiers')} />
+      <SectionHeader headingLevel="h1" title={t('common.entities.modifiers')} />
 
       <AsyncSection
         isLoading={stateQuery.isLoading}

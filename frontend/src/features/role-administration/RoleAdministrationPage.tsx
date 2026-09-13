@@ -13,7 +13,6 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TextField,
   Typography,
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -22,6 +21,7 @@ import type { AuthRole, RoleAdministrationUser } from '../../shared/api/contract
 import {
   AppButton,
   AppToast,
+  FormTextField,
   PageShell,
   PageStatePanel,
   SectionCard,
@@ -74,6 +74,7 @@ export function RoleAdministrationPage() {
   return (
     <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
       <SectionHeader
+        headingLevel="h1"
         title={t('roleAdministration.title')}
         description={t('roleAdministration.description')}
       />
@@ -89,7 +90,7 @@ export function RoleAdministrationPage() {
           spacing={1.5}
           onSubmit={submitSearch}
         >
-          <TextField
+          <FormTextField
             value={searchInput}
             label={t('roleAdministration.searchLabel')}
             size="small"

@@ -31,7 +31,7 @@ export function GameSetupSettingsSidebar({
 
   return (
     <>
-      <SectionCard inset sx={gameSetupSidebarPaperSx}>
+      <SectionCard surface="accented" sx={gameSetupSidebarPaperSx}>
         <Typography variant="overline" color="text.secondary">
           {t('gameSetup.settingsSidebar.overline')}
         </Typography>

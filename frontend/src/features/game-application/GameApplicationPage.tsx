@@ -9,7 +9,6 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { isTeamJoinable } from './model/team-availability.ts'
 import { CreateTeamSection } from './ui/CreateTeamSection.tsx'
 import { MyTeamSection } from './ui/MyTeamSection.tsx'
 import { OpenTeamsSection } from './ui/OpenTeamsSection.tsx'
@@ -19,9 +18,6 @@ import { useGameApplicationPage } from './use-game-application-page.ts'
 const applicationColumnSx = {
   minWidth: 0,
   scrollMarginTop: { xs: 160, md: 100 },
-  display: { md: 'grid' },
-  gridTemplateRows: { md: 'subgrid' },
-  gridRow: { md: 'span 2' },
 } as const
 
 export function GameApplicationPage() {
@@ -36,6 +32,8 @@ export function GameApplicationPage() {
     createPlayerInvitation,
     cancelPlayerInvitation,
     requestTeamDisband,
+    cancelTeamDisbandRequest,
+    canCancelDisbandRequest,
     updateTeamName,
     acceptInvitation,
     declineInvitation,
@@ -81,8 +79,12 @@ export function GameApplicationPage() {
   }
 
   const snapshot = snapshotQuery.data
-  const joinableTeamsCount = snapshot.teams.filter((team) =>
-    isTeamJoinable(team, snapshot.maxPlayersPerTeam),
+  const confirmedTeamsCount = snapshot.teams.filter((team) => team.status === 'confirmed').length
+  const openTeamsCount = snapshot.teams.filter(
+    (team) => team.status === 'forming' && team.recruitmentOpen,
+  ).length
+  const closedTeamsCount = snapshot.teams.filter(
+    (team) => team.status === 'forming' && !team.recruitmentOpen,
   ).length
 
   const isBusy = [
@@ -94,6 +96,7 @@ export function GameApplicationPage() {
     createPlayerInvitation,
     cancelPlayerInvitation,
     requestTeamDisband,
+    cancelTeamDisbandRequest,
     updateTeamName,
   ].some((mutation) => mutation.isPending)
   const hasAvailableSlot = snapshot.teamSlots.some(
@@ -116,51 +119,75 @@ export function GameApplicationPage() {
               {t('gameApplication.title')}
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography variant="caption" color="text.secondary">
-                {t('gameApplication.teamSize', {
-                  min: snapshot.minPlayersPerTeam,
-                  max: snapshot.maxPlayersPerTeam,
-                })}
-              </Typography>
               <AppLinkButton to={gameBoardRoute.fullPath} tone="secondary" size="small">
                 {t('gameApplication.backToBoard')}
               </AppLinkButton>
             </Stack>
           </Stack>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            justifyContent="space-between"
-            sx={{ mt: 1.25, py: 0.75, borderBlock: '1px solid', borderColor: 'divider' }}
+          <Typography
+            component="h2"
+            variant="overline"
+            color="text.secondary"
+            sx={{ mt: 2, display: 'block' }}
           >
-            <Stack direction="row" spacing={1.25} alignItems="center" role="status">
+            {t('gameApplication.teamsOverview')}
+          </Typography>
+          <Box
+            component="dl"
+            aria-label={t('gameApplication.teamsOverview')}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+              columnGap: 0,
+              rowGap: 1.5,
+              m: 0,
+              mt: 0.5,
+              py: 1.5,
+              borderBlock: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            {(
+              [
+                ['confirmedTeamsCount', confirmedTeamsCount],
+                ['openTeamsCount', openTeamsCount],
+                ['closedTeamsCount', closedTeamsCount],
+                ['totalTeamsCount', snapshot.teams.length],
+              ] as const
+            ).map(([key, count], index) => (
               <Box
-                aria-hidden
+                key={key}
                 sx={{
-                  width: 7,
-                  height: 7,
-                  flexShrink: 0,
-                  transform: 'rotate(45deg)',
-                  bgcolor: snapshot.myTeam ? 'primary.main' : 'text.secondary',
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  px: { xs: 1, sm: 2 },
+                  borderLeftStyle: 'solid',
+                  borderLeftWidth: {
+                    xs: index % 2 === 1 ? 1 : 0,
+                    sm: index > 0 ? 1 : 0,
+                  },
+                  borderColor: 'divider',
                 }}
-              />
-              <Typography variant="body2">
-                {t(
-                  snapshot.myTeam?.status === 'confirmed'
-                    ? 'gameApplication.applicationConfirmed'
-                    : snapshot.myTeam
-                      ? 'gameApplication.applicationForming'
-                      : 'gameApplication.overviewTeamMissing',
-                )}
-              </Typography>
-            </Stack>
-            <Typography variant="body2" color="text.secondary">
-              {t('gameApplication.overviewTeamsValue', {
-                total: snapshot.teams.length,
-                open: joinableTeamsCount,
-              })}
-            </Typography>
-          </Stack>
+              >
+                <Typography component="dt" variant="body2" color="text.secondary">
+                  {t(`gameApplication.${key}`)}
+                </Typography>
+                <Typography
+                  component="dd"
+                  variant="h5"
+                  sx={{
+                    m: 0,
+                    color: key === 'confirmedTeamsCount' ? 'primary.light' : 'text.primary',
+                  }}
+                >
+                  {count}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
           <Stack
             component="nav"
             aria-label={t('gameApplication.sectionNavigation')}
@@ -198,6 +225,7 @@ export function GameApplicationPage() {
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: 'minmax(320px, 0.85fr) minmax(0, 1.15fr)' },
             columnGap: 2.5,
+            alignItems: 'start',
             rowGap: { xs: 2.5, md: 1.25 },
           }}
         >
@@ -222,15 +250,22 @@ export function GameApplicationPage() {
                 isInvitingPlayer={createPlayerInvitation.isPending}
                 onCancelInvitation={(invitationId) => cancelPlayerInvitation.mutate(invitationId)}
                 isCancellingInvitation={cancelPlayerInvitation.isPending}
-                onLeave={() => leaveTeam.mutate(undefined, { onSuccess: focusRoster })}
+                onLeave={() => leaveTeam.mutateAsync(undefined, { onSuccess: focusRoster })}
                 isLeaving={leaveTeam.isPending}
-                onRequestDisband={() => requestTeamDisband.mutate()}
+                onRequestDisband={() => requestTeamDisband.mutateAsync()}
+                onCancelDisbandRequest={() => cancelTeamDisbandRequest.mutateAsync()}
+                isCancellingDisbandRequest={cancelTeamDisbandRequest.isPending}
+                canCancelDisbandRequest={canCancelDisbandRequest}
+                existingTeamNames={snapshot.teams
+                  .filter((team) => team.teamId !== snapshot.myTeam?.teamId)
+                  .map((team) => team.name)}
                 isRequestingDisband={requestTeamDisband.isPending}
-                onUpdateName={(name) => updateTeamName.mutate(name)}
+                onUpdateName={(name) => updateTeamName.mutateAsync(name)}
                 isUpdatingName={updateTeamName.isPending}
               />
             ) : (
               <CreateTeamSection
+                existingNames={snapshot.teams.map((team) => team.name)}
                 onCreate={(recruitmentOpen, name) =>
                   createTeam.mutate({ recruitmentOpen, name }, { onSuccess: focusRoster })
                 }

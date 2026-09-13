@@ -1,10 +1,10 @@
-import { Alert, Button, MenuItem, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Stack, TextField, Typography } from '@mui/material'
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { ConfirmDialog } from '../../../shared/ui/index.ts'
+import { AppButton, ConfirmDialog, FormSelect, FormTextField } from '../../../shared/ui/index.ts'
 
 type ManualQuizAwardPlayer = components['schemas']['ManualQuizAwardPlayerDto']
 
@@ -129,20 +129,18 @@ export function ManualQuizAwardControl({
               )}
             />
 
-            <TextField
-              select
-              size="small"
+            <FormSelect
               label={t('gameBoard.manualQuizAwardOperationLabel')}
               value={operationType}
               disabled={isAwarding}
-              onChange={(event) => setOperationType(event.target.value as 'award' | 'deduct')}
-            >
-              <MenuItem value="award">{t('gameBoard.manualQuizAwardOperationAward')}</MenuItem>
-              <MenuItem value="deduct">{t('gameBoard.manualQuizAwardOperationDeduct')}</MenuItem>
-            </TextField>
+              onChange={setOperationType}
+              options={[
+                { value: 'award', label: t('gameBoard.manualQuizAwardOperationAward') },
+                { value: 'deduct', label: t('gameBoard.manualQuizAwardOperationDeduct') },
+              ]}
+            />
 
-            <TextField
-              size="small"
+            <FormTextField
               type="number"
               label={t('gameBoard.manualQuizAwardPointsLabel')}
               value={points}
@@ -151,8 +149,7 @@ export function ManualQuizAwardControl({
               onChange={(event) => setPoints(event.target.value)}
             />
 
-            <TextField
-              size="small"
+            <FormTextField
               label={t('gameBoard.manualQuizAwardReasonLabel')}
               value={reason}
               disabled={isAwarding}
@@ -174,16 +171,17 @@ export function ManualQuizAwardControl({
               </Alert>
             ) : null}
 
-            <Button
+            <AppButton
               type="submit"
-              variant="contained"
               disabled={!canAward}
-              sx={{ alignSelf: 'flex-start', minHeight: 36 }}
+              loading={isAwarding}
+              size="small"
+              sx={{ alignSelf: 'flex-start' }}
             >
               {isAwarding
                 ? t('gameBoard.manualQuizAwardSaving')
                 : t('gameBoard.manualQuizAwardAction')}
-            </Button>
+            </AppButton>
           </>
         )}
       </Stack>

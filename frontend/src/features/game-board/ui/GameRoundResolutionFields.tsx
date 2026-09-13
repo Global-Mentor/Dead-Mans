@@ -40,7 +40,7 @@ export function GameRoundRuleGroupCard({
   if (!group) return null
 
   return (
-    <SectionCard inset>
+    <SectionCard surface="inset">
       <Stack spacing={1.25}>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           <Typography variant="subtitle2">{group.modifierName}</Typography>
@@ -108,7 +108,7 @@ export function GameRoundScoringInstanceCard({
   if (!instance) return null
 
   return (
-    <SectionCard inset>
+    <SectionCard surface="inset">
       <Stack spacing={1.25}>
         {instance.memberResultIds.length > 1 ? (
           <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">

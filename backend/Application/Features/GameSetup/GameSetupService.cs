@@ -122,7 +122,7 @@ public sealed class GameSetupService : IGameSetupService
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledQuestions);
         }
 
-        if (!await _gameQuestionRepository.QuestionIdsExistAsync(
+        if (!await _gameQuestionRepository.QuestionIdsAvailableAsync(
                 normalizedEnabledQuestionIds,
                 cancellationToken
             ))
@@ -147,6 +147,8 @@ public sealed class GameSetupService : IGameSetupService
                 new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.Updated, saveResult.Snapshot),
             UpdateDraftSetupRepositoryStatus.StaleVersion =>
                 new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.StaleVersion),
+            UpdateDraftSetupRepositoryStatus.InvalidEnabledQuestions =>
+                new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledQuestions),
             _ => new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.NoDraftFound),
         };
 

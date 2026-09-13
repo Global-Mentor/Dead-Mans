@@ -525,7 +525,9 @@ public sealed class BackendProjectDependencyRulesTests
             "DbGameRegistrationPersistence.InvitationValidation.cs",
             "DbGameRegistrationPersistence.RosterChanges.cs",
             "DbGameRegistrationPersistence.TeamOperations.cs",
-            "DbGameRegistrationPersistence.Teams.cs"
+            "DbGameRegistrationPersistence.Teams.cs",
+            "DbGameRegistrationPersistence.TeamNames.cs",
+            "DbGameRegistrationPersistence.DisbandRequests.cs"
         };
 
         var actualFiles = Directory
@@ -1027,6 +1029,7 @@ public sealed class BackendProjectDependencyRulesTests
             "DbGameQuestionRepository.cs",
             "DbGameQuestionRepository.Catalog.cs",
             "DbGameQuestionRepository.Categories.cs",
+            "DbGameQuestionRepository.DraftSelections.cs",
             "DbGameQuestionRepository.Import.cs",
             "DbGameQuestionRepository.Questions.cs"
         };

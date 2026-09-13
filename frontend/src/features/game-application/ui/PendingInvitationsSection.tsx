@@ -56,7 +56,7 @@ export function PendingInvitationsSection({
           {invitations.map((invitation) => (
             <SectionCard
               key={invitation.invitationId}
-              inset
+              surface="inset"
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
@@ -68,7 +68,7 @@ export function PendingInvitationsSection({
               <Stack spacing={0.5} sx={{ minWidth: 0 }}>
                 <Typography component="h3" variant="subtitle2" sx={{ overflowWrap: 'anywhere' }}>
                   {teams.find((team) => team.teamId === invitation.teamId)?.name?.trim() ||
-                    t('gameApplication.invitationSlot', { slot: invitation.teamSlotIndex })}
+                    t('gameApplication.unnamedTeam')}
                 </Typography>
                 <Typography
                   variant="body2"

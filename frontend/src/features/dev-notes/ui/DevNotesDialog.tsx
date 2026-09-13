@@ -43,9 +43,7 @@ export function DevNotesDialog({ open, onClose }: DevNotesDialogProps) {
       onClose={onClose}
       maxWidth="sm"
       scroll="paper"
-      PaperProps={{
-        sx: { maxHeight: 'min(72vh, 560px)' },
-      }}
+      sx={{ '& .MuiDialog-paper': { maxHeight: 'min(72vh, 560px)' } }}
       title={t('navigation.devNotes.dialogTitle')}
       actions={
         <AppButton tone="ghost" onClick={onClose}>

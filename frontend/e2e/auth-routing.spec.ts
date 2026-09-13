@@ -1,4 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectUnifiedTypography } from './typography-assertions.ts'
+
+test.afterEach(async ({ page }) => {
+  await expectUnifiedTypography(page)
+})
 
 interface MockSession {
   userId: string

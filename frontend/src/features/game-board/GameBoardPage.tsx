@@ -224,7 +224,11 @@ export function GameBoardPage() {
             flexDirection: 'column',
           }}
         >
-          <SectionHeader title={snapshot.title || t('gameBoard.title')} textAlign="center" />
+          <SectionHeader
+            headingLevel="h1"
+            title={snapshot.title || t('gameBoard.title')}
+            textAlign="center"
+          />
           {!launchPanel.canManageGame && activeTeamEntry ? (
             <Box
               sx={(theme) => ({

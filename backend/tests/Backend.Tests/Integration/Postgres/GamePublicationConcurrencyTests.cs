@@ -7,6 +7,8 @@ using backend.Infrastructure.Configuration;
 using backend.Infrastructure.Persistence;
 using Backend.Tests.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -109,6 +111,160 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         Assert.Equal(GameStatusValue.Ready, (await readDb.Games.SingleAsync()).Status);
         Assert.Equal(attach == mediaFirst ? 1 : 0, await readDb.BoardCellMedia.CountAsync());
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Publication_WhenSelectedQuestionBecomesUnavailable_RequiresReviewOfSynchronizedDraft(bool deleted)
+    {
+        var draft = await CreateDraftAsync();
+        Guid questionId;
+        int reviewedVersion;
+        await using (var seedDb = database.CreateDbContext())
+        {
+            var catalog = new DbGameQuestionRepository(seedDb, TimeProvider.System);
+            var category = await catalog.CreateCategoryAsync("Availability");
+            var question = await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
+                "q-availability", category.Id, "Capital?", "Paris", ["Paris", "Париж"], 1, true, 0));
+            Assert.NotNull(question);
+            questionId = question.QuestionId;
+            var saved = await Setup(seedDb).UpdateDraftSetupAsync(new GameSetupDraftUpdate(
+                draft.Version, draft.Title, draft.RowLabels, draft.ColLabels,
+                draft.Cells.Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost)).ToArray(),
+                [], [questionId]));
+            Assert.Equal(UpdateDraftSetupRepositoryStatus.Updated, saved.Status);
+            reviewedVersion = saved.Snapshot!.Version;
+            Assert.True(deleted
+                ? await catalog.SoftDeleteQuestionAsync(questionId)
+                : await catalog.SetQuestionEnabledAsync(questionId, false));
+        }
+
+        await using (var publishDb = database.CreateDbContext())
+        {
+            var result = await Lifecycle(publishDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion);
+            Assert.False(result.Success);
+            Assert.Equal(GameLifecycleErrorCode.DraftStaleVersion, result.Error);
+        }
+        await using (var verifyDb = database.CreateDbContext())
+        {
+            var game = await verifyDb.Games.SingleAsync();
+            Assert.Equal(GameStatusValue.Draft, game.Status);
+            Assert.Null(game.ReadyAtUtc);
+            Assert.Equal(reviewedVersion + 1, (await verifyDb.GameBoards.SingleAsync()).Version);
+            Assert.Empty(await verifyDb.GameEnabledQuestions.ToArrayAsync());
+        }
+        await using var retryDb = database.CreateDbContext();
+        Assert.True((await Lifecycle(retryDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion + 1)).Success);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DisableAndSave_CannotAttachAnUnavailableQuestion(bool disableFirst)
+    {
+        var draft = await CreateDraftAsync();
+        var questionId = await CreateQuestionAsync();
+        Task<bool> Disable(ApplicationDbContext db) => new DbGameQuestionRepository(db, TimeProvider.System)
+            .SetQuestionEnabledAsync(questionId, false);
+        Task<UpdateDraftSetupRepositoryResult> Save(ApplicationDbContext db) => Setup(db)
+            .UpdateDraftSetupAsync(SelectQuestion(draft, questionId) with { Title = "Saved title" });
+        var (disabled, saved) = disableFirst
+            ? await RunInOrderAsync(Disable, Save)
+            : await ReverseAsync(Save, Disable);
+
+        Assert.True(disabled);
+        Assert.Equal(disableFirst ? UpdateDraftSetupRepositoryStatus.InvalidEnabledQuestions
+            : UpdateDraftSetupRepositoryStatus.Updated, saved.Status);
+        await using var verifyDb = database.CreateDbContext();
+        var current = await Setup(verifyDb).GetLatestDraftSetupSnapshotAsync();
+        Assert.NotNull(current);
+        Assert.Empty(current.EnabledQuestionIds);
+        Assert.Equal(disableFirst ? draft.Title : "Saved title", current.Title);
+        Assert.Equal(draft.Version + (disableFirst ? 0 : 2), current.Version);
+        Assert.Equal(draft.Cells.Select(cell => (cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost, cell.State)),
+            current.Cells.Select(cell => (cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost, cell.State)));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DisableAndPublication_EitherRequireReviewOrKeepThePublishedSnapshot(bool disableFirst)
+    {
+        var draft = await CreateDraftAsync();
+        var questionId = await CreateQuestionAsync();
+        await using (var seedDb = database.CreateDbContext())
+        {
+            draft = (await Setup(seedDb).UpdateDraftSetupAsync(SelectQuestion(draft, questionId))).Snapshot!;
+        }
+        Task<bool> Disable(ApplicationDbContext db) => new DbGameQuestionRepository(db, TimeProvider.System)
+            .SetQuestionEnabledAsync(questionId, false);
+        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db)
+            .OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version);
+        var (disabled, published) = disableFirst
+            ? await RunInOrderAsync(Disable, Publish)
+            : await ReverseAsync(Publish, Disable);
+
+        Assert.True(disabled);
+        Assert.Equal(!disableFirst, published.Success);
+        await using var verifyDb = database.CreateDbContext();
+        Assert.Equal(disableFirst ? GameStatusValue.Draft : GameStatusValue.Ready,
+            (await verifyDb.Games.SingleAsync()).Status);
+        Assert.Equal(disableFirst ? 0 : 1, await verifyDb.GameEnabledQuestions.CountAsync());
+        if (disableFirst) Assert.Equal(GameLifecycleErrorCode.DraftStaleVersion, published.Error);
+    }
+
+    [Fact]
+    public async Task AvailabilityMigration_RemovesLegacyDraftSelectionsAndPreservesPublishedQuestions()
+    {
+        var publishedDraft = await CreateDraftAsync();
+        var questionId = await CreateQuestionAsync();
+        await using (var seedDb = database.CreateDbContext())
+        {
+            var setup = Setup(seedDb);
+            var saved = await setup.UpdateDraftSetupAsync(SelectQuestion(publishedDraft, questionId));
+            Assert.True((await Lifecycle(seedDb).OpenRegistrationAsync(Guid.Parse(publishedDraft.GameId), saved.Snapshot!.Version)).Success);
+        }
+        GameBoardSnapshot legacyDraft;
+        await using (var seedDb = database.CreateDbContext())
+        {
+            var setup = Setup(seedDb);
+            var draft = await setup.CreateDraftSetupAsync("Legacy draft");
+            Assert.NotNull(draft);
+            legacyDraft = (await setup.UpdateDraftSetupAsync(SelectQuestion(draft, questionId))).Snapshot!;
+            await seedDb.GetService<IMigrator>().MigrateAsync("20260911162438_AllowEquivalentQuestionAnswers");
+            // Model the pre-fix behavior, which left draft selections attached.
+            await seedDb.Database.ExecuteSqlInterpolatedAsync($"UPDATE question_definitions SET is_enabled = false WHERE id = {questionId}");
+        }
+        await using (var migrateDb = database.CreateDbContext())
+        {
+            await migrateDb.Database.MigrateAsync();
+        }
+        await using var verifyDb = database.CreateDbContext();
+        var synchronizedDraft = await Setup(verifyDb).GetLatestDraftSetupSnapshotAsync();
+        Assert.NotNull(synchronizedDraft);
+        Assert.Empty(synchronizedDraft.EnabledQuestionIds);
+        Assert.Equal(legacyDraft.Version + 1, synchronizedDraft.Version);
+        Assert.Equal(legacyDraft.Title, synchronizedDraft.Title);
+        var publishedSelection = await verifyDb.GameEnabledQuestions.SingleAsync();
+        Assert.Equal(Guid.Parse(publishedDraft.GameId), publishedSelection.GameId);
+        Assert.Equal(questionId, publishedSelection.QuestionId);
+    }
+
+    private async Task<Guid> CreateQuestionAsync()
+    {
+        await using var db = database.CreateDbContext();
+        var catalog = new DbGameQuestionRepository(db, TimeProvider.System);
+        var category = await catalog.CreateCategoryAsync("Availability");
+        var question = await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
+            "q-availability", category.Id, "Capital?", "Paris", ["Paris"], 1, true, 0));
+        Assert.NotNull(question);
+        return question.QuestionId;
+    }
+
+    private static GameSetupDraftUpdate SelectQuestion(GameBoardSnapshot draft, Guid questionId) => new(
+        draft.Version, draft.Title, draft.RowLabels, draft.ColLabels,
+        draft.Cells.Select(cell => new GameSetupCellUpdate(cell.Id, cell.Row, cell.Col, cell.Title, cell.Cost)).ToArray(),
+        [], [questionId]);
 
     private async Task<GameBoardSnapshot> CreateDraftAsync()
     {

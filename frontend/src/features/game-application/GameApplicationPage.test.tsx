@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
@@ -7,14 +7,28 @@ import { GameApplicationPage } from './GameApplicationPage.tsx'
 import { CreateTeamSection } from './ui/CreateTeamSection.tsx'
 
 describe('CreateTeamSection', () => {
-  it('submits an open team with an optional empty name', () => {
+  it('rejects whitespace and names equivalent to existing teams', () => {
+    const onCreate = vi.fn()
+    renderWithAppProviders(
+      <CreateTeamSection onCreate={onCreate} isCreating={false} existingNames={['Ночной дозор']} />,
+    )
+    const name = screen.getByRole('textbox', { name: 'Название команды' })
+    for (const value of ['   ', 'ab', '  нОЧНОЙДОЗОР  ']) {
+      fireEvent.change(name, { target: { value } })
+      fireEvent.submit(screen.getByRole('button', { name: 'Создать команду' }).closest('form')!)
+      expect(onCreate).not.toHaveBeenCalled()
+      expect(name).toBeInvalid()
+    }
+  })
+  it('requires a nonblank team name before creating a team', () => {
     const onCreate = vi.fn()
     renderWithAppProviders(<CreateTeamSection onCreate={onCreate} isCreating={false} />)
 
     expect(screen.getByRole('radio', { name: /^Открытая команда/ })).toBeChecked()
     fireEvent.click(screen.getByRole('button', { name: 'Создать команду' }))
 
-    expect(onCreate).toHaveBeenCalledExactlyOnceWith(true, undefined)
+    expect(onCreate).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox', { name: 'Название команды' })).toBeRequired()
   })
 
   it('waits for submission before creating the selected private team', () => {
@@ -64,8 +78,10 @@ function createPageController(data: unknown) {
     createTeam: { isPending: false, mutate: vi.fn() },
     joinTeam: { isPending: false, mutate: vi.fn() },
     leaveTeam: { isPending: false, mutate: vi.fn() },
-    requestTeamDisband: { isPending: false, mutate: vi.fn() },
-    updateTeamName: { isPending: false, mutate: vi.fn() },
+    requestTeamDisband: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
+    cancelTeamDisbandRequest: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
+    canCancelDisbandRequest: false,
+    updateTeamName: { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() },
     createPlayerInvitation: { isPending: false, mutate: vi.fn() },
     cancelPlayerInvitation: { isPending: false, mutate: vi.fn() },
     acceptInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },
@@ -259,15 +275,11 @@ describe('GameApplicationPage', () => {
 
     expect(screen.getByRole('button', { name: 'Отменить приглашение' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Выйти из команды' })).toBeDisabled()
-    expect(
-      screen.getByText(
-        'Нельзя выйти из команды, пока отправленное приглашение ожидает ответа. Сначала отмените приглашение.',
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Перед выходом отмените приглашение.')).toBeInTheDocument()
   })
 
   it('replaces direct leave with an admin disband request for confirmed teams', () => {
-    const requestTeamDisband = { isPending: false, mutate: vi.fn() }
+    const requestTeamDisband = { isPending: false, mutateAsync: vi.fn() }
     const pageController = createPageController({
       gameId: 'game-1',
       gameStatus: 'ready',
@@ -312,6 +324,12 @@ describe('GameApplicationPage', () => {
     expect(screen.queryByRole('button', { name: 'Выйти из команды' })).not.toBeInTheDocument()
     const requestButton = screen.getByRole('button', { name: 'Попросить распустить команду' })
     fireEvent.click(requestButton)
-    expect(requestTeamDisband.mutate).toHaveBeenCalled()
+    expect(requestTeamDisband.mutateAsync).not.toHaveBeenCalled()
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Запросить роспуск',
+      }),
+    )
+    expect(requestTeamDisband.mutateAsync).toHaveBeenCalledOnce()
   })
 })

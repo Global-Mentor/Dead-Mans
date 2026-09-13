@@ -36,7 +36,8 @@ export function GameSetupQuestionsSection({
   } = useGameSetupQuestionsCatalog()
 
   const enabledQuestionIds = new Set(draft.enabledQuestionIds)
-  const visibleIds = filteredQuestions.map((question) => question.questionId)
+  const visibleQuestions = filteredQuestions.filter((question) => question.isEnabled)
+  const visibleIds = visibleQuestions.map((question) => question.questionId)
 
   return (
     <SectionCard>
@@ -75,7 +76,12 @@ export function GameSetupQuestionsSection({
       </Stack>
 
       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-        <AppButton size="small" tone="secondary" onClick={() => onBulkSetEnabled(visibleIds, true)}>
+        <AppButton
+          size="small"
+          tone="secondary"
+          disabled={visibleIds.length === 0}
+          onClick={() => onBulkSetEnabled(visibleIds, true)}
+        >
           {t('gameSetup.questions.enableVisible')}
         </AppButton>
         <AppButton
@@ -90,13 +96,13 @@ export function GameSetupQuestionsSection({
       <AsyncSection
         isLoading={catalogQuery.isLoading}
         isError={catalogQuery.isError}
-        isEmpty={filteredQuestions.length === 0}
+        isEmpty={visibleQuestions.length === 0}
         loadingMessage={t('gameSetup.questions.loading')}
         errorMessage={t('gameSetup.questions.error')}
         emptyMessage={t('gameSetup.questions.empty')}
       >
         <Stack spacing={0.5} sx={{ mt: 1.5 }}>
-          {filteredQuestions.map((question) => (
+          {visibleQuestions.map((question) => (
             <Box
               key={question.questionId}
               sx={{
@@ -130,7 +136,6 @@ export function GameSetupQuestionsSection({
                   asked: question.askedTotalCount,
                   correct: question.correctTotalCount,
                 })}
-                {question.isEnabled ? '' : ` · ${t('gameSetup.questions.globallyDisabled')}`}
               </Typography>
             </Box>
           ))}

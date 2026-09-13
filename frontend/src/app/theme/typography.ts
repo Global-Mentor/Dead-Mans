@@ -3,6 +3,7 @@ import { huntTypography } from '../../shared/theme/tokens.ts'
 
 export const appTypography: TypographyVariantsOptions = {
   fontFamily: huntTypography.body,
+  allVariants: { fontVariantNumeric: 'var(--app-font-numeric)' },
   body1: { fontSize: '1.0625rem', lineHeight: 1.5 },
   body2: { fontSize: '1rem', lineHeight: 1.5 },
   caption: { fontSize: '0.875rem', lineHeight: 1.45 },

@@ -45,6 +45,17 @@ public sealed partial class DbGameSetupRepository
                 return new UpdateDraftSetupRepositoryResult(UpdateDraftSetupRepositoryStatus.StaleVersion);
             }
 
+            // Recheck inside the shared catalog transaction: a question may have
+            // been disabled after the application's initial validation.
+            var requestedQuestionIds = update.EnabledQuestionIds.Distinct().ToArray();
+            var availableQuestionCount = await _dbContext.QuestionDefinitions
+                .CountAsync(question => requestedQuestionIds.Contains(question.Id)
+                    && question.IsEnabled && !question.IsDeleted, cancellationToken);
+            if (availableQuestionCount != requestedQuestionIds.Length)
+            {
+                return new UpdateDraftSetupRepositoryResult(UpdateDraftSetupRepositoryStatus.InvalidEnabledQuestions);
+            }
+
             await _dbContext.Entry(board)
                 .Collection(existingBoard => existingBoard.Cells)
                 .LoadAsync(cancellationToken);

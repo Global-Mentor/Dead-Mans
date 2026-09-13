@@ -161,7 +161,7 @@ public sealed class DbGameRegistrationRepositoryTests
         var historicalMember = await db.GameTeamMembers.SingleAsync(member => member.TeamId == teamId);
         Assert.NotNull(historicalMember.LeftAtUtc);
 
-        var create = await service.CreateTeamAsync(userId, recruitmentOpen: true);
+        var create = await service.CreateTeamAsync(userId, recruitmentOpen: true, name: "New team");
         Assert.True(create.Success);
         Assert.NotNull(create.Value);
         Assert.Equal(1, create.Value!.TeamSlotIndex);
@@ -385,7 +385,12 @@ public sealed class DbGameRegistrationRepositoryTests
             NullLogger<DbGameRegistrationPersistence>.Instance,
             TimeProvider.System
         );
-        return new GameRegistrationService(reads, persistence);
+        return new GameRegistrationService(reads, persistence, new SilentRegistrationEvents(), NullLogger<GameRegistrationService>.Instance);
+    }
+
+    private sealed class SilentRegistrationEvents : backend.Application.Abstractions.Realtime.IGameRegistrationEventsPublisher
+    {
+        public Task PublishRegistrationChangedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private static ApplicationDbContext CreateDbContext()

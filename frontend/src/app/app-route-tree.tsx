@@ -24,6 +24,14 @@ const TwitchAuthCallbackPage = lazy(() =>
   })),
 )
 
+const UiStateGallery = import.meta.env.DEV
+  ? lazy(() =>
+      import('../features/dev-notes/ui/UiStateGallery.tsx').then((module) => ({
+        default: module.UiStateGallery,
+      })),
+    )
+  : null
+
 function lazyAuthRoute(
   path: string,
   Page: LazyExoticComponent<ComponentType<unknown>>,
@@ -57,6 +65,18 @@ function createPanelChildRoute(route: (typeof panelRouteConfig)[number]): RouteO
 const panelChildRoutes: RouteObject[] = [
   { index: true, element: <PanelIndexRedirect /> },
   ...panelRouteConfig.map(createPanelChildRoute),
+  ...(UiStateGallery
+    ? [
+        {
+          path: '__ui-states',
+          element: (
+            <Suspense fallback={<CenteredProgress minHeight={240} />}>
+              <UiStateGallery />
+            </Suspense>
+          ),
+        },
+      ]
+    : []),
 ]
 
 export const appRoutes: RouteObject[] = [

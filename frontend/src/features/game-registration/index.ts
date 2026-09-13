@@ -20,6 +20,7 @@ export {
   useLeaveGameRegistrationTeamMutation,
   useMoveGameRegistrationTeamToSlotMutation,
   useRequestMyGameRegistrationTeamDisbandMutation,
+  useCancelMyGameRegistrationTeamDisbandRequestMutation,
   useRejectGameRegistrationTeamMutation,
   useRemoveGameRegistrationPlayerFromTeamMutation,
   useStartGameFromRegistrationMutation,
@@ -28,7 +29,11 @@ export {
 } from './api/game-registration-mutation-hooks.ts'
 export { useGameRegistrationToast } from './api/use-game-registration-toast.ts'
 
-export { RegistrationTeamNameEditor } from './ui/RegistrationTeamNameEditor.tsx'
-export { normalizeTeamNameInput, TEAM_NAME_MAX_LENGTH } from './model/team-name.ts'
+export {
+  isTeamNameTaken,
+  normalizeTeamNameInput,
+  TEAM_NAME_MAX_LENGTH,
+  TEAM_NAME_MIN_LENGTH,
+} from './model/team-name.ts'
 export { searchRegistrationPlayers } from './model/player-search.ts'
 export { formatRegistrationTeamStatus } from './model/registration-team-status.ts'

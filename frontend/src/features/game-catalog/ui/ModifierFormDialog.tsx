@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Paper, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Alert, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import type { FieldPath } from 'react-hook-form'
@@ -9,7 +9,13 @@ import type {
   GameModifierDefinition,
   GameModifierDraftPreview,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AppDialog, ConfirmDialog } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AppDialog,
+  ConfirmDialog,
+  FormTextField,
+  SectionCard,
+} from '../../../shared/ui/index.ts'
 import { previewGameModifier } from '../api/catalog-modifiers-api.ts'
 import {
   createDefaultModifierFormValues,
@@ -213,7 +219,7 @@ function ModifierFormDialogBody({
           </Alert>
         ) : null}
         {staleLatest ? (
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+          <SectionCard surface="plain" sx={{ p: 1.5, mb: 2 }}>
             <Typography variant="subtitle2">
               {t('gameCatalog.modifiers.latestForComparison', {
                 revision: staleLatest.revision,
@@ -229,7 +235,7 @@ function ModifierFormDialogBody({
                 limit: staleLatest.activationLimit.count ?? t('gameCatalog.modifiers.unlimited'),
               })}
             </Typography>
-          </Paper>
+          </SectionCard>
         ) : null}
         {isReadOnly ? (
           <Alert severity="info" sx={{ mb: 2 }}>
@@ -264,7 +270,7 @@ function ModifierFormDialogBody({
                   name="changeNote"
                   control={control}
                   render={({ field, fieldState }) => (
-                    <TextField
+                    <FormTextField
                       {...field}
                       label={t('gameCatalog.modifiers.fields.changeNote')}
                       helperText={

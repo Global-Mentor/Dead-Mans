@@ -3,7 +3,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import type { ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierActivation } from '../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import type { CancelModifierOption } from '../model/admin-modifier-support.ts'
 import { AdminModifierBlock } from './admin-modifier-panel-primitives.tsx'
 
@@ -103,7 +103,7 @@ export function AdminModifierCancellationBlock({
             )}
           />
 
-          <TextField
+          <FormTextField
             size="small"
             label={t('gameModifiers.adminPanel.cancelReasonLabel')}
             value={cancelReason}

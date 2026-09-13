@@ -1,7 +1,7 @@
-import { MenuItem, Stack, TextField, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, ConfirmDialog } from '../../../shared/ui/index.ts'
+import { AppButton, ConfirmDialog, FormSelect, FormTextField } from '../../../shared/ui/index.ts'
 import type { TechnicalCancelRoundInput } from '../use-start-game-round.ts'
 import type { GameRoundDetails } from '../model/game-management-panel.ts'
 
@@ -56,22 +56,17 @@ export function RoundSafetyControls({
         </>
       ) : null}
 
-      <TextField
-        select
-        size="small"
+      <FormSelect
         label={t('gameBoard.roundPanelTechnicalReason')}
         value={reasonCode}
         disabled={isBusy}
-        onChange={(event) => setReasonCode(event.target.value as TechnicalReasonCode)}
-      >
-        {reasonCodes.map((code) => (
-          <MenuItem key={code} value={code}>
-            {t(`gameBoard.technicalCancelReasons.${code}`)}
-          </MenuItem>
-        ))}
-      </TextField>
-      <TextField
-        size="small"
+        onChange={setReasonCode}
+        options={reasonCodes.map((code) => ({
+          value: code,
+          label: t(`gameBoard.technicalCancelReasons.${code}`),
+        }))}
+      />
+      <FormTextField
         multiline
         minRows={2}
         required
@@ -82,8 +77,7 @@ export function RoundSafetyControls({
         onChange={(event) => setInternalDetail(event.target.value)}
       />
       {requiresPublicSummary ? (
-        <TextField
-          size="small"
+        <FormTextField
           required
           label={t('gameBoard.roundPanelTechnicalPublicSummary')}
           value={publicSummary}

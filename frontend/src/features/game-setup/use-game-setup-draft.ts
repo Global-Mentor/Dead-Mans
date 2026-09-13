@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GameSetupSnapshot } from '../../shared/api/contracts/index.ts'
+import { gameQuestionCatalogQueryOptions } from '../game-questions/index.ts'
 import { createDraftGameSetup, deleteDraftGameSetup } from './api/game-setup-api.ts'
 import { gameSetupDraftQueryOptions } from './api/game-setup-queries.ts'
 import { isGameSetupDraftDirty, type GameSetupDraftState } from './model/game-setup-draft.ts'
@@ -34,7 +35,39 @@ export function useGameSetupDraft() {
   const snapshotDraftKey = snapshot ? getSnapshotDraftKey(snapshot) : null
   const activeDraftOverride =
     snapshotDraftKey && draftOverride?.key === snapshotDraftKey ? draftOverride : null
-  const draft = activeDraftOverride?.draft ?? draftQuery.data?.initialDraft ?? null
+  const rawDraft = activeDraftOverride?.draft ?? draftQuery.data?.initialDraft ?? null
+  // Use the complete catalog here. Search/category results must never remove
+  // selected questions merely because they are outside the current filter.
+  const availableQuestions = useQuery({
+    ...gameQuestionCatalogQueryOptions({ search: '', includeDisabled: false }),
+    enabled: snapshot !== null && (rawDraft?.enabledQuestionIds.length ?? 0) > 0,
+  })
+  const availableQuestionIds = useMemo(
+    () =>
+      availableQuestions.isSuccess && !availableQuestions.isFetching
+        ? new Set(
+            availableQuestions.data
+              .filter((question) => question.isEnabled)
+              .map((question) => question.questionId),
+          )
+        : null,
+    [availableQuestions.data, availableQuestions.isSuccess, availableQuestions.isFetching],
+  )
+  const draft = useMemo(
+    () => (rawDraft ? removeUnavailableQuestions(rawDraft, availableQuestionIds) : null),
+    [rawDraft, availableQuestionIds],
+  )
+
+  useEffect(() => {
+    if (!availableQuestionIds || !snapshotDraftKey || !rawDraft) return
+    queueMicrotask(() =>
+      setDraftOverride((current) => {
+        const currentDraft = current?.key === snapshotDraftKey ? current.draft : rawDraft
+        const next = removeUnavailableQuestions(currentDraft, availableQuestionIds)
+        return next === currentDraft ? current : { key: snapshotDraftKey, draft: next }
+      }),
+    )
+  }, [availableQuestionIds, snapshotDraftKey, rawDraft])
 
   const isDirty = useMemo(() => {
     if (!savedDraft || !draft) {
@@ -163,3 +196,11 @@ export function useGameSetupDraft() {
 }
 
 export type GameSetupDraftController = ReturnType<typeof useGameSetupDraft>
+
+function removeUnavailableQuestions(draft: GameSetupDraftState, availableIds: Set<string> | null) {
+  if (!availableIds) return draft
+  const enabledQuestionIds = draft.enabledQuestionIds.filter((id) => availableIds.has(id))
+  return enabledQuestionIds.length === draft.enabledQuestionIds.length
+    ? draft
+    : { ...draft, enabledQuestionIds }
+}

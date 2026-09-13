@@ -657,6 +657,72 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OpenRegistration_WhenSelectedQuestionBecomesUnavailable_ReturnsConflictAndKeepsDraft(bool deleted)
+    {
+        await ClearGamesAsync();
+        using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
+        var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Question availability"));
+        var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var catalog = new backend.Infrastructure.Persistence.DbGameQuestionRepository(db, TimeProvider.System);
+        var category = await catalog.CreateCategoryAsync("Publication");
+        await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
+            "q-availability", category.Id, "Capital?", "Paris", ["Paris"], 1, true, 0));
+        var question = await db.QuestionDefinitions
+            .Include(item => item.CategoryDefinition)
+            .Include(item => item.AcceptedAnswers)
+            .FirstAsync(item => item.IsEnabled && !item.IsDeleted);
+        var snapshotAt = DateTime.UtcNow.AddMinutes(-1);
+        db.GameEnabledQuestions.Add(new GameEnabledQuestion
+        {
+            GameId = Guid.Parse(draft.GameId),
+            QuestionId = question.Id,
+            EnabledAtUtc = snapshotAt,
+            SnapshotAtUtc = snapshotAt,
+            QuestionRevisionSnapshot = question.Revision,
+            QuestionCodeSnapshot = question.ExternalCode,
+            CategoryNameSnapshot = question.CategoryDefinition!.Name,
+            QuestionTextSnapshot = question.Text,
+            AcceptedAnswersSnapshot = question.AcceptedAnswers.OrderBy(item => item.SortOrder).Select(item => item.AnswerText).ToArray(),
+            NormalizedAnswersSnapshot = question.AcceptedAnswers.OrderBy(item => item.SortOrder).Select(item => item.NormalizedAnswer).ToArray(),
+            RewardSnapshot = question.Reward,
+            PrioritySnapshot = question.Priority
+        });
+        await db.SaveChangesAsync();
+        question.IsEnabled = false;
+        question.IsDeleted = deleted;
+        question.DeletedAtUtc = deleted ? DateTime.UtcNow : null;
+        await db.SaveChangesAsync();
+
+        var request = new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version);
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(AppMessages.ErrorCodes.GameLifecycleQuestionsUnavailable, (await response.Content.ReadFromJsonAsync<ErrorResponse>())!.Code);
+        db.ChangeTracker.Clear();
+        var game = await db.Games.SingleAsync(item => item.Id == request.GameId);
+        Assert.Equal(GameStatusValue.Draft, game.Status);
+        Assert.Null(game.ReadyAtUtc);
+        var selection = await db.GameEnabledQuestions.SingleAsync(item => item.GameId == request.GameId);
+        Assert.Equal(snapshotAt, selection.SnapshotAtUtc);
+
+        if (deleted)
+        {
+            db.GameEnabledQuestions.Remove(selection);
+        }
+        else
+        {
+            (await db.QuestionDefinitions.SingleAsync(item => item.Id == selection.QuestionId)).IsEnabled = true;
+        }
+        await db.SaveChangesAsync();
+        var retried = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
+        Assert.Equal(HttpStatusCode.OK, retried.StatusCode);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task OpenRegistration_RejectsStaleOrReplacedReviewedDraft(bool staleVersion)

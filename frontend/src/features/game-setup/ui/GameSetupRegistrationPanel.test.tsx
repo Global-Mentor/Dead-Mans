@@ -121,6 +121,20 @@ describe('GameSetupRegistrationPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Обновить', exact: true }))
     await waitFor(() => expect(defaultProps.onReloadFromServer).toHaveBeenCalledOnce())
   })
+  it('explains how to resolve unavailable questions without navigating away from the draft', async () => {
+    mocks.open.mockRejectedValue(
+      new ApiError('Conflict', {
+        status: 409,
+        details: { code: 'game_lifecycle.questions_unavailable' },
+      }),
+    )
+    renderPanel()
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: 'Опубликовать и открыть регистрацию' }))
+    expect(await screen.findByText(/Выбранный вопрос отключён или удалён/)).toBeInTheDocument()
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(defaultProps.onBusyChange).toHaveBeenLastCalledWith(false)
+  })
   it('prevents duplicate publication while a request is pending', async () => {
     let resolve!: (value: unknown) => void
     mocks.open.mockImplementation(

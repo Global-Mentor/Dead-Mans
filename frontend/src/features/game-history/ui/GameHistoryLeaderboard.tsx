@@ -1,4 +1,4 @@
-import { AccordionDetails, AccordionSummary, Box, Chip, Stack, Typography } from '@mui/material'
+import { AccordionDetails, Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
@@ -18,6 +18,7 @@ import {
   getRankColor,
 } from '../model/game-history-formatters.ts'
 import { MiniMetricChip } from './game-history-display.tsx'
+import { AppAccordionSummary } from '../../../shared/ui/index.ts'
 import { LeaderboardRoundCard } from './GameHistoryLeaderboardRound.tsx'
 import {
   AccordionSurface,
@@ -48,16 +49,7 @@ export function TeamLeaderboardRow({
 
   return (
     <AccordionSurface defaultExpanded={rank <= 3}>
-      <AccordionSummary
-        expandIcon={<ExpandGlyph />}
-        sx={{
-          px: 1.4,
-          py: 0.1,
-          '& .MuiAccordionSummary-content': {
-            my: 0.8,
-          },
-        }}
-      >
+      <AppAccordionSummary density="compact" expandIcon={<ExpandGlyph />}>
         <Box sx={{ width: '100%' }}>
           <Stack spacing={0.9}>
             <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} alignItems="flex-start">
@@ -166,7 +158,7 @@ export function TeamLeaderboardRow({
             </Stack>
           </Stack>
         </Box>
-      </AccordionSummary>
+      </AppAccordionSummary>
 
       <AccordionDetails sx={{ px: 1.4, pt: 0, pb: 1.4 }}>
         <Stack spacing={1.25}>

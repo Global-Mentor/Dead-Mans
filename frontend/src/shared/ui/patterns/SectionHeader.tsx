@@ -7,6 +7,7 @@ interface SectionHeaderProps {
   description?: ReactNode
   actions?: ReactNode
   textAlign?: 'left' | 'center'
+  headingLevel?: 'h1' | 'h2' | 'h3'
 }
 
 export function SectionHeader({
@@ -14,16 +15,18 @@ export function SectionHeader({
   description,
   actions,
   textAlign = 'left',
+  headingLevel = 'h2',
 }: SectionHeaderProps) {
   return (
     <Stack
+      component="header"
       direction={{ xs: 'column', sm: 'row' }}
       spacing={2}
       justifyContent="space-between"
       alignItems={{ xs: 'stretch', sm: 'flex-start' }}
     >
       <Box sx={{ minWidth: 0, width: textAlign === 'center' ? '100%' : 'auto', textAlign }}>
-        <Typography variant="subtitle1" sx={huntBrassTitleSx}>
+        <Typography component={headingLevel} variant="subtitle1" sx={huntBrassTitleSx}>
           {title}
         </Typography>
         {description ? (

@@ -43,6 +43,22 @@ pwsh backend/scripts/setup-local.ps1
 
 ## Daily Development
 
+### Единая типографика frontend
+
+Гарнитура Alegreya Variable загружается локально в `frontend/src/main.tsx`.
+Единственное место задания семейства и начертания цифр — CSS-переменные
+`--app-font-family` и `--app-font-numeric` в `frontend/src/index.css`.
+`huntTypography` и тема MUI используют эти переменные; обычные HTML-поля
+наследуют их автоматически, включая элементы в модалках и меню вне `#root`.
+Для цифр используется `lining-nums tabular-nums`: единая высота и ширина.
+
+В новых компонентах используйте варианты `Typography` и общую тему, без
+локальных названий шрифтов или сброса `font-variant-numeric`. При замене
+гарнитуры обновляйте импорт, CSS-переменную и браузерную проверку типографики.
+`frontend/e2e/typography.spec.ts` проверяет страницы панели на en/ru/uk/pl,
+наследование обычными HTML-полями и фактический шрифт украинских и польских букв.
+Существующие браузерные сценарии также проверяют формы, модалки и production-сборку.
+
 ### Full stack from repo root
 
 ```bash

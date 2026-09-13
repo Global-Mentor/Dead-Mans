@@ -1,10 +1,11 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useId, type ReactNode } from 'react'
+import { SectionCard } from '../../../shared/ui/index.ts'
 
 interface ApplicationSectionProps {
   title: string
   description?: string
-  summary?: ReactNode
+  action?: ReactNode
   controls?: ReactNode
   children: ReactNode
 }
@@ -12,46 +13,50 @@ interface ApplicationSectionProps {
 export function ApplicationSection({
   title,
   description,
-  summary,
+  action,
   controls,
   children,
 }: ApplicationSectionProps) {
   const headingId = useId()
 
   return (
-    <Box
+    <SectionCard
       component="section"
       aria-labelledby={headingId}
       sx={{
-        display: 'grid',
-        gridTemplateRows: { xs: 'auto auto', md: 'subgrid' },
-        gridRow: { md: 'span 2' },
-        rowGap: 1.25,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        p: { xs: 1.5, sm: 2 },
         minWidth: 0,
+        containerType: 'inline-size',
       }}
     >
-      <Stack spacing={1.25}>
+      <Stack component="header" sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Stack
           direction="row"
           spacing={1}
-          alignItems="baseline"
+          alignItems="center"
           justifyContent="space-between"
           flexWrap="wrap"
           useFlexGap
+          sx={{ minHeight: 44 }}
         >
           <Typography id={headingId} component="h2" variant="h5" sx={{ fontSize: 28 }}>
             {title}
           </Typography>
-          {summary}
+          {action}
         </Stack>
+      </Stack>
+      <Stack spacing={1.5} sx={{ minWidth: 0 }}>
         {description ? (
           <Typography variant="body2" color="text.secondary">
             {description}
           </Typography>
         ) : null}
         {controls}
+        <Box sx={{ minWidth: 0 }}>{children}</Box>
       </Stack>
-      <Box sx={{ minWidth: 0, alignSelf: 'start' }}>{children}</Box>
-    </Box>
+    </SectionCard>
   )
 }

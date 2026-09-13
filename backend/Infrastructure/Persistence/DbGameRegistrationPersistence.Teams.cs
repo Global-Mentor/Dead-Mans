@@ -27,6 +27,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
+        if (await TeamNameTakenAsync(gameId, null, name, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameTaken);
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var team = new GameTeam
         {
@@ -88,6 +93,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
+        if (await TeamNameTakenAsync(gameId, null, name, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameTaken);
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var team = new GameTeam
         {
@@ -129,12 +139,32 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         Guid gameId,
         Guid teamId,
         string? name,
+        Guid? actingPlayerId,
         CancellationToken cancellationToken = default
     )
     {
         await using var transaction = _dbContext.Database.IsRelational()
             ? await BeginRosterChangeAsync(gameId, cancellationToken)
             : null;
+
+        var canRenameInGame = await _dbContext.Games.AsNoTracking().AnyAsync(
+            game => game.Id == gameId && !game.IsDeleted
+                && (game.Status == GameStatusValue.Ready
+                    || (!actingPlayerId.HasValue && game.Status == GameStatusValue.Active)),
+            cancellationToken);
+        if (!canRenameInGame)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
+        }
+
+        // The player may have left or been removed after the service's initial read.
+        if (actingPlayerId.HasValue && !await _dbContext.GameTeamMembers.AnyAsync(
+                member => member.GameId == gameId && member.TeamId == teamId
+                    && member.UserId == actingPlayerId.Value && member.LeftAtUtc == null,
+                cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NotTeamMember);
+        }
 
         var team = await _dbContext.GameTeams
             .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
@@ -146,6 +176,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         if (team.Status != TeamStatusValue.Forming)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
+        }
+
+        if (await TeamNameTakenAsync(gameId, teamId, name, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameTaken);
         }
 
         team.Name = TeamNameValue.Normalize(name);

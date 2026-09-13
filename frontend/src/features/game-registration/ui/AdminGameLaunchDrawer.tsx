@@ -97,7 +97,7 @@ export function AdminGameLaunchDrawer({
               sx={{ alignSelf: 'flex-start' }}
             />
 
-            <SectionCard inset>
+            <SectionCard surface="inset">
               <Stack spacing={1}>
                 <Typography variant="subtitle2">
                   {t('gameApplication.adminPanel.launchPanelValidationTitle')}
@@ -121,7 +121,7 @@ export function AdminGameLaunchDrawer({
               </Stack>
             </SectionCard>
 
-            <SectionCard inset variantStyle={canStartGame ? 'default' : 'dashed'}>
+            <SectionCard surface="inset" borderStyle={canStartGame ? 'solid' : 'dashed'}>
               {canStartGame ? (
                 <Typography variant="body2" color="text.secondary">
                   {t('gameApplication.adminPanel.launchPanelReadyDescription')}

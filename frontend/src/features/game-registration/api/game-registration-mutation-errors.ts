@@ -5,6 +5,9 @@ import type { ErrorResponse } from '../../../shared/api/contracts/index.ts'
 
 const REGISTRATION_ERROR_I18N_KEYS: Partial<Record<NonNullable<ErrorResponse['code']>, ParseKeys>> =
   {
+    [API_ERROR_CODES.gameRegistrationTeamNameTaken]: 'gameRegistration.errors.teamNameTaken',
+    [API_ERROR_CODES.gameRegistrationDisbandRequestNotOwned]:
+      'gameRegistration.errors.disbandRequestNotOwned',
     [API_ERROR_CODES.gameRegistrationNotOpen]: 'gameRegistration.errors.notOpen',
     [API_ERROR_CODES.gameRegistrationNoSlots]: 'gameRegistration.errors.noSlots',
     [API_ERROR_CODES.gameRegistrationAlreadyOnTeam]: 'gameRegistration.errors.alreadyOnTeam',

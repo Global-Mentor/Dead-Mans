@@ -16,6 +16,7 @@ import {
   leaveGameRegistrationTeam,
   moveGameRegistrationTeamToSlot,
   requestMyGameRegistrationTeamDisband,
+  cancelMyGameRegistrationTeamDisbandRequest,
   rejectGameRegistrationTeam,
   removeGameRegistrationPlayerFromTeam,
   startGameFromRegistration,
@@ -241,6 +242,16 @@ export function startGameFromRegistrationMutationOptions(
 ) {
   return mutationOptions({
     mutationFn: startGameFromRegistration,
+    ...registrationMutationHandlers(queryClient, onError),
+  })
+}
+
+export function cancelMyGameRegistrationTeamDisbandRequestMutationOptions(
+  queryClient: QueryClient,
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  return mutationOptions({
+    mutationFn: cancelMyGameRegistrationTeamDisbandRequest,
     ...registrationMutationHandlers(queryClient, onError),
   })
 }

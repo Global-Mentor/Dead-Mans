@@ -94,6 +94,16 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamActiveInGame,
                 AppMessages.ErrorCodes.GameRegistrationTeamActiveInGame
             ),
+            GameRegistrationErrorCode.TeamNameTaken => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNameTaken,
+                AppMessages.ErrorCodes.GameRegistrationTeamNameTaken
+            ),
+            GameRegistrationErrorCode.DisbandRequestNotOwned => new(
+                StatusCodes.Status403Forbidden,
+                AppMessages.Client.GameRegistrationDisbandRequestNotOwned,
+                AppMessages.ErrorCodes.GameRegistrationDisbandRequestNotOwned
+            ),
             GameRegistrationErrorCode.InvalidTeamName => new(
                 StatusCodes.Status400BadRequest,
                 AppMessages.Client.GameRegistrationInvalidTeamName,
@@ -138,6 +148,11 @@ public static class DomainErrorHttpPolicy
                 StatusCodes.Status409Conflict,
                 "An enabled modifier cannot be bound to an immutable revision.",
                 AppMessages.ErrorCodes.GameModifierVersionBindingMissing
+            ),
+            GameLifecycleErrorCode.QuestionsUnavailable => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleQuestionsUnavailable,
+                AppMessages.ErrorCodes.GameLifecycleQuestionsUnavailable
             ),
             GameLifecycleErrorCode.GameNotActive => new(
                 StatusCodes.Status404NotFound,

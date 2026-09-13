@@ -11,6 +11,7 @@ public static class RealtimeServiceCollectionExtensions
     {
         services.AddSingleton<IGameBoardEventsPublisher, SignalRGameBoardEventsPublisher>();
         services.AddSingleton<IGameSetupEventsPublisher, SignalRGameSetupEventsPublisher>();
+        services.AddSingleton<IGameRegistrationEventsPublisher, SignalRGameRegistrationEventsPublisher>();
         services
             .AddSignalR()
             .AddJsonProtocol(options =>

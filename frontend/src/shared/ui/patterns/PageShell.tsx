@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import type { BoxProps, SxProps, Theme } from '@mui/material'
 import { pageShellSx, setupSplitLayoutSx } from '../../theme/layout-sx.ts'
+import { mergeSx } from '../../theme/merge-sx.ts'
 
 type PageShellVariant = 'standard' | 'centered' | 'split'
 
@@ -27,6 +28,5 @@ function resolveVariantSx(variant: PageShellVariant): SxProps<Theme> {
 
 export function PageShell({ variant = 'standard', sx, ...props }: PageShellProps) {
   const variantSx = resolveVariantSx(variant)
-  const mergedSx = sx ? ([variantSx, sx].filter(Boolean) as SxProps<Theme>) : variantSx
-  return <Box {...props} sx={mergedSx} />
+  return <Box {...props} sx={mergeSx(variantSx, sx)} />
 }

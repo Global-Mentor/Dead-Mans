@@ -1,9 +1,9 @@
-import { AccordionDetails, AccordionSummary, Box, Chip, Stack, Typography } from '@mui/material'
+import { AccordionDetails, Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { formatPlayedCardModifierOutcomeStatus } from '../../../shared/lib/played-card-formatters.ts'
-import { AppButton, ParticipantNamesList } from '../../../shared/ui/index.ts'
+import { AppAccordionSummary, AppButton, ParticipantNamesList } from '../../../shared/ui/index.ts'
 import { getRoundBonusDelta, getRoundScore } from '../model/game-history-team-leaderboard.ts'
 import { formatSignedNumber } from '../model/game-history-view.ts'
 import { MiniMetricChip } from './game-history-display.tsx'
@@ -27,16 +27,7 @@ export function LeaderboardRoundCard({
 
   return (
     <AccordionSurface defaultExpanded={isBestRound} highlighted={isBestRound}>
-      <AccordionSummary
-        expandIcon={<ExpandGlyph />}
-        sx={{
-          px: 1.25,
-          py: 0.1,
-          '& .MuiAccordionSummary-content': {
-            my: 0.65,
-          },
-        }}
-      >
+      <AppAccordionSummary density="compact" expandIcon={<ExpandGlyph />}>
         <Box sx={{ width: '100%' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={0.75} alignItems="flex-start">
             <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -70,7 +61,7 @@ export function LeaderboardRoundCard({
             </Stack>
           </Stack>
         </Box>
-      </AccordionSummary>
+      </AppAccordionSummary>
 
       <AccordionDetails sx={{ px: 1.25, pt: 0, pb: 1.25 }}>
         <Stack spacing={1.2}>

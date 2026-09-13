@@ -43,15 +43,12 @@ export function fetchGameRegistrationAdminSnapshot() {
   return unwrapOpenApiDataOrNullOn404(gameRegistrationApiClient.GET('/game/registration/admin'))
 }
 
-export function createGameRegistrationTeam(input: {
-  recruitmentOpen: boolean
-  name?: string | undefined
-}) {
+export function createGameRegistrationTeam(input: { recruitmentOpen: boolean; name: string }) {
   return unwrapOpenApiData(
     gameRegistrationApiClient.POST('/game/registration/teams', {
       body: {
         recruitmentOpen: input.recruitmentOpen,
-        ...(input.name ? { name: input.name } : {}),
+        name: input.name,
       },
     }),
   )
@@ -111,6 +108,12 @@ export function joinGameRegistrationTeam(teamId: string) {
 
 export function leaveGameRegistrationTeam() {
   return ensureOpenApiSuccess(gameRegistrationApiClient.POST('/game/registration/teams/leave'))
+}
+
+export function cancelMyGameRegistrationTeamDisbandRequest() {
+  return unwrapOpenApiData(
+    gameRegistrationApiClient.DELETE('/game/registration/my-team/disband-request'),
+  )
 }
 
 export function requestMyGameRegistrationTeamDisband() {

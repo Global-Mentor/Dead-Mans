@@ -1,5 +1,8 @@
 :root {
-  font-family: 'Roboto Condensed Variable', 'Arial Narrow', Arial, sans-serif;
+  --app-font-family: 'Alegreya Variable', Georgia, 'Times New Roman', serif;
+  --app-font-numeric: lining-nums tabular-nums;
+  font-family: var(--app-font-family);
+  font-variant-numeric: var(--app-font-numeric);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -19,4 +22,16 @@ body,
 
 body {
   margin: 0;
+}
+
+/* Native controls do not consistently inherit typography from their parent. */
+button,
+input,
+textarea,
+select,
+optgroup,
+option,
+input::file-selector-button {
+  font-family: inherit;
+  font-variant-numeric: inherit;
 }

@@ -1,7 +1,9 @@
 import type { SxProps, Theme } from '@mui/material'
 import type { SystemStyleObject } from '@mui/system'
 import { alpha } from '@mui/material/styles'
-import { huntTypography } from './tokens.ts'
+import { huntTypography, uiTokens } from './tokens.ts'
+
+export type AppSurface = 'panel' | 'inset' | 'accented' | 'plain'
 
 export const huntBrassTitleSx: SxProps<Theme> = {
   fontFamily: huntTypography.display,
@@ -48,20 +50,36 @@ export function huntAuthCardSx(theme: Theme) {
   }
 }
 
-export function huntPanelSx(theme: Theme): SystemStyleObject<Theme> {
-  return {
-    border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
-    boxShadow: 'none',
-    backgroundImage: theme.custom.gradients.panelSurface,
-    backgroundSize: 'auto, 640px auto',
-  }
-}
-
-export function huntInsetSurfaceSx(theme: Theme): SystemStyleObject<Theme> {
-  return {
-    backgroundColor: alpha(theme.palette.common.black, 0.22),
-    border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
-    backgroundImage: 'none',
-    boxShadow: 'none',
+export function getAppSurfaceSx(theme: Theme, surface: AppSurface): SystemStyleObject<Theme> {
+  switch (surface) {
+    case 'inset':
+      return {
+        backgroundColor: alpha(theme.palette.common.black, 0.22),
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+        backgroundImage: 'none',
+        boxShadow: 'none',
+      }
+    case 'accented':
+      return {
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: theme.custom.gradients.panelAccentSoft,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.42)}`,
+        boxShadow: 'none',
+      }
+    case 'plain':
+      return {
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: 'none',
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
+        boxShadow: 'none',
+      }
+    default:
+      return {
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: theme.custom.gradients.panelSurface,
+        backgroundSize: `auto, ${uiTokens.texture.panelSize}`,
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
+        boxShadow: 'none',
+      }
   }
 }

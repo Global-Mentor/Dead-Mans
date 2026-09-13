@@ -5,7 +5,14 @@ import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
 
 const mocks = vi.hoisted(() => ({ subscribe: vi.fn() }))
 vi.mock('../shared/realtime/index.ts', () => ({
-  realtimeHubs: { gameBoard: { events: { gameLifecycleChanged: 'gameLifecycleChanged' } } },
+  realtimeHubs: {
+    gameBoard: {
+      events: {
+        gameLifecycleChanged: 'gameLifecycleChanged',
+        registrationChanged: 'registrationChanged',
+      },
+    },
+  },
   useSignalrHubSubscription: mocks.subscribe,
 }))
 afterEach(() => {
@@ -22,16 +29,16 @@ describe('GameLifecycleRealtimeSync', () => {
       </QueryClientProvider>,
     )
     const subscription = mocks.subscribe.mock.calls[0]?.[0]
-    let handler!: () => void
+    const handlers = new Map<string, () => void>()
     const connection = {
       on: vi.fn((_event, fn) => {
-        handler = fn
+        handlers.set(_event, fn)
       }),
       off: vi.fn(),
     }
     const unregister = subscription.registerEventHandlers(connection)
     await act(async () => {
-      handler()
+      handlers.get('gameLifecycleChanged')!()
     })
     for (const queryKey of [
       ['gameSetup', 'draftSnapshot'],
@@ -45,7 +52,21 @@ describe('GameLifecycleRealtimeSync', () => {
     invalidate.mockClear()
     await subscription.onConnected()
     expect(invalidate).toHaveBeenCalledTimes(5)
+    invalidate.mockClear()
+    await act(async () => {
+      handlers.get('registrationChanged')!()
+    })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'snapshot'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'adminSnapshot'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentTeamQueue'] })
     unregister()
-    expect(connection.off).toHaveBeenCalledWith('gameLifecycleChanged', handler)
+    expect(connection.off).toHaveBeenCalledWith(
+      'gameLifecycleChanged',
+      handlers.get('gameLifecycleChanged'),
+    )
+    expect(connection.off).toHaveBeenCalledWith(
+      'registrationChanged',
+      handlers.get('registrationChanged'),
+    )
   })
 })

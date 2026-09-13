@@ -127,4 +127,14 @@ public sealed partial class GameRegistrationController
         );
         return ToTeamResult(result, StatusCodes.Status200OK);
     }
+
+    [HttpDelete("my-team/disband-request")]
+    [ProducesResponseType(typeof(ApiContracts.RegistrationTeamDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CancelMyTeamDisbandRequest(CancellationToken cancellationToken)
+    {
+        var userId = RequireUserId();
+        if (userId is null) return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
+        var result = await _registrationService.CancelMyTeamDisbandRequestAsync(userId.Value, cancellationToken);
+        return ToTeamResult(result, StatusCodes.Status200OK);
+    }
 }

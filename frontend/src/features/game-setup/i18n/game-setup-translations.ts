@@ -28,6 +28,8 @@ const translations = {
         currentGame: 'Another game is already ready or active. Finish it first.',
         teamSize: 'The team size limits are invalid.',
         slots: 'There are no team slots available.',
+        questions:
+          'A selected question is disabled or deleted. Enable it in the catalog or remove it from the draft and save your changes.',
         modifiers:
           'An enabled modifier is archived or has no published version. Review the selected modifiers.',
         missingDraft: 'This draft is no longer available. Reload the page.',
@@ -88,11 +90,10 @@ const translations = {
       empty: 'No questions match current filters.',
       meta: 'Category: {{category}} · Reward: {{reward}} · Asked: {{asked}} · Correct: {{correct}}',
       enabledDescription:
-        'Enable the questions this game will draw from. Only enabled questions are asked.',
+        'Select questions for this game. Globally disabled questions are hidden and removed from drafts.',
       enabledCount: 'Enabled for this game: {{count}}',
       enableVisible: 'Enable visible',
       disableVisible: 'Disable visible',
-      globallyDisabled: 'globally disabled',
     },
     reloadFromServer: 'Reload',
     remoteChangeNotice:
@@ -206,6 +207,8 @@ const translations = {
         currentGame: 'Другая игра уже готова или запущена. Сначала завершите её.',
         teamSize: 'Некорректные ограничения размера команды.',
         slots: 'Нет доступных слотов команд.',
+        questions:
+          'Выбранный вопрос отключён или удалён. Включите его в каталоге либо уберите из черновика и сохраните изменения.',
         modifiers:
           'Выбранный модификатор архивирован или не имеет опубликованной версии. Проверьте набор модификаторов.',
         missingDraft: 'Этот черновик больше недоступен. Обновите страницу.',
@@ -267,11 +270,10 @@ const translations = {
       empty: 'По выбранным фильтрам вопросов нет.',
       meta: 'Категория: {{category}} · Награда: {{reward}} · Задано: {{asked}} · Верно: {{correct}}',
       enabledDescription:
-        'Включите вопросы, из которых будет идти эта игра. Задаются только включённые вопросы.',
+        'Выберите вопросы для игры. Глобально отключённые вопросы скрыты и удаляются из черновиков.',
       enabledCount: 'Включено для этой игры: {{count}}',
       enableVisible: 'Включить видимые',
       disableVisible: 'Отключить видимые',
-      globallyDisabled: 'выключен глобально',
     },
     reloadFromServer: 'Обновить',
     remoteChangeNotice:
@@ -384,6 +386,8 @@ const translations = {
         currentGame: 'Інша гра вже готова або запущена. Спочатку завершіть її.',
         teamSize: 'Некоректні обмеження розміру команди.',
         slots: 'Немає доступних слотів команд.',
+        questions:
+          'Вибране питання вимкнено або видалено. Увімкніть його в каталозі або приберіть із чернетки та збережіть зміни.',
         modifiers:
           'Вибраний модифікатор архівований або не має опублікованої версії. Перевірте набір модифікаторів.',
         missingDraft: 'Ця чернетка більше недоступна. Оновіть сторінку.',
@@ -445,11 +449,10 @@ const translations = {
       empty: 'За поточними фільтрами питань немає.',
       meta: 'Категорія: {{category}} · Нагорода: {{reward}} · Поставлено: {{asked}} · Вірно: {{correct}}',
       enabledDescription:
-        'Увімкніть питання, з яких складатиметься ця гра. Ставляться лише увімкнені питання.',
+        'Виберіть питання для гри. Глобально вимкнені питання приховані та видаляються з чернеток.',
       enabledCount: 'Увімкнено для цієї гри: {{count}}',
       enableVisible: 'Увімкнути видимі',
       disableVisible: 'Вимкнути видимі',
-      globallyDisabled: 'вимкнено глобально',
     },
     reloadFromServer: 'Оновити',
     remoteChangeNotice:
@@ -562,6 +565,8 @@ const translations = {
         currentGame: 'Inna gra jest już gotowa lub trwa. Najpierw ją zakończ.',
         teamSize: 'Limity wielkości drużyny są nieprawidłowe.',
         slots: 'Brak dostępnych miejsc dla drużyn.',
+        questions:
+          'Wybrane pytanie jest wyłączone lub usunięte. Włącz je w katalogu albo usuń ze szkicu i zapisz zmiany.',
         modifiers:
           'Wybrany modyfikator jest zarchiwizowany lub nie ma opublikowanej wersji. Sprawdź wybrane modyfikatory.',
         missingDraft: 'Ten szkic nie jest już dostępny. Odśwież stronę.',
@@ -623,11 +628,10 @@ const translations = {
       empty: 'Brak pytań dla bieżących filtrów.',
       meta: 'Kategoria: {{category}} · Nagroda: {{reward}} · Zadane: {{asked}} · Poprawne: {{correct}}',
       enabledDescription:
-        'Włącz pytania, z których będzie korzystać ta gra. Zadawane są tylko włączone pytania.',
+        'Wybierz pytania do gry. Globalnie wyłączone pytania są ukryte i usuwane ze szkiców.',
       enabledCount: 'Włączono dla tej gry: {{count}}',
       enableVisible: 'Włącz widoczne',
       disableVisible: 'Wyłącz widoczne',
-      globallyDisabled: 'wyłączone globalnie',
     },
     reloadFromServer: 'Odśwież',
     remoteChangeNotice:

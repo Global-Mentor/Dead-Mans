@@ -23,7 +23,8 @@ public sealed class ApplicationMigrationChainTests
             [
                 "20260908003848_ProductionBaseline",
                 "20260910171900_AllowAdminTeamDisband",
-                "20260911162438_AllowEquivalentQuestionAnswers"
+                "20260911162438_AllowEquivalentQuestionAnswers",
+                "20260912162321_RemoveUnavailableDraftQuestions"
             ],
             migrations
         );

@@ -11,7 +11,7 @@ import {
 import { Controller, useWatch } from 'react-hook-form'
 import type { Control, UseFormSetValue } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { ControlledFormTextField } from '../../../shared/ui/index.ts'
+import { ChoiceCard, ControlledFormTextField } from '../../../shared/ui/index.ts'
 import {
   modifierEventMaximumKinds,
   modifierEventMeasurementModes,
@@ -21,7 +21,7 @@ import {
   modifierPayoutKinds,
   type ModifierFormValues,
 } from '../model/modifier-form-schema.ts'
-import { FieldWithHelp, SelectionCard, WizardSection } from './modifier-form-fields.tsx'
+import { FieldWithHelp, WizardSection } from './modifier-form-fields.tsx'
 
 export function ModifierImpactStep({
   control,
@@ -49,10 +49,10 @@ export function ModifierImpactStep({
     isDisabled = disabled,
   ) =>
     values.map((value) => (
-      <SelectionCard
+      <ChoiceCard
         key={value}
         value={value}
-        checked={selected === value}
+        selected={selected === value}
         disabled={isDisabled}
         title={label(value, 'title')}
         description={label(value, 'description')}

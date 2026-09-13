@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.Tests.Integration.GameEndpoints;
 
-public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplicationFactory>
+public sealed partial class GameRegistrationContractTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -130,7 +130,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
 
         var response = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(true)
+            new CreateRegistrationTeamRequestDto(true, "Test team")
         );
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -276,13 +276,13 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
 
         var firstResponse = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(true)
+            new CreateRegistrationTeamRequestDto(true, "Test team")
         );
         Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
 
         var secondResponse = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(false)
+            new CreateRegistrationTeamRequestDto(false, "Test team")
         );
 
         Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
@@ -902,7 +902,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
 
         var createResponse = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(recruitmentOpen)
+            new CreateRegistrationTeamRequestDto(recruitmentOpen, "Test team")
         );
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var createdTeam = await createResponse.Content.ReadFromJsonAsync<RegistrationTeamDto>();
@@ -930,7 +930,7 @@ public sealed class GameRegistrationContractTests : IClassFixture<TestWebApplica
 
         var replacementResponse = await viewerClient.PostAsJsonAsync(
             "/api/game/registration/teams",
-            new CreateRegistrationTeamRequestDto(recruitmentOpen)
+            new CreateRegistrationTeamRequestDto(recruitmentOpen, "Test team")
         );
         Assert.Equal(HttpStatusCode.Created, replacementResponse.StatusCode);
         var replacement = await replacementResponse.Content.ReadFromJsonAsync<RegistrationTeamDto>();

@@ -1,4 +1,4 @@
-import { Stack, TextField, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,7 +6,7 @@ import type {
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AppDialog } from '../../../shared/ui/index.ts'
+import { AppButton, AppDialog, FormTextField } from '../../../shared/ui/index.ts'
 import { searchRegistrationPlayers } from '../model/player-search.ts'
 
 export type AdminInviteTeamTarget = {
@@ -71,7 +71,7 @@ export function AdminInvitePlayerDialog({
       }
     >
       <Stack spacing={1.5}>
-        <TextField
+        <FormTextField
           fullWidth
           size="small"
           label={t('gameApplication.adminPanel.inviteDialogSearchLabel')}

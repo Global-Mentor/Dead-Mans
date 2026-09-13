@@ -16,6 +16,7 @@ export const huntPalette = {
   ochre: '#51492c',
   bronze: '#5b4536',
   amber: '#aa9270',
+  ember: '#b86d32',
   fern: '#909780',
   twitch: '#6441A5',
   twitchHover: '#7c4fd9',

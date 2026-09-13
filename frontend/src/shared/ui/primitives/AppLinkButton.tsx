@@ -1,18 +1,14 @@
 import { Link as RouterLink } from 'react-router-dom'
-import type { LinkProps as RouterLinkProps } from 'react-router-dom'
-import { AppButton } from './AppButton.tsx'
-import type { AppButtonProps } from './AppButton.tsx'
+import { Button } from '@mui/material'
+import type { ButtonProps } from '@mui/material'
+import { resolveAppButtonTone } from './app-button-tone.ts'
+import type { AppButtonTone } from './app-button-tone.ts'
 
-interface AppLinkButtonProps extends Omit<AppButtonProps, 'component' | 'href'> {
-  to: RouterLinkProps['to']
-}
+type AppLinkButtonProps = Omit<
+  ButtonProps<typeof RouterLink>,
+  'color' | 'component' | 'href' | 'variant'
+> & { tone?: AppButtonTone }
 
-export function AppLinkButton({ to, ...props }: AppLinkButtonProps) {
-  return (
-    <AppButton
-      {...props}
-      component={RouterLink as unknown as NonNullable<AppButtonProps['component']>}
-      {...({ to } as Record<string, unknown>)}
-    />
-  )
+export function AppLinkButton({ tone = 'primary', ...props }: AppLinkButtonProps) {
+  return <Button component={RouterLink} {...resolveAppButtonTone(tone)} {...props} />
 }

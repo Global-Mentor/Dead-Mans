@@ -18,7 +18,7 @@ export function CancelledRoundsSection({
   if (rounds.length === 0) return null
 
   return (
-    <SectionCard inset sx={{ p: 1.5 }}>
+    <SectionCard surface="inset" sx={{ p: 1.5 }}>
       <Stack spacing={1.1}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}

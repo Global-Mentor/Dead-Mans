@@ -1,0 +1,333 @@
+import { expect, test, type WebSocketRoute } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
+import { expectUnifiedTypography } from './typography-assertions.ts'
+import type {
+  GameRegistrationSnapshot,
+  RegistrationTeam,
+} from '../src/shared/api/contracts/index.ts'
+
+test.beforeAll(async () => {
+  await mkdir('../.tmp/ui-audit/after', { recursive: true })
+})
+
+for (const viewport of [
+  { width: 1440, height: 1000, suffix: '1440' },
+  { width: 390, height: 1000, suffix: '390' },
+  { width: 320, height: 700, suffix: '320' },
+  { width: 390, height: 600, suffix: '390-short' },
+]) {
+  test(`application updates live and confirms disband requests at ${viewport.suffix}`, async ({
+    page,
+  }) => {
+    const { width, height, suffix } = viewport
+    await page.setViewportSize({ width, height })
+    await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
+    const userId = 'a518e557-2910-4111-97fb-86eb7a079101'
+    const mine: RegistrationTeam = {
+      teamId: 'mine',
+      name: 'Ночной дозор',
+      teamSlotIndex: 1,
+      teamSlotType: 'public',
+      recruitmentOpen: true,
+      status: 'forming',
+      isPlayed: false,
+      isActiveInGame: false,
+      members: [
+        {
+          player: { userId, login: 'raven', displayName: 'Ворон' },
+          joinedAtUtc: '2026-09-13T00:00:00Z',
+        },
+      ],
+      pendingInvitations: [],
+    }
+    const state: GameRegistrationSnapshot = {
+      gameId: 'game',
+      gameStatus: 'ready',
+      minPlayersPerTeam: 1,
+      maxPlayersPerTeam: 2,
+      teamSlots: [],
+      teams: [
+        mine,
+        {
+          ...mine,
+          teamId: 'ready',
+          name: 'Чёрные вороны',
+          teamSlotIndex: 2,
+          status: 'confirmed',
+          members: [
+            {
+              player: { userId: 'hunter', login: 'hunter', displayName: 'Скиталец' },
+              joinedAtUtc: '2026-09-13T00:00:00Z',
+            },
+          ],
+        },
+        {
+          ...mine,
+          teamId: 'closed',
+          name: 'Тихая охота',
+          teamSlotIndex: 3,
+          recruitmentOpen: false,
+          members: [],
+        },
+      ],
+      myTeam: mine,
+      myPendingInvitations: [],
+      myOutgoingInvitations: [],
+      canInvitePlayersToMyTeam: false,
+      invitablePlayers: [],
+    }
+    state.myTeam = null
+    state.teams.shift()
+    state.teamSlots = [
+      { teamSlotId: 'slot', teamSlotIndex: 1, teamSlotType: 'public', isAvailableForNewTeam: true },
+    ]
+    let creates = 0
+    let socket: WebSocketRoute | undefined
+    let handshaken = false
+    let posts = 0
+    let deletes = 0
+    await page.routeWebSocket(/\/hubs\/game-board(?:\?|$)/, (ws) => {
+      socket = ws
+      ws.onMessage((message) => {
+        if (message.toString().includes('"protocol"')) {
+          ws.send('{}\u001e')
+          handshaken = true
+        }
+      })
+    })
+    await page.route(
+      (url) =>
+        url.pathname === '/auth/me' ||
+        url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/hubs/'),
+      async (route) => {
+        const path = new URL(route.request().url()).pathname
+        if (path === '/auth/me')
+          return route.fulfill({ json: { userId, displayName: 'Ворон', roles: ['viewer'] } })
+        if (path.endsWith('/negotiate'))
+          return route.fulfill({
+            json: {
+              negotiateVersion: 1,
+              connectionId: 'local-test',
+              connectionToken: 'local-test',
+              availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text'] }],
+            },
+          })
+        if (path === '/api/game')
+          return route.fulfill({
+            json: {
+              gameId: 'game',
+              title: 'Тестовая игра',
+              status: state.gameStatus,
+              version: 1,
+              rows: 1,
+              cols: 1,
+              cells: [],
+              rowLabels: ['A'],
+              colLabels: ['1'],
+            },
+          })
+        if (path === '/api/game/registration') return route.fulfill({ json: state })
+        if (path === '/api/game/registration/teams') {
+          creates++
+          state.myTeam = mine
+          state.teams.unshift(mine)
+          return route.fulfill({ status: 201, json: mine })
+        }
+        if (path === '/api/game/registration/my-team/disband-request') {
+          if (route.request().method() === 'POST') {
+            posts++
+            mine.disbandRequestedAtUtc = '2026-09-13T00:00:00Z'
+            mine.disbandRequestedByUserId = userId
+          } else {
+            deletes++
+            mine.disbandRequestedAtUtc = null
+            mine.disbandRequestedByUserId = null
+          }
+          return route.fulfill({ json: mine })
+        }
+        return route.fulfill({ status: 204 })
+      },
+    )
+    await page.goto('/panel/game-application')
+    await expect(page.getByRole('heading', { name: 'Заявка на игру' })).toBeVisible()
+    await expectUnifiedTypography(page)
+    await expect.poll(() => handshaken).toBe(true)
+    if (width >= 1024) {
+      const roster = await page.locator('#application-roster').boundingBox()
+      const teams = await page.locator('#application-teams').boundingBox()
+      expect(roster?.y).toBe(teams?.y)
+    }
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-create-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    const createButton = page.getByRole('button', { name: 'Создать команду' })
+    await createButton.click()
+    await expect(page.getByRole('alert')).toHaveText('Введите название команды.')
+    await expect(page.getByRole('textbox', { name: 'Название команды' })).toBeFocused()
+    expect(creates).toBe(0)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-hint-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('ab')
+    await createButton.click()
+    await expect(page.getByRole('alert')).toHaveText('Введите минимум 3 символа.')
+    expect(creates).toBe(0)
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('чЁРНЫЕВОРОНЫ')
+    await createButton.click()
+    await expect(page.getByRole('alert')).toHaveText('Команда с таким названием уже существует.')
+    expect(creates).toBe(0)
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('Ночной дозор')
+    await createButton.click()
+    await expect(page.getByRole('button', { name: 'Изменить название команды' })).toBeVisible()
+    await page.getByRole('button', { name: 'Выйти из команды' }).click()
+    const leaveDialog = page.getByRole('dialog', { name: 'Выйти из команды?' })
+    await expect(leaveDialog).toBeVisible()
+    await expect(leaveDialog.locator('.MuiDialogTitle-root')).toHaveCSS(
+      'border-bottom-style',
+      'solid',
+    )
+    await expect(leaveDialog.locator('.MuiDialogContent-root')).toHaveCSS(
+      'border-bottom-style',
+      'solid',
+    )
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-leave-dialog-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await leaveDialog.getByRole('button', { name: 'Отмена' }).click()
+    await expect(leaveDialog).toHaveCount(0)
+    expect(creates).toBe(1)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-forming-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await expect(
+      page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
+    ).toHaveCount(0)
+    const readyToggle = page.getByRole('button', { name: 'Готовы к участию (1 команда)' })
+    await expect(readyToggle).toHaveAttribute('aria-expanded', 'false')
+    const teamSearch = page.getByRole('searchbox', { name: 'Найти команду или игрока' })
+    await teamSearch.fill('Скиталец')
+    await expect(readyToggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('article', { name: 'Чёрные вороны' })).toBeVisible()
+    await teamSearch.fill('')
+    await expect(readyToggle).toHaveAttribute('aria-expanded', 'false')
+    await readyToggle.click()
+    await expect(page.getByRole('article', { name: 'Чёрные вороны' })).toBeVisible()
+    await expect(
+      page.getByRole('region', { name: 'В процессе формирования' }).getByRole('article'),
+    ).toHaveCount(2)
+    await expect(page.getByText(/^Слот /)).toHaveCount(0)
+    await expect(page.getByText('3 из 3')).toHaveCount(0)
+    await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Изменить название команды' }).click()
+    await expectUnifiedTypography(page)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-name-dialog-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое название')
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Сохранить' })).toHaveClass(
+      /MuiButton-containedPrimary/,
+    )
+    state.teams[2]!.members = [
+      {
+        player: { userId: 'second', displayName: 'Напарник', login: 'partner' },
+        joinedAtUtc: '2026-09-13T00:00:00Z',
+      },
+    ]
+    socket!.send(
+      JSON.stringify({ type: 1, target: 'registrationChanged', arguments: [] }) + '\u001e',
+    )
+    await expect(
+      page.getByRole('article', { name: 'Тихая охота', includeHidden: true }),
+    ).toContainText('Напарник')
+    await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveValue(
+      'Несохранённое название',
+    )
+    mine.status = 'confirmed'
+    socket!.send(
+      JSON.stringify({ type: 1, target: 'registrationChanged', arguments: [] }) + '\u001e',
+    )
+    await expect(
+      page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
+    ).toHaveCount(2)
+    await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.getByRole('button', { name: 'Попросить распустить команду' }).click()
+    await expectUnifiedTypography(page)
+    expect(posts).toBe(0)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-disband-dialog-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    const disbandDialog = page.getByRole('dialog')
+    const cancelButtonBox = await disbandDialog
+      .getByRole('button', { name: 'Отмена' })
+      .boundingBox()
+    const confirmButtonBox = await disbandDialog
+      .getByRole('button', { name: 'Запросить роспуск' })
+      .boundingBox()
+    expect(cancelButtonBox).not.toBeNull()
+    expect(confirmButtonBox).not.toBeNull()
+    expect(Math.abs(cancelButtonBox!.width - confirmButtonBox!.width)).toBeLessThan(1)
+    expect(Math.abs(cancelButtonBox!.height - confirmButtonBox!.height)).toBeLessThan(1)
+    const cancelFrame = await disbandDialog
+      .getByRole('button', { name: 'Отмена' })
+      .evaluate((element) => getComputedStyle(element).borderImageSource)
+    const confirmFrame = await disbandDialog
+      .getByRole('button', { name: 'Запросить роспуск' })
+      .evaluate((element) => getComputedStyle(element).borderImageSource)
+    expect(cancelFrame).not.toBe('none')
+    expect(cancelFrame).toBe(confirmFrame)
+    await disbandDialog.getByRole('button', { name: 'Запросить роспуск' }).click()
+    await expect(page.getByText('Запрос на роспуск отправлен')).toBeVisible()
+    await expect(page.getByText('Состав подтверждён')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Отозвать запрос' })).toBeVisible()
+    expect(posts).toBe(1)
+    await page.getByRole('button', { name: 'Отозвать запрос' }).click()
+    expect(deletes).toBe(0)
+    await page.getByRole('dialog').getByRole('button', { name: 'Отмена' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(deletes).toBe(0)
+    await page.getByRole('button', { name: 'Отозвать запрос' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Отозвать запрос' }).click()
+    await expect(page.getByRole('button', { name: 'Попросить распустить команду' })).toBeVisible()
+    expect(deletes).toBe(1)
+    expect(mine.status).toBe('confirmed')
+    state.gameStatus = 'active'
+    socket!.send(
+      JSON.stringify({
+        type: 1,
+        target: 'gameLifecycleChanged',
+        arguments: [
+          {
+            gameId: 'game',
+            status: 'active',
+            boardVersion: 2,
+            occurredAtUtc: '2026-09-13T00:00:00Z',
+          },
+        ],
+      }) + '\u001e',
+    )
+    await expect(
+      page.getByText('Приём заявок закрыт. Дождитесь публикации игры администратором.'),
+    ).toBeVisible()
+    await expect(page.getByRole('article')).toHaveCount(0)
+  })
+}

@@ -52,6 +52,7 @@ function getPublicationErrorKey(error: Error) {
     if (code === API_ERROR_CODES.gameLifecycleCurrentAlreadyExists) return 'currentGame' as const
     if (code === API_ERROR_CODES.gameLifecycleInvalidTeamSizeLimits) return 'teamSize' as const
     if (code === API_ERROR_CODES.gameLifecycleRegistrationSlotsRequired) return 'slots' as const
+    if (code === API_ERROR_CODES.gameLifecycleQuestionsUnavailable) return 'questions' as const
     if (code === API_ERROR_CODES.gameModifierVersionBindingMissing) return 'modifiers' as const
     if (error.status === 404) return 'missingDraft' as const
     if (error.status === 401 || error.status === 403) return 'forbidden' as const

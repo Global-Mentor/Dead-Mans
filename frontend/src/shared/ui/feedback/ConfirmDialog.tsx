@@ -1,6 +1,8 @@
-import { type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { AppButton } from '../primitives/AppButton.tsx'
+import type { AppButtonTone } from '../primitives/app-button-tone.ts'
 import { AppDialog } from './AppDialog.tsx'
+import type { AppDialogAppearance } from './AppDialog.tsx'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -9,6 +11,8 @@ interface ConfirmDialogProps {
   confirmLabel: string
   cancelLabel: string
   confirmTone?: 'primary' | 'danger'
+  cancelTone?: AppButtonTone
+  appearance?: AppDialogAppearance
   isBusy?: boolean
   confirmDisabled?: boolean
   onClose: () => void
@@ -22,26 +26,54 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   confirmTone = 'primary',
+  cancelTone = 'secondary',
+  appearance = 'standard',
   isBusy = false,
   confirmDisabled = false,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) {
+  const inFlightRef = useRef(false)
+  const [isLocallyBusy, setIsLocallyBusy] = useState(false)
+  const busy = isBusy || isLocallyBusy
+
+  const handleConfirm = async () => {
+    if (busy || confirmDisabled || inFlightRef.current) return
+    inFlightRef.current = true
+    setIsLocallyBusy(true)
+    try {
+      await onConfirm()
+    } catch {
+      // Mutation errors belong to the caller; keep its mounted dialog state intact.
+    } finally {
+      inFlightRef.current = false
+      setIsLocallyBusy(false)
+    }
+  }
+
   return (
     <AppDialog
       open={open}
-      onClose={isBusy ? undefined : onClose}
+      onClose={busy ? undefined : onClose}
       title={title}
       description={description}
+      appearance={appearance}
       actions={
         <>
-          <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>
+          <AppButton
+            tone={cancelTone}
+            size={appearance === 'accented' ? 'large' : 'medium'}
+            onClick={onClose}
+            disabled={busy}
+          >
             {cancelLabel}
           </AppButton>
           <AppButton
             tone={confirmTone === 'danger' ? 'danger' : 'primary'}
-            onClick={() => void onConfirm()}
-            disabled={isBusy || confirmDisabled}
+            size={appearance === 'accented' ? 'large' : 'medium'}
+            onClick={() => void handleConfirm()}
+            disabled={busy || confirmDisabled}
+            loading={isLocallyBusy}
           >
             {confirmLabel}
           </AppButton>

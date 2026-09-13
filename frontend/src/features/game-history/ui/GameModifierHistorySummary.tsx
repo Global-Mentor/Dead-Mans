@@ -24,7 +24,7 @@ export function GameModifierHistorySummary({
   if (items.length === 0 && snapshots.length === 0 && snapshotStatus === 'complete') return null
 
   return (
-    <SectionCard inset sx={{ p: 1.5 }}>
+    <SectionCard surface="inset" sx={{ p: 1.5 }}>
       <Stack spacing={1.1}>
         <Box>
           <Typography variant="subtitle1">{t('gameHistory.modifierSummary.title')}</Typography>

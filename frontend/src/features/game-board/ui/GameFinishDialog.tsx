@@ -1,13 +1,10 @@
 import {
-  Accordion,
   AccordionDetails,
-  AccordionSummary,
   Alert,
   Checkbox,
   CircularProgress,
   FormControlLabel,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
@@ -15,7 +12,13 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
-import { AppButton, AppDialog } from '../../../shared/ui/index.ts'
+import {
+  AppAccordion,
+  AppAccordionSummary,
+  AppButton,
+  AppDialog,
+  FormTextField,
+} from '../../../shared/ui/index.ts'
 import { gameFinishPreviewQueryOptions } from '../api/game-finish-queries.ts'
 
 type FinishPreview = components['schemas']['GameFinishPreviewDto']
@@ -223,10 +226,10 @@ function FinishPreviewContent({
         ))}
       </Stack>
 
-      <Accordion disableGutters>
-        <AccordionSummary expandIcon={<span aria-hidden="true">⌄</span>}>
+      <AppAccordion surface="inset">
+        <AppAccordionSummary>
           <Typography fontWeight={700}>{t('gameBoard.finishCalculationDetails')}</Typography>
-        </AccordionSummary>
+        </AppAccordionSummary>
         <AccordionDetails>
           <Stack spacing={1}>
             {preview.summary.teams.map((team) => (
@@ -243,9 +246,9 @@ function FinishPreviewContent({
             ))}
           </Stack>
         </AccordionDetails>
-      </Accordion>
+      </AppAccordion>
 
-      <TextField
+      <FormTextField
         label={t('gameBoard.finishNoteLabel')}
         helperText={t('gameBoard.finishNoteHelper', { count: note.length })}
         value={note}
