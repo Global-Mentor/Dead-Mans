@@ -111,39 +111,7 @@ export function MyTeamSection({
     <ApplicationSection
       title={t('gameApplication.myTeamTitle')}
       action={
-        canEditName ? (
-          <Tooltip title={t('gameApplication.editTeamName')} describeChild arrow>
-            <AppButton
-              tone="secondary"
-              size="small"
-              disabled={disabled}
-              aria-label={t('gameApplication.editTeamName')}
-              sx={{
-                ml: 'auto',
-                flexShrink: 0,
-                minWidth: 44,
-                minHeight: 44,
-                p: 1,
-                gap: 1,
-                '@container (max-width: 480px)': {
-                  '& .team-name-action-label': { display: 'none' },
-                },
-              }}
-              onClick={() => {
-                setNameDraft(team.name ?? '')
-                setShowNameHint(false)
-                setNameEditorOpen(true)
-              }}
-            >
-              <SvgIcon fontSize="small">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-              </SvgIcon>
-              <Box component="span" className="team-name-action-label">
-                {t('gameApplication.editTeamName')}
-              </Box>
-            </AppButton>
-          </Tooltip>
-        ) : isConfirmedTeam ? (
+        isConfirmedTeam ? (
           <Chip
             size="small"
             variant="outlined"
@@ -158,7 +126,46 @@ export function MyTeamSection({
       }
     >
       <Stack spacing={1.5}>
-        <TeamSummary team={team} capacity={capacity} showStatus={false} showNameLabel />
+        <TeamSummary
+          team={team}
+          capacity={capacity}
+          showStatus={false}
+          emphasizeName
+          capacityBelowName
+          nameAction={
+            canEditName ? (
+              <Tooltip title={t('gameApplication.editTeamName')} describeChild arrow>
+                <AppButton
+                  tone="secondary"
+                  size="small"
+                  disabled={disabled}
+                  aria-label={t('gameApplication.editTeamName')}
+                  sx={{
+                    ml: 'auto',
+                    minWidth: 0,
+                    minHeight: 34,
+                    flexShrink: 0,
+                    gap: 0.65,
+                    px: 1,
+                    py: 0.5,
+                    fontSize: 13,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    setNameDraft(team.name ?? '')
+                    setShowNameHint(false)
+                    setNameEditorOpen(true)
+                  }}
+                >
+                  <SvgIcon sx={{ fontSize: 18 }}>
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                  </SvgIcon>
+                  {t('common.actions.edit')}
+                </AppButton>
+              </Tooltip>
+            ) : undefined
+          }
+        />
 
         {isClosedTeam && !isConfirmedTeam ? (
           <InviteTeammateSection
