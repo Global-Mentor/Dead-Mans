@@ -271,7 +271,9 @@ describe('Application decisions', () => {
     expect(screen.getByText('Всего').nextElementSibling).toHaveTextContent('5')
     expect(screen.getByText('Ищут напарника').nextElementSibling).toHaveTextContent('3')
     expect(screen.getByText('Закрытые').nextElementSibling).toHaveTextContent('1')
-    expect(screen.getByText('Готовы к участию').nextElementSibling).toHaveTextContent('1')
+    expect(
+      screen.getByText('Готовы к участию', { selector: 'dt' }).nextElementSibling,
+    ).toHaveTextContent('1')
     expect(screen.getAllByRole('button', { name: 'Вступить' })).toHaveLength(1)
     expect(
       within(screen.getByRole('article', { name: 'Свободная' })).getByRole('button', {

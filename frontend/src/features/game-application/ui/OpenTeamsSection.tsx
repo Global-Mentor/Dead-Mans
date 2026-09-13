@@ -30,49 +30,47 @@ interface OpenTeamsSectionProps {
 
 const teamGroupHeaderSx = {
   width: '100%',
-  minHeight: 48,
+  minHeight: 52,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: 1,
+  gap: 1.25,
   m: 0,
-  px: 0.5,
-  py: 1,
+  px: { xs: 1.25, sm: 1.5 },
+  py: 1.1,
   border: 0,
-  borderBottom: '2px solid',
-  borderBottomColor: alpha(huntPalette.amber, 0.5),
   borderRadius: 0,
-  color: 'primary.light',
-  backgroundColor: 'transparent',
-  backgroundImage: 'none',
-  boxShadow: 'none',
+  color: 'text.primary',
+  position: 'relative',
+  overflow: 'hidden',
   textAlign: 'left',
+  transition: 'background-color 150ms ease',
 } as const
 
-function TeamGroupTitle({ title }: { title: string }) {
+function TeamGroupTitle({ title, accent }: { title: string; accent: string }) {
   return (
-    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
       <Box
         aria-hidden
         component="span"
         sx={{
-          width: 7,
-          height: 7,
+          width: 8,
+          height: 8,
           flexShrink: 0,
           transform: 'rotate(45deg)',
-          bgcolor: 'primary.main',
-          boxShadow: `0 0 10px ${alpha(huntPalette.amber, 0.38)}`,
+          bgcolor: alpha(accent, 0.58),
+          boxShadow: `0 0 10px ${alpha(accent, 0.14)}`,
         }}
       />
       <Typography
         component="span"
-        variant="h6"
+        variant="subtitle1"
         sx={{
-          fontSize: { xs: 22, sm: 24 },
-          fontWeight: 800,
-          lineHeight: 1.15,
-          letterSpacing: '0.01em',
-          textTransform: 'none',
+          minWidth: 0,
+          fontSize: 20,
+          fontWeight: 700,
+          lineHeight: 1.2,
+          letterSpacing: '0.025em',
         }}
       >
         {title}
@@ -194,9 +192,15 @@ export function OpenTeamsSection({
             const isForming = status === 'forming'
             const expanded = isForming ? formingExpanded : readyExpanded
             const contentId = isForming ? formingId : readyId
-            const groupTitle = isForming
+            const visibleGroupTitle = t(
+              isForming
+                ? 'gameApplication.formingTeamsTitle'
+                : 'gameApplication.confirmedTeamsTitle',
+            )
+            const groupLabel = isForming
               ? t('gameApplication.formingTeamsTitle')
               : t('gameApplication.confirmedTeamsGroup', { count: group.length })
+            const groupAccent = huntPalette.parchmentMuted
             return (
               <Stack
                 component="section"
@@ -208,13 +212,13 @@ export function OpenTeamsSection({
                 key={status}
                 spacing={0.75}
                 sx={{
-                  '& + &': { pt: 2, mt: 1.25, borderTop: '1px solid', borderColor: 'divider' },
+                  '& + &': { pt: 1.25 },
                 }}
               >
                 <Box component="h3" sx={{ m: 0 }}>
                   <ButtonBase
                     type="button"
-                    aria-label={groupTitle}
+                    aria-label={groupLabel}
                     aria-expanded={expanded}
                     aria-controls={contentId}
                     onClick={() =>
@@ -224,66 +228,44 @@ export function OpenTeamsSection({
                     }
                     sx={(theme) => ({
                       ...teamGroupHeaderSx,
+                      backgroundColor: alpha(theme.palette.common.black, 0.16),
+                      backgroundImage: 'none',
+                      boxShadow: `inset 2px 0 0 ${alpha(groupAccent, expanded ? 0.42 : 0.24)}`,
                       '&:hover': {
-                        borderBottomColor: 'primary.light',
-                        backgroundColor: alpha(theme.palette.primary.main, 0.07),
+                        backgroundColor: alpha(groupAccent, 0.035),
                       },
                       '&:focus-visible': {
-                        outline: `2px solid ${theme.palette.primary.light}`,
+                        outline: `2px solid ${groupAccent}`,
                         outlineOffset: 2,
                       },
                     })}
                   >
-                    <TeamGroupTitle title={groupTitle} />
+                    <TeamGroupTitle title={visibleGroupTitle} accent={groupAccent} />
                     <Box
+                      aria-hidden
                       component="span"
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.75,
+                        width: 30,
+                        height: 30,
+                        display: 'grid',
+                        placeItems: 'center',
                         flexShrink: 0,
                       }}
                     >
-                      <Typography
-                        component="span"
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: { xs: 'none', sm: 'inline' }, whiteSpace: 'nowrap' }}
-                      >
-                        {t(
-                          expanded
-                            ? 'gameApplication.collapseReadyTeams'
-                            : 'gameApplication.expandReadyTeams',
-                        )}
-                      </Typography>
                       <Box
-                        aria-hidden
                         component="span"
                         sx={{
-                          width: 30,
-                          height: 30,
-                          display: 'grid',
-                          placeItems: 'center',
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          backgroundColor: alpha(huntPalette.amber, 0.08),
-                          flexShrink: 0,
+                          width: 10,
+                          height: 10,
+                          color: alpha(groupAccent, 0.58),
+                          borderRight: '2px solid',
+                          borderBottom: '2px solid',
+                          transition: 'transform 150ms ease',
+                          transform: expanded
+                            ? 'translateY(3px) rotate(225deg)'
+                            : 'translateY(-3px) rotate(45deg)',
                         }}
-                      >
-                        <Box
-                          component="span"
-                          sx={{
-                            width: 10,
-                            height: 10,
-                            borderRight: '2px solid',
-                            borderBottom: '2px solid',
-                            transition: 'transform 150ms ease',
-                            transform: expanded
-                              ? 'translateY(3px) rotate(225deg)'
-                              : 'translateY(-3px) rotate(45deg)',
-                          }}
-                        />
-                      </Box>
+                      />
                     </Box>
                   </ButtonBase>
                 </Box>
