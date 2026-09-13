@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { expect, test, type Page, type Route, type WebSocketRoute } from '@playwright/test'
+import { expectUnifiedTypography } from './typography-assertions.ts'
+
+test.afterEach(async ({ page }) => {
+  await expectUnifiedTypography(page)
+})
 
 const origin = 'https://deadmans.test'
 const dist = resolve('dist')
