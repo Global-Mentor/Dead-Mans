@@ -55,6 +55,24 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
 })
 
+test('production entry point declares a bundled favicon', async ({ page }) => {
+  await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+  await page.goto(`${origin}/`)
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.svg')
+  const icon = await page.evaluate(async () => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')!
+    const response = await fetch(link.href)
+    return {
+      status: response.status,
+      contentType: response.headers.get('content-type'),
+      body: await response.text(),
+    }
+  })
+  expect(icon.status).toBe(200)
+  expect(icon.contentType).toBe('image/svg+xml')
+  expect(icon.body).toContain('<svg')
+})
+
 test('catalog answer editing preserves variants and validates duplicates under production CSP', async ({
   page,
 }) => {
