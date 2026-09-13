@@ -8,15 +8,34 @@ for (const language of ['en', 'ru', 'uk', 'pl']) {
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.addInitScript((locale) => localStorage.setItem('i18nextLng', locale), language)
+    await page.routeWebSocket(/\/hubs\/(?:game-board|game-setup)(?:\?|$)/, (socket) => {
+      socket.onMessage((message) => {
+        if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
+      })
+    })
     await page.route(
-      (url) => url.pathname === '/auth/me' || url.pathname.startsWith('/api/'),
+      (url) =>
+        url.pathname === '/auth/me' ||
+        url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/hubs/'),
       async (route) => {
-        if (new URL(route.request().url()).pathname === '/auth/me') {
+        const path = new URL(route.request().url()).pathname
+        if (path === '/auth/me') {
           return route.fulfill({
             json: {
               userId: 'abf3680b-ac92-43ce-8c4f-c542f806e520',
               displayName: 'Hunter 123',
               roles: ['superadmin', 'admin', 'viewer'],
+            },
+          })
+        }
+        if (path.endsWith('/negotiate')) {
+          return route.fulfill({
+            json: {
+              negotiateVersion: 1,
+              connectionId: 'typography-test',
+              connectionToken: 'typography-test',
+              availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text'] }],
             },
           })
         }

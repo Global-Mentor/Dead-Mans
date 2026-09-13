@@ -1,13 +1,26 @@
 import { expect, test, type WebSocketRoute } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
 import { expectUnifiedTypography } from './typography-assertions.ts'
 import type {
   GameRegistrationSnapshot,
   RegistrationTeam,
 } from '../src/shared/api/contracts/index.ts'
 
-for (const width of [1440, 390]) {
-  test(`application updates live and confirms disband requests at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 1000 })
+test.beforeAll(async () => {
+  await mkdir('../.tmp/ui-audit/after', { recursive: true })
+})
+
+for (const viewport of [
+  { width: 1440, height: 1000, suffix: '1440' },
+  { width: 390, height: 1000, suffix: '390' },
+  { width: 320, height: 700, suffix: '320' },
+  { width: 390, height: 600, suffix: '390-short' },
+]) {
+  test(`application updates live and confirms disband requests at ${viewport.suffix}`, async ({
+    page,
+  }) => {
+    const { width, height, suffix } = viewport
+    await page.setViewportSize({ width, height })
     await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
     const userId = 'a518e557-2910-4111-97fb-86eb7a079101'
     const mine: RegistrationTeam = {
@@ -146,7 +159,7 @@ for (const width of [1440, 390]) {
       expect(roster?.y).toBe(teams?.y)
     }
     await page.screenshot({
-      path: `../.tmp/application-create-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-create-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -156,7 +169,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toBeFocused()
     expect(creates).toBe(0)
     await page.screenshot({
-      path: `../.tmp/application-hint-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-hint-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -183,7 +196,7 @@ for (const width of [1440, 390]) {
       'solid',
     )
     await page.screenshot({
-      path: `../.tmp/application-leave-dialog-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-leave-dialog-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -191,7 +204,7 @@ for (const width of [1440, 390]) {
     await expect(leaveDialog).toHaveCount(0)
     expect(creates).toBe(1)
     await page.screenshot({
-      path: `../.tmp/application-forming-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-forming-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -217,7 +230,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Изменить название команды' }).click()
     await expectUnifiedTypography(page)
     await page.screenshot({
-      path: `../.tmp/application-name-dialog-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-name-dialog-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -248,8 +261,9 @@ for (const width of [1440, 390]) {
       page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
     ).toHaveCount(2)
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
+    await page.evaluate(() => window.scrollTo(0, 0))
     await page.screenshot({
-      path: `../.tmp/application-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
@@ -258,7 +272,7 @@ for (const width of [1440, 390]) {
     await expectUnifiedTypography(page)
     expect(posts).toBe(0)
     await page.screenshot({
-      path: `../.tmp/application-disband-dialog-${width}.png`,
+      path: `../.tmp/ui-audit/after/application-disband-dialog-${suffix}.png`,
       fullPage: true,
       animations: 'disabled',
     })
