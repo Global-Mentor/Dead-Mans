@@ -12,6 +12,8 @@ public class GameTeamMember
 
     public DateTime JoinedAtUtc { get; set; }
 
+    public DateTime? ReadyAtUtc { get; set; }
+
     public DateTime? LeftAtUtc { get; set; }
 
     public GameTeam? Team { get; set; }

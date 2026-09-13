@@ -99,6 +99,16 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamNameTaken,
                 AppMessages.ErrorCodes.GameRegistrationTeamNameTaken
             ),
+            GameRegistrationErrorCode.TeamNameRequired => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNameRequired,
+                AppMessages.ErrorCodes.GameRegistrationTeamNameRequired
+            ),
+            GameRegistrationErrorCode.TeamNotFull => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNotFull,
+                AppMessages.ErrorCodes.GameRegistrationTeamNotFull
+            ),
             GameRegistrationErrorCode.DisbandRequestNotOwned => new(
                 StatusCodes.Status403Forbidden,
                 AppMessages.Client.GameRegistrationDisbandRequestNotOwned,

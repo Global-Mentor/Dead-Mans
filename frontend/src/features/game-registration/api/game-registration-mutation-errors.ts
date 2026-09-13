@@ -26,6 +26,8 @@ const REGISTRATION_ERROR_I18N_KEYS: Partial<Record<NonNullable<ErrorResponse['co
     [API_ERROR_CODES.gameRegistrationTeamAlreadyPlayed]:
       'gameRegistration.errors.teamAlreadyPlayed',
     [API_ERROR_CODES.gameRegistrationInvalidTeamName]: 'gameRegistration.errors.invalidTeamName',
+    [API_ERROR_CODES.gameRegistrationTeamNameRequired]: 'gameRegistration.errors.teamNameRequired',
+    [API_ERROR_CODES.gameRegistrationTeamNotFull]: 'gameRegistration.errors.teamNotFull',
     [API_ERROR_CODES.gameRegistrationOperationFailed]: 'gameRegistration.errors.operationFailed',
     [API_ERROR_CODES.gameLifecycleNoConfirmedTeams]: 'gameRegistration.errors.noConfirmedTeams',
     [API_ERROR_CODES.gameLifecycleUnconfirmedTeams]: 'gameRegistration.errors.unconfirmedTeams',

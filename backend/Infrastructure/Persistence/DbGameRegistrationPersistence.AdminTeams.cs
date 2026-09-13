@@ -323,6 +323,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
+        if (TeamNameValue.Normalize(team.Name) is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameRequired);
+        }
+
         var memberCount = await _dbContext.GameTeamMembers.CountAsync(
             member => member.TeamId == team.Id && member.LeftAtUtc == null,
             cancellationToken
@@ -382,6 +387,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             .ToListAsync(cancellationToken);
         foreach (var member in members)
         {
+            member.ReadyAtUtc = null;
             member.LeftAtUtc = utcNow;
         }
 

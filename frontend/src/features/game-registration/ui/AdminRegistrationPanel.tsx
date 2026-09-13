@@ -103,17 +103,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
     [sortedTeamSlots, teamsById],
   )
 
-  const readyTeamsCount = snapshot.teams.filter((team) => {
-    const pendingInvitations = team.pendingInvitations ?? []
-    const membersCount = team.members.length
-
-    return (
-      team.status === 'forming' &&
-      pendingInvitations.length === 0 &&
-      membersCount >= snapshot.minPlayersPerTeam &&
-      membersCount <= snapshot.maxPlayersPerTeam
-    )
-  }).length
+  const readyTeamsCount = snapshot.teams.filter((team) => team.isReady).length
   const hasAvailableCreateTeamSlot = sortedTeamSlots.some((slot) => slot.isAvailableForNewTeam)
   const disbandRequestEntries = orderedTeamEntries.filter(
     ({ team }) => team.disbandRequestedAtUtc != null,

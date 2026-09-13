@@ -30,13 +30,34 @@ Partial unique indexes: one `draft`, one `ready`, one `active` game at a time; o
 
 ## Team names and application display
 
-Player-created teams require a name of 3–48 characters after whitespace normalization; players cannot
+Player-created teams require a name of 3–18 characters after whitespace normalization; players cannot
 clear an existing name. All creation and rename paths, including admin actions, reject
 names equivalent to another forming/confirmed team in the same game. Comparison removes
 all whitespace and ignores case; display names retain normalized word spacing. The
 check runs inside the existing game roster row lock, preventing concurrent duplicates.
 Rejected/disbanded historical names do not block reuse. Admin-created empty rosters may
 remain unnamed until edited; no existing or historical teams are renamed automatically.
+
+Each active forming-team membership stores an optional readiness timestamp. A player may mark only
+their own membership ready, and only after the team has a valid name and every configured roster
+place is filled (`member count == MaxPlayersPerTeam`). Team readiness is derived rather than stored:
+the forming team is ready when its roster is full and every active member is ready. A player may
+withdraw their own readiness while the team remains forming. When any member leaves or is moved out,
+readiness is cleared for every member remaining in the source team; a newly joined member starts not
+ready.
+
+Readiness writes recheck the current game lifecycle and roster capacity after acquiring the game-row
+lock. Both marking and withdrawing readiness require open registration; a request waiting behind
+game deletion or closure cannot update the old roster. The request must explicitly contain the
+`isReady` boolean; an empty or malformed body is rejected without changing readiness. Clearing a
+forming team's name through the admin API clears every member's readiness; restoring the name does
+not restore those confirmations. A nonempty rename preserves readiness.
+
+Readiness informs the administrator but does not authorize confirmation. Administrators may confirm
+an unready forming team when its roster still satisfies the configured `MinPlayersPerTeam` /
+`MaxPlayersPerTeam` bounds and it has no pending invitations. Confirmation always requires a valid
+team name. This requirement is rechecked inside the roster transaction, so a concurrent rename or
+roster change cannot bypass it.
 
 Renaming rechecks game state and, for player actions, current membership after acquiring
 the game roster lock. A player who left or was removed while the request waited cannot
@@ -63,6 +84,7 @@ after a failed request, allowing a retry; it closes only after success or cancel
 
 - `GET /api/game/registration` — snapshot for the ready game
 - `POST /api/game/registration/teams` — create team on a public team slot
+- `PATCH /api/game/registration/my-team/readiness` — mark or withdraw the current player's own readiness for a forming team
 - `POST /api/game/registration/teams/{teamId}/join` — open team only
 - `POST /api/game/registration/teams/leave` — while game is ready; confirmed teams cannot be left directly
 - `POST /api/game/registration/my-team/disband-request` — confirmed team member asks an admin to disband the team
@@ -100,6 +122,30 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - Confirmed rosters have no individual removal or player drag controls and do not accept player drops. The API enforces the same rule for both the source and destination of a transfer, returning `409 game_registration.team_roster_locked` with a translated explanation. Queue reordering is limited to registration; stale requests after game start return a domain conflict.
 - Disbanding closes recruitment and clears the pending disband request while preserving team, invitation and membership history. After game start, a narrow database exception permits this transition only for an inactive team that is not marked played and has never opened a card. All registration mutations acquire the game-row lock before any team, slot or invitation locks, serializing them with game start, round creation, active-team selection and played-state changes. Leaving a team rechecks confirmation and pending invitations under that lock. The team transition and membership closure commit together, enforced by deferred roster checks. Starting a game still requires a confirmed roster; all eligible teams may subsequently be disbanded.
 - Leaving, removing or transferring the last member uses the same closure procedure. Automatic closure records the acting player for a voluntary exit and the administrator for a removal or transfer. Final results omit teams that never opened a card. A cancelled round preserves its team in history and prevents disbanding; an administrator may mark that team played to remove it from the remaining queue. Reverting the migration is refused if it would restore invariants incompatible with already committed empty rosters or finalizations.
+
+## Readiness rollout compatibility
+
+- Apply `20260913191016_AddTeamMemberReadiness` before directing traffic to the new backend.
+  `Database:ApplyMigrationsOnStartup` is false by default; a normal application restart alone
+  does not apply the migration. Existing memberships start with null readiness, so no players
+  or teams are automatically marked ready.
+- Deploy backend and frontend from the same release and drain old backend instances before
+  enabling player traffic to readiness. Mixed backend versions are not supported once readiness
+  is used: the old membership closure code does not clear `ready_at_utc`, so closing a ready
+  membership can violate the new check constraint, and old roster mutations do not reset the
+  other members' readiness.
+- The existing `registrationChanged` SignalR event keeps its name and empty argument list.
+  Player and admin snapshots and the team queue are invalidated on that event; reconnecting
+  clients reload state. A publication failure does not roll back the committed HTTP mutation.
+- Team readiness does not replace admin confirmation in game-start validation. Confirmed rosters
+  remain eligible without every player having marked ready; confirmed membership changes remain
+  locked. Existing unnamed historical/confirmed teams are not automatically renamed by this
+  migration; the name requirement applies to new confirmations.
+- For rollback, stop traffic to the new release first. Reverting the migration drops readiness
+  timestamps, so preserve a backup if those values must survive. Restore the matching old backend
+  and frontend together; do not run the old roster writer against populated readiness columns.
+- Before release, run the real PostgreSQL migration, constraint and concurrency suite. CI provides
+  PostgreSQL and runs this suite before image publication; local in-memory tests do not replace it.
 
 ## Known future work
 

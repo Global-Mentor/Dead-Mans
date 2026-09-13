@@ -22,6 +22,7 @@ import {
   startGameFromRegistration,
   updateAdminGameRegistrationTeamName,
   updateMyGameRegistrationTeamName,
+  updateMyGameRegistrationReadiness,
 } from './game-registration-api.ts'
 import { gameRegistrationQueryKeys } from './game-registration-queries.ts'
 
@@ -82,6 +83,16 @@ export function updateMyGameRegistrationTeamNameMutationOptions(
 ) {
   return mutationOptions({
     mutationFn: updateMyGameRegistrationTeamName,
+    ...registrationMutationHandlers(queryClient, onError),
+  })
+}
+
+export function updateMyGameRegistrationReadinessMutationOptions(
+  queryClient: QueryClient,
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  return mutationOptions({
+    mutationFn: updateMyGameRegistrationReadiness,
     ...registrationMutationHandlers(queryClient, onError),
   })
 }

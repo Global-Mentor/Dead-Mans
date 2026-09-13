@@ -13,6 +13,7 @@ const gameRegistrationApiClient =
       | '/game/registration'
       | '/game/registration/teams'
       | '/game/registration/my-team/name'
+      | '/game/registration/my-team/readiness'
       | '/game/registration/admin'
       | '/game/registration/teams/{teamId}/join'
       | '/game/registration/teams/leave'
@@ -76,6 +77,14 @@ export function updateMyGameRegistrationTeamName(name?: string | undefined) {
       body: {
         name: name || null,
       },
+    }),
+  )
+}
+
+export function updateMyGameRegistrationReadiness(isReady: boolean) {
+  return unwrapOpenApiData(
+    gameRegistrationApiClient.PATCH('/game/registration/my-team/readiness', {
+      body: { isReady },
     }),
   )
 }

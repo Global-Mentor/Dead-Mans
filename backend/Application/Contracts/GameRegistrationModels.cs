@@ -12,7 +12,7 @@ public sealed record TeamSlotSnapshot(Guid TeamSlotId, int TeamSlotIndex);
 
 public sealed record JoinableTeamSnapshot(Guid TeamId, string Status, bool RecruitmentOpen);
 
-public sealed record TeamAdminActionSnapshot(string Status, int MemberCount);
+public sealed record TeamAdminActionSnapshot(string Status, int MemberCount, string? Name);
 
 public sealed record TeamAdminLifecycleSnapshot(
     string Status,
@@ -51,7 +51,11 @@ public sealed record AcceptInvitationCommand(
 
 public sealed record RegistrationPlayerDto(Guid UserId, string Login, string DisplayName);
 
-public sealed record RegistrationTeamMemberDto(RegistrationPlayerDto Player, DateTime JoinedAtUtc);
+public sealed record RegistrationTeamMemberDto(
+    RegistrationPlayerDto Player,
+    DateTime JoinedAtUtc,
+    DateTime? ReadyAtUtc
+);
 
 public sealed record RegistrationTeamPendingInvitationDto(
     Guid InvitationId,
@@ -72,6 +76,7 @@ public sealed record RegistrationTeamDto(
     Guid? DisbandRequestedByUserId,
     string? DisbandRequestedByDisplayName,
     bool IsActiveInGame,
+    bool IsReady,
     IReadOnlyList<RegistrationTeamMemberDto> Members,
     IReadOnlyList<RegistrationTeamPendingInvitationDto> PendingInvitations
 );
@@ -155,6 +160,8 @@ public enum GameRegistrationErrorCode
     TeamAlreadyPlayed,
     InvalidTeamName,
     TeamNameTaken,
+    TeamNameRequired,
+    TeamNotFull,
     DisbandRequestNotOwned,
     OperationFailed,
 }

@@ -130,6 +130,10 @@ public static class AppMessages
             "Enter a team name of 3 to 18 characters.";
         public const string GameRegistrationTeamNameTaken =
             "A team with this name already exists in this game. Names ignore case and whitespace.";
+        public const string GameRegistrationTeamNameRequired =
+            "Give the team a name before marking ready or confirming it.";
+        public const string GameRegistrationTeamNotFull =
+            "The team must be full before a player can mark ready.";
         public const string GameRegistrationDisbandRequestNotOwned =
             "Only the player who requested disbanding can withdraw the request.";
         public const string GameRegistrationOperationFailed = "The registration operation could not be completed.";
@@ -311,6 +315,9 @@ public static class AppMessages
         public const string GameRegistrationInvalidTeamName =
             "game_registration.invalid_team_name";
         public const string GameRegistrationTeamNameTaken = "game_registration.team_name_taken";
+        public const string GameRegistrationTeamNameRequired =
+            "game_registration.team_name_required";
+        public const string GameRegistrationTeamNotFull = "game_registration.team_not_full";
         public const string GameRegistrationDisbandRequestNotOwned = "game_registration.disband_request_not_owned";
         public const string GameRegistrationOperationFailed = "game_registration.operation_failed";
         public const string GameModifierGameNotActive = "game_modifier.game_not_active";

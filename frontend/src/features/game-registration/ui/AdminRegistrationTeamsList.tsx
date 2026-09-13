@@ -82,11 +82,15 @@ export function AdminRegistrationTeamsList({
         const pendingInvitations = team.pendingInvitations ?? []
         const hasPendingInvitations = pendingInvitations.length > 0
         const reservedPlayersCount = membersCount + pendingInvitations.length
-        const isTeamReady =
+        const hasTeamName = Boolean(team.name?.trim())
+        const canConfirmTeam =
           team.status === 'forming' &&
+          hasTeamName &&
           !hasPendingInvitations &&
           membersCount >= snapshot.minPlayersPerTeam &&
           membersCount <= snapshot.maxPlayersPerTeam
+        const isTeamReady = team.isReady
+        const readyPlayersCount = team.members.filter((member) => member.readyAtUtc != null).length
         const canShowInvitePlayer = !team.recruitmentOpen && team.status === 'forming'
         const canAssignPlayer = (userId: string) =>
           team.status === 'forming' &&
@@ -111,12 +115,19 @@ export function AdminRegistrationTeamsList({
                 ? t('gameApplication.adminPanel.teamConfirmedHint')
                 : hasPendingInvitations
                   ? t('gameApplication.adminPanel.teamPendingInvitesHint')
-                  : isTeamReady
-                    ? t('gameApplication.adminPanel.teamReadyHint')
-                    : t('gameApplication.adminPanel.teamNeedsPlayersHint', {
-                        min: snapshot.minPlayersPerTeam,
-                        max: snapshot.maxPlayersPerTeam,
-                      })
+                  : !hasTeamName
+                    ? t('gameApplication.adminPanel.teamNameRequiredHint')
+                    : isTeamReady
+                      ? t('gameApplication.adminPanel.teamReadyHint')
+                      : membersCount === snapshot.maxPlayersPerTeam
+                        ? t('gameApplication.adminPanel.teamWaitingForReadinessHint', {
+                            ready: readyPlayersCount,
+                            total: membersCount,
+                          })
+                        : t('gameApplication.adminPanel.teamNeedsPlayersHint', {
+                            min: snapshot.minPlayersPerTeam,
+                            max: snapshot.maxPlayersPerTeam,
+                          })
 
         return (
           <SectionCard
@@ -214,16 +225,29 @@ export function AdminRegistrationTeamsList({
                     <Tooltip title={teamStatusHint} describeChild arrow>
                       <Chip
                         size="small"
-                        color={
-                          hasPendingInvitations ? 'warning' : isTeamReady ? 'success' : 'default'
-                        }
-                        variant={isTeamReady ? 'filled' : 'outlined'}
+                        color={hasPendingInvitations ? 'warning' : 'default'}
+                        variant="outlined"
                         label={t('gameApplication.adminPanel.membersChip', {
                           count: membersCount,
                         })}
                         tabIndex={0}
                       />
                     </Tooltip>
+                    {team.status === 'forming' ? (
+                      <Chip
+                        size="small"
+                        color={isTeamReady ? 'success' : 'default'}
+                        variant={isTeamReady ? 'filled' : 'outlined'}
+                        label={
+                          isTeamReady
+                            ? t('gameApplication.adminPanel.playersReady')
+                            : t('gameApplication.readyPlayersCount', {
+                                ready: readyPlayersCount,
+                                total: membersCount,
+                              })
+                        }
+                      />
+                    ) : null}
                     <Typography variant="caption" color="text.secondary">
                       {team.recruitmentOpen
                         ? t('gameApplication.recruitmentOpen')
@@ -289,7 +313,7 @@ export function AdminRegistrationTeamsList({
                       size="small"
                       sx={teamActionButtonSx}
                       disabled={
-                        !isTeamReady ||
+                        !canConfirmTeam ||
                         isAssigningPlayer ||
                         isMovingTeam ||
                         isConfirmingTeam(team.teamId)
@@ -338,6 +362,7 @@ export function AdminRegistrationTeamsList({
                       <RegistrationTeamNameEditor
                         value={team.name}
                         canEdit={team.status === 'forming'}
+                        required
                         isSaving={isUpdatingTeamName(team.teamId)}
                         onSave={(name) => onUpdateTeamName(team.teamId, name)}
                         buttonSx={{ ...teamActionButtonSx, minWidth: 112 }}

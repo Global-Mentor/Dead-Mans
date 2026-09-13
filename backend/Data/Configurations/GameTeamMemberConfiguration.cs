@@ -16,11 +16,17 @@ public class GameTeamMemberConfiguration : IEntityTypeConfiguration<GameTeamMemb
                     "ck_game_team_members_left_after_join",
                     "left_at_utc IS NULL OR left_at_utc >= joined_at_utc"
                 );
+                tableBuilder.HasCheckConstraint(
+                    "ck_game_team_members_ready_semantics",
+                    "(ready_at_utc IS NULL OR ready_at_utc >= joined_at_utc) "
+                    + "AND (left_at_utc IS NULL OR ready_at_utc IS NULL)"
+                );
             }
         );
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.JoinedAtUtc).IsRequired();
+        builder.Property(x => x.ReadyAtUtc);
 
         builder.HasIndex(x => new { x.TeamId, x.UserId });
         builder

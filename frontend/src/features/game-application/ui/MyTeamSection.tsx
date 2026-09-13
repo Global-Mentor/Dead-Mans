@@ -38,6 +38,9 @@ interface MyTeamSectionProps {
   isRequestingDisband: boolean
   onUpdateName: (name?: string) => Promise<unknown> | void
   isUpdatingName: boolean
+  currentUserId: string | undefined
+  onUpdateReadiness: (isReady: boolean) => Promise<unknown> | void
+  isUpdatingReadiness: boolean
 }
 
 export function MyTeamSection({
@@ -61,6 +64,9 @@ export function MyTeamSection({
   existingTeamNames,
   onUpdateName,
   isUpdatingName,
+  currentUserId,
+  onUpdateReadiness,
+  isUpdatingReadiness,
 }: MyTeamSectionProps) {
   const { t } = useTranslation()
   const [confirmation, setConfirmation] = useState<'request' | 'cancel' | 'leave'>('request')
@@ -93,6 +99,21 @@ export function MyTeamSection({
           : null
   const canSaveName =
     canEditName && isNameChanged && !isUpdatingName && !disabled && nameError === null
+  const currentMember = team.members.find((member) => member.player.userId === currentUserId)
+  const isCurrentPlayerReady = currentMember?.readyAtUtc != null
+  const readyPlayersCount = team.members.filter((member) => member.readyAtUtc != null).length
+  const isTeamFull = team.members.length === capacity
+  const hasTeamName = currentTeamName.length > 0
+  const canMarkReady = canEditName && hasTeamName && isTeamFull && currentMember != null
+  const readinessHelperKey = !hasTeamName
+    ? 'gameApplication.readinessNeedsName'
+    : !isTeamFull
+      ? 'gameApplication.readinessNeedsFullTeam'
+      : team.isReady
+        ? 'gameApplication.readinessTeamReady'
+        : isCurrentPlayerReady
+          ? 'gameApplication.readinessWaitingForTeam'
+          : 'gameApplication.readinessActionHint'
   const closeNameEditor = () => {
     if (isUpdatingName) return
     setNameEditorOpen(false)
@@ -106,6 +127,13 @@ export function MyTeamSection({
       setShowNameHint(false)
     } catch {
       /* The page toast displays the error; keep the draft available for retry. */
+    }
+  }
+  const toggleReadiness = async () => {
+    try {
+      await onUpdateReadiness(!isCurrentPlayerReady)
+    } catch {
+      /* The mutation toast displays the error; keep the server's readiness state. */
     }
   }
 
@@ -134,6 +162,7 @@ export function MyTeamSection({
           showStatus={false}
           emphasizeName
           capacityBelowName
+          showReadiness
           nameAction={
             canEditName ? (
               <Tooltip title={t('gameApplication.editTeamName')} describeChild arrow>
@@ -190,7 +219,7 @@ export function MyTeamSection({
                 : (['confirmedWaitPoint'] as const)
               : pendingOutgoingInvitation
                 ? (['invitationPendingPoint', 'cancelInvitationFirstPoint'] as const)
-                : (['leaveAvailablePoint', 'formingWaitPoint'] as const)
+                : (['leaveAvailablePoint'] as const)
             ).map((key) => (
               <Box
                 component="li"
@@ -215,20 +244,68 @@ export function MyTeamSection({
             ))}
           </Box>
 
+          {team.status === 'forming' ? (
+            <Box
+              sx={(theme) => ({
+                p: 1.5,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: theme.shape.borderRadius,
+                backgroundColor: theme.palette.action.hover,
+              })}
+            >
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Chip
+                  size="small"
+                  color={team.isReady ? 'success' : 'default'}
+                  variant={team.isReady ? 'filled' : 'outlined'}
+                  label={
+                    team.isReady
+                      ? t('gameApplication.teamReady')
+                      : t('gameApplication.readyPlayersCount', {
+                          ready: readyPlayersCount,
+                          total: team.members.length,
+                        })
+                  }
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {t(readinessHelperKey)}
+                </Typography>
+              </Stack>
+            </Box>
+          ) : null}
+
           {!isConfirmedTeam || !hasDisbandRequest || canCancelDisbandRequest ? (
             <Stack
-              direction="row"
-              alignItems="center"
+              direction={isConfirmedTeam ? 'row' : { xs: 'column', sm: 'row' }}
+              alignItems={isConfirmedTeam ? 'center' : 'stretch'}
               gap={1.5}
               sx={{
+                '& > button': { flex: isConfirmedTeam ? undefined : 1 },
                 '&::before, &::after': {
                   content: '""',
+                  display: isConfirmedTeam ? 'block' : 'none',
                   flex: 1,
                   borderTop: '1px solid',
                   borderColor: 'divider',
                 },
               }}
             >
+              {team.status === 'forming' ? (
+                <AppButton
+                  tone={isCurrentPlayerReady ? 'secondary' : 'primary'}
+                  disabled={
+                    disabled || isUpdatingReadiness || (!isCurrentPlayerReady && !canMarkReady)
+                  }
+                  loading={isUpdatingReadiness}
+                  onClick={() => void toggleReadiness()}
+                >
+                  {t(
+                    isCurrentPlayerReady
+                      ? 'gameApplication.withdrawReadiness'
+                      : 'gameApplication.markReady',
+                  )}
+                </AppButton>
+              ) : null}
               {isConfirmedTeam ? (
                 hasDisbandRequest ? (
                   <AppButton

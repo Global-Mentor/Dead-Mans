@@ -50,10 +50,12 @@ export const buttonOverrides: Components<Theme> = {
           borderColor: alpha(huntPalette.parchmentMuted, 0.16),
           backgroundColor: alpha(huntPalette.soot, 0.18),
           backgroundImage: 'none',
-          borderImage: 'none',
           boxShadow: 'none',
           opacity: 1,
-          '&::before': { display: 'none' },
+          '&::before': {
+            filter: 'brightness(1.7) contrast(1.4)',
+            opacity: 0.24,
+          },
         },
       },
       sizeSmall: {

@@ -56,6 +56,14 @@ public sealed partial class DbGameRegistrationPersistence
         CancellationToken cancellationToken
     )
     {
+        var activeMembers = await _dbContext.GameTeamMembers
+            .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
+            .ToListAsync(cancellationToken);
+        foreach (var member in activeMembers)
+        {
+            member.ReadyAtUtc = null;
+        }
+
         membership.LeftAtUtc = utcNow;
         team.UpdatedAtUtc = utcNow;
 
@@ -163,6 +171,7 @@ public sealed partial class DbGameRegistrationPersistence
             .ToListAsync(cancellationToken);
         foreach (var member in members)
         {
+            member.ReadyAtUtc = null;
             member.LeftAtUtc = utcNow;
         }
 

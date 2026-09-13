@@ -180,7 +180,7 @@ public sealed partial class GameRegistrationReadStore : IGameRegistrationReadSto
         var team = await _dbContext.GameTeams
             .AsNoTracking()
             .Where(candidate => candidate.Id == teamId && candidate.GameId == gameId)
-            .Select(candidate => new { candidate.Status })
+            .Select(candidate => new { candidate.Status, candidate.Name })
             .FirstOrDefaultAsync(cancellationToken);
         if (team is null)
         {
@@ -192,7 +192,7 @@ public sealed partial class GameRegistrationReadStore : IGameRegistrationReadSto
             cancellationToken
         );
 
-        return new TeamAdminActionSnapshot(team.Status, memberCount);
+        return new TeamAdminActionSnapshot(team.Status, memberCount, team.Name);
     }
 
     public async Task<TeamAdminLifecycleSnapshot?> GetTeamAdminLifecycleSnapshotAsync(

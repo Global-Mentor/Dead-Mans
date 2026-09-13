@@ -170,6 +170,73 @@ describe('TeamRegistrationsPage', () => {
     expect(screen.getByRole('textbox', { name: 'Название команды' })).toBeInTheDocument()
   })
 
+  it('allows confirming an unready roster but requires a team name', () => {
+    const confirmTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+    const namedTeam = {
+      teamId: 'team-1',
+      name: 'Ночной дозор',
+      teamSlotIndex: 1,
+      teamSlotType: 'public',
+      reservedLabel: null,
+      recruitmentOpen: false,
+      status: 'forming',
+      isPlayed: false,
+      isActiveInGame: false,
+      isReady: false,
+      members: [
+        {
+          player: { userId: 'user-1', login: 'raven', displayName: 'Ворон' },
+          joinedAtUtc: '2026-09-12T10:00:00Z',
+          readyAtUtc: null,
+        },
+      ],
+      pendingInvitations: [],
+    }
+    const snapshot = {
+      gameId: 'game-1',
+      gameStatus: 'ready',
+      minPlayersPerTeam: 1,
+      maxPlayersPerTeam: 2,
+      launchSummary: {
+        canStartGame: false,
+        confirmedTeamsCount: 0,
+        formingTeamsCount: 1,
+        pendingInvitationsCount: 0,
+        disbandRequestsCount: 0,
+        invalidConfirmedRostersCount: 0,
+      },
+      teamSlots: [
+        {
+          teamSlotId: 'slot-1',
+          teamSlotIndex: 1,
+          teamSlotType: 'public',
+          reservedLabel: null,
+          isAvailableForNewTeam: false,
+          teamId: 'team-1',
+          teamStatus: 'forming',
+        },
+      ],
+      teams: [namedTeam],
+      availablePlayers: [],
+    }
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(snapshot, { confirmTeam }),
+    )
+    renderWithAppProviders(<TeamRegistrationsPage />)
+
+    const confirmButton = screen.getByRole('button', { name: 'Подтвердить' })
+    expect(confirmButton).toBeEnabled()
+    fireEvent.click(confirmButton)
+    expect(confirmTeam.mutate).toHaveBeenCalledExactlyOnceWith('team-1')
+
+    cleanup()
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController({ ...snapshot, teams: [{ ...namedTeam, name: null }] }, { confirmTeam }),
+    )
+    renderWithAppProviders(<TeamRegistrationsPage />)
+    expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeDisabled()
+  })
+
   it('shows bottom team creation actions without rendering empty slots', () => {
     const createAdminTeam = { isPending: false, mutate: vi.fn() }
     pageMocks.useTeamRegistrationsPage.mockReturnValue(

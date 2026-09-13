@@ -1,8 +1,14 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Api.Contracts;
 
 public sealed record RegistrationPlayerDto(Guid UserId, string Login, string DisplayName);
 
-public sealed record RegistrationTeamMemberDto(RegistrationPlayerDto Player, DateTime JoinedAtUtc);
+public sealed record RegistrationTeamMemberDto(
+    RegistrationPlayerDto Player,
+    DateTime JoinedAtUtc,
+    DateTime? ReadyAtUtc
+);
 
 public sealed record RegistrationTeamPendingInvitationDto(
     Guid InvitationId,
@@ -23,6 +29,7 @@ public sealed record RegistrationTeamDto(
     Guid? DisbandRequestedByUserId,
     string? DisbandRequestedByDisplayName,
     bool IsActiveInGame,
+    bool IsReady,
     IReadOnlyList<RegistrationTeamMemberDto> Members,
     IReadOnlyList<RegistrationTeamPendingInvitationDto> PendingInvitations
 );
@@ -91,6 +98,8 @@ public sealed record CreateAdminRegistrationTeamRequestDto(
 );
 
 public sealed record UpdateRegistrationTeamNameRequestDto(string? Name);
+
+public sealed record UpdateRegistrationReadinessRequestDto([property: JsonRequired] bool IsReady);
 
 public sealed record AssignRegistrationPlayerRequestDto(Guid UserId);
 

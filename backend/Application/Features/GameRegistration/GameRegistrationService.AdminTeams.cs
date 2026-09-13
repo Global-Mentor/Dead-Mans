@@ -303,6 +303,11 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
+        if (TeamNameValue.Normalize(team.Name) is null)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameRequired);
+        }
+
         if (team.MemberCount < game.MinPlayersPerTeam || team.MemberCount > game.MaxPlayersPerTeam)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
