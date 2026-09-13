@@ -190,7 +190,7 @@ export function MyTeamSection({
                 : (['confirmedWaitPoint'] as const)
               : pendingOutgoingInvitation
                 ? (['invitationPendingPoint', 'cancelInvitationFirstPoint'] as const)
-                : (['formingWaitPoint', 'leaveAvailablePoint'] as const)
+                : (['leaveAvailablePoint', 'formingWaitPoint'] as const)
             ).map((key) => (
               <Box
                 component="li"

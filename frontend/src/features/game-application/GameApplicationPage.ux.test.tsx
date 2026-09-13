@@ -188,6 +188,16 @@ describe('Application decisions', () => {
     const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
     render(value)
 
+    const leavePoint = screen.getByText(
+      'На этом этапе вы можете выйти и вступить в другую команду.',
+    )
+    const confirmationPoint = screen.getByText(
+      'Если вы готовы, ожидайте подтверждения администратора.',
+    )
+    expect(
+      leavePoint.compareDocumentPosition(confirmationPoint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+
     fireEvent.click(screen.getByRole('button', { name: 'Выйти из команды' }))
     expect(value.leaveTeam.mutateAsync).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog', { name: 'Выйти из команды?' })).toBeInTheDocument()
