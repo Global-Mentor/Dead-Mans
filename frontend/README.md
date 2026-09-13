@@ -75,7 +75,7 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 
 - `src/shared/theme/hunt-palette.ts` — каноническая палитра (единственный источник raw colors);
 - `src/shared/theme/tokens.ts` — `huntTypography`, spacing и brand tokens;
-- `src/shared/theme/surface-sx.ts` — переиспользуемые surface/title/auth presets (`huntPanelSx`, `huntAuthCardSx`, …);
+- `src/shared/theme/surface-sx.ts` — семантические поверхности (`getAppSurfaceSx`) и title/auth presets;
 - `src/app/theme/palette.ts` — MUI palette и app gradients;
 - `src/app/theme/typography.ts` — typography options;
 - `src/app/theme/component-overrides.ts` — глобальные MUI component overrides;
@@ -94,7 +94,7 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 
 Ключевые reusable-компоненты:
 
-- primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `ControlledFormTextField`, `FormSelect`, `SectionCard`;
+- primitives: `AppButton`, `AppLinkButton`, `FormTextField`, `ControlledFormTextField`, `FormSelect`, `SectionCard`, `AppAccordion`, `AppAccordionSummary`, `ChoiceCard`;
 - patterns: `PageShell`, `SectionHeader`, `BoardMatrix`, `AsyncSection`, `AuthScreenShell`;
 - feedback: `AppDialog`, `ConfirmDialog`, `AppToast`, `PageStatePanel`, `CenteredProgress`.
 
@@ -104,6 +104,9 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 - повторяемые visual patterns — только через theme override или `shared/ui`;
 - межфичевые импорты — через public API (`features/<feature>/index.ts`), без deep-import в `api/`/`model/` соседа;
 - не вводим второй styling-подход параллельно MUI (`CSS Modules`, `Tailwind`, отдельный runtime-styling).
+
+Подробный выбор вариантов, границы ответственности и допустимые исключения описаны в
+[`docs/development/frontend-ui-system.md`](../docs/development/frontend-ui-system.md).
 
 ## Локализация
 
