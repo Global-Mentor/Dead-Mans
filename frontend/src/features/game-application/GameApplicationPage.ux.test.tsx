@@ -149,6 +149,19 @@ describe('Application decisions', () => {
     const mine = team('Ночной дозор')
     const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
     render(value)
+    const myTeamSection = screen.getByRole('heading', { name: 'Ваша команда' }).closest('section')!
+    const teamNameHeading = within(myTeamSection).getByRole('heading', {
+      name: 'Ночной дозор',
+    })
+    const teamNameRow = teamNameHeading.parentElement!
+    const capacity = within(myTeamSection).getByText('Игроки: 1 / 2')
+
+    const editNameButton = within(teamNameRow).getByRole('button', {
+      name: 'Изменить название команды',
+    })
+    expect(editNameButton).toHaveTextContent('Изменить')
+    expect(within(myTeamSection).queryByText('Название:')).not.toBeInTheDocument()
+    expect(teamNameRow.nextElementSibling).toBe(capacity)
     expect(screen.queryByRole('textbox', { name: 'Название команды' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Изменить название команды' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Название команды' }), {
@@ -174,6 +187,16 @@ describe('Application decisions', () => {
     const mine = team('Ночной дозор')
     const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
     render(value)
+
+    const leavePoint = screen.getByText(
+      'На этом этапе вы можете выйти и вступить в другую команду.',
+    )
+    const confirmationPoint = screen.getByText(
+      'Если вы готовы, ожидайте подтверждения администратора.',
+    )
+    expect(
+      leavePoint.compareDocumentPosition(confirmationPoint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
 
     fireEvent.click(screen.getByRole('button', { name: 'Выйти из команды' }))
     expect(value.leaveTeam.mutateAsync).not.toHaveBeenCalled()
@@ -248,7 +271,9 @@ describe('Application decisions', () => {
     expect(screen.getByText('Всего').nextElementSibling).toHaveTextContent('5')
     expect(screen.getByText('Ищут напарника').nextElementSibling).toHaveTextContent('3')
     expect(screen.getByText('Закрытые').nextElementSibling).toHaveTextContent('1')
-    expect(screen.getByText('Готовы к участию').nextElementSibling).toHaveTextContent('1')
+    expect(
+      screen.getByText('Готовы к участию', { selector: 'dt' }).nextElementSibling,
+    ).toHaveTextContent('1')
     expect(screen.getAllByRole('button', { name: 'Вступить' })).toHaveLength(1)
     expect(
       within(screen.getByRole('article', { name: 'Свободная' })).getByRole('button', {
@@ -361,7 +386,9 @@ describe('Application decisions', () => {
   it('groups confirmed and forming teams and removes redundant slot and own-team labels', () => {
     const mine = team('Моя команда', { status: 'confirmed' })
     render(controller(snapshot({ myTeam: mine, teams: [mine, team('Формируется')] })))
+    const formingToggle = screen.getByRole('button', { name: 'В процессе формирования' })
     const readyToggle = screen.getByRole('button', { name: 'Готовы к участию (1 команда)' })
+    expect(formingToggle).toHaveAttribute('aria-expanded', 'true')
     expect(readyToggle).toHaveAttribute('aria-expanded', 'false')
     expect(screen.queryByRole('article', { name: 'Моя команда' })).not.toBeInTheDocument()
     fireEvent.click(readyToggle)
@@ -376,6 +403,10 @@ describe('Application decisions', () => {
         name: 'Формируется',
       }),
     ).toBeInTheDocument()
+    fireEvent.click(formingToggle)
+    expect(formingToggle).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(formingToggle)
+    expect(formingToggle).toHaveAttribute('aria-expanded', 'true')
     expect(
       within(screen.getByRole('article', { name: 'Моя команда' })).queryByText('Ваша команда'),
     ).not.toBeInTheDocument()

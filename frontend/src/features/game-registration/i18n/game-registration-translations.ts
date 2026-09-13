@@ -25,7 +25,7 @@ const translations = {
       teamActiveInGame: 'The active team cannot be disbanded while it is taking its turn.',
       teamAlreadyPlayed:
         'A team that has opened a card or is marked as played cannot be disbanded.',
-      invalidTeamName: 'Enter a team name of 3 to 48 characters.',
+      invalidTeamName: 'Enter a team name of 3 to 18 characters.',
       operationFailed: 'The registration operation could not be completed.',
       noConfirmedTeams: 'Confirm at least one team before starting the game.',
       unconfirmedTeams: 'Resolve all forming teams before starting the game.',
@@ -66,7 +66,7 @@ const translations = {
       teamActiveInGame: 'Нельзя распустить команду, чей ход сейчас активен.',
       teamAlreadyPlayed:
         'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
-      invalidTeamName: 'Введите название команды длиной от 3 до 48 символов.',
+      invalidTeamName: 'Введите название команды длиной от 3 до 18 символов.',
       operationFailed: 'Не удалось выполнить операцию регистрации.',
       noConfirmedTeams: 'Перед запуском подтвердите хотя бы одну команду.',
       unconfirmedTeams: 'Перед запуском обработайте все команды в формировании.',
@@ -106,7 +106,7 @@ const translations = {
       teamActiveInGame: 'Не можна розформувати команду, чий хід зараз активний.',
       teamAlreadyPlayed:
         'Команда вже відкривала картку або позначена як зіграна. Розформувати її не можна.',
-      invalidTeamName: 'Введіть назву команди завдовжки від 3 до 48 символів.',
+      invalidTeamName: 'Введіть назву команди завдовжки від 3 до 18 символів.',
       operationFailed: 'Не вдалося виконати операцію реєстрації.',
       noConfirmedTeams: 'Перед запуском підтвердьте хоча б одну команду.',
       unconfirmedTeams: 'Перед запуском опрацюйте всі команди у формуванні.',
@@ -147,7 +147,7 @@ const translations = {
       teamActiveInGame: 'Nie można rozwiązać drużyny, która ma aktywną turę.',
       teamAlreadyPlayed:
         'Nie można rozwiązać drużyny, która otworzyła kartę lub jest oznaczona jako rozegrana.',
-      invalidTeamName: 'Wpisz nazwę drużyny o długości od 3 do 48 znaków.',
+      invalidTeamName: 'Wpisz nazwę drużyny o długości od 3 do 18 znaków.',
       operationFailed: 'Nie udało się wykonać operacji rejestracji.',
       noConfirmedTeams: 'Przed startem zatwierdź co najmniej jedną drużynę.',
       unconfirmedTeams: 'Przed startem rozwiąż wszystkie drużyny w trakcie formowania.',

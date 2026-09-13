@@ -9,16 +9,20 @@ interface TeamSummaryProps {
   team: RegistrationTeam
   capacity: number
   action?: ReactNode
+  nameAction?: ReactNode
   showStatus?: boolean
-  showNameLabel?: boolean
+  emphasizeName?: boolean
+  capacityBelowName?: boolean
 }
 
 export function TeamSummary({
   team,
   capacity,
   action,
+  nameAction,
   showStatus = true,
-  showNameLabel = false,
+  emphasizeName = false,
+  capacityBelowName = false,
 }: TeamSummaryProps) {
   const { t } = useTranslation()
   const pending = team.pendingInvitations ?? []
@@ -49,31 +53,48 @@ export function TeamSummary({
       }}
     >
       <Stack spacing={1} sx={{ minWidth: 0 }}>
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="space-between"
-          alignItems="baseline"
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <Typography
-            component="h3"
-            variant="h6"
-            sx={{ fontSize: 24, lineHeight: 1.15, overflowWrap: 'anywhere' }}
+        <Stack spacing={capacityBelowName ? 0 : 1}>
+          <Stack
+            direction="row"
+            spacing={1}
+            justifyContent="space-between"
+            alignItems={nameAction ? 'center' : 'baseline'}
+            flexWrap={nameAction ? 'nowrap' : 'wrap'}
+            useFlexGap
           >
-            {showNameLabel ? (
-              <Typography component="span" variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                {t('gameApplication.teamNameLabel')}
+            <Typography
+              component="h3"
+              variant="h6"
+              sx={{
+                minWidth: 0,
+                flex: nameAction ? 1 : undefined,
+                fontSize: 24,
+                lineHeight: 1.15,
+                overflowWrap: 'anywhere',
+                color: emphasizeName ? 'primary.light' : 'inherit',
+              }}
+            >
+              {team.name?.trim() || t('gameApplication.unnamedTeam')}
+            </Typography>
+            {nameAction}
+            {!capacityBelowName ? (
+              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                {t('gameApplication.rosterCapacity', {
+                  count: team.members.length,
+                  max: capacity,
+                })}
               </Typography>
             ) : null}
-            <Box component="span" sx={{ color: showNameLabel ? 'primary.light' : 'inherit' }}>
-              {team.name?.trim() || t('gameApplication.unnamedTeam')}
-            </Box>
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
-          </Typography>
+          </Stack>
+          {capacityBelowName ? (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ lineHeight: 1.1, whiteSpace: 'nowrap' }}
+            >
+              {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
+            </Typography>
+          ) : null}
         </Stack>
         <Stack
           direction="row"

@@ -17,7 +17,7 @@ import { useGameApplicationPage } from './use-game-application-page.ts'
 
 const applicationColumnSx = {
   minWidth: 0,
-  scrollMarginTop: { xs: 160, md: 100 },
+  scrollMarginTop: { xs: 210, sm: 150, md: 100 },
 } as const
 
 export function GameApplicationPage() {
@@ -188,25 +188,36 @@ export function GameApplicationPage() {
               </Box>
             ))}
           </Box>
-          <Stack
-            component="nav"
-            aria-label={t('gameApplication.sectionNavigation')}
-            direction="row"
-            spacing={1}
-            sx={{ display: { xs: 'flex', md: 'none' }, mt: 1 }}
-          >
-            <AppButton tone="secondary" href="#application-roster" sx={{ flex: 1 }}>
-              {t(
-                snapshot.myTeam
-                  ? 'gameApplication.myTeamTitle'
-                  : 'gameApplication.createTeamAction',
-              )}
-            </AppButton>
-            <AppButton tone="secondary" href="#application-teams" sx={{ flex: 1 }}>
-              {t('gameApplication.createdTeamsTitle')}
-            </AppButton>
-          </Stack>
         </Box>
+
+        <Stack
+          component="nav"
+          aria-label={t('gameApplication.sectionNavigation')}
+          direction="row"
+          spacing={1}
+          sx={(theme) => ({
+            display: { xs: 'flex', md: 'none' },
+            position: 'sticky',
+            top: { xs: 148, sm: 76 },
+            zIndex: theme.zIndex.appBar - 1,
+            mx: { xs: -1, sm: 0 },
+            p: 1,
+            borderBlock: '1px solid',
+            borderColor: 'divider',
+            backgroundColor: 'background.default',
+            backgroundImage: theme.custom.gradients.panelAccentSoft,
+            boxShadow: `0 8px 18px ${theme.palette.background.default}`,
+          })}
+        >
+          <AppButton tone="secondary" href="#application-roster" sx={{ flex: 1, minWidth: 0 }}>
+            {t(
+              snapshot.myTeam ? 'gameApplication.myTeamTitle' : 'gameApplication.createTeamAction',
+            )}
+          </AppButton>
+          <AppButton tone="secondary" href="#application-teams" sx={{ flex: 1, minWidth: 0 }}>
+            {t('gameApplication.createdTeamsTitle')}
+          </AppButton>
+        </Stack>
 
         <PendingInvitationsSection
           invitations={snapshot.myPendingInvitations}

@@ -5,7 +5,7 @@ namespace backend.Domain.Persistence;
 public static partial class TeamNameValue
 {
     public const int MinLength = 3;
-    public const int MaxLength = 48;
+    public const int MaxLength = 18;
 
     public static string? Normalize(string? value)
     {

@@ -153,6 +153,19 @@ for (const viewport of [
     await expect(page.getByRole('heading', { name: 'Заявка на игру' })).toBeVisible()
     await expectUnifiedTypography(page)
     await expect.poll(() => handshaken).toBe(true)
+    const sectionNavigation = page.getByRole('navigation', { name: 'Разделы заявки' })
+    if (width < 900) {
+      await expect(sectionNavigation).toBeVisible()
+      await expect(sectionNavigation).toHaveCSS('position', 'sticky')
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+      await expect(sectionNavigation).toBeInViewport()
+      const globalHeaderBox = await page.getByRole('banner').boundingBox()
+      const sectionNavigationBox = await sectionNavigation.boundingBox()
+      expect(sectionNavigationBox!.y).toBeGreaterThanOrEqual(
+        globalHeaderBox!.y + globalHeaderBox!.height - 1,
+      )
+      await page.evaluate(() => window.scrollTo(0, 0))
+    }
     if (width >= 1024) {
       const roster = await page.locator('#application-roster').boundingBox()
       const teams = await page.locator('#application-teams').boundingBox()
@@ -212,7 +225,36 @@ for (const viewport of [
       page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
     ).toHaveCount(0)
     const readyToggle = page.getByRole('button', { name: 'Готовы к участию (1 команда)' })
+    const formingHeader = page.getByRole('heading', { name: 'В процессе формирования' })
+    const formingToggle = page.getByRole('button', { name: 'В процессе формирования' })
+    await expect(formingHeader.getByText('В процессе формирования')).toHaveCSS('font-size', '20px')
+    await expect(page.getByText('Свернуть список команд')).toHaveCount(0)
+    await expect(page.getByText('Раскрыть список команд')).toHaveCount(0)
+    const readGroupHeaderStyle = (element: HTMLElement) => {
+      const style = getComputedStyle(element)
+      return {
+        borderBottomStyle: style.borderBottomStyle,
+        borderBottomWidth: style.borderBottomWidth,
+        minHeight: style.minHeight,
+        paddingLeft: style.paddingLeft,
+        paddingRight: style.paddingRight,
+      }
+    }
+    expect(await readyToggle.evaluate(readGroupHeaderStyle)).toEqual(
+      await formingToggle.evaluate(readGroupHeaderStyle),
+    )
+    await expect(formingToggle).toHaveAttribute('aria-expanded', 'true')
     await expect(readyToggle).toHaveAttribute('aria-expanded', 'false')
+    const formingTeams = page
+      .getByRole('region', { name: 'В процессе формирования' })
+      .getByRole('article')
+    await expect(formingTeams).toHaveCount(2)
+    await formingToggle.click()
+    await expect(formingToggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(formingTeams).toHaveCount(0)
+    await formingToggle.click()
+    await expect(formingToggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(formingTeams).toHaveCount(2)
     const teamSearch = page.getByRole('searchbox', { name: 'Найти команду или игрока' })
     await teamSearch.fill('Скиталец')
     await expect(readyToggle).toHaveAttribute('aria-expanded', 'true')
@@ -234,7 +276,7 @@ for (const viewport of [
       fullPage: true,
       animations: 'disabled',
     })
-    await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое название')
+    await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое имя')
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Сохранить' })).toHaveClass(
       /MuiButton-containedPrimary/,
     )
@@ -251,7 +293,7 @@ for (const viewport of [
       page.getByRole('article', { name: 'Тихая охота', includeHidden: true }),
     ).toContainText('Напарник')
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveValue(
-      'Несохранённое название',
+      'Несохранённое имя',
     )
     mine.status = 'confirmed'
     socket!.send(

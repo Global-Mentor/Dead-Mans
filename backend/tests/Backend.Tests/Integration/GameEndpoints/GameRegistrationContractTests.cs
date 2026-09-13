@@ -194,6 +194,31 @@ public sealed partial class GameRegistrationContractTests : IClassFixture<TestWe
     }
 
     [Fact]
+    public async Task CreateTeam_WhenNameHasMaximumLength_ReturnsCreated()
+    {
+        await ClearRegistrationDataAsync();
+        var userId = Guid.NewGuid();
+        await SeedReadyGameAsync();
+        await SeedUserAsync(userId);
+        using var viewerClient = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Viewer],
+            userId
+        );
+        var name = new string('a', TeamNameValue.MaxLength);
+
+        var response = await viewerClient.PostAsJsonAsync(
+            "/api/game/registration/teams",
+            new CreateRegistrationTeamRequestDto(true, name)
+        );
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<RegistrationTeamDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(name, payload.Name);
+    }
+
+    [Fact]
     public async Task UpdateMyTeamName_WhenFormingTeam_ReturnsUpdatedName()
     {
         await ClearRegistrationDataAsync();

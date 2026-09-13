@@ -1,4 +1,12 @@
-import { Box, Checkbox, Collapse, FormControlLabel, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  ButtonBase,
+  Checkbox,
+  Collapse,
+  FormControlLabel,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,6 +28,57 @@ interface OpenTeamsSectionProps {
   joiningTeamId: string | undefined
 }
 
+const teamGroupHeaderSx = {
+  width: '100%',
+  minHeight: 52,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 1.25,
+  m: 0,
+  px: { xs: 1.25, sm: 1.5 },
+  py: 1.1,
+  border: 0,
+  borderRadius: 0,
+  color: 'text.primary',
+  position: 'relative',
+  overflow: 'hidden',
+  textAlign: 'left',
+  transition: 'background-color 150ms ease',
+} as const
+
+function TeamGroupTitle({ title, accent }: { title: string; accent: string }) {
+  return (
+    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+      <Box
+        aria-hidden
+        component="span"
+        sx={{
+          width: 8,
+          height: 8,
+          flexShrink: 0,
+          transform: 'rotate(45deg)',
+          bgcolor: alpha(accent, 0.58),
+          boxShadow: `0 0 10px ${alpha(accent, 0.14)}`,
+        }}
+      />
+      <Typography
+        component="span"
+        variant="subtitle1"
+        sx={{
+          minWidth: 0,
+          fontSize: 20,
+          fontWeight: 700,
+          lineHeight: 1.2,
+          letterSpacing: '0.025em',
+        }}
+      >
+        {title}
+      </Typography>
+    </Box>
+  )
+}
+
 export function OpenTeamsSection({
   teams,
   capacity,
@@ -31,8 +90,9 @@ export function OpenTeamsSection({
 }: OpenTeamsSectionProps) {
   const { t, i18n } = useTranslation()
   const searchId = useId()
+  const formingId = useId()
   const readyId = useId()
-  const readyHintId = useId()
+  const [formingExpanded, setFormingExpanded] = useState(true)
   const [readyExpanded, setReadyExpanded] = useState(false)
   const [query, setQuery] = useState('')
   const [onlyOpen, setOnlyOpen] = useState(false)
@@ -71,6 +131,7 @@ export function OpenTeamsSection({
               onChange={(event) => {
                 const nextQuery = event.target.value
                 setQuery(nextQuery)
+                setFormingExpanded(true)
                 setReadyExpanded(nextQuery.trim().length > 0)
               }}
             />
@@ -116,6 +177,7 @@ export function OpenTeamsSection({
                 onClick={() => {
                   setQuery('')
                   setOnlyOpen(false)
+                  setFormingExpanded(true)
                   setReadyExpanded(false)
                 }}
               >
@@ -127,121 +189,87 @@ export function OpenTeamsSection({
           (['forming', 'confirmed'] as const).map((status) => {
             const group = visibleTeams.filter((team) => team.status === status)
             if (group.length === 0) return null
+            const isForming = status === 'forming'
+            const expanded = isForming ? formingExpanded : readyExpanded
+            const contentId = isForming ? formingId : readyId
+            const visibleGroupTitle = t(
+              isForming
+                ? 'gameApplication.formingTeamsTitle'
+                : 'gameApplication.confirmedTeamsTitle',
+            )
+            const groupLabel = isForming
+              ? t('gameApplication.formingTeamsTitle')
+              : t('gameApplication.confirmedTeamsGroup', { count: group.length })
+            const groupAccent = huntPalette.parchmentMuted
             return (
               <Stack
                 component="section"
                 aria-label={t(
-                  status === 'confirmed'
-                    ? 'gameApplication.confirmedTeamsTitle'
-                    : 'gameApplication.formingTeamsTitle',
+                  isForming
+                    ? 'gameApplication.formingTeamsTitle'
+                    : 'gameApplication.confirmedTeamsTitle',
                 )}
                 key={status}
                 spacing={0.75}
                 sx={{
-                  '& + &': { pt: 2, mt: 1.25, borderTop: '1px solid', borderColor: 'divider' },
+                  '& + &': { pt: 1.25 },
                 }}
               >
-                {status === 'confirmed' ? (
-                  <Box component="h3" sx={{ m: 0 }}>
-                    <AppButton
-                      tone="secondary"
-                      fullWidth
-                      aria-label={t('gameApplication.confirmedTeamsGroup', { count: group.length })}
-                      aria-describedby={readyHintId}
-                      aria-expanded={readyExpanded}
-                      aria-controls={readyId}
-                      onClick={() => setReadyExpanded((expanded) => !expanded)}
-                      sx={{
-                        justifyContent: 'space-between',
-                        textAlign: 'left',
-                        gap: 1.5,
-                        p: 1.5,
-                        borderColor: alpha(huntPalette.amber, 0.65),
-                        backgroundColor: alpha(huntPalette.ember, readyExpanded ? 0.16 : 0.08),
-                        '&:hover': {
-                          borderColor: 'primary.light',
-                          backgroundColor: alpha(huntPalette.ember, 0.22),
-                        },
-                      }}
-                    >
-                      <Box component="span" sx={{ display: 'grid', gap: 0.5 }}>
-                        <Box component="span">
-                          {t('gameApplication.confirmedTeamsGroup', { count: group.length })}
-                        </Box>
-                        <Typography
-                          component="span"
-                          id={readyHintId}
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ textTransform: 'none', fontWeight: 400, letterSpacing: 0 }}
-                        >
-                          {t(
-                            readyExpanded
-                              ? 'gameApplication.collapseReadyTeams'
-                              : 'gameApplication.expandReadyTeams',
-                          )}
-                        </Typography>
-                      </Box>
-                      <Box
-                        aria-hidden
-                        component="span"
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          display: 'grid',
-                          placeItems: 'center',
-                          border: '1px solid',
-                          borderColor: 'primary.main',
-                          backgroundColor: alpha(huntPalette.amber, 0.12),
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Box
-                          component="span"
-                          sx={{
-                            width: 10,
-                            height: 10,
-                            borderRight: '2px solid',
-                            borderBottom: '2px solid',
-                            transform: readyExpanded
-                              ? 'translateY(3px) rotate(225deg)'
-                              : 'translateY(-3px) rotate(45deg)',
-                          }}
-                        />
-                      </Box>
-                    </AppButton>
-                  </Box>
-                ) : (
-                  <Typography
-                    component="h3"
-                    variant="overline"
-                    color="text.secondary"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      pb: 1,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                    }}
+                <Box component="h3" sx={{ m: 0 }}>
+                  <ButtonBase
+                    type="button"
+                    aria-label={groupLabel}
+                    aria-expanded={expanded}
+                    aria-controls={contentId}
+                    onClick={() =>
+                      isForming
+                        ? setFormingExpanded((current) => !current)
+                        : setReadyExpanded((current) => !current)
+                    }
+                    sx={(theme) => ({
+                      ...teamGroupHeaderSx,
+                      backgroundColor: alpha(theme.palette.common.black, 0.16),
+                      backgroundImage: 'none',
+                      boxShadow: `inset 2px 0 0 ${alpha(groupAccent, expanded ? 0.42 : 0.24)}`,
+                      '&:hover': {
+                        backgroundColor: alpha(groupAccent, 0.035),
+                      },
+                      '&:focus-visible': {
+                        outline: `2px solid ${groupAccent}`,
+                        outlineOffset: 2,
+                      },
+                    })}
                   >
+                    <TeamGroupTitle title={visibleGroupTitle} accent={groupAccent} />
                     <Box
                       aria-hidden
+                      component="span"
                       sx={{
-                        width: 6,
-                        height: 6,
-                        transform: 'rotate(45deg)',
-                        bgcolor: 'currentColor',
+                        width: 30,
+                        height: 30,
+                        display: 'grid',
+                        placeItems: 'center',
+                        flexShrink: 0,
                       }}
-                    />
-                    {t('gameApplication.formingTeamsTitle')}
-                  </Typography>
-                )}
-                <Collapse
-                  id={status === 'confirmed' ? readyId : undefined}
-                  in={status === 'forming' || readyExpanded}
-                  unmountOnExit
-                >
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          color: alpha(groupAccent, 0.58),
+                          borderRight: '2px solid',
+                          borderBottom: '2px solid',
+                          transition: 'transform 150ms ease',
+                          transform: expanded
+                            ? 'translateY(3px) rotate(225deg)'
+                            : 'translateY(-3px) rotate(45deg)',
+                        }}
+                      />
+                    </Box>
+                  </ButtonBase>
+                </Box>
+                <Collapse id={contentId} in={expanded} unmountOnExit>
                   <Stack spacing={0.75}>
                     {group.map((team) => {
                       const isMine = team.teamId === myTeamId

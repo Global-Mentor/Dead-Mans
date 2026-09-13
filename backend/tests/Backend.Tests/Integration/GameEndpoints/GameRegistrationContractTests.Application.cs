@@ -38,7 +38,7 @@ public sealed partial class GameRegistrationContractTests
     [Theory]
     [InlineData("player", "ноЧнойдозор")]
     [InlineData("admin", "  НОЧНОЙ \t ДОЗОР ")]
-    [InlineData("rename", "н о ч н о й\u00a0д о з о р")]
+    [InlineData("rename", "ночной\u00a0дозор")]
     public async Task TeamNames_AreUniqueIgnoringCaseAndWhitespace(string action, string equivalentName)
     {
         await ClearRegistrationDataAsync();

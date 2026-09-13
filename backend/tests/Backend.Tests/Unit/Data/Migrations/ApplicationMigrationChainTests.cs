@@ -24,7 +24,8 @@ public sealed class ApplicationMigrationChainTests
                 "20260908003848_ProductionBaseline",
                 "20260910171900_AllowAdminTeamDisband",
                 "20260911162438_AllowEquivalentQuestionAnswers",
-                "20260912162321_RemoveUnavailableDraftQuestions"
+                "20260912162321_RemoveUnavailableDraftQuestions",
+                "20260913160212_LimitTeamNameLength"
             ],
             migrations
         );
@@ -61,6 +62,8 @@ public sealed class ApplicationMigrationChainTests
             script,
             StringComparison.Ordinal
         );
+        Assert.Contains("20260913160212_LimitTeamNameLength", script, StringComparison.Ordinal);
+        Assert.Contains("character varying(18)", script, StringComparison.Ordinal);
         Assert.Contains("at least one accepted answer", script, StringComparison.Ordinal);
         Assert.DoesNotContain("game_quiz_manual_awards", script, StringComparison.Ordinal);
     }

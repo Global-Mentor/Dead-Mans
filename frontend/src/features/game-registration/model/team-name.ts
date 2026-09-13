@@ -1,5 +1,5 @@
 export const TEAM_NAME_MIN_LENGTH = 3
-export const TEAM_NAME_MAX_LENGTH = 48
+export const TEAM_NAME_MAX_LENGTH = 18
 
 function teamNameUniquenessKey(value: string) {
   return value.replace(/\s/g, '').toUpperCase()

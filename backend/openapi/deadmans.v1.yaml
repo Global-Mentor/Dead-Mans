@@ -4153,7 +4153,7 @@ components:
           format: uuid
         name:
           type: string
-          maxLength: 48
+          maxLength: 18
           nullable: true
         teamSlotIndex:
           type: integer
@@ -4365,9 +4365,9 @@ components:
           type: boolean
         name:
           type: string
-          maxLength: 48
+          maxLength: 18
           minLength: 3
-          description: Required; 3–48 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace.
+          description: Required; 3–18 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace.
     CreateAdminRegistrationTeamRequestDto:
       type: object
       required: [recruitmentOpen]
@@ -4380,14 +4380,14 @@ components:
           type: boolean
         name:
           type: string
-          maxLength: 48
+          maxLength: 18
           nullable: true
     UpdateRegistrationTeamNameRequestDto:
       type: object
       properties:
         name:
           type: string
-          maxLength: 48
+          maxLength: 18
           nullable: true
     AssignRegistrationPlayerRequestDto:
       type: object
