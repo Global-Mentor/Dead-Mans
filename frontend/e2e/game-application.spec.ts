@@ -274,6 +274,14 @@ for (const viewport of [
     mine.isReady = true
     publishRegistration()
     await expect(page.getByText('Вся команда готова', { exact: true })).toBeVisible()
+    const readinessDescription = page.getByText(
+      'Все игроки готовы. Администратор видит этот статус.',
+      { exact: true },
+    )
+    await expect(readinessDescription.locator('..')).toHaveCSS('flex-direction', 'column')
+    const readyBadgeBox = await page.getByText('Вся команда готова', { exact: true }).boundingBox()
+    const readinessDescriptionBox = await readinessDescription.boundingBox()
+    expect(readinessDescriptionBox!.y).toBeGreaterThan(readyBadgeBox!.y + readyBadgeBox!.height)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({
       path: `../.tmp/ui-audit/after/application-readiness-${suffix}.png`,

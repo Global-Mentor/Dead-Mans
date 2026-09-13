@@ -253,7 +253,7 @@ export function MyTeamSection({
                 backgroundColor: theme.palette.action.hover,
               })}
             >
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Stack spacing={1} alignItems="flex-start">
                 <Chip
                   size="small"
                   color={team.isReady ? 'success' : 'default'}
