@@ -64,7 +64,7 @@ public interface IGameQuestionRepository
         CancellationToken cancellationToken = default
     );
 
-    Task<bool> QuestionIdsExistAsync(
+    Task<bool> QuestionIdsAvailableAsync(
         IReadOnlyList<Guid> questionIds,
         CancellationToken cancellationToken = default
     );

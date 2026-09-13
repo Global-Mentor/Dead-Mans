@@ -19,6 +19,7 @@ public enum GameLifecycleErrorCode
     ActiveGameAlreadyExists,
     GameNotReady,
     ModifierVersionBindingMissing,
+    QuestionsUnavailable,
     GameNotActive,
     NoTeamSlots,
     InvalidTeamSizeLimits,

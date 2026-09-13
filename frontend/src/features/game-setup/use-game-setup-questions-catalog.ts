@@ -9,9 +9,12 @@ export function useGameSetupQuestionsCatalog() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
-  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions({ search }))
+  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions({ search, includeDisabled: false }))
 
-  const questions = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data])
+  const questions = useMemo(
+    () => (catalogQuery.data ?? []).filter((question) => question.isEnabled),
+    [catalogQuery.data],
+  )
 
   const categories = useMemo(() => {
     return Array.from(new Set(questions.map((question) => question.categoryName))).sort((a, b) =>

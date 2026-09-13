@@ -99,6 +99,14 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
 
         await LockQuestionCatalogForPublicationAsync(draft.Id, cancellationToken);
 
+        if (await _dbContext.GameEnabledQuestions.AnyAsync(
+                item => item.GameId == draft.Id
+                    && (item.QuestionDefinition.IsDeleted || !item.QuestionDefinition.IsEnabled),
+                cancellationToken))
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.QuestionsUnavailable);
+        }
+
         var enabledModifiers = await _dbContext.GameEnabledModifiers
             .Include(item => item.ModifierDefinition)
             .Where(item => item.GameId == draft.Id)

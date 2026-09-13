@@ -1,6 +1,8 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Repositories;
+using backend.Application.Abstractions.Realtime;
 using backend.Application.Contracts;
+using backend.Application.Realtime;
 using backend.Messaging;
 
 namespace backend.Application.Features.GameQuestions;
@@ -8,10 +10,17 @@ namespace backend.Application.Features.GameQuestions;
 public sealed class GameQuestionService : IGameQuestionService
 {
     private readonly IGameQuestionRepository _repository;
+    private readonly IGameSetupEventsPublisher _setupEventsPublisher;
+    private readonly ILogger<GameQuestionService> _logger;
 
-    public GameQuestionService(IGameQuestionRepository repository)
+    public GameQuestionService(
+        IGameQuestionRepository repository,
+        IGameSetupEventsPublisher setupEventsPublisher,
+        ILogger<GameQuestionService> logger)
     {
         _repository = repository;
+        _setupEventsPublisher = setupEventsPublisher;
+        _logger = logger;
     }
 
     public Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(
@@ -101,6 +110,7 @@ public sealed class GameQuestionService : IGameQuestionService
             return new UpdateGameQuestionCategoryResult(UpdateGameQuestionCategoryOutcome.NotFound);
         }
 
+        await PublishSetupChangedBestEffortAsync();
         return new UpdateGameQuestionCategoryResult(UpdateGameQuestionCategoryOutcome.Updated, updated);
     }
 
@@ -120,6 +130,10 @@ public sealed class GameQuestionService : IGameQuestionService
         }
 
         var created = await _repository.CreateQuestionAsync(normalized, cancellationToken);
+        if (created is not null)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
         return created is null
             ? new CreateGameQuestionResult(CreateGameQuestionOutcome.DuplicateCode)
             : new CreateGameQuestionResult(CreateGameQuestionOutcome.Created, created);
@@ -142,6 +156,10 @@ public sealed class GameQuestionService : IGameQuestionService
         }
 
         var updated = await _repository.UpdateQuestionAsync(questionId, normalized, cancellationToken);
+        if (updated is not null)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
         return updated is null
             ? new UpdateGameQuestionResult(UpdateGameQuestionOutcome.NotFound)
             : new UpdateGameQuestionResult(UpdateGameQuestionOutcome.Updated, updated);
@@ -215,6 +233,10 @@ public sealed class GameQuestionService : IGameQuestionService
         }
 
         var repositoryResult = await _repository.ImportQuestionsAsync(normalizedInputs, cancellationToken);
+        if (repositoryResult.ImportedCount > 0)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
         var mergedSkipped = skipped
             .Concat(repositoryResult.SkippedQuestions ?? Array.Empty<ImportGameQuestionSkippedItem>())
             .OrderBy(item => item.RowNumber)
@@ -226,29 +248,49 @@ public sealed class GameQuestionService : IGameQuestionService
         );
     }
 
-    public Task<bool> SetQuestionEnabledAsync(
+    public async Task<bool> SetQuestionEnabledAsync(
         Guid questionId,
         bool isEnabled,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.SetQuestionEnabledAsync(questionId, isEnabled, cancellationToken);
+        var updated = await _repository.SetQuestionEnabledAsync(questionId, isEnabled, cancellationToken);
+        if (updated)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
+        return updated;
     }
 
-    public Task<bool> SoftDeleteQuestionAsync(
+    public async Task<bool> SoftDeleteQuestionAsync(
         Guid questionId,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.SoftDeleteQuestionAsync(questionId, cancellationToken);
+        var deleted = await _repository.SoftDeleteQuestionAsync(questionId, cancellationToken);
+        if (deleted)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
+        return deleted;
     }
 
-    public Task<bool> SetCategoryEnabledAsync(
+    public async Task<bool> SetCategoryEnabledAsync(
         Guid categoryId,
         bool isEnabled,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.SetCategoryEnabledAsync(categoryId, isEnabled, cancellationToken);
+        var updated = await _repository.SetCategoryEnabledAsync(categoryId, isEnabled, cancellationToken);
+        if (updated)
+        {
+            await PublishSetupChangedBestEffortAsync();
+        }
+        return updated;
     }
+
+    private Task PublishSetupChangedBestEffortAsync() => RealtimePublishGuard.TryPublishAsync(
+        token => _setupEventsPublisher.PublishDraftChangedAsync(token),
+        _logger,
+        AppMessages.Logs.RealtimeGameSetupDraftChangedPublishFailed);
 }

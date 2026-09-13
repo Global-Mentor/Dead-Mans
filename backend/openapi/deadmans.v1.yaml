@@ -7190,6 +7190,7 @@ components:
             - game_lifecycle.game_not_ready
             - game_lifecycle.game_not_active
             - game_lifecycle.registration_slots_required
+            - game_lifecycle.questions_unavailable
             - game_lifecycle.invalid_team_size_limits
             - game_lifecycle.no_confirmed_teams
             - game_lifecycle.unconfirmed_teams
@@ -7478,7 +7479,7 @@ x-signalr:
         summary: Admin role required (enforced in GameSetupHub).
       serverEvents:
         draftChanged:
-          summary: Draft setup changed; clients resync from GET /api/game/setup.
+          summary: Draft setup or question catalog changed; clients resync from GET /api/game/setup and invalidate question catalogs.
           payload:
             $ref: '#/components/schemas/GameSetupDraftChangedEventDto'
       clientEvents: {}

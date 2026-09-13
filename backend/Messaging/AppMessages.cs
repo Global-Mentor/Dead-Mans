@@ -80,6 +80,8 @@ public static class AppMessages
         public const string GameArchiveNotAllowed =
             "Only a fully finished game can be archived.";
         public const string GameLifecycleGameNotFound = "Requested game was not found.";
+        public const string GameLifecycleQuestionsUnavailable =
+            "A selected question is disabled or deleted. Enable it in the catalog or remove it from the draft before publishing.";
         public const string GameFinishRoundInProgress =
             "Finish or technically cancel the active round before finishing the game.";
         public const string GameFinishStaleVersion =
@@ -252,6 +254,7 @@ public static class AppMessages
             "game_lifecycle.current_already_exists";
         public const string GameLifecycleActiveAlreadyExists = "game_lifecycle.active_already_exists";
         public const string GameLifecycleGameNotReady = "game_lifecycle.game_not_ready";
+        public const string GameLifecycleQuestionsUnavailable = "game_lifecycle.questions_unavailable";
         public const string GameLifecycleGameNotActive = "game_lifecycle.game_not_active";
         public const string GameLifecycleRegistrationSlotsRequired =
             "game_lifecycle.registration_slots_required";

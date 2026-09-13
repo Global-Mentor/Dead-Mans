@@ -59,6 +59,7 @@ export const API_ERROR_CODES = {
   gameLifecycleCurrentAlreadyExists: 'game_lifecycle.current_already_exists',
   gameLifecycleInvalidTeamSizeLimits: 'game_lifecycle.invalid_team_size_limits',
   gameLifecycleRegistrationSlotsRequired: 'game_lifecycle.registration_slots_required',
+  gameLifecycleQuestionsUnavailable: 'game_lifecycle.questions_unavailable',
   gameModifierVersionBindingMissing: 'game_modifier_version_binding_missing',
   gameLifecycleNoConfirmedTeams: 'game_lifecycle.no_confirmed_teams',
   gameLifecycleUnconfirmedTeams: 'game_lifecycle.unconfirmed_teams',

@@ -49,7 +49,7 @@ public sealed partial class DbGameQuestionRepository
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<bool> QuestionIdsExistAsync(
+    public async Task<bool> QuestionIdsAvailableAsync(
         IReadOnlyList<Guid> questionIds,
         CancellationToken cancellationToken = default
     )
@@ -62,7 +62,7 @@ public sealed partial class DbGameQuestionRepository
         var distinctIds = questionIds.Distinct().ToArray();
         var knownCount = await _dbContext.QuestionDefinitions
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && distinctIds.Contains(x.Id))
+            .Where(x => !x.IsDeleted && x.IsEnabled && distinctIds.Contains(x.Id))
             .CountAsync(cancellationToken);
         return knownCount == distinctIds.Length;
     }

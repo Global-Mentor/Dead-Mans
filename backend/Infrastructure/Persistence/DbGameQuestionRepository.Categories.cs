@@ -264,6 +264,10 @@ public sealed partial class DbGameQuestionRepository
             return false;
         }
 
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         var categoryExists = await _dbContext.QuestionCategories
             .AsNoTracking()
             .AnyAsync(x => x.Id == categoryId, cancellationToken);
@@ -285,21 +289,26 @@ public sealed partial class DbGameQuestionRepository
                 question.UpdatedAtUtc = now;
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return true;
         }
-
-        var query = _dbContext.QuestionDefinitions.Where(
-            x => x.CategoryId == categoryId && !x.IsDeleted
-        );
-
-        await query.ExecuteUpdateAsync(
-            setters =>
-                setters
+        else
+        {
+            var query = _dbContext.QuestionDefinitions.Where(
+                x => x.CategoryId == categoryId && !x.IsDeleted);
+            await query.ExecuteUpdateAsync(
+                setters => setters
                     .SetProperty(x => x.IsEnabled, isEnabled)
                     .SetProperty(x => x.UpdatedAtUtc, now),
-            cancellationToken
-        );
+                cancellationToken);
+        }
+        if (!isEnabled)
+        {
+            await RemoveDraftQuestionSelectionsAsync(item => item.CategoryId == categoryId, cancellationToken);
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
         return true;
     }
 }

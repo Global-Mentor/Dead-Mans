@@ -1027,6 +1027,7 @@ public sealed class BackendProjectDependencyRulesTests
             "DbGameQuestionRepository.cs",
             "DbGameQuestionRepository.Catalog.cs",
             "DbGameQuestionRepository.Categories.cs",
+            "DbGameQuestionRepository.DraftSelections.cs",
             "DbGameQuestionRepository.Import.cs",
             "DbGameQuestionRepository.Questions.cs"
         };
