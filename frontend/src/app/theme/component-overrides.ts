@@ -24,8 +24,6 @@ export const appComponentOverrides: Components<Theme> = {
     styleOverrides: {
       root: {
         borderRadius: appThemeBorderRadius,
-        backgroundImage: appThemeGradients.panelSurface,
-        backgroundSize: 'auto, 640px auto',
       },
       outlined: {
         borderColor: alpha(huntPalette.brassMuted, 0.5),
@@ -215,16 +213,6 @@ export const appComponentOverrides: Components<Theme> = {
     styleOverrides: {
       root: {
         color: huntPalette.brass,
-      },
-    },
-  },
-  MuiSnackbar: {
-    styleOverrides: {
-      root: {
-        '& .MuiPaper-root': {
-          backgroundColor: 'transparent',
-          boxShadow: 'none',
-        },
       },
     },
   },

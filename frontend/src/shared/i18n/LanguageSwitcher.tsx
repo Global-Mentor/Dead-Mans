@@ -21,7 +21,7 @@ export function LanguageSwitcher({ sx }: LanguageSwitcherProps) {
 
   return (
     <FormSelect
-      layout="compact"
+      density="compact"
       label=""
       ariaLabel={t('languageSwitcher.ariaLabel')}
       value={value}

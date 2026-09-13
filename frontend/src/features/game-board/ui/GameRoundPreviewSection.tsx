@@ -25,7 +25,7 @@ export function GameRoundPreviewSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard inset>
+    <SectionCard surface="inset">
       <Stack spacing={1.25}>
         <Typography variant="subtitle2">{t('gameBoard.roundSummaryScoreTitle')}</Typography>
         <Divider />

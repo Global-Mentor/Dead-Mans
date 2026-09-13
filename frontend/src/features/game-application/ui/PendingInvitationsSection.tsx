@@ -56,7 +56,7 @@ export function PendingInvitationsSection({
           {invitations.map((invitation) => (
             <SectionCard
               key={invitation.invitationId}
-              inset
+              surface="inset"
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },

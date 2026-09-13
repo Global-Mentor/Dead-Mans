@@ -105,6 +105,7 @@ export function GameSetupPage() {
           }}
         >
           <SectionHeader
+            headingLevel="h1"
             title={t('gameSetup.boardTitle')}
             description={t('gameSetup.boardDescription')}
             actions={

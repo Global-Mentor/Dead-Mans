@@ -15,7 +15,7 @@ export function FinalResultSnapshot({
   const { t, i18n } = useTranslation()
 
   return (
-    <SectionCard inset>
+    <SectionCard surface="inset">
       <Stack spacing={1.5}>
         <Stack spacing={0.35}>
           <Typography variant="subtitle1" fontWeight={850}>

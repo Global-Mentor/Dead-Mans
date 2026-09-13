@@ -122,7 +122,7 @@ export function AdminRegistrationTeamsList({
           <SectionCard
             key={slot.teamSlotId}
             data-testid={`admin-slot-${slot.teamSlotIndex}`}
-            inset
+            surface="inset"
             sx={{
               minWidth: 0,
               p: { xs: 1.25, sm: 1.5 },

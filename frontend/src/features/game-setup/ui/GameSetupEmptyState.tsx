@@ -21,7 +21,7 @@ export function GameSetupEmptyState({
 
   return (
     <PageShell variant="split">
-      <SectionCard inset sx={gameSetupSidebarPaperSx}>
+      <SectionCard surface="accented" sx={gameSetupSidebarPaperSx}>
         <Typography variant="overline" color="text.secondary">
           {t('gameSetup.settingsSidebar.overline')}
         </Typography>
@@ -41,7 +41,11 @@ export function GameSetupEmptyState({
           flexDirection: 'column',
         }}
       >
-        <SectionHeader title={t('gameSetup.boardTitle')} description={t('gameSetup.empty')} />
+        <SectionHeader
+          headingLevel="h1"
+          title={t('gameSetup.boardTitle')}
+          description={t('gameSetup.empty')}
+        />
 
         {draftRemovedNotice ? (
           <Alert severity="warning" sx={{ mt: 2 }} onClose={onDismissDraftRemovedNotice}>

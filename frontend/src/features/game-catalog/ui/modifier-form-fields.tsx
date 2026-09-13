@@ -4,8 +4,6 @@ import {
   Chip,
   IconButton,
   LinearProgress,
-  Paper,
-  Radio,
   Stack,
   TextField,
   Tooltip,
@@ -89,46 +87,6 @@ export function WizardSection({
         {children}
       </Stack>
     </Box>
-  )
-}
-
-export function SelectionCard({
-  checked,
-  description,
-  disabled,
-  title,
-  value,
-}: {
-  checked: boolean
-  description: string
-  disabled: boolean
-  title: string
-  value: string
-}) {
-  return (
-    <Paper
-      component="label"
-      variant="outlined"
-      sx={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 0.75,
-        p: 1.25,
-        cursor: disabled ? 'default' : 'pointer',
-        borderColor: checked ? 'primary.main' : 'divider',
-        bgcolor: checked ? 'action.selected' : 'background.paper',
-        transition: (theme) => theme.transitions.create(['border-color', 'background-color']),
-        '&:hover': disabled ? undefined : { borderColor: 'primary.main' },
-      }}
-    >
-      <Radio value={value} checked={checked} disabled={disabled} sx={{ p: 0.25 }} />
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="subtitle2">{title}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Box>
-    </Paper>
   )
 }
 

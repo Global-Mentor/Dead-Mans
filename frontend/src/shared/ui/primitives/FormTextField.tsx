@@ -1,33 +1,36 @@
 import { TextField, Tooltip } from '@mui/material'
 import type { OutlinedTextFieldProps, SxProps, Theme } from '@mui/material'
 import { useState } from 'react'
+import { mergeSx } from '../../theme/merge-sx.ts'
 
-type FormFieldLayout = 'default' | 'compact' | 'centered'
+type FormFieldDensity = 'standard' | 'compact'
+type FormFieldTextAlign = 'start' | 'center'
 
 export interface FormTextFieldProps extends Omit<OutlinedTextFieldProps, 'variant'> {
-  layout?: FormFieldLayout
+  density?: FormFieldDensity
+  textAlign?: FormFieldTextAlign
   variant?: 'outlined'
   validationHint?: string | null
   onValidationHintClose?: () => void
 }
 
-function resolveLayoutSx(layout: FormFieldLayout): SxProps<Theme> | undefined {
-  switch (layout) {
-    case 'compact':
-      return {
-        '& .MuiInputBase-input': { py: 0.3, fontSize: 12 },
-      }
-    case 'centered':
-      return {
-        '& .MuiInputBase-input': { textAlign: 'center', fontWeight: 600 },
-      }
-    default:
-      return undefined
+function resolveFieldSx(
+  density: FormFieldDensity,
+  textAlign: FormFieldTextAlign,
+): SxProps<Theme> | undefined {
+  if (density === 'standard' && textAlign === 'start') return undefined
+
+  return {
+    '& .MuiInputBase-input': {
+      ...(density === 'compact' ? { py: 0.3, fontSize: 12 } : {}),
+      ...(textAlign === 'center' ? { textAlign: 'center', fontWeight: 600 } : {}),
+    },
   }
 }
 
 export function FormTextField({
-  layout = 'default',
+  density = 'standard',
+  textAlign = 'start',
   sx,
   validationHint,
   onValidationHintClose,
@@ -39,11 +42,7 @@ export function FormTextField({
     setNativeHint(null)
     onValidationHintClose?.()
   }
-  const layoutSx = resolveLayoutSx(layout)
-  const mergedSx: SxProps<Theme> = [
-    ...(Array.isArray(layoutSx) ? layoutSx : layoutSx ? [layoutSx] : []),
-    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-  ]
+
   return (
     <Tooltip
       open={Boolean(hint)}
@@ -87,7 +86,7 @@ export function FormTextField({
           closeHint()
           props.onBlur?.(event)
         }}
-        {...(mergedSx ? { sx: mergedSx } : {})}
+        sx={mergeSx(resolveFieldSx(density, textAlign), sx)}
       />
     </Tooltip>
   )

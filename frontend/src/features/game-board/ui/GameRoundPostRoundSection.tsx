@@ -18,7 +18,7 @@ export function GameRoundPostRoundSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard inset>
+    <SectionCard surface="inset">
       <Stack spacing={1.25}>
         <Typography variant="subtitle2">{t('gameBoard.roundSummaryPostRoundTitle')}</Typography>
         <Typography variant="body2" color="text.secondary">

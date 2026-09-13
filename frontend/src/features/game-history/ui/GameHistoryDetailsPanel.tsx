@@ -113,7 +113,7 @@ export function GameDetailsPanel({
       {finalResult ? <FinalResultSnapshot summary={finalResult} /> : null}
 
       {!finalResult ? (
-        <SectionCard inset sx={{ p: 0 }}>
+        <SectionCard surface="inset" sx={{ p: 0 }}>
           <CollapsibleSection
             title={t('gameHistory.summary.bestTeams')}
             description={t('gameHistory.summary.bestTeamsDescription')}
@@ -148,7 +148,7 @@ export function GameDetailsPanel({
         snapshotStatus={game.modifierSnapshotStatus}
       />
 
-      <SectionCard inset sx={{ p: 0 }}>
+      <SectionCard surface="inset" sx={{ p: 0 }}>
         <CollapsibleSection
           title={t('gameHistory.summary.modifierTimeline')}
           description={t('gameHistory.summary.modifierTimelineDescription')}
@@ -198,7 +198,7 @@ export function GameDetailsPanel({
         </CollapsibleSection>
       </SectionCard>
 
-      <SectionCard inset sx={{ p: 0 }}>
+      <SectionCard surface="inset" sx={{ p: 0 }}>
         <CollapsibleSection
           title={t('gameHistory.summary.roundHistory')}
           description={t('gameHistory.summary.roundHistoryDescription')}

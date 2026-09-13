@@ -1,15 +1,12 @@
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { AccordionDetails, Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import type { components } from '../../../shared/api/contracts/generated'
-import { PlayedCardPreviewDialog } from '../../../shared/ui/index.ts'
+import {
+  AppAccordion,
+  AppAccordionSummary,
+  PlayedCardPreviewDialog,
+} from '../../../shared/ui/index.ts'
 import { MiniMetricChip } from './game-history-display.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -34,29 +31,9 @@ export function AccordionSurface({
   highlighted?: boolean
 }) {
   return (
-    <Accordion
-      disableGutters
-      elevation={0}
-      defaultExpanded={defaultExpanded}
-      sx={(theme) => ({
-        borderRadius: 2.5,
-        border: `1px solid ${
-          highlighted ? alpha(theme.palette.warning.main, 0.72) : alpha(theme.palette.divider, 0.88)
-        }`,
-        backgroundColor: highlighted
-          ? alpha(theme.palette.warning.main, 0.08)
-          : alpha(theme.palette.background.paper, 0.58),
-        boxShadow: highlighted
-          ? `inset 0 0 0 1px ${alpha(theme.palette.warning.main, 0.42)}`
-          : 'none',
-        overflow: 'hidden',
-        '&::before': {
-          display: 'none',
-        },
-      })}
-    >
+    <AppAccordion defaultExpanded={defaultExpanded} tone={highlighted ? 'warning' : 'default'}>
       {children}
-    </Accordion>
+    </AppAccordion>
   )
 }
 
@@ -76,34 +53,8 @@ export function CollapsibleSection({
   nested?: boolean
 }) {
   return (
-    <Accordion
-      disableGutters
-      elevation={0}
-      defaultExpanded={defaultExpanded}
-      sx={(theme) => ({
-        backgroundColor: 'transparent',
-        '&::before': {
-          display: 'none',
-        },
-        ...(nested
-          ? {
-              border: `1px solid ${alpha(theme.palette.divider, 0.78)}`,
-              borderRadius: 2,
-              overflow: 'hidden',
-            }
-          : {}),
-      })}
-    >
-      <AccordionSummary
-        expandIcon={<ExpandGlyph />}
-        sx={{
-          px: 2,
-          py: nested ? 0.15 : 0.35,
-          '& .MuiAccordionSummary-content': {
-            my: 1,
-          },
-        }}
-      >
+    <AppAccordion defaultExpanded={defaultExpanded} surface={nested ? 'inset' : 'plain'}>
+      <AppAccordionSummary expandIcon={<ExpandGlyph />}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -121,10 +72,10 @@ export function CollapsibleSection({
             {countLabel ? <MiniMetricChip label={countLabel} /> : null}
           </Stack>
         </Box>
-      </AccordionSummary>
+      </AppAccordionSummary>
 
       <AccordionDetails sx={{ px: 2, pt: 0, pb: 2 }}>{children}</AccordionDetails>
-    </Accordion>
+    </AppAccordion>
   )
 }
 

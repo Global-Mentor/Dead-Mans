@@ -1,8 +1,8 @@
-import { AccordionDetails, AccordionSummary, Box, Chip, Stack, Typography } from '@mui/material'
+import { AccordionDetails, Box, Chip, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton, ParticipantNamesList } from '../../../shared/ui/index.ts'
+import { AppAccordionSummary, AppButton, ParticipantNamesList } from '../../../shared/ui/index.ts'
 import { getRoundBonusDelta, getRoundScore } from '../model/game-history-team-leaderboard.ts'
 import { formatCardLabel, formatHistoryTeamName } from '../model/game-history-formatters.ts'
 import {
@@ -30,16 +30,7 @@ export function RoundHistoryRow({
 
   return (
     <AccordionSurface>
-      <AccordionSummary
-        expandIcon={<ExpandGlyph />}
-        sx={{
-          px: 1.75,
-          py: 0.25,
-          '& .MuiAccordionSummary-content': {
-            my: 1,
-          },
-        }}
-      >
+      <AppAccordionSummary expandIcon={<ExpandGlyph />}>
         <Box sx={{ width: '100%' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems="flex-start">
             <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -84,7 +75,7 @@ export function RoundHistoryRow({
             </Stack>
           </Stack>
         </Box>
-      </AccordionSummary>
+      </AppAccordionSummary>
 
       <AccordionDetails sx={{ px: 1.75, pt: 0, pb: 1.75 }}>
         <Stack spacing={1.2}>

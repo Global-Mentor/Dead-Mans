@@ -1,15 +1,7 @@
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { AccordionDetails, Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
+import { AppAccordion, AppAccordionSummary } from '../../../shared/ui/index.ts'
 
 export function AdminModifierBlock({
   sectionId,
@@ -28,34 +20,8 @@ export function AdminModifierBlock({
   const contentId = `modifier-management-${sectionId}-content`
 
   return (
-    <Accordion
-      defaultExpanded
-      disableGutters
-      elevation={0}
-      aria-labelledby={headerId}
-      sx={(theme) => ({
-        borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.divider, 0.78)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.42),
-        overflow: 'hidden',
-        '&::before': { display: 'none' },
-      })}
-    >
-      <AccordionSummary
-        id={headerId}
-        aria-controls={contentId}
-        aria-description={tooltip}
-        expandIcon={
-          <Box component="span" aria-hidden sx={{ fontSize: 18, lineHeight: 1 }}>
-            ⌄
-          </Box>
-        }
-        sx={{
-          px: { xs: 1.25, sm: 1.5 },
-          minHeight: 52,
-          '& .MuiAccordionSummary-content': { my: 0.75 },
-        }}
-      >
+    <AppAccordion surface="inset" defaultExpanded aria-labelledby={headerId}>
+      <AppAccordionSummary id={headerId} aria-controls={contentId} aria-description={tooltip}>
         <Stack spacing={0.2}>
           <Typography
             variant="caption"
@@ -87,11 +53,11 @@ export function AdminModifierBlock({
             </Box>
           </Stack>
         </Stack>
-      </AccordionSummary>
+      </AppAccordionSummary>
       <AccordionDetails id={contentId} sx={{ px: { xs: 1.25, sm: 1.5 }, pt: 0, pb: 1.5 }}>
         {children}
       </AccordionDetails>
-    </Accordion>
+    </AppAccordion>
   )
 }
 

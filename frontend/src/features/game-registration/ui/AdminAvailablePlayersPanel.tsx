@@ -1,8 +1,8 @@
-import { Chip, Stack, TextField, Tooltip, Typography } from '@mui/material'
+import { Chip, Stack, Tooltip, Typography } from '@mui/material'
 import { useMemo, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer } from '../../../shared/api/contracts/index.ts'
-import { SectionCard } from '../../../shared/ui/index.ts'
+import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import { searchRegistrationPlayers } from '../model/player-search.ts'
 import { AdminRegistrationPlayerCard } from './admin-registration-components.tsx'
 import {
@@ -43,7 +43,7 @@ export function AdminAvailablePlayersPanel({
 
   return (
     <SectionCard
-      inset
+      surface="inset"
       sx={{
         width: { xs: '100%', lg: 288 },
         flexShrink: 0,
@@ -75,7 +75,7 @@ export function AdminAvailablePlayersPanel({
           </Tooltip>
         </Stack>
 
-        <TextField
+        <FormTextField
           fullWidth
           size="small"
           label={t('gameApplication.adminPanel.playerSearchLabel')}

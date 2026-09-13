@@ -257,16 +257,21 @@ export function MyTeamSection({
       <AppDialog
         open={nameEditorOpen && canEditName}
         title={t('gameApplication.editTeamName')}
-        accented
-        dividers
+        appearance="accented"
         onClose={closeNameEditor}
         actions={
           <>
-            <AppButton tone="secondary" disabled={isUpdatingName} onClick={closeNameEditor}>
+            <AppButton
+              tone="secondary"
+              size="large"
+              disabled={isUpdatingName}
+              onClick={closeNameEditor}
+            >
               {t('common.actions.cancel')}
             </AppButton>
             <AppButton
               type="submit"
+              size="large"
               form={nameEditorFormId}
               disabled={!canSaveName}
               loading={isUpdatingName}
@@ -310,8 +315,7 @@ export function MyTeamSection({
       </AppDialog>
       <ConfirmDialog
         open={confirmationOpen}
-        accented
-        dividers
+        appearance="accented"
         title={t(
           confirmation === 'cancel'
             ? 'gameApplication.cancelDisbandConfirmTitle'

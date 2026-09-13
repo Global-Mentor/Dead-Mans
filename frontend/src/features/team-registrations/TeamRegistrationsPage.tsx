@@ -56,6 +56,7 @@ export function TeamRegistrationsPage() {
   return (
     <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
       <SectionHeader
+        headingLevel="h1"
         title={t('teamRegistrations.title')}
         description={t('teamRegistrations.description')}
       />

@@ -8,7 +8,7 @@ import type {
   GameModifierAvailability,
   GameModifierState,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import { buildModifierSearchText } from '../model/modifier-search.ts'
 import { deriveModifierRoundSummaryMeta } from '../model/modifier-round-summary.ts'
 import { AdminModifierBlock, AdminModifierStateNotice } from './admin-modifier-panel-primitives.tsx'
@@ -228,7 +228,7 @@ export function AdminModifierActivationBlock({
                       : t('gameModifiers.adminPanel.activateAction')}
                   </AppButton>
 
-                  <TextField
+                  <FormTextField
                     size="small"
                     label={t('gameModifiers.adminPanel.emergencyDisableReasonLabel')}
                     value={emergencyDisableReason}

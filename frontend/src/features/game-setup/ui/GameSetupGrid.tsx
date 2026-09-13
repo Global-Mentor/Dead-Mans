@@ -56,7 +56,7 @@ export function GameSetupGrid({
         leadColumnWidth={120}
         renderColumnLabel={(columnLabel, columnIndex) => (
           <FormTextField
-            layout="centered"
+            textAlign="center"
             label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
             value={columnLabel}
             onChange={(event) => {
@@ -84,7 +84,7 @@ export function GameSetupGrid({
         )}
         renderRowLabel={(rowLabel, rowIndex) => (
           <FormTextField
-            layout="compact"
+            density="compact"
             label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
             value={rowLabel}
             onChange={(event) => {
@@ -125,7 +125,7 @@ export function GameSetupGrid({
             : undefined
 
           return (
-            <SectionCard variantStyle="dashed" sx={setupCellCardSx}>
+            <SectionCard surface="inset" borderStyle="dashed" sx={setupCellCardSx}>
               <GameSetupCellImage
                 imageUrl={imageUrl}
                 imageKey={imageKey}
@@ -152,6 +152,7 @@ export function GameSetupGrid({
               />
               <FormTextField
                 label={t('gameSetup.cellPriceLabel')}
+                textAlign="center"
                 value={cellDraft?.cost ?? 0}
                 onChange={(event) => {
                   const parsed = Number.parseInt(event.target.value, 10)
@@ -164,11 +165,6 @@ export function GameSetupGrid({
                 }}
                 type="number"
                 inputProps={{ min: 0 }}
-                sx={{
-                  '& .MuiInputBase-input': {
-                    textAlign: 'center',
-                  },
-                }}
               />
             </SectionCard>
           )

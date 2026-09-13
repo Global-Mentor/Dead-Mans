@@ -1,8 +1,6 @@
 import type { DefaultTranslation } from '../../../locales/index.ts'
 import {
-  Accordion,
   AccordionDetails,
-  AccordionSummary,
   Box,
   FormControl,
   FormHelperText,
@@ -16,14 +14,14 @@ import { Controller, useWatch } from 'react-hook-form'
 import type { Control, UseFormSetValue } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
-import { ControlledFormTextField } from '../../../shared/ui/index.ts'
-import { modifierPhases, type ModifierFormValues } from '../model/modifier-form-schema.ts'
 import {
-  FieldWithHelp,
-  ModifierConflictField,
-  SelectionCard,
-  WizardSection,
-} from './modifier-form-fields.tsx'
+  AppAccordion,
+  AppAccordionSummary,
+  ChoiceCard,
+  ControlledFormTextField,
+} from '../../../shared/ui/index.ts'
+import { modifierPhases, type ModifierFormValues } from '../model/modifier-form-schema.ts'
+import { FieldWithHelp, ModifierConflictField, WizardSection } from './modifier-form-fields.tsx'
 
 export function ModifierActivationStep({
   control,
@@ -59,10 +57,10 @@ export function ModifierActivationStep({
                 <FormLabel component="legend">{t('gameCatalog.modifiers.wizard.phase')}</FormLabel>
                 <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
                   {modifierPhases.map((phase) => (
-                    <SelectionCard
+                    <ChoiceCard
                       key={phase}
                       value={phase}
-                      checked={field.value === phase}
+                      selected={field.value === phase}
                       disabled={disabled}
                       title={t(`gameCatalog.modifiers.wizard.phases.${phase}`)}
                       description={t(`gameCatalog.modifiers.wizard.phaseDescriptions.${phase}`)}
@@ -95,10 +93,10 @@ export function ModifierActivationStep({
                   }}
                 >
                   {(['activeTeam', 'mentor'] as const).map((performer) => (
-                    <SelectionCard
+                    <ChoiceCard
                       key={performer}
                       value={performer}
-                      checked={field.value === performer}
+                      selected={field.value === performer}
                       disabled={disabled}
                       title={t(`gameCatalog.modifiers.wizard.performers.${performer}`)}
                       description={t(
@@ -147,10 +145,10 @@ export function ModifierActivationStep({
                   }}
                 >
                   {(['yes', 'no'] as const).map((answer) => (
-                    <SelectionCard
+                    <ChoiceCard
                       key={answer}
                       value={answer}
-                      checked={field.value === (answer === 'yes')}
+                      selected={field.value === (answer === 'yes')}
                       disabled={disabled}
                       title={t(`gameCatalog.modifiers.wizard.monitoringAnswers.${answer}`)}
                       description={t(
@@ -194,10 +192,10 @@ export function ModifierActivationStep({
                       }}
                     >
                       {(['yes', 'no'] as const).map((answer) => (
-                        <SelectionCard
+                        <ChoiceCard
                           key={answer}
                           value={answer}
-                          checked={field.value === (answer === 'yes')}
+                          selected={field.value === (answer === 'yes')}
                           disabled={disabled}
                           title={t(`gameCatalog.modifiers.wizard.durationAnswers.${answer}`)}
                           description={t(
@@ -276,12 +274,8 @@ export function ModifierActivationStep({
             modifiers={modifiers}
           />
         </FieldWithHelp>
-        <Accordion
-          disableGutters
-          elevation={0}
-          sx={{ border: 1, borderColor: 'divider', '&::before': { display: 'none' } }}
-        >
-          <AccordionSummary>
+        <AppAccordion surface="inset">
+          <AppAccordionSummary>
             <Box>
               <Typography variant="subtitle2">
                 {t('gameCatalog.modifiers.wizard.advancedSettings')}
@@ -290,7 +284,7 @@ export function ModifierActivationStep({
                 {t('gameCatalog.modifiers.wizard.advancedSettingsDescription')}
               </Typography>
             </Box>
-          </AccordionSummary>
+          </AppAccordionSummary>
           <AccordionDetails>
             <FieldWithHelp
               label={t('gameCatalog.modifiers.fields.activationCommand')}
@@ -305,7 +299,7 @@ export function ModifierActivationStep({
               />
             </FieldWithHelp>
           </AccordionDetails>
-        </Accordion>
+        </AppAccordion>
       </WizardSection>
     </Stack>
   )

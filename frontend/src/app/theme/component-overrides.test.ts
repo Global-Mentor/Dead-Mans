@@ -4,6 +4,14 @@ import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { appComponentOverrides } from './component-overrides.ts'
 
 describe('appComponentOverrides', () => {
+  it('leaves decorative surface selection to semantic components', () => {
+    expect(appComponentOverrides.MuiPaper?.styleOverrides?.root).not.toMatchObject({
+      backgroundImage: expect.anything(),
+      backgroundSize: expect.anything(),
+    })
+    expect(appComponentOverrides.MuiSnackbar).toBeUndefined()
+  })
+
   it('keeps disabled buttons subdued without making their labels illegible', () => {
     const rootStyles = appComponentOverrides.MuiButton?.styleOverrides?.root
 
@@ -37,9 +45,11 @@ describe('appComponentOverrides', () => {
 type Rgb = readonly [number, number, number]
 
 function hexToRgb(value: string): Rgb {
-  return [1, 3, 5].map(
-    (offset) => Number.parseInt(value.slice(offset, offset + 2), 16) / 255,
-  ) as unknown as Rgb
+  return [
+    Number.parseInt(value.slice(1, 3), 16) / 255,
+    Number.parseInt(value.slice(3, 5), 16) / 255,
+    Number.parseInt(value.slice(5, 7), 16) / 255,
+  ]
 }
 
 function blendHex(foreground: string, background: string, alpha: number): Rgb {
@@ -47,9 +57,11 @@ function blendHex(foreground: string, background: string, alpha: number): Rgb {
 }
 
 function blendRgb(foreground: Rgb, background: Rgb, alpha: number): Rgb {
-  return foreground.map(
-    (channel, index) => channel * alpha + background[index]! * (1 - alpha),
-  ) as unknown as Rgb
+  return [
+    foreground[0] * alpha + background[0] * (1 - alpha),
+    foreground[1] * alpha + background[1] * (1 - alpha),
+    foreground[2] * alpha + background[2] * (1 - alpha),
+  ]
 }
 
 function contrastRatio(left: Rgb, right: Rgb) {
@@ -63,9 +75,9 @@ function contrastRatio(left: Rgb, right: Rgb) {
 }
 
 function relativeLuminance(rgb: Rgb) {
-  const [red, green, blue] = rgb.map((channel) =>
-    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-  )
+  const toLinear = (channel: number) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  const [red, green, blue] = rgb
 
-  return 0.2126 * red! + 0.7152 * green! + 0.0722 * blue!
+  return 0.2126 * toLinear(red) + 0.7152 * toLinear(green) + 0.0722 * toLinear(blue)
 }

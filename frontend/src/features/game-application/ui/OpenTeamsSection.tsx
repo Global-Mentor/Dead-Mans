@@ -101,7 +101,7 @@ export function OpenTeamsSection({
     >
       <Stack spacing={0.75}>
         {visibleTeams.length === 0 ? (
-          <SectionCard inset sx={{ py: 4, textAlign: 'center' }}>
+          <SectionCard surface="inset" sx={{ py: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               {t(
                 teams.length === 0

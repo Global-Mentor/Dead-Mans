@@ -1,4 +1,4 @@
-import { Box, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material'
+import { Box, Chip, Stack, Typography } from '@mui/material'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,8 @@ import {
   AppButton,
   AppLinkButton,
   AsyncSection,
+  FormSelect,
+  FormTextField,
   PageShell,
   SectionCard,
   SectionHeader,
@@ -57,30 +59,28 @@ export function ModifierHistoryPage() {
   return (
     <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
       <SectionHeader
+        headingLevel="h1"
         title={t('modifierHistory.title')}
         description={t('modifierHistory.description')}
       />
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ my: 2 }}>
-        <TextField
+        <FormTextField
           label={t('modifierHistory.search')}
           value={search}
           onChange={(event) => setSearch(event.target.value.slice(0, 100))}
           inputProps={{ maxLength: 100 }}
           fullWidth
         />
-        <TextField
-          select
+        <FormSelect
           label={t('modifierHistory.filter')}
           value={filter}
-          onChange={(event) => setFilter(event.target.value as ArchiveFilter)}
+          onChange={setFilter}
+          options={(['all', 'active', 'archived'] as const).map((value) => ({
+            value,
+            label: t(`modifierHistory.${value}`),
+          }))}
           sx={{ minWidth: 190 }}
-        >
-          {(['all', 'active', 'archived'] as const).map((value) => (
-            <MenuItem key={value} value={value}>
-              {t(`modifierHistory.${value}`)}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
       </Stack>
 
       <Box
@@ -138,7 +138,7 @@ export function ModifierHistoryPage() {
         ) : (
           <Stack spacing={2}>
             {selectedSummary ? (
-              <SectionCard inset>
+              <SectionCard surface="inset">
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}
                   gap={1}

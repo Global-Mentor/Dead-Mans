@@ -40,15 +40,7 @@ export function PlayedCardPreviewDialog({
       open={previewCard !== null}
       onClose={onClose}
       maxWidth="lg"
-      PaperProps={{
-        sx: (theme) => ({
-          borderRadius: 2.5,
-          border: `1px solid ${alpha(theme.palette.divider, 0.82)}`,
-          backgroundImage: 'none',
-          boxShadow: `0 22px 70px ${alpha(theme.palette.common.black, 0.38)}`,
-          overflow: 'hidden',
-        }),
-      }}
+      appearance="preview"
       title={
         previewCard ? (
           <Typography

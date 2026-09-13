@@ -60,7 +60,7 @@ export function GameQuizPage() {
         px: { xs: 0, sm: 0 },
       }}
     >
-      <SectionHeader title={t('gameQuiz.title')} />
+      <SectionHeader headingLevel="h1" title={t('gameQuiz.title')} />
 
       <AsyncSection
         isLoading={isLoading}
