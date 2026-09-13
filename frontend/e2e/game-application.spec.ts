@@ -227,6 +227,36 @@ for (const viewport of [
     await expect(leaveDialog).toHaveCount(0)
     expect(creates).toBe(1)
     await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeDisabled()
+    const readinessButton = page.getByRole('button', { name: 'Я готов', exact: true })
+    const leaveButton = page.getByRole('button', { name: 'Выйти из команды' })
+    const readButtonSurface = (element: HTMLElement) => {
+      const style = getComputedStyle(element)
+      const texture = getComputedStyle(element, '::before')
+      return {
+        frame: style.borderImageSource,
+        outset: style.borderImageOutset,
+        texture: texture.backgroundImage,
+        textureDisplay: texture.display,
+        textureOpacity: Number(texture.opacity),
+        height: element.getBoundingClientRect().height,
+      }
+    }
+    const disabledSurface = await readinessButton.evaluate(readButtonSurface)
+    const activeSurface = await leaveButton.evaluate(readButtonSurface)
+    expect(disabledSurface.frame).not.toBe('none')
+    expect(disabledSurface.frame).toBe(activeSurface.frame)
+    expect(disabledSurface.outset).toBe(activeSurface.outset)
+    expect(disabledSurface.texture).not.toBe('none')
+    expect(disabledSurface.texture).toBe(activeSurface.texture)
+    expect(disabledSurface.textureDisplay).not.toBe('none')
+    expect(disabledSurface.textureOpacity).toBeGreaterThan(0)
+    expect(disabledSurface.textureOpacity).toBeLessThan(activeSurface.textureOpacity)
+    expect(disabledSurface.height).toBe(activeSurface.height)
+    await page.screenshot({
+      path: `../.tmp/ui-audit/after/application-readiness-disabled-${suffix}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
     mine.members.push({
       player: { userId: 'teammate', displayName: 'Напарник', login: 'teammate' },
       joinedAtUtc: '2026-09-13T00:00:00Z',
