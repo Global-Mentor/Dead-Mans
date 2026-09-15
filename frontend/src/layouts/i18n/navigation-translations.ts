@@ -1,15 +1,23 @@
 const translations = {
   en: {
+    brandMark: 'DM',
+    menu: 'Menu',
+    openNavigation: 'Open navigation',
+    history: 'History',
+    manage: 'Manage',
     primary: 'Primary navigation',
     adminNavigation: 'Administration navigation',
-    menus: {
+    adminSections: {
       currentGame: 'Current game',
-      history: 'History',
-      gameSetup: 'Game setup',
-      globalSettings: 'Global settings',
+      catalog: 'Catalogs',
       system: 'System',
     },
     profile: 'Profile',
+    accessRoles: 'Access roles',
+    uiStateGallery: {
+      title: 'Interface components',
+      description: 'Development preview of shared interface states.',
+    },
     notifications: 'Notifications',
     openNotifications: 'Open notifications',
     notificationCount: '{{count}} important notification(s)',
@@ -63,37 +71,41 @@ const translations = {
         label: 'Board setup',
       },
       adminModifiers: {
-        label: 'Modifier setup',
+        label: 'Current game modifiers',
       },
       adminQuestions: {
-        label: 'Question setup',
+        label: 'Current game questions',
       },
       catalogModifiers: {
-        label: 'Modifier setup',
+        label: 'Modifier catalog',
       },
       catalogQuestions: {
-        label: 'Question setup',
+        label: 'Question catalog',
       },
       roleAdministration: {
         label: 'User roles',
       },
     },
-    uiStateGallery: {
-      title: 'Interface components',
-      description: 'Development preview of shared interface states.',
-    },
   },
   ru: {
+    brandMark: 'DM',
+    menu: 'Меню',
+    openNavigation: 'Открыть навигацию',
+    history: 'История',
+    manage: 'Управление',
     primary: 'Основная навигация',
     adminNavigation: 'Навигация администратора',
-    menus: {
+    adminSections: {
       currentGame: 'Текущая игра',
-      history: 'История',
-      gameSetup: 'Настройка игры',
-      globalSettings: 'Глобальные настройки',
+      catalog: 'Каталоги',
       system: 'Система',
     },
     profile: 'Профиль',
+    accessRoles: 'Роли доступа',
+    uiStateGallery: {
+      title: 'Компоненты интерфейса',
+      description: 'Служебный просмотр общих состояний интерфейса.',
+    },
     notifications: 'Уведомления',
     openNotifications: 'Открыть уведомления',
     notificationCount: 'Важных уведомлений: {{count}}',
@@ -148,37 +160,41 @@ const translations = {
         label: 'Настройка доски',
       },
       adminModifiers: {
-        label: 'Настройка модификаторов',
+        label: 'Модификаторы текущей игры',
       },
       adminQuestions: {
-        label: 'Настройка вопросов',
+        label: 'Вопросы текущей игры',
       },
       catalogModifiers: {
-        label: 'Настройка модификаторов',
+        label: 'Каталог модификаторов',
       },
       catalogQuestions: {
-        label: 'Настройка вопросов',
+        label: 'Каталог вопросов',
       },
       roleAdministration: {
         label: 'Роли пользователей',
       },
     },
-    uiStateGallery: {
-      title: 'Компоненты интерфейса',
-      description: 'Служебный просмотр общих состояний интерфейса.',
-    },
   },
   uk: {
+    brandMark: 'DM',
+    menu: 'Меню',
+    openNavigation: 'Відкрити навігацію',
+    history: 'Історія',
+    manage: 'Керування',
     primary: 'Основна навігація',
     adminNavigation: 'Навігація адміністратора',
-    menus: {
+    adminSections: {
       currentGame: 'Поточна гра',
-      history: 'Історія',
-      gameSetup: 'Налаштування гри',
-      globalSettings: 'Глобальні налаштування',
+      catalog: 'Каталоги',
       system: 'Система',
     },
     profile: 'Профіль',
+    accessRoles: 'Ролі доступу',
+    uiStateGallery: {
+      title: 'Компоненти інтерфейсу',
+      description: 'Службовий перегляд спільних станів інтерфейсу.',
+    },
     notifications: 'Сповіщення',
     openNotifications: 'Відкрити сповіщення',
     notificationCount: 'Важливих сповіщень: {{count}}',
@@ -233,37 +249,41 @@ const translations = {
         label: 'Налаштування дошки',
       },
       adminModifiers: {
-        label: 'Налаштування модифікаторів',
+        label: 'Модифікатори поточної гри',
       },
       adminQuestions: {
-        label: 'Налаштування питань',
+        label: 'Питання поточної гри',
       },
       catalogModifiers: {
-        label: 'Налаштування модифікаторів',
+        label: 'Каталог модифікаторів',
       },
       catalogQuestions: {
-        label: 'Налаштування питань',
+        label: 'Каталог питань',
       },
       roleAdministration: {
         label: 'Ролі користувачів',
       },
     },
-    uiStateGallery: {
-      title: 'Компоненти інтерфейсу',
-      description: 'Службовий перегляд спільних станів інтерфейсу.',
-    },
   },
   pl: {
+    brandMark: 'DM',
+    menu: 'Menu',
+    openNavigation: 'Otwórz nawigację',
+    history: 'Historia',
+    manage: 'Zarządzanie',
     primary: 'Główna nawigacja',
     adminNavigation: 'Nawigacja administratora',
-    menus: {
+    adminSections: {
       currentGame: 'Bieżąca gra',
-      history: 'Historia',
-      gameSetup: 'Konfiguracja gry',
-      globalSettings: 'Ustawienia globalne',
+      catalog: 'Katalogi',
       system: 'System',
     },
     profile: 'Profil',
+    accessRoles: 'Role dostępu',
+    uiStateGallery: {
+      title: 'Komponenty interfejsu',
+      description: 'Deweloperski podgląd wspólnych stanów interfejsu.',
+    },
     notifications: 'Powiadomienia',
     openNotifications: 'Otwórz powiadomienia',
     notificationCount: 'Ważne powiadomienia: {{count}}',
@@ -318,24 +338,20 @@ const translations = {
         label: 'Konfiguracja planszy',
       },
       adminModifiers: {
-        label: 'Konfiguracja modyfikatorów',
+        label: 'Modyfikatory bieżącej gry',
       },
       adminQuestions: {
-        label: 'Konfiguracja pytań',
+        label: 'Pytania bieżącej gry',
       },
       catalogModifiers: {
-        label: 'Konfiguracja modyfikatorów',
+        label: 'Katalog modyfikatorów',
       },
       catalogQuestions: {
-        label: 'Konfiguracja pytań',
+        label: 'Katalog pytań',
       },
       roleAdministration: {
         label: 'Role użytkowników',
       },
-    },
-    uiStateGallery: {
-      title: 'Komponenty interfejsu',
-      description: 'Deweloperski podgląd wspólnych stanów interfejsu.',
     },
   },
 }

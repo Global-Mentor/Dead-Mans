@@ -1,224 +1,201 @@
 import { useId, useState, type MouseEvent } from 'react'
-import type { ParseKeys } from 'i18next'
-import { ButtonBase, Menu, MenuItem, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import {
+  Box,
+  ButtonBase,
+  ListSubheader,
+  Menu,
+  MenuItem,
+  SvgIcon,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
+import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
 import { gameSetupDraftQueryOptions } from '../features/game-setup/index.ts'
 import {
   adminModifiersRoute,
   adminQuestionsRoute,
-  catalogModifiersRoute,
-  catalogQuestionsRoute,
-  gameSetupRoute,
   hasAccessToPanelRoute,
-  roleAdministrationRoute,
-  type PanelRouteDefinition,
+  panelRoutes,
+  type PanelAdminSection,
 } from '../routes/app-routes.ts'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
+import { navigationButtonSx } from './navigation-styles.ts'
+import { NavigationChevron } from './NavigationChevron.tsx'
 
-const adminMenus: ReadonlyArray<{
-  id: 'game-setup' | 'global-settings' | 'system'
-  labelKey: Extract<ParseKeys, `navigation.menus.${string}`>
-  routes: readonly PanelRouteDefinition[]
+const adminSections: ReadonlyArray<{
+  id: PanelAdminSection
+  labelKey:
+    | 'navigation.adminSections.currentGame'
+    | 'navigation.adminSections.catalog'
+    | 'navigation.adminSections.system'
 }> = [
   {
-    id: 'game-setup',
-    labelKey: 'navigation.menus.gameSetup',
-    routes: [gameSetupRoute, adminModifiersRoute, adminQuestionsRoute],
+    id: 'current-game',
+    labelKey: 'navigation.adminSections.currentGame',
   },
-  {
-    id: 'global-settings',
-    labelKey: 'navigation.menus.globalSettings',
-    routes: [catalogModifiersRoute, catalogQuestionsRoute],
-  },
-  {
-    id: 'system',
-    labelKey: 'navigation.menus.system',
-    routes: [roleAdministrationRoute],
-  },
+  { id: 'catalog', labelKey: 'navigation.adminSections.catalog' },
+  { id: 'system', labelKey: 'navigation.adminSections.system' },
 ]
+
+const draftDependentRouteIds = new Set([adminModifiersRoute.id, adminQuestionsRoute.id])
+
+const sectionIconPaths: Record<PanelAdminSection, string> = {
+  'current-game': 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  catalog: 'M4 4h5v16H4zM4 8h5M12 5l5-1 3 15-5 1zM13 9l5-1',
+  system: 'M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6zM9 12l2 2 4-4',
+}
 
 interface PanelAdminNavigationProps {
   activeRouteId: string | undefined
-  layout: 'inline' | 'stacked'
   roles: readonly AuthRole[]
 }
 
-export function PanelAdminNavigation({ activeRouteId, layout, roles }: PanelAdminNavigationProps) {
+export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigationProps) {
   const { t } = useTranslation()
-  const isStacked = layout === 'stacked'
-  const navigationId = useId()
-  const [openMenuId, setOpenMenuId] = useState<(typeof adminMenus)[number]['id'] | null>(null)
-  const [anchorByMenuId, setAnchorByMenuId] = useState<
-    Partial<Record<(typeof adminMenus)[number]['id'], HTMLElement | null>>
-  >({})
+  const triggerId = useId()
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const accessibleSections = adminSections
+    .map((section) => ({
+      ...section,
+      routes: panelRoutes.filter(
+        (route) =>
+          route.group === 'admin' &&
+          route.adminSection === section.id &&
+          hasAccessToPanelRoute(route, roles),
+      ),
+    }))
+    .filter((section) => section.routes.length > 0)
+  const accessibleRoutes = accessibleSections.flatMap((section) => section.routes)
+  const needsDraftState = accessibleRoutes.some((route) => draftDependentRouteIds.has(route.id))
   const { data: draftState } = useQuery({
     ...gameSetupDraftQueryOptions,
     staleTime: 60_000,
-    enabled: roles.includes('admin') || roles.includes('superadmin'),
+    enabled: needsDraftState,
   })
   const hasDraftGame = draftState?.snapshot != null
-  const accessibleMenus = adminMenus
-    .map((menu) => ({
-      ...menu,
-      routes: menu.routes.filter((route) => hasAccessToPanelRoute(route, roles)),
-    }))
-    .filter((menu) => menu.routes.length > 0)
+  const isActive = accessibleRoutes.some((route) => route.id === activeRouteId)
 
-  const handleMenuOpen =
-    (menuId: (typeof adminMenus)[number]['id']) => (event: MouseEvent<HTMLElement>) => {
-      setAnchorByMenuId((current) => ({
-        ...current,
-        [menuId]: event.currentTarget,
-      }))
-      setOpenMenuId(menuId)
-    }
+  if (accessibleSections.length === 0) return null
 
-  const handleMenuClose = () => {
-    setOpenMenuId(null)
-  }
+  const openMenu = (event: MouseEvent<HTMLElement>) => setAnchor(event.currentTarget)
+  const closeMenu = () => setAnchor(null)
 
   return (
-    <Stack
-      component="nav"
-      aria-label={t('navigation.adminNavigation')}
-      direction={isStacked ? 'column' : 'row'}
-      spacing={isStacked ? 1.5 : 2}
-      sx={
-        isStacked
-          ? { display: { xs: 'flex', sm: 'none' }, pb: 1 }
-          : { display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }
-      }
-    >
-      {accessibleMenus.map((menu) => (
-        <AdminNavigationMenu
-          key={menu.id}
-          triggerId={`${navigationId}-${menu.id}`}
-          label={t(menu.labelKey)}
-          routes={menu.routes}
-          activeRouteId={activeRouteId}
-          anchorEl={anchorByMenuId[menu.id] ?? null}
-          isOpen={openMenuId === menu.id}
-          onOpen={handleMenuOpen(menu.id)}
-          onClose={handleMenuClose}
-          fullWidth={isStacked}
-          disableCurrentGameChildren={menu.id === 'game-setup' && !hasDraftGame}
-        />
-      ))}
-    </Stack>
-  )
-}
-
-interface AdminNavigationMenuProps {
-  triggerId: string
-  label: string
-  routes: readonly PanelRouteDefinition[]
-  activeRouteId: string | undefined
-  anchorEl: HTMLElement | null
-  isOpen: boolean
-  onOpen: (event: MouseEvent<HTMLElement>) => void
-  onClose: () => void
-  fullWidth?: boolean
-  disableCurrentGameChildren?: boolean
-}
-
-function AdminNavigationMenu({
-  triggerId,
-  label,
-  routes,
-  activeRouteId,
-  anchorEl,
-  isOpen,
-  onOpen,
-  onClose,
-  fullWidth = false,
-  disableCurrentGameChildren = false,
-}: AdminNavigationMenuProps) {
-  const { t } = useTranslation()
-  const isActive = routes.some((route) => route.id === activeRouteId)
-
-  return (
-    <>
-      <ButtonBase
-        id={triggerId}
-        aria-controls={isOpen ? `${triggerId}-menu` : undefined}
-        aria-expanded={isOpen ? 'true' : undefined}
-        aria-haspopup="menu"
-        aria-current={isActive ? 'page' : undefined}
-        onClick={onOpen}
-        sx={(theme) => ({
-          position: 'relative',
-          width: fullWidth ? '100%' : 'auto',
-          minHeight: 42,
-          px: { xs: 1, sm: 2 },
-          borderRadius: 1,
-          color: isActive ? 'warning.light' : 'text.secondary',
-          fontFamily: theme.typography.button.fontFamily,
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          justifyContent: fullWidth ? 'space-between' : 'center',
-          gap: 1,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            right: 10,
-            bottom: 2,
-            left: 10,
-            height: 2,
-            backgroundColor: isActive ? 'warning.main' : 'transparent',
-            transition: 'background-color 0.15s ease',
-          },
-          '&:hover': {
-            color: 'text.primary',
-            backgroundColor: alpha(theme.palette.warning.main, 0.08),
-          },
-        })}
-      >
-        <Typography component="span" variant="button" noWrap>
-          {label}
-        </Typography>
-        <Typography component="span" variant="button" aria-hidden>
-          ▾
-        </Typography>
-      </ButtonBase>
+    <nav aria-label={t('navigation.adminNavigation')}>
+      <Tooltip title={t('navigation.administration')}>
+        <ButtonBase
+          id={triggerId}
+          aria-label={t('navigation.administration')}
+          aria-controls={anchor ? `${triggerId}-menu` : undefined}
+          aria-expanded={anchor ? 'true' : undefined}
+          aria-haspopup="menu"
+          aria-current={isActive ? 'page' : undefined}
+          onClick={openMenu}
+          sx={(theme) => ({
+            ...navigationButtonSx(isActive)(theme),
+            minWidth: 44,
+            px: { xs: 1.25, lg: 1.5 },
+          })}
+        >
+          <SvgIcon aria-hidden sx={{ fontSize: 19 }}>
+            <path
+              d="M5 4v16M12 4v16M19 4v16M2 8h6M9 16h6M16 9h6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </SvgIcon>
+          <Typography
+            component="span"
+            sx={{ display: { xs: 'none', lg: 'block' }, font: 'inherit' }}
+          >
+            {t('navigation.manage')}
+          </Typography>
+          <Box component="span" sx={{ display: { xs: 'none', lg: 'flex' } }}>
+            <NavigationChevron open={Boolean(anchor)} />
+          </Box>
+        </ButtonBase>
+      </Tooltip>
 
       <Menu
         id={`${triggerId}-menu`}
-        anchorEl={anchorEl}
-        open={isOpen}
-        onClose={onClose}
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={closeMenu}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 260 } } }}
+        slotProps={{
+          paper: { sx: { mt: 1, width: 320, maxWidth: 'calc(100vw - 32px)' } },
+          list: { 'aria-labelledby': triggerId },
+        }}
       >
-        {routes.map((route, index) => {
-          const isRouteDisabled = disableCurrentGameChildren && index > 0
-          const routeLabel = t(route.labelKey)
+        {accessibleSections.map((section, index) => [
+          <ListSubheader
+            key={`${section.id}-heading`}
+            disableSticky
+            sx={(theme) => ({
+              color: theme.palette.primary.light,
+              backgroundColor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              fontSize: 15,
+              fontWeight: 600,
+              lineHeight: 1.5,
+              letterSpacing: '0.01em',
+              textTransform: 'none',
+              px: 2,
+              pt: index === 0 ? 1 : 2.25,
+              pb: 0.75,
+              '&::after': {
+                content: '""',
+                flex: 1,
+                minWidth: 16,
+                height: '1px',
+                ml: 0.5,
+                backgroundImage: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.4)}, transparent)`,
+              },
+            })}
+          >
+            <SvgIcon aria-hidden sx={{ fontSize: 16, flexShrink: 0 }}>
+              <path
+                d={sectionIconPaths[section.id]}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </SvgIcon>
+            {t(section.labelKey)}
+          </ListSubheader>,
+          ...section.routes.map((route) => {
+            const isDisabled = draftDependentRouteIds.has(route.id) && !hasDraftGame
 
-          if (isRouteDisabled) {
-            return (
-              <MenuItem key={route.id} disabled>
-                {routeLabel}
+            return isDisabled ? (
+              <MenuItem key={route.id} disabled sx={{ minHeight: 44, whiteSpace: 'normal' }}>
+                {t(route.labelKey)}
+              </MenuItem>
+            ) : (
+              <MenuItem
+                key={route.id}
+                component={RouterLink}
+                to={route.fullPath}
+                selected={activeRouteId === route.id}
+                onClick={closeMenu}
+                aria-current={activeRouteId === route.id ? 'page' : undefined}
+                sx={{ minHeight: 44, whiteSpace: 'normal' }}
+              >
+                {t(route.labelKey)}
               </MenuItem>
             )
-          }
-
-          return (
-            <MenuItem
-              key={route.id}
-              component={RouterLink}
-              to={route.fullPath}
-              selected={activeRouteId === route.id}
-              onClick={onClose}
-            >
-              {routeLabel}
-            </MenuItem>
-          )
-        })}
+          }),
+        ])}
       </Menu>
-    </>
+    </nav>
   )
 }

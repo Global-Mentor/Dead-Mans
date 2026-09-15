@@ -1,30 +1,30 @@
 import { useState, type MouseEvent } from 'react'
-import { Box, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/material'
+import { Box, ButtonBase, Chip, Divider, Menu, MenuItem, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import {
-  gameSetupRoute,
-  roleAdministrationRoute,
-  teamRegistrationsRoute,
-} from '../routes/app-routes.ts'
+import { useNavigate } from 'react-router-dom'
 import type { AuthContextValue, AuthUser } from '../shared/auth/auth-context.ts'
+import type { AuthRole } from '../shared/api/contracts/index.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
+import { navigationButtonSx } from './navigation-styles.ts'
+import { NavigationChevron } from './NavigationChevron.tsx'
 
 interface PanelProfileMenuProps {
   user: AuthUser
-  activeRouteId: string | undefined
   onLogout: AuthContextValue['logout']
 }
 
-export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfileMenuProps) {
+function roleColor(role: AuthRole): 'warning' | 'info' | 'default' {
+  if (role === 'superadmin' || role === 'admin') return 'warning'
+  if (role === 'moderator') return 'info'
+  return 'default'
+}
+
+export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null)
-  const canAdminister = user.roles.includes('admin') || user.roles.includes('superadmin')
-  const canManageRoles = user.roles.includes('superadmin')
-
   const closeProfile = () => setProfileAnchor(null)
 
   const handleProfileOpen = (event: MouseEvent<HTMLElement>) => {
@@ -40,29 +40,47 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
   return (
     <>
       <ButtonBase
+        aria-label={user.displayName}
         aria-controls={profileAnchor ? 'profile-menu' : undefined}
         aria-haspopup="menu"
         aria-expanded={profileAnchor ? 'true' : undefined}
         onClick={handleProfileOpen}
         sx={(theme) => ({
-          maxWidth: { xs: 96, sm: 220 },
-          px: { xs: 1, sm: 1.5 },
-          py: 1,
-          minHeight: 42,
-          borderRadius: 0,
-          border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
-          backgroundColor: alpha(theme.palette.common.black, 0.16),
-          '&:hover': {
-            borderColor: alpha(theme.palette.primary.main, 0.55),
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          },
+          ...navigationButtonSx(Boolean(profileAnchor))(theme),
+          maxWidth: 200,
+          minWidth: 44,
+          px: 0.75,
         })}
       >
-        <Typography variant="body2" fontWeight={700} noWrap>
+        <Box
+          component="span"
+          aria-hidden
+          sx={(theme) => ({
+            width: 30,
+            height: 30,
+            display: 'grid',
+            placeItems: 'center',
+            flexShrink: 0,
+            borderRadius: '50%',
+            backgroundColor: alpha(theme.palette.primary.main, 0.14),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+            color: 'primary.light',
+            fontSize: 15,
+            fontWeight: 700,
+          })}
+        >
+          {Array.from(user.displayName)[0]?.toLocaleUpperCase()}
+        </Box>
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          noWrap
+          sx={{ display: { xs: 'none', xl: 'block' } }}
+        >
           {user.displayName}
         </Typography>
-        <Box component="span" aria-hidden sx={{ ml: 1, color: 'primary.main' }}>
-          ▾
+        <Box component="span" aria-hidden sx={{ display: { xs: 'none', xl: 'flex' } }}>
+          <NavigationChevron open={Boolean(profileAnchor)} />
         </Box>
       </ButtonBase>
 
@@ -73,63 +91,38 @@ export function PanelProfileMenu({ user, activeRouteId, onLogout }: PanelProfile
         onClose={closeProfile}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 260 } } }}
+        slotProps={{ paper: { sx: { mt: 1, width: 280, maxWidth: 'calc(100vw - 32px)' } } }}
       >
-        <Box sx={{ px: 2, py: 1.25 }}>
+        <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="overline" sx={huntOverlineSx}>
             {t('navigation.profile')}
           </Typography>
-          <Typography variant="body1" fontWeight={700}>
+          <Typography variant="body1" fontWeight={700} sx={{ mt: 0.25 }}>
             {user.displayName}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {user.roles.map((role) => t(`navigation.roles.${role}`)).join(', ')}
-          </Typography>
         </Box>
-        <Divider />
-        {canAdminister ? <Divider /> : null}
-        {canAdminister ? (
-          <Typography
-            variant="overline"
-            sx={{ ...huntOverlineSx, display: 'block', px: 2, pt: 1.5 }}
-          >
-            {t('navigation.administration')}
-          </Typography>
-        ) : null}
-        {canManageRoles ? (
-          <MenuItem
-            component={RouterLink}
-            to={roleAdministrationRoute.fullPath}
-            selected={activeRouteId === roleAdministrationRoute.id}
-            onClick={closeProfile}
-          >
-            {t(roleAdministrationRoute.labelKey)}
-          </MenuItem>
-        ) : null}
-        {canAdminister ? (
-          <MenuItem
-            component={RouterLink}
-            to={gameSetupRoute.fullPath}
-            selected={activeRouteId === gameSetupRoute.id}
-            onClick={closeProfile}
-          >
-            {t('navigation.menus.gameSetup')}
-          </MenuItem>
-        ) : null}
-        {canAdminister ? (
-          <MenuItem
-            component={RouterLink}
-            to={teamRegistrationsRoute.fullPath}
-            selected={activeRouteId === teamRegistrationsRoute.id}
-            onClick={closeProfile}
-          >
-            {t(teamRegistrationsRoute.labelKey)}
-          </MenuItem>
-        ) : null}
 
         <Divider />
-        <Box sx={{ px: 2, py: 1.25 }}>
-          <Typography variant="caption" color="text.secondary">
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="overline" sx={huntOverlineSx}>
+            {t('navigation.accessRoles')}
+          </Typography>
+          <Stack direction="row" gap={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 0.75 }}>
+            {user.roles.map((role) => (
+              <Chip
+                key={role}
+                size="small"
+                color={roleColor(role)}
+                variant={role === 'viewer' ? 'outlined' : 'filled'}
+                label={t(`navigation.roles.${role}`)}
+              />
+            ))}
+          </Stack>
+        </Box>
+
+        <Divider />
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="overline" sx={huntOverlineSx}>
             {t('navigation.language')}
           </Typography>
           <LanguageSwitcher sx={{ mt: 0.75, width: '100%' }} />

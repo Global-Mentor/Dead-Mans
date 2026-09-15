@@ -1,215 +1,149 @@
-import { useId, useState, type MouseEvent } from 'react'
-import type { ParseKeys } from 'i18next'
-import { ButtonBase, Menu, MenuItem, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
-import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
-import { huntTypography } from '../shared/theme/tokens.ts'
+import { useId, useState } from 'react'
 import {
-  gameApplicationRoute,
-  gameBoardRoute,
-  gameHistoryRoute,
-  gameLeaderboardRoute,
-  gameModifiersRoute,
-  gameQuizRoute,
-  type PanelRouteDefinition,
-} from '../routes/app-routes.ts'
+  Box,
+  ButtonBase,
+  Divider,
+  ListSubheader,
+  Menu,
+  MenuItem,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
+import { useTranslation } from 'react-i18next'
+import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { gameApplicationRoute, getPanelRouteByPath, panelRoutes } from '../routes/app-routes.ts'
+import { navigationButtonSx } from './navigation-styles.ts'
+import { NavigationChevron } from './NavigationChevron.tsx'
 
-const primaryMenus: ReadonlyArray<{
-  id: 'current-game' | 'history'
-  labelKey: Extract<ParseKeys, `navigation.menus.${string}`>
-  routes: readonly PanelRouteDefinition[]
-}> = [
-  {
-    id: 'current-game',
-    labelKey: 'navigation.menus.currentGame',
-    routes: [
-      gameBoardRoute,
-      gameLeaderboardRoute,
-      gameApplicationRoute,
-      gameModifiersRoute,
-      gameQuizRoute,
-    ],
-  },
-  {
-    id: 'history',
-    labelKey: 'navigation.menus.history',
-    routes: [gameHistoryRoute],
-  },
-]
+const primaryRoutes = panelRoutes.filter((route) => route.group === 'player')
+const historyRoutes = primaryRoutes.filter((route) => route.id.endsWith('history'))
 
 interface PanelPrimaryNavigationProps {
   activeRouteId: string | undefined
-  layout: 'inline' | 'stacked'
   showGameApplication: boolean
 }
 
 export function PanelPrimaryNavigation({
   activeRouteId,
-  layout,
   showGameApplication,
 }: PanelPrimaryNavigationProps) {
   const { t } = useTranslation()
-  const isStacked = layout === 'stacked'
-  const navigationId = useId()
-  const [openMenuId, setOpenMenuId] = useState<(typeof primaryMenus)[number]['id'] | null>(null)
-  const [anchorByMenuId, setAnchorByMenuId] = useState<
-    Partial<Record<(typeof primaryMenus)[number]['id'], HTMLElement | null>>
-  >({})
-
-  const handleMenuOpen =
-    (menuId: (typeof primaryMenus)[number]['id']) => (event: MouseEvent<HTMLElement>) => {
-      setAnchorByMenuId((current) => ({
-        ...current,
-        [menuId]: event.currentTarget,
-      }))
-      setOpenMenuId(menuId)
-    }
-
-  const handleMenuClose = () => {
-    setOpenMenuId(null)
-  }
-
-  const visibleMenus = primaryMenus.map((menu) => ({
-    ...menu,
-    routes: showGameApplication
-      ? menu.routes
-      : menu.routes.filter((route) => route.id !== gameApplicationRoute.id),
-  }))
+  const theme = useTheme()
+  const compact = useMediaQuery(theme.breakpoints.down('lg'))
+  const location = useLocation()
+  const activeRoute = getPanelRouteByPath(location.pathname)
+  const menuId = useId()
+  const [menu, setMenu] = useState<{ anchor: HTMLElement; compact: boolean } | null>(null)
+  const anchor = menu?.anchor ?? null
+  const open = menu != null && menu.compact === compact && menu.anchor.isConnected
+  const visibleRoutes = primaryRoutes.filter(
+    (route) =>
+      !route.id.endsWith('history') &&
+      (showGameApplication || route.id !== gameApplicationRoute.id),
+  )
+  const historyActive = historyRoutes.some((route) => route.id === activeRouteId)
+  const closeMenu = () => setMenu(null)
 
   return (
     <Stack
       component="nav"
       aria-label={t('navigation.primary')}
       direction="row"
-      spacing={isStacked ? 1.5 : 2}
-      sx={
-        isStacked
-          ? { display: { xs: 'flex', sm: 'none' }, pb: 1 }
-          : { display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }
-      }
+      sx={{ minWidth: 0, alignItems: 'center', gap: 0.25 }}
     >
-      {visibleMenus.map((menu) => (
-        <PrimaryNavigationMenu
-          key={menu.id}
-          triggerId={`${navigationId}-${menu.id}`}
-          label={t(menu.labelKey)}
-          routes={menu.routes}
-          activeRouteId={activeRouteId}
-          anchorEl={anchorByMenuId[menu.id] ?? null}
-          isOpen={openMenuId === menu.id}
-          onOpen={handleMenuOpen(menu.id)}
-          onClose={handleMenuClose}
-          fullWidth={isStacked}
-        />
-      ))}
-    </Stack>
-  )
-}
+      {!compact &&
+        visibleRoutes.map((route) => {
+          const isActive = route.id === activeRouteId
 
-interface PrimaryNavigationMenuProps {
-  triggerId: string
-  label: string
-  routes: readonly PanelRouteDefinition[]
-  activeRouteId: string | undefined
-  anchorEl: HTMLElement | null
-  isOpen: boolean
-  onOpen: (event: MouseEvent<HTMLElement>) => void
-  onClose: () => void
-  fullWidth?: boolean
-}
-
-function PrimaryNavigationMenu({
-  triggerId,
-  label,
-  routes,
-  activeRouteId,
-  anchorEl,
-  isOpen,
-  onOpen,
-  onClose,
-  fullWidth = false,
-}: PrimaryNavigationMenuProps) {
-  const { t } = useTranslation()
-  const isActive = routes.some((route) => route.id === activeRouteId)
-
-  return (
-    <>
+          return (
+            <ButtonBase
+              key={route.id}
+              component={RouterLink}
+              to={route.fullPath}
+              aria-current={isActive ? 'page' : undefined}
+              sx={navigationButtonSx(isActive)}
+            >
+              {t(route.labelKey)}
+            </ButtonBase>
+          )
+        })}
       <ButtonBase
-        id={triggerId}
-        aria-controls={isOpen ? `${triggerId}-menu` : undefined}
-        aria-expanded={isOpen ? 'true' : undefined}
+        key={compact ? 'compact' : 'desktop'}
+        id={`${menuId}-trigger`}
+        aria-label={compact ? t('navigation.openNavigation') : undefined}
+        aria-controls={open ? menuId : undefined}
         aria-haspopup="menu"
-        aria-current={isActive ? 'page' : undefined}
-        onClick={onOpen}
+        aria-expanded={open}
+        onClick={(event) => setMenu({ anchor: event.currentTarget, compact })}
         sx={(theme) => ({
-          position: 'relative',
-          flex: fullWidth ? 1 : undefined,
-          minWidth: 0,
-          minHeight: fullWidth ? 44 : 76,
-          px: { xs: 1, sm: 2 },
-          borderRadius: 0,
-          color: isActive ? 'text.primary' : 'text.secondary',
-          fontFamily: theme.typography.button.fontFamily,
-          fontWeight: 500,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          justifyContent: fullWidth ? 'space-between' : 'center',
-          gap: 1,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            right: 10,
-            bottom: 0,
-            left: 10,
-            height: 2,
-            backgroundColor: isActive ? 'text.primary' : 'transparent',
-            transition: 'background-color 0.15s ease',
-          },
-          '&:hover': {
-            color: 'text.primary',
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          },
+          ...navigationButtonSx(!compact && historyActive)(theme),
+          ...(compact ? { width: '100%', justifyContent: 'flex-start', px: 1, minWidth: 0 } : {}),
         })}
       >
-        <Typography
-          component="span"
-          variant="button"
-          sx={{
-            whiteSpace: fullWidth ? 'normal' : 'nowrap',
-            fontFamily: huntTypography.display,
-            fontSize: { xs: 18, sm: 20 },
-            fontWeight: huntTypography.displayWeight,
-          }}
-        >
-          {label}
+        {compact && (
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ display: 'grid', gap: '4px', flexShrink: 0, mr: 0.5 }}
+          >
+            <Box sx={{ width: 14, borderTop: '1.5px solid' }} />
+            <Box sx={{ width: 10, borderTop: '1.5px solid' }} />
+          </Box>
+        )}
+        <Typography component="span" noWrap sx={{ font: 'inherit', minWidth: 0 }}>
+          {compact
+            ? activeRoute
+              ? t(activeRoute.labelKey)
+              : t('navigation.menu')
+            : t('navigation.history')}
         </Typography>
-        <Typography component="span" variant="button" aria-hidden>
-          ▾
-        </Typography>
+        <NavigationChevron open={open} />
       </ButtonBase>
-
       <Menu
-        id={`${triggerId}-menu`}
-        anchorEl={anchorEl}
-        open={isOpen}
-        onClose={onClose}
+        id={menuId}
+        anchorEl={anchor}
+        open={open}
+        onClose={closeMenu}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 240 } } }}
+        slotProps={{
+          paper: { sx: { mt: 1, width: compact ? 300 : 260, maxWidth: 'calc(100vw - 32px)' } },
+          list: { 'aria-labelledby': `${menuId}-trigger` },
+        }}
       >
-        {routes.map((route) => (
+        {compact && <ListSubheader disableSticky>{t('navigation.primary')}</ListSubheader>}
+        {compact &&
+          visibleRoutes.map((route) => (
+            <MenuItem
+              key={route.id}
+              component={RouterLink}
+              to={route.fullPath}
+              selected={route.id === activeRouteId}
+              aria-current={route.id === activeRouteId ? 'page' : undefined}
+              onClick={closeMenu}
+              sx={{ minHeight: 44 }}
+            >
+              {t(route.labelKey)}
+            </MenuItem>
+          ))}
+        {compact && <Divider />}
+        {compact && <ListSubheader disableSticky>{t('navigation.history')}</ListSubheader>}
+        {historyRoutes.map((route) => (
           <MenuItem
             key={route.id}
             component={RouterLink}
             to={route.fullPath}
-            selected={activeRouteId === route.id}
-            onClick={onClose}
+            selected={route.id === activeRouteId}
+            aria-current={route.id === activeRouteId ? 'page' : undefined}
+            onClick={closeMenu}
+            sx={{ minHeight: 44 }}
           >
             {t(route.labelKey)}
           </MenuItem>
         ))}
       </Menu>
-    </>
+    </Stack>
   )
 }
