@@ -2772,14 +2772,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameRegistrationSnapshotDto'
+        '204':
+          description: Registration is not open (no ready game)
         '401':
           description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Registration is not open (no ready game)
           content:
             application/json:
               schema:

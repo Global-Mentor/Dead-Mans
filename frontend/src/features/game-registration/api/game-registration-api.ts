@@ -3,6 +3,7 @@ import {
   ensureOpenApiSuccess,
   unwrapOpenApiData,
   unwrapOpenApiDataOrNullOn404,
+  unwrapOpenApiDataOrNullOnNoContent,
 } from '../../../shared/api/client/openApiClient.ts'
 import type { paths } from '../../../shared/api/contracts/generated'
 
@@ -37,7 +38,7 @@ const gameRegistrationApiClient =
   >()
 
 export function fetchGameRegistrationSnapshot() {
-  return unwrapOpenApiDataOrNullOn404(gameRegistrationApiClient.GET('/game/registration'))
+  return unwrapOpenApiDataOrNullOnNoContent(gameRegistrationApiClient.GET('/game/registration'))
 }
 
 export function fetchGameRegistrationAdminSnapshot() {

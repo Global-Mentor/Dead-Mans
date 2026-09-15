@@ -33,18 +33,15 @@ public sealed partial class GameRegistrationContractTests : IClassFixture<TestWe
     }
 
     [Fact]
-    public async Task GetRegistration_WhenNoReadyGame_ReturnsNotFound()
+    public async Task GetRegistration_WhenNoReadyGame_ReturnsNoContent()
     {
         await ClearRegistrationDataAsync();
         using var viewerClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
 
         var response = await viewerClient.GetAsync("/api/game/registration");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        Assert.NotNull(payload);
-        Assert.Equal(AppMessages.Client.GameRegistrationNotOpen, payload.Error);
-        Assert.Equal(AppMessages.ErrorCodes.GameRegistrationNotOpen, payload.Code);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Empty(await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
