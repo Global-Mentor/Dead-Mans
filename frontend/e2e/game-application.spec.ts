@@ -1,4 +1,4 @@
-import { expect, test, type WebSocketRoute } from '@playwright/test'
+import { expect, test, type Page, type WebSocketRoute } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { expectUnifiedTypography } from './typography-assertions.ts'
 import type {
@@ -9,6 +9,17 @@ import type {
 test.beforeAll(async () => {
   await mkdir('../.tmp/ui-audit/after', { recursive: true })
 })
+
+async function expectValidFormLabels(page: Page) {
+  const invalidLabels = await page
+    .locator('label[for]')
+    .evaluateAll((labels) =>
+      labels
+        .filter((label) => !(label as HTMLLabelElement).control)
+        .map((label) => ({ text: label.textContent, for: label.getAttribute('for') })),
+    )
+  expect(invalidLabels).toEqual([])
+}
 
 for (const viewport of [
   { width: 1440, height: 1000, suffix: '1440' },
@@ -187,9 +198,11 @@ for (const viewport of [
       animations: 'disabled',
     })
     const createButton = page.getByRole('button', { name: 'Создать команду' })
+    await expectValidFormLabels(page)
     await createButton.click()
     await expect(page.getByRole('alert')).toHaveText('Введите название команды.')
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toBeFocused()
+    await expectValidFormLabels(page)
     expect(creates).toBe(0)
     await page.screenshot({
       path: `../.tmp/ui-audit/after/application-hint-${suffix}.png`,
@@ -355,6 +368,7 @@ for (const viewport of [
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
     await page.getByRole('button', { name: 'Изменить название команды' }).click()
     await expectUnifiedTypography(page)
+    await expectValidFormLabels(page)
     await page.screenshot({
       path: `../.tmp/ui-audit/after/application-name-dialog-${suffix}.png`,
       fullPage: true,
