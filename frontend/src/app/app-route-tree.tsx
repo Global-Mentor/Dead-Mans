@@ -26,7 +26,7 @@ const TwitchAuthCallbackPage = lazy(() =>
 
 const UiStateGallery = import.meta.env.DEV
   ? lazy(() =>
-      import('../features/dev-notes/ui/UiStateGallery.tsx').then((module) => ({
+      import('../features/ui-state-gallery/UiStateGallery.tsx').then((module) => ({
         default: module.UiStateGallery,
       })),
     )

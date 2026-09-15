@@ -78,16 +78,9 @@ const translations = {
         label: 'User roles',
       },
     },
-    devNotes: {
-      menuItem: "What's new",
-      dialogTitle: "What's new",
-      empty: 'No updates yet.',
-      statuses: {
-        fix: 'Fix',
-        feature: 'New feature',
-        change: 'Change',
-        notice: 'Notice',
-      },
+    uiStateGallery: {
+      title: 'Interface components',
+      description: 'Development preview of shared interface states.',
     },
   },
   ru: {
@@ -170,16 +163,9 @@ const translations = {
         label: 'Роли пользователей',
       },
     },
-    devNotes: {
-      menuItem: 'Обновления',
-      dialogTitle: 'Обновления',
-      empty: 'Пока нет обновлений.',
-      statuses: {
-        fix: 'Фикс',
-        feature: 'Новая фича',
-        change: 'Изменение',
-        notice: 'Объявление',
-      },
+    uiStateGallery: {
+      title: 'Компоненты интерфейса',
+      description: 'Служебный просмотр общих состояний интерфейса.',
     },
   },
   uk: {
@@ -262,16 +248,9 @@ const translations = {
         label: 'Ролі користувачів',
       },
     },
-    devNotes: {
-      menuItem: 'Оновлення',
-      dialogTitle: 'Оновлення',
-      empty: 'Поки що немає оновлень.',
-      statuses: {
-        fix: 'Виправлення',
-        feature: 'Нова функція',
-        change: 'Зміна',
-        notice: 'Оголошення',
-      },
+    uiStateGallery: {
+      title: 'Компоненти інтерфейсу',
+      description: 'Службовий перегляд спільних станів інтерфейсу.',
     },
   },
   pl: {
@@ -354,16 +333,9 @@ const translations = {
         label: 'Role użytkowników',
       },
     },
-    devNotes: {
-      menuItem: 'Aktualności',
-      dialogTitle: 'Aktualności',
-      empty: 'Na razie brak aktualności.',
-      statuses: {
-        fix: 'Poprawka',
-        feature: 'Nowa funkcja',
-        change: 'Zmiana',
-        notice: 'Ogłoszenie',
-      },
+    uiStateGallery: {
+      title: 'Komponenty interfejsu',
+      description: 'Deweloperski podgląd wspólnych stanów interfejsu.',
     },
   },
 }
