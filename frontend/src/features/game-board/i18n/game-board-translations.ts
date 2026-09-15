@@ -1,5 +1,10 @@
 const translations = {
   en: {
+    cellCancelledShort: 'Cancelled',
+    boardHint: 'Open a revealed card to view its details',
+    revealedCount: '{{count}} / {{total}} revealed',
+    boardProgress: 'Revealed cards',
+    mobileCategories: 'Board categories',
     title: 'Game board',
     loading: 'Loading game board...',
     errorLoading: 'Failed to load game board.',
@@ -402,6 +407,11 @@ const translations = {
     activeTeamRoundInProgress: 'Finish the active round before changing the active team.',
   },
   ru: {
+    cellCancelledShort: 'Отменена',
+    boardHint: 'Открытую карточку можно посмотреть подробнее',
+    revealedCount: 'Открыто {{count}} / {{total}}',
+    boardProgress: 'Открытые карточки',
+    mobileCategories: 'Категории поля',
     title: 'Игровое поле',
     loading: 'Загрузка игрового поля...',
     errorLoading: 'Не удалось загрузить игровое поле.',
@@ -810,6 +820,11 @@ const translations = {
     activeTeamRoundInProgress: 'Завершите текущий раунд, прежде чем менять активную команду.',
   },
   uk: {
+    cellCancelledShort: 'Скасовано',
+    boardHint: 'Відкриту картку можна переглянути докладніше',
+    revealedCount: 'Відкрито {{count}} / {{total}}',
+    boardProgress: 'Відкриті картки',
+    mobileCategories: 'Категорії поля',
     title: 'Ігрове поле',
     loading: 'Завантаження ігрового поля...',
     errorLoading: 'Не вдалося завантажити ігрове поле.',
@@ -1215,6 +1230,11 @@ const translations = {
     activeTeamRoundInProgress: 'Завершіть поточний раунд, перш ніж змінювати активну команду.',
   },
   pl: {
+    cellCancelledShort: 'Anulowana',
+    boardHint: 'Otwórz odkrytą kartę, aby zobaczyć szczegóły',
+    revealedCount: 'Odkryto {{count}} / {{total}}',
+    boardProgress: 'Odkryte karty',
+    mobileCategories: 'Kategorie planszy',
     title: 'Plansza gry',
     loading: 'Ładowanie planszy gry...',
     errorLoading: 'Nie udało się załadować planszy gry.',

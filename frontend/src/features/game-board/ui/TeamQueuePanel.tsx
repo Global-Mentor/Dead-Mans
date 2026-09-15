@@ -1,16 +1,7 @@
 import type { TFunction } from 'i18next'
-import {
-  Box,
-  ButtonBase,
-  Chip,
-  Divider,
-  Drawer,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, ButtonBase, Chip, Drawer, IconButton, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import { SectionCard } from '../../../shared/ui/index.ts'
@@ -26,37 +17,24 @@ interface TeamQueuePanelProps {
 export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: TeamQueuePanelProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
+  const panelId = useId()
   const { remainingTeams, playedTeams } = groupTeamQueueTeams(teams)
 
   return (
     <>
       <ButtonBase
         aria-label={t('gameBoard.teamQueueOpen')}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? panelId : undefined}
         onClick={() => setIsOpen(true)}
         sx={(theme) => ({
-          position: 'fixed',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: theme.zIndex.drawer - 1,
-          minHeight: 148,
-          width: 56,
-          overflow: 'hidden',
-          borderRadius: `0 20px 20px 0`,
-          border: `1px solid ${alpha(theme.palette.warning.main, 0.34)}`,
-          borderLeft: 0,
-          background: `linear-gradient(180deg, ${alpha(theme.palette.warning.main, 0.2)} 0%, ${alpha(
-            theme.palette.background.paper,
-            0.96,
-          )} 34%, ${alpha(theme.palette.info.main, 0.18)} 100%)`,
-          boxShadow: `0 18px 34px ${alpha(theme.palette.common.black, 0.3)}, inset 0 1px 0 ${alpha(
-            theme.palette.common.white,
-            0.14,
-          )}`,
+          minHeight: 44,
+          px: 1.5,
+          border: 0,
+          backgroundColor: 'transparent',
           color: theme.palette.text.primary,
           '&:hover': {
             backgroundColor: alpha(theme.palette.primary.main, 0.14),
-            width: 60,
           },
           '&:focus-visible': {
             outline: `2px solid ${theme.palette.primary.main}`,
@@ -64,22 +42,15 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
           },
         })}
       >
-        <Stack spacing={1} alignItems="center" sx={{ py: 1.25 }}>
-          <Typography component="span" aria-hidden variant="body2" fontWeight={900}>
-            {isOpen ? '<' : '>'}
-          </Typography>
-          <Typography
-            component="span"
-            variant="caption"
-            fontWeight={800}
-            sx={{
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)',
-              letterSpacing: 0,
-            }}
-          >
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography component="span" variant="body2" fontWeight={700}>
             {t('common.entities.teams')}
           </Typography>
+          {!isLoading && !isError ? (
+            <Typography component="span" variant="body2" color="primary.light">
+              {teams.length}
+            </Typography>
+          ) : null}
         </Stack>
       </ButtonBase>
 
@@ -96,6 +67,7 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
         }}
       >
         <SectionCard
+          id={panelId}
           component="aside"
           aria-label={t('gameBoard.teamQueueTitle')}
           sx={{
@@ -105,7 +77,8 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
             border: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: 1.5,
+            p: 2,
             overflowY: 'auto',
           }}
         >
@@ -115,15 +88,12 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
             alignItems="flex-start"
             justifyContent="space-between"
             sx={(theme) => ({
-              mx: -3,
-              mt: -3,
-              px: 3,
-              pt: 3,
-              pb: 2,
-              background: `linear-gradient(180deg, ${alpha(theme.palette.warning.main, 0.18)} 0%, ${alpha(
-                theme.palette.info.main,
-                0.12,
-              )} 58%, transparent 100%)`,
+              mx: -2,
+              mt: -2,
+              px: 2,
+              pt: 2,
+              pb: 1.5,
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
               borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.18)}`,
             })}
           >
@@ -134,14 +104,13 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
               size="small"
               aria-label={t('gameBoard.teamQueueClose')}
               onClick={() => setIsOpen(false)}
+              sx={{ minWidth: 44, minHeight: 44 }}
             >
               <Box component="span" aria-hidden sx={{ fontSize: 18, lineHeight: 1 }}>
                 ×
               </Box>
             </IconButton>
           </Stack>
-
-          <Divider />
 
           {isLoading ? (
             <Typography variant="body2" color="text.secondary">
@@ -322,9 +291,7 @@ function TeamQueueCard({
                 theme.palette.background.default,
                 0.46,
               )}, ${alpha(theme.palette.common.black, 0.12)})`,
-        boxShadow: isActive
-          ? `0 18px 32px ${alpha(theme.palette.common.black, 0.24)}`
-          : `0 10px 22px ${alpha(theme.palette.common.black, 0.16)}`,
+        boxShadow: 'none',
         px: 1.35,
         py: 1.25,
         opacity: isPlayed && !isActive ? 0.86 : 1,
@@ -348,7 +315,7 @@ function TeamQueueCard({
         <Stack direction="row" spacing={1.15} alignItems="center">
           <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
             <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography variant="subtitle2" fontWeight={900}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
                 {formatTeamQueueName(t, team.teamName)}
               </Typography>
               {playedOrder ? (
@@ -370,18 +337,15 @@ function TeamQueueCard({
           {team.participants.map((participant, index) => (
             <Box
               key={participant.userId}
-              sx={(theme) => ({
+              sx={{
                 display: 'grid',
                 gridTemplateColumns: '18px 1fr',
                 gap: 1.25,
                 alignItems: 'center',
                 minWidth: 0,
                 px: 1,
-                py: 0.75,
-                borderRadius: 2,
-                backgroundColor: alpha(theme.palette.common.black, 0.12),
-                border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
-              })}
+                py: 0.25,
+              }}
             >
               <Typography
                 variant="caption"

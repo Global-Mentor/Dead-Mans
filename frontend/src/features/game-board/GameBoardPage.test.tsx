@@ -316,15 +316,15 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(<GameBoardPage />)
 
     expect(screen.getByRole('heading', { name: 'Тестовая игра' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Тестовая игра' }).parentElement).toHaveStyle({
-      textAlign: 'center',
-    })
+    expect(screen.getByRole('region', { name: 'Тестовая игра' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Открыть очередь команд' })).toBeInTheDocument()
     expect(screen.queryByRole('complementary', { name: 'Очередь команд' })).not.toBeInTheDocument()
     expect(screen.getByTestId('game-board-grid')).toBeInTheDocument()
     expect(screen.queryByText(/модификатор/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Активна')).not.toBeInTheDocument()
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
+    expect(screen.queryByText('Фаза раунда')).not.toBeInTheDocument()
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.queryByText('Описание игры')).not.toBeInTheDocument()
     expect(screen.getByText('Выбрать активную команду')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
   })
@@ -385,7 +385,7 @@ describe('GameBoardPage', () => {
     expect(within(queuePanel).getByText('Player Three')).toBeInTheDocument()
     expect(within(queuePanel).getByText('Играет')).toBeInTheDocument()
     expect(within(boardCard as HTMLElement).queryByText('Играет')).not.toBeInTheDocument()
-    expect(screen.getByText('Идёт раунд команды #2')).toBeInTheDocument()
+    expect(screen.queryByText('Идёт раунд команды #2')).not.toBeInTheDocument()
     expect(screen.queryByText('Идёт раунд: команда #2, база 120')).not.toBeInTheDocument()
     expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
 
@@ -501,10 +501,10 @@ describe('GameBoardPage', () => {
 
     const boardCard = screen.getByTestId('game-board-grid').closest('.MuiPaper-root')
     expect(boardCard).not.toBeNull()
-    expect(within(boardCard as HTMLElement).getByText('Активная команда')).toBeInTheDocument()
+    expect(within(boardCard as HTMLElement).queryByText('Активная команда')).not.toBeInTheDocument()
     expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).getByText('Player Two')).toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).getByText('Player Three')).toBeInTheDocument()
+    expect(within(boardCard as HTMLElement).queryByText('Player Two')).not.toBeInTheDocument()
+    expect(within(boardCard as HTMLElement).queryByText('Player Three')).not.toBeInTheDocument()
   })
 
   it('shows a registration call-to-action above the board while the game is ready', () => {
@@ -562,7 +562,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
+    expect(screen.queryByText('Фаза раунда')).not.toBeInTheDocument()
     expect(screen.getByText('Активировать модификаторы')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(
@@ -593,7 +593,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
+    expect(screen.queryByText('Фаза раунда')).not.toBeInTheDocument()
     expect(screen.getByText('Открыть карточку')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(

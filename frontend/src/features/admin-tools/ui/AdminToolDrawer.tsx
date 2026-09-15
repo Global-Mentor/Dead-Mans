@@ -14,9 +14,14 @@ export interface AdminToolDescriptor {
 interface AdminToolDrawerProps {
   tools: readonly AdminToolDescriptor[]
   initialToolId: string
+  inlineTrigger?: boolean
 }
 
-export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) {
+export function AdminToolDrawer({
+  tools,
+  initialToolId,
+  inlineTrigger = false,
+}: AdminToolDrawerProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [activeToolId, setActiveToolId] = useState(initialToolId)
@@ -60,31 +65,42 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
     <>
       <AppButton
         ref={openerRef}
-        tone="secondary"
+        tone={inlineTrigger ? 'ghost' : 'secondary'}
         size="medium"
         onClick={() => setIsOpen(true)}
         aria-haspopup="dialog"
-        sx={(theme) => ({
-          position: 'fixed',
-          zIndex: theme.zIndex.drawer - 1,
-          right: { xs: 12, md: 0 },
-          top: { xs: 'auto', md: '50%' },
-          bottom: { xs: 16, md: 'auto' },
-          transform: { xs: 'none', md: 'translateY(-50%)' },
-          minWidth: { xs: 0, md: 52 },
-          minHeight: { xs: 46, md: 192 },
-          px: { xs: 1.6, md: 0.95 },
-          py: { xs: 0.9, md: 1.6 },
-          borderRadius: { xs: 999, md: '18px 0 0 18px' },
-          writingMode: { xs: 'horizontal-tb', md: 'vertical-rl' },
-          textOrientation: { xs: 'mixed', md: 'mixed' },
-          justifyContent: 'center',
-          letterSpacing: '0.03em',
-          whiteSpace: 'nowrap',
-          boxShadow: `0 14px 28px ${alpha(theme.palette.common.black, 0.38)}`,
-        })}
+        aria-label={t('adminTools.openAction')}
+        sx={(theme) =>
+          inlineTrigger
+            ? {
+                minHeight: 44,
+                whiteSpace: 'normal',
+                textTransform: 'none',
+                fontSize: 14,
+                px: 1.5,
+              }
+            : {
+                position: 'fixed',
+                zIndex: theme.zIndex.drawer - 1,
+                right: { xs: 12, md: 0 },
+                top: { xs: 'auto', md: '50%' },
+                bottom: { xs: 16, md: 'auto' },
+                transform: { xs: 'none', md: 'translateY(-50%)' },
+                minWidth: { xs: 0, md: 52 },
+                minHeight: { xs: 46, md: 192 },
+                px: { xs: 1.6, md: 0.95 },
+                py: { xs: 0.9, md: 1.6 },
+                borderRadius: { xs: 999, md: '18px 0 0 18px' },
+                writingMode: { xs: 'horizontal-tb', md: 'vertical-rl' },
+                textOrientation: { xs: 'mixed', md: 'mixed' },
+                justifyContent: 'center',
+                letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
+                boxShadow: `0 14px 28px ${alpha(theme.palette.common.black, 0.38)}`,
+              }
+        }
       >
-        {t('adminTools.openAction')}
+        {t(inlineTrigger ? 'adminTools.inlineOpenAction' : 'adminTools.openAction')}
       </AppButton>
 
       <Drawer
