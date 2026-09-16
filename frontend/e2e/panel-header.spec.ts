@@ -82,12 +82,10 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
     if (compact) await expect(trigger).toContainText('История игр')
     await header.getByRole('button', { name: 'Администрирование', exact: true }).click()
     await expect(page.getByRole('menuitem', { name: 'Команды', exact: true })).toBeVisible()
-    await page
-      .getByRole('menu')
-      .screenshot({
-        path: `../.tmp/header-design/administration-${width}.png`,
-        animations: 'disabled',
-      })
+    await page.getByRole('menu').screenshot({
+      path: `../.tmp/header-design/administration-${width}.png`,
+      animations: 'disabled',
+    })
     await page.keyboard.press('Escape')
     await expect(
       header.getByRole('button', { name: 'Администрирование', exact: true }),
