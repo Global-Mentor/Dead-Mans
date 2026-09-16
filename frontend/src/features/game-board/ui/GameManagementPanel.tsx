@@ -195,21 +195,6 @@ export function GameManagementTool({
                 isChangingRoundStage={isChangingRoundStage}
               />
 
-              {activeRound ? (
-                <SecondaryManagementSection
-                  sectionId="round-safety"
-                  title={t('gameBoard.roundPanelSafetyTitle')}
-                  tooltip={t('gameBoard.roundPanelSafetyTooltip')}
-                >
-                  <RoundSafetyControls
-                    activeRound={activeRound}
-                    isBusy={isChangingRoundStage}
-                    onRebuild={onRebuildRound}
-                    onTechnicalCancel={onTechnicalCancelRound}
-                  />
-                </SecondaryManagementSection>
-              ) : null}
-
               <TeamControlSection
                 isActiveGame={isActiveGame}
                 isLoading={isTeamQueueLoading}
@@ -224,6 +209,21 @@ export function GameManagementTool({
                 onSelectActiveTeam={handleSelectActiveTeam}
                 onSetTeamPlayedState={onSetTeamPlayedState}
               />
+
+              {activeRound ? (
+                <SecondaryManagementSection
+                  sectionId="round-safety"
+                  title={t('gameBoard.roundPanelSafetyTitle')}
+                  tooltip={t('gameBoard.roundPanelSafetyTooltip')}
+                >
+                  <RoundSafetyControls
+                    activeRound={activeRound}
+                    isBusy={isChangingRoundStage}
+                    onRebuild={onRebuildRound}
+                    onTechnicalCancel={onTechnicalCancelRound}
+                  />
+                </SecondaryManagementSection>
+              ) : null}
 
               <SecondaryManagementSection
                 sectionId="manual-quiz"

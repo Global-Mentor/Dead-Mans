@@ -16,7 +16,14 @@ export function RoundAssistantSection({
   return (
     <ManagementControlSurface accent={roundAction.statusTone}>
       <Stack spacing={1.05}>
-        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+        <Stack
+          direction="row"
+          gap={1}
+          flexWrap="wrap"
+          useFlexGap
+          alignItems="center"
+          justifyContent="space-between"
+        >
           <ManagementSectionTitle
             title={t('gameBoard.managementRoundAssistantTitle')}
             tooltip={t('gameBoard.managementRoundAssistantTooltip')}
@@ -26,23 +33,26 @@ export function RoundAssistantSection({
               <Chip
                 size="small"
                 variant="outlined"
+                sx={{ border: 0, bgcolor: 'transparent', color: 'text.secondary' }}
                 label={t('gameBoard.managementRoundStepProgress', {
                   current: roundAction.stepNumber,
                   total: 6,
                 })}
               />
             ) : null}
-            <Chip
-              size="small"
-              color={roundAction.statusTone}
-              variant="filled"
-              label={roundAction.statusLabel}
-            />
+            {roundAction.statusLabel !== roundAction.title ? (
+              <Chip
+                size="small"
+                color={roundAction.statusTone}
+                variant="outlined"
+                label={roundAction.statusLabel}
+              />
+            ) : null}
           </Stack>
         </Stack>
 
         <Box>
-          <Typography variant="subtitle1" fontWeight={850}>
+          <Typography variant="subtitle1" fontWeight={750} sx={{ fontSize: 20 }}>
             {roundAction.title}
           </Typography>
           {roundAction.description &&

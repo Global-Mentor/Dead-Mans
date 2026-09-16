@@ -54,6 +54,7 @@ export function GameAdminToolsPanel({
     {
       id: 'game',
       label: t('adminTools.gameTool'),
+      tabLabel: t('adminTools.gameTab'),
       content: (
         <GameManagementTool
           snapshot={data}
@@ -88,6 +89,7 @@ export function GameAdminToolsPanel({
     tools.push({
       id: 'modifiers',
       label: t('adminTools.modifierTool'),
+      tabLabel: t('adminTools.modifierTab'),
       content: <AdminModifierTool />,
     })
   }

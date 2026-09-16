@@ -197,6 +197,29 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
     await page.getByRole('dialog').getByRole('button', { name: 'Отмена' }).click()
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
     await expect(page.getByTestId('game-management-tool')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Управление игрой' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Управление модификаторами' })).toBeVisible()
+    await expect
+      .poll(async () => {
+        const box = await page.getByRole('dialog').boundingBox()
+        return Math.round(box!.x + box!.width)
+      })
+      .toBe(width)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/management-${width}.png`,
+      animations: 'disabled',
+    })
+    expect(
+      await page
+        .getByTestId('admin-tool-drawer-scroll-body')
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true)
+    await page.getByTestId('admin-tool-drawer-scroll-body').evaluate((element) => {
+      element.scrollTop = element.scrollHeight
+    })
+    await expect(
+      page.getByRole('button', { name: 'Закрыть инструменты управления' }),
+    ).toBeInViewport()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Управление игрой', exact: true })).toBeFocused()
     expect(writes).toEqual([])
