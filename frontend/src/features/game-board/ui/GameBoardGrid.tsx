@@ -8,6 +8,7 @@ import { GameBoardMatrix } from './GameBoardMatrix.tsx'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import type { GameBoardCellPlayResult } from '../model/game-board-cell-results.ts'
 import { createBoardCellSx } from '../theme/board-cell-sx.ts'
+import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardGridProps {
   snapshot: GameBoardSnapshot
@@ -38,8 +39,8 @@ export function GameBoardGrid({
         colLabels={snapshot.colLabels}
         rowLabels={snapshot.rowLabels}
         minWidth={520}
-        gap={0.85}
-        leadColumnWidth={40}
+        gap={boardGridMetrics.gap}
+        leadColumnWidth={boardGridMetrics.leadColumnWidth}
         leadCell={<Box />}
         renderColumnLabel={(col) => (
           <Box

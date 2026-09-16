@@ -1,5 +1,7 @@
 const translations = {
   en: {
+    statusTeamCaption: 'Active team',
+    statusGameCaption: 'Game',
     cellCancelledShort: 'Cancelled',
     boardHint: 'Open a revealed card to view its details',
     revealedCount: '{{count}} / {{total}} revealed',
@@ -407,6 +409,8 @@ const translations = {
     activeTeamRoundInProgress: 'Finish the active round before changing the active team.',
   },
   ru: {
+    statusTeamCaption: 'Активная команда',
+    statusGameCaption: 'Игра',
     cellCancelledShort: 'Отменена',
     boardHint: 'Открытую карточку можно посмотреть подробнее',
     revealedCount: 'Открыто {{count}} / {{total}}',
@@ -820,6 +824,8 @@ const translations = {
     activeTeamRoundInProgress: 'Завершите текущий раунд, прежде чем менять активную команду.',
   },
   uk: {
+    statusTeamCaption: 'Активна команда',
+    statusGameCaption: 'Гра',
     cellCancelledShort: 'Скасовано',
     boardHint: 'Відкриту картку можна переглянути докладніше',
     revealedCount: 'Відкрито {{count}} / {{total}}',
@@ -1230,6 +1236,8 @@ const translations = {
     activeTeamRoundInProgress: 'Завершіть поточний раунд, перш ніж змінювати активну команду.',
   },
   pl: {
+    statusTeamCaption: 'Aktywna drużyna',
+    statusGameCaption: 'Gra',
     cellCancelledShort: 'Anulowana',
     boardHint: 'Otwórz odkrytą kartę, aby zobaczyć szczegóły',
     revealedCount: 'Odkryto {{count}} / {{total}}',

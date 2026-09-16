@@ -43,42 +43,50 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
           </AppButton>
         ) : null}
       </Stack>
-      <Tabs
-        value={column}
-        onChange={(_, value: number) => setSelectedColumn(value)}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-        aria-label={t('gameBoard.mobileCategories')}
-        sx={{ mb: 1.5, minHeight: 48, '& .MuiTabs-scrollButtons': { width: 32 } }}
-      >
-        {props.colLabels.map((label, index) => (
-          <Tab
-            key={index}
-            id={`${id}-tab-${index}`}
-            aria-controls={`${id}-panel`}
-            label={
-              <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                {label}
-                {index === activeColumnIndex ? (
-                  <Box
-                    component="span"
-                    aria-label={t('gameBoard.cellActiveRound')}
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      bgcolor: 'primary.light',
-                      flexShrink: 0,
-                    }}
-                  />
-                ) : null}
-              </Box>
-            }
-            sx={{ minWidth: 64, minHeight: 48, maxWidth: 200, textTransform: 'none', fontSize: 16 }}
-          />
-        ))}
-      </Tabs>
+      <Stack direction="row" alignItems="center" sx={{ mb: 1, minWidth: 0 }}>
+        <Tabs
+          value={column}
+          onChange={(_, value: number) => setSelectedColumn(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label={t('gameBoard.mobileCategories')}
+          sx={{ minWidth: 0, flex: 1, minHeight: 48, '& .MuiTabs-scrollButtons': { width: 24 } }}
+        >
+          {props.colLabels.map((label, index) => (
+            <Tab
+              key={index}
+              id={`${id}-tab-${index}`}
+              aria-controls={`${id}-panel`}
+              label={
+                <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  {label}
+                  {index === activeColumnIndex ? (
+                    <Box
+                      component="span"
+                      aria-label={t('gameBoard.cellActiveRound')}
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        bgcolor: 'primary.light',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : null}
+                </Box>
+              }
+              sx={{
+                minWidth: 64,
+                minHeight: 48,
+                maxWidth: 200,
+                textTransform: 'none',
+                fontSize: 16,
+              }}
+            />
+          ))}
+        </Tabs>
+      </Stack>
       <ViewportBoard columns={2} rows={Math.ceil(props.rowLabels.length / 2)} gap={8} mobile>
         <Box
           role="tabpanel"

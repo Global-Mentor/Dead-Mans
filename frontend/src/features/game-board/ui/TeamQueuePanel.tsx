@@ -42,7 +42,7 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
           },
         })}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} useFlexGap alignItems="center">
           <Typography component="span" variant="body2" fontWeight={700}>
             {t('common.entities.teams')}
           </Typography>
