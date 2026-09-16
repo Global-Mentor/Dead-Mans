@@ -1,5 +1,8 @@
 const translations = {
   en: {
+    teamQueueSearch: 'Find a team or player',
+    teamQueueClearSearch: 'Clear team search',
+    teamQueueNoResults: 'No teams found. Try a different name.',
     statusTeamCaption: 'Active team',
     statusGameCaption: 'Game',
     cellCancelledShort: 'Cancelled',
@@ -409,6 +412,9 @@ const translations = {
     activeTeamRoundInProgress: 'Finish the active round before changing the active team.',
   },
   ru: {
+    teamQueueSearch: 'Найти команду или игрока',
+    teamQueueClearSearch: 'Очистить поиск команд',
+    teamQueueNoResults: 'Команды не найдены. Попробуйте другое имя.',
     statusTeamCaption: 'Активная команда',
     statusGameCaption: 'Игра',
     cellCancelledShort: 'Отменена',
@@ -824,6 +830,9 @@ const translations = {
     activeTeamRoundInProgress: 'Завершите текущий раунд, прежде чем менять активную команду.',
   },
   uk: {
+    teamQueueSearch: 'Знайти команду або гравця',
+    teamQueueClearSearch: 'Очистити пошук команд',
+    teamQueueNoResults: 'Команди не знайдено. Спробуйте інше ім’я.',
     statusTeamCaption: 'Активна команда',
     statusGameCaption: 'Гра',
     cellCancelledShort: 'Скасовано',
@@ -1236,6 +1245,9 @@ const translations = {
     activeTeamRoundInProgress: 'Завершіть поточний раунд, перш ніж змінювати активну команду.',
   },
   pl: {
+    teamQueueSearch: 'Znajdź drużynę lub gracza',
+    teamQueueClearSearch: 'Wyczyść wyszukiwanie drużyn',
+    teamQueueNoResults: 'Nie znaleziono drużyn. Spróbuj innej nazwy.',
     statusTeamCaption: 'Aktywna drużyna',
     statusGameCaption: 'Gra',
     cellCancelledShort: 'Anulowana',

@@ -183,6 +183,26 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
     await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toBeVisible()
     await page.getByRole('button', { name: 'Открыть очередь команд' }).click()
     await expect(page.getByRole('complementary', { name: 'Очередь команд' })).toBeVisible()
+    const queue = page.getByRole('complementary', { name: 'Очередь команд' })
+    await expect.poll(async () => (await page.getByRole('dialog').boundingBox())!.x).toBe(0)
+    expect(
+      (await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox())!.y,
+    ).toBeGreaterThanOrEqual(16)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/teams-${width}.png`,
+    })
+    expect(
+      (await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox())!.y,
+    ).toBeGreaterThanOrEqual(16)
+    await queue.getByRole('textbox', { name: 'Найти команду или игрока' }).fill('ворон')
+    await expect(queue.getByRole('heading', { name: 'Ночные странники' })).toBeVisible()
+    await expect(queue.getByRole('heading', { name: 'Последний рубеж' })).toHaveCount(0)
+    await queue
+      .getByRole('textbox', { name: 'Найти команду или игрока' })
+      .fill('несуществующая команда')
+    await expect(queue.getByRole('status')).toContainText('Команды не найдены')
+    await queue.getByRole('button', { name: 'Очистить поиск команд' }).click()
+    await expect(queue.getByRole('heading', { name: 'Последний рубеж' })).toBeVisible()
     await page.getByRole('button', { name: 'Закрыть очередь команд' }).click()
     await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toBeFocused()
     await page
