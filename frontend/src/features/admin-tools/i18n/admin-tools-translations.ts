@@ -1,5 +1,8 @@
 const translations = {
   en: {
+    gameTab: 'Game',
+    modifierTab: 'Modifiers',
+    inlineOpenAction: 'Manage',
     openAction: 'Game administration',
     drawerLabel: 'Game administration tools',
     previousTool: 'Previous administration panel',
@@ -11,6 +14,9 @@ const translations = {
     modifierTool: 'Modifier management',
   },
   ru: {
+    gameTab: 'Игра',
+    modifierTab: 'Модификаторы',
+    inlineOpenAction: 'Управление',
     openAction: 'Управление игрой',
     drawerLabel: 'Инструменты управления игрой',
     previousTool: 'Предыдущая панель управления',
@@ -22,6 +28,9 @@ const translations = {
     modifierTool: 'Управление модификаторами',
   },
   uk: {
+    gameTab: 'Гра',
+    modifierTab: 'Модифікатори',
+    inlineOpenAction: 'Керування',
     openAction: 'Керування грою',
     drawerLabel: 'Інструменти керування грою',
     previousTool: 'Попередня панель керування',
@@ -33,6 +42,9 @@ const translations = {
     modifierTool: 'Керування модифікаторами',
   },
   pl: {
+    gameTab: 'Gra',
+    modifierTab: 'Modyfikatory',
+    inlineOpenAction: 'Zarządzanie',
     openAction: 'Zarządzanie grą',
     drawerLabel: 'Narzędzia zarządzania grą',
     previousTool: 'Poprzedni panel zarządzania',

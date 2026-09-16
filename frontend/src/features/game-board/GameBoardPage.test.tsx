@@ -312,21 +312,21 @@ describe('GameBoardPage', () => {
     expect(screen.getByText('Игровое поле сейчас недоступно.')).toBeInTheDocument()
   })
 
-  it('renders only the game board surface and its status', () => {
+  it('keeps labeled controls and the current step visible without a menu', () => {
     renderWithAppProviders(<GameBoardPage />)
 
     expect(screen.getByRole('heading', { name: 'Тестовая игра' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Тестовая игра' }).parentElement).toHaveStyle({
-      textAlign: 'center',
-    })
-    expect(screen.getByRole('button', { name: 'Открыть очередь команд' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Тестовая игра' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Меню игры' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Открыть очередь команд' })).toBeVisible()
     expect(screen.queryByRole('complementary', { name: 'Очередь команд' })).not.toBeInTheDocument()
     expect(screen.getByTestId('game-board-grid')).toBeInTheDocument()
     expect(screen.queryByText(/модификатор/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Активна')).not.toBeInTheDocument()
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
-    expect(screen.getByText('Выбрать активную команду')).toBeInTheDocument()
+    expect(screen.getByText('Фаза раунда')).toBeVisible()
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
+    expect(screen.getByText('Выбрать активную команду')).toBeVisible()
   })
 
   it('renders team queue and highlights the active round team', async () => {
@@ -373,6 +373,7 @@ describe('GameBoardPage', () => {
     const boardCard = screen.getByTestId('game-board-grid').closest('.MuiPaper-root')
     expect(boardCard).not.toBeNull()
 
+    expect(screen.getByText('Команда #2')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть очередь команд' }))
 
     const queuePanel = screen.getByRole('complementary', { name: 'Очередь команд' })
@@ -385,7 +386,7 @@ describe('GameBoardPage', () => {
     expect(within(queuePanel).getByText('Player Three')).toBeInTheDocument()
     expect(within(queuePanel).getByText('Играет')).toBeInTheDocument()
     expect(within(boardCard as HTMLElement).queryByText('Играет')).not.toBeInTheDocument()
-    expect(screen.getByText('Идёт раунд команды #2')).toBeInTheDocument()
+    expect(screen.queryByText('Идёт раунд команды #2')).not.toBeInTheDocument()
     expect(screen.queryByText('Идёт раунд: команда #2, база 120')).not.toBeInTheDocument()
     expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
 
@@ -460,7 +461,7 @@ describe('GameBoardPage', () => {
     expect(within(queuePanel).getByText('Отыгрыш #2')).toBeInTheDocument()
   })
 
-  it('shows the active team banner above the board', () => {
+  it('shows the active team beside the board', () => {
     pageMocks.useGameBoardPage.mockReturnValue(
       createPageQuery({
         data: {
@@ -501,13 +502,14 @@ describe('GameBoardPage', () => {
 
     const boardCard = screen.getByTestId('game-board-grid').closest('.MuiPaper-root')
     expect(boardCard).not.toBeNull()
-    expect(within(boardCard as HTMLElement).getByText('Активная команда')).toBeInTheDocument()
+    expect(within(boardCard as HTMLElement).getByText('Активная команда')).toBeVisible()
     expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).getByText('Player Two')).toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).getByText('Player Three')).toBeInTheDocument()
+    expect(within(screen.getByTestId('game-board-context')).getByText('Команда #2')).toBeVisible()
+    expect(within(boardCard as HTMLElement).queryByText('Player Two')).not.toBeInTheDocument()
+    expect(within(boardCard as HTMLElement).queryByText('Player Three')).not.toBeInTheDocument()
   })
 
-  it('shows a registration call-to-action above the board while the game is ready', () => {
+  it('keeps the registration call-to-action available beside the board', () => {
     pageMocks.useGameBoardPage.mockReturnValue(
       createPageQuery({
         data: {
@@ -523,20 +525,14 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Сейчас идёт приём заявок')).toBeInTheDocument()
-    expect(screen.getByText(/Подайте заявку, пока регистрация открыта/i)).toBeInTheDocument()
+    expect(screen.getByText('Сейчас идёт приём заявок')).toBeVisible()
     expect(screen.getByRole('link', { name: 'Подать заявку' })).toHaveAttribute(
       'href',
       '/panel/game-application',
     )
-    expect(
-      screen
-        .getByText('Сейчас идёт приём заявок')
-        .compareDocumentPosition(screen.getByRole('heading', { name: 'Тестовая игра' })),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
-  it('shows the live round phase above the board for regular users', () => {
+  it('shows the live round phase beside the board for regular users', () => {
     pageMocks.useGameBoardPage.mockReturnValue(
       createPageQuery({
         data: {
@@ -562,8 +558,8 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
-    expect(screen.getByText('Активировать модификаторы')).toBeInTheDocument()
+    expect(screen.getByText('Фаза раунда')).toBeVisible()
+    expect(screen.getByText('Активировать модификаторы')).toBeVisible()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(
       screen.queryByText(
@@ -593,7 +589,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeInTheDocument()
+    expect(screen.getByText('Фаза раунда')).toBeVisible()
     expect(screen.getByText('Открыть карточку')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(

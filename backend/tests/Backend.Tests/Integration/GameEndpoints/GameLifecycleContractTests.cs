@@ -84,12 +84,25 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
 
+        using var playerClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var registrationBeforeStart = await playerClient.GetAsync("/api/game/registration");
+        Assert.Equal(HttpStatusCode.OK, registrationBeforeStart.StatusCode);
+
         var response = await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<GameLifecycleStateDto>();
         Assert.NotNull(payload);
         Assert.Equal(GameStatusValue.Active, payload.Status);
+
+        // Both realtime synchronization and the launch mutation refresh this endpoint.
+        // A closed registration is a normal empty state, not a missing endpoint.
+        foreach (var client in new[] { playerClient, adminClient })
+        {
+            var registrationAfterStart = await client.GetAsync("/api/game/registration");
+            Assert.Equal(HttpStatusCode.NoContent, registrationAfterStart.StatusCode);
+            Assert.Empty(await registrationAfterStart.Content.ReadAsStringAsync());
+        }
     }
 
     [Fact]

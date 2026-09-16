@@ -1,16 +1,6 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useState, type MouseEvent } from 'react'
-import {
-  Badge,
-  Box,
-  ButtonBase,
-  Container,
-  Menu,
-  MenuItem,
-  Stack,
-  SvgIcon,
-  Typography,
-} from '@mui/material'
+import { Badge, Box, ButtonBase, Menu, MenuItem, Stack, SvgIcon, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +29,7 @@ import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
+import { navigationButtonSx } from './navigation-styles.ts'
 
 const USER_NOTIFICATION_CREATED_EVENT = realtimeHubs.gameBoard.events.userNotificationCreated
 
@@ -48,7 +39,6 @@ export function PanelNavigation() {
   const { user, logout } = useAuth()
   const queryClient = useQueryClient()
   const activeRoute = getPanelRouteByPath(location.pathname)
-  const isAdminRoute = activeRoute?.group === 'admin'
   const canSeeStaffNotifications =
     user?.roles.includes('admin') === true || user?.roles.includes('moderator') === true
   const gameBoardQuery = useQuery({
@@ -117,53 +107,106 @@ export function PanelNavigation() {
           position: 'sticky',
           top: 0,
           zIndex: theme.zIndex.appBar,
-          borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.16)}`,
-          backgroundImage: theme.custom.gradients.panelAccentSoft,
-          boxShadow: 'none',
+          backgroundColor: alpha(theme.palette.background.default, 0.96),
+          backgroundImage: `linear-gradient(110deg, ${alpha(theme.palette.primary.main, 0.12)}, transparent 34%, transparent 66%, ${alpha(theme.palette.primary.main, 0.08)})`,
+          boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.16)}`,
           backdropFilter: 'blur(12px)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            pointerEvents: 'none',
+            left: { xs: 16, sm: 24 },
+            right: { xs: 16, sm: 24 },
+            bottom: 3,
+            height: '1px',
+            backgroundImage: `linear-gradient(90deg, transparent, ${alpha(theme.palette.primary.light, 0.55)} 15%, ${alpha(theme.palette.primary.light, 0.55)} calc(50% - 16px), transparent calc(50% - 16px), transparent calc(50% + 16px), ${alpha(theme.palette.primary.light, 0.55)} calc(50% + 16px), ${alpha(theme.palette.primary.light, 0.55)} 85%, transparent)`,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            pointerEvents: 'none',
+            left: '50%',
+            bottom: -1,
+            width: 9,
+            height: 9,
+            transform: 'translateX(-50%) rotate(45deg)',
+            border: `1px solid ${alpha(theme.palette.primary.light, 0.8)}`,
+            backgroundColor: theme.palette.background.default,
+          },
         })}
       >
-        <Container maxWidth="xl">
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={{ xs: 1, sm: 2 }}
-            sx={{ minHeight: 76 }}
+        <Box sx={{ px: { xs: 1, sm: 3 } }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'auto minmax(0, 1fr) auto',
+                lg: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+              },
+              minHeight: { xs: 56, lg: 64 },
+              columnGap: { xs: 0.5, sm: 2, xl: 4 },
+              alignItems: 'center',
+            }}
           >
             <Typography
               component={RouterLink}
               to={gameBoardRoute.fullPath}
               variant="h6"
+              aria-label={t('appTitle')}
               sx={{
                 ...huntBrassTitleSx,
-                color: 'text.primary',
-                fontSize: { xs: 18, sm: 26 },
-                minWidth: 0,
+                color: 'primary.light',
+                fontSize: 22,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 44,
+                minWidth: 44,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 textDecoration: 'none',
-                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                whiteSpace: 'nowrap',
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2,
+                },
+                gridColumn: 1,
+                gridRow: 1,
+                justifySelf: 'start',
               }}
             >
-              {t('appTitle')}
+              <Box
+                component="span"
+                aria-hidden
+                sx={{
+                  display: { xs: 'inline', sm: 'none' },
+                  color: 'primary.main',
+                  fontSize: 19,
+                  letterSpacing: '-0.08em',
+                }}
+              >
+                {t('navigation.brandMark')}
+              </Box>
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                {t('appTitle')}
+              </Box>
             </Typography>
 
-            {isAdminRoute ? (
-              <PanelAdminNavigation
-                activeRouteId={activeRoute?.id}
-                layout="inline"
-                roles={user.roles}
-              />
-            ) : (
+            <Box sx={{ gridColumn: 2, gridRow: 1, minWidth: 0 }}>
               <PanelPrimaryNavigation
                 activeRouteId={activeRoute?.id}
-                layout="inline"
                 showGameApplication={shouldShowGameApplicationNavigation}
               />
-            )}
+            </Box>
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+            <Stack
+              direction="row"
+              spacing={{ xs: 0, sm: 0.5 }}
+              alignItems="center"
+              sx={{ gridColumn: 3, gridRow: 1, flexShrink: 0, justifySelf: 'end' }}
+            >
+              <PanelAdminNavigation activeRouteId={activeRoute?.id} roles={user.roles} />
               <ButtonBase
                 aria-controls={notificationAnchor ? 'notification-menu' : undefined}
                 aria-expanded={notificationAnchor ? 'true' : undefined}
@@ -171,16 +214,9 @@ export function PanelNavigation() {
                 aria-label={t('navigation.openNotifications')}
                 onClick={openNotificationMenu}
                 sx={(theme) => ({
-                  width: { xs: 36, sm: 42 },
-                  height: 42,
-                  borderRadius: 0,
-                  border: `1px solid ${alpha(theme.palette.text.primary, 0.18)}`,
-                  backgroundColor: alpha(theme.palette.common.black, 0.16),
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: alpha(theme.palette.primary.main, 0.55),
-                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                  },
+                  ...navigationButtonSx(Boolean(notificationAnchor))(theme),
+                  width: 44,
+                  height: 44,
                 })}
               >
                 <Badge color="warning" badgeContent={totalNotificationsCount} max={9}>
@@ -204,7 +240,7 @@ export function PanelNavigation() {
                 onClose={closeNotificationMenu}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{ paper: { sx: { mt: 1, minWidth: 320, maxWidth: 380 } } }}
+                slotProps={{ paper: { sx: { mt: 1, width: 360, maxWidth: 'calc(100vw - 32px)' } } }}
               >
                 <Box sx={{ px: 2, py: 1.25 }}>
                   <Typography variant="subtitle2">{t('navigation.notifications')}</Typography>
@@ -291,24 +327,10 @@ export function PanelNavigation() {
                 )}
               </Menu>
 
-              <PanelProfileMenu user={user} activeRouteId={activeRoute?.id} onLogout={logout} />
+              <PanelProfileMenu user={user} onLogout={logout} />
             </Stack>
-          </Stack>
-
-          {isAdminRoute ? (
-            <PanelAdminNavigation
-              activeRouteId={activeRoute?.id}
-              layout="stacked"
-              roles={user.roles}
-            />
-          ) : (
-            <PanelPrimaryNavigation
-              activeRouteId={activeRoute?.id}
-              layout="stacked"
-              showGameApplication={shouldShowGameApplicationNavigation}
-            />
-          )}
-        </Container>
+          </Box>
+        </Box>
       </Box>
     </>
   )

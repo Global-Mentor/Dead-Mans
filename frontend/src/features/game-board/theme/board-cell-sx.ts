@@ -30,9 +30,14 @@ export function createBoardCellSx({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    aspectRatio: '5 / 6',
+    width: '100%',
+    minWidth: 0,
+    minHeight: 0,
+    aspectRatio: '2 / 3',
+    containerType: 'inline-size',
     gap: 0.35,
-    p: 0.45,
+    p: 1,
+    pt: isActiveRound ? 4 : 1,
     background: isPlayed
       ? `linear-gradient(160deg, ${alpha(theme.palette.success.main, 0.12)}, ${alpha(theme.palette.background.paper, 0.5)})`
       : isActiveRound
@@ -66,5 +71,9 @@ export function createBoardCellSx({
           outlineOffset: 2,
         }
       : undefined,
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+      '&:hover': { transform: 'none' },
+    },
   })
 }

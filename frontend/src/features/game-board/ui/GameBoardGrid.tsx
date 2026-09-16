@@ -4,10 +4,11 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameBoardCell, GameBoardSnapshot } from '../../../shared/api/contracts/index.ts'
 import { resolveBackendMediaUrl } from '../../../shared/api/media-url.ts'
-import { BoardMatrix } from '../../../shared/ui/index.ts'
+import { GameBoardMatrix } from './GameBoardMatrix.tsx'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import type { GameBoardCellPlayResult } from '../model/game-board-cell-results.ts'
 import { createBoardCellSx } from '../theme/board-cell-sx.ts'
+import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardGridProps {
   snapshot: GameBoardSnapshot
@@ -32,17 +33,19 @@ export function GameBoardGrid({
   }, [snapshot.cells])
 
   return (
-    <Box sx={{ mt: 1.25 }}>
-      <BoardMatrix
+    <Box sx={{ minWidth: 0 }}>
+      <GameBoardMatrix
+        activeColumnIndex={snapshot.cells.find((cell) => cell.id === activeCellId)?.col}
         colLabels={snapshot.colLabels}
         rowLabels={snapshot.rowLabels}
         minWidth={520}
-        gap={0.35}
-        leadColumnWidth={48}
+        gap={boardGridMetrics.gap}
+        leadColumnWidth={boardGridMetrics.leadColumnWidth}
         leadCell={<Box />}
         renderColumnLabel={(col) => (
           <Box
             role="columnheader"
+            title={col}
             sx={{
               textAlign: 'center',
               fontWeight: 850,
@@ -51,8 +54,10 @@ export function GameBoardGrid({
               color: 'text.primary',
               letterSpacing: '0.015em',
               px: 0.5,
-              py: 0.3,
-              overflowWrap: 'anywhere',
+              py: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {col}
@@ -93,6 +98,12 @@ export function GameBoardGrid({
               role={isInteractive ? 'button' : undefined}
               tabIndex={isInteractive ? 0 : undefined}
               aria-disabled={isInteractive ? undefined : true}
+              data-cell-id={cell?.id}
+              title={
+                cell
+                  ? `${snapshot.colLabels[colIndex]} · ${snapshot.rowLabels[rowIndex]}`
+                  : undefined
+              }
               aria-label={
                 cell
                   ? isPreviewable
@@ -160,15 +171,14 @@ export function GameBoardGrid({
                   sx={(theme) => ({
                     position: 'absolute',
                     zIndex: 2,
-                    top: 5,
-                    left: 5,
-                    right: 5,
-                    borderRadius: '999px',
+                    top: 0,
+                    left: 0,
+                    right: 0,
                     backgroundColor: alpha(theme.palette.warning.main, 0.92),
                     color: theme.palette.getContrastText(theme.palette.warning.main),
                     px: 0.6,
-                    py: 0.2,
-                    fontSize: '0.62rem',
+                    py: 0.45,
+                    fontSize: '0.7rem',
                     fontWeight: 900,
                     lineHeight: 1.2,
                     textAlign: 'center',
@@ -198,6 +208,18 @@ export function GameBoardGrid({
                   minWidth: 0,
                   px: 0.35,
                   pointerEvents: 'none',
+                  '& [data-card-compact]': { display: 'none' },
+                  '@container (max-width: 130px)': {
+                    '& .MuiTypography-root:not([data-card-value])': {
+                      fontSize: 12,
+                      lineHeight: 1.15,
+                      overflowWrap: 'anywhere',
+                    },
+                  },
+                  '@container (max-width: 100px)': {
+                    '& [data-card-secondary]': { display: 'none' },
+                    '& [data-card-compact]': { display: 'block' },
+                  },
                 }}
               >
                 {cell ? (
@@ -210,14 +232,23 @@ export function GameBoardGrid({
                           {cell.title || t('gameBoard.cellLabel')}
                         </Typography>
                         <Typography
+                          data-card-secondary
                           variant="caption"
                           color="text.secondary"
                           sx={{ fontWeight: 700 }}
                         >
                           {t('gameBoard.cellCostLabel', { cost: cell.cost })}
                         </Typography>
-                        <Typography variant="caption" color="error.main" sx={{ fontWeight: 850 }}>
+                        <Typography
+                          data-card-secondary
+                          variant="caption"
+                          color="error.main"
+                          sx={{ fontWeight: 850 }}
+                        >
                           {t('gameBoard.cellTechnicalCancelled')}
+                        </Typography>
+                        <Typography data-card-compact variant="caption" color="error.main">
+                          {t('gameBoard.cellCancelledShort')}
                         </Typography>
                       </Stack>
                     ) : isOpen ? (
@@ -237,6 +268,7 @@ export function GameBoardGrid({
                           {cell.title || t('gameBoard.cellLabel')}
                         </Typography>
                         <Typography
+                          data-card-secondary
                           variant="caption"
                           color="text.primary"
                           sx={{ fontWeight: 800, lineHeight: 1.15 }}
@@ -244,6 +276,7 @@ export function GameBoardGrid({
                           {t('gameBoard.cellCostLabel', { cost: cell.cost })}
                         </Typography>
                         <Typography
+                          data-card-secondary
                           variant="caption"
                           color="text.secondary"
                           sx={{ fontWeight: 700, lineHeight: 1.15 }}
@@ -254,9 +287,15 @@ export function GameBoardGrid({
                     ) : null}
                     {!isRevealed ? (
                       <Typography
+                        data-card-value
                         variant="h6"
                         color="text.primary"
-                        sx={{ fontWeight: 850, lineHeight: 1 }}
+                        sx={{
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          fontSize: 'clamp(14px, 20cqw, 30px)',
+                          color: 'primary.light',
+                        }}
                       >
                         {t('gameBoard.costLabel', { cost: cell.cost })}
                       </Typography>
@@ -307,6 +346,7 @@ function PlayedCellSummary({ playResult }: { playResult: GameBoardCellPlayResult
         {teamName}
       </Typography>
       <Stack
+        data-card-secondary
         spacing={0.1}
         alignItems="center"
         sx={{

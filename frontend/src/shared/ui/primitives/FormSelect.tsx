@@ -24,6 +24,8 @@ export function FormSelect<TValue extends string | number>({
   onChange,
   ariaLabel,
   SelectProps,
+  InputLabelProps,
+  slotProps,
   ...props
 }: FormSelectProps<TValue>) {
   return (
@@ -31,6 +33,21 @@ export function FormSelect<TValue extends string | number>({
       {...props}
       select
       value={value}
+      slotProps={{
+        ...slotProps,
+        inputLabel: (ownerState) => {
+          const labelProps = slotProps?.inputLabel ?? InputLabelProps
+          const selectProps = slotProps?.select ?? SelectProps
+          const native =
+            typeof selectProps === 'function' ? selectProps(ownerState).native : selectProps?.native
+
+          return {
+            ...(typeof labelProps === 'function' ? labelProps(ownerState) : labelProps),
+            // The custom Select is a div: MUI links its accessible name through labelId.
+            ...(!native ? { component: 'span', htmlFor: undefined } : {}),
+          }
+        },
+      }}
       SelectProps={{
         ...SelectProps,
         inputProps: {

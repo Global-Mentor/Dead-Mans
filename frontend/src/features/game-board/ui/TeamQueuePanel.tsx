@@ -3,17 +3,23 @@ import {
   Box,
   ButtonBase,
   Chip,
-  Divider,
   Drawer,
   IconButton,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import { SectionCard } from '../../../shared/ui/index.ts'
+import {
+  sidePanelCloseSx,
+  sidePanelHeaderSx,
+  sidePanelPaperSx,
+  sidePanelTitleSx,
+} from '../../../shared/theme/side-panel-sx.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 
 interface TeamQueuePanelProps {
@@ -26,37 +32,40 @@ interface TeamQueuePanelProps {
 export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: TeamQueuePanelProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
-  const { remainingTeams, playedTeams } = groupTeamQueueTeams(teams)
+  const panelId = useId()
+  const [search, setSearch] = useState('')
+  const query = search.trim().toLocaleLowerCase()
+  const matchingTeams = teams.filter(
+    (team) =>
+      !query ||
+      [
+        formatTeamQueueName(t, team.teamName),
+        ...team.participants.map((player) => player.displayName),
+      ].some((value) => value.toLocaleLowerCase().includes(query)),
+  )
+  const groupedTeams = groupTeamQueueTeams(teams)
+  // Search must not renumber the historical play order.
+  const matchingIds = new Set(matchingTeams.map((team) => team.teamId))
+  const remainingTeams = groupedTeams.remainingTeams.filter(({ team }) =>
+    matchingIds.has(team.teamId),
+  )
+  const playedTeams = groupedTeams.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))
 
   return (
     <>
       <ButtonBase
         aria-label={t('gameBoard.teamQueueOpen')}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? panelId : undefined}
         onClick={() => setIsOpen(true)}
         sx={(theme) => ({
-          position: 'fixed',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: theme.zIndex.drawer - 1,
-          minHeight: 148,
-          width: 56,
-          overflow: 'hidden',
-          borderRadius: `0 20px 20px 0`,
-          border: `1px solid ${alpha(theme.palette.warning.main, 0.34)}`,
-          borderLeft: 0,
-          background: `linear-gradient(180deg, ${alpha(theme.palette.warning.main, 0.2)} 0%, ${alpha(
-            theme.palette.background.paper,
-            0.96,
-          )} 34%, ${alpha(theme.palette.info.main, 0.18)} 100%)`,
-          boxShadow: `0 18px 34px ${alpha(theme.palette.common.black, 0.3)}, inset 0 1px 0 ${alpha(
-            theme.palette.common.white,
-            0.14,
-          )}`,
+          minHeight: 44,
+          px: 1.5,
+          border: 0,
+          backgroundColor: 'transparent',
           color: theme.palette.text.primary,
           '&:hover': {
             backgroundColor: alpha(theme.palette.primary.main, 0.14),
-            width: 60,
           },
           '&:focus-visible': {
             outline: `2px solid ${theme.palette.primary.main}`,
@@ -64,22 +73,15 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
           },
         })}
       >
-        <Stack spacing={1} alignItems="center" sx={{ py: 1.25 }}>
-          <Typography component="span" aria-hidden variant="body2" fontWeight={900}>
-            {isOpen ? '<' : '>'}
-          </Typography>
-          <Typography
-            component="span"
-            variant="caption"
-            fontWeight={800}
-            sx={{
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)',
-              letterSpacing: 0,
-            }}
-          >
+        <Stack direction="row" spacing={1} useFlexGap alignItems="center">
+          <Typography component="span" variant="body2" fontWeight={700}>
             {t('common.entities.teams')}
           </Typography>
+          {!isLoading && !isError ? (
+            <Typography component="span" variant="body2" color="primary.light">
+              {teams.length}
+            </Typography>
+          ) : null}
         </Stack>
       </ButtonBase>
 
@@ -89,104 +91,139 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
         onClose={() => setIsOpen(false)}
         ModalProps={{ keepMounted: true }}
         PaperProps={{
-          sx: {
-            width: { xs: 'calc(100vw - 40px)', sm: 380 },
+          sx: (theme) => ({
+            ...sidePanelPaperSx(theme),
+            borderLeft: 0,
+            borderRight: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+            width: { xs: '100vw', sm: 400 },
+            height: '100dvh',
+            overflow: 'hidden',
             maxWidth: '100vw',
-          },
+          }),
         }}
       >
         <SectionCard
+          id={panelId}
           component="aside"
           aria-label={t('gameBoard.teamQueueTitle')}
           sx={{
             width: '100%',
-            minHeight: '100%',
+            height: '100%',
+            minHeight: 0,
             borderRadius: 0,
             border: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            overflowY: 'auto',
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            display: 'grid',
+            gridTemplateRows: 'auto minmax(0, 1fr)',
+            p: 0,
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="flex-start"
-            justifyContent="space-between"
-            sx={(theme) => ({
-              mx: -3,
-              mt: -3,
-              px: 3,
-              pt: 3,
-              pb: 2,
-              background: `linear-gradient(180deg, ${alpha(theme.palette.warning.main, 0.18)} 0%, ${alpha(
-                theme.palette.info.main,
-                0.12,
-              )} 58%, transparent 100%)`,
-              borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.18)}`,
-            })}
-          >
-            <Typography variant="h6" sx={{ minWidth: 0 }}>
-              {t('gameBoard.teamQueueTitle')}
-            </Typography>
-            <IconButton
-              size="small"
-              aria-label={t('gameBoard.teamQueueClose')}
-              onClick={() => setIsOpen(false)}
-            >
-              <Box component="span" aria-hidden sx={{ fontSize: 18, lineHeight: 1 }}>
-                ×
-              </Box>
-            </IconButton>
-          </Stack>
-
-          <Divider />
-
-          {isLoading ? (
-            <Typography variant="body2" color="text.secondary">
-              {t('gameBoard.teamQueueLoading')}
-            </Typography>
-          ) : isError ? (
-            <Typography variant="body2" color="error">
-              {t('gameBoard.teamQueueError')}
-            </Typography>
-          ) : teams.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              {t('gameBoard.teamQueueEmpty')}
-            </Typography>
-          ) : (
-            <Stack spacing={1.5}>
-              <TeamQueueSection
-                title={t('gameBoard.teamQueueRemainingTitle')}
-                count={remainingTeams.length}
-                emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
+          <Box sx={sidePanelHeaderSx}>
+            <Stack direction="row" gap={1} alignItems="center" justifyContent="space-between">
+              <Typography component="h2" variant="h6" sx={sidePanelTitleSx}>
+                {t('gameBoard.teamQueueTitle')}
+              </Typography>
+              <IconButton
+                aria-label={t('gameBoard.teamQueueClose')}
+                onClick={() => setIsOpen(false)}
+                sx={sidePanelCloseSx}
               >
-                {remainingTeams.map(({ team }) => (
-                  <TeamQueueCard
-                    key={team.teamId}
-                    team={team}
-                    isActive={team.teamId === activeTeamId}
-                  />
-                ))}
-              </TeamQueueSection>
-
-              <TeamQueueSection
-                title={t('gameBoard.teamQueuePlayedTitle')}
-                count={playedTeams.length}
-                emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
-              >
-                {playedTeams.map(({ team, playedOrder }) => (
-                  <TeamQueueCard
-                    key={team.teamId}
-                    team={team}
-                    isActive={team.teamId === activeTeamId}
-                    playedOrder={playedOrder}
-                  />
-                ))}
-              </TeamQueueSection>
+                <Box component="span" aria-hidden sx={{ fontSize: 24, lineHeight: 1 }}>
+                  ×
+                </Box>
+              </IconButton>
             </Stack>
-          )}
+            {!isLoading && !isError && teams.length > 0 ? (
+              <TextField
+                fullWidth
+                size="small"
+                label={t('gameBoard.teamQueueSearch')}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                sx={{
+                  mt: 2,
+                  '& .MuiOutlinedInput-root': { borderRadius: '8px' },
+                }}
+                slotProps={{
+                  input: {
+                    endAdornment: search ? (
+                      <IconButton
+                        aria-label={t('gameBoard.teamQueueClearSearch')}
+                        onClick={() => setSearch('')}
+                        edge="end"
+                        sx={{ minWidth: 44, minHeight: 44 }}
+                      >
+                        <Box component="span" aria-hidden>
+                          ×
+                        </Box>
+                      </IconButton>
+                    ) : undefined,
+                  },
+                }}
+              />
+            ) : null}
+          </Box>
+          <Box
+            data-testid="team-queue-scroll-body"
+            sx={{
+              minHeight: 0,
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+              px: { xs: 2, sm: 2.5 },
+              pt: 2,
+              pb: 'max(20px, env(safe-area-inset-bottom))',
+            }}
+          >
+            {isLoading ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('gameBoard.teamQueueLoading')}
+              </Typography>
+            ) : isError ? (
+              <Typography variant="body2" color="error">
+                {t('gameBoard.teamQueueError')}
+              </Typography>
+            ) : teams.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('gameBoard.teamQueueEmpty')}
+              </Typography>
+            ) : matchingTeams.length === 0 ? (
+              <Typography role="status" variant="body2" color="text.secondary">
+                {t('gameBoard.teamQueueNoResults')}
+              </Typography>
+            ) : (
+              <Stack spacing={2.5}>
+                <TeamQueueSection
+                  title={t('gameBoard.teamQueueRemainingTitle')}
+                  count={remainingTeams.length}
+                  emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
+                >
+                  {remainingTeams.map(({ team }) => (
+                    <TeamQueueCard
+                      key={team.teamId}
+                      team={team}
+                      isActive={team.teamId === activeTeamId}
+                    />
+                  ))}
+                </TeamQueueSection>
+
+                <TeamQueueSection
+                  title={t('gameBoard.teamQueuePlayedTitle')}
+                  count={playedTeams.length}
+                  emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
+                >
+                  {playedTeams.map(({ team, playedOrder }) => (
+                    <TeamQueueCard
+                      key={team.teamId}
+                      team={team}
+                      isActive={team.teamId === activeTeamId}
+                      playedOrder={playedOrder}
+                    />
+                  ))}
+                </TeamQueueSection>
+              </Stack>
+            )}
+          </Box>
         </SectionCard>
       </Drawer>
     </>
@@ -255,10 +292,19 @@ function TeamQueueSection({
   return (
     <Stack spacing={0.85}>
       <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="space-between">
-        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900 }}>
+        <Typography
+          variant="overline"
+          color="text.secondary"
+          sx={{ fontWeight: 600, fontSize: 11, letterSpacing: '0.12em' }}
+        >
           {title}
         </Typography>
-        <Chip size="small" variant="outlined" label={count} />
+        <Chip
+          size="small"
+          variant="outlined"
+          label={count}
+          sx={{ border: 0, bgcolor: 'transparent', color: 'text.secondary' }}
+        />
       </Stack>
 
       {count === 0 ? (
@@ -292,55 +338,27 @@ function TeamQueueCard({
   playedOrder?: number
 }) {
   const { t } = useTranslation()
-  const isPlayed = team.isPlayed ?? false
 
   return (
     <Box
       sx={(theme) => ({
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 2,
-        border: `1px solid ${alpha(
-          isActive
-            ? theme.palette.warning.main
-            : isPlayed
-              ? theme.palette.success.main
-              : theme.palette.divider,
-          isActive || isPlayed ? 0.7 : 0.9,
-        )}`,
-        background: isActive
-          ? `linear-gradient(140deg, ${alpha(theme.palette.warning.main, 0.22)}, ${alpha(
-              theme.palette.info.main,
-              0.16,
-            )})`
-          : isPlayed
-            ? `linear-gradient(140deg, ${alpha(theme.palette.success.main, 0.16)}, ${alpha(
-                theme.palette.background.default,
-                0.42,
-              )})`
-            : `linear-gradient(140deg, ${alpha(
-                theme.palette.background.default,
-                0.46,
-              )}, ${alpha(theme.palette.common.black, 0.12)})`,
-        boxShadow: isActive
-          ? `0 18px 32px ${alpha(theme.palette.common.black, 0.24)}`
-          : `0 10px 22px ${alpha(theme.palette.common.black, 0.16)}`,
-        px: 1.35,
-        py: 1.25,
-        opacity: isPlayed && !isActive ? 0.86 : 1,
+        borderRadius: '8px',
+        border: `1px solid ${alpha(theme.palette.primary.main, isActive ? 0.38 : 0.16)}`,
+        background: `linear-gradient(115deg, ${alpha(theme.palette.primary.main, isActive ? 0.11 : 0.025)}, ${alpha(theme.palette.background.paper, 0.68)} 75%)`,
+        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.04)}`,
+        px: 1.75,
+        py: 1.75,
         '&::before': {
           content: '""',
           position: 'absolute',
-          left: 0,
+          left: -1,
           top: 16,
           bottom: 16,
-          width: 4,
+          width: 3,
           borderRadius: 999,
-          backgroundColor: isActive
-            ? alpha(theme.palette.warning.main, 0.92)
-            : isPlayed
-              ? alpha(theme.palette.success.main, 0.82)
-              : alpha(theme.palette.primary.main, 0.36),
+          backgroundColor: isActive ? theme.palette.primary.main : 'transparent',
         },
       })}
     >
@@ -348,19 +366,36 @@ function TeamQueueCard({
         <Stack direction="row" spacing={1.15} alignItems="center">
           <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
             <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography variant="subtitle2" fontWeight={900}>
+              <Typography
+                component="h3"
+                variant="subtitle1"
+                fontWeight={700}
+                sx={{ fontSize: 18, overflowWrap: 'anywhere' }}
+              >
                 {formatTeamQueueName(t, team.teamName)}
               </Typography>
               {playedOrder ? (
                 <Chip
                   size="small"
                   color="success"
-                  variant="filled"
+                  variant="outlined"
+                  sx={{ border: 0, bgcolor: 'transparent', color: 'text.secondary' }}
                   label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
                 />
               ) : null}
               {isActive ? (
-                <Chip size="small" color="warning" label={t('gameBoard.teamQueueActiveChip')} />
+                <Chip
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={(theme) => ({
+                    border: 0,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.light',
+                    borderRadius: '4px',
+                  })}
+                  label={t('gameBoard.teamQueueActiveChip')}
+                />
               ) : null}
             </Stack>
           </Stack>
@@ -370,18 +405,15 @@ function TeamQueueCard({
           {team.participants.map((participant, index) => (
             <Box
               key={participant.userId}
-              sx={(theme) => ({
+              sx={{
                 display: 'grid',
                 gridTemplateColumns: '18px 1fr',
                 gap: 1.25,
                 alignItems: 'center',
                 minWidth: 0,
                 px: 1,
-                py: 0.75,
-                borderRadius: 2,
-                backgroundColor: alpha(theme.palette.common.black, 0.12),
-                border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
-              })}
+                py: 0.25,
+              }}
             >
               <Typography
                 variant="caption"
@@ -390,7 +422,11 @@ function TeamQueueCard({
               >
                 {index + 1}.
               </Typography>
-              <Typography variant="body2" noWrap title={participant.displayName} fontWeight={600}>
+              <Typography
+                variant="body2"
+                title={participant.displayName}
+                sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
+              >
                 {participant.displayName}
               </Typography>
             </Box>

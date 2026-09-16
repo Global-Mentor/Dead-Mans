@@ -1,4 +1,4 @@
-import { AccordionDetails, Alert, Box, Stack, Typography } from '@mui/material'
+import { AccordionDetails, Alert, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { AppAccordion, AppAccordionSummary, SectionCard } from '../../../../shared/ui/index.ts'
@@ -14,16 +14,14 @@ export function ManagementControlSurface({
     <SectionCard
       surface="plain"
       sx={(theme) => ({
-        p: 1.15,
+        p: { xs: 1.75, sm: 2 },
+        borderRadius: '8px',
         border: `1px solid ${alpha(
-          accent === 'success'
-            ? theme.palette.success.main
-            : accent === 'warning'
-              ? theme.palette.warning.main
-              : theme.palette.info.main,
-          0.3,
+          accent === 'warning' ? theme.palette.warning.main : theme.palette.primary.main,
+          0.22,
         )}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.5),
+        background: `linear-gradient(115deg, ${alpha(theme.palette.primary.main, 0.06)}, ${alpha(theme.palette.background.paper, 0.65)} 75%)`,
+        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.04)}`,
       })}
     >
       {children}
@@ -48,16 +46,31 @@ export function SecondaryManagementSection({
   const contentId = `management-${sectionId}-content`
 
   return (
-    <AppAccordion surface="inset" defaultExpanded={defaultExpanded} aria-labelledby={headerId}>
+    <AppAccordion
+      surface="plain"
+      defaultExpanded={defaultExpanded}
+      aria-labelledby={headerId}
+      sx={(theme) => ({
+        borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+        '&.Mui-expanded': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.035),
+          borderRadius: '0 0 8px 8px',
+        },
+      })}
+    >
       <AppAccordionSummary
         density="compact"
         id={headerId}
         aria-controls={contentId}
         aria-description={tooltip}
+        sx={{ minHeight: 52, px: 1.5 }}
       >
         <ManagementSectionTitle title={title} tooltip={tooltip} />
       </AppAccordionSummary>
-      <AccordionDetails id={contentId} sx={{ px: 1.15, pt: 0, pb: 1.15 }}>
+      <AccordionDetails id={contentId} sx={{ px: 1.5, pt: 0.5, pb: 1.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          {tooltip}
+        </Typography>
         {children}
       </AccordionDetails>
     </AppAccordion>
@@ -66,30 +79,14 @@ export function SecondaryManagementSection({
 
 export function ManagementSectionTitle({ title, tooltip }: { title: string; tooltip: string }) {
   return (
-    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
-      <Typography variant="subtitle2" fontWeight={850} noWrap>
-        {title}
-      </Typography>
-      <Box
-        component="span"
-        aria-hidden
-        title={tooltip}
-        sx={(theme) => ({
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-          color: 'text.secondary',
-          fontSize: '0.7rem',
-          flexShrink: 0,
-        })}
-      >
-        ?
-      </Box>
-    </Stack>
+    <Typography
+      variant="subtitle2"
+      fontWeight={600}
+      title={tooltip}
+      sx={{ minWidth: 0, overflowWrap: 'anywhere', color: 'primary.light', fontSize: 14 }}
+    >
+      {title}
+    </Typography>
   )
 }
 

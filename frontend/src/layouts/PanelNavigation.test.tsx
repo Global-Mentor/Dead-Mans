@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ThemeProvider } from '@mui/material'
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -159,14 +159,15 @@ describe('PanelNavigation', () => {
       roles: ['viewer'],
     })
 
-    expect(screen.getAllByRole('button', { name: /Текущая игра/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('button', { name: /История/i }).length).toBeGreaterThan(0)
+    const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Текущая игра/i })[0]!)
+    for (const label of ['Игра', 'Лидерборд', 'Подать заявку', 'Модификаторы', 'Викторина']) {
+      expect(within(navigation).getByRole('link', { name: label })).toBeInTheDocument()
+    }
 
-    expect(screen.getByRole('menuitem', { name: 'Игра' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Лидерборд' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Подать заявку' })).toBeInTheDocument()
+    fireEvent.click(within(navigation).getByRole('button', { name: 'История' }))
+    expect(screen.getByRole('menuitem', { name: 'История игр' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'История модификаторов' })).toBeInTheDocument()
   })
 
   it('shows an invitation bell with the pending invite count', () => {
@@ -347,67 +348,38 @@ describe('PanelNavigation', () => {
       'active',
     )
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Текущая игра/i })[0]!)
+    const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    expect(screen.getByRole('menuitem', { name: 'Игра' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Лидерборд' })).toBeInTheDocument()
-    expect(screen.queryByRole('menuitem', { name: 'Подать заявку' })).not.toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Игра' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Лидерборд' })).toBeInTheDocument()
+    expect(
+      within(navigation).queryByRole('link', { name: 'Подать заявку' }),
+    ).not.toBeInTheDocument()
   })
 
-  it('opens site updates from the profile nickname menu', () => {
-    renderNavigation({
-      id: 'viewer-1',
-      displayName: 'Player',
-      roles: ['viewer'],
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /Player/ }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Обновления' }))
-
-    const dialog = screen.getByRole('dialog', { name: 'Обновления' })
-    const dialogText = dialog.textContent ?? ''
-
-    expect(dialog).toBeInTheDocument()
-    expect(dialogText.indexOf('Новый UI: заявка на игру')).toBeGreaterThan(-1)
-    expect(dialogText.indexOf('Новый UI: заявка на игру')).toBeLessThan(
-      dialogText.indexOf('Пустые команды в превью интерфейса'),
-    )
-    expect(dialogText.indexOf('Пустые команды в превью интерфейса')).toBeLessThan(
-      dialogText.indexOf('Несколько правильных ответов'),
-    )
-    expect(dialogText.indexOf('Несколько правильных ответов')).toBeGreaterThan(-1)
-    expect(dialogText.indexOf('Несколько правильных ответов')).toBeLessThan(
-      dialogText.indexOf('Исключение игроков из команды'),
-    )
-    expect(dialogText.indexOf('Исключение игроков из команды')).toBeLessThan(
-      dialogText.indexOf('Закрытое тестирование'),
-    )
-    expect(screen.getByText('Новая фича')).toBeInTheDocument()
-    expect(screen.getByText('Объявление')).toBeInTheDocument()
-    expect(screen.getAllByText('Фикс')).toHaveLength(2)
-    expect(screen.getByTestId('dev-notes-list')).toHaveStyle({
-      overflowY: 'auto',
-      maxHeight: 'min(52vh, 420px)',
-    })
-  })
-
-  it('keeps admin entry points inside the admin profile menu', () => {
+  it('keeps the nickname menu limited to profile-related actions', () => {
     renderNavigation({
       id: 'admin-1',
       displayName: 'Admin',
-      roles: ['admin'],
+      roles: ['admin', 'viewer'],
     })
-
-    expect(screen.queryByRole('menuitem', { name: 'Настройка игры' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('menuitem', { name: 'Команды' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Admin/ }))
 
-    expect(screen.getByRole('menuitem', { name: 'Настройка игры' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Команды' })).toBeInTheDocument()
+    const profileMenu = screen.getByRole('menu')
+    expect(within(profileMenu).getByText('Профиль')).toBeInTheDocument()
+    expect(within(profileMenu).getByText('Роли доступа')).toBeInTheDocument()
+    expect(within(profileMenu).getByText('Администратор')).toBeInTheDocument()
+    expect(within(profileMenu).getByText('Участник')).toBeInTheDocument()
+    expect(
+      within(profileMenu).getByRole('combobox', { name: 'Язык интерфейса' }),
+    ).toBeInTheDocument()
+    expect(within(profileMenu).getByRole('menuitem', { name: 'Выйти' })).toBeInTheDocument()
+    expect(within(profileMenu).queryByText('Настройка доски')).not.toBeInTheDocument()
+    expect(within(profileMenu).queryByText('Команды')).not.toBeInTheDocument()
   })
 
-  it('shows two admin dropdowns in the header and keeps teams out of them', () => {
+  it('collects every available admin form in one administration dropdown', () => {
     renderNavigation(
       {
         id: 'admin-1',
@@ -417,11 +389,66 @@ describe('PanelNavigation', () => {
       '/panel/game-setup',
     )
 
-    expect(screen.getAllByRole('button', { name: /Настройка игры/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('button', { name: /Глобальные настройки/i }).length).toBeGreaterThan(
-      0,
+    const navigation = screen.getByRole('navigation', { name: 'Навигация администратора' })
+    const trigger = within(navigation).getByRole('button', { name: 'Администрирование' })
+
+    expect(within(navigation).getAllByRole('button')).toHaveLength(1)
+    fireEvent.click(trigger)
+
+    for (const label of [
+      'Настройка доски',
+      'Команды',
+      'Модификаторы текущей игры',
+      'Вопросы текущей игры',
+      'Каталог модификаторов',
+      'Каталог вопросов',
+    ]) {
+      expect(screen.getByRole('menuitem', { name: label })).toBeInTheDocument()
+    }
+
+    expect(screen.queryByRole('menuitem', { name: 'Роли пользователей' })).not.toBeInTheDocument()
+  })
+
+  it('shows role administration only to super administrators', () => {
+    renderNavigation(
+      {
+        id: 'superadmin-1',
+        displayName: 'Super Admin',
+        roles: ['superadmin'],
+      },
+      '/panel/role-administration',
     )
-    expect(screen.queryByRole('button', { name: /Команды/i })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Администрирование' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Роли пользователей' })).toBeInTheDocument()
+  })
+
+  it('limits the administration dropdown to team management for moderators', () => {
+    renderNavigation({
+      id: 'moderator-1',
+      displayName: 'Moderator',
+      roles: ['moderator'],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Администрирование' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Команды' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Настройка доски' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Каталог вопросов' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Роли пользователей' })).not.toBeInTheDocument()
+  })
+
+  it('does not render administration navigation for regular players', () => {
+    renderNavigation({
+      id: 'viewer-1',
+      displayName: 'Player',
+      roles: ['viewer'],
+    })
+
+    expect(
+      screen.queryByRole('navigation', { name: 'Навигация администратора' }),
+    ).not.toBeInTheDocument()
   })
 
   it('disables current-game modifiers and questions when there is no draft game', () => {
@@ -435,18 +462,17 @@ describe('PanelNavigation', () => {
       null,
     )
 
-    const [gameSetupMenuButton] = screen.getAllByRole('button', { name: /Настройка игры/i })
-    fireEvent.click(gameSetupMenuButton!)
+    fireEvent.click(screen.getByRole('button', { name: 'Администрирование' }))
 
     expect(screen.getByRole('menuitem', { name: 'Настройка доски' })).not.toHaveAttribute(
       'aria-disabled',
       'true',
     )
-    expect(screen.getByRole('menuitem', { name: 'Настройка модификаторов' })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: 'Модификаторы текущей игры' })).toHaveAttribute(
       'aria-disabled',
       'true',
     )
-    expect(screen.getByRole('menuitem', { name: 'Настройка вопросов' })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: 'Вопросы текущей игры' })).toHaveAttribute(
       'aria-disabled',
       'true',
     )

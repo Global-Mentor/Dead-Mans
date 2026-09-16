@@ -12,20 +12,21 @@ import {
   PageShell,
   SectionCard,
   SectionHeader,
-} from '../../../shared/ui/index.ts'
+} from '../../shared/ui/index.ts'
 
 export function UiStateGallery() {
   const { t } = useTranslation()
   const [choice, setChoice] = useState('primary')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const description = t('navigation.uiStateGallery.description')
 
   return (
     <PageShell>
       <Stack spacing={2}>
         <SectionHeader
           headingLevel="h1"
-          title={t('navigation.devNotes.dialogTitle')}
-          description={t('navigation.devNotes.empty')}
+          title={t('navigation.uiStateGallery.title')}
+          description={description}
         />
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems="stretch">
@@ -51,11 +52,7 @@ export function UiStateGallery() {
         <SectionCard>
           <Stack spacing={1.5}>
             <FormTextField label={t('common.entities.player')} />
-            <FormTextField
-              label={t('common.entities.player')}
-              error
-              helperText={t('navigation.devNotes.empty')}
-            />
+            <FormTextField label={t('common.entities.player')} error helperText={description} />
             <FormTextField label={t('common.entities.player')} multiline minRows={2} disabled />
             <FormSelect
               ariaLabel={t('common.entities.player')}
@@ -74,22 +71,22 @@ export function UiStateGallery() {
             value="primary"
             selected={choice === 'primary'}
             title={t('common.actions.save')}
-            description={t('navigation.devNotes.empty')}
+            description={description}
           />
           <ChoiceCard
             value="secondary"
             selected={choice === 'secondary'}
             title={t('common.actions.cancel')}
-            description={t('navigation.devNotes.empty')}
+            description={description}
           />
         </RadioGroup>
 
         <AppAccordion surface="inset">
           <AppAccordionSummary>
-            <Typography variant="subtitle2">{t('navigation.devNotes.dialogTitle')}</Typography>
+            <Typography variant="subtitle2">{t('navigation.uiStateGallery.title')}</Typography>
           </AppAccordionSummary>
           <AccordionDetails>
-            <Typography color="text.secondary">{t('navigation.devNotes.empty')}</Typography>
+            <Typography color="text.secondary">{description}</Typography>
           </AccordionDetails>
         </AppAccordion>
 
@@ -101,8 +98,8 @@ export function UiStateGallery() {
       <AppDialog
         open={dialogOpen}
         appearance="accented"
-        title={t('navigation.devNotes.dialogTitle')}
-        description={t('navigation.devNotes.empty')}
+        title={t('navigation.uiStateGallery.title')}
+        description={description}
         onClose={() => setDialogOpen(false)}
         actions={
           <>

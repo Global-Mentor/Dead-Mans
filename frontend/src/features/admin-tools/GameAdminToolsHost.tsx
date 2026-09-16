@@ -27,7 +27,13 @@ export function GameAdminToolsHost() {
   return <GameAdminToolsPanel initialToolId={initialToolId} />
 }
 
-export function GameAdminToolsPanel({ initialToolId }: { initialToolId: AdminToolId }) {
+export function GameAdminToolsPanel({
+  initialToolId,
+  inlineTrigger = false,
+}: {
+  initialToolId: AdminToolId
+  inlineTrigger?: boolean
+}) {
   const { t } = useTranslation()
   const { data, activeRound, teamQueue, isTeamQueueError, isTeamQueueLoading, isError, isLoading } =
     useGameBoardPage()
@@ -48,6 +54,7 @@ export function GameAdminToolsPanel({ initialToolId }: { initialToolId: AdminToo
     {
       id: 'game',
       label: t('adminTools.gameTool'),
+      tabLabel: t('adminTools.gameTab'),
       content: (
         <GameManagementTool
           snapshot={data}
@@ -82,6 +89,7 @@ export function GameAdminToolsPanel({ initialToolId }: { initialToolId: AdminToo
     tools.push({
       id: 'modifiers',
       label: t('adminTools.modifierTool'),
+      tabLabel: t('adminTools.modifierTab'),
       content: <AdminModifierTool />,
     })
   }
@@ -92,7 +100,11 @@ export function GameAdminToolsPanel({ initialToolId }: { initialToolId: AdminToo
 
   return (
     <>
-      <AdminToolDrawer tools={tools} initialToolId={resolvedInitialToolId} />
+      <AdminToolDrawer
+        tools={tools}
+        initialToolId={resolvedInitialToolId}
+        inlineTrigger={inlineTrigger}
+      />
 
       <AppToast
         message={gameFinish.toastMessage}

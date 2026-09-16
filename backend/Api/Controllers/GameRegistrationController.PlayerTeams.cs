@@ -14,7 +14,7 @@ public sealed partial class GameRegistrationController
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiContracts.GameRegistrationSnapshotDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
         var userId = RequireUserId();
@@ -29,7 +29,7 @@ public sealed partial class GameRegistrationController
         );
         if (snapshot is null)
         {
-            return NotFound(GameRegistrationErrorMapping.NotOpenResponse());
+            return NoContent();
         }
 
         return Ok(snapshot.ToDto());

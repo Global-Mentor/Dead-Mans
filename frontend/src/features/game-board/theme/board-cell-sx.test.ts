@@ -11,6 +11,9 @@ describe('createBoardCellSx', () => {
     }
 
     const styles = resolver(appTheme) as Record<string, unknown>
+    expect(styles.aspectRatio).toBe('2 / 3')
+    expect(styles.width).toBe('100%')
+    expect(styles.minHeight).toBe(0)
     expect(styles.background).toBe(alpha(appTheme.palette.primary.main, 0.065))
     expect(styles.borderColor).toBe(alpha(appTheme.palette.primary.main, 0.3))
     expect(styles.boxShadow).toContain('0 2px 8px')

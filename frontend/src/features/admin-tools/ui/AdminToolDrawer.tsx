@@ -1,26 +1,38 @@
-import { Box, Drawer, IconButton, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Drawer, IconButton, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppButton } from '../../../shared/ui/index.ts'
+import {
+  sidePanelCloseSx,
+  sidePanelHeaderSx,
+  sidePanelPaperSx,
+  sidePanelTitleSx,
+} from '../../../shared/theme/side-panel-sx.ts'
 
 export interface AdminToolDescriptor {
   id: string
   label: string
+  tabLabel?: string
   content: ReactNode
 }
 
 interface AdminToolDrawerProps {
   tools: readonly AdminToolDescriptor[]
   initialToolId: string
+  inlineTrigger?: boolean
 }
 
-export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) {
+export function AdminToolDrawer({
+  tools,
+  initialToolId,
+  inlineTrigger = false,
+}: AdminToolDrawerProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [activeToolId, setActiveToolId] = useState(initialToolId)
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const panelId = useId()
   const availableToolIds = useMemo(() => tools.map((tool) => tool.id), [tools])
   const resolvedActiveToolId = availableToolIds.includes(activeToolId)
     ? activeToolId
@@ -49,42 +61,48 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
     return null
   }
 
-  const selectRelativeTool = (offset: -1 | 1) => {
-    if (!hasMultipleTools) return
-    const nextIndex = (activeToolIndex + offset + tools.length) % tools.length
-    const nextTool = tools[nextIndex]
-    if (nextTool) setActiveToolId(nextTool.id)
-  }
-
   return (
     <>
       <AppButton
         ref={openerRef}
-        tone="secondary"
+        tone={inlineTrigger ? 'ghost' : 'secondary'}
         size="medium"
         onClick={() => setIsOpen(true)}
         aria-haspopup="dialog"
-        sx={(theme) => ({
-          position: 'fixed',
-          zIndex: theme.zIndex.drawer - 1,
-          right: { xs: 12, md: 0 },
-          top: { xs: 'auto', md: '50%' },
-          bottom: { xs: 16, md: 'auto' },
-          transform: { xs: 'none', md: 'translateY(-50%)' },
-          minWidth: { xs: 0, md: 52 },
-          minHeight: { xs: 46, md: 192 },
-          px: { xs: 1.6, md: 0.95 },
-          py: { xs: 0.9, md: 1.6 },
-          borderRadius: { xs: 999, md: '18px 0 0 18px' },
-          writingMode: { xs: 'horizontal-tb', md: 'vertical-rl' },
-          textOrientation: { xs: 'mixed', md: 'mixed' },
-          justifyContent: 'center',
-          letterSpacing: '0.03em',
-          whiteSpace: 'nowrap',
-          boxShadow: `0 14px 28px ${alpha(theme.palette.common.black, 0.38)}`,
-        })}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? panelId : undefined}
+        aria-label={t('adminTools.openAction')}
+        sx={(theme) =>
+          inlineTrigger
+            ? {
+                minHeight: 44,
+                whiteSpace: 'normal',
+                textTransform: 'none',
+                fontSize: 14,
+                px: 1.5,
+              }
+            : {
+                position: 'fixed',
+                zIndex: theme.zIndex.drawer - 1,
+                right: { xs: 12, md: 0 },
+                top: { xs: 'auto', md: '50%' },
+                bottom: { xs: 16, md: 'auto' },
+                transform: { xs: 'none', md: 'translateY(-50%)' },
+                minWidth: { xs: 0, md: 52 },
+                minHeight: { xs: 46, md: 192 },
+                px: { xs: 1.6, md: 0.95 },
+                py: { xs: 0.9, md: 1.6 },
+                borderRadius: { xs: 999, md: '18px 0 0 18px' },
+                writingMode: { xs: 'horizontal-tb', md: 'vertical-rl' },
+                textOrientation: { xs: 'mixed', md: 'mixed' },
+                justifyContent: 'center',
+                letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
+                boxShadow: `0 14px 28px ${alpha(theme.palette.common.black, 0.38)}`,
+              }
+        }
       >
-        {t('adminTools.openAction')}
+        {t(inlineTrigger ? 'adminTools.inlineOpenAction' : 'adminTools.openAction')}
       </AppButton>
 
       <Drawer
@@ -94,100 +112,87 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
         ModalProps={{ keepMounted: true }}
         PaperProps={{
           sx: (theme) => ({
+            ...sidePanelPaperSx(theme),
             width: { xs: '100vw', md: 520 },
             maxWidth: '100vw',
             height: '100dvh',
             display: 'grid',
             gridTemplateRows: 'auto minmax(0, 1fr)',
-            borderLeft: `1px solid ${alpha(theme.palette.divider, 0.86)}`,
-            backgroundImage: 'none',
+            borderLeft: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
             overflow: 'hidden',
           }),
         }}
       >
         <Box
+          id={panelId}
           component="aside"
           aria-label={t('adminTools.drawerLabel')}
           sx={{ display: 'contents' }}
         >
           <Box
             sx={(theme) => ({
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.82)}`,
-              backgroundColor: alpha(theme.palette.background.paper, 0.82),
-              px: { xs: 1, sm: 1.25 },
-              py: 1,
+              ...sidePanelHeaderSx(theme),
             })}
           >
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Tooltip title={t('adminTools.previousTool')}>
-                <span>
-                  <IconButton
-                    size="small"
-                    disabled={!hasMultipleTools}
-                    aria-label={t('adminTools.previousTool')}
-                    onClick={() => selectRelativeTool(-1)}
-                  >
-                    <Box component="span" aria-hidden sx={{ fontSize: 22, lineHeight: 1 }}>
-                      ←
-                    </Box>
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <AppButton
-                tone="ghost"
-                size="small"
-                aria-label={`${activeTool.label}. ${t('adminTools.chooseTool')}`}
-                aria-haspopup="menu"
-                aria-expanded={menuAnchor !== null}
-                aria-controls={menuAnchor ? 'admin-tool-menu' : undefined}
-                onClick={(event) => setMenuAnchor(event.currentTarget)}
-                sx={{ minWidth: 0, flex: 1, justifyContent: 'center', px: 1 }}
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography component="h2" variant="h6" sx={sidePanelTitleSx}>
+                {t('adminTools.inlineOpenAction')}
+              </Typography>
+              <IconButton
+                aria-label={t('adminTools.closeAction')}
+                onClick={() => setIsOpen(false)}
+                sx={sidePanelCloseSx}
               >
-                <Stack spacing={0.1} alignItems="center" sx={{ minWidth: 0 }}>
-                  <Typography component="span" variant="subtitle1" fontWeight={850} noWrap>
-                    {activeTool.label}
-                  </Typography>
-                  <Typography component="span" variant="caption" color="text.secondary">
-                    {t('adminTools.toolPosition', {
-                      current: String(activeToolIndex + 1),
-                      total: String(tools.length),
-                    })}
-                  </Typography>
-                </Stack>
-              </AppButton>
-
-              <Tooltip title={t('adminTools.nextTool')}>
-                <span>
-                  <IconButton
-                    size="small"
-                    disabled={!hasMultipleTools}
-                    aria-label={t('adminTools.nextTool')}
-                    onClick={() => selectRelativeTool(1)}
-                  >
-                    <Box component="span" aria-hidden sx={{ fontSize: 22, lineHeight: 1 }}>
-                      →
-                    </Box>
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title={t('adminTools.closeAction')}>
-                <IconButton
-                  size="small"
-                  aria-label={t('adminTools.closeAction')}
-                  onClick={() => setIsOpen(false)}
-                  sx={(theme) => ({
-                    ml: 0.35,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-                  })}
-                >
-                  <Box component="span" aria-hidden sx={{ fontSize: 20, lineHeight: 1 }}>
-                    ×
-                  </Box>
-                </IconButton>
-              </Tooltip>
+                <Box component="span" aria-hidden sx={{ fontSize: 24, lineHeight: 1 }}>
+                  ×
+                </Box>
+              </IconButton>
             </Stack>
+            {hasMultipleTools ? (
+              <Tabs
+                value={resolvedActiveToolId}
+                onChange={(_, value: string) => setActiveToolId(value)}
+                aria-label={t('adminTools.chooseTool')}
+                variant="fullWidth"
+                sx={(theme) => ({
+                  mt: 2,
+                  minHeight: 44,
+                  p: 0.5,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+                  borderRadius: '8px',
+                  bgcolor: alpha(theme.palette.common.black, 0.18),
+                  '& .MuiTabs-indicator': { display: 'none' },
+                })}
+              >
+                {tools.map((tool) => (
+                  <Tab
+                    key={tool.id}
+                    value={tool.id}
+                    label={tool.tabLabel ?? tool.label}
+                    aria-label={tool.label}
+                    id={`${panelId}-tab-${tool.id}`}
+                    aria-controls={`${panelId}-panel-${tool.id}`}
+                    sx={(theme) => ({
+                      minWidth: 0,
+                      minHeight: 44,
+                      px: 1,
+                      py: 0.75,
+                      textTransform: 'none',
+                      fontSize: 14,
+                      lineHeight: 1.3,
+                      borderRadius: '5px',
+                      color: 'text.secondary',
+                      '&.Mui-selected': {
+                        color: 'primary.light',
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        boxShadow: `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}`,
+                      },
+                      '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.07) },
+                    })}
+                  />
+                ))}
+              </Tabs>
+            ) : null}
           </Box>
 
           <Box
@@ -198,15 +203,17 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
               overflowX: 'hidden',
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
-              px: { xs: 1, sm: 1.25 },
-              py: 1.15,
+              px: { xs: 2, sm: 2.5 },
+              pt: 2,
+              pb: 'max(20px, env(safe-area-inset-bottom))',
             }}
           >
             {tools.map((tool) => (
               <Box
                 key={tool.id}
                 role="tabpanel"
-                id={`admin-tool-panel-${tool.id}`}
+                id={`${panelId}-panel-${tool.id}`}
+                aria-labelledby={hasMultipleTools ? `${panelId}-tab-${tool.id}` : undefined}
                 aria-label={tool.label}
                 hidden={tool.id !== resolvedActiveToolId}
               >
@@ -216,27 +223,6 @@ export function AdminToolDrawer({ tools, initialToolId }: AdminToolDrawerProps) 
           </Box>
         </Box>
       </Drawer>
-
-      <Menu
-        id="admin-tool-menu"
-        anchorEl={menuAnchor}
-        open={menuAnchor !== null}
-        onClose={() => setMenuAnchor(null)}
-        MenuListProps={{ 'aria-label': t('adminTools.chooseTool') }}
-      >
-        {tools.map((tool) => (
-          <MenuItem
-            key={tool.id}
-            selected={tool.id === resolvedActiveToolId}
-            onClick={() => {
-              setActiveToolId(tool.id)
-              setMenuAnchor(null)
-            }}
-          >
-            {tool.label}
-          </MenuItem>
-        ))}
-      </Menu>
     </>
   )
 }

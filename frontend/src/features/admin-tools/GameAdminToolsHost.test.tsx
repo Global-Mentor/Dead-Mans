@@ -131,7 +131,7 @@ describe('GameAdminToolsHost', () => {
     expect(screen.getByRole('tabpanel', { name: 'Управление модификаторами' })).toBeVisible()
     expect(screen.getByText('Содержимое управления модификаторами')).toBeVisible()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Предыдущая панель управления' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Управление игрой' }))
 
     expect(screen.getByRole('tabpanel', { name: 'Управление игрой' })).toBeVisible()
     expect(screen.getByText('Содержимое управления игрой')).toBeVisible()
@@ -148,7 +148,7 @@ describe('GameAdminToolsHost', () => {
 
     expect(screen.getByRole('tabpanel', { name: 'Управление игрой' })).toBeVisible()
     expect(screen.queryByText('Содержимое управления модификаторами')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Следующая панель управления' })).toBeDisabled()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
   })
 
   it('does not mount administration queries outside supported pages', () => {

@@ -12,28 +12,33 @@ beforeAll(async () => {
 })
 
 describe('AdminToolDrawer', () => {
-  it('switches with arrows and keeps tool form state', () => {
+  it('switches using visible tabs and keeps tool form state', () => {
     renderDrawer()
     fireEvent.click(screen.getByRole('button', { name: 'Управление игрой' }))
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Поле игры' }), {
       target: { value: 'несохранённое значение' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Следующая панель управления' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Модификаторы' }))
 
     expect(screen.getByRole('tabpanel', { name: 'Модификаторы' })).toBeVisible()
     expect(screen.queryByRole('textbox', { name: 'Поле игры' })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Предыдущая панель управления' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Игра' }))
 
     expect(screen.getByRole('textbox', { name: 'Поле игры' })).toHaveValue('несохранённое значение')
   })
 
-  it('opens a direct panel list from the current title', () => {
+  it('associates the selected tab with its panel', () => {
     renderDrawer()
     fireEvent.click(screen.getByRole('button', { name: 'Управление игрой' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Игра. Выбрать панель управления' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Модификаторы' }))
+    const tab = screen.getByRole('tab', { name: 'Модификаторы' })
+    fireEvent.click(tab)
+    expect(tab).toHaveAttribute('aria-selected', 'true')
+    expect(tab).toHaveAttribute(
+      'aria-controls',
+      screen.getByRole('tabpanel', { name: 'Модификаторы' }).id,
+    )
 
     expect(screen.getByRole('tabpanel', { name: 'Модификаторы' })).toBeVisible()
   })

@@ -15,7 +15,7 @@ type PanelRouteLabelKey = Extract<
   `navigation.items.${string}.label` | `common.entities.${string}`
 >
 
-type PanelAdminSection = 'current-game' | 'catalog' | 'system'
+export type PanelAdminSection = 'current-game' | 'catalog' | 'system'
 
 type PanelRouteDefinitionInput = {
   id: string
@@ -52,13 +52,6 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'player',
   }),
   createPanelRouteDefinition({
-    id: 'game-leaderboard',
-    path: 'game-leaderboard',
-    labelKey: 'navigation.items.gameLeaderboard.label',
-    allowedRoles: authenticatedPanelRoles,
-    group: 'player',
-  }),
-  createPanelRouteDefinition({
     id: 'game-application',
     path: 'game-application',
     labelKey: 'navigation.items.gameApplication.label',
@@ -76,6 +69,13 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'game-quiz',
     path: 'game-quiz',
     labelKey: 'navigation.items.gameQuiz.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'player',
+  }),
+  createPanelRouteDefinition({
+    id: 'game-leaderboard',
+    path: 'game-leaderboard',
+    labelKey: 'navigation.items.gameLeaderboard.label',
     allowedRoles: authenticatedPanelRoles,
     group: 'player',
   }),

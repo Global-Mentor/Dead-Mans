@@ -42,11 +42,58 @@ for (const viewport of [
     await expect(page.locator('button button, button a, a button, a a')).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 
+    const primaryNavigation = page.getByRole('navigation', { name: 'Primary navigation' })
+    const compactNavigation = viewport.width < 1200
+    if (compactNavigation) {
+      await primaryNavigation.getByRole('button', { name: 'Open navigation' }).click()
+    }
+    for (const label of ['Game', 'Leaderboard', 'Apply', 'Modifiers', 'Quiz']) {
+      await expect(
+        compactNavigation
+          ? page.getByRole('menuitem', { name: label, exact: true })
+          : primaryNavigation.getByRole('link', { name: label, exact: true }),
+      ).toBeVisible()
+    }
+    if (!compactNavigation) await primaryNavigation.getByRole('button', { name: 'History' }).click()
+    await expect(page.getByRole('menuitem', { name: 'Game history', exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('menuitem', { name: 'Modifier history', exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+
     await page.screenshot({
       path: `../.tmp/ui-audit/after/gallery-${viewport.label}.png`,
       fullPage: true,
       animations: 'disabled',
     })
+
+    const administrationButton = page.getByRole('button', {
+      name: 'Administration',
+      exact: true,
+    })
+    await administrationButton.click()
+    const administrationMenu = page.getByRole('menu')
+    for (const label of [
+      'Board setup',
+      'Teams',
+      'Current game modifiers',
+      'Current game questions',
+      'Modifier catalog',
+      'Question catalog',
+    ]) {
+      await expect(administrationMenu.getByRole('menuitem', { name: label })).toBeAttached()
+    }
+    await expect(administrationMenu.getByRole('menuitem', { name: 'User roles' })).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    await page.getByRole('button', { name: 'Gallery' }).click()
+    const profileMenu = page.getByRole('menu')
+    await expect(profileMenu.getByText('Access roles')).toBeVisible()
+    await expect(profileMenu.getByText('Administrator')).toBeVisible()
+    await expect(profileMenu.getByText('Participant')).toBeVisible()
+    await expect(profileMenu.getByRole('combobox', { name: 'Interface language' })).toBeVisible()
+    await expect(profileMenu.getByRole('menuitem', { name: 'Log out' })).toBeVisible()
+    await page.keyboard.press('Escape')
 
     const opener = page.getByRole('button', { name: 'Open', exact: true }).last()
     await opener.focus()

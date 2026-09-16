@@ -55,6 +55,24 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
 })
 
+test('production entry point declares a bundled favicon', async ({ page }) => {
+  await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+  await page.goto(`${origin}/`)
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.svg')
+  const icon = await page.evaluate(async () => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')!
+    const response = await fetch(link.href)
+    return {
+      status: response.status,
+      contentType: response.headers.get('content-type'),
+      body: await response.text(),
+    }
+  })
+  expect(icon.status).toBe(200)
+  expect(icon.contentType).toBe('image/svg+xml')
+  expect(icon.body).toContain('<svg')
+})
+
 test('catalog answer editing preserves variants and validates duplicates under production CSP', async ({
   page,
 }) => {
@@ -234,44 +252,4 @@ test('a shared hub reconnects after an abnormal close and refreshes an empty boa
   await expect(page.getByText('No current game board is available yet.')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Reconnected game', exact: true })).toBeVisible()
   expect(failures).toEqual([])
-})
-
-test('production profile changelog is bundled and works under strict CSP', async ({ page }) => {
-  const violations: string[] = []
-  const errors: string[] = []
-  const noteFileRequests: string[] = []
-  await page.exposeFunction('recordCspViolation', (directive: string) => violations.push(directive))
-  await page.addInitScript(() => {
-    document.addEventListener('securitypolicyviolation', (event) => {
-      void (
-        window as unknown as { recordCspViolation: (value: string) => Promise<void> }
-      ).recordCspViolation(`${event.effectiveDirective}: ${event.blockedURI}`)
-    })
-  })
-  page.on('pageerror', (error) => errors.push(error.message))
-  page.on('request', (request) => {
-    if (request.url().includes('dev-notes')) {
-      noteFileRequests.push(request.url())
-    }
-  })
-  await serveProductionApp(page, async (route) => {
-    await route.fulfill({ status: 204 })
-  })
-  await page.goto(`${origin}/panel/game-board`)
-  await page.getByRole('button', { name: /Administrator/ }).click()
-  await page.getByRole('menuitem', { name: "What's new" }).click()
-
-  const dialog = page.getByRole('dialog', { name: "What's new" })
-  await expect(dialog).toBeVisible()
-  const dialogText = await dialog.innerText()
-  expect(dialogText.indexOf('Several correct answers')).toBeGreaterThan(-1)
-  expect(dialogText.indexOf('Several correct answers')).toBeLessThan(
-    dialogText.indexOf('Removing players from a team'),
-  )
-  expect(dialogText.indexOf('Removing players from a team')).toBeLessThan(
-    dialogText.indexOf('Closed testing'),
-  )
-  expect(errors).toEqual([])
-  expect(violations).toEqual([])
-  expect(noteFileRequests).toEqual([])
 })

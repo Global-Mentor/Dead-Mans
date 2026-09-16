@@ -23,10 +23,10 @@ describe('panel route helpers', () => {
   it('keeps player navigation focused on player routes', () => {
     expect(getAccessiblePanelRoutes(['viewer'])).toEqual([
       gameBoardRoute,
-      gameLeaderboardRoute,
       gameApplicationRoute,
       gameModifiersRoute,
       gameQuizRoute,
+      gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
     ])
@@ -35,10 +35,10 @@ describe('panel route helpers', () => {
   it('includes administration routes for admins', () => {
     expect(getAccessiblePanelRoutes(['admin'])).toEqual([
       gameBoardRoute,
-      gameLeaderboardRoute,
       gameApplicationRoute,
       gameModifiersRoute,
       gameQuizRoute,
+      gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
       gameSetupRoute,
@@ -53,10 +53,10 @@ describe('panel route helpers', () => {
   it('allows moderators to manage team registrations without exposing admin setup pages', () => {
     expect(getAccessiblePanelRoutes(['moderator'])).toEqual([
       gameBoardRoute,
-      gameLeaderboardRoute,
       gameApplicationRoute,
       gameModifiersRoute,
       gameQuizRoute,
+      gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
       teamRegistrationsRoute,
@@ -66,10 +66,10 @@ describe('panel route helpers', () => {
   it('gives super administrators every admin route plus role administration', () => {
     expect(getAccessiblePanelRoutes(['superadmin'])).toEqual([
       gameBoardRoute,
-      gameLeaderboardRoute,
       gameApplicationRoute,
       gameModifiersRoute,
       gameQuizRoute,
+      gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
       gameSetupRoute,

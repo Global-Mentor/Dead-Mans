@@ -6730,17 +6730,15 @@ export interface operations {
                     "application/json": components["schemas"]["GameRegistrationSnapshotDto"];
                 };
             };
-            /** @description Not authenticated */
-            401: {
+            /** @description Registration is not open (no ready game) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
+                content?: never;
             };
-            /** @description Registration is not open (no ready game) */
-            404: {
+            /** @description Not authenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
