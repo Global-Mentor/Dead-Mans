@@ -16,7 +16,6 @@ import { buildRoundActionModel, type GameRoundDetails } from '../model/game-mana
 import { ManualQuizAwardControl } from './ManualQuizAwardControl.tsx'
 import { RoundSafetyControls } from './RoundSafetyControls.tsx'
 import type { TechnicalCancelRoundInput } from '../use-start-game-round.ts'
-import { ManagementFlowPanel } from './management-panel/ManagementFlowPanel.tsx'
 import { SecondaryManagementSection } from './management-panel/ManagementPanelSurfaces.tsx'
 import { RoundAssistantSection } from './management-panel/RoundAssistantSection.tsx'
 import { TeamControlSection } from './management-panel/TeamControlSection.tsx'
@@ -151,7 +150,7 @@ export function GameManagementTool({
   return (
     <>
       <Box data-testid="game-management-tool">
-        <Stack spacing={1.15}>
+        <Stack spacing={2}>
           {flow.phase === 'ready' ? (
             <SecondaryManagementSection
               sectionId="launch"
@@ -268,14 +267,6 @@ export function GameManagementTool({
               ) : null}
             </>
           ) : null}
-
-          <SecondaryManagementSection
-            sectionId="flow-details"
-            title={t('gameBoard.flowTitle')}
-            tooltip={t('gameBoard.flowTooltip')}
-          >
-            <ManagementFlowPanel snapshot={snapshot} activeRound={activeRound} />
-          </SecondaryManagementSection>
         </Stack>
       </Box>
 

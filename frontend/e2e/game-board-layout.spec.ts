@@ -263,6 +263,24 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
     await page.getByRole('dialog').getByRole('button', { name: 'Отмена' }).click()
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
     await expect(page.getByTestId('game-management-tool')).toBeVisible()
+    const management = page.getByTestId('game-management-tool')
+    await expect(management.getByText('Фаза раунда', { exact: true })).toHaveCount(0)
+    await expect(management.getByRole('heading', { name: 'Ассистент раунда' })).toBeVisible()
+    await expect(management.getByRole('heading', { name: 'Активная команда' })).toBeVisible()
+    for (const section of ['round', 'team', 'manual-quiz', 'finish-game']) {
+      const block = management.getByTestId(`management-${section}-section`)
+      expect(
+        await block.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth)),
+      ).toBeGreaterThanOrEqual(1)
+    }
+    const assistantBounds = await management.getByTestId('management-round-section').boundingBox()
+    const teamBounds = await management.getByTestId('management-team-section').boundingBox()
+    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeGreaterThanOrEqual(15)
+    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+      const action = management.getByRole('button', { name: label, exact: true })
+      await expect(action).toHaveClass(/MuiButton-outlinedPrimary/)
+      await expect(action).toBeEnabled()
+    }
     await expect(page.getByRole('tab', { name: 'Управление игрой' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Управление модификаторами' })).toBeVisible()
     await expect
@@ -354,6 +372,50 @@ for (const status of ['ready', 'finished'] as const) {
       )
     })
   }
+}
+
+for (const width of [320, 1440]) {
+  test(`management highlights the round action at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    const writes = await mockGame(page)
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({
+        json: {
+          roundId: 'round-one',
+          cellId: 'card-0',
+          teamId: 'team-one',
+          teamName: 'Ночные странники',
+          teamSlotIndex: 1,
+          status: 'awaiting_modifiers',
+          baseScore: 100,
+          roundVersion: 1,
+        },
+      }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const assistant = page.getByTestId('management-round-section')
+    await expect(assistant.getByRole('button')).toBeVisible()
+    await expect(assistant.getByRole('button')).toBeEnabled()
+    await expect(page.getByTestId('management-team-section')).toContainText('Ворон')
+    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+      const action = page
+        .getByTestId('management-team-section')
+        .getByRole('button', { name: label, exact: true })
+      await expect(action).toHaveClass(/MuiButton-outlinedPrimary/)
+      await expect(action).toBeDisabled()
+    }
+    expect(
+      await page
+        .getByTestId('admin-tool-drawer-scroll-body')
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/management-round-${width}.png`,
+      animations: 'disabled',
+    })
+    expect(writes).toEqual([])
+  })
 }
 
 for (const width of [320, 390, 1440]) {
