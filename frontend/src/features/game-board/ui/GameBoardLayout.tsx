@@ -2,6 +2,8 @@ import { Box, type Theme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
+import { huntWornFrame } from '../../../shared/theme/hunt-materials.ts'
+import { uiTokens } from '../../../shared/theme/tokens.ts'
 
 interface GameBoardLayoutProps {
   context: ReactNode
@@ -15,8 +17,18 @@ function edgeTabSx(theme: Theme, side: 'left' | 'right') {
     minHeight: 44,
     border: '1px solid',
     borderColor: 'divider',
-    borderRadius: 1,
+    ...huntWornFrame,
+    borderImageOutset: 0,
+    borderRadius: 0,
     bgcolor: 'background.paper',
+    backgroundImage: theme.custom.gradients.panelSurface,
+    backgroundSize: `auto, ${uiTokens.texture.panelSize}`,
+    fontSize: 15,
+    fontWeight: 700,
+    letterSpacing: '0.025em',
+    '&::before': { display: 'none' },
+    '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' },
+    '&:focus-visible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: -3 },
     [theme.breakpoints.up('lg')]: {
       position: 'fixed',
       [side]: 0,
@@ -31,10 +43,7 @@ function edgeTabSx(theme: Theme, side: 'left' | 'right') {
       py: 2,
       writingMode: 'vertical-rl',
       whiteSpace: 'nowrap',
-      borderRadius: side === 'left' ? '0 12px 12px 0' : '12px 0 0 12px',
       boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.24)}`,
-      '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' },
-      '&:focus-visible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: 2 },
     },
   }
 }

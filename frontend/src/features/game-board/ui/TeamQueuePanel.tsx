@@ -21,6 +21,8 @@ import {
   sidePanelTitleSx,
 } from '../../../shared/theme/side-panel-sx.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
+import { huntWornFrame } from '../../../shared/theme/hunt-materials.ts'
+import { huntPalette } from '../../../shared/theme/hunt-palette.ts'
 
 interface TeamQueuePanelProps {
   teams: readonly GameTeamQueueItem[]
@@ -141,10 +143,7 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
                 label={t('gameBoard.teamQueueSearch')}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                sx={{
-                  mt: 2,
-                  '& .MuiOutlinedInput-root': { borderRadius: '8px' },
-                }}
+                sx={{ mt: 2 }}
                 slotProps={{
                   input: {
                     endAdornment: search ? (
@@ -291,11 +290,40 @@ function TeamQueueSection({
 }) {
   return (
     <Stack spacing={0.85}>
-      <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="space-between">
+      <Stack
+        direction="row"
+        spacing={0.75}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={(theme) => ({
+          minHeight: 52,
+          px: 1.25,
+          py: 1,
+          bgcolor: alpha(theme.palette.common.black, 0.16),
+          boxShadow: `inset 2px 0 0 ${alpha(theme.palette.text.secondary, 0.42)}`,
+        })}
+      >
         <Typography
-          variant="overline"
-          color="text.secondary"
-          sx={{ fontWeight: 600, fontSize: 11, letterSpacing: '0.12em' }}
+          component="h3"
+          variant="subtitle1"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.25,
+            fontWeight: 700,
+            fontSize: 20,
+            lineHeight: 1.2,
+            letterSpacing: '0.025em',
+            '&::before': {
+              content: '""',
+              width: 8,
+              height: 8,
+              flexShrink: 0,
+              transform: 'rotate(45deg)',
+              bgcolor: 'text.secondary',
+              opacity: 0.58,
+            },
+          }}
         >
           {title}
         </Typography>
@@ -340,26 +368,15 @@ function TeamQueueCard({
   const { t } = useTranslation()
 
   return (
-    <Box
+    <SectionCard
+      component="article"
+      aria-label={formatTeamQueueName(t, team.teamName)}
       sx={(theme) => ({
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: '8px',
-        border: `1px solid ${alpha(theme.palette.primary.main, isActive ? 0.38 : 0.16)}`,
-        background: `linear-gradient(115deg, ${alpha(theme.palette.primary.main, isActive ? 0.11 : 0.025)}, ${alpha(theme.palette.background.paper, 0.68)} 75%)`,
-        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.04)}`,
-        px: 1.75,
-        py: 1.75,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          left: -1,
-          top: 16,
-          bottom: 16,
-          width: 3,
-          borderRadius: 999,
-          backgroundColor: isActive ? theme.palette.primary.main : 'transparent',
-        },
+        p: 1.5,
+        borderColor: isActive ? alpha(huntPalette.amber, 0.65) : 'divider',
+        backgroundImage: `linear-gradient(110deg, ${alpha(huntPalette.ember, isActive ? 0.26 : 0)}, transparent 70%), ${theme.custom.gradients.panelSurface}`,
+        backgroundSize: 'auto, auto, 640px auto',
+        ...(isActive ? huntWornFrame : {}),
       })}
     >
       <Stack spacing={1}>
@@ -367,10 +384,10 @@ function TeamQueueCard({
           <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
             <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
               <Typography
-                component="h3"
+                component="h4"
                 variant="subtitle1"
                 fontWeight={700}
-                sx={{ fontSize: 18, overflowWrap: 'anywhere' }}
+                sx={{ fontSize: 24, lineHeight: 1.15, overflowWrap: 'anywhere' }}
               >
                 {formatTeamQueueName(t, team.teamName)}
               </Typography>
@@ -389,10 +406,10 @@ function TeamQueueCard({
                   color="primary"
                   variant="outlined"
                   sx={(theme) => ({
-                    border: 0,
+                    borderColor: alpha(theme.palette.primary.main, 0.4),
                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                     color: 'primary.light',
-                    borderRadius: '4px',
+                    borderRadius: 0,
                   })}
                   label={t('gameBoard.teamQueueActiveChip')}
                 />
@@ -401,27 +418,27 @@ function TeamQueueCard({
           </Stack>
         </Stack>
 
-        <Stack spacing={0.7} sx={{ pl: 0.4 }}>
-          {team.participants.map((participant, index) => (
+        <Stack component="ul" spacing={0.75} sx={{ listStyle: 'none', p: 0, m: 0 }}>
+          {team.participants.map((participant) => (
             <Box
+              component="li"
               key={participant.userId}
               sx={{
-                display: 'grid',
-                gridTemplateColumns: '18px 1fr',
+                display: 'flex',
                 gap: 1.25,
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 minWidth: 0,
-                px: 1,
-                py: 0.25,
+                '&::before': {
+                  content: '""',
+                  width: 5,
+                  height: 5,
+                  mt: '0.6em',
+                  flexShrink: 0,
+                  transform: 'rotate(45deg)',
+                  bgcolor: 'primary.main',
+                },
               }}
             >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ textAlign: 'right', fontWeight: 700 }}
-              >
-                {index + 1}.
-              </Typography>
               <Typography
                 variant="body2"
                 title={participant.displayName}
@@ -433,7 +450,7 @@ function TeamQueueCard({
           ))}
         </Stack>
       </Stack>
-    </Box>
+    </SectionCard>
   )
 }
 
