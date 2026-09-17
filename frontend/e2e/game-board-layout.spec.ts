@@ -105,6 +105,52 @@ async function mockGame(
   return writes
 }
 
+for (const touch of [false, true]) {
+  test(`active team roster tooltip works with ${touch ? 'touch' : 'mouse and keyboard'}`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: touch ? 390 : 1440, height: 900 },
+      hasTouch: touch,
+    })
+    const page = await context.newPage()
+    const writes = await mockGame(page)
+    await page.goto('/panel/game-board')
+    const team = page.getByRole('button', { name: 'Ночные странники', exact: true })
+    await expect(team).toBeVisible()
+    const status = page.getByTestId('game-board-context')
+    const statusBefore = await status.boundingBox()
+    const card = page.locator('[data-cell-id="card-0"]')
+    const cardBefore = await card.boundingBox()
+    if (touch) await team.tap()
+    else await team.hover()
+    const tooltip = page.getByRole('tooltip')
+    await expect(tooltip).toContainText('Искатель приключений')
+    await expect(tooltip).toContainText('Ворон')
+    await expect(tooltip).not.toContainText('Ночные странники')
+    await expect(tooltip).not.toContainText('Стрелок')
+    const tooltipBox = await tooltip.boundingBox()
+    expect(tooltipBox!.x).toBeGreaterThanOrEqual(0)
+    expect(tooltipBox!.x + tooltipBox!.width).toBeLessThanOrEqual(touch ? 390 : 1440)
+    expect(await status.boundingBox()).toEqual(statusBefore)
+    expect(await card.boundingBox()).toEqual(cardBefore)
+    if (touch) {
+      await page.locator('body').tap({ position: { x: 5, y: 400 } })
+    } else {
+      await page.mouse.move(5, 400)
+    }
+    await expect(tooltip).not.toBeVisible()
+    if (!touch) {
+      await team.focus()
+      await expect(tooltip).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(tooltip).not.toBeVisible()
+    }
+    expect(writes).toEqual([])
+    await context.close()
+  })
+}
+
 for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
   test(`game board is readable and operable at ${width}px`, async ({ page }) => {
     const height =
@@ -282,17 +328,32 @@ test('edge tabs adapt to mobile without losing the open panel or focus', async (
 })
 
 for (const status of ['ready', 'finished'] as const) {
-  test(`shows ${status} state and player actions on a phone`, async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await mockGame(page, status, 'viewer')
-    await page.goto('/panel/game-board')
-    await expect(page.getByRole('heading', { name: 'Последняя охота' })).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: status === 'ready' ? 'Подать заявку' : 'Открыть результаты' }),
-    ).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  })
+  for (const width of [320, 390, 1440]) {
+    test(`shows ${status} state and highlighted player actions at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 })
+      await mockGame(page, status, 'viewer')
+      await page.goto('/panel/game-board')
+      await expect(page.getByRole('heading', { name: 'Последняя охота' })).toBeVisible()
+      const actionLabel = status === 'ready' ? 'Подать заявку' : 'Открыть результаты'
+      const action = page.getByTestId('game-board-context').getByRole('link', { name: actionLabel })
+      await expect(action).toBeVisible()
+      await expect(action).toHaveClass(/MuiButton-containedPrimary/)
+      const label = action.getByTitle(actionLabel)
+      expect(
+        await label.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+      ).toBeGreaterThanOrEqual(16)
+      expect(
+        await label.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+      ).toBe(true)
+      await action.focus()
+      await expect(action).toBeFocused()
+      await page.screenshot({ path: `../.tmp/game-board-design/${status}-${width}.png` })
+      await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+    })
+  }
 }
 
 for (const width of [320, 390, 1440]) {
@@ -324,6 +385,15 @@ for (const width of [320, 390, 1440]) {
     }
     await expect(page.locator('[data-cell-id="card-0"]')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toBeVisible()
+    const modifierAction = page.getByRole('link', { name: 'Перейти к модификаторам' })
+    await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
+    const modifierLabel = modifierAction.getByTitle('Активировать модификаторы')
+    expect(
+      await modifierLabel.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+    ).toBe(width < 600 ? 15 : 16)
+    expect(
+      await modifierLabel.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+    ).toBe(true)
     await expect(page.getByTestId('game-board-context')).toContainText(teamName)
     await expect(page.getByTestId('game-board-context')).toContainText('Активная команда')
     await expect(page.getByTestId('game-board-context')).toContainText('Фаза раунда')
@@ -331,6 +401,13 @@ for (const width of [320, 390, 1440]) {
       .getByRole('link', { name: 'Перейти к модификаторам' })
       .boundingBox()
     const statusBox = await page.getByTestId('game-board-context').boundingBox()
+    const phaseCaptionBox = await modifierAction.getByTitle('Фаза раунда').boundingBox()
+    const teamCaptionBox = await page
+      .getByTestId('game-board-context')
+      .getByTitle('Активная команда')
+      .boundingBox()
+    expect(phaseCaptionBox!.y - actionBox!.y).toBeGreaterThanOrEqual(7)
+    expect(Math.abs(phaseCaptionBox!.y - teamCaptionBox!.y)).toBeLessThanOrEqual(2)
     expect(actionBox!.height).toBeGreaterThanOrEqual(44)
     expect(statusBox!.height).toBeLessThanOrEqual(76)
     expect(statusBox!.height).toBe(64)
@@ -351,7 +428,7 @@ for (const width of [320, 390, 1440]) {
     // Switching between an action and a passive phase must not move the team or cards.
     const teamBoxBefore = await page
       .getByTestId('game-board-context')
-      .getByTitle(teamName)
+      .getByTestId('game-board-status-title')
       .boundingBox()
     const cardBoxBefore = await page.locator('[data-cell-id="card-0"]').boundingBox()
     roundStatus = 'in_progress'
@@ -360,7 +437,7 @@ for (const width of [320, 390, 1440]) {
     await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toHaveCount(0)
     const teamBoxAfter = await page
       .getByTestId('game-board-context')
-      .getByTitle(teamName)
+      .getByTestId('game-board-status-title')
       .boundingBox()
     const cardBoxAfter = await page.locator('[data-cell-id="card-0"]').boundingBox()
     expect(await page.getByTestId('game-board-context').boundingBox()).toEqual(statusBox)
