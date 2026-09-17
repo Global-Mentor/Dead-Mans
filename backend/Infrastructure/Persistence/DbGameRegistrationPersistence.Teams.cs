@@ -88,7 +88,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             ? await BeginRosterChangeAsync(gameId, cancellationToken)
             : null;
 
-        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        if (!await _dbContext.Games.AsNoTracking().AnyAsync(
+                game => game.Id == gameId && !game.IsDeleted
+                    && (game.Status == GameStatusValue.Ready || game.Status == GameStatusValue.Active),
+                cancellationToken))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
