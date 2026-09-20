@@ -30,7 +30,8 @@ public sealed class ApplicationMigrationChainTests
                 "20260913191016_AddTeamMemberReadiness",
                 "20260917140000_AllowAdminTeamManagement",
                 "20260919151237_ConvertQuizToMultipleChoice",
-                "20260919162829_RenameQuizRoundToQuestionSession"
+                "20260919162829_RenameQuizRoundToQuestionSession",
+                "20260920001406_HardenQuizSubmissionHistory"
             ],
             migrations
         );
@@ -74,10 +75,13 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("ck_game_team_members_ready_semantics", script, StringComparison.Ordinal);
         Assert.Contains("20260919151237_ConvertQuizToMultipleChoice", script, StringComparison.Ordinal);
         Assert.Contains("20260919162829_RenameQuizRoundToQuestionSession", script, StringComparison.Ordinal);
+        Assert.Contains("20260920001406_HardenQuizSubmissionHistory", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_submissions", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_question_sessions", script, StringComparison.Ordinal);
         Assert.Contains("question_session_id", script, StringComparison.Ordinal);
         Assert.Contains("deadmans_assert_question_options", script, StringComparison.Ordinal);
+        Assert.Contains("trg_game_quiz_submissions_immutable", script, StringComparison.Ordinal);
+        Assert.Contains("ck_game_quiz_question_sessions_option_ids_unique", script, StringComparison.Ordinal);
         Assert.Contains("Quiz rewards must match closed correct submissions exactly once", script, StringComparison.Ordinal);
         Assert.DoesNotContain("game_quiz_manual_awards", script, StringComparison.Ordinal);
     }

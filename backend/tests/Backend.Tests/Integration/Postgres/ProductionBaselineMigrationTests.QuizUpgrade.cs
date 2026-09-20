@@ -97,6 +97,12 @@ public sealed partial class ProductionBaselineMigrationTests
             await repository.CloseExpiredQuizQuestionSessionsAsync();
             await repository.CloseExpiredQuizQuestionSessionsAsync();
             Assert.Equal(question.Reward, (await db.GameQuizPointLedgerEntries.SingleAsync()).PointsDelta);
+            var submissionId = await db.GameQuizSubmissions.Select(x => x.Id).SingleAsync();
+            await AssertHardenedQuizHistoryAsync(
+                connectionString,
+                submissionId,
+                correctId
+            );
         });
     }
 
@@ -242,6 +248,57 @@ public sealed partial class ProductionBaselineMigrationTests
         command.Parameters.AddWithValue("status", status);
         await command.ExecuteNonQueryAsync();
         return user;
+    }
+
+    private static async Task AssertHardenedQuizHistoryAsync(
+        string connectionString,
+        Guid submissionId,
+        Guid correctOptionId
+    )
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "UPDATE game_quiz_submissions SET display_name_snapshot = 'tampered' WHERE id = @id";
+            command.Parameters.AddWithValue("id", submissionId);
+            var exception = await Assert.ThrowsAsync<PostgresException>(
+                () => command.ExecuteNonQueryAsync()
+            );
+            Assert.Equal(PostgresErrorCodes.ObjectNotInPrerequisiteState, exception.SqlState);
+        }
+
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "DELETE FROM game_quiz_submissions WHERE id = @id";
+            command.Parameters.AddWithValue("id", submissionId);
+            var exception = await Assert.ThrowsAsync<PostgresException>(
+                () => command.ExecuteNonQueryAsync()
+            );
+            Assert.Equal(PostgresErrorCodes.ObjectNotInPrerequisiteState, exception.SqlState);
+        }
+
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = """
+                SELECT NOT deadmans_uuid_array_has_unique_values(
+                    ARRAY[@option, @option]::uuid[]
+                ) AND (
+                    SELECT count(*) = 2
+                    FROM pg_constraint
+                    WHERE conname IN (
+                        'ck_game_enabled_questions_option_ids_unique',
+                        'ck_game_quiz_question_sessions_option_ids_unique'
+                    )
+                      AND convalidated
+                      AND pg_get_constraintdef(oid) LIKE
+                          '%deadmans_uuid_array_has_unique_values(option_ids_snapshot)%'
+                );
+                """;
+            command.Parameters.AddWithValue("option", correctOptionId);
+            Assert.True(Assert.IsType<bool>(await command.ExecuteScalarAsync()));
+        }
     }
 
     private sealed class UpgradeClock(DateTime now) : TimeProvider
