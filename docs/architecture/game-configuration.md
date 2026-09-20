@@ -122,6 +122,7 @@
 
 - `PUT /api/game/setup` принимает `enabledModifierIds` и **`enabledQuestionIds`**;
   снапшот (`GET /api/game/setup`) возвращает оба набора.
+- Подписи строк и колонок ограничены 24 символами.
 
 ## 5. Инварианты
 

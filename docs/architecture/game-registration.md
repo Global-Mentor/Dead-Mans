@@ -108,7 +108,7 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 
 ## Current UI behavior
 
-- Admins open registration from the game setup sidebar after saving the draft. The panel blocks unsaved edits, in-flight media operations, known remote changes and an existing ready/active game, then asks for publication confirmation and opens team management.
+- Admins open registration from the game setup sidebar after the draft finishes auto-saving. The panel blocks pending edits, in-flight saves or media operations, known remote changes and an existing ready/active game, then asks for publication confirmation and opens team management.
 - Quiz questions are optional for both `draft → ready` and `ready → active`. A game with no selected questions can be published and started normally after its teams meet the start requirements.
 - Draft saves, resets, media attachment/removal and publication share the catalog transaction lock. Storage uploads finish outside the transaction; attachment rechecks that the draft is still editable and cleans up the uploaded object if publication/reset won the race. Publication pins modifier revisions and question snapshots; opening registration and starting the game broadcast lifecycle changes so navigation and registration views refresh across the panel.
 

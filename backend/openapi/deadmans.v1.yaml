@@ -3952,7 +3952,7 @@ components:
           items:
             type: string
             minLength: 1
-            maxLength: 100
+            maxLength: 24
         colLabels:
           type: array
           minItems: 1
@@ -3960,7 +3960,7 @@ components:
           items:
             type: string
             minLength: 1
-            maxLength: 100
+            maxLength: 24
         cells:
           type: array
           minItems: 1

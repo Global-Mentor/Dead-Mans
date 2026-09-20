@@ -22,6 +22,7 @@ interface GameSetupGridProps {
   snapshot: GameSetupSnapshot
   draft: GameSetupDraftState
   onDraftChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
+  onDraftCommit: () => void
   cellMediaDisplayByCellId: Record<string, GameSetupCellMediaDisplayState>
   isCellMediaBusy: (cellId: string | undefined) => boolean
   onUploadCellMedia: (cellId: string | undefined, file: File) => void
@@ -32,6 +33,7 @@ export function GameSetupGrid({
   snapshot,
   draft,
   onDraftChange,
+  onDraftCommit,
   cellMediaDisplayByCellId,
   isCellMediaBusy,
   onUploadCellMedia,
@@ -59,8 +61,11 @@ export function GameSetupGrid({
             textAlign="center"
             label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
             value={columnLabel}
+            multiline
+            minRows={2}
+            maxRows={2}
             onChange={(event) => {
-              const nextValue = event.target.value
+              const nextValue = normalizeBoardLabelInput(event.target.value)
               onDraftChange((current) => ({
                 ...current,
                 colLabels: current.colLabels.map((label, index) =>
@@ -68,6 +73,7 @@ export function GameSetupGrid({
                 ),
               }))
             }}
+            onBlur={onDraftCommit}
             inputProps={{
               maxLength: GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
             }}
@@ -78,6 +84,9 @@ export function GameSetupGrid({
               },
               '& .MuiInputBase-input': {
                 px: 1.25,
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                overflowWrap: 'anywhere',
               },
             }}
           />
@@ -87,8 +96,11 @@ export function GameSetupGrid({
             density="compact"
             label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
             value={rowLabel}
+            multiline
+            minRows={2}
+            maxRows={2}
             onChange={(event) => {
-              const nextValue = event.target.value
+              const nextValue = normalizeBoardLabelInput(event.target.value)
               onDraftChange((current) => ({
                 ...current,
                 rowLabels: current.rowLabels.map((label, index) =>
@@ -96,6 +108,7 @@ export function GameSetupGrid({
                 ),
               }))
             }}
+            onBlur={onDraftCommit}
             inputProps={{
               maxLength: GAME_SETUP_MAX_ROW_LABEL_LENGTH,
             }}
@@ -109,6 +122,9 @@ export function GameSetupGrid({
                 py: 2,
                 textAlign: 'center',
                 fontWeight: 600,
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                overflowWrap: 'anywhere',
               },
             }}
           />
@@ -148,6 +164,7 @@ export function GameSetupGrid({
                     }),
                   )
                 }}
+                onBlur={onDraftCommit}
                 inputProps={{ maxLength: GAME_SETUP_MAX_CELL_TITLE_LENGTH }}
               />
               <FormTextField
@@ -163,6 +180,7 @@ export function GameSetupGrid({
                     }),
                   )
                 }}
+                onBlur={onDraftCommit}
                 type="number"
                 inputProps={{ min: 0 }}
               />
@@ -172,4 +190,8 @@ export function GameSetupGrid({
       />
     </Box>
   )
+}
+
+function normalizeBoardLabelInput(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ')
 }

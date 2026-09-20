@@ -14,13 +14,11 @@ export function AdminGameModifiersPage() {
     isError,
     syncStatus,
     isDirty,
-    isSaving,
     saveErrorMessage,
     resetErrorMessage,
     cellMediaErrorKey,
     remoteChangeNotice,
     draftRemovedNotice,
-    saveDraft,
     reloadFromServer,
     toggleModifier,
     dismissRemoteChangeNotice,
@@ -62,14 +60,7 @@ export function AdminGameModifiersPage() {
       <GameSetupModifiersSection
         draft={draft}
         onToggle={toggleModifier}
-        actions={
-          <GameSetupSyncActions
-            syncStatus={syncStatus}
-            isDirty={isDirty}
-            isSaving={isSaving}
-            onSave={() => void saveDraft()}
-          />
-        }
+        actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
 
       <GameSetupBoardNotices

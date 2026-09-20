@@ -1,7 +1,6 @@
 import { Chip, Stack, type ChipProps } from '@mui/material'
 import type { ParseKeys } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/index.ts'
 import type { GameSetupSyncStatus } from '../use-game-setup-save.ts'
 
 interface SyncChipProps {
@@ -30,34 +29,22 @@ function getSyncChipProps(syncStatus: GameSetupSyncStatus, isDirty: boolean): Sy
 interface GameSetupSyncActionsProps {
   syncStatus: GameSetupSyncStatus
   isDirty: boolean
-  isSaving: boolean
-  onSave: () => void
 }
 
-export function GameSetupSyncActions({
-  syncStatus,
-  isDirty,
-  isSaving,
-  onSave,
-}: GameSetupSyncActionsProps) {
+export function GameSetupSyncActions({ syncStatus, isDirty }: GameSetupSyncActionsProps) {
   const { t } = useTranslation()
   const syncChip = getSyncChipProps(syncStatus, isDirty)
 
   return (
-    <Stack spacing={1} alignItems="flex-end" justifyContent="flex-end">
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
-        justifyContent="flex-end"
-        sx={{ flexWrap: 'nowrap' }}
-      >
-        <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
-        <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
-      </Stack>
-      <AppButton disabled={!isDirty || isSaving} onClick={onSave}>
-        {isSaving ? t('gameSetup.saving') : t('gameSetup.save')}
-      </AppButton>
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      justifyContent="flex-end"
+      sx={{ flexWrap: 'nowrap' }}
+    >
+      <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
+      <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
     </Stack>
   )
 }

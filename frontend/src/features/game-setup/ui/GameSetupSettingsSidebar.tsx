@@ -11,6 +11,7 @@ import { ResetGameSetupDialog } from './ResetGameSetupDialog.tsx'
 interface GameSetupSettingsSidebarProps {
   draft: GameSetupDraftState
   onDraftChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
+  onDraftCommit: () => void
   onLayoutChange: (updater: (current: GameSetupDraftState) => GameSetupDraftState) => void
   onReset: () => void | Promise<void>
   isResetting: boolean
@@ -20,6 +21,7 @@ interface GameSetupSettingsSidebarProps {
 export function GameSetupSettingsSidebar({
   draft,
   onDraftChange,
+  onDraftCommit,
   onLayoutChange,
   onReset,
   isResetting,
@@ -53,6 +55,7 @@ export function GameSetupSettingsSidebar({
                 title: nextTitle,
               }))
             }}
+            onBlur={onDraftCommit}
             inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
           />
 
