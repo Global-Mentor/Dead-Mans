@@ -62,9 +62,9 @@ describe('QuestionFormDialog', () => {
       correctSubmissionTotalCount: 0,
       correctPercentage: 0,
       options: [
-        { id: 'a', text: 'Krakow', isCorrect: false, sortOrder: 0 },
-        { id: 'b', text: 'Warsaw', isCorrect: true, sortOrder: 2 },
-        { id: 'c', text: 'Gdansk', isCorrect: false, sortOrder: 1 },
+        { optionId: 'a', text: 'Krakow', isCorrect: false, sortOrder: 0 },
+        { optionId: 'b', text: 'Warsaw', isCorrect: true, sortOrder: 2 },
+        { optionId: 'c', text: 'Gdansk', isCorrect: false, sortOrder: 1 },
       ],
     }
     const onSubmit = renderForm(initial)

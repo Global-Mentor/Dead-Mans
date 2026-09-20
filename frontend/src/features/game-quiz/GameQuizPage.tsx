@@ -50,7 +50,7 @@ export function GameQuizPage() {
     enabled: gameId !== '',
   })
   const currentQuizQuery = useQuery({
-    ...currentGameQuizQueryOptions,
+    ...currentGameQuizQueryOptions(gameId),
     enabled: gameId !== '',
     refetchOnWindowFocus: 'always',
     refetchInterval: (query) => {
@@ -62,7 +62,7 @@ export function GameQuizPage() {
     user?.roles.some((role) => role === 'moderator' || role === 'admin' || role === 'superadmin') ??
     false
   const availableQuestionsQuery = useQuery({
-    ...availableGameQuizQuestionsQueryOptions,
+    ...availableGameQuizQuestionsQueryOptions(gameId),
     enabled: canManageQuiz && gameId !== '',
   })
   const invalidateQuiz = async () => {

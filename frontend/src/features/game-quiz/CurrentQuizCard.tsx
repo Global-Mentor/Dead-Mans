@@ -1,4 +1,5 @@
 import { Alert, Chip, LinearProgress, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
@@ -50,12 +51,19 @@ export function CurrentQuizCard({
     : ''
   const isOpen = state?.status === 'open'
   const hasAnswered = state?.mySelectedOptionId != null
+  const description = !state
+    ? t('gameQuiz.waitingDescription')
+    : isOpen
+      ? t('gameQuiz.currentDescription')
+      : state.status === 'closed'
+        ? t('gameQuiz.closedDescription')
+        : t('gameQuiz.skippedDescription')
 
   return (
     <SectionCard sx={{ mt: 1 }}>
       <SectionHeader
         title={state ? t('gameQuiz.currentTitle') : t('gameQuiz.waitingTitle')}
-        description={state ? t('gameQuiz.currentDescription') : t('gameQuiz.waitingDescription')}
+        description={description}
         actions={
           canManage ? (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -117,14 +125,39 @@ export function CurrentQuizCard({
             {state.options.map((option) => {
               const isSelected = state.mySelectedOptionId === option.optionId
               const isCorrect = state.correctOptionId === option.optionId
+              const resultKind = !isOpen
+                ? isCorrect
+                  ? 'correct'
+                  : isSelected
+                    ? 'selected-wrong'
+                    : undefined
+                : undefined
               const result = state.optionResults?.find((item) => item.optionId === option.optionId)
               return (
                 <AppButton
                   key={option.optionId}
-                  tone={!isOpen && isCorrect ? 'secondary' : 'ghost'}
+                  tone="ghost"
+                  data-quiz-result={resultKind}
                   disabled={!isOpen || hasAnswered || isSubmitting}
                   onClick={() => onSubmit(state.questionSessionId, option.optionId)}
-                  sx={{ justifyContent: 'space-between', textAlign: 'left' }}
+                  sx={(theme) => ({
+                    justifyContent: 'space-between',
+                    textAlign: 'left',
+                    ...(resultKind === 'correct' && {
+                      '&.Mui-disabled': {
+                        color: theme.palette.success.light,
+                        borderColor: alpha(theme.palette.success.main, 0.7),
+                        backgroundColor: alpha(theme.palette.success.main, 0.18),
+                      },
+                    }),
+                    ...(resultKind === 'selected-wrong' && {
+                      '&.Mui-disabled': {
+                        color: theme.palette.error.light,
+                        borderColor: alpha(theme.palette.error.main, 0.7),
+                        backgroundColor: alpha(theme.palette.error.main, 0.18),
+                      },
+                    }),
+                  })}
                 >
                   <span>
                     {option.text}

@@ -104,5 +104,36 @@ describe('CurrentQuizCard', () => {
     expect(screen.getByText(i18n.t('gameQuiz.resultCorrect', { points: 10 }))).toBeInTheDocument()
     expect(screen.getByText('3 · 75%')).toBeInTheDocument()
     expect(screen.getByText('1 · 25%')).toBeInTheDocument()
+    expect(screen.getByText(i18n.t('gameQuiz.closedDescription'))).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /First/ })).toHaveAttribute(
+      'data-quiz-result',
+      'correct',
+    )
+  })
+
+  it('marks a selected wrong answer separately from the correct answer', () => {
+    renderCard({
+      ...baseState,
+      status: 'closed',
+      closedAtUtc: baseState.closesAtUtc,
+      mySelectedOptionId: baseState.options[0].optionId,
+      correctOptionId: baseState.options[1].optionId,
+      myIsCorrect: false,
+      myAwardedPoints: 0,
+      totalSubmissions: 1,
+      optionResults: [
+        { optionId: baseState.options[0].optionId, answerCount: 1, percentage: 100 },
+        { optionId: baseState.options[1].optionId, answerCount: 0, percentage: 0 },
+      ],
+    })
+
+    expect(screen.getByRole('button', { name: /First/ })).toHaveAttribute(
+      'data-quiz-result',
+      'selected-wrong',
+    )
+    expect(screen.getByRole('button', { name: /Second/ })).toHaveAttribute(
+      'data-quiz-result',
+      'correct',
+    )
   })
 })
