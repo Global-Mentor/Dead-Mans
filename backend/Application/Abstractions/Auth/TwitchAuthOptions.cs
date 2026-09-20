@@ -5,6 +5,7 @@ namespace backend.Application.Abstractions.Auth;
 public class TwitchAuthOptions
 {
     public const string SectionName = "TwitchAuth";
+    public const string SignInScope = "openid";
 
     [Required]
     [MinLength(3)]
@@ -41,7 +42,7 @@ public class TwitchAuthOptions
         return !requireHttps || uri.Scheme == Uri.UriSchemeHttps;
     }
 
-    public static bool HasValidScopes(IEnumerable<string>? scopes)
+    public static bool HasOnlySignInScope(IEnumerable<string>? scopes)
     {
         if (scopes is null)
         {
@@ -52,9 +53,9 @@ public class TwitchAuthOptions
             .Select(scope => scope?.Trim())
             .Where(scope => !string.IsNullOrWhiteSpace(scope))
             .ToArray();
-        return normalized.Length > 0
+        return normalized.Length == 1
             && normalized.Length == scopes.Count()
-            && normalized.Distinct(StringComparer.Ordinal).Count() == normalized.Length;
+            && string.Equals(normalized[0], SignInScope, StringComparison.Ordinal);
     }
 
     public static bool HasValidPermanentSuperAdminTwitchUserIds(
