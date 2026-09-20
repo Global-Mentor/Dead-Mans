@@ -13,8 +13,24 @@ vi.mock('../use-game-setup-questions-catalog.ts', () => ({
     catalogQuery: { isLoading: false, isError: false },
     categories: [],
     filteredQuestions: [
-      { questionId: 'available', text: 'Available question', isEnabled: true },
-      { questionId: 'disabled', text: 'Disabled question', isEnabled: false },
+      {
+        questionId: 'available',
+        text: 'Available question',
+        isEnabled: true,
+        categoryName: 'General',
+        reward: 1,
+        askedTotalCount: 0,
+        correctSubmissionTotalCount: 0,
+      },
+      {
+        questionId: 'disabled',
+        text: 'Disabled question',
+        isEnabled: false,
+        categoryName: 'General',
+        reward: 1,
+        askedTotalCount: 0,
+        correctSubmissionTotalCount: 0,
+      },
     ],
   }),
 }))
@@ -36,9 +52,11 @@ function renderQuestions(enabledQuestionIds: string[] = []) {
         cells: [],
         enabledModifierIds: [],
         enabledQuestionIds,
+        quizAnswerDurationSeconds: 60,
       }}
       onToggle={onToggle}
       onBulkSetEnabled={onBulkSetEnabled}
+      onDurationChange={vi.fn()}
     />,
   )
   return { onToggle, onBulkSetEnabled }

@@ -38,7 +38,11 @@
   `awaiting_modifiers`, сохраняя выбранные карточку и команду; technical cancel — отдельный
   terminal path с нулевым score, retired-card state, освобождением команды и append-only
   transition audit
-- game questions (phase 1): каталог вопросов с поиском/фильтрацией и enable/disable в `game-setup`; runtime quiz API для ask/answer/manual awards живёт отдельно на `/api/game/quiz/*`
+- game questions: каталог multiple-choice вопросов с поиском/фильтрацией и
+  enable/disable в `game-setup`; отдельные timed question sessions принимают не
+  более одного submission пользователя через любой transport, а после таймера
+  атомарно закрываются, начисляют награды и публикуют результат через
+  `/api/game/quiz/*` и SignalR
 - game history (phase 1): user-centric API `GET /api/game/history/users/{userId}` возвращает активность пользователя по играм (какие модификаторы активировал и какие вопросы были зачтены как ответы пользователя)
 - lifecycle archive (phase 1): `DELETE /api/game/lifecycle/games/{gameId}` выполняет soft-delete для non-draft игр; draft остаётся отдельным hard-delete сценарием через game setup
 - game registration: приём заявок в статусе `ready`, команды и инвайты (см. `docs/architecture/game-registration.md`)

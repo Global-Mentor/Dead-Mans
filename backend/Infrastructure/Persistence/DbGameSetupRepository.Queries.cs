@@ -108,6 +108,10 @@ public sealed partial class DbGameSetupRepository
             .OrderBy(x => x.QuestionId)
             .Select(x => x.QuestionId.ToString())
             .ToArrayAsync(cancellationToken);
+        var quizAnswerDurationSeconds = await _dbContext.Games.AsNoTracking()
+            .Where(x => x.Id == board.GameId)
+            .Select(x => x.QuizAnswerDurationSeconds)
+            .SingleAsync(cancellationToken);
 
         return new GameBoardSnapshot(
             board.GameId.ToString(),
@@ -123,7 +127,8 @@ public sealed partial class DbGameSetupRepository
             enabledModifierIds,
             activeModifiers,
             null,
-            enabledQuestionIds
+            enabledQuestionIds,
+            quizAnswerDurationSeconds
         );
     }
 
@@ -183,8 +188,9 @@ public sealed partial class DbGameSetupRepository
         string ExternalCode,
         string CategoryName,
         string Text,
-        string[] AcceptedAnswers,
-        string[] NormalizedAnswers,
+        Guid[] OptionIds,
+        string[] OptionTexts,
+        Guid CorrectOptionId,
         int Reward,
         int Priority
     );

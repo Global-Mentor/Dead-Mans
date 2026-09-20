@@ -2,6 +2,7 @@ import { z } from '../../../shared/validation/zod.ts'
 import { normalizeQuestionAnswer, trimQuestionAnswer } from './question-answer-normalize.ts'
 
 export const maxQuestionAnswers = 10
+export const minQuestionAnswers = 2
 
 interface QuestionFormSchemaMessages {
   required: string
@@ -9,6 +10,7 @@ interface QuestionFormSchemaMessages {
   tooLong: string
   maxAnswers: string
   duplicateAnswers: string
+  correctAnswer: string
 }
 
 export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
@@ -20,14 +22,14 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
   return z.object({
     categoryId: z.string().trim().min(1, messages.required),
     text: z.string().trim().min(1, messages.required).max(2000, messages.tooLong),
-    answers: z
-      .array(z.object({ value: answerValueSchema }))
-      .min(1, messages.required)
+    options: z
+      .array(z.object({ text: answerValueSchema, isCorrect: z.boolean() }))
+      .min(minQuestionAnswers, messages.required)
       .max(maxQuestionAnswers, messages.maxAnswers)
-      .superRefine((answers, context) => {
+      .superRefine((options, context) => {
         const seen = new Set<string>()
-        for (let index = 0; index < answers.length; index += 1) {
-          const normalizedAnswer = normalizeQuestionAnswer(answers[index]?.value ?? '')
+        for (let index = 0; index < options.length; index += 1) {
+          const normalizedAnswer = normalizeQuestionAnswer(options[index]?.text ?? '')
           if (!normalizedAnswer) {
             continue
           }
@@ -35,13 +37,17 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
           if (seen.has(normalizedAnswer)) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              path: [index, 'value'],
+              path: [index, 'text'],
               message: messages.duplicateAnswers,
             })
             return
           }
 
           seen.add(normalizedAnswer)
+        }
+
+        if (options.filter((option) => option.isCorrect).length !== 1) {
+          context.addIssue({ code: z.ZodIssueCode.custom, message: messages.correctAnswer })
         }
       }),
     reward: z.string().regex(/^\d+$/, messages.number),

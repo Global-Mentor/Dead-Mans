@@ -11,261 +11,220 @@ namespace Backend.Tests.Unit.Infrastructure.Persistence;
 public sealed class DbGameQuizRepositoryTimingTests
 {
     [Fact]
-    public async Task AskNextQuizQuestionAsync_WithTwitchDeliveryPersistsSourceMetadata()
+    public async Task AskQuizQuestion_PersistsOneShuffledOptionSnapshotForTheQuestionSession()
     {
         var now = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = CreateDbContext();
-        var gameId = Guid.NewGuid();
-        var questionId = Guid.NewGuid();
-        dbContext.Games.Add(
-            new Game
-            {
-                Id = gameId,
-                Title = "Twitch delivery test",
-                Status = GameStatusValue.Active,
-                QuizAnswerDurationSeconds = 45,
-                CreatedAtUtc = now.UtcDateTime,
-                StartedAtUtc = now.UtcDateTime
-            }
-        );
-        dbContext.GameEnabledQuestions.Add(
-            new GameEnabledQuestion
-            {
-                GameId = gameId,
-                QuestionId = questionId,
-                EnabledAtUtc = now.UtcDateTime,
-                QuestionRevisionSnapshot = 1,
-                QuestionCodeSnapshot = "twitch-question",
-                CategoryNameSnapshot = "twitch",
-                QuestionTextSnapshot = "Answer?",
-                AcceptedAnswersSnapshot = ["answer"],
-                NormalizedAnswersSnapshot = ["answer"],
-                RewardSnapshot = 5,
-                PrioritySnapshot = 1,
-                SnapshotAtUtc = now.UtcDateTime
-            }
-        );
-        await dbContext.SaveChangesAsync();
-        var repository = new DbGameQuizRepository(dbContext, new FixedTimeProvider(now));
+        await using var db = CreateDbContext();
+        var seeded = await SeedEnabledQuestionAsync(db, now.UtcDateTime);
+        var repository = new DbGameQuizRepository(db, new FixedTimeProvider(now));
 
-        var result = await repository.AskNextQuizQuestionAsync(
-            gameId,
-            new TwitchGameQuizQuestionDelivery("channel-1", "message-1")
-        );
+        var result = await repository.AskQuizQuestionAsync(
+            seeded.GameId, null, new TwitchGameQuizQuestionDelivery("channel-1", "message-1"));
 
         Assert.NotNull(result);
-        var round = await dbContext.GameQuizRounds.SingleAsync();
-        Assert.Equal(GameQuizDeliveryKindValue.Twitch, round.DeliveryKind);
-        Assert.Equal("channel-1", round.SourceChannelId);
-        Assert.Equal("message-1", round.SourceMessageId);
-        Assert.Null(round.AskedByUserId);
-        Assert.Equal(now.AddSeconds(45).UtcDateTime, round.ClosesAtUtc);
+        Assert.Equal(2, result.Options.Count);
+        Assert.Equal(result.Options.Select(x => x.OptionId),
+            (await repository.GetCurrentQuizStateAsync(seeded.UserId))!.Options.Select(x => x.OptionId));
+        var session = await db.GameQuizQuestionSessions.SingleAsync();
+        Assert.Equal(GameQuizDeliveryKindValue.Twitch, session.DeliveryKind);
+        Assert.Equal("channel-1", session.SourceChannelId);
+        Assert.Equal(now.AddSeconds(45).UtcDateTime, session.ClosesAtUtc);
     }
 
     [Fact]
-    public async Task AnswerQuizRoundAsync_AtExactDeadlineTimesOutWithoutPersistingAnswer()
+    public async Task SubmitQuizAnswer_AtExactDeadlineClosesWithoutPersistingSubmission()
     {
         var deadline = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = CreateDbContext();
-        var seeded = await SeedOpenRoundAsync(dbContext, deadline.UtcDateTime);
-        var repository = new DbGameQuizRepository(
-            dbContext,
-            new FixedTimeProvider(deadline)
-        );
+        await using var db = CreateDbContext();
+        var seeded = await SeedOpenQuestionSessionAsync(db, deadline.UtcDateTime);
+        var repository = new DbGameQuizRepository(db, new FixedTimeProvider(deadline));
 
-        var result = await repository.AnswerQuizRoundAsync(
-            seeded.RoundId,
-            new SubmitGameQuizAnswerInput(
-                "answer",
-                new ManualGameQuizAnswerSource(seeded.UserId, seeded.UserId, "Viewer")
-            )
-        );
+        var result = await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+            new SubmitGameQuizAnswerInput(seeded.CorrectOptionId,
+                new WebGameQuizAnswerSource(seeded.UserId)));
 
-        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.RoundNotPending, result.Outcome);
-        Assert.Equal(GameQuizRoundStatusValue.Timeout, result.Round?.Status);
-        Assert.False(await dbContext.GameQuizCorrectAnswers.AnyAsync());
-        Assert.False(await dbContext.GameQuizPointLedgerEntries.AnyAsync());
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.QuestionSessionClosed, result.Outcome);
+        Assert.Equal(GameQuizQuestionSessionStatusValue.Closed, (await db.GameQuizQuestionSessions.SingleAsync()).Status);
+        Assert.Empty(db.GameQuizSubmissions);
+        Assert.Empty(db.GameQuizPointLedgerEntries);
     }
 
     [Fact]
-    public async Task AnswerQuizRoundAsync_BeforeDeadlinePersistsFirstCorrectAnswerAndReward()
+    public async Task CorrectSubmission_IsHiddenAndUnrewardedUntilIdempotentClosure()
     {
         var deadline = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = CreateDbContext();
-        var seeded = await SeedOpenRoundAsync(dbContext, deadline.UtcDateTime);
-        var repository = new DbGameQuizRepository(
-            dbContext,
-            new FixedTimeProvider(deadline.AddTicks(-1))
-        );
+        await using var db = CreateDbContext();
+        var seeded = await SeedOpenQuestionSessionAsync(db, deadline.UtcDateTime);
+        var time = new MutableTimeProvider(deadline.AddSeconds(-1));
+        var repository = new DbGameQuizRepository(db, time);
 
-        var result = await repository.AnswerQuizRoundAsync(
-            seeded.RoundId,
-            new SubmitGameQuizAnswerInput(
-                "answer",
-                new ManualGameQuizAnswerSource(seeded.UserId, seeded.UserId, "Viewer")
-            )
-        );
+        var accepted = await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+            new SubmitGameQuizAnswerInput(seeded.CorrectOptionId,
+                new WebGameQuizAnswerSource(seeded.UserId)));
+        var openState = await repository.GetCurrentQuizStateAsync(seeded.UserId);
 
-        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Correct, result.Outcome);
-        Assert.Equal(GameQuizRoundStatusValue.AnsweredCorrect, result.Round?.Status);
-        var answer = await dbContext.GameQuizCorrectAnswers.SingleAsync();
-        Assert.Equal(deadline.AddTicks(-1).UtcDateTime, answer.AnsweredAtUtc);
-        var reward = await dbContext.GameQuizPointLedgerEntries.SingleAsync();
-        Assert.Equal(5, reward.PointsDelta);
-        Assert.Equal(answer.Id, reward.CorrectAnswerId);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Accepted, accepted.Outcome);
+        Assert.Null(openState!.CorrectOptionId);
+        Assert.Null(openState.Reward);
+        Assert.Null(openState.MyIsCorrect);
+        Assert.Null(openState.OptionResults);
+        Assert.Empty(db.GameQuizPointLedgerEntries);
+
+        time.UtcNow = deadline;
+        Assert.Equal(1, (await repository.CloseExpiredQuizQuestionSessionsAsync()).ClosedQuizQuestionCount);
+        Assert.Equal(0, (await repository.CloseExpiredQuizQuestionSessionsAsync()).ClosedQuizQuestionCount);
+        var closedState = await repository.GetCurrentQuizStateAsync(seeded.UserId);
+        Assert.Equal(seeded.CorrectOptionId, closedState!.CorrectOptionId);
+        Assert.Equal(5, closedState.Reward);
+        Assert.True(closedState.MyIsCorrect);
+        Assert.Equal(5, closedState.MyAwardedPoints);
+        Assert.Equal(5, (await db.GameQuizPointLedgerEntries.SingleAsync()).PointsDelta);
     }
 
     [Fact]
-    public async Task AnswerQuizRoundAsync_WithCorrectTwitchAnswerCreatesPreLoginPrincipal()
+    public async Task OneUserGetsOneSubmissionWhileDifferentUsersDoNotConflict()
     {
         var deadline = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = CreateDbContext();
-        var seeded = await SeedOpenRoundAsync(dbContext, deadline.UtcDateTime);
-        dbContext.Users.Remove(await dbContext.Users.SingleAsync());
-        await dbContext.SaveChangesAsync();
-        var answeredAt = deadline.AddSeconds(-1);
-        var repository = new DbGameQuizRepository(
-            dbContext,
-            new FixedTimeProvider(answeredAt)
-        );
+        await using var db = CreateDbContext();
+        var seeded = await SeedOpenQuestionSessionAsync(db, deadline.UtcDateTime);
+        var secondUser = AddUser(db, "222222", "second");
+        await db.SaveChangesAsync();
+        var repository = new DbGameQuizRepository(db, new FixedTimeProvider(deadline.AddSeconds(-1)));
+        var source = new WebGameQuizAnswerSource(seeded.UserId);
 
-        var result = await repository.AnswerQuizRoundAsync(
-            seeded.RoundId,
-            new SubmitGameQuizAnswerInput(
-                "answer",
-                new TwitchGameQuizAnswerSource(
-                    "987654",
-                    "new_viewer",
-                    "New Viewer",
-                    "channel-1",
-                    "message-2"
-                )
-            )
-        );
-
-        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Correct, result.Outcome);
-        var user = await dbContext.Users.SingleAsync();
-        Assert.Equal("987654", user.TwitchUserId);
-        Assert.Equal("new_viewer", user.Login);
-        Assert.Equal("New Viewer", user.DisplayName);
-        Assert.Null(user.LastLoginAtUtc);
-        Assert.Empty(user.UserRoles);
-        var answer = await dbContext.GameQuizCorrectAnswers.SingleAsync();
-        Assert.Equal(user.Id, answer.AwardedToUserId);
-        Assert.Null(answer.CapturedByUserId);
-        Assert.Equal(GameQuizAnswerSourceValue.Twitch, answer.SourceProvider);
-        Assert.Equal("channel-1", answer.SourceChannelId);
-        Assert.Equal("message-2", answer.SourceMessageId);
-        Assert.Equal(answeredAt.UtcDateTime, answer.AnsweredAtUtc);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Accepted,
+            (await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+                new SubmitGameQuizAnswerInput(seeded.CorrectOptionId, source))).Outcome);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Existing,
+            (await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+                new SubmitGameQuizAnswerInput(seeded.CorrectOptionId, source))).Outcome);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.AlreadyAnswered,
+            (await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+                new SubmitGameQuizAnswerInput(seeded.WrongOptionId, source))).Outcome);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Accepted,
+            (await repository.SubmitQuizAnswerAsync(seeded.QuestionSessionId,
+                new SubmitGameQuizAnswerInput(seeded.WrongOptionId,
+                    new WebGameQuizAnswerSource(secondUser.Id)))).Outcome);
+        Assert.Equal(2, await db.GameQuizSubmissions.CountAsync());
     }
 
-    [Fact]
-    public async Task AnswerQuizRoundAsync_WithIncorrectTwitchAnswerDoesNotCreatePrincipalOrHistory()
+    private static ApplicationDbContext CreateDbContext() => new(
+        new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase($"quiz-timing-tests-{Guid.NewGuid():N}").Options);
+
+    private static async Task<(Guid GameId, Guid UserId)> SeedEnabledQuestionAsync(
+        ApplicationDbContext db, DateTime now)
     {
-        var deadline = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = CreateDbContext();
-        var seeded = await SeedOpenRoundAsync(dbContext, deadline.UtcDateTime);
-        dbContext.Users.Remove(await dbContext.Users.SingleAsync());
-        await dbContext.SaveChangesAsync();
-        var repository = new DbGameQuizRepository(
-            dbContext,
-            new FixedTimeProvider(deadline.AddSeconds(-1))
-        );
-
-        var result = await repository.AnswerQuizRoundAsync(
-            seeded.RoundId,
-            new SubmitGameQuizAnswerInput(
-                "wrong",
-                new TwitchGameQuizAnswerSource(
-                    "987654",
-                    "new_viewer",
-                    "New Viewer",
-                    "channel-1",
-                    "message-3"
-                )
-            )
-        );
-
-        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Incorrect, result.Outcome);
-        Assert.Empty(dbContext.Users);
-        Assert.Empty(dbContext.GameQuizCorrectAnswers);
-        Assert.Empty(dbContext.GameQuizPointLedgerEntries);
-    }
-
-    private static ApplicationDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"quiz-timing-tests-{Guid.NewGuid():N}")
-            .Options;
-        return new ApplicationDbContext(options);
-    }
-
-    private static async Task<SeededQuizRound> SeedOpenRoundAsync(
-        ApplicationDbContext dbContext,
-        DateTime closesAtUtc
-    )
-    {
-        var gameId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var roundId = Guid.NewGuid();
-        dbContext.Games.Add(
-            new Game
-            {
-                Id = gameId,
-                Title = "Timing test",
-                Status = GameStatusValue.Active,
-                IsDeleted = false,
-                CreatedAtUtc = closesAtUtc.AddMinutes(-5),
-                StartedAtUtc = closesAtUtc.AddMinutes(-5)
-            }
-        );
-        dbContext.Users.Add(
-            new User
-            {
-                Id = userId,
-                TwitchUserId = "123456",
-                Login = "viewer",
-                DisplayName = "Viewer",
-                IsActive = true,
-                CreatedAtUtc = closesAtUtc.AddMinutes(-5),
-                UpdatedAtUtc = closesAtUtc.AddMinutes(-5)
-            }
-        );
-        dbContext.GameQuizRounds.Add(
-            new GameQuizRound
-            {
-                Id = roundId,
-                GameId = gameId,
-                QuestionId = Guid.NewGuid(),
-                AskOrder = 1,
-                AskedAtUtc = closesAtUtc.AddMinutes(-1),
-                ClosesAtUtc = closesAtUtc,
-                Status = GameQuizRoundStatusValue.Asked,
-                QuestionRevisionSnapshot = 1,
-                QuestionCodeSnapshot = "timing-question",
-                CategoryNameSnapshot = "timing",
-                QuestionTextSnapshot = "Answer?",
-                AcceptedAnswersSnapshot = ["answer"],
-                NormalizedAnswersSnapshot = ["answer"],
-                RewardSnapshot = 5,
-                DeliveryKind = GameQuizDeliveryKindValue.Manual
-            }
-        );
-        await dbContext.SaveChangesAsync();
-        return new SeededQuizRound(roundId, userId);
-    }
-
-    private sealed record SeededQuizRound(Guid RoundId, Guid UserId);
-
-    private sealed class FixedTimeProvider : TimeProvider
-    {
-        private readonly DateTimeOffset _utcNow;
-
-        public FixedTimeProvider(DateTimeOffset utcNow)
+        var game = new Game
         {
-            _utcNow = utcNow;
-        }
+            Id = Guid.NewGuid(),
+            Title = "Quiz",
+            Status = GameStatusValue.Active,
+            QuizAnswerDurationSeconds = 45,
+            CreatedAtUtc = now,
+            StartedAtUtc = now
+        };
+        var user = AddUser(db, "123456", "viewer");
+        var optionIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var questionId = Guid.NewGuid();
+        db.QuestionDefinitions.Add(new QuestionDefinition
+        {
+            Id = questionId,
+            ExternalCode = "q-1",
+            CategoryId = Guid.NewGuid(),
+            Text = "Answer?",
+            Reward = 5,
+            Revision = 1,
+            IsEnabled = true,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        });
+        db.Games.Add(game);
+        db.GameEnabledQuestions.Add(new GameEnabledQuestion
+        {
+            GameId = game.Id,
+            QuestionId = questionId,
+            EnabledAtUtc = now,
+            QuestionRevisionSnapshot = 1,
+            QuestionCodeSnapshot = "q-1",
+            CategoryNameSnapshot = "general",
+            QuestionTextSnapshot = "Answer?",
+            OptionIdsSnapshot = optionIds,
+            OptionTextsSnapshot = ["right", "wrong"],
+            CorrectOptionIdSnapshot = optionIds[0],
+            RewardSnapshot = 5,
+            PrioritySnapshot = 1,
+            SnapshotAtUtc = now
+        });
+        await db.SaveChangesAsync();
+        return (game.Id, user.Id);
+    }
 
-        public override DateTimeOffset GetUtcNow() => _utcNow;
+    private static async Task<SeededQuizQuestionSession> SeedOpenQuestionSessionAsync(ApplicationDbContext db, DateTime deadline)
+    {
+        var game = new Game
+        {
+            Id = Guid.NewGuid(),
+            Title = "Timing",
+            Status = GameStatusValue.Active,
+            CreatedAtUtc = deadline.AddMinutes(-5),
+            StartedAtUtc = deadline.AddMinutes(-5)
+        };
+        var user = AddUser(db, "123456", "viewer");
+        var correct = Guid.NewGuid();
+        var wrong = Guid.NewGuid();
+        var session = new GameQuizQuestionSession
+        {
+            Id = Guid.NewGuid(),
+            GameId = game.Id,
+            QuestionId = Guid.NewGuid(),
+            AskOrder = 1,
+            AskedAtUtc = deadline.AddMinutes(-1),
+            ClosesAtUtc = deadline,
+            Status = GameQuizQuestionSessionStatusValue.Open,
+            QuestionRevisionSnapshot = 1,
+            QuestionCodeSnapshot = "q-1",
+            CategoryNameSnapshot = "general",
+            QuestionTextSnapshot = "Answer?",
+            OptionIdsSnapshot = [correct, wrong],
+            OptionTextsSnapshot = ["right", "wrong"],
+            CorrectOptionIdSnapshot = correct,
+            RewardSnapshot = 5,
+            DeliveryKind = GameQuizDeliveryKindValue.Manual,
+            Game = game
+        };
+        db.Games.Add(game);
+        db.GameQuizQuestionSessions.Add(session);
+        await db.SaveChangesAsync();
+        return new(session.Id, user.Id, correct, wrong);
+    }
+
+    private static User AddUser(ApplicationDbContext db, string twitchId, string login)
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            TwitchUserId = twitchId,
+            Login = login,
+            DisplayName = login,
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+        db.Users.Add(user);
+        return user;
+    }
+
+    private sealed record SeededQuizQuestionSession(Guid QuestionSessionId, Guid UserId, Guid CorrectOptionId, Guid WrongOptionId);
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
+    private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public DateTimeOffset UtcNow { get; set; } = utcNow;
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 }

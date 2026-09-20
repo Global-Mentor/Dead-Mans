@@ -217,9 +217,13 @@ public static class AppMessages
             "The player does not have enough available quiz points for this deduction.";
         public const string GameQuizManualAwardDuplicateRequestConflict =
             "This adjustment request identifier was already used for another operation.";
-        public const string GameQuizRoundNotFound = "Quiz round was not found.";
-        public const string GameQuizRoundNotPending =
-            "Quiz round cannot be answered because it is already closed.";
+        public const string GameQuizQuestionSessionNotFound = "Quiz question session was not found.";
+        public const string GameQuizQuestionSessionClosed =
+            "Quiz question session cannot be answered because it is already closed.";
+        public const string GameQuizAlreadyAnswered =
+            "You already selected another answer for this quiz question.";
+        public const string GameQuizOptionNotFound =
+            "The selected answer option does not belong to this quiz question session.";
         public const string UnexpectedServerError = "An unexpected server error occurred.";
         public const string TooManyRequests = "Too many requests. Please slow down and try again.";
     }
@@ -427,8 +431,10 @@ public static class AppMessages
             "game_quiz.manual_award_insufficient_points";
         public const string GameQuizManualAwardDuplicateRequestConflict =
             "game_quiz.manual_award_duplicate_request_conflict";
-        public const string GameQuizRoundNotFound = "game_quiz.round_not_found";
-        public const string GameQuizRoundNotPending = "game_quiz.round_not_pending";
+        public const string GameQuizQuestionSessionNotFound = "game_quiz.question_session_not_found";
+        public const string GameQuizQuestionSessionClosed = "game_quiz.question_session_closed";
+        public const string GameQuizAlreadyAnswered = "game_quiz.already_answered";
+        public const string GameQuizOptionNotFound = "game_quiz.option_not_found";
         public const string GameQuestionImportInvalidFields = "game_question.import_invalid_fields";
         public const string GameQuestionImportDuplicateCodeInFile =
             "game_question.import_duplicate_code_in_file";

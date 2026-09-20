@@ -10,9 +10,9 @@ import type {
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import {
   AppToast,
-  AsyncSection,
   ConfirmDialog,
   PageShell,
+  PageStatePanel,
   SectionHeader,
 } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
@@ -181,6 +181,23 @@ export function GameModifiersPage() {
           ? activeCard?.title?.trim() || t('gameModifiers.summaryUntitledCard')
           : t('gameModifiers.summaryNoActiveCard')
 
+  if (stateQuery.isLoading || stateQuery.isError || isEmpty) {
+    return (
+      <PageStatePanel
+        title={t('common.entities.modifiers')}
+        message={t(
+          stateQuery.isLoading
+            ? 'gameModifiers.loading'
+            : stateQuery.isError
+              ? 'gameModifiers.errorLoading'
+              : 'gameModifiers.noGame',
+        )}
+        showSpinner={stateQuery.isLoading}
+        tone={stateQuery.isError ? 'error' : 'default'}
+      />
+    )
+  }
+
   return (
     <PageShell
       data-testid="game-modifiers-page"
@@ -194,70 +211,61 @@ export function GameModifiersPage() {
     >
       <SectionHeader headingLevel="h1" title={t('common.entities.modifiers')} />
 
-      <AsyncSection
-        isLoading={stateQuery.isLoading}
-        isError={stateQuery.isError}
-        isEmpty={isEmpty}
-        loadingMessage={t('gameModifiers.loading')}
-        errorMessage={t('gameModifiers.errorLoading')}
-        emptyMessage={t('gameModifiers.noGame')}
-      >
-        {state ? (
-          <>
-            <ModifierStatusBar
-              state={state}
-              search={search}
-              onSearchChange={setSearch}
-              currentTeamLabel={currentTeamLabel}
-              currentTeamParticipantNames={currentTeamParticipantNames}
-              currentTeamParticipantsEmptyLabel={currentTeamParticipantsEmptyLabel}
-              activeCardLabel={activeCardLabel}
-              canOpenActiveCard={activeCard !== null}
-              onOpenActiveCard={() => {
-                if (activeCard) {
-                  setPreviewCell(activeCard)
-                }
-              }}
-            />
+      {state ? (
+        <>
+          <ModifierStatusBar
+            state={state}
+            search={search}
+            onSearchChange={setSearch}
+            currentTeamLabel={currentTeamLabel}
+            currentTeamParticipantNames={currentTeamParticipantNames}
+            currentTeamParticipantsEmptyLabel={currentTeamParticipantsEmptyLabel}
+            activeCardLabel={activeCardLabel}
+            canOpenActiveCard={activeCard !== null}
+            onOpenActiveCard={() => {
+              if (activeCard) {
+                setPreviewCell(activeCard)
+              }
+            }}
+          />
 
-            <ModifierRuntimePanel
-              key={`${activeRound?.roundId ?? 'none'}:${activeRound?.roundVersion ?? 0}:${activeRound?.serverNowUtc ?? 'unsynced'}`}
-              round={activeRound}
-              isOffline={activeRoundQuery.isError || snapshotQuery.isError}
-            />
+          <ModifierRuntimePanel
+            key={`${activeRound?.roundId ?? 'none'}:${activeRound?.roundVersion ?? 0}:${activeRound?.serverNowUtc ?? 'unsynced'}`}
+            round={activeRound}
+            isOffline={activeRoundQuery.isError || snapshotQuery.isError}
+          />
 
-            <Box
-              sx={{
-                mt: 1.5,
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                gap: 1.5,
-                alignItems: 'start',
-              }}
-            >
-              <ActiveModifiersSection
-                groups={activeGroups}
-                activationsCount={state.activeModifiers.length}
-                definitionsById={availableDefinitionsById}
-                currentUserId={user?.id ?? null}
-                canSelfCancel={state.isOrderingOpen}
-                isCancelling={selfCancelMutation.isPending}
-                hasSearch={hasSearch}
-                onSelfCancel={setSelfCancelToConfirm}
-              />
-              <AvailableModifiersSection
-                groups={availableGroups}
-                modifierNamesById={modifierNamesById}
-                activeModifierIds={activeModifierIds}
-                hasSearch={hasSearch}
-                isBusy={activation.isActivating}
-                pendingModifierId={activation.pendingModifierId}
-                onActivate={setActivationToConfirmId}
-              />
-            </Box>
-          </>
-        ) : null}
-      </AsyncSection>
+          <Box
+            sx={{
+              mt: 1.5,
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1.5,
+              alignItems: 'start',
+            }}
+          >
+            <ActiveModifiersSection
+              groups={activeGroups}
+              activationsCount={state.activeModifiers.length}
+              definitionsById={availableDefinitionsById}
+              currentUserId={user?.id ?? null}
+              canSelfCancel={state.isOrderingOpen}
+              isCancelling={selfCancelMutation.isPending}
+              hasSearch={hasSearch}
+              onSelfCancel={setSelfCancelToConfirm}
+            />
+            <AvailableModifiersSection
+              groups={availableGroups}
+              modifierNamesById={modifierNamesById}
+              activeModifierIds={activeModifierIds}
+              hasSearch={hasSearch}
+              isBusy={activation.isActivating}
+              pendingModifierId={activation.pendingModifierId}
+              onActivate={setActivationToConfirmId}
+            />
+          </Box>
+        </>
+      ) : null}
 
       <ConfirmDialog
         open={activationToConfirm !== null}

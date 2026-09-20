@@ -74,6 +74,29 @@ Do not open the application to users until the readiness check and backup restor
 
 ## Automatic deployments
 
+### One-time multiple-choice quiz upgrade
+
+The release containing `20260919151237_ConvertQuizToMultipleChoice` is an
+in-place upgrade, not a new-database deployment. It removes the approved test
+games, questions, gameplay history and points, while retaining users, access
+rights, modifier catalogs and media. See the [database upgrade notes](../docs/architecture/database.md#pre-release-multiple-choice-upgrade).
+
+For this release, keep `PRODUCTION_DEPLOY_ENABLED=false` until the maintenance
+rollout is complete. Verify the restore procedure ahead of the maintenance
+window. At cutover, stop every old application instance and worker first, take
+and record a final backup of that read-only database, and only then start the
+selected new image with `Database__ApplyMigrationsOnStartup=true` so migrations
+run once against the existing database. Do not use a rolling deployment: old
+and new versions are not schema-compatible.
+
+Verify readiness, the release SHA, Twitch sign-in, retained users/access and the
+new question workflow before reopening traffic and enabling automatic releases.
+If rollback is necessary, restore the pre-upgrade backup together with the old
+image; neither an image-only rollback nor `Down` restores discarded data. No
+database deletion or connection-string change is needed for the upgrade.
+
+### Routine releases
+
 Add these values to the GitHub `production` environment:
 
 ```text

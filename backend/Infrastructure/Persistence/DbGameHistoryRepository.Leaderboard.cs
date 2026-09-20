@@ -36,20 +36,19 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             )
             .ToArrayAsync(cancellationToken);
 
-        var quizRows = await _dbContext.GameQuizCorrectAnswers
+        var quizRows = await _dbContext.GameQuizSubmissions
             .AsNoTracking()
-            .Where(x => !x.QuizRound.Game!.IsDeleted)
+            .Where(x => !x.QuestionSession.Game!.IsDeleted
+                && x.QuestionSession.Status == GameQuizQuestionSessionStatusValue.Closed)
             .Select(
                 x =>
                     new LeaderboardQuizRow(
-                        x.AwardedToUserId,
+                        x.UserId,
                         x.DisplayNameSnapshot,
                         x.GameId,
-                        x.PointEntries
-                            .Where(entry => entry.EntryType == GameQuizPointEntryTypeValue.QuizReward)
-                            .Sum(entry => entry.PointsDelta),
-                        true,
-                        x.AnsweredAtUtc
+                        x.AwardedPoints,
+                        x.IsCorrect,
+                        x.SubmittedAtUtc
                     )
             )
             .ToArrayAsync(cancellationToken);
@@ -147,7 +146,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                         SaturatingInt32.From(x.Value.MainGamePoints + x.Value.QuizPoints),
                         x.Value.GamesPlayed.Count,
                         SaturatingInt32.From(x.Value.MainGameRoundsPlayed),
-                        SaturatingInt32.From(x.Value.QuizRoundsAnswered),
+                        SaturatingInt32.From(x.Value.QuizQuestionsAnswered),
                         SaturatingInt32.From(x.Value.CorrectQuizAnswers),
                         SaturatingInt32.From(x.Value.ModifiersActivated),
                         x.Value.LastActivityAtUtc

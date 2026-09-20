@@ -24,6 +24,7 @@ export function AdminGameQuestionsPage() {
     reloadFromServer,
     toggleQuestion,
     setQuestionsEnabled,
+    setQuizAnswerDuration,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -64,6 +65,7 @@ export function AdminGameQuestionsPage() {
         draft={draft}
         onToggle={toggleQuestion}
         onBulkSetEnabled={setQuestionsEnabled}
+        onDurationChange={setQuizAnswerDuration}
         actions={
           <GameSetupSyncActions
             syncStatus={syncStatus}

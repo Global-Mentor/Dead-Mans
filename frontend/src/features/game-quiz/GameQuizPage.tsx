@@ -1,25 +1,35 @@
-import type { TFunction } from 'i18next'
 import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import { AsyncSection, PageShell, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import { PageShell, PageStatePanel, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { gameHistoryGameDetailsQueryOptions } from '../game-history/api/game-history-queries.ts'
-import { getQuizRoundParticipantDetails } from './model/quiz-round-participants.ts'
+import { QuizQuestionSessionHistoryItem } from './QuizQuestionSessionHistoryItem.tsx'
+import {
+  askNextGameQuizQuestion,
+  askSpecificGameQuizQuestion,
+  submitGameQuizAnswer,
+} from './api/game-quiz-api.ts'
+import {
+  availableGameQuizQuestionsQueryOptions,
+  currentGameQuizQueryOptions,
+  gameQuizQueryKeys,
+} from './api/game-quiz-queries.ts'
+import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
+import { CurrentQuizCard } from './CurrentQuizCard.tsx'
 
-type QuizRound = components['schemas']['GameHistoryQuizRoundItemDto']
+type QuizQuestionSession = components['schemas']['GameHistoryQuizQuestionSessionItemDto']
 type ManualAward = components['schemas']['GameHistoryQuizManualAwardItemDto']
-type RoundStatus = QuizRound['status']
 
 type QuizHistoryItem =
   | {
       id: string
-      kind: 'round'
+      kind: 'questionSession'
       sortAtUtc: string
-      round: QuizRound
+      questionSession: QuizQuestionSession
     }
   | {
       id: string
@@ -31,6 +41,7 @@ type QuizHistoryItem =
 export function GameQuizPage() {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const gameId = snapshotQuery.data?.gameId ?? ''
@@ -38,18 +49,72 @@ export function GameQuizPage() {
     ...gameHistoryGameDetailsQueryOptions(gameId),
     enabled: gameId !== '',
   })
+  const currentQuizQuery = useQuery({
+    ...currentGameQuizQueryOptions(gameId),
+    enabled: gameId !== '',
+    refetchOnWindowFocus: 'always',
+    refetchInterval: (query) => {
+      const state = query.state.data
+      return state?.status === 'open' && Date.now() >= Date.parse(state.closesAtUtc) ? 1000 : false
+    },
+  })
+  const canManageQuiz =
+    user?.roles.some((role) => role === 'moderator' || role === 'admin' || role === 'superadmin') ??
+    false
+  const availableQuestionsQuery = useQuery({
+    ...availableGameQuizQuestionsQueryOptions(gameId),
+    enabled: canManageQuiz && gameId !== '',
+  })
+  const invalidateQuiz = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
+      queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+    ])
+  }
+  const submitMutation = useMutation({
+    mutationFn: ({
+      questionSessionId,
+      optionId,
+    }: {
+      questionSessionId: string
+      optionId: string
+    }) => submitGameQuizAnswer(questionSessionId, optionId),
+    onSuccess: invalidateQuiz,
+    onError: invalidateQuiz,
+  })
+  const askNextMutation = useMutation({
+    mutationFn: askNextGameQuizQuestion,
+    onSuccess: invalidateQuiz,
+  })
+  const askSpecificMutation = useMutation({
+    mutationFn: askSpecificGameQuizQuestion,
+    onSuccess: invalidateQuiz,
+  })
 
   const isLoading =
-    snapshotQuery.isLoading || (snapshotQuery.data != null && gameDetailsQuery.isLoading)
-  const isError = snapshotQuery.isError || gameDetailsQuery.isError
+    snapshotQuery.isLoading ||
+    (snapshotQuery.data != null && (gameDetailsQuery.isLoading || currentQuizQuery.isLoading))
+  const isError = snapshotQuery.isError || gameDetailsQuery.isError || currentQuizQuery.isError
   const snapshot = snapshotQuery.data ?? null
-  const leaderboard =
-    gameDetailsQuery.data?.quiz.playerStats.filter((entry) => entry.points > 0) ?? []
+  const leaderboard = gameDetailsQuery.data?.quiz.playerStats ?? []
   const historyItems = getHistoryItems(
-    gameDetailsQuery.data?.quiz.rounds ?? [],
+    gameDetailsQuery.data?.quiz.questionSessions ?? [],
     gameDetailsQuery.data?.quiz.manualAwards ?? [],
   )
   const isEmpty = !isLoading && !isError && snapshot == null
+
+  if (isLoading || isError || isEmpty) {
+    return (
+      <PageStatePanel
+        title={t('gameQuiz.title')}
+        message={t(
+          isLoading ? 'gameQuiz.loading' : isError ? 'gameQuiz.errorLoading' : 'gameQuiz.noGame',
+        )}
+        showSpinner={isLoading}
+        tone={isError ? 'error' : 'default'}
+      />
+    )
+  }
 
   return (
     <PageShell
@@ -62,213 +127,145 @@ export function GameQuizPage() {
     >
       <SectionHeader headingLevel="h1" title={t('gameQuiz.title')} />
 
-      <AsyncSection
-        isLoading={isLoading}
-        isError={isError}
-        isEmpty={isEmpty}
-        loadingMessage={t('gameQuiz.loading')}
-        errorMessage={t('gameQuiz.errorLoading')}
-        emptyMessage={t('gameQuiz.noGame')}
+      <CurrentQuizCard
+        state={currentQuizQuery.data ?? null}
+        canManage={canManageQuiz}
+        questions={availableQuestionsQuery.data ?? []}
+        isSubmitting={submitMutation.isPending}
+        isStarting={askNextMutation.isPending || askSpecificMutation.isPending}
+        error={submitMutation.error ?? askNextMutation.error ?? askSpecificMutation.error}
+        onSubmit={(questionSessionId, optionId) =>
+          submitMutation.mutate({ questionSessionId, optionId })
+        }
+        onAskNext={() => askNextMutation.mutate()}
+        onAskSpecific={(questionId) => askSpecificMutation.mutate(questionId)}
+        onDeadline={() => void currentQuizQuery.refetch()}
+      />
+
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={2}
+        alignItems="stretch"
+        sx={{ mt: 1 }}
       >
-        <Stack
-          direction={{ xs: 'column', lg: 'row' }}
-          spacing={2}
-          alignItems="stretch"
-          sx={{ mt: 1 }}
+        <SectionCard
+          sx={{
+            width: { xs: '100%', lg: 420, xl: 460 },
+            minWidth: { lg: 420, xl: 460 },
+            flexShrink: 0,
+            p: 0,
+          }}
         >
-          <SectionCard
-            sx={{
-              width: { xs: '100%', lg: 420, xl: 460 },
-              minWidth: { lg: 420, xl: 460 },
-              flexShrink: 0,
-              p: 0,
-            }}
-          >
-            <Stack spacing={0}>
-              <Box sx={{ px: 2, pt: 2, pb: 1.25 }}>
-                <Typography variant="overline" color="text.secondary">
-                  {t('gameQuiz.leaderboardTitle')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameQuiz.leaderboardDescription')}
-                </Typography>
-              </Box>
+          <Stack spacing={0}>
+            <Box sx={{ px: 2, pt: 2, pb: 1.25 }}>
+              <Typography variant="overline" color="text.secondary">
+                {t('gameQuiz.leaderboardTitle')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('gameQuiz.leaderboardDescription')}
+              </Typography>
+            </Box>
 
-              {leaderboard.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
-                  {t('gameQuiz.noLeaderboardEntries')}
-                </Typography>
-              ) : (
-                leaderboard.map((entry, index) => (
-                  <Box key={entry.userId}>
-                    {index > 0 ? <Divider /> : null}
-                    <Stack
-                      direction="row"
-                      spacing={1.25}
-                      alignItems="center"
-                      sx={(theme) => ({
-                        px: 2,
-                        py: 1.25,
-                        backgroundColor:
-                          entry.userId === user?.id
-                            ? alpha(theme.palette.primary.main, 0.08)
-                            : 'transparent',
-                      })}
+            {leaderboard.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+                {t('gameQuiz.noLeaderboardEntries')}
+              </Typography>
+            ) : (
+              leaderboard.map((entry, index) => (
+                <Box key={entry.userId}>
+                  {index > 0 ? <Divider /> : null}
+                  <Stack
+                    direction="row"
+                    spacing={1.25}
+                    alignItems="center"
+                    sx={(theme) => ({
+                      px: 2,
+                      py: 1.25,
+                      backgroundColor:
+                        entry.userId === user?.id
+                          ? alpha(theme.palette.primary.main, 0.08)
+                          : 'transparent',
+                    })}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ minWidth: 26, fontWeight: 700 }}
                     >
+                      {index + 1}
+                    </Typography>
+
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ minWidth: 26, fontWeight: 700 }}
+                        variant="body2"
+                        fontWeight={entry.userId === user?.id ? 700 : 500}
+                        noWrap
                       >
-                        {index + 1}
+                        {entry.displayName}
                       </Typography>
-
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography
-                          variant="body2"
-                          fontWeight={entry.userId === user?.id ? 700 : 500}
-                          noWrap
-                        >
-                          {entry.displayName}
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {t('gameQuiz.answerStats', {
+                          attempts: entry.attempts,
+                          correct: entry.correctAnswers,
+                        })}
+                      </Typography>
+                      {entry.lastActivityAtUtc ? (
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {t('gameQuiz.lastActivityAt', {
+                            time: new Date(entry.lastActivityAtUtc).toLocaleTimeString(
+                              i18n.resolvedLanguage,
+                            ),
+                          })}
                         </Typography>
-                        {entry.lastActivityAtUtc ? (
-                          <Typography variant="caption" color="text.secondary" noWrap>
-                            {t('gameQuiz.lastActivityAt', {
-                              time: new Date(entry.lastActivityAtUtc).toLocaleTimeString(
-                                i18n.resolvedLanguage,
-                              ),
-                            })}
-                          </Typography>
-                        ) : null}
-                      </Box>
-
-                      <Typography variant="body2" fontWeight={700} color="primary.main">
-                        {t('gameQuiz.totalPoints', { points: entry.points })}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                ))
-              )}
-            </Stack>
-          </SectionCard>
-
-          <SectionCard sx={{ flex: 1, minWidth: 0, p: 0 }}>
-            <Stack spacing={0}>
-              <Box sx={{ px: 2, pt: 2, pb: 1.25 }}>
-                <Typography variant="overline" color="text.secondary">
-                  {t('gameQuiz.historyTitle')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameQuiz.historyDescription')}
-                </Typography>
-              </Box>
-
-              {historyItems.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
-                  {t('gameQuiz.noHistory')}
-                </Typography>
-              ) : (
-                <Stack spacing={0}>
-                  {historyItems.map((item, index) => (
-                    <Box key={item.id}>
-                      {index > 0 ? <Divider /> : null}
-                      {item.kind === 'round' ? (
-                        <QuizRoundHistoryItem round={item.round} currentUserId={user?.id ?? null} />
-                      ) : (
-                        <ManualAwardHistoryItem
-                          award={item.award}
-                          currentUserId={user?.id ?? null}
-                        />
-                      )}
+                      ) : null}
                     </Box>
-                  ))}
-                </Stack>
-              )}
-            </Stack>
-          </SectionCard>
-        </Stack>
-      </AsyncSection>
-    </PageShell>
-  )
-}
 
-function QuizRoundHistoryItem({
-  round,
-  currentUserId,
-}: {
-  round: QuizRound
-  currentUserId: string | null
-}) {
-  const { t, i18n } = useTranslation()
-  const participantDetails = getQuizRoundParticipantDetails(round)
-  const isMyAnswer =
-    currentUserId != null &&
-    (round.answeredByUserId === currentUserId || round.answeredForUserId === currentUserId)
+                    <Typography variant="body2" fontWeight={700} color="primary.main">
+                      {t('gameQuiz.totalPoints', { points: entry.points })}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))
+            )}
+          </Stack>
+        </SectionCard>
 
-  return (
-    <Box
-      sx={(theme) => ({
-        px: 2,
-        py: 1.5,
-        backgroundColor: isMyAnswer ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
-      })}
-    >
-      <Stack spacing={1}>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-            {t('gameQuiz.questionLabel', { order: round.questionCode })}
-          </Typography>
-          <Chip
-            label={getStatusLabel(round.status, t)}
-            color={getStatusColor(round.status)}
-            size="small"
-            sx={{ height: 20, fontSize: '0.68rem' }}
-          />
-          <Chip
-            label={t('gameQuiz.rewardLabel', { reward: round.reward })}
-            size="small"
-            variant="outlined"
-            sx={{ height: 20, fontSize: '0.68rem' }}
-          />
-          <Chip
-            label={t('gameQuiz.categoryLabel', { category: round.categoryName })}
-            size="small"
-            variant="outlined"
-            sx={{ height: 20, fontSize: '0.68rem' }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-            {formatHistoryTime(round.answeredAtUtc ?? round.askedAtUtc, i18n.resolvedLanguage)}
-          </Typography>
-        </Stack>
+        <SectionCard sx={{ flex: 1, minWidth: 0, p: 0 }}>
+          <Stack spacing={0}>
+            <Box sx={{ px: 2, pt: 2, pb: 1.25 }}>
+              <Typography variant="overline" color="text.secondary">
+                {t('gameQuiz.historyTitle')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('gameQuiz.historyDescription')}
+              </Typography>
+            </Box>
 
-        <Typography variant="body2" fontWeight={600}>
-          {round.questionText}
-        </Typography>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} flexWrap="wrap" useFlexGap>
-          <Typography variant="caption" color="text.secondary">
-            {participantDetails.answeredByDisplayName != null
-              ? t('gameQuiz.answeredBy', { name: participantDetails.answeredByDisplayName })
-              : t('gameQuiz.notAnswered')}
-          </Typography>
-          {participantDetails.answeredForDisplayName != null ? (
-            <Typography variant="caption" color="info.main" fontWeight={700}>
-              {t('gameQuiz.answeredFor', { name: participantDetails.answeredForDisplayName })}
-            </Typography>
-          ) : null}
-          {round.submittedAnswer ? (
-            <Typography variant="caption" color="text.secondary">
-              {t('gameQuiz.answerLabel', { answer: round.submittedAnswer })}
-            </Typography>
-          ) : null}
-          {round.awardedPoints != null && round.awardedPoints > 0 ? (
-            <Typography variant="caption" color="success.main" fontWeight={700}>
-              {t('gameQuiz.pointsEarned', { points: round.awardedPoints })}
-            </Typography>
-          ) : null}
-        </Stack>
+            {historyItems.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 2 }}>
+                {t('gameQuiz.noHistory')}
+              </Typography>
+            ) : (
+              <Stack spacing={0}>
+                {historyItems.map((item, index) => (
+                  <Box key={item.id}>
+                    {index > 0 ? <Divider /> : null}
+                    {item.kind === 'questionSession' ? (
+                      <QuizQuestionSessionHistoryItem
+                        questionSession={item.questionSession}
+                        currentUserId={user?.id ?? null}
+                      />
+                    ) : (
+                      <ManualAwardHistoryItem award={item.award} currentUserId={user?.id ?? null} />
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </SectionCard>
       </Stack>
-    </Box>
+    </PageShell>
   )
 }
 
@@ -328,13 +325,16 @@ function ManualAwardHistoryItem({
   )
 }
 
-function getHistoryItems(rounds: QuizRound[], manualAwards: ManualAward[]): QuizHistoryItem[] {
+function getHistoryItems(
+  questionSessions: QuizQuestionSession[],
+  manualAwards: ManualAward[],
+): QuizHistoryItem[] {
   const items: QuizHistoryItem[] = [
-    ...rounds.map((round) => ({
-      id: `round-${round.roundId}`,
-      kind: 'round' as const,
-      sortAtUtc: round.answeredAtUtc ?? round.askedAtUtc,
-      round,
+    ...questionSessions.map((questionSession) => ({
+      id: `question-session-${questionSession.questionSessionId}`,
+      kind: 'questionSession' as const,
+      sortAtUtc: questionSession.closedAtUtc ?? questionSession.askedAtUtc,
+      questionSession,
     })),
     ...manualAwards.map((award) => ({
       id: `award-${award.awardId}`,
@@ -352,35 +352,6 @@ function getHistoryItems(rounds: QuizRound[], manualAwards: ManualAward[]): Quiz
 
     return right.id.localeCompare(left.id)
   })
-}
-
-function getStatusColor(status: RoundStatus): 'default' | 'success' | 'error' | 'warning' {
-  switch (status) {
-    case 'answered_correct':
-      return 'success'
-    case 'answered_wrong':
-      return 'error'
-    case 'timeout':
-    case 'skipped':
-      return 'warning'
-    default:
-      return 'default'
-  }
-}
-
-function getStatusLabel(status: RoundStatus, t: TFunction) {
-  switch (status) {
-    case 'asked':
-      return t('gameQuiz.statusAsked')
-    case 'answered_correct':
-      return t('gameQuiz.statusAnsweredCorrect')
-    case 'answered_wrong':
-      return t('gameQuiz.statusAnsweredWrong')
-    case 'timeout':
-      return t('gameQuiz.statusTimeout')
-    case 'skipped':
-      return t('gameQuiz.statusSkipped')
-  }
 }
 
 function formatHistoryTime(value: string, locale?: string) {

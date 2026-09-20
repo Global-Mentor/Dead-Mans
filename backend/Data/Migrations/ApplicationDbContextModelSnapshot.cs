@@ -376,25 +376,29 @@ namespace backend.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("question_id");
 
-                    b.PrimitiveCollection<string[]>("AcceptedAnswersSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("accepted_answers_snapshot");
-
                     b.Property<string>("CategoryNameSnapshot")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("category_name_snapshot");
 
+                    b.Property<Guid>("CorrectOptionIdSnapshot")
+                        .HasColumnType("uuid")
+                        .HasColumnName("correct_option_id_snapshot");
+
                     b.Property<DateTime>("EnabledAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("enabled_at_utc");
 
-                    b.PrimitiveCollection<string[]>("NormalizedAnswersSnapshot")
+                    b.PrimitiveCollection<Guid[]>("OptionIdsSnapshot")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("option_ids_snapshot");
+
+                    b.PrimitiveCollection<string[]>("OptionTextsSnapshot")
                         .IsRequired()
                         .HasColumnType("text[]")
-                        .HasColumnName("normalized_answers_snapshot");
+                        .HasColumnName("option_texts_snapshot");
 
                     b.Property<int>("PrioritySnapshot")
                         .HasColumnType("integer")
@@ -432,9 +436,9 @@ namespace backend.Data.Migrations
 
                     b.ToTable("game_enabled_questions", null, t =>
                         {
-                            t.HasCheckConstraint("ck_game_enabled_questions_answers_present", "cardinality(accepted_answers_snapshot) > 0 AND cardinality(accepted_answers_snapshot) = cardinality(normalized_answers_snapshot)");
-
                             t.HasCheckConstraint("ck_game_enabled_questions_content_not_blank", "length(trim(question_code_snapshot)) > 0 AND length(trim(category_name_snapshot)) > 0 AND length(trim(question_text_snapshot)) > 0");
+
+                            t.HasCheckConstraint("ck_game_enabled_questions_options_present", "cardinality(option_ids_snapshot) BETWEEN 2 AND 10 AND cardinality(option_ids_snapshot) = cardinality(option_texts_snapshot) AND correct_option_id_snapshot = ANY(option_ids_snapshot)");
 
                             t.HasCheckConstraint("ck_game_enabled_questions_revision_positive", "question_revision_snapshot > 0");
 
@@ -686,119 +690,6 @@ namespace backend.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizCorrectAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("AnsweredAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("answered_at_utc");
-
-                    b.Property<Guid>("AwardedToUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("awarded_to_user_id");
-
-                    b.Property<Guid?>("CapturedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("captured_by_user_id");
-
-                    b.Property<string>("DisplayNameSnapshot")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("display_name_snapshot");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("game_id");
-
-                    b.Property<string>("LoginSnapshot")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("login_snapshot");
-
-                    b.Property<string>("NormalizedAnswer")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("normalized_answer");
-
-                    b.Property<Guid>("QuizRoundId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("quiz_round_id");
-
-                    b.Property<string>("SourceChannelId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("source_channel_id");
-
-                    b.Property<string>("SourceMessageId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("source_message_id");
-
-                    b.Property<string>("SourceProvider")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("source_provider");
-
-                    b.Property<string>("SubmittedAnswer")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("submitted_answer");
-
-                    b.Property<string>("TwitchUserIdSnapshot")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("twitch_user_id_snapshot");
-
-                    b.HasKey("Id")
-                        .HasName("pk_game_quiz_correct_answers");
-
-                    b.HasAlternateKey("GameId", "Id")
-                        .HasName("ak_game_quiz_correct_answers_game_id_id");
-
-                    b.HasIndex("AwardedToUserId")
-                        .HasDatabaseName("ix_game_quiz_correct_answers_awarded_to_user_id");
-
-                    b.HasIndex("CapturedByUserId")
-                        .HasDatabaseName("ix_game_quiz_correct_answers_captured_by_user_id");
-
-                    b.HasIndex("QuizRoundId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_game_quiz_correct_answers_quiz_round_id");
-
-                    b.HasIndex("GameId", "QuizRoundId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_game_quiz_correct_answers_game_id_quiz_round_id");
-
-                    b.HasIndex("GameId", "AwardedToUserId", "AnsweredAtUtc")
-                        .HasDatabaseName("ix_quiz_answers_game_user_time");
-
-                    b.HasIndex(new[] { "SourceProvider", "SourceChannelId", "SourceMessageId" }, "ux_game_quiz_correct_answers_source_message")
-                        .IsUnique()
-                        .HasDatabaseName("ux_game_quiz_correct_answers_source_message")
-                        .HasFilter("source_channel_id IS NOT NULL AND source_message_id IS NOT NULL");
-
-                    b.ToTable("game_quiz_correct_answers", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_game_quiz_correct_answers_answer_not_blank", "length(trim(submitted_answer)) > 0 AND length(trim(normalized_answer)) > 0");
-
-                            t.HasCheckConstraint("ck_game_quiz_correct_answers_identity_snapshots_not_blank", "length(trim(twitch_user_id_snapshot)) > 0 AND length(trim(login_snapshot)) > 0 AND length(trim(display_name_snapshot)) > 0");
-
-                            t.HasCheckConstraint("ck_game_quiz_correct_answers_source_allowed", "source_provider IN ('manual','twitch')");
-
-                            t.HasCheckConstraint("ck_game_quiz_correct_answers_source_semantics", "(source_provider = 'manual' AND source_channel_id IS NULL AND source_message_id IS NULL) OR (source_provider = 'twitch' AND source_channel_id IS NOT NULL AND source_message_id IS NOT NULL AND length(trim(source_channel_id)) > 0 AND length(trim(source_message_id)) > 0)");
-                        });
-                });
-
             modelBuilder.Entity("backend.Data.Entities.GameQuizPointLedgerEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -813,10 +704,6 @@ namespace backend.Data.Migrations
                     b.Property<long>("AvailablePointsBefore")
                         .HasColumnType("bigint")
                         .HasColumnName("available_points_before");
-
-                    b.Property<Guid?>("CorrectAnswerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("correct_answer_id");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
@@ -848,6 +735,10 @@ namespace backend.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("points_delta");
 
+                    b.Property<Guid?>("QuizSubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quiz_submission_id");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -867,11 +758,6 @@ namespace backend.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_game_quiz_point_ledger_entries");
 
-                    b.HasIndex("CorrectAnswerId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_game_quiz_point_ledger_entries_correct_answer_id")
-                        .HasFilter("correct_answer_id IS NOT NULL");
-
                     b.HasIndex("CreatedByUserId")
                         .HasDatabaseName("ix_game_quiz_point_ledger_entries_created_by_user_id");
 
@@ -880,15 +766,20 @@ namespace backend.Data.Migrations
                         .HasDatabaseName("ix_game_quiz_point_ledger_entries_manual_request_id")
                         .HasFilter("manual_request_id IS NOT NULL");
 
+                    b.HasIndex("QuizSubmissionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_game_quiz_point_ledger_entries_quiz_submission_id")
+                        .HasFilter("quiz_submission_id IS NOT NULL");
+
                     b.HasIndex("SequenceNumber")
                         .IsUnique()
                         .HasDatabaseName("ix_game_quiz_point_ledger_entries_sequence_number");
 
-                    b.HasIndex("GameId", "CorrectAnswerId")
-                        .HasDatabaseName("ix_game_quiz_point_ledger_entries_game_id_correct_answer_id");
-
                     b.HasIndex("GameId", "ModifierActivationId")
                         .HasDatabaseName("ix_quiz_ledger_game_activation");
+
+                    b.HasIndex("GameId", "QuizSubmissionId")
+                        .HasDatabaseName("ix_game_quiz_point_ledger_entries_game_id_quiz_submission_id");
 
                     b.HasIndex("UserId", "GameId")
                         .HasDatabaseName("ix_game_quiz_point_ledger_entries_user_id_game_id");
@@ -909,21 +800,16 @@ namespace backend.Data.Migrations
 
                             t.HasCheckConstraint("ck_quiz_point_ledger_nonzero_delta", "points_delta <> 0");
 
-                            t.HasCheckConstraint("ck_quiz_point_ledger_source_semantics", "(entry_type = 'quiz_reward' AND points_delta > 0 AND correct_answer_id IS NOT NULL AND modifier_activation_id IS NULL AND manual_request_id IS NULL AND created_by_user_id IS NULL AND reason IS NULL) OR (entry_type = 'manual_adjustment' AND correct_answer_id IS NULL AND modifier_activation_id IS NULL AND manual_request_id IS NOT NULL AND created_by_user_id IS NOT NULL AND reason IS NOT NULL AND length(trim(reason)) BETWEEN 3 AND 500) OR (entry_type = 'modifier_purchase' AND points_delta < 0 AND correct_answer_id IS NULL AND modifier_activation_id IS NOT NULL AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL AND reason IS NULL) OR (entry_type = 'modifier_refund' AND points_delta > 0 AND correct_answer_id IS NULL AND modifier_activation_id IS NOT NULL AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL AND (reason IS NULL OR length(trim(reason)) BETWEEN 3 AND 500))");
+                            t.HasCheckConstraint("ck_quiz_point_ledger_source_semantics", "(entry_type = 'quiz_reward' AND points_delta > 0 AND quiz_submission_id IS NOT NULL AND modifier_activation_id IS NULL AND manual_request_id IS NULL AND created_by_user_id IS NULL AND reason IS NULL) OR (entry_type = 'manual_adjustment' AND quiz_submission_id IS NULL AND modifier_activation_id IS NULL AND manual_request_id IS NOT NULL AND created_by_user_id IS NOT NULL AND reason IS NOT NULL AND length(trim(reason)) BETWEEN 3 AND 500) OR (entry_type = 'modifier_purchase' AND points_delta < 0 AND quiz_submission_id IS NULL AND modifier_activation_id IS NOT NULL AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL AND reason IS NULL) OR (entry_type = 'modifier_refund' AND points_delta > 0 AND quiz_submission_id IS NULL AND modifier_activation_id IS NOT NULL AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL AND (reason IS NULL OR length(trim(reason)) BETWEEN 3 AND 500))");
                         });
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizRound", b =>
+            modelBuilder.Entity("backend.Data.Entities.GameQuizQuestionSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.PrimitiveCollection<string[]>("AcceptedAnswersSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("accepted_answers_snapshot");
 
                     b.Property<int>("AskOrder")
                         .HasColumnType("integer")
@@ -951,6 +837,10 @@ namespace backend.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("closes_at_utc");
 
+                    b.Property<Guid>("CorrectOptionIdSnapshot")
+                        .HasColumnType("uuid")
+                        .HasColumnName("correct_option_id_snapshot");
+
                     b.Property<string>("DeliveryKind")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -961,10 +851,15 @@ namespace backend.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("game_id");
 
-                    b.PrimitiveCollection<string[]>("NormalizedAnswersSnapshot")
+                    b.PrimitiveCollection<Guid[]>("OptionIdsSnapshot")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("option_ids_snapshot");
+
+                    b.PrimitiveCollection<string[]>("OptionTextsSnapshot")
                         .IsRequired()
                         .HasColumnType("text[]")
-                        .HasColumnName("normalized_answers_snapshot");
+                        .HasColumnName("option_texts_snapshot");
 
                     b.Property<string>("QuestionCodeSnapshot")
                         .IsRequired()
@@ -1007,51 +902,171 @@ namespace backend.Data.Migrations
                         .HasColumnName("status");
 
                     b.HasKey("Id")
-                        .HasName("pk_game_quiz_rounds");
+                        .HasName("pk_game_quiz_question_sessions");
 
                     b.HasAlternateKey("GameId", "Id")
-                        .HasName("ak_game_quiz_rounds_game_id_id");
+                        .HasName("ak_game_quiz_question_sessions_game_id_id");
 
                     b.HasIndex("QuestionId")
-                        .HasDatabaseName("ix_game_quiz_rounds_question_id");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_question_id");
 
                     b.HasIndex("AskedByUserId", "AskedAtUtc")
-                        .HasDatabaseName("ix_game_quiz_rounds_asked_by_user_id_asked_at_utc");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_asked_by_user_id_asked_at_utc");
 
                     b.HasIndex("GameId", "AskOrder")
                         .IsUnique()
-                        .HasDatabaseName("ix_game_quiz_rounds_game_id_ask_order");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_game_id_ask_order");
 
                     b.HasIndex("GameId", "AskedAtUtc")
-                        .HasDatabaseName("ix_game_quiz_rounds_game_id_asked_at_utc");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_game_id_asked_at_utc");
 
                     b.HasIndex("GameId", "QuestionId")
                         .IsUnique()
-                        .HasDatabaseName("ix_game_quiz_rounds_game_id_question_id");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_game_id_question_id");
 
                     b.HasIndex("GameId", "Status")
-                        .HasDatabaseName("ix_game_quiz_rounds_game_id_status");
+                        .HasDatabaseName("ix_game_quiz_question_sessions_game_id_status");
 
-                    b.HasIndex(new[] { "GameId" }, "ux_game_quiz_rounds_one_open")
+                    b.HasIndex(new[] { "GameId" }, "ux_game_quiz_question_sessions_one_open")
                         .IsUnique()
-                        .HasDatabaseName("ux_game_quiz_rounds_one_open")
-                        .HasFilter("status = 'asked'");
+                        .HasDatabaseName("ux_game_quiz_question_sessions_one_open")
+                        .HasFilter("status = 'open'");
 
-                    b.ToTable("game_quiz_rounds", null, t =>
+                    b.ToTable("game_quiz_question_sessions", null, t =>
                         {
-                            t.HasCheckConstraint("ck_game_quiz_rounds_ask_order_positive", "ask_order > 0");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_ask_order_positive", "ask_order > 0");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_close_semantics", "((status = 'asked') AND closed_at_utc IS NULL) OR ((status IN ('answered_correct','timeout','skipped')) AND closed_at_utc IS NOT NULL)");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_close_semantics", "((status = 'open') AND closed_at_utc IS NULL) OR ((status IN ('closed','skipped')) AND closed_at_utc IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_delivery_kind_allowed", "delivery_kind IN ('manual','twitch')");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_delivery_kind_allowed", "delivery_kind IN ('manual','twitch')");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_delivery_source_semantics", "(delivery_kind = 'manual' AND source_channel_id IS NULL AND source_message_id IS NULL) OR (delivery_kind = 'twitch' AND source_channel_id IS NOT NULL AND length(trim(source_channel_id)) > 0 AND (source_message_id IS NULL OR length(trim(source_message_id)) > 0))");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_delivery_source_semantics", "(delivery_kind = 'manual' AND source_channel_id IS NULL AND source_message_id IS NULL) OR (delivery_kind = 'twitch' AND source_channel_id IS NOT NULL AND length(trim(source_channel_id)) > 0 AND (source_message_id IS NULL OR length(trim(source_message_id)) > 0))");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_snapshot", "question_revision_snapshot > 0 AND reward_snapshot >= 0 AND length(trim(question_code_snapshot)) > 0 AND length(trim(category_name_snapshot)) > 0 AND length(trim(question_text_snapshot)) > 0 AND cardinality(accepted_answers_snapshot) > 0 AND cardinality(accepted_answers_snapshot) = cardinality(normalized_answers_snapshot)");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_snapshot", "question_revision_snapshot > 0 AND reward_snapshot >= 0 AND length(trim(question_code_snapshot)) > 0 AND length(trim(category_name_snapshot)) > 0 AND length(trim(question_text_snapshot)) > 0 AND cardinality(option_ids_snapshot) BETWEEN 2 AND 10 AND cardinality(option_ids_snapshot) = cardinality(option_texts_snapshot) AND correct_option_id_snapshot = ANY(option_ids_snapshot)");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_status_allowed", "status IN ('asked','answered_correct','timeout','skipped')");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_status_allowed", "status IN ('open','closed','skipped')");
 
-                            t.HasCheckConstraint("ck_game_quiz_rounds_window", "closes_at_utc > asked_at_utc AND (closed_at_utc IS NULL OR (closed_at_utc >= asked_at_utc AND closed_at_utc <= closes_at_utc))");
+                            t.HasCheckConstraint("ck_game_quiz_question_sessions_window", "closes_at_utc > asked_at_utc AND (closed_at_utc IS NULL OR (closed_at_utc >= asked_at_utc AND closed_at_utc <= closes_at_utc))");
+                        });
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.GameQuizSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AwardedPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("awarded_points");
+
+                    b.Property<Guid?>("CapturedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("captured_by_user_id");
+
+                    b.Property<string>("DisplayNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("display_name_snapshot");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("game_id");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_correct");
+
+                    b.Property<string>("LoginSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("login_snapshot");
+
+                    b.Property<Guid>("QuestionSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_session_id");
+
+                    b.Property<Guid>("SelectedOptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("selected_option_id");
+
+                    b.Property<string>("SelectedOptionTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("selected_option_text_snapshot");
+
+                    b.Property<string>("SourceChannelId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("source_channel_id");
+
+                    b.Property<string>("SourceMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("source_message_id");
+
+                    b.Property<string>("SourceProvider")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source_provider");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at_utc");
+
+                    b.Property<string>("TwitchUserIdSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("twitch_user_id_snapshot");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_game_quiz_submissions");
+
+                    b.HasAlternateKey("GameId", "Id")
+                        .HasName("ak_game_quiz_submissions_game_id_id");
+
+                    b.HasIndex("CapturedByUserId")
+                        .HasDatabaseName("ix_game_quiz_submissions_captured_by_user_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_game_quiz_submissions_user_id");
+
+                    b.HasIndex("GameId", "QuestionSessionId")
+                        .HasDatabaseName("ix_game_quiz_submissions_game_id_question_session_id");
+
+                    b.HasIndex("QuestionSessionId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_game_quiz_submissions_question_session_id_user_id");
+
+                    b.HasIndex("GameId", "UserId", "SubmittedAtUtc")
+                        .HasDatabaseName("ix_game_quiz_submissions_game_id_user_id_submitted_at_utc");
+
+                    b.HasIndex(new[] { "SourceProvider", "SourceChannelId", "SourceMessageId" }, "ux_game_quiz_submissions_source_message")
+                        .IsUnique()
+                        .HasDatabaseName("ux_game_quiz_submissions_source_message")
+                        .HasFilter("source_channel_id IS NOT NULL AND source_message_id IS NOT NULL");
+
+                    b.ToTable("game_quiz_submissions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_game_quiz_submissions_award_semantics", "awarded_points >= 0 AND (is_correct = TRUE OR awarded_points = 0)");
+
+                            t.HasCheckConstraint("ck_game_quiz_submissions_identity_snapshots_not_blank", "length(trim(twitch_user_id_snapshot)) > 0 AND length(trim(login_snapshot)) > 0 AND length(trim(display_name_snapshot)) > 0");
+
+                            t.HasCheckConstraint("ck_game_quiz_submissions_option_text_not_blank", "length(trim(selected_option_text_snapshot)) > 0");
+
+                            t.HasCheckConstraint("ck_game_quiz_submissions_source_allowed", "source_provider IN ('manual','web','twitch')");
+
+                            t.HasCheckConstraint("ck_game_quiz_submissions_source_semantics", "(source_provider IN ('manual','web') AND source_channel_id IS NULL AND source_message_id IS NULL) OR (source_provider = 'twitch' AND source_channel_id IS NOT NULL AND source_message_id IS NOT NULL AND length(trim(source_channel_id)) > 0 AND length(trim(source_message_id)) > 0)");
                         });
                 });
 
@@ -2351,65 +2366,6 @@ namespace backend.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.QuestionAcceptedAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AnswerText")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("answer_text");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_primary");
-
-                    b.Property<string>("NormalizedAnswer")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("normalized_answer");
-
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_id");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
-
-                    b.HasKey("Id")
-                        .HasName("pk_question_accepted_answers");
-
-                    b.HasIndex("QuestionId", "NormalizedAnswer")
-                        .IsUnique()
-                        .HasDatabaseName("ix_question_accepted_answers_question_id_normalized_answer");
-
-                    b.HasIndex("QuestionId", "SortOrder")
-                        .IsUnique()
-                        .HasDatabaseName("ix_question_accepted_answers_question_id_sort_order");
-
-                    b.HasIndex(new[] { "AnswerText" }, "ix_question_accepted_answers_text_trgm")
-                        .HasDatabaseName("ix_question_accepted_answers_text_trgm");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "AnswerText" }, "ix_question_accepted_answers_text_trgm"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "AnswerText" }, "ix_question_accepted_answers_text_trgm"), new[] { "gin_trgm_ops" });
-
-                    b.ToTable("question_accepted_answers", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_question_accepted_answers_sort_order_non_negative", "sort_order >= 0");
-
-                            t.HasCheckConstraint("ck_question_accepted_answers_text_not_blank", "length(trim(answer_text)) > 0 AND length(trim(normalized_answer)) > 0");
-                        });
-                });
-
             modelBuilder.Entity("backend.Data.Entities.QuestionCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2540,6 +2496,73 @@ namespace backend.Data.Migrations
                             t.HasCheckConstraint("ck_question_definitions_soft_delete_semantics", "(is_deleted = FALSE AND deleted_at_utc IS NULL) OR (is_deleted = TRUE AND is_enabled = FALSE AND deleted_at_utc IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_question_definitions_timestamps", "updated_at_utc >= created_at_utc AND (deleted_at_utc IS NULL OR deleted_at_utc >= created_at_utc)");
+                        });
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.QuestionOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_correct");
+
+                    b.Property<string>("NormalizedText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("normalized_text");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_id");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_question_options");
+
+                    b.HasAlternateKey("QuestionId", "Id")
+                        .HasName("ak_question_options_question_id_id");
+
+                    b.HasIndex("QuestionId", "NormalizedText")
+                        .IsUnique()
+                        .HasDatabaseName("ix_question_options_question_id_normalized_text");
+
+                    b.HasIndex("QuestionId", "SortOrder")
+                        .IsUnique()
+                        .HasDatabaseName("ix_question_options_question_id_sort_order");
+
+                    b.HasIndex(new[] { "Text" }, "ix_question_options_text_trgm")
+                        .HasDatabaseName("ix_question_options_text_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Text" }, "ix_question_options_text_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "Text" }, "ix_question_options_text_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "QuestionId" }, "ux_question_options_one_correct")
+                        .IsUnique()
+                        .HasDatabaseName("ux_question_options_one_correct")
+                        .HasFilter("is_correct = TRUE");
+
+                    b.ToTable("question_options", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_question_options_sort_order_non_negative", "sort_order >= 0");
+
+                            t.HasCheckConstraint("ck_question_options_text_not_blank", "length(trim(text)) > 0 AND length(trim(normalized_text)) > 0");
                         });
                 });
 
@@ -3003,36 +3026,6 @@ namespace backend.Data.Migrations
                     b.Navigation("Round");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizCorrectAnswer", b =>
-                {
-                    b.HasOne("backend.Data.Entities.User", "AwardedToUser")
-                        .WithMany("CorrectQuizAnswers")
-                        .HasForeignKey("AwardedToUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_game_quiz_correct_answers_users_awarded_to_user_id");
-
-                    b.HasOne("backend.Data.Entities.User", "CapturedByUser")
-                        .WithMany()
-                        .HasForeignKey("CapturedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_game_quiz_correct_answers_users_captured_by_user_id");
-
-                    b.HasOne("backend.Data.Entities.GameQuizRound", "QuizRound")
-                        .WithOne("CorrectAnswer")
-                        .HasForeignKey("backend.Data.Entities.GameQuizCorrectAnswer", "GameId", "QuizRoundId")
-                        .HasPrincipalKey("backend.Data.Entities.GameQuizRound", "GameId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_quiz_correct_answers_round_same_game");
-
-                    b.Navigation("AwardedToUser");
-
-                    b.Navigation("CapturedByUser");
-
-                    b.Navigation("QuizRound");
-                });
-
             modelBuilder.Entity("backend.Data.Entities.GameQuizPointLedgerEntry", b =>
                 {
                     b.HasOne("backend.Data.Entities.User", "CreatedByUser")
@@ -3055,13 +3048,6 @@ namespace backend.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_game_quiz_point_ledger_entries_users_user_id");
 
-                    b.HasOne("backend.Data.Entities.GameQuizCorrectAnswer", "CorrectAnswer")
-                        .WithMany("PointEntries")
-                        .HasForeignKey("GameId", "CorrectAnswerId")
-                        .HasPrincipalKey("GameId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_quiz_point_ledger_correct_answer_same_game");
-
                     b.HasOne("backend.Data.Entities.GameModifierActivation", "ModifierActivation")
                         .WithMany()
                         .HasForeignKey("GameId", "ModifierActivationId")
@@ -3069,7 +3055,12 @@ namespace backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_quiz_point_ledger_modifier_activation_same_game");
 
-                    b.Navigation("CorrectAnswer");
+                    b.HasOne("backend.Data.Entities.GameQuizSubmission", "QuizSubmission")
+                        .WithMany("PointEntries")
+                        .HasForeignKey("GameId", "QuizSubmissionId")
+                        .HasPrincipalKey("GameId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_quiz_point_ledger_submission_same_game");
 
                     b.Navigation("CreatedByUser");
 
@@ -3077,37 +3068,39 @@ namespace backend.Data.Migrations
 
                     b.Navigation("ModifierActivation");
 
+                    b.Navigation("QuizSubmission");
+
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizRound", b =>
+            modelBuilder.Entity("backend.Data.Entities.GameQuizQuestionSession", b =>
                 {
                     b.HasOne("backend.Data.Entities.User", "AskedByUser")
-                        .WithMany("AskedGameQuizRounds")
+                        .WithMany("AskedGameQuizQuestionSessions")
                         .HasForeignKey("AskedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_game_quiz_rounds_users_asked_by_user_id");
+                        .HasConstraintName("fk_game_quiz_question_sessions_users_asked_by_user_id");
 
                     b.HasOne("backend.Data.Entities.Game", "Game")
                         .WithMany()
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_game_quiz_rounds_games_game_id");
+                        .HasConstraintName("fk_game_quiz_question_sessions_games_game_id");
 
                     b.HasOne("backend.Data.Entities.QuestionDefinition", "Question")
-                        .WithMany("AskedInQuizRounds")
+                        .WithMany("AskedInQuizQuestionSessions")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_game_quiz_rounds_question_definitions_question_id");
+                        .HasConstraintName("fk_quiz_question_sessions_question");
 
                     b.HasOne("backend.Data.Entities.GameEnabledQuestion", "EnabledQuestion")
                         .WithMany()
                         .HasForeignKey("GameId", "QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_game_quiz_rounds_enabled_question");
+                        .HasConstraintName("fk_game_quiz_question_sessions_enabled_question");
 
                     b.Navigation("AskedByUser");
 
@@ -3116,6 +3109,36 @@ namespace backend.Data.Migrations
                     b.Navigation("Game");
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.GameQuizSubmission", b =>
+                {
+                    b.HasOne("backend.Data.Entities.User", "CapturedByUser")
+                        .WithMany()
+                        .HasForeignKey("CapturedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_game_quiz_submissions_users_captured_by_user_id");
+
+                    b.HasOne("backend.Data.Entities.User", "User")
+                        .WithMany("QuizSubmissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_game_quiz_submissions_users_user_id");
+
+                    b.HasOne("backend.Data.Entities.GameQuizQuestionSession", "QuestionSession")
+                        .WithMany("Submissions")
+                        .HasForeignKey("GameId", "QuestionSessionId")
+                        .HasPrincipalKey("GameId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_quiz_submissions_question_session_same_game");
+
+                    b.Navigation("CapturedByUser");
+
+                    b.Navigation("QuestionSession");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.GameRound", b =>
@@ -3517,18 +3540,6 @@ namespace backend.Data.Migrations
                     b.Navigation("ModifierVersion");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.QuestionAcceptedAnswer", b =>
-                {
-                    b.HasOne("backend.Data.Entities.QuestionDefinition", "Question")
-                        .WithMany("AcceptedAnswers")
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_question_accepted_answers_question_definitions_question_id");
-
-                    b.Navigation("Question");
-                });
-
             modelBuilder.Entity("backend.Data.Entities.QuestionDefinition", b =>
                 {
                     b.HasOne("backend.Data.Entities.QuestionCategory", "CategoryDefinition")
@@ -3539,6 +3550,18 @@ namespace backend.Data.Migrations
                         .HasConstraintName("fk_question_definitions_question_categories_category_id");
 
                     b.Navigation("CategoryDefinition");
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.QuestionOption", b =>
+                {
+                    b.HasOne("backend.Data.Entities.QuestionDefinition", "Question")
+                        .WithMany("Options")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_question_options_question_definitions_question_id");
+
+                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.UserRole", b =>
@@ -3629,14 +3652,14 @@ namespace backend.Data.Migrations
                     b.Navigation("TeamResults");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizCorrectAnswer", b =>
+            modelBuilder.Entity("backend.Data.Entities.GameQuizQuestionSession", b =>
                 {
-                    b.Navigation("PointEntries");
+                    b.Navigation("Submissions");
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.GameQuizRound", b =>
+            modelBuilder.Entity("backend.Data.Entities.GameQuizSubmission", b =>
                 {
-                    b.Navigation("CorrectAnswer");
+                    b.Navigation("PointEntries");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.GameRound", b =>
@@ -3681,11 +3704,11 @@ namespace backend.Data.Migrations
 
             modelBuilder.Entity("backend.Data.Entities.QuestionDefinition", b =>
                 {
-                    b.Navigation("AcceptedAnswers");
-
-                    b.Navigation("AskedInQuizRounds");
+                    b.Navigation("AskedInQuizQuestionSessions");
 
                     b.Navigation("EnabledInGames");
+
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.Role", b =>
@@ -3699,17 +3722,17 @@ namespace backend.Data.Migrations
                 {
                     b.Navigation("ActivatedGameModifiers");
 
-                    b.Navigation("AskedGameQuizRounds");
+                    b.Navigation("AskedGameQuizQuestionSessions");
 
                     b.Navigation("AssignedRoles");
-
-                    b.Navigation("CorrectQuizAnswers");
 
                     b.Navigation("GameNotifications");
 
                     b.Navigation("PerformedRoleAuditEvents");
 
                     b.Navigation("QuizPointLedgerEntries");
+
+                    b.Navigation("QuizSubmissions");
 
                     b.Navigation("RoleAuditEvents");
 

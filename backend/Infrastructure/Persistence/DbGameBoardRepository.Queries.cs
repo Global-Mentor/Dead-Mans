@@ -84,6 +84,10 @@ public sealed partial class DbGameBoardRepository
                     )
                 )
                 .ToArrayAsync(cancellationToken);
+            var quizAnswerDurationSeconds = await _dbContext.Games.AsNoTracking()
+                .Where(x => x.Id == selectedBoard.GameId)
+                .Select(x => x.QuizAnswerDurationSeconds)
+                .SingleAsync(cancellationToken);
 
             _logger.LogDebug(
                 AppMessages.Logs.GameBoardSnapshotResolved,
@@ -106,7 +110,8 @@ public sealed partial class DbGameBoardRepository
                 enabledModifierIds,
                 activeModifiers,
                 selectedBoard.ActiveTeamId?.ToString(),
-                Array.Empty<string>()
+                Array.Empty<string>(),
+                quizAnswerDurationSeconds
             );
         }
         catch (Exception ex)

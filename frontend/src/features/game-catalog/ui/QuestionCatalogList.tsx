@@ -11,7 +11,7 @@ import {
   SectionCard,
   SectionHeader,
 } from '../../../shared/ui/index.ts'
-import { getQuestionDisplayAnswers } from '../model/question-answer-normalize.ts'
+import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
 
 interface QuestionCatalogListProps {
   search: string
@@ -103,7 +103,7 @@ export function QuestionCatalogList({
 
 function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogItem }) {
   const { t } = useTranslation()
-  const answers = getQuestionDisplayAnswers(question)
+  const options = getQuestionDisplayOptions(question)
 
   return (
     <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}>
@@ -117,11 +117,11 @@ function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogI
         color="warning"
         label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
       />
-      {answers.map((answer, index) => (
+      {options.map((option, index) => (
         <Chip
-          key={`${question.questionId}-answer-${index}`}
-          color="success"
-          label={t('gameCatalog.questions.answerMeta', { answer })}
+          key={`${question.questionId}-option-${index}`}
+          color={option.isCorrect ? 'success' : 'default'}
+          label={t('gameCatalog.questions.answerMeta', { answer: option.text })}
           sx={{
             maxWidth: '100%',
             height: 'auto',
@@ -133,6 +133,9 @@ function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogI
         label={t('gameCatalog.questions.askedMeta', {
           asked: question.askedTotalCount,
         })}
+      />
+      <Chip
+        label={`${question.correctSubmissionTotalCount}/${question.submissionTotalCount} · ${question.correctPercentage}%`}
       />
       {question.isEnabled ? null : (
         <Chip color="error" label={t('gameCatalog.questions.disabledBadge')} />

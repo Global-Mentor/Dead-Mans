@@ -1,13 +1,16 @@
 import { Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { AppLinkButton } from '../../../shared/ui/index.ts'
+import { ActiveTeamRosterTooltip } from './ActiveTeamRosterTooltip.tsx'
 
 interface GameBoardStatusBarProps {
   title: string
   caption: string
+  participantNames?: readonly string[] | undefined
   phase: string
   phaseCaption?: string | undefined
-  action?: { to: string; label: string; accessibleLabel?: string } | undefined
+  action?:
+    { to: string; label: string; accessibleLabel?: string; compactLabel?: boolean } | undefined
 }
 
 const groupSx = {
@@ -33,7 +36,13 @@ const valueSx = {
   overflow: 'hidden',
 } as const
 
-function StatusCaption({ children }: { children: string }) {
+function StatusCaption({
+  children,
+  highlighted = false,
+}: {
+  children: string
+  highlighted?: boolean
+}) {
   return (
     <Typography
       component="span"
@@ -42,7 +51,7 @@ function StatusCaption({ children }: { children: string }) {
         alignItems: 'center',
         gap: 0.75,
         minWidth: 0,
-        color: 'text.secondary',
+        color: highlighted ? 'text.primary' : 'text.secondary',
         fontSize: 11,
         lineHeight: '14px',
       }}
@@ -54,7 +63,7 @@ function StatusCaption({ children }: { children: string }) {
           width: 5,
           height: 5,
           flexShrink: 0,
-          bgcolor: 'primary.main',
+          bgcolor: highlighted ? 'text.primary' : 'primary.main',
           transform: 'rotate(45deg)',
         }}
       />
@@ -72,17 +81,45 @@ function StatusCaption({ children }: { children: string }) {
 export function GameBoardStatusBar({
   title,
   caption,
+  participantNames,
   phase,
   phaseCaption,
   action,
 }: GameBoardStatusBarProps) {
+  const teamContent = (
+    <>
+      <StatusCaption>{caption}</StatusCaption>
+      <Typography
+        component="span"
+        data-testid="game-board-status-title"
+        title={participantNames?.length ? undefined : title}
+        sx={{ ...valueSx, fontWeight: 750 }}
+      >
+        {title}
+      </Typography>
+    </>
+  )
   const phaseContent = (
     <>
-      {phaseCaption ? <StatusCaption>{phaseCaption}</StatusCaption> : null}
+      {phaseCaption ? (
+        <StatusCaption highlighted={Boolean(action)}>{phaseCaption}</StatusCaption>
+      ) : null}
       <Typography
         component="span"
         title={action?.label ?? phase}
-        sx={{ ...valueSx, pr: 2.5, color: action ? 'primary.light' : 'text.secondary' }}
+        sx={{
+          ...valueSx,
+          pr: 2.5,
+          color: action ? 'text.primary' : 'text.secondary',
+          ...(action
+            ? {
+                fontSize: action.compactLabel ? { xs: 15, sm: 16 } : { xs: 16, sm: 18 },
+                lineHeight: action.compactLabel ? '20px' : { xs: '20px', sm: '22px' },
+                fontWeight: 700,
+                pr: { xs: 0, sm: 2.5 },
+              }
+            : {}),
+        }}
       >
         {action?.label ?? phase}
       </Typography>
@@ -101,27 +138,31 @@ export function GameBoardStatusBar({
         // Reserve the same two-line value slot in every phase, including actionable ones.
         height: 64,
         border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-        borderRadius: '8px',
+        borderRadius: 0,
         background: `linear-gradient(110deg, ${alpha(theme.palette.primary.main, 0.09)}, ${alpha(theme.palette.background.paper, 0.88)} 60%)`,
         boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.06)}`,
       })}
     >
-      <Box sx={groupSx}>
-        <StatusCaption>{caption}</StatusCaption>
-        <Typography component="span" title={title} sx={{ ...valueSx, fontWeight: 750 }}>
-          {title}
-        </Typography>
-      </Box>
+      {participantNames?.length ? (
+        <ActiveTeamRosterTooltip key={title} title={title} names={participantNames} sx={groupSx}>
+          {teamContent}
+        </ActiveTeamRosterTooltip>
+      ) : (
+        <Box sx={groupSx}>{teamContent}</Box>
+      )}
       <Box sx={{ minWidth: 0, height: '100%', borderLeft: '1px solid', borderColor: 'divider' }}>
         {action ? (
           <AppLinkButton
             to={action.to}
             aria-label={action.accessibleLabel ?? action.label}
-            tone="ghost"
+            tone="primary"
             size="small"
             sx={(theme) => ({
               ...groupSx,
               gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr',
+              // Account for the button border to align captions with the adjacent group.
+              pt: '7px',
+              pb: '3px',
               position: 'relative',
               width: '100%',
               minHeight: 44,
@@ -129,17 +170,11 @@ export function GameBoardStatusBar({
               textAlign: 'left',
               textTransform: 'none',
               whiteSpace: 'normal',
-              borderRadius: '0 7px 7px 0',
-              color: 'primary.light',
-              bgcolor: 'transparent',
-              backgroundImage: 'none',
-              '&:hover': {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                backgroundImage: 'none',
-              },
+              borderRadius: 0,
+              borderImageOutset: 0,
               '&:focus-visible': {
-                outline: `2px solid ${theme.palette.primary.main}`,
-                outlineOffset: -2,
+                outline: `2px solid ${theme.palette.text.primary}`,
+                outlineOffset: -3,
               },
             })}
           >
@@ -150,6 +185,7 @@ export function GameBoardStatusBar({
               viewBox="0 0 20 20"
               sx={{
                 position: 'absolute',
+                display: { xs: 'none', sm: 'block' },
                 right: 10,
                 top: '50%',
                 transform: 'translateY(-50%)',

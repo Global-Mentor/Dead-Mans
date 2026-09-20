@@ -11,7 +11,8 @@ public sealed record UpdateGameSetupRequestDto(
     IReadOnlyList<string> ColLabels,
     IReadOnlyList<UpdateGameSetupCellDto> Cells,
     IReadOnlyList<string>? EnabledModifierIds = null,
-    IReadOnlyList<string>? EnabledQuestionIds = null
+    IReadOnlyList<string>? EnabledQuestionIds = null,
+    int QuizAnswerDurationSeconds = 60
 );
 
 public sealed record GameSetupSnapshotDto(
@@ -26,5 +27,6 @@ public sealed record GameSetupSnapshotDto(
     IReadOnlyList<string> ColLabels,
     IReadOnlyList<GameBoardCellDto> Cells,
     IReadOnlyList<string> EnabledModifierIds,
-    IReadOnlyList<string> EnabledQuestionIds
+    IReadOnlyList<string> EnabledQuestionIds,
+    int QuizAnswerDurationSeconds = 60
 );

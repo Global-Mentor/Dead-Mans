@@ -103,7 +103,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken
     )
     {
-        if (!await IsRegistrationOpenAsync(gameId, cancellationToken))
+        if (!await _dbContext.Games.AsNoTracking().AnyAsync(
+                game => game.Id == gameId && !game.IsDeleted
+                    && (game.Status == GameStatusValue.Ready || game.Status == GameStatusValue.Active),
+                cancellationToken))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
@@ -113,6 +116,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         if (sourceTeam is null)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
+        }
+
+        if (sourceTeam.Status != TeamStatusValue.Forming && sourceTeam.Status != TeamStatusValue.Confirmed)
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
 
         var targetSlotExists = await _dbContext.GameTeamSlots.AnyAsync(
@@ -156,6 +164,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
                 SlotType = TeamSlotTypeValue.Public,
                 CreatedAtUtc = utcNow
             };
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT set_config('deadmans.team_swap_buffer', {swapBufferSlot.Id.ToString()}, true)",
+                cancellationToken
+            );
             _dbContext.GameTeamSlots.Add(swapBufferSlot);
             await _dbContext.SaveChangesAsync(cancellationToken);
 

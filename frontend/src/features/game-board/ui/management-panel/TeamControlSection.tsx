@@ -43,8 +43,8 @@ export function TeamControlSection({
   const isTeamControlBusy = isSelectingActiveTeam || isUpdatingPlayedState
 
   return (
-    <ManagementControlSurface accent="info">
-      <Stack spacing={1}>
+    <ManagementControlSurface kind="team">
+      <Stack spacing={1.5}>
         <Stack
           direction="row"
           gap={1}
@@ -52,8 +52,10 @@ export function TeamControlSection({
           useFlexGap
           alignItems="center"
           justifyContent="space-between"
+          sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}
         >
           <ManagementSectionTitle
+            icon="team"
             title={t('gameBoard.managementActiveTeamTitle')}
             tooltip={t('gameBoard.managementActiveTeamTooltip')}
           />
@@ -111,11 +113,17 @@ export function TeamControlSection({
               </ManagementStateNotice>
             ) : null}
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.75}>
+            <Stack
+              direction="row"
+              flexWrap="wrap"
+              useFlexGap
+              spacing={0.75}
+              sx={{ '& > button': { flex: '1 1 140px' } }}
+            >
               {resumableTeam && !currentActiveTeam ? (
                 <AppButton
                   size="small"
-                  tone="warningGhost"
+                  tone="secondary"
                   disabled={isTeamControlBusy || isActiveTeamLocked}
                   onClick={() =>
                     onSetTeamPlayedState({ teamId: resumableTeam.teamId, isPlayed: true })
@@ -129,7 +137,7 @@ export function TeamControlSection({
               {currentActiveTeam ? (
                 <>
                   <AppButton
-                    tone="ghost"
+                    tone="secondary"
                     size="small"
                     onClick={() => onSelectActiveTeam(null)}
                     disabled={isTeamControlBusy || isActiveTeamLocked}
@@ -139,7 +147,7 @@ export function TeamControlSection({
                   </AppButton>
                   <AppButton
                     size="small"
-                    tone={currentActiveTeam.isPlayed ? 'secondary' : 'warningGhost'}
+                    tone="secondary"
                     disabled={isTeamControlBusy || isActiveTeamLocked}
                     onClick={() =>
                       onSetTeamPlayedState({
@@ -209,21 +217,23 @@ function TeamSpotlight({
   const { t } = useTranslation()
 
   return (
-    <Box
-      sx={(theme) => ({
-        borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.45)}`,
-        pl: 1.5,
-        py: 0.5,
-      })}
-    >
-      <Stack spacing={0.65}>
-        <Stack direction="row" spacing={0.6} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
-            {isCurrent
-              ? t('gameBoard.managementActiveTeamCurrentLabel')
-              : team
-                ? t('gameBoard.managementActiveTeamRecentLabel')
-                : t('gameBoard.managementActiveTeamNone')}
+    <Box sx={{ minWidth: 0 }}>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Typography
+            variant="subtitle1"
+            fontWeight={750}
+            sx={{
+              flex: '1 1 160px',
+              minWidth: 0,
+              fontSize: 26,
+              lineHeight: 1.15,
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {team
+              ? formatManagementTeamName(t, team.teamName, team.teamSlotIndex)
+              : t('gameBoard.managementActiveTeamNone')}
           </Typography>
           {isCurrent ? (
             <Chip
@@ -232,22 +242,15 @@ function TeamSpotlight({
               variant="filled"
               sx={(theme) => ({
                 border: 0,
-                borderRadius: '4px',
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                color: 'primary.light',
+                borderRadius: 0,
+                bgcolor: alpha(theme.palette.success.main, 0.1),
+                color: 'success.light',
               })}
               label={t('gameBoard.teamQueueActiveChip')}
             />
           ) : null}
         </Stack>
 
-        <Typography
-          variant="subtitle1"
-          fontWeight={750}
-          sx={{ fontSize: 20, overflowWrap: 'anywhere' }}
-        >
-          {team ? formatManagementTeamName(t, team.teamName, team.teamSlotIndex) : '-'}
-        </Typography>
         {description ? (
           <Typography variant="body2" color="text.secondary">
             {description}
@@ -255,9 +258,22 @@ function TeamSpotlight({
         ) : null}
 
         {team?.participants.length ? (
-          <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-            {team.participants.map((participant) => participant.displayName).join(', ')}
-          </Typography>
+          <Stack component="ul" spacing={0.4} sx={{ m: 0, p: 0, listStyle: 'none' }}>
+            {team.participants.map((participant) => (
+              <Typography
+                key={participant.userId}
+                component="li"
+                variant="body2"
+                color="text.secondary"
+                sx={{ display: 'flex', gap: 1, alignItems: 'baseline', overflowWrap: 'anywhere' }}
+              >
+                <Box component="span" aria-hidden sx={{ color: 'primary.main', flexShrink: 0 }}>
+                  ·
+                </Box>
+                {participant.displayName}
+              </Typography>
+            ))}
+          </Stack>
         ) : null}
       </Stack>
     </Box>
@@ -292,7 +308,7 @@ function CompactTeamRow({
         gridTemplateColumns: '34px minmax(0, 1fr) auto',
         gap: 0.8,
         alignItems: 'center',
-        borderRadius: 1.5,
+        borderRadius: 0,
         border: `1px solid ${
           isCurrent
             ? alpha(theme.palette.success.main, 0.42)
@@ -327,7 +343,7 @@ function CompactTeamRow({
         sx={(theme) => ({
           width: 28,
           height: 28,
-          borderRadius: 1.2,
+          borderRadius: 0,
           display: 'grid',
           placeItems: 'center',
           border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,

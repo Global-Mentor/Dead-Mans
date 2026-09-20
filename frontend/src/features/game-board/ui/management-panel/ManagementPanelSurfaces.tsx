@@ -1,27 +1,34 @@
-import { AccordionDetails, Alert, Typography } from '@mui/material'
+import { AccordionDetails, Alert, Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { AppAccordion, AppAccordionSummary, SectionCard } from '../../../../shared/ui/index.ts'
 
 export function ManagementControlSurface({
-  accent,
+  kind,
   children,
 }: {
-  accent: 'info' | 'warning' | 'success'
+  kind: 'round' | 'team'
   children: ReactNode
 }) {
   return (
     <SectionCard
-      surface="plain"
+      surface="panel"
+      data-testid={`management-${kind}-section`}
       sx={(theme) => ({
-        p: { xs: 1.75, sm: 2 },
-        borderRadius: '8px',
-        border: `1px solid ${alpha(
-          accent === 'warning' ? theme.palette.warning.main : theme.palette.primary.main,
-          0.22,
-        )}`,
-        background: `linear-gradient(115deg, ${alpha(theme.palette.primary.main, 0.06)}, ${alpha(theme.palette.background.paper, 0.65)} 75%)`,
-        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.04)}`,
+        p: { xs: 1.5, sm: 2 },
+        minWidth: 0,
+        borderRadius: 0,
+        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.text.primary, 0.05)}`,
+        ...(kind === 'round'
+          ? {
+              borderColor: alpha(theme.palette.primary.main, 0.5),
+              borderLeft: `3px solid ${theme.palette.primary.main}`,
+              backgroundColor: alpha(theme.palette.primary.main, 0.12),
+            }
+          : {
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.36)}`,
+              backgroundColor: alpha(theme.palette.common.black, 0.28),
+            }),
       })}
     >
       {children}
@@ -47,14 +54,20 @@ export function SecondaryManagementSection({
 
   return (
     <AppAccordion
-      surface="plain"
+      surface="panel"
+      data-testid={`management-${sectionId}-section`}
       defaultExpanded={defaultExpanded}
       aria-labelledby={headerId}
       sx={(theme) => ({
-        borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+        borderRadius: 0,
+        backgroundColor: alpha(theme.palette.background.paper, 0.78),
         '&.Mui-expanded': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.035),
-          borderRadius: '0 0 8px 8px',
+          borderColor: alpha(theme.palette.primary.main, 0.45),
+          backgroundColor: alpha(theme.palette.background.paper, 0.92),
+        },
+        '& .MuiAccordionSummary-root.Mui-expanded': {
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.22)}`,
         },
       })}
     >
@@ -67,7 +80,7 @@ export function SecondaryManagementSection({
       >
         <ManagementSectionTitle title={title} tooltip={tooltip} />
       </AppAccordionSummary>
-      <AccordionDetails id={contentId} sx={{ px: 1.5, pt: 0.5, pb: 1.5 }}>
+      <AccordionDetails id={contentId} sx={{ px: 1.5, pt: 1.5, pb: 1.5 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           {tooltip}
         </Typography>
@@ -77,14 +90,56 @@ export function SecondaryManagementSection({
   )
 }
 
-export function ManagementSectionTitle({ title, tooltip }: { title: string; tooltip: string }) {
+export function ManagementSectionTitle({
+  title,
+  tooltip,
+  icon,
+}: {
+  title: string
+  tooltip: string
+  icon?: 'round' | 'team'
+}) {
   return (
     <Typography
       variant="subtitle2"
+      component={icon ? 'h3' : 'span'}
       fontWeight={600}
       title={tooltip}
-      sx={{ minWidth: 0, overflowWrap: 'anywhere', color: 'primary.light', fontSize: 14 }}
+      sx={{
+        minWidth: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        overflowWrap: 'anywhere',
+        color: icon === 'round' ? 'primary.light' : 'text.primary',
+        fontSize: icon === 'round' ? 16 : 20,
+        lineHeight: 1.2,
+      }}
     >
+      {icon ? (
+        <Box
+          component="svg"
+          aria-hidden
+          viewBox="0 0 24 24"
+          sx={{
+            width: 22,
+            height: 22,
+            flexShrink: 0,
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: 1.4,
+          }}
+        >
+          {icon === 'round' ? (
+            <path d="M5 5h14v14H5z M9 8l6 4-6 4z" />
+          ) : (
+            <>
+              <circle cx="9" cy="8" r="3" />
+              <path d="M3 20v-2a6 6 0 0112 0v2 M16 5a3 3 0 010 6 M17 14a5 5 0 014 4v2" />
+            </>
+          )}
+        </Box>
+      ) : null}
       {title}
     </Typography>
   )

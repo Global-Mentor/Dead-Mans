@@ -24,6 +24,7 @@ export interface GameSetupDraftState {
   cells: GameSetupCellDraft[]
   enabledModifierIds: string[]
   enabledQuestionIds: string[]
+  quizAnswerDurationSeconds: number
 }
 
 export function createDraftFromSnapshot(snapshot: GameSetupSnapshot): GameSetupDraftState {
@@ -40,6 +41,7 @@ export function createDraftFromSnapshot(snapshot: GameSetupSnapshot): GameSetupD
     })),
     enabledModifierIds: [...snapshot.enabledModifierIds],
     enabledQuestionIds: [...snapshot.enabledQuestionIds],
+    quizAnswerDurationSeconds: snapshot.quizAnswerDurationSeconds,
   }
 }
 
@@ -87,6 +89,10 @@ export function isGameSetupDraftDirty(
   current: GameSetupDraftState,
 ): boolean {
   if (saved.title !== current.title) {
+    return true
+  }
+
+  if (saved.quizAnswerDurationSeconds !== current.quizAnswerDurationSeconds) {
     return true
   }
 
@@ -173,6 +179,10 @@ function normalizeGameSetupDraftForSave(draft: GameSetupDraftState): GameSetupDr
     enabledQuestionIds: [...draft.enabledQuestionIds].sort((left, right) =>
       left.localeCompare(right),
     ),
+    quizAnswerDurationSeconds: Math.min(
+      3600,
+      Math.max(5, Math.round(draft.quizAnswerDurationSeconds || 60)),
+    ),
   }
 }
 
@@ -201,5 +211,6 @@ export function buildUpdateGameSetupRequest(
     }),
     enabledModifierIds: normalized.enabledModifierIds,
     enabledQuestionIds: normalized.enabledQuestionIds,
+    quizAnswerDurationSeconds: normalized.quizAnswerDurationSeconds,
   }
 }

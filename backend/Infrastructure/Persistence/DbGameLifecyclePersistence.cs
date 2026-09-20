@@ -133,7 +133,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             .Include(item => item.QuestionDefinition)
             .ThenInclude(question => question.CategoryDefinition)
             .Include(item => item.QuestionDefinition)
-            .ThenInclude(question => question.AcceptedAnswers)
+            .ThenInclude(question => question.Options)
             .Where(item => item.GameId == draft.Id)
             .ToArrayAsync(cancellationToken);
         foreach (var enabledQuestion in enabledQuestions)
@@ -143,14 +143,14 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             enabledQuestion.QuestionCodeSnapshot = question.ExternalCode;
             enabledQuestion.CategoryNameSnapshot = question.CategoryDefinition?.Name ?? string.Empty;
             enabledQuestion.QuestionTextSnapshot = question.Text;
-            enabledQuestion.AcceptedAnswersSnapshot = question.AcceptedAnswers
-                .OrderBy(answer => answer.SortOrder)
-                .Select(answer => answer.AnswerText)
+            var options = question.Options.OrderBy(option => option.SortOrder).ToArray();
+            enabledQuestion.OptionIdsSnapshot = options
+                .Select(option => option.Id)
                 .ToArray();
-            enabledQuestion.NormalizedAnswersSnapshot = question.AcceptedAnswers
-                .OrderBy(answer => answer.SortOrder)
-                .Select(answer => answer.NormalizedAnswer)
+            enabledQuestion.OptionTextsSnapshot = options
+                .Select(option => option.Text)
                 .ToArray();
+            enabledQuestion.CorrectOptionIdSnapshot = options.Single(option => option.IsCorrect).Id;
             enabledQuestion.RewardSnapshot = question.Reward;
             enabledQuestion.PrioritySnapshot = question.Priority;
             enabledQuestion.SnapshotAtUtc = utcNow;
@@ -347,12 +347,12 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
         );
         await _dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"""
-            SELECT answer.id
-            FROM question_accepted_answers answer
-            JOIN game_enabled_questions enabled ON enabled.question_id = answer.question_id
+            SELECT option.id
+            FROM question_options option
+            JOIN game_enabled_questions enabled ON enabled.question_id = option.question_id
             WHERE enabled.game_id = {gameId}
-            ORDER BY answer.id
-            FOR SHARE OF answer
+            ORDER BY option.id
+            FOR SHARE OF option
             """,
             cancellationToken
         );

@@ -149,24 +149,6 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         string Name
     );
 
-    private sealed record QuizRoundRow(
-        Guid RoundId,
-        Guid QuestionId,
-        string QuestionCode,
-        string QuestionText,
-        string CategoryName,
-        int Reward,
-        string Status,
-        DateTime AskedAtUtc,
-        DateTime? AnsweredAtUtc,
-        string? AnsweredByDisplayName,
-        Guid? AnsweredByUserId,
-        Guid? AnsweredForUserId,
-        string? SubmittedAnswer,
-        bool? IsCorrect,
-        int? AwardedPoints
-    );
-
     private sealed record QuizManualAwardRow(
         Guid AwardId,
         Guid AwardedToUserId,
@@ -194,7 +176,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
 
         public long MainGameRoundsPlayed { get; set; }
 
-        public long QuizRoundsAnswered { get; set; }
+        public long QuizQuestionsAnswered { get; set; }
 
         public long CorrectQuizAnswers { get; set; }
 
@@ -217,6 +199,8 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         public long Points { get; set; }
 
         public long EventCount { get; set; }
+
+        public long CorrectAnswerCount { get; set; }
 
         public DateTime? LastActivityAtUtc { get; set; }
     }

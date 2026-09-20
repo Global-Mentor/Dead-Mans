@@ -237,38 +237,30 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                 x.ConflictingModifierNameSnapshot))
             .ToArrayAsync(cancellationToken);
 
-        var quizRounds = await _dbContext.GameQuizRounds
+        var quizQuestionSessions = await _dbContext.GameQuizQuestionSessions
             .AsNoTracking()
-            .Where(x => x.GameId == gameId)
+            .Where(x => x.GameId == gameId && x.Status != GameQuizQuestionSessionStatusValue.Open)
             .OrderBy(x => x.AskedAtUtc)
-            .Select(
-                x =>
-                    new QuizRoundRow(
-                        x.Id,
-                        x.QuestionId,
-                        x.QuestionCodeSnapshot,
-                        x.QuestionTextSnapshot,
-                        x.CategoryNameSnapshot,
-                        x.RewardSnapshot,
-                        x.Status,
-                        x.AskedAtUtc,
-                        x.CorrectAnswer != null ? x.CorrectAnswer.AnsweredAtUtc : null,
-                        x.CorrectAnswer != null && x.CorrectAnswer.CapturedByUser != null
-                            ? x.CorrectAnswer.CapturedByUser.DisplayName
-                            : null,
-                        x.CorrectAnswer != null ? x.CorrectAnswer.CapturedByUserId : null,
-                        x.CorrectAnswer != null ? x.CorrectAnswer.AwardedToUserId : null,
-                        x.CorrectAnswer != null ? x.CorrectAnswer.SubmittedAnswer : null,
-                        x.CorrectAnswer != null ? true : null,
-                        x.CorrectAnswer != null
-                            ? x.CorrectAnswer.PointEntries
-                                .Where(entry =>
-                                    entry.EntryType == GameQuizPointEntryTypeValue.QuizReward)
-                                .Sum(entry => entry.PointsDelta)
-                            : null
-                    )
-            )
             .ToArrayAsync(cancellationToken);
+        var closedSessionIds = quizQuestionSessions
+            .Where(x => x.Status == GameQuizQuestionSessionStatusValue.Closed)
+            .Select(x => x.Id).ToArray();
+        var historySubmissions = await _dbContext.GameQuizSubmissions.AsNoTracking()
+            .Where(x => closedSessionIds.Contains(x.QuestionSessionId))
+            .OrderBy(x => x.SubmittedAtUtc).ThenBy(x => x.Id)
+            .ToArrayAsync(cancellationToken);
+        var submissionsBySession = historySubmissions.ToLookup(x => x.QuestionSessionId);
+
+        var quizSubmissionRows = historySubmissions
+            .Select(x => new LeaderboardQuizRow(
+                x.UserId,
+                x.DisplayNameSnapshot,
+                x.GameId,
+                x.AwardedPoints,
+                x.IsCorrect,
+                x.SubmittedAtUtc
+            ))
+            .ToArray();
 
         var manualQuizAwards = await _dbContext.GameQuizPointLedgerEntries
             .AsNoTracking()
@@ -297,8 +289,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         var userDisplayNames = await LoadUserDisplayNamesAsync(
             participants.Select(x => x.UserId)
                 .Concat(modifierActivations.Select(x => x.ActivatedByUserId))
-                .Concat(quizRounds.Select(x => x.AnsweredByUserId).Where(x => x.HasValue).Select(x => x!.Value))
-                .Concat(quizRounds.Select(x => x.AnsweredForUserId ?? x.AnsweredByUserId).Where(x => x.HasValue).Select(x => x!.Value))
+                .Concat(quizSubmissionRows.Select(x => x.UserId))
                 .Concat(manualQuizAwards.Select(x => x.AwardedToUserId))
                 .Concat(manualQuizAwards.Select(x => x.AwardedByUserId))
                 .Distinct()
@@ -365,7 +356,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             successfulModifierActivations,
             userDisplayNames
         );
-        var quizPlayerStats = BuildQuizPlayerStats(quizRounds, manualQuizAwards, userDisplayNames);
+        var quizPlayerStats = BuildQuizPlayerStats(quizSubmissionRows, manualQuizAwards, userDisplayNames);
         var mainModifierActivations = modifierActivations
             .Select(
                 x =>
@@ -481,41 +472,19 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             new GameHistoryQuizSection(
                 SaturatingInt32.From(quizPlayerStats.Sum(x => (long)x.Points)),
                 quizPlayerStats,
-                quizRounds
-                    .Select(
-                        x =>
-                            new GameHistoryQuizRoundItem(
-                                x.RoundId,
-                                x.QuestionId,
-                                x.QuestionCode,
-                                x.QuestionText,
-                                x.CategoryName,
-                                x.Reward,
-                                x.Status,
-                                x.AskedAtUtc,
-                                x.AnsweredAtUtc,
-                                x.AnsweredByUserId.HasValue
-                                    ? ResolveDisplayName(
-                                        x.AnsweredByDisplayName,
-                                        userDisplayNames,
-                                        x.AnsweredByUserId.Value
-                                    )
-                                    : x.AnsweredByDisplayName,
-                                x.AnsweredByUserId,
-                                x.AnsweredForUserId,
-                                x.AnsweredForUserId.HasValue
-                                    ? ResolveDisplayName(
-                                        null,
-                                        userDisplayNames,
-                                        x.AnsweredForUserId.Value
-                                    )
-                                    : null,
-                                x.SubmittedAnswer,
-                                x.IsCorrect,
-                                x.AwardedPoints
-                            )
-                    )
-                    .ToArray(),
+                quizQuestionSessions.Select(session => new GameHistoryQuizQuestionSessionItem(
+                    session.Id, session.QuestionId, session.QuestionCodeSnapshot,
+                    session.QuestionTextSnapshot, session.CategoryNameSnapshot, session.RewardSnapshot,
+                    session.Status, session.AskedAtUtc, session.ClosedAtUtc,
+                    session.Status == GameQuizQuestionSessionStatusValue.Closed
+                        ? session.CorrectOptionIdSnapshot : null,
+                    session.OptionIdsSnapshot.Zip(session.OptionTextsSnapshot)
+                        .Select((option, index) => new GameQuizOption(option.First, option.Second, index)).ToArray(),
+                    submissionsBySession[session.Id].Select(submission => new GameHistoryQuizSubmissionItem(
+                        submission.UserId, ResolveDisplayName(submission.DisplayNameSnapshot, userDisplayNames, submission.UserId),
+                        submission.SelectedOptionId, submission.SelectedOptionTextSnapshot,
+                        submission.IsCorrect, submission.AwardedPoints, submission.SubmittedAtUtc)).ToArray()
+                )).ToArray(),
                 manualQuizAwards
                     .Select(
                         x =>

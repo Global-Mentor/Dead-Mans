@@ -29,9 +29,10 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .Distinct()
             .ToArrayAsync(cancellationToken);
 
-        var answeredGameIds = await _dbContext.GameQuizCorrectAnswers
+        var answeredGameIds = await _dbContext.GameQuizSubmissions
             .AsNoTracking()
-            .Where(x => x.AwardedToUserId == userId)
+            .Where(x => x.UserId == userId
+                && x.QuestionSession.Status == GameQuizQuestionSessionStatusValue.Closed)
             .Select(x => x.GameId)
             .Distinct()
             .ToArrayAsync(cancellationToken);
@@ -90,27 +91,25 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             )
             .ToArrayAsync(cancellationToken);
 
-        var questionAnswers = await _dbContext.GameQuizCorrectAnswers
+        var questionAnswers = await _dbContext.GameQuizSubmissions
             .AsNoTracking()
-            .Where(x => gameIds.Contains(x.GameId) && x.AwardedToUserId == userId)
-            .OrderBy(x => x.AnsweredAtUtc)
+            .Where(x => gameIds.Contains(x.GameId) && x.UserId == userId
+                && x.QuestionSession.Status == GameQuizQuestionSessionStatusValue.Closed)
+            .OrderBy(x => x.SubmittedAtUtc)
             .Select(
                 x =>
                     new
                     {
                         x.GameId,
                         Item = new UserGameQuestionAnswerHistoryItem(
-                            x.QuizRoundId,
-                            x.QuizRound.QuestionId,
-                            x.QuizRound.QuestionTextSnapshot,
-                            x.QuizRound.CategoryNameSnapshot,
-                            x.AnsweredAtUtc,
-                            true,
-                            x.PointEntries
-                                .Where(entry =>
-                                    entry.EntryType == GameQuizPointEntryTypeValue.QuizReward)
-                                .Sum(entry => entry.PointsDelta),
-                            x.SubmittedAnswer,
+                            x.QuestionSessionId,
+                            x.QuestionSession.QuestionId,
+                            x.QuestionSession.QuestionTextSnapshot,
+                            x.QuestionSession.CategoryNameSnapshot,
+                            x.SubmittedAtUtc,
+                            x.IsCorrect,
+                            x.AwardedPoints,
+                            x.SelectedOptionTextSnapshot,
                             x.CapturedByUserId
                         )
                     }

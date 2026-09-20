@@ -2242,7 +2242,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("// Required fields: text, reward and at least one answer in answer or answers.", content);
+        Assert.Contains("// Required fields: text, reward, and options.", content);
+        Assert.Contains("// Options must contain 2-10 unique values and exactly one isCorrect: true.", content);
         Assert.Contains("// Available categories:", content);
         Assert.Contains("(БЕЗ КАТЕГОРИИ)", content);
         Assert.Contains($"({categoryName})", content);
@@ -2260,7 +2261,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("// Шаблон JSONC для массового импорта вопросов.", content);
-        Assert.Contains("// Обязательные поля у вопроса: text, reward и хотя бы один ответ в answer или answers.", content);
+        Assert.Contains("// Обязательные поля: text, reward и options.", content);
+        Assert.Contains("// В options должно быть от 2 до 10 уникальных вариантов и ровно один isCorrect: true.", content);
         Assert.Contains(QuestionCatalogDefaults.UncategorizedCategoryName, content);
     }
 
@@ -2274,13 +2276,19 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
           "questions": [
             {
               "text": "Импортированный вопрос?",
-              "answer": "Да",
+              "options": [
+                { "text": "Да", "isCorrect": true },
+                { "text": "Нет", "isCorrect": false }
+              ],
               "reward": 100,
               "externalCode": "import-q-1001"
             },
             {
               "text": "Вопрос с плохой категорией?",
-              "answer": "Тоже да",
+              "options": [
+                { "text": "Тоже да", "isCorrect": true },
+                { "text": "Нет", "isCorrect": false }
+              ],
               "reward": 50,
               "categoryId": "not-a-guid",
               "externalCode": "import-q-1002"
@@ -2311,14 +2319,14 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             payload.SkippedQuestions[0].ReasonCode
         );
         Assert.Equal(
-            "Missing or invalid fields. Include text, a non-negative reward, and at least one answer in answer or answers (up to 10 entries, each up to 500 characters).",
+            "Missing or invalid fields. Include text, a non-negative reward, 2-10 unique options, and exactly one correct option.",
             payload.SkippedQuestions[0].Reason
         );
         var skippedSourceQuestion = Assert.IsType<ImportGameQuestionSourceDto>(
             payload.SkippedQuestions[0].SourceQuestion
         );
         Assert.Equal("Вопрос без ответа", skippedSourceQuestion.Text);
-        Assert.Null(skippedSourceQuestion.Answer);
+        Assert.Null(skippedSourceQuestion.Options);
         Assert.Equal("import-q-1003", skippedSourceQuestion.ExternalCode);
 
         var catalogResponse = await adminClient.GetAsync("/api/game/questions/catalog");
@@ -2504,7 +2512,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var moreUsedQuestion = await dbContext.QuestionDefinitions.SingleAsync(
+            var moreUsedQuestion = await dbContext.QuestionDefinitions.Include(x => x.Options).SingleAsync(
                 question => question.ExternalCode == "priority-q-0001"
             );
             var now = DateTime.UtcNow;
@@ -2519,8 +2527,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                     FinishedAtUtc = now.AddDays(-1)
                 }
             );
-            dbContext.GameQuizRounds.Add(
-                new GameQuizRound
+            dbContext.GameQuizQuestionSessions.Add(
+                new GameQuizQuestionSession
                 {
                     Id = Guid.NewGuid(),
                     GameId = historicalGameId,
@@ -2529,13 +2537,14 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                     AskedAtUtc = now.AddDays(-1),
                     ClosesAtUtc = now.AddDays(-1).AddMinutes(1),
                     ClosedAtUtc = now.AddDays(-1).AddMinutes(1),
-                    Status = GameQuizRoundStatusValue.Timeout,
+                    Status = GameQuizQuestionSessionStatusValue.Closed,
                     QuestionRevisionSnapshot = moreUsedQuestion.Revision,
                     QuestionCodeSnapshot = moreUsedQuestion.ExternalCode,
                     CategoryNameSnapshot = "lore",
                     QuestionTextSnapshot = moreUsedQuestion.Text,
-                    AcceptedAnswersSnapshot = ["Да"],
-                    NormalizedAnswersSnapshot = ["да"],
+                    OptionIdsSnapshot = moreUsedQuestion.Options.OrderBy(x => x.SortOrder).Select(x => x.Id).ToArray(),
+                    OptionTextsSnapshot = moreUsedQuestion.Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(),
+                    CorrectOptionIdSnapshot = moreUsedQuestion.Options.Single(x => x.IsCorrect).Id,
                     RewardSnapshot = moreUsedQuestion.Reward,
                     DeliveryKind = "manual"
                 }
@@ -2554,7 +2563,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task AnswerQuizRound_WhenAnswerCorrect_ReturnsAnsweredCorrectWithPoints()
+    public async Task SubmitQuizAnswer_WhenAccepted_DoesNotRevealOrAwardBeforeDeadline()
     {
         await SeedActiveGameForQuestionsAsync();
         await SeedQuestionCatalogWithQuestionsAsync(
@@ -2577,27 +2586,33 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(GameQuizStateChangeKinds.QuestionAsked, askEvent.ChangeKind);
         Assert.Equal(asked.GameId, askEvent.GameId.ToString());
 
+        var selectedOption = Assert.Single(asked.Options, option => option.Text == "2");
         var answerResponse = await moderatorClient.PostAsJsonAsync(
-            $"/api/game/quiz/rounds/{asked.RoundId}/answer",
-            new AnswerQuizRoundRequestDto("2", "Integration Tester", null)
+            $"/api/game/quiz/question-sessions/{asked.QuestionSessionId}/submissions",
+            new SubmitGameQuizAnswerRequestDto(selectedOption.OptionId)
         );
 
         Assert.Equal(HttpStatusCode.OK, answerResponse.StatusCode);
-        var answered = await answerResponse.Content.ReadFromJsonAsync<GameQuizRoundSummaryDto>();
-        Assert.NotNull(answered);
-        Assert.Equal("answered_correct", answered.Status);
-        Assert.True(answered.IsCorrect);
-        Assert.Equal(3, answered.AwardedPoints);
-        Assert.Equal("Integration Tester", answered.AnsweredByDisplayName);
-        Assert.Equal(2, publisher.PublishedQuizStateChangedEvents.Count);
-        Assert.Equal(
-            GameQuizStateChangeKinds.QuestionAnswered,
-            publisher.PublishedQuizStateChangedEvents[1].ChangeKind
-        );
+        var receipt = await answerResponse.Content.ReadFromJsonAsync<GameQuizSubmissionReceiptDto>();
+        Assert.NotNull(receipt);
+        Assert.Equal(selectedOption.OptionId, receipt.SelectedOptionId);
+        Assert.False(receipt.IsExisting);
+        Assert.Single(publisher.PublishedQuizStateChangedEvents);
+
+        var currentResponse = await moderatorClient.GetAsync("/api/game/quiz/current");
+        var currentJson = await currentResponse.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("correctOptionId", currentJson, StringComparison.Ordinal);
+        Assert.DoesNotContain("myIsCorrect", currentJson, StringComparison.Ordinal);
+        Assert.DoesNotContain("myAwardedPoints", currentJson, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"reward\"", currentJson, StringComparison.Ordinal);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Empty(await verificationDb.GameQuizPointLedgerEntries.ToArrayAsync());
     }
 
     [Fact]
-    public async Task AnswerQuizRound_WhenCreditedPlayerDoesNotExist_ReturnsNotFoundWithoutMutation()
+    public async Task SubmitQuizAnswer_WhenOptionDoesNotBelongToQuestionSession_ReturnsNotFoundWithoutMutation()
     {
         await SeedActiveGameForQuestionsAsync();
         await SeedQuestionCatalogWithQuestionsAsync(
@@ -2618,25 +2633,28 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.NotNull(asked);
 
         var answerResponse = await moderatorClient.PostAsJsonAsync(
-            $"/api/game/quiz/rounds/{asked.RoundId}/answer",
-            new AnswerQuizRoundRequestDto("6", "Missing Player", Guid.NewGuid().ToString())
+            $"/api/game/quiz/question-sessions/{asked.QuestionSessionId}/submissions",
+            new SubmitGameQuizAnswerRequestDto(Guid.NewGuid().ToString())
         );
 
         Assert.Equal(HttpStatusCode.NotFound, answerResponse.StatusCode);
         var error = await answerResponse.Content.ReadFromJsonAsync<ErrorResponse>();
-        Assert.Equal(AppMessages.ErrorCodes.GameQuizAnswerPlayerNotFound, error?.Code);
+        Assert.Equal(AppMessages.ErrorCodes.GameQuizOptionNotFound, error?.Code);
 
         using var verificationScope = _factory.Services.CreateScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var roundId = Guid.Parse(asked.RoundId);
-        var persistedRound = await verificationDb.GameQuizRounds.SingleAsync(x => x.Id == roundId);
-        Assert.Equal(GameQuizRoundStatusValue.Asked, persistedRound.Status);
-        Assert.False(await verificationDb.GameQuizCorrectAnswers.AnyAsync(x => x.QuizRoundId == roundId));
-        Assert.False(await verificationDb.GameQuizPointLedgerEntries.AnyAsync(x => x.GameId == persistedRound.GameId));
+        var questionSessionId = Guid.Parse(asked.QuestionSessionId);
+        var persistedSession = await verificationDb.GameQuizQuestionSessions.SingleAsync(
+            x => x.Id == questionSessionId);
+        Assert.Equal(GameQuizQuestionSessionStatusValue.Open, persistedSession.Status);
+        Assert.False(await verificationDb.GameQuizSubmissions.AnyAsync(
+            x => x.QuestionSessionId == questionSessionId));
+        Assert.False(await verificationDb.GameQuizPointLedgerEntries.AnyAsync(
+            x => x.GameId == persistedSession.GameId));
     }
 
     [Fact]
-    public async Task AnswerQuizRound_WhenRoundBelongsToFinishedGame_ReturnsNotFoundWithoutMutation()
+    public async Task SubmitQuizAnswer_WhenQuestionSessionBelongsToFinishedGame_ReturnsNotFoundWithoutMutation()
     {
         await SeedActiveGameForQuestionsAsync();
         await SeedQuestionCatalogWithQuestionsAsync(
@@ -2650,6 +2668,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         );
         var asked = await askResponse.Content.ReadFromJsonAsync<AskedQuizQuestionDto>();
         Assert.NotNull(asked);
+        var selectedOption = Assert.Single(asked.Options, option => option.Text == "4");
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -2662,20 +2681,19 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         }
 
         var answerResponse = await moderatorClient.PostAsJsonAsync(
-            $"/api/game/quiz/rounds/{asked.RoundId}/answer",
-            new AnswerQuizRoundRequestDto("4", "Integration Tester", null)
+            $"/api/game/quiz/question-sessions/{asked.QuestionSessionId}/submissions",
+            new SubmitGameQuizAnswerRequestDto(selectedOption.OptionId)
         );
 
         Assert.Equal(HttpStatusCode.NotFound, answerResponse.StatusCode);
         using var verificationScope = _factory.Services.CreateScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var persistedRound = await verificationDb.GameQuizRounds.SingleAsync(
-            candidate => candidate.Id == Guid.Parse(asked.RoundId)
+        var persistedSession = await verificationDb.GameQuizQuestionSessions.SingleAsync(
+            candidate => candidate.Id == Guid.Parse(asked.QuestionSessionId)
         );
-        Assert.Equal(GameQuizRoundStatusValue.Asked, persistedRound.Status);
-        Assert.False(await verificationDb.GameQuizCorrectAnswers.AnyAsync(
-            answer => answer.QuizRoundId == persistedRound.Id
-        ));
+        Assert.Equal(GameQuizQuestionSessionStatusValue.Open, persistedSession.Status);
+        Assert.False(await verificationDb.GameQuizSubmissions.AnyAsync(
+            submission => submission.QuestionSessionId == persistedSession.Id));
     }
 
     [Fact]
@@ -3415,6 +3433,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             .SingleAsync();
         var categoryId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
+        var correctOptionId = Guid.NewGuid();
+        var wrongOptionId = Guid.NewGuid();
 
         dbContext.Users.Add(
             new User
@@ -3447,60 +3467,68 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 Reward = points,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
-                AcceptedAnswers =
+                Options =
                 [
-                    new QuestionAcceptedAnswer
+                    new QuestionOption
                     {
-                        Id = Guid.NewGuid(),
+                        Id = correctOptionId,
                         QuestionId = questionId,
-                        AnswerText = "answer",
-                        NormalizedAnswer = "answer",
-                        IsPrimary = true,
+                        Text = "answer",
+                        NormalizedText = "answer",
+                        IsCorrect = true,
                         SortOrder = 0,
                         CreatedAtUtc = now
+                    },
+                    new QuestionOption
+                    {
+                        Id = wrongOptionId, QuestionId = questionId, Text = "wrong", NormalizedText = "wrong",
+                        IsCorrect = false, SortOrder = 1, CreatedAtUtc = now
                     }
                 ]
             }
         );
-        var quizRoundId = Guid.NewGuid();
+        var quizQuestionSessionId = Guid.NewGuid();
         var correctAnswerId = Guid.NewGuid();
-        dbContext.GameQuizRounds.Add(
-            new GameQuizRound
+        dbContext.GameQuizQuestionSessions.Add(
+            new GameQuizQuestionSession
             {
-                Id = quizRoundId,
+                Id = quizQuestionSessionId,
                 GameId = gameId,
                 QuestionId = questionId,
                 AskOrder = 1,
                 AskedAtUtc = now.AddMinutes(-1),
-                ClosesAtUtc = now.AddMinutes(1),
+                ClosesAtUtc = now,
                 ClosedAtUtc = now,
                 AskedByUserId = userId,
-                Status = GameQuizRoundStatusValue.AnsweredCorrect,
+                Status = GameQuizQuestionSessionStatusValue.Closed,
                 QuestionRevisionSnapshot = 1,
                 QuestionCodeSnapshot = $"reward-{questionId:N}",
                 CategoryNameSnapshot = $"reward-{categoryId:N}",
                 QuestionTextSnapshot = "Quiz reward question?",
-                AcceptedAnswersSnapshot = ["answer"],
-                NormalizedAnswersSnapshot = ["answer"],
+                OptionIdsSnapshot = [correctOptionId, wrongOptionId],
+                OptionTextsSnapshot = ["answer", "wrong"],
+                CorrectOptionIdSnapshot = correctOptionId,
                 RewardSnapshot = points,
                 DeliveryKind = "manual"
             }
         );
-        dbContext.GameQuizCorrectAnswers.Add(
-            new GameQuizCorrectAnswer
+        dbContext.GameQuizSubmissions.Add(
+            new GameQuizSubmission
             {
                 Id = correctAnswerId,
                 GameId = gameId,
-                QuizRoundId = quizRoundId,
-                AwardedToUserId = userId,
+                QuestionSessionId = quizQuestionSessionId,
+                UserId = userId,
                 CapturedByUserId = userId,
                 TwitchUserIdSnapshot = $"quiz-reward-{userId:N}",
                 LoginSnapshot = $"quiz-reward-{userId:N}"[..32],
                 DisplayNameSnapshot = "Quiz Reward Player",
-                SubmittedAnswer = "answer",
-                NormalizedAnswer = "answer",
+                SelectedOptionId = correctOptionId,
+                SelectedOptionTextSnapshot = "answer",
+                IsCorrect = true,
+                AwardedPoints = points,
                 SourceProvider = "manual",
-                AnsweredAtUtc = now
+                SubmittedAtUtc = now.AddSeconds(-1)
             }
         );
         dbContext.GameQuizPointLedgerEntries.Add(
@@ -3511,7 +3539,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 UserId = userId,
                 EntryType = GameQuizPointEntryTypeValue.QuizReward,
                 PointsDelta = points,
-                CorrectAnswerId = correctAnswerId,
+                QuizSubmissionId = correctAnswerId,
                 AvailablePointsBefore = 0,
                 AvailablePointsAfter = points,
                 OccurredAtUtc = now
@@ -3571,7 +3599,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         dbContext.GameRoundModifierResults.RemoveRange(dbContext.GameRoundModifierResults);
         dbContext.GameRoundParticipants.RemoveRange(dbContext.GameRoundParticipants);
         dbContext.GameRounds.RemoveRange(dbContext.GameRounds);
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.GameEnabledQuestions.RemoveRange(dbContext.GameEnabledQuestions);
         dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
         dbContext.QuestionCategories.RemoveRange(dbContext.QuestionCategories);
@@ -3824,7 +3852,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.GameEnabledQuestions.RemoveRange(dbContext.GameEnabledQuestions);
         dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
         dbContext.QuestionCategories.RemoveRange(dbContext.QuestionCategories);
@@ -3854,7 +3882,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
         dbContext.QuestionCategories.RemoveRange(dbContext.QuestionCategories);
         await dbContext.SaveChangesAsync();
@@ -3886,7 +3914,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         foreach (var question in questions)
         {
             var questionId = Guid.NewGuid();
-            var normalizedAnswer = NormalizeAnswer(question.Answer);
+            var correctOptionId = Guid.NewGuid();
+            var wrongOptionId = Guid.NewGuid();
             var definition = new QuestionDefinition
             {
                 Id = questionId,
@@ -3899,16 +3928,26 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 Priority = question.Priority ?? priority++,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
-                AcceptedAnswers =
+                Options =
                 [
-                    new QuestionAcceptedAnswer
+                    new QuestionOption
                     {
-                        Id = Guid.NewGuid(),
+                        Id = correctOptionId,
                         QuestionId = questionId,
-                        AnswerText = question.Answer,
-                        NormalizedAnswer = normalizedAnswer,
-                        IsPrimary = true,
+                        Text = question.Answer,
+                        NormalizedText = NormalizeAnswer(question.Answer),
+                        IsCorrect = true,
                         SortOrder = 0,
+                        CreatedAtUtc = now
+                    },
+                    new QuestionOption
+                    {
+                        Id = wrongOptionId,
+                        QuestionId = questionId,
+                        Text = $"Not {question.Answer}",
+                        NormalizedText = NormalizeAnswer($"Not {question.Answer}"),
+                        IsCorrect = false,
+                        SortOrder = 1,
                         CreatedAtUtc = now
                     }
                 ]
@@ -3941,14 +3980,15 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                         CategoryNameSnapshot = definition.CategoryDefinition?.Name
                             ?? categories.Single(category => category.Id == definition.CategoryId).Name,
                         QuestionTextSnapshot = definition.Text,
-                        AcceptedAnswersSnapshot = definition.AcceptedAnswers
-                            .OrderBy(answer => answer.SortOrder)
-                            .Select(answer => answer.AnswerText)
+                        OptionIdsSnapshot = definition.Options
+                            .OrderBy(option => option.SortOrder)
+                            .Select(option => option.Id)
                             .ToArray(),
-                        NormalizedAnswersSnapshot = definition.AcceptedAnswers
-                            .OrderBy(answer => answer.SortOrder)
-                            .Select(answer => answer.NormalizedAnswer)
+                        OptionTextsSnapshot = definition.Options
+                            .OrderBy(option => option.SortOrder)
+                            .Select(option => option.Text)
                             .ToArray(),
+                        CorrectOptionIdSnapshot = definition.Options.Single(option => option.IsCorrect).Id,
                         RewardSnapshot = definition.Reward,
                         PrioritySnapshot = definition.Priority,
                         SnapshotAtUtc = now

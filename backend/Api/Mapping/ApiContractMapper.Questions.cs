@@ -15,9 +15,10 @@ public static partial class ApiContractMapper
         return new CreateGameQuestionInput(
             request.ExternalCode,
             categoryId,
-            request.Text,
-            request.Answer ?? string.Empty,
-            request.Answers ?? Array.Empty<string>(),
+            request.Text ?? string.Empty,
+            (request.Options ?? Array.Empty<GameQuestionOptionInputDto>())
+                .Select(MapQuestionOptionInput)
+                .ToArray(),
             request.Reward,
             request.IsEnabled,
             request.Priority
@@ -34,8 +35,9 @@ public static partial class ApiContractMapper
             rowNumber,
             categoryId,
             request.Text,
-            request.Answer,
-            request.Answers ?? Array.Empty<string>(),
+            (request.Options ?? Array.Empty<GameQuestionOptionInputDto>())
+                .Select(MapQuestionOptionInput)
+                .ToArray(),
             request.Reward,
             request.ExternalCode,
             request.IsEnabled,
@@ -48,8 +50,8 @@ public static partial class ApiContractMapper
     {
         return new ImportGameQuestionSource(
             request.Text,
-            request.Answer,
-            request.Answers,
+            request.Options?.Select(MapQuestionOptionInput)
+                .ToArray(),
             request.Reward,
             request.CategoryId,
             request.ExternalCode,
@@ -65,14 +67,20 @@ public static partial class ApiContractMapper
     {
         return new UpdateGameQuestionInput(
             categoryId,
-            request.Text,
-            request.Answer ?? string.Empty,
-            request.Answers ?? Array.Empty<string>(),
+            request.Text ?? string.Empty,
+            (request.Options ?? Array.Empty<GameQuestionOptionInputDto>())
+                .Select(MapQuestionOptionInput)
+                .ToArray(),
             request.Reward,
             request.IsEnabled,
             request.Priority
         );
     }
+
+    // Preserve invalid entries as empty options so validation rejects the whole
+    // question instead of silently dropping malformed choices from an import.
+    private static GameQuestionOptionInput MapQuestionOptionInput(GameQuestionOptionInputDto? option) =>
+        new(option?.Text ?? string.Empty, option?.IsCorrect ?? false);
 
     public static GameQuestionCatalogItemDto ToDto(this GameQuestionCatalogItem item)
     {
@@ -82,13 +90,19 @@ public static partial class ApiContractMapper
             item.CategoryId.ToString(),
             item.CategoryName,
             item.Text,
-            item.Answer,
-            item.Answers?.ToArray() ?? Array.Empty<string>(),
+            item.Options.Select(option => new GameQuestionOptionDto(
+                option.OptionId.ToString(),
+                option.Text,
+                option.IsCorrect,
+                option.SortOrder
+            )).ToArray(),
             item.Reward,
             item.Priority,
             item.IsEnabled,
             item.AskedTotalCount,
-            item.CorrectTotalCount,
+            item.SubmissionTotalCount,
+            item.CorrectSubmissionTotalCount,
+            item.CorrectPercentage,
             item.LastAskedAtUtc
         );
     }
@@ -96,13 +110,18 @@ public static partial class ApiContractMapper
     public static AskedQuizQuestionDto ToDto(this AskedQuizQuestion question)
     {
         return new AskedQuizQuestionDto(
-            question.RoundId.ToString(),
+            question.QuestionSessionId.ToString(),
             question.GameId.ToString(),
             question.AskOrder,
             question.QuestionId.ToString(),
             question.QuestionCode,
             question.CategoryName,
             question.Text,
+            question.Options.Select(option => new GameQuizOptionDto(
+                option.OptionId.ToString(),
+                option.Text,
+                option.DisplayOrder
+            )).ToArray(),
             question.Reward,
             question.AskedAtUtc,
             question.ClosesAtUtc
@@ -134,8 +153,10 @@ public static partial class ApiContractMapper
     {
         return new ImportGameQuestionSourceDto(
             source.Text,
-            source.Answer,
-            source.Answers?.ToArray(),
+            source.Options?.Select(option => new GameQuestionOptionInputDto(
+                option.Text,
+                option.IsCorrect
+            )).ToArray(),
             source.Reward,
             source.CategoryId,
             source.ExternalCode,
@@ -144,28 +165,53 @@ public static partial class ApiContractMapper
         );
     }
 
-    public static GameQuizRoundSummaryDto ToDto(this GameQuizRoundSummary round)
-    {
-        return new GameQuizRoundSummaryDto(
-            round.RoundId.ToString(),
-            round.GameId.ToString(),
-            round.AskOrder,
-            round.QuestionId.ToString(),
-            round.QuestionText,
-            round.CategoryName,
-            round.Reward,
-            round.Status,
-            round.AskedAtUtc,
-            round.ClosesAtUtc,
-            round.AnsweredAtUtc,
-            round.AnsweredByDisplayName,
-            round.AnsweredByUserId?.ToString(),
-            round.AnsweredForUserId?.ToString(),
-            round.SubmittedAnswer,
-            round.IsCorrect,
-            round.AwardedPoints
-        );
-    }
+
+    public static GameQuizSubmissionReceiptDto ToDto(this GameQuizSubmissionReceipt receipt) => new(
+        receipt.SubmissionId.ToString(),
+        receipt.QuestionSessionId.ToString(),
+        receipt.UserId.ToString(),
+        receipt.SelectedOptionId.ToString(),
+        receipt.SubmittedAtUtc,
+        receipt.IsExisting
+    );
+
+    public static AvailableGameQuizQuestionDto ToDto(this AvailableGameQuizQuestion question) => new(
+        question.QuestionId.ToString(),
+        question.QuestionCode,
+        question.CategoryName,
+        question.Text
+    );
+
+    public static CurrentGameQuizStateDto ToDto(this CurrentGameQuizState state) => new(
+        state.QuestionSessionId.ToString(),
+        state.GameId.ToString(),
+        state.AskOrder,
+        state.QuestionId.ToString(),
+        state.QuestionCode,
+        state.CategoryName,
+        state.Text,
+        state.Options.Select(option => new GameQuizOptionDto(
+            option.OptionId.ToString(),
+            option.Text,
+            option.DisplayOrder
+        )).ToArray(),
+        state.Reward,
+        state.Status,
+        state.AskedAtUtc,
+        state.ClosesAtUtc,
+        state.ClosedAtUtc,
+        state.MySelectedOptionId?.ToString(),
+        state.MySubmittedAtUtc,
+        state.CorrectOptionId?.ToString(),
+        state.MyIsCorrect,
+        state.MyAwardedPoints,
+        state.TotalSubmissions,
+        state.OptionResults?.Select(result => new GameQuizOptionResultDto(
+            result.OptionId.ToString(),
+            result.AnswerCount,
+            result.Percentage
+        )).ToArray()
+    );
 
     public static ManualQuizAwardSummaryDto ToDto(this ManualQuizAwardSummary award)
     {

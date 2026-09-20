@@ -1,4 +1,5 @@
 import { CircularProgress, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 import { huntBrassTitleSx } from '../../theme/surface-sx.ts'
 import { SectionCard } from '../primitives/SectionCard.tsx'
 
@@ -7,6 +8,7 @@ interface PageStatePanelProps {
   message: string
   tone?: 'default' | 'error'
   showSpinner?: boolean
+  actions?: ReactNode
 }
 
 export function PageStatePanel({
@@ -14,9 +16,10 @@ export function PageStatePanel({
   message,
   tone = 'default',
   showSpinner = false,
+  actions,
 }: PageStatePanelProps) {
   return (
-    <SectionCard>
+    <SectionCard sx={{ width: '100%', minWidth: 0 }} data-testid="page-state-panel">
       <Stack spacing={title ? 1 : 0} alignItems={showSpinner ? 'center' : 'stretch'}>
         {showSpinner ? <CircularProgress size={28} /> : null}
         {title ? (
@@ -31,6 +34,11 @@ export function PageStatePanel({
         >
           {message}
         </Typography>
+        {actions ? (
+          <Stack direction="row" sx={{ pt: 1 }}>
+            {actions}
+          </Stack>
+        ) : null}
       </Stack>
     </SectionCard>
   )

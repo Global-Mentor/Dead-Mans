@@ -300,16 +300,16 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
                 return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.InvitationNotFound);
             }
 
-            var gameIsReady = await _dbContext.Games
+            var gameAcceptsInvitation = await _dbContext.Games
                 .AsNoTracking()
                 .AnyAsync(
                     candidate =>
                         candidate.Id == command.GameId
-                        && candidate.Status == GameStatusValue.Ready
+                        && (candidate.Status == GameStatusValue.Ready || candidate.Status == GameStatusValue.Active)
                         && !candidate.IsDeleted,
                     cancellationToken
                 );
-            if (!gameIsReady)
+            if (!gameAcceptsInvitation)
             {
                 return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
             }

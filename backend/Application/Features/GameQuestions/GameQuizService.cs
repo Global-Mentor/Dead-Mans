@@ -29,30 +29,38 @@ public sealed class GameQuizService : IGameQuizService
         _logger = logger;
     }
 
-    public async Task<AskNextGameQuizQuestionResult> AskNextQuizQuestionAsync(
+    public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
+        CancellationToken cancellationToken = default
+    ) => _repository.GetAvailableQuizQuestionsAsync(cancellationToken);
+
+    public async Task<AskGameQuizQuestionResult> AskQuizQuestionAsync(
+        Guid? questionId,
         GameQuizQuestionDelivery delivery,
         CancellationToken cancellationToken = default
     )
     {
         if (!IsValidDelivery(delivery))
         {
-            return new AskNextGameQuizQuestionResult(AskNextGameQuizQuestionOutcome.InvalidDelivery);
+            return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.InvalidDelivery);
         }
+
+        await CloseExpiredQuizQuestionSessionsAsync(cancellationToken);
 
         var activeGameId = await _repository.GetActiveGameIdAsync(cancellationToken);
         if (!activeGameId.HasValue)
         {
-            return new AskNextGameQuizQuestionResult(AskNextGameQuizQuestionOutcome.NoActiveGame);
+            return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.NoActiveGame);
         }
 
-        var askedQuestion = await _repository.AskNextQuizQuestionAsync(
+        var askedQuestion = await _repository.AskQuizQuestionAsync(
             activeGameId.Value,
+            questionId,
             delivery,
             cancellationToken
         );
         if (askedQuestion is null)
         {
-            return new AskNextGameQuizQuestionResult(AskNextGameQuizQuestionOutcome.NoAvailableQuestions);
+            return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.NoAvailableQuestions);
         }
 
         await PublishQuizStateChangedBestEffortAsync(
@@ -61,65 +69,75 @@ public sealed class GameQuizService : IGameQuizService
             askedQuestion.AskedAtUtc
         );
 
-        return new AskNextGameQuizQuestionResult(AskNextGameQuizQuestionOutcome.Asked, askedQuestion);
+        return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.Asked, askedQuestion);
     }
 
-    public async Task<AnswerGameQuizRoundResult> AnswerQuizRoundAsync(
-        Guid roundId,
+    public async Task<SubmitGameQuizAnswerResult> SubmitQuizAnswerAsync(
+        Guid questionSessionId,
         SubmitGameQuizAnswerInput input,
         CancellationToken cancellationToken = default
     )
     {
-        if (
-            string.IsNullOrWhiteSpace(input.SubmittedAnswer)
-            || input.SubmittedAnswer.Trim().Length > 500
-        )
+        if (input.SelectedOptionId == Guid.Empty)
         {
-            return new AnswerGameQuizRoundResult(AnswerGameQuizRoundOutcome.InvalidAnswer);
+            return new SubmitGameQuizAnswerResult(SubmitGameQuizAnswerOutcome.InvalidRequest);
         }
         if (!IsValidAnswerSource(input.Source))
         {
-            return new AnswerGameQuizRoundResult(AnswerGameQuizRoundOutcome.InvalidSource);
+            return new SubmitGameQuizAnswerResult(SubmitGameQuizAnswerOutcome.InvalidSource);
         }
 
-        var submission = await _repository.AnswerQuizRoundAsync(
-            roundId,
+        var submission = await _repository.SubmitQuizAnswerAsync(
+            questionSessionId,
             input,
             cancellationToken
         );
-        if (submission.Outcome == SubmitQuizAnswerRepositoryOutcome.RoundNotFound)
+        if (submission.ClosedGameId.HasValue)
         {
-            return new AnswerGameQuizRoundResult(AnswerGameQuizRoundOutcome.QuizRoundNotFound);
-        }
-        if (submission.Outcome == SubmitQuizAnswerRepositoryOutcome.RoundNotPending)
-        {
-            return new AnswerGameQuizRoundResult(
-                AnswerGameQuizRoundOutcome.QuizRoundNotPending,
-                submission.Round
+            await PublishQuizStateChangedBestEffortAsync(
+                submission.ClosedGameId.Value,
+                GameQuizStateChangeKinds.QuestionClosed,
+                _timeProvider.GetUtcNow().UtcDateTime
             );
         }
-        if (submission.Outcome == SubmitQuizAnswerRepositoryOutcome.Incorrect)
+        var outcome = submission.Outcome switch
         {
-            return new AnswerGameQuizRoundResult(
-                AnswerGameQuizRoundOutcome.Incorrect,
-                submission.Round
+            SubmitQuizAnswerRepositoryOutcome.Accepted => SubmitGameQuizAnswerOutcome.Accepted,
+            SubmitQuizAnswerRepositoryOutcome.Existing => SubmitGameQuizAnswerOutcome.Existing,
+            SubmitQuizAnswerRepositoryOutcome.AlreadyAnswered => SubmitGameQuizAnswerOutcome.AlreadyAnswered,
+            SubmitQuizAnswerRepositoryOutcome.QuestionSessionNotFound => SubmitGameQuizAnswerOutcome.QuestionSessionNotFound,
+            SubmitQuizAnswerRepositoryOutcome.QuestionSessionClosed => SubmitGameQuizAnswerOutcome.QuestionSessionClosed,
+            SubmitQuizAnswerRepositoryOutcome.OptionNotFound => SubmitGameQuizAnswerOutcome.OptionNotFound,
+            SubmitQuizAnswerRepositoryOutcome.PlayerNotFound => SubmitGameQuizAnswerOutcome.PlayerNotFound,
+            _ => SubmitGameQuizAnswerOutcome.InvalidRequest
+        };
+        return new SubmitGameQuizAnswerResult(outcome, submission.Receipt);
+    }
+
+    public async Task<CurrentGameQuizState?> GetCurrentQuizStateAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await CloseExpiredQuizQuestionSessionsAsync(cancellationToken);
+        return await _repository.GetCurrentQuizStateAsync(userId, cancellationToken);
+    }
+
+    public async Task<int> CloseExpiredQuizQuestionSessionsAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await _repository.CloseExpiredQuizQuestionSessionsAsync(cancellationToken);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        foreach (var gameId in result.ClosedGameIds)
+        {
+            await PublishQuizStateChangedBestEffortAsync(
+                gameId,
+                GameQuizStateChangeKinds.QuestionClosed,
+                now
             );
         }
-        if (submission.Outcome == SubmitQuizAnswerRepositoryOutcome.PlayerNotFound)
-        {
-            return new AnswerGameQuizRoundResult(AnswerGameQuizRoundOutcome.PlayerNotFound);
-        }
-
-        await PublishQuizStateChangedBestEffortAsync(
-            submission.Round!.GameId,
-            GameQuizStateChangeKinds.QuestionAnswered,
-            submission.Round.AnsweredAtUtc ?? _timeProvider.GetUtcNow().UtcDateTime
-        );
-
-        return new AnswerGameQuizRoundResult(
-            AnswerGameQuizRoundOutcome.Answered,
-            submission.Round
-        );
+        return result.ClosedQuizQuestionCount;
     }
 
     public async Task<ManualQuizAwardResult> AwardManualQuizPointsAsync(
@@ -214,6 +232,7 @@ public sealed class GameQuizService : IGameQuizService
                 )
                 && HasRequiredValue(twitch.SourceChannelId, 128)
                 && HasRequiredValue(twitch.SourceMessageId, 128),
+            WebGameQuizAnswerSource web => web.UserId != Guid.Empty,
             _ => false
         };
     }

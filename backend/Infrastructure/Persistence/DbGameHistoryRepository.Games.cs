@@ -44,7 +44,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .Select(x => new CountRow(x.Key, x.Count()))
             .ToDictionaryAsync(x => x.GameId, x => x.Count, cancellationToken);
 
-        var quizCounts = await _dbContext.GameQuizRounds
+        var quizCounts = await _dbContext.GameQuizQuestionSessions
             .AsNoTracking()
             .Where(x => !x.Game!.IsDeleted)
             .GroupBy(x => x.GameId)

@@ -136,6 +136,11 @@ export function GameBoardPage() {
                     )
               }
               phase={phaseLabel}
+              participantNames={
+                snapshot.status === 'active'
+                  ? activeTeam?.participants?.map((participant) => participant.displayName)
+                  : undefined
+              }
               phaseCaption={snapshot.status === 'active' ? t('gameBoard.flowTitle') : undefined}
               action={
                 snapshot.status !== 'active'
@@ -155,6 +160,7 @@ export function GameBoardPage() {
                         to: gameModifiersRoute.fullPath,
                         label: phaseLabel,
                         accessibleLabel: t('gameBoard.flowOpenModifiersAction'),
+                        compactLabel: true,
                       }
                     : undefined
               }

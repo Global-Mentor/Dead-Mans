@@ -28,11 +28,11 @@ public class QuestionDefinition
 
     public QuestionCategory? CategoryDefinition { get; set; }
 
-    public ICollection<GameQuizRound> AskedInQuizRounds { get; set; } = new List<GameQuizRound>();
+    public ICollection<GameQuizQuestionSession> AskedInQuizQuestionSessions { get; set; } = new List<GameQuizQuestionSession>();
 
     public ICollection<GameEnabledQuestion> EnabledInGames { get; set; } =
         new List<GameEnabledQuestion>();
 
-    public ICollection<QuestionAcceptedAnswer> AcceptedAnswers { get; set; } =
-        new List<QuestionAcceptedAnswer>();
+    public ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
+
 }

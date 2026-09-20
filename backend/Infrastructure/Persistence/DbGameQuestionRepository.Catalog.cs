@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using backend.Application.Contracts;
 using backend.Data.Entities;
+using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Infrastructure.Persistence;
@@ -32,8 +33,8 @@ public sealed partial class DbGameQuestionRepository
             query = query.Where(
                 x =>
                     EF.Functions.ILike(x.Text, $"%{searchLower}%")
-                    || x.AcceptedAnswers.Any(answer =>
-                        EF.Functions.ILike(answer.AnswerText, $"%{searchLower}%"))
+                    || x.Options.Any(option =>
+                        EF.Functions.ILike(option.Text, $"%{searchLower}%"))
             );
         }
 
@@ -94,22 +95,34 @@ public sealed partial class DbGameQuestionRepository
                 x.CategoryId,
                 x.CategoryDefinition != null ? x.CategoryDefinition.Name : string.Empty,
                 x.Text,
-                x.AcceptedAnswers
-                    .OrderBy(answer => answer.SortOrder)
-                    .Select(answer => answer.AnswerText)
-                    .FirstOrDefault() ?? string.Empty,
-                x.AcceptedAnswers
-                    .OrderBy(answer => answer.SortOrder)
-                    .Select(answer => answer.AnswerText)
+                x.Options
+                    .OrderBy(option => option.SortOrder)
+                    .Select(option => new GameQuestionOption(
+                        option.Id,
+                        option.Text,
+                        option.IsCorrect,
+                        option.SortOrder
+                    ))
                     .ToArray(),
                 x.Reward,
                 x.Priority,
                 x.IsEnabled,
-                x.AskedInQuizRounds.Count,
-                x.AskedInQuizRounds.Count(round => round.CorrectAnswer != null),
-                x.AskedInQuizRounds
-                    .OrderByDescending(round => round.AskedAtUtc)
-                    .Select(round => (DateTime?)round.AskedAtUtc)
+                x.AskedInQuizQuestionSessions.Count,
+                x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
+                    .SelectMany(session => session.Submissions).Count(),
+                x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
+                    .SelectMany(session => session.Submissions).Count(submission => submission.IsCorrect),
+                x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
+                    .SelectMany(session => session.Submissions).Any()
+                    ? 100m * x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
+                        .SelectMany(session => session.Submissions)
+                        .Count(submission => submission.IsCorrect)
+                        / x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
+                            .SelectMany(session => session.Submissions).Count()
+                    : 0m,
+                x.AskedInQuizQuestionSessions
+                    .OrderByDescending(session => session.AskedAtUtc)
+                    .Select(session => (DateTime?)session.AskedAtUtc)
                     .FirstOrDefault()
             );
     }

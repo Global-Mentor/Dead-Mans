@@ -7,24 +7,25 @@ using Npgsql;
 
 namespace Backend.Tests.Integration.Postgres;
 
-public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTestDatabase>
+public sealed class GameQuestionOptionsTests : IClassFixture<PostgresTestDatabase>
 {
     private readonly PostgresTestDatabase _database;
 
-    public GameQuestionAcceptedAnswersTests(PostgresTestDatabase database)
+    public GameQuestionOptionsTests(PostgresTestDatabase database)
     {
         _database = database;
     }
 
     [Fact]
-    public async Task UpdateQuestionAsync_ConcurrentReplacementsSerializeBeforeReadingAnswers()
+    public async Task UpdateQuestionAsync_ConcurrentReplacementsSerializeBeforeReadingOptions()
     {
         await _database.ResetAsync();
         await using var seedDb = _database.CreateDbContext();
         var seedRepository = new DbGameQuestionRepository(seedDb, TimeProvider.System);
-        var category = await seedRepository.CreateCategoryAsync("Concurrent answers");
+        var category = await seedRepository.CreateCategoryAsync("Concurrent options");
         var question = await seedRepository.CreateQuestionAsync(new CreateGameQuestionInput(
-            "q-concurrent", category.Id, "Capital?", "Paris", ["Paris", "Париж"], 1, true, 0));
+            "q-concurrent", category.Id, "Capital?",
+            [new("Paris", true), new("London", false)], 1, true, 0));
         Assert.NotNull(question);
 
         await using var gateDb = _database.CreateDbContext();
@@ -38,7 +39,8 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var first = new DbGameQuestionRepository(firstDb, TimeProvider.System).UpdateQuestionAsync(
             question.QuestionId,
-            new UpdateGameQuestionInput(category.Id, "First edit", "London", ["London", "Лондон"], 2, true, 0),
+            new UpdateGameQuestionInput(category.Id, "First edit",
+                [new("London", true), new("Paris", false)], 2, true, 0),
             timeout.Token);
         Task<GameQuestionCatalogItem?>? second = null;
         try
@@ -46,7 +48,8 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
             await WaitForLockAsync(((NpgsqlConnection)firstDb.Database.GetDbConnection()).ProcessID, timeout.Token);
             second = new DbGameQuestionRepository(secondDb, TimeProvider.System).UpdateQuestionAsync(
                 question.QuestionId,
-                new UpdateGameQuestionInput(category.Id, "Second edit", "Warsaw", ["Warsaw", "Варшава"], 3, true, 0),
+                new UpdateGameQuestionInput(category.Id, "Second edit",
+                    [new("Warsaw", true), new("Krakow", false)], 3, true, 0),
                 timeout.Token);
             await WaitForLockAsync(((NpgsqlConnection)secondDb.Database.GetDbConnection()).ProcessID, timeout.Token);
         }
@@ -58,11 +61,11 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
         Assert.NotNull(await first);
         Assert.NotNull(await second!);
         await using var verifyDb = _database.CreateDbContext();
-        var stored = await verifyDb.QuestionDefinitions.Include(item => item.AcceptedAnswers).SingleAsync();
+        var stored = await verifyDb.QuestionDefinitions.Include(item => item.Options).SingleAsync();
         Assert.Equal("Second edit", stored.Text);
         Assert.Equal(3, stored.Revision);
-        Assert.Equal(["Warsaw", "Варшава"], stored.AcceptedAnswers.OrderBy(item => item.SortOrder)
-            .Select(item => item.AnswerText).ToArray());
+        Assert.Equal(["Warsaw", "Krakow"], stored.Options.OrderBy(item => item.SortOrder)
+            .Select(item => item.Text).ToArray());
     }
 
     private async Task WaitForLockAsync(int processId, CancellationToken cancellationToken)
@@ -82,7 +85,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
     }
 
     [Fact]
-    public async Task UpdateQuestionAsync_CanSwapAndAddAnswersWithoutUniqueViolations()
+    public async Task UpdateQuestionAsync_CanSwapAndAddOptionsWithoutUniqueViolations()
     {
         await _database.ResetAsync();
         Guid questionId;
@@ -98,8 +101,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
                     "q-swap",
                     categoryId,
                     "Capital?",
-                    "Paris",
-                    ["Paris", "London"],
+                    [new("Paris", true), new("London", false)],
                     1,
                     true,
                     0
@@ -117,8 +119,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
                 new UpdateGameQuestionInput(
                     categoryId,
                     "Capitals?",
-                    "London",
-                    ["London", "Paris", "Париж"],
+                    [new("London", true), new("Paris", false), new("Warsaw", false)],
                     2,
                     true,
                     1
@@ -126,23 +127,23 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
             );
 
             Assert.NotNull(updated);
-            Assert.Equal("London", updated.Answer);
-            Assert.Equal(["London", "Paris", "Париж"], updated.Answers);
+            Assert.Equal("London", updated.Options.Single(option => option.IsCorrect).Text);
+            Assert.Equal(["London", "Paris", "Warsaw"], updated.Options.Select(option => option.Text));
         }
 
         await using var assertDb = _database.CreateDbContext();
-        var stored = await assertDb.QuestionAcceptedAnswers
+        var stored = await assertDb.QuestionOptions
             .AsNoTracking()
             .Where(answer => answer.QuestionId == questionId)
             .OrderBy(answer => answer.SortOrder)
             .ToArrayAsync();
-        Assert.Equal(["London", "Paris", "Париж"], stored.Select(answer => answer.AnswerText).ToArray());
-        Assert.True(stored[0].IsPrimary);
-        Assert.Equal(new[] { 0, 1, 2 }, stored.Select(answer => answer.SortOrder).ToArray());
+        Assert.Equal(["London", "Paris", "Warsaw"], stored.Select(option => option.Text).ToArray());
+        Assert.True(stored[0].IsCorrect);
+        Assert.Equal(new[] { 0, 1, 2 }, stored.Select(option => option.SortOrder).ToArray());
     }
 
     [Fact]
-    public async Task UpdateQuestionAsync_CanShrinkAcceptedAnswersToASingleAnswer()
+    public async Task UpdateQuestionAsync_CanShrinkOptionsToTwo()
     {
         await _database.ResetAsync();
         Guid questionId;
@@ -158,8 +159,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
                     "q-shrink",
                     categoryId,
                     "Capital?",
-                    "Paris",
-                    ["Paris", "London", "Париж"],
+                    [new("Paris", true), new("London", false), new("Warsaw", false)],
                     1,
                     true,
                     0
@@ -177,8 +177,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
                 new UpdateGameQuestionInput(
                     categoryId,
                     "Capital?",
-                    "Paris",
-                    ["Paris"],
+                    [new("Paris", true), new("London", false)],
                     1,
                     true,
                     0
@@ -186,7 +185,7 @@ public sealed class GameQuestionAcceptedAnswersTests : IClassFixture<PostgresTes
             );
 
             Assert.NotNull(updated);
-            Assert.Equal(["Paris"], updated.Answers);
+            Assert.Equal(["Paris", "London"], updated.Options.Select(option => option.Text));
         }
     }
 }

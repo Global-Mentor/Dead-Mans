@@ -45,19 +45,23 @@ Guardrails:
   version detail and related-game endpoints (all authenticated roles, keyset pagination)
 - `GET /api/game/questions/catalog`, `GET /api/game/questions/categories`, `POST /api/game/questions/categories`
 - `PATCH /api/game/questions/{questionId}/enabled`, `PATCH /api/game/questions/categories/{categoryId}/enabled`
-- `POST /api/game/quiz/questions/ask-next`, `POST /api/game/quiz/rounds/{roundId}/answer`
+- `GET /api/game/quiz/current`, `POST /api/game/quiz/questions/ask-next`,
+  `POST /api/game/quiz/question-sessions/{questionSessionId}/submissions`
 - `DELETE /api/game/questions/{questionId}` (admin): soft-delete вопроса из каталога
 - `GET/POST/PUT/DELETE /api/game/setup`, cell media under `/api/game/setup/cells/{cellId}/media`
 - `GET /api/game/registration`, team/invitation mutations under `/api/game/registration/*`
 - `GET /api/game/registration/teams` (moderator/admin), confirm/reject/disband, disband requests, invitations
-- `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered quiz rounds)
+- `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered quiz questions)
 - `POST /api/game/lifecycle/open-registration`, `/start`, `GET /api/game/lifecycle/games/{gameId}/finish-preview`, `POST /api/game/lifecycle/games/{gameId}/finish`, `DELETE /api/game/lifecycle/games/{gameId}` (admin lifecycle, immutable final result + non-draft archive workflow)
 - `GET /auth/me`, `POST /auth/logout`, Twitch login/callback
 
-Quiz application port distinguishes manual delivery/answers from Twitch delivery/answers. A future
-bot can call the application service directly with provider channel/message identity; only the first
-correct answer is persisted. Its Twitch principal is created without a login timestamp, and OAuth
-later reuses that same `twitch_user_id` row.
+Quiz application ports keep question-session state independent from HTTP or Twitch transport.
+Every active authenticated user can submit one option per question session. Correctness is revealed
+and points are awarded only when that question's timer closes; a future extension resolves its
+Twitch identity to the same internal user before using the same submission service.
+`GET /api/game/quiz/current` returns `204` before the first question. Closed-question history keeps
+each participant's chosen option, correctness and awarded points. Identical submission retries
+return the original receipt even after the timer; changing an accepted choice returns `409`.
 
 ## Локальный запуск
 
@@ -102,6 +106,14 @@ Uploader:
 
 `setup-local.ps1` применяет миграции, заливает PNG-файлы в bucket `deadman`, затем идемпотентно пересоздает локальную активную тестовую игру `c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a` с `media_assets` / `board_cell_media`, командами, quiz questions, enabled catalog selections, quiz points и несколькими активными модификаторами.
 
+Переход `ConvertQuizToMultipleChoice` выполняется в существующей БД. Эта разовая
+миграция удаляет старые тестовые игры со всей связанной историей и очками, а также
+текстовые вопросы; пользователей, права, каталоги модификаторов и медиа сохраняет.
+Перед применением сделайте проверенную резервную копию и остановите старые
+экземпляры приложения. Пересоздавать БД или менять строку подключения не нужно.
+Повторный запуск миграций не сбрасывает новые данные. Обратная миграция не
+восстанавливает удалённые данные; для этого нужна резервная копия.
+
 ## Twitch auth
 
 Для работы auth нужны:
@@ -110,7 +122,7 @@ Uploader:
 - `TwitchAuth__ClientSecret`
 - `TwitchAuth__RedirectUri`
 - `TwitchAuth__FrontendRedirectUri`
-- `TwitchAuth__Scopes__*`
+- `TwitchAuth__Scopes__0=openid` (обычный вход принимает только этот scope; email и другие права пользователей не запрашиваются)
 - `TwitchAuth__PermanentSuperAdminTwitchUserIds__*` (числовые Twitch ID владельцев; минимум один обязателен в Production)
 
 Backend валидирует auth-конфигурацию и наличие рабочего `ApplicationDbContext` на старте.

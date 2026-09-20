@@ -55,7 +55,8 @@ Finalization locks the target `games` row, rechecks active status and board vers
 in one transaction:
 
 1. validates round and modifier state and warning acknowledgements;
-2. closes an `asked` quiz round as `skipped` if its timer is still live, otherwise as `timeout`;
+2. closes every expired quiz question session and awards its correct submissions, then marks any
+   still-open question session as `skipped` without awarding points;
 3. writes one `game_finalizations` row plus results for teams that opened a card in `game_team_final_results`;
 4. clears `games.active_team_id`;
 5. sets `games.status = finished` and `finished_at_utc`;

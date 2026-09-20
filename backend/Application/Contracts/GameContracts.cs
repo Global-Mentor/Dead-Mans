@@ -30,7 +30,8 @@ public sealed record GameBoardSnapshot(
     IReadOnlyList<Guid> EnabledModifierIds,
     IReadOnlyList<GameModifierActivation> ActiveModifiers,
     string? ActiveTeamId,
-    IReadOnlyList<string> EnabledQuestionIds
+    IReadOnlyList<string> EnabledQuestionIds,
+    int QuizAnswerDurationSeconds = 60
 );
 
 public sealed record GameTeamQueueParticipant(Guid UserId, string DisplayName);

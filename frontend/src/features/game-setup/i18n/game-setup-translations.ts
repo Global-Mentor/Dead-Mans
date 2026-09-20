@@ -92,6 +92,7 @@ const translations = {
       enabledDescription:
         'Select questions for this game. Globally disabled questions are hidden and removed from drafts.',
       enabledCount: 'Enabled for this game: {{count}}',
+      answerDuration: 'Answer time (seconds)',
       enableVisible: 'Enable visible',
       disableVisible: 'Disable visible',
     },
@@ -272,6 +273,7 @@ const translations = {
       enabledDescription:
         'Выберите вопросы для игры. Глобально отключённые вопросы скрыты и удаляются из черновиков.',
       enabledCount: 'Включено для этой игры: {{count}}',
+      answerDuration: 'Время на ответ (секунды)',
       enableVisible: 'Включить видимые',
       disableVisible: 'Отключить видимые',
     },
@@ -451,6 +453,7 @@ const translations = {
       enabledDescription:
         'Виберіть питання для гри. Глобально вимкнені питання приховані та видаляються з чернеток.',
       enabledCount: 'Увімкнено для цієї гри: {{count}}',
+      answerDuration: 'Час на відповідь (секунди)',
       enableVisible: 'Увімкнути видимі',
       disableVisible: 'Вимкнути видимі',
     },
@@ -630,6 +633,7 @@ const translations = {
       enabledDescription:
         'Wybierz pytania do gry. Globalnie wyłączone pytania są ukryte i usuwane ze szkiców.',
       enabledCount: 'Włączono dla tej gry: {{count}}',
+      answerDuration: 'Czas na odpowiedź (sekundy)',
       enableVisible: 'Włącz widoczne',
       disableVisible: 'Wyłącz widoczne',
     },

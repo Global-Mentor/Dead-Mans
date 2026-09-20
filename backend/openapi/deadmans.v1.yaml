@@ -1419,6 +1419,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/quiz/questions/available:
+    get:
+      operationId: getAvailableGameQuizQuestions
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Remaining enabled questions included in the active game
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailableGameQuizQuestionDto'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Missing moderator/admin role
   /game/quiz/questions/ask-next:
     post:
       operationId: askNextGameQuizQuestion
@@ -1455,13 +1473,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /game/quiz/rounds/{roundId}/answer:
+  /game/quiz/questions/{questionId}/ask:
     post:
-      operationId: answerGameQuizRound
+      operationId: askSpecificGameQuizQuestion
       security:
         - cookieAuth: []
       parameters:
-        - name: roundId
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Selected quiz question session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskedQuizQuestionDto'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Missing moderator/admin role
+        '404':
+          description: Question is unavailable
+  /game/quiz/current:
+    get:
+      operationId: getCurrentGameQuizState
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current or most recently closed quiz question session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentGameQuizStateDto'
+        '204':
+          description: No quiz question session exists
+        '401':
+          description: Not authenticated
+  /game/quiz/question-sessions/{questionSessionId}/submissions:
+    post:
+      operationId: submitGameQuizAnswer
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: questionSessionId
           in: path
           required: true
           schema:
@@ -1472,14 +1531,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AnswerQuizRoundRequestDto'
+              $ref: '#/components/schemas/SubmitGameQuizAnswerRequestDto'
       responses:
         '200':
-          description: Quiz round answered
+          description: Answer accepted or idempotently returned
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameQuizRoundSummaryDto'
+                $ref: '#/components/schemas/GameQuizSubmissionReceiptDto'
         '400':
           description: Invalid request payload
           content:
@@ -1492,20 +1551,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Missing moderator/admin role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Round or credited player not found
+          description: Question session, option, or user not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Round already closed
+          description: Question session closed or user already selected another option
           content:
             application/json:
               schema:
@@ -3882,7 +3935,7 @@ components:
           minimum: 0
     UpdateGameSetupRequestDto:
       type: object
-      required: [expectedVersion, title, rowLabels, colLabels, cells, enabledModifierIds]
+      required: [expectedVersion, title, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
       properties:
         expectedVersion:
           type: integer
@@ -3923,10 +3976,15 @@ components:
           items:
             type: string
             format: uuid
+        quizAnswerDurationSeconds:
+          type: integer
+          minimum: 5
+          maximum: 3600
+          default: 60
     GameSetupSnapshotDto:
       type: object
       required:
-        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds]
+        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
       properties:
         gameId:
           type: string
@@ -3966,6 +4024,10 @@ components:
           items:
             type: string
             format: uuid
+        quizAnswerDurationSeconds:
+          type: integer
+          minimum: 5
+          maximum: 3600
     GameLifecycleStateDto:
       type: object
       required: [gameId, status]
@@ -5403,6 +5465,30 @@ components:
           nullable: true
           minLength: 1
           maxLength: 1000
+    GameQuestionOptionInputDto:
+      type: object
+      required: [text, isCorrect]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        isCorrect:
+          type: boolean
+    GameQuestionOptionDto:
+      type: object
+      required: [optionId, text, isCorrect, sortOrder]
+      properties:
+        optionId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        isCorrect:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
     GameQuestionCatalogItemDto:
       type: object
       required:
@@ -5411,13 +5497,14 @@ components:
         - categoryId
         - categoryName
         - text
-        - answer
-        - answers
+        - options
         - reward
         - priority
         - isEnabled
         - askedTotalCount
-        - correctTotalCount
+        - submissionTotalCount
+        - correctSubmissionTotalCount
+        - correctPercentage
       properties:
         questionId:
           type: string
@@ -5432,17 +5519,12 @@ components:
           description: Human-readable name of the question category.
         text:
           type: string
-        answer:
-          type: string
-        answers:
+        options:
           type: array
-          description: Accepted answers in display order; answer is the first entry for compatibility.
-          minItems: 1
+          minItems: 2
           maxItems: 10
           items:
-            type: string
-            minLength: 1
-            maxLength: 500
+            $ref: '#/components/schemas/GameQuestionOptionDto'
         reward:
           type: integer
           minimum: 0
@@ -5453,9 +5535,17 @@ components:
         askedTotalCount:
           type: integer
           minimum: 0
-        correctTotalCount:
+        submissionTotalCount:
           type: integer
           minimum: 0
+        correctSubmissionTotalCount:
+          type: integer
+          minimum: 0
+        correctPercentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
         lastAskedAtUtc:
           type: string
           format: date-time
@@ -5520,15 +5610,11 @@ components:
         text:
           type: string
           nullable: true
-        answer:
-          type: string
-          nullable: true
-        answers:
+        options:
           type: array
           description: Original unvalidated values, preserved so a rejected row can be corrected and retried.
           items:
-            type: string
-            nullable: true
+            $ref: '#/components/schemas/GameQuestionOptionInputDto'
           nullable: true
         reward:
           type: integer
@@ -5558,11 +5644,8 @@ components:
           type: boolean
     CreateGameQuestionRequestDto:
       type: object
-      description: >
-        Supply answers or the legacy answer field. Blank array items are ignored and duplicate
-        normalized answers are saved once. A nonempty cleaned answers array takes precedence;
-        otherwise answer is used. At least one nonblank answer is required.
-      required: [categoryId, text, reward]
+      description: Supply 2-10 unique options with exactly one correct option.
+      required: [categoryId, text, options, reward]
       properties:
         categoryId:
           type: string
@@ -5571,17 +5654,12 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
-        answer:
-          type: string
-          nullable: true
-          maxLength: 500
-        answers:
+        options:
           type: array
-          nullable: true
+          minItems: 2
           maxItems: 10
           items:
-            type: string
-            maxLength: 500
+            $ref: '#/components/schemas/GameQuestionOptionInputDto'
         reward:
           type: integer
           minimum: 0
@@ -5597,10 +5675,8 @@ components:
           default: 0
     ImportGameQuestionRequestDto:
       type: object
-      description: >
-        Uses the same answer normalization and fallback rules as CreateGameQuestionRequestDto.
-        Supply up to ten answer entries, each up to 500 characters after trimming.
-      required: [text, reward]
+      description: Uses the same multiple-choice option rules as CreateGameQuestionRequestDto.
+      required: [text, options, reward]
       properties:
         categoryId:
           type: string
@@ -5613,17 +5689,12 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
-        answer:
-          type: string
-          nullable: true
-          maxLength: 500
-        answers:
+        options:
           type: array
-          nullable: true
+          minItems: 2
           maxItems: 10
           items:
-            type: string
-            maxLength: 500
+            $ref: '#/components/schemas/GameQuestionOptionInputDto'
         reward:
           type: integer
           minimum: 0
@@ -5662,10 +5733,8 @@ components:
           maxLength: 64
     UpdateGameQuestionRequestDto:
       type: object
-      description: >
-        Replaces the full accepted-answer set using the same normalization and fallback rules
-        as CreateGameQuestionRequestDto. Published games retain their pinned answer snapshots.
-      required: [categoryId, text, reward]
+      description: Replaces the complete option set; published games retain their snapshots.
+      required: [categoryId, text, options, reward]
       properties:
         categoryId:
           type: string
@@ -5674,17 +5743,12 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
-        answer:
-          type: string
-          nullable: true
-          maxLength: 500
-        answers:
+        options:
           type: array
-          nullable: true
+          minItems: 2
           maxItems: 10
           items:
-            type: string
-            maxLength: 500
+            $ref: '#/components/schemas/GameQuestionOptionInputDto'
         reward:
           type: integer
           minimum: 0
@@ -5697,18 +5761,19 @@ components:
     AskedQuizQuestionDto:
       type: object
       required:
-        - roundId
+        - questionSessionId
         - gameId
         - askOrder
         - questionId
         - questionCode
         - categoryName
         - text
+        - options
         - reward
         - askedAtUtc
         - closesAtUtc
       properties:
-        roundId:
+        questionSessionId:
           type: string
           format: uuid
         gameId:
@@ -5726,6 +5791,12 @@ components:
           type: string
         text:
           type: string
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/GameQuizOptionDto'
         reward:
           type: integer
           minimum: 0
@@ -5735,22 +5806,148 @@ components:
         closesAtUtc:
           type: string
           format: date-time
-    AnswerQuizRoundRequestDto:
+    GameQuizOptionDto:
       type: object
-      required: [answer]
+      required: [optionId, text, displayOrder]
       properties:
-        answer:
+        optionId:
           type: string
-          minLength: 1
-          maxLength: 500
-        answeredByDisplayName:
+          format: uuid
+        text:
           type: string
+        displayOrder:
+          type: integer
+          minimum: 0
+    AvailableGameQuizQuestionDto:
+      type: object
+      required: [questionId, questionCode, categoryName, text]
+      properties:
+        questionId:
+          type: string
+          format: uuid
+        questionCode:
+          type: string
+        categoryName:
+          type: string
+        text:
+          type: string
+    SubmitGameQuizAnswerRequestDto:
+      type: object
+      required: [optionId]
+      properties:
+        optionId:
+          type: string
+          format: uuid
+    GameQuizSubmissionReceiptDto:
+      type: object
+      required: [submissionId, questionSessionId, userId, selectedOptionId, submittedAtUtc, isExisting]
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        questionSessionId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        selectedOptionId:
+          type: string
+          format: uuid
+        submittedAtUtc:
+          type: string
+          format: date-time
+        isExisting:
+          type: boolean
+    GameQuizOptionResultDto:
+      type: object
+      required: [optionId, answerCount, percentage]
+      properties:
+        optionId:
+          type: string
+          format: uuid
+        answerCount:
+          type: integer
+          minimum: 0
+        percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+    CurrentGameQuizStateDto:
+      type: object
+      required: [questionSessionId, gameId, askOrder, questionId, questionCode, categoryName, text, options, status, askedAtUtc, closesAtUtc]
+      properties:
+        questionSessionId:
+          type: string
+          format: uuid
+        gameId:
+          type: string
+          format: uuid
+        askOrder:
+          type: integer
+          minimum: 1
+        questionId:
+          type: string
+          format: uuid
+        questionCode:
+          type: string
+        categoryName:
+          type: string
+        text:
+          type: string
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/GameQuizOptionDto'
+        reward:
+          type: integer
+          minimum: 0
           nullable: true
-          maxLength: 128
-        answeredForUserId:
+          description: Present only after the question timer closes the session.
+        status:
+          type: string
+          enum: [open, closed, skipped]
+        askedAtUtc:
+          type: string
+          format: date-time
+        closesAtUtc:
+          type: string
+          format: date-time
+        closedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        mySelectedOptionId:
           type: string
           format: uuid
           nullable: true
+        mySubmittedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        correctOptionId:
+          type: string
+          format: uuid
+          nullable: true
+        myIsCorrect:
+          type: boolean
+          nullable: true
+        myAwardedPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+        totalSubmissions:
+          type: integer
+          minimum: 0
+          nullable: true
+        optionResults:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/GameQuizOptionResultDto'
     ManualQuizAwardRequestDto:
       type: object
       required: [awardedToUserId, operationType, points, reason, requestId]
@@ -5852,80 +6049,10 @@ components:
           format: uuid
         changeKind:
           type: string
-          enum: [question_asked, question_answered, manual_adjustment_applied]
+          enum: [question_asked, question_closed, manual_adjustment_applied]
         occurredAtUtc:
           type: string
           format: date-time
-    GameQuizRoundSummaryDto:
-      type: object
-      required:
-        - roundId
-        - gameId
-        - askOrder
-        - questionId
-        - questionText
-        - categoryName
-        - reward
-        - status
-        - askedAtUtc
-        - closesAtUtc
-      properties:
-        roundId:
-          type: string
-          format: uuid
-        gameId:
-          type: string
-          format: uuid
-        askOrder:
-          type: integer
-          minimum: 1
-        questionId:
-          type: string
-          format: uuid
-        questionText:
-          type: string
-        categoryName:
-          type: string
-        reward:
-          type: integer
-          minimum: 0
-        status:
-          type: string
-          enum: [asked, answered_correct, timeout, skipped]
-        askedAtUtc:
-          type: string
-          format: date-time
-        closesAtUtc:
-          type: string
-          format: date-time
-        answeredAtUtc:
-          type: string
-          format: date-time
-          nullable: true
-        answeredByDisplayName:
-          type: string
-          nullable: true
-        answeredByUserId:
-          type: string
-          format: uuid
-          nullable: true
-        answeredForUserId:
-          type: string
-          format: uuid
-          nullable: true
-        answeredForDisplayName:
-          type: string
-          nullable: true
-        submittedAnswer:
-          type: string
-          nullable: true
-        isCorrect:
-          type: boolean
-          nullable: true
-        awardedPoints:
-          type: integer
-          nullable: true
-          minimum: 0
     UserGameModifierActivationHistoryItemDto:
       type: object
       required: [modifierId, activatedAtUtc]
@@ -5939,7 +6066,7 @@ components:
     UserGameQuestionAnswerHistoryItemDto:
       type: object
       required:
-        - roundId
+        - questionSessionId
         - questionId
         - questionText
         - categoryName
@@ -5947,7 +6074,7 @@ components:
         - isCorrect
         - awardedPoints
       properties:
-        roundId:
+        questionSessionId:
           type: string
           format: uuid
         questionId:
@@ -6052,7 +6179,7 @@ components:
         - totalPoints
         - gamesPlayed
         - mainGameRoundsPlayed
-        - quizRoundsAnswered
+        - quizQuestionsAnswered
         - correctQuizAnswers
         - modifiersActivated
       properties:
@@ -6073,7 +6200,7 @@ components:
         mainGameRoundsPlayed:
           type: integer
           minimum: 0
-        quizRoundsAnswered:
+        quizQuestionsAnswered:
           type: integer
           minimum: 0
         correctQuizAnswers:
@@ -6094,7 +6221,7 @@ components:
         - gameStatus
         - createdAtUtc
         - mainGameRoundCount
-        - quizRoundCount
+        - quizQuestionCount
         - uniquePlayerCount
       properties:
         gameId:
@@ -6118,7 +6245,7 @@ components:
         mainGameRoundCount:
           type: integer
           minimum: 0
-        quizRoundCount:
+        quizQuestionCount:
           type: integer
           minimum: 0
         uniquePlayerCount:
@@ -6140,6 +6267,27 @@ components:
         points:
           type: integer
         eventCount:
+          type: integer
+          minimum: 0
+        lastActivityAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+    GameHistoryQuizPlayerSummaryDto:
+      type: object
+      required: [userId, displayName, points, attempts, correctAnswers]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        points:
+          type: integer
+        attempts:
+          type: integer
+          minimum: 0
+        correctAnswers:
           type: integer
           minimum: 0
         lastActivityAtUtc:
@@ -6483,19 +6631,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameHistoryRoundModifierItemDto'
-    GameHistoryQuizRoundItemDto:
+    GameHistoryQuizSubmissionItemDto:
       type: object
-      required:
-        - roundId
-        - questionId
-        - questionCode
-        - questionText
-        - categoryName
-        - reward
-        - status
-        - askedAtUtc
+      required: [userId, displayName, selectedOptionId, selectedOptionText, isCorrect, awardedPoints, submittedAtUtc]
       properties:
-        roundId:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        selectedOptionId:
+          type: string
+          format: uuid
+        selectedOptionText:
+          type: string
+        isCorrect:
+          type: boolean
+        awardedPoints:
+          type: integer
+        submittedAtUtc:
+          type: string
+          format: date-time
+    GameHistoryQuizQuestionSessionItemDto:
+      type: object
+      required: [questionSessionId, questionId, questionCode, questionText, categoryName, reward, status, askedAtUtc, options, submissions]
+      properties:
+        questionSessionId:
           type: string
           format: uuid
         questionId:
@@ -6511,36 +6672,26 @@ components:
           type: integer
         status:
           type: string
+          enum: [closed, skipped]
         askedAtUtc:
           type: string
           format: date-time
-        answeredAtUtc:
+        closedAtUtc:
           type: string
           format: date-time
           nullable: true
-        answeredByDisplayName:
-          type: string
-          nullable: true
-        answeredByUserId:
+        correctOptionId:
           type: string
           format: uuid
           nullable: true
-        answeredForUserId:
-          type: string
-          format: uuid
-          nullable: true
-        answeredForDisplayName:
-          type: string
-          nullable: true
-        submittedAnswer:
-          type: string
-          nullable: true
-        isCorrect:
-          type: boolean
-          nullable: true
-        awardedPoints:
-          type: integer
-          nullable: true
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameQuizOptionDto'
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameHistoryQuizSubmissionItemDto'
     GameHistoryQuizManualAwardItemDto:
       type: object
       required:
@@ -6667,7 +6818,7 @@ components:
       required:
         - totalPoints
         - playerStats
-        - rounds
+        - questionSessions
         - manualAwards
       properties:
         totalPoints:
@@ -6675,11 +6826,11 @@ components:
         playerStats:
           type: array
           items:
-            $ref: '#/components/schemas/GameHistoryPlayerSummaryDto'
-        rounds:
+            $ref: '#/components/schemas/GameHistoryQuizPlayerSummaryDto'
+        questionSessions:
           type: array
           items:
-            $ref: '#/components/schemas/GameHistoryQuizRoundItemDto'
+            $ref: '#/components/schemas/GameHistoryQuizQuestionSessionItemDto'
         manualAwards:
           type: array
           items:
@@ -7395,8 +7546,10 @@ components:
             - game_quiz.no_active_game
             - game_quiz.no_available_questions
             - game_quiz.answer_player_not_found
-            - game_quiz.round_not_found
-            - game_quiz.round_not_pending
+            - game_quiz.question_session_not_found
+            - game_quiz.question_session_closed
+            - game_quiz.already_answered
+            - game_quiz.option_not_found
             - game_quiz.manual_award_player_not_found
             - game_quiz.manual_award_invalid_points
             - game_quiz.manual_award_invalid_operation

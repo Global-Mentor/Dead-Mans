@@ -30,19 +30,19 @@ public sealed class GameQuizPointLedgerEntryConfiguration
                 table.HasCheckConstraint(
                     "ck_quiz_point_ledger_source_semantics",
                     "(entry_type = 'quiz_reward' AND points_delta > 0 "
-                    + "AND correct_answer_id IS NOT NULL AND modifier_activation_id IS NULL "
+                    + "AND quiz_submission_id IS NOT NULL AND modifier_activation_id IS NULL "
                     + "AND manual_request_id IS NULL AND created_by_user_id IS NULL "
                     + "AND reason IS NULL) OR "
-                    + "(entry_type = 'manual_adjustment' AND correct_answer_id IS NULL "
+                    + "(entry_type = 'manual_adjustment' AND quiz_submission_id IS NULL "
                     + "AND modifier_activation_id IS NULL AND manual_request_id IS NOT NULL "
                     + "AND created_by_user_id IS NOT NULL AND reason IS NOT NULL "
                     + "AND length(trim(reason)) BETWEEN 3 AND 500) OR "
                     + "(entry_type = 'modifier_purchase' AND points_delta < 0 "
-                    + "AND correct_answer_id IS NULL AND modifier_activation_id IS NOT NULL "
+                    + "AND quiz_submission_id IS NULL AND modifier_activation_id IS NOT NULL "
                     + "AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL "
                     + "AND reason IS NULL) OR "
                     + "(entry_type = 'modifier_refund' AND points_delta > 0 "
-                    + "AND correct_answer_id IS NULL AND modifier_activation_id IS NOT NULL "
+                    + "AND quiz_submission_id IS NULL AND modifier_activation_id IS NOT NULL "
                     + "AND manual_request_id IS NULL AND created_by_user_id IS NOT NULL "
                     + "AND (reason IS NULL OR length(trim(reason)) BETWEEN 3 AND 500))"
                 );
@@ -64,9 +64,9 @@ public sealed class GameQuizPointLedgerEntryConfiguration
             .HasDatabaseName("ix_quiz_ledger_game_user_sequence");
         builder.HasIndex(x => new { x.UserId, x.GameId });
         builder
-            .HasIndex(x => x.CorrectAnswerId)
+            .HasIndex(x => x.QuizSubmissionId)
             .IsUnique()
-            .HasFilter("correct_answer_id IS NOT NULL");
+            .HasFilter("quiz_submission_id IS NOT NULL");
         builder
             .HasIndex(x => x.ManualRequestId)
             .IsUnique()
@@ -98,11 +98,11 @@ public sealed class GameQuizPointLedgerEntryConfiguration
             .HasForeignKey(x => x.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
         builder
-            .HasOne(x => x.CorrectAnswer)
+            .HasOne(x => x.QuizSubmission)
             .WithMany(x => x.PointEntries)
-            .HasForeignKey(x => new { x.GameId, x.CorrectAnswerId })
+            .HasForeignKey(x => new { x.GameId, x.QuizSubmissionId })
             .HasPrincipalKey(x => new { x.GameId, x.Id })
-            .HasConstraintName("fk_quiz_point_ledger_correct_answer_same_game")
+            .HasConstraintName("fk_quiz_point_ledger_submission_same_game")
             .OnDelete(DeleteBehavior.Restrict);
         builder
             .HasOne(x => x.ModifierActivation)

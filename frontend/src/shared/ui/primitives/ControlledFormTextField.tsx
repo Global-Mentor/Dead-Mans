@@ -24,11 +24,13 @@ export function ControlledFormTextField<
   ...props
 }: ControlledFormTextFieldProps<TFieldValues, TTransformedValues>) {
   const { field, fieldState } = useController({ control, name })
+  const { ref, ...inputField } = field
 
   return (
     <FormTextField
       {...props}
-      {...field}
+      {...inputField}
+      inputRef={ref}
       value={field.value ?? ''}
       error={fieldState.invalid}
       helperText={fieldState.error?.message ?? helperText}

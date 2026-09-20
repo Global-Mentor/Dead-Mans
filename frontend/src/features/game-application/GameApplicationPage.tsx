@@ -55,28 +55,26 @@ export function GameApplicationPage() {
 
   if (snapshotQuery.isError) {
     return (
-      <Stack spacing={2}>
-        <PageStatePanel
-          title={t('gameApplication.title')}
-          message={t('gameApplication.errorLoading')}
-          tone="error"
-        />
-        <AppButton
-          tone="secondary"
-          onClick={() => void snapshotQuery.refetch()}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          {t('gameApplication.retry')}
-        </AppButton>
-      </Stack>
+      <PageStatePanel
+        title={t('gameApplication.title')}
+        message={t('gameApplication.errorLoading')}
+        tone="error"
+        actions={
+          <AppButton
+            tone="secondary"
+            onClick={() => void snapshotQuery.refetch()}
+            sx={{ alignSelf: 'flex-start' }}
+          >
+            {t('gameApplication.retry')}
+          </AppButton>
+        }
+      />
     )
   }
 
   if (snapshotQuery.data == null) {
     return (
-      <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
-        <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
-      </PageShell>
+      <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
     )
   }
 

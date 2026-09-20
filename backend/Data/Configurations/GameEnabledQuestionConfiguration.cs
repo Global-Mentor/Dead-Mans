@@ -27,9 +27,10 @@ public class GameEnabledQuestionConfiguration : IEntityTypeConfiguration<GameEna
                     + "AND length(trim(question_text_snapshot)) > 0"
                 );
                 table.HasCheckConstraint(
-                    "ck_game_enabled_questions_answers_present",
-                    "cardinality(accepted_answers_snapshot) > 0 "
-                    + "AND cardinality(accepted_answers_snapshot) = cardinality(normalized_answers_snapshot)"
+                    "ck_game_enabled_questions_options_present",
+                    "cardinality(option_ids_snapshot) BETWEEN 2 AND 10 "
+                    + "AND cardinality(option_ids_snapshot) = cardinality(option_texts_snapshot) "
+                    + "AND correct_option_id_snapshot = ANY(option_ids_snapshot)"
                 );
             }
         );
@@ -40,8 +41,9 @@ public class GameEnabledQuestionConfiguration : IEntityTypeConfiguration<GameEna
         builder.Property(x => x.QuestionCodeSnapshot).HasMaxLength(64).IsRequired();
         builder.Property(x => x.CategoryNameSnapshot).HasMaxLength(64).IsRequired();
         builder.Property(x => x.QuestionTextSnapshot).HasMaxLength(2000).IsRequired();
-        builder.Property(x => x.AcceptedAnswersSnapshot).HasColumnType("text[]").IsRequired();
-        builder.Property(x => x.NormalizedAnswersSnapshot).HasColumnType("text[]").IsRequired();
+        builder.Property(x => x.OptionIdsSnapshot).HasColumnType("uuid[]").IsRequired();
+        builder.Property(x => x.OptionTextsSnapshot).HasColumnType("text[]").IsRequired();
+        builder.Property(x => x.CorrectOptionIdSnapshot).IsRequired();
         builder.Property(x => x.RewardSnapshot).IsRequired();
         builder.Property(x => x.PrioritySnapshot).IsRequired();
         builder.Property(x => x.SnapshotAtUtc).IsRequired();

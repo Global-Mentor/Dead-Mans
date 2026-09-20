@@ -15,7 +15,7 @@ public sealed class GameQuizPointLedgerEntry
 
     public int PointsDelta { get; set; }
 
-    public Guid? CorrectAnswerId { get; set; }
+    public Guid? QuizSubmissionId { get; set; }
 
     public Guid? ModifierActivationId { get; set; }
 
@@ -37,7 +37,7 @@ public sealed class GameQuizPointLedgerEntry
 
     public User? CreatedByUser { get; set; }
 
-    public GameQuizCorrectAnswer? CorrectAnswer { get; set; }
+    public GameQuizSubmission? QuizSubmission { get; set; }
 
     public GameModifierActivation? ModifierActivation { get; set; }
 }

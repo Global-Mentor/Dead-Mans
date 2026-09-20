@@ -260,7 +260,7 @@ export function GameSummaryButton({
           />
           <MiniMetricChip
             label={t('gameHistory.summary.quizCountShort', {
-              count: game.quizRoundCount,
+              count: game.quizQuestionCount,
             })}
           />
           <MiniMetricChip

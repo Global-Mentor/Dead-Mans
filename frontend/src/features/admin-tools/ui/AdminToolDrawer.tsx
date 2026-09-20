@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppButton } from '../../../shared/ui/index.ts'
+import { huntWornFrame } from '../../../shared/theme/hunt-materials.ts'
 import {
   sidePanelCloseSx,
   sidePanelHeaderSx,
@@ -154,15 +155,12 @@ export function AdminToolDrawer({
                 onChange={(_, value: string) => setActiveToolId(value)}
                 aria-label={t('adminTools.chooseTool')}
                 variant="fullWidth"
-                sx={(theme) => ({
+                sx={{
                   mt: 2,
                   minHeight: 44,
-                  p: 0.5,
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-                  borderRadius: '8px',
-                  bgcolor: alpha(theme.palette.common.black, 0.18),
+                  '& .MuiTabs-flexContainer': { gap: 1 },
                   '& .MuiTabs-indicator': { display: 'none' },
-                })}
+                }}
               >
                 {tools.map((tool) => (
                   <Tab
@@ -178,14 +176,16 @@ export function AdminToolDrawer({
                       px: 1,
                       py: 0.75,
                       textTransform: 'none',
-                      fontSize: 14,
+                      fontSize: 16,
                       lineHeight: 1.3,
-                      borderRadius: '5px',
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
+                      borderRadius: 0,
                       color: 'text.secondary',
                       '&.Mui-selected': {
-                        color: 'primary.light',
+                        color: 'text.primary',
+                        ...huntWornFrame,
+                        borderImageOutset: 0,
                         bgcolor: alpha(theme.palette.primary.main, 0.12),
-                        boxShadow: `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}`,
                       },
                       '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.07) },
                     })}

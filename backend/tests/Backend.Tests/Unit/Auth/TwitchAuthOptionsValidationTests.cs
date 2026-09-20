@@ -21,12 +21,13 @@ public sealed class TwitchAuthOptionsValidationTests
     }
 
     [Fact]
-    public void HasValidScopes_RequiresUniqueNonBlankValues()
+    public void HasOnlySignInScope_AcceptsOnlyOpenId()
     {
-        Assert.True(TwitchAuthOptions.HasValidScopes(["openid"]));
-        Assert.False(TwitchAuthOptions.HasValidScopes(["openid", "openid"]));
-        Assert.False(TwitchAuthOptions.HasValidScopes(["openid", " "]));
-        Assert.False(TwitchAuthOptions.HasValidScopes([]));
+        Assert.True(TwitchAuthOptions.HasOnlySignInScope(["openid"]));
+        Assert.False(TwitchAuthOptions.HasOnlySignInScope(["openid", "user:read:email"]));
+        Assert.False(TwitchAuthOptions.HasOnlySignInScope(["openid", "openid"]));
+        Assert.False(TwitchAuthOptions.HasOnlySignInScope(["openid", " "]));
+        Assert.False(TwitchAuthOptions.HasOnlySignInScope([]));
     }
 
     [Fact]

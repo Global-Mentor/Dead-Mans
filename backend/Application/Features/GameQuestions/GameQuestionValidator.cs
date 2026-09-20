@@ -5,11 +5,12 @@ namespace backend.Application.Features.GameQuestions;
 
 internal static class GameQuestionValidator
 {
-    private const int MaxAnswers = 10;
+    public const int MinOptions = 2;
+    public const int MaxOptions = 10;
     public const int MaxExternalCodeLength = 64;
     public const int MaxCategoryLength = 64;
     public const int MaxTextLength = 2000;
-    public const int MaxAnswerLength = 500;
+    public const int MaxOptionLength = 500;
 
     public static bool TryNormalizeCreate(
         CreateGameQuestionInput input,
@@ -17,32 +18,23 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
-
         var text = (input.Text ?? string.Empty).Trim();
-        if (!TryNormalizeAnswers(input.Answer, input.Answers, out var answer, out var answers))
-        {
-            return false;
-        }
-
         var externalCode = (input.ExternalCode ?? string.Empty).Trim();
-
-        if (input.CategoryId == Guid.Empty
-            || !IsSharedValid(text, input.Reward)
+        if (!TryNormalizeOptions(input.Options, out var options)
+            || input.CategoryId == Guid.Empty
+            || text.Length is 0 or > MaxTextLength
+            || input.Reward < 0
             || externalCode.Length > MaxExternalCodeLength)
         {
             return false;
         }
 
-        normalized = new CreateGameQuestionInput(
-            externalCode.Length == 0 ? null : externalCode,
-            input.CategoryId,
-            text,
-            answer,
-            answers,
-            input.Reward,
-            input.IsEnabled,
-            input.Priority
-        );
+        normalized = input with
+        {
+            ExternalCode = externalCode.Length == 0 ? null : externalCode,
+            Text = text,
+            Options = options
+        };
         return true;
     }
 
@@ -52,88 +44,63 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
-
         var text = (input.Text ?? string.Empty).Trim();
-        if (!TryNormalizeAnswers(input.Answer, input.Answers, out var answer, out var answers))
+        if (!TryNormalizeOptions(input.Options, out var options)
+            || input.CategoryId == Guid.Empty
+            || text.Length is 0 or > MaxTextLength
+            || input.Reward < 0)
         {
             return false;
         }
 
-        if (input.CategoryId == Guid.Empty
-            || !IsSharedValid(text, input.Reward))
-        {
-            return false;
-        }
-
-        normalized = new UpdateGameQuestionInput(
-            input.CategoryId,
-            text,
-            answer,
-            answers,
-            input.Reward,
-            input.IsEnabled,
-            input.Priority
-        );
+        normalized = input with { Text = text, Options = options };
         return true;
     }
 
-    private static bool IsSharedValid(string text, int reward)
-    {
-        return text.Length is > 0 and <= MaxTextLength
-            && reward >= 0;
-    }
-
-    private static bool TryNormalizeAnswers(
-        string? answer,
-        IReadOnlyList<string>? answers,
-        out string firstAnswer,
-        out IReadOnlyList<string> normalizedAnswers
+    private static bool TryNormalizeOptions(
+        IReadOnlyList<GameQuestionOptionInput>? options,
+        out IReadOnlyList<GameQuestionOptionInput> normalizedOptions
     )
     {
-        firstAnswer = string.Empty;
-        normalizedAnswers = Array.Empty<string>();
-        // Bound the raw payload before allocating normalized strings or deduplicating.
-        // Otherwise oversized duplicates can bypass the per-answer length limit.
-        if (answers is { Count: > MaxAnswers })
+        normalizedOptions = Array.Empty<GameQuestionOptionInput>();
+        if (options is null || options.Count is < MinOptions or > MaxOptions)
         {
             return false;
         }
 
-        var result = new List<string>();
-        var normalizedSet = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var item in answers ?? Array.Empty<string>())
+        var result = new List<GameQuestionOptionInput>(options.Count);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var correctCount = 0;
+        foreach (var option in options)
         {
-            var trimmed = (item ?? string.Empty).Trim();
-            if (trimmed.Length > MaxAnswerLength)
+            if (option is null)
             {
                 return false;
             }
-            if (trimmed.Length == 0)
-            {
-                continue;
-            }
-
-            var normalized = QuestionAnswerNormalizer.Normalize(trimmed);
-            if (!normalizedSet.Add(normalized))
-            {
-                continue;
-            }
-
-            result.Add(trimmed);
-        }
-
-        if (result.Count == 0)
-        {
-            var fallback = (answer ?? string.Empty).Trim();
-            if (fallback.Length is 0 or > MaxAnswerLength)
+            var text = (option.Text ?? string.Empty).Trim();
+            if (text.Length is 0 or > MaxOptionLength)
             {
                 return false;
             }
-            result.Add(fallback);
+
+            if (!seen.Add(QuestionAnswerNormalizer.Normalize(text)))
+            {
+                return false;
+            }
+
+            if (option.IsCorrect)
+            {
+                correctCount++;
+            }
+            result.Add(new GameQuestionOptionInput(text, option.IsCorrect));
         }
 
-        firstAnswer = result[0];
-        normalizedAnswers = result;
+        if (correctCount != 1)
+        {
+            return false;
+        }
+
+        normalizedOptions = result;
         return true;
     }
 }

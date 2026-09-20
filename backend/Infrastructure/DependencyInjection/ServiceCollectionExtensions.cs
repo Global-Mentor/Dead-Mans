@@ -149,6 +149,10 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<DatabaseMigrationStartupService>();
         services.AddHostedService<DatabaseConfigurationStartupValidator>();
         services.AddHostedService<AuthPersistenceStartupValidator>();
+        if (!environment.IsEnvironment("Testing"))
+        {
+            services.AddHostedService<GameQuizDeadlineWorker>();
+        }
 
         return services;
     }

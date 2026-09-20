@@ -22,6 +22,17 @@ public sealed class GameQuizController : ControllerBase
         _gameQuizService = gameQuizService;
     }
 
+    [HttpGet("questions/available")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    [ProducesResponseType(typeof(IReadOnlyList<AvailableGameQuizQuestionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAvailableQuestions(CancellationToken cancellationToken)
+    {
+        var questions = await _gameQuizService.GetAvailableQuizQuestionsAsync(cancellationToken);
+        return Ok(questions.Select(question => question.ToDto()).ToArray());
+    }
+
     [HttpPost("questions/ask-next")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     [ProducesResponseType(typeof(AskedQuizQuestionDto), StatusCodes.Status200OK)]
@@ -38,19 +49,20 @@ public sealed class GameQuizController : ControllerBase
             return this.BadRequestError(AppMessages.Client.AuthCookieMissingClaims);
         }
 
-        var result = await _gameQuizService.AskNextQuizQuestionAsync(
+        var result = await _gameQuizService.AskQuizQuestionAsync(
+            null,
             new ManualGameQuizQuestionDelivery(askedByUserId.Value),
             cancellationToken
         );
         return result.Outcome switch
         {
-            AskNextGameQuizQuestionOutcome.Asked when result.AskedQuestion is not null =>
+            AskGameQuizQuestionOutcome.Asked when result.AskedQuestion is not null =>
                 Ok(result.AskedQuestion.ToDto()),
-            AskNextGameQuizQuestionOutcome.NoActiveGame => this.NotFoundError(
+            AskGameQuizQuestionOutcome.NoActiveGame => this.NotFoundError(
                 AppMessages.Client.GameQuizNoActiveGame,
                 AppMessages.ErrorCodes.GameQuizNoActiveGame
             ),
-            AskNextGameQuizQuestionOutcome.NoAvailableQuestions => this.NotFoundError(
+            AskGameQuizQuestionOutcome.NoAvailableQuestions => this.NotFoundError(
                 AppMessages.Client.GameQuizNoAvailableQuestions,
                 AppMessages.ErrorCodes.GameQuizNoAvailableQuestions
             ),
@@ -61,22 +73,68 @@ public sealed class GameQuizController : ControllerBase
         };
     }
 
-    [HttpPost("rounds/{roundId:guid}/answer")]
+    [HttpPost("questions/{questionId:guid}/ask")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
-    [ProducesResponseType(typeof(GameQuizRoundSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AskedQuizQuestionDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AskQuestion(Guid questionId, CancellationToken cancellationToken)
+    {
+        var askedByUserId = HttpContext.TryGetUserId();
+        if (!askedByUserId.HasValue)
+        {
+            return this.BadRequestError(AppMessages.Client.AuthCookieMissingClaims);
+        }
+
+        var result = await _gameQuizService.AskQuizQuestionAsync(
+            questionId,
+            new ManualGameQuizQuestionDelivery(askedByUserId.Value),
+            cancellationToken
+        );
+        return result.Outcome switch
+        {
+            AskGameQuizQuestionOutcome.Asked when result.AskedQuestion is not null =>
+                Ok(result.AskedQuestion.ToDto()),
+            AskGameQuizQuestionOutcome.NoActiveGame => this.NotFoundError(
+                AppMessages.Client.GameQuizNoActiveGame,
+                AppMessages.ErrorCodes.GameQuizNoActiveGame
+            ),
+            AskGameQuizQuestionOutcome.NoAvailableQuestions => this.NotFoundError(
+                AppMessages.Client.GameQuizNoAvailableQuestions,
+                AppMessages.ErrorCodes.GameQuizNoAvailableQuestions
+            ),
+            _ => this.StatusError(StatusCodes.Status500InternalServerError, AppMessages.Client.UnexpectedServerError)
+        };
+    }
+
+    [HttpGet("current")]
+    [ProducesResponseType(typeof(CurrentGameQuizStateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> GetCurrent(CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.TryGetUserId();
+        if (!userId.HasValue)
+        {
+            return this.BadRequestError(AppMessages.Client.AuthCookieMissingClaims);
+        }
+
+        var state = await _gameQuizService.GetCurrentQuizStateAsync(userId.Value, cancellationToken);
+        return state is null ? NoContent() : Ok(state.ToDto());
+    }
+
+    [HttpPost("question-sessions/{questionSessionId:guid}/submissions")]
+    [ProducesResponseType(typeof(GameQuizSubmissionReceiptDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AnswerRound(
-        Guid roundId,
-        [FromBody] AnswerQuizRoundRequestDto? request,
+    public async Task<IActionResult> SubmitAnswer(
+        Guid questionSessionId,
+        [FromBody] SubmitGameQuizAnswerRequestDto? request,
         CancellationToken cancellationToken
     )
     {
-        if (request is null)
+        if (request is null || !Guid.TryParse(request.OptionId, out var optionId))
         {
             return this.BadRequestError(
                 AppMessages.Client.GameQuestionInvalidRequest,
@@ -84,64 +142,49 @@ public sealed class GameQuizController : ControllerBase
             );
         }
 
-        var answeredByUserId = HttpContext.TryGetUserId();
-        if (!answeredByUserId.HasValue)
+        var userId = HttpContext.TryGetUserId();
+        if (!userId.HasValue)
         {
             return this.BadRequestError(AppMessages.Client.AuthCookieMissingClaims);
         }
 
-        Guid? answeredForUserId = null;
-        if (!string.IsNullOrWhiteSpace(request.AnsweredForUserId))
-        {
-            if (!Guid.TryParse(request.AnsweredForUserId, out var parsedAnsweredForUserId))
-            {
-                return this.BadRequestError(
-                    AppMessages.Client.GameQuestionInvalidRequest,
-                    AppMessages.ErrorCodes.GameQuestionInvalidRequest
-                );
-            }
-
-            answeredForUserId = parsedAnsweredForUserId;
-        }
-
-        var result = await _gameQuizService.AnswerQuizRoundAsync(
-            roundId,
-            new SubmitGameQuizAnswerInput(
-                request.Answer,
-                new ManualGameQuizAnswerSource(
-                    answeredByUserId.Value,
-                    answeredForUserId ?? answeredByUserId.Value,
-                    request.AnsweredByDisplayName
-                )
-            ),
+        var result = await _gameQuizService.SubmitQuizAnswerAsync(
+            questionSessionId,
+            new SubmitGameQuizAnswerInput(optionId, new WebGameQuizAnswerSource(userId.Value)),
             cancellationToken
         );
 
         return result.Outcome switch
         {
-            AnswerGameQuizRoundOutcome.Answered when result.QuizRound is not null =>
-                Ok(result.QuizRound.ToDto()),
-            AnswerGameQuizRoundOutcome.Incorrect when result.QuizRound is not null =>
-                Ok(result.QuizRound.ToDto()),
-            AnswerGameQuizRoundOutcome.InvalidAnswer => this.BadRequestError(
+            SubmitGameQuizAnswerOutcome.Accepted when result.Receipt is not null => Ok(result.Receipt.ToDto()),
+            SubmitGameQuizAnswerOutcome.Existing when result.Receipt is not null => Ok(result.Receipt.ToDto()),
+            SubmitGameQuizAnswerOutcome.InvalidRequest => this.BadRequestError(
                 AppMessages.Client.GameQuestionInvalidRequest,
                 AppMessages.ErrorCodes.GameQuestionInvalidRequest
             ),
-            AnswerGameQuizRoundOutcome.InvalidSource => this.BadRequestError(
+            SubmitGameQuizAnswerOutcome.InvalidSource => this.BadRequestError(
                 AppMessages.Client.GameQuestionInvalidRequest,
                 AppMessages.ErrorCodes.GameQuestionInvalidRequest
             ),
-            AnswerGameQuizRoundOutcome.QuizRoundNotFound => this.NotFoundError(
-                AppMessages.Client.GameQuizRoundNotFound,
-                AppMessages.ErrorCodes.GameQuizRoundNotFound
+            SubmitGameQuizAnswerOutcome.QuestionSessionNotFound => this.NotFoundError(
+                AppMessages.Client.GameQuizQuestionSessionNotFound,
+                AppMessages.ErrorCodes.GameQuizQuestionSessionNotFound
             ),
-            AnswerGameQuizRoundOutcome.PlayerNotFound => this.NotFoundError(
+            SubmitGameQuizAnswerOutcome.PlayerNotFound => this.NotFoundError(
                 AppMessages.Client.GameQuizAnswerPlayerNotFound,
                 AppMessages.ErrorCodes.GameQuizAnswerPlayerNotFound
             ),
-            AnswerGameQuizRoundOutcome.QuizRoundNotPending => this.ConflictError(
-                AppMessages.Client.GameQuizRoundNotPending,
-                AppMessages.ErrorCodes.GameQuizRoundNotPending
+            SubmitGameQuizAnswerOutcome.OptionNotFound => this.NotFoundError(
+                AppMessages.Client.GameQuizOptionNotFound,
+                AppMessages.ErrorCodes.GameQuizOptionNotFound
+            ),
+            SubmitGameQuizAnswerOutcome.QuestionSessionClosed => this.ConflictError(
+                AppMessages.Client.GameQuizQuestionSessionClosed,
+                AppMessages.ErrorCodes.GameQuizQuestionSessionClosed
+            ),
+            SubmitGameQuizAnswerOutcome.AlreadyAnswered => this.ConflictError(
+                AppMessages.Client.GameQuizAlreadyAnswered,
+                AppMessages.ErrorCodes.GameQuizAlreadyAnswered
             ),
             _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,

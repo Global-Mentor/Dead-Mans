@@ -14,8 +14,8 @@ export function RoundAssistantSection({
   const { t } = useTranslation()
 
   return (
-    <ManagementControlSurface accent={roundAction.statusTone}>
-      <Stack spacing={1.05}>
+    <ManagementControlSurface kind="round">
+      <Stack spacing={1.5}>
         <Stack
           direction="row"
           gap={1}
@@ -25,20 +25,18 @@ export function RoundAssistantSection({
           justifyContent="space-between"
         >
           <ManagementSectionTitle
+            icon="round"
             title={t('gameBoard.managementRoundAssistantTitle')}
             tooltip={t('gameBoard.managementRoundAssistantTooltip')}
           />
           <Stack direction="row" spacing={0.55} alignItems="center" flexWrap="wrap" useFlexGap>
             {roundAction.stepNumber ? (
-              <Chip
-                size="small"
-                variant="outlined"
-                sx={{ border: 0, bgcolor: 'transparent', color: 'text.secondary' }}
-                label={t('gameBoard.managementRoundStepProgress', {
+              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                {t('gameBoard.managementRoundStepProgress', {
                   current: roundAction.stepNumber,
                   total: 6,
                 })}
-              />
+              </Typography>
             ) : null}
             {roundAction.statusLabel !== roundAction.title ? (
               <Chip
@@ -52,7 +50,11 @@ export function RoundAssistantSection({
         </Stack>
 
         <Box>
-          <Typography variant="subtitle1" fontWeight={750} sx={{ fontSize: 20 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={750}
+            sx={{ fontSize: 25, lineHeight: 1.15, overflowWrap: 'anywhere' }}
+          >
             {roundAction.title}
           </Typography>
           {roundAction.description &&

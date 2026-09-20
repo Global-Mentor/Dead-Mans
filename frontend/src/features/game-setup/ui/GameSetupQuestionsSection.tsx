@@ -15,6 +15,7 @@ interface GameSetupQuestionsSectionProps {
   draft: GameSetupDraftState
   onToggle: (questionId: string, enabled: boolean) => void
   onBulkSetEnabled: (questionIds: readonly string[], enabled: boolean) => void
+  onDurationChange: (seconds: number) => void
   actions?: ReactNode
 }
 
@@ -22,6 +23,7 @@ export function GameSetupQuestionsSection({
   draft,
   onToggle,
   onBulkSetEnabled,
+  onDurationChange,
   actions,
 }: GameSetupQuestionsSectionProps) {
   const { t } = useTranslation()
@@ -50,6 +52,15 @@ export function GameSetupQuestionsSection({
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
         {t('gameSetup.questions.enabledCount', { count: draft.enabledQuestionIds.length })}
       </Typography>
+
+      <FormTextField
+        value={String(draft.quizAnswerDurationSeconds)}
+        type="number"
+        label={t('gameSetup.questions.answerDuration')}
+        slotProps={{ htmlInput: { min: 5, max: 3600 } }}
+        sx={{ mt: 1.5, maxWidth: 320 }}
+        onChange={(event) => onDurationChange(Number(event.target.value))}
+      />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
         <FormTextField
@@ -134,7 +145,7 @@ export function GameSetupQuestionsSection({
                   category: question.categoryName,
                   reward: question.reward,
                   asked: question.askedTotalCount,
-                  correct: question.correctTotalCount,
+                  correct: question.correctSubmissionTotalCount,
                 })}
               </Typography>
             </Box>

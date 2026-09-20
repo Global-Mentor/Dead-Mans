@@ -71,7 +71,7 @@ export function AdminRegistrationTeamsList({
     onTogglePlayedState,
     onUpdateTeamName,
   } = controls
-  const canReorderTeams = snapshot.gameStatus === 'ready'
+  const canReorderTeams = snapshot.gameStatus === 'ready' || snapshot.gameStatus === 'active'
 
   return (
     <>

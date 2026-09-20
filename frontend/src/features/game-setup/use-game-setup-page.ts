@@ -86,6 +86,13 @@ export function useGameSetupPage() {
     })
   }
 
+  const setQuizAnswerDuration = (seconds: number) => {
+    updateDraft((current) => ({
+      ...current,
+      quizAnswerDurationSeconds: Number.isFinite(seconds) ? seconds : 60,
+    }))
+  }
+
   return {
     snapshot: draft.snapshot,
     draft: draft.draft,
@@ -106,6 +113,7 @@ export function useGameSetupPage() {
     toggleModifier,
     toggleQuestion,
     setQuestionsEnabled,
+    setQuizAnswerDuration,
     isCreating: draft.isCreating,
     isResetting: draft.isResetting,
     isSaving: save.isSaving,

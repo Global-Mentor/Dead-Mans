@@ -64,8 +64,8 @@ public static class HostSecurityServiceCollectionExtensions
             .Bind(configuration.GetSection(TwitchAuthOptions.SectionName))
             .ValidateDataAnnotations()
             .Validate(
-                options => TwitchAuthOptions.HasValidScopes(options.Scopes),
-                "TwitchAuth:Scopes must contain unique, non-empty scopes."
+                options => TwitchAuthOptions.HasOnlySignInScope(options.Scopes),
+                "TwitchAuth:Scopes must contain only the openid sign-in scope."
             )
             .Validate(
                 options => TwitchAuthOptions.HasValidPermanentSuperAdminTwitchUserIds(

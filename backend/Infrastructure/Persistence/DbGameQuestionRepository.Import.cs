@@ -104,7 +104,7 @@ public sealed partial class DbGameQuestionRepository
                     Priority = input.Question.Priority,
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now,
-                    AcceptedAnswers = [.. BuildAcceptedAnswers(questionId, input.Question.Answers, now)]
+                    Options = [.. BuildOptions(questionId, input.Question.Options, now)]
                 }
             );
         }
