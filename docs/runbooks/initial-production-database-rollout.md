@@ -1,12 +1,12 @@
 # Первый production-запуск базы данных
 
-Этот runbook применяется только к первому публичному развёртыванию Dead-Mans. Целевая
-PostgreSQL должна быть пустой: перенос pre-release данных и поддержка удалённой цепочки
-миграций не предусмотрены.
+Этот runbook применяется только к созданию нового окружения на пустой PostgreSQL.
+Он не используется для обновления уже заполненной базы: такое обновление идёт по
+полной forward-цепочке и release-specific процедуре из `deploy/README.md`.
 
-Единственная исходная миграция — `20260908003848_ProductionBaseline`. Она создаёт схему и
-три технические роли доступа. Игры, пользователи, вопросы, ответы и модификаторы не
-загружаются.
+Первая миграция — `20260908003848_ProductionBaseline`. В новом окружении EF
+последовательно применяет её и все более новые миграции текущего release. Миграции
+создают схему и технические роли доступа; product/test data ими не загружаются.
 
 ## Неизменяемые правила
 
@@ -46,19 +46,20 @@ dotnet tool restore
 dotnet restore backend/backend.slnx
 dotnet build backend/backend.slnx --no-restore
 dotnet tool run dotnet-ef migrations has-pending-model-changes `
-  --project backend/backend.csproj `
+  --project backend/backend.Data.csproj `
   --startup-project backend/backend.csproj `
   --no-build
 dotnet tool run dotnet-ef migrations list `
-  --project backend/backend.csproj `
+  --project backend/backend.Data.csproj `
   --startup-project backend/backend.csproj `
   --no-build
 ```
 
-`has-pending-model-changes` должен сообщить, что model changes отсутствуют, а список должен
-содержать только `20260908003848_ProductionBaseline`.
+`has-pending-model-changes` должен сообщить, что model changes отсутствуют. Список
+должен начинаться с `20260908003848_ProductionBaseline`, заканчиваться последней
+reviewed-миграцией release commit и не содержать неизвестных миграций.
 
-## 2. Применение baseline
+## 2. Применение цепочки миграций
 
 1. Не запускать backend и другие writers.
 2. Передать production connection string процессу миграции через секрет окружения.
@@ -66,12 +67,12 @@ dotnet tool run dotnet-ef migrations list `
 
 ```powershell
 dotnet tool run dotnet-ef database update `
-  --project backend/backend.csproj `
+  --project backend/backend.Data.csproj `
   --startup-project backend/backend.csproj `
   --no-build
 ```
 
-4. Повторно выполнить `migrations list`: baseline должна иметь статус applied.
+4. Повторно выполнить `migrations list`: все миграции release должны иметь статус applied.
 5. Проверить каталог PostgreSQL штатным интеграционным gate:
 
 ```powershell

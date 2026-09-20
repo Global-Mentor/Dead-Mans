@@ -82,11 +82,12 @@ games, questions, gameplay history and points, while retaining users, access
 rights, modifier catalogs and media. See the [database upgrade notes](../docs/architecture/database.md#pre-release-multiple-choice-upgrade).
 
 For this release, keep `PRODUCTION_DEPLOY_ENABLED=false` until the maintenance
-rollout is complete. Verify a fresh database backup and its restore before
-stopping every old application instance and worker. Then start the selected
-new image with `Database__ApplyMigrationsOnStartup=true` so migrations run once
-against the existing database. Do not use a rolling deployment: old and new
-versions are not schema-compatible.
+rollout is complete. Verify the restore procedure ahead of the maintenance
+window. At cutover, stop every old application instance and worker first, take
+and record a final backup of that read-only database, and only then start the
+selected new image with `Database__ApplyMigrationsOnStartup=true` so migrations
+run once against the existing database. Do not use a rolling deployment: old
+and new versions are not schema-compatible.
 
 Verify readiness, the release SHA, Twitch sign-in, retained users/access and the
 new question workflow before reopening traffic and enabling automatic releases.

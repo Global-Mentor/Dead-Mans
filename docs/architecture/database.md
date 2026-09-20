@@ -19,12 +19,14 @@ unexpected foreign-key dependencies abort it instead of deleting extra data.
 The reset and schema conversion run in the same EF migration transaction.
 Reapplying the completed migration is a no-op and must not reset new games.
 
-Before rollout, take and verify a database backup, stop all application instances
-and workers, apply the migrations once, then start the new application. No
-database recreation or connection-string change is required. Old game history
-is recoverable only from the backup, not by `Down`. Downgrading a populated new
-quiz is explicitly rejected. Test content is loaded separately using
-`seed-local-test-data.ps1`; it is not inserted into production by the migration.
+Before rollout, verify the restore procedure against an earlier backup. At
+cutover, stop all application instances and workers, take and record a final
+backup of the now read-only database, apply the migrations once, then start the
+new application. No database recreation or connection-string change is
+required. Old game history is recoverable only from that cutover backup, not by
+`Down`. Downgrading a populated new quiz is explicitly rejected. Test content is
+loaded separately using `seed-local-test-data.ps1`; it is not inserted into
+production by the migration.
 
 ## Naming
 
@@ -222,15 +224,20 @@ quiz is explicitly rejected. Test content is loaded separately using
 
 ## Migration Policy
 
-- The first public deployment starts from the single reviewed
-  `20260908003848_ProductionBaseline` migration. It creates an empty product database and
-  seeds only the three technical access roles; no games, users, questions or modifiers are seeded.
-- Because the database has not yet been deployed, the discarded pre-release migration chain
-  is retained only in Git history and is not a supported upgrade path.
-- After the first public deployment, applied migrations are immutable. Every later schema
-  change is delivered as a new additive forward migration with a tested rollback or restore plan.
+- `20260908003848_ProductionBaseline` is the immutable root of the supported
+  migration chain. On an empty database it creates the product schema and seeds
+  only technical access roles; later migrations advance that schema to the
+  current release.
+- Existing environments are upgraded in place by the complete ordered forward
+  migration chain in this repository. Release artifacts, migration runner and
+  application instances must use the same commit.
+- Applied migrations are immutable. Every later schema change is delivered as a
+  new forward migration with a tested rollback or restore plan. A migration may
+  intentionally discard pre-release test data only when that exact reset and
+  recovery boundary is documented and approved for the release.
 - The EF migrations history table is `__ef_migrations_history`.
 - When changing the physical schema, update this document and the retention policy
   in the same change.
-- The first production database rollout and restore gates are defined in
-  `docs/runbooks/initial-production-database-rollout.md`.
+- The empty-database bootstrap and restore gates are defined in
+  `docs/runbooks/initial-production-database-rollout.md`; upgrades of populated
+  environments follow the release-specific section in `deploy/README.md`.
