@@ -49,36 +49,62 @@ export function GameBoardGrid({
             sx={{
               textAlign: 'center',
               fontWeight: 850,
-              fontSize: { xs: '0.82rem', sm: '0.95rem' },
-              lineHeight: 1.2,
               color: 'text.primary',
               letterSpacing: '0.015em',
               px: 0.5,
-              py: 1,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {col}
-          </Box>
-        )}
-        renderRowLabel={(rowLabel) => (
-          <Box
-            sx={{
-              textAlign: 'center',
-              fontWeight: 750,
-              fontSize: { xs: '0.68rem', sm: '0.76rem' },
-              color: 'text.secondary',
+              py: 0.5,
+              height: '3rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              px: 0.35,
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+              containerType: 'inline-size',
             }}
           >
-            {rowLabel}
+            <Box
+              component="span"
+              sx={{
+                fontSize: 'clamp(0.65rem, 12cqw, 0.95rem)',
+                lineHeight: 1.05,
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {col}
+            </Box>
           </Box>
         )}
+        renderRowLabel={(rowLabel) => {
+          const isShortLabel = rowLabel.trim().length <= 6
+          return (
+            <Box
+              data-board-row-label
+              title={rowLabel}
+              sx={{
+                textAlign: 'center',
+                fontWeight: 750,
+                color: 'text.secondary',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                px: 0.35,
+                overflowWrap: 'anywhere',
+                containerType: 'inline-size',
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  fontSize: isShortLabel ? '0.76rem' : 'clamp(0.6rem, 22cqw, 0.76rem)',
+                  lineHeight: 1.05,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {rowLabel}
+              </Box>
+            </Box>
+          )
+        }}
         renderCell={(rowIndex, colIndex) => {
           const cell = cellMap.get(`${rowIndex}:${colIndex}`)
           const isOpen = cell?.state === 'open'

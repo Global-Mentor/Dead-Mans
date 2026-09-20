@@ -58,9 +58,23 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
               key={index}
               id={`${id}-tab-${index}`}
               aria-controls={`${id}-panel`}
+              title={label}
               label={
-                <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  {label}
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    minWidth: 0,
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {label}
+                  </Box>
                   {index === activeColumnIndex ? (
                     <Box
                       component="span"
@@ -79,9 +93,9 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
               sx={{
                 minWidth: 64,
                 minHeight: 48,
-                maxWidth: 200,
+                maxWidth: 'min(76vw, 240px)',
                 textTransform: 'none',
-                fontSize: 16,
+                fontSize: 'clamp(0.78rem, 3.8vw, 0.9rem)',
               }}
             />
           ))}
@@ -94,22 +108,42 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
           aria-labelledby={`${id}-tab-${column}`}
           sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}
         >
-          {props.rowLabels.map((rowLabel, rowIndex) => (
-            <Box
-              key={`${rowIndex}-${column}`}
-              sx={{ minWidth: 0, display: 'grid', gridTemplateRows: 'auto 1fr' }}
-            >
-              <Typography
-                data-board-row-label
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mb: 0.5 }}
+          {props.rowLabels.map((rowLabel, rowIndex) => {
+            const isShortLabel = rowLabel.trim().length <= 6
+            return (
+              <Box
+                key={`${rowIndex}-${column}`}
+                sx={{ minWidth: 0, display: 'grid', gridTemplateRows: 'auto 1fr' }}
               >
-                {rowLabel}
-              </Typography>
-              {props.renderCell(rowIndex, column, rowLabel)}
-            </Box>
-          ))}
+                <Typography
+                  data-board-row-label
+                  title={rowLabel}
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: '2em',
+                    mb: 0.5,
+                    overflowWrap: 'anywhere',
+                    containerType: 'inline-size',
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: isShortLabel ? '0.75rem' : 'clamp(0.65rem, 8cqw, 0.75rem)',
+                      lineHeight: 1.05,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {rowLabel}
+                  </Box>
+                </Typography>
+                {props.renderCell(rowIndex, column, rowLabel)}
+              </Box>
+            )
+          })}
         </Box>
       </ViewportBoard>
     </Box>
