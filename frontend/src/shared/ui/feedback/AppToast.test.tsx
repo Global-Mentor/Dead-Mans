@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppToast } from './AppToast.tsx'
+
+afterEach(cleanup)
 
 describe('AppToast', () => {
   it.each([null, '', '   '])('does not render an alert for %j', (message) => {
