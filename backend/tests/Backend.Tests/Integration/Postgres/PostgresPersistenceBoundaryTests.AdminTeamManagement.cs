@@ -27,12 +27,20 @@ public sealed partial class PostgresPersistenceBoundaryTests
         game.ActiveTeamId = seeded.TeamId;
         db.GameRounds.Add(new GameRound
         {
-            Id = Guid.NewGuid(), GameId = seeded.GameId, BoardId = seeded.BoardId,
-            BoardCellId = seeded.CellId, TeamId = seeded.TeamId,
-            Status = GameRoundStatusValue.AwaitingModifiers, BaseScore = 100,
-            TeamSlotIndexSnapshot = 1, CellRowIndex = 0, CellColIndex = 0,
-            CellTitleSnapshot = "Test cell", CellCostSnapshot = 100,
-            CreatedAtUtc = seeded.Now, UpdatedAtUtc = seeded.Now
+            Id = Guid.NewGuid(),
+            GameId = seeded.GameId,
+            BoardId = seeded.BoardId,
+            BoardCellId = seeded.CellId,
+            TeamId = seeded.TeamId,
+            Status = GameRoundStatusValue.AwaitingModifiers,
+            BaseScore = 100,
+            TeamSlotIndexSnapshot = 1,
+            CellRowIndex = 0,
+            CellColIndex = 0,
+            CellTitleSnapshot = "Test cell",
+            CellCostSnapshot = 100,
+            CreatedAtUtc = seeded.Now,
+            UpdatedAtUtc = seeded.Now
         });
         await db.SaveChangesAsync();
         var repository = new DbGameRegistrationPersistence(db, new GameRegistrationReadStore(db),
