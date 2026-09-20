@@ -123,7 +123,7 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    height: '2em',
+                    height: isShortLabel ? '1.25rem' : '2em',
                     mb: 0.5,
                     overflowWrap: 'anywhere',
                     containerType: 'inline-size',

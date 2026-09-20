@@ -52,8 +52,8 @@ export function GameBoardGrid({
               color: 'text.primary',
               letterSpacing: '0.015em',
               px: 0.5,
-              py: 0.5,
-              height: '3rem',
+              py: 0.25,
+              height: '2.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -66,7 +66,7 @@ export function GameBoardGrid({
               component="span"
               sx={{
                 fontSize: 'clamp(0.65rem, 12cqw, 0.95rem)',
-                lineHeight: 1.05,
+                lineHeight: 1,
                 overflowWrap: 'anywhere',
               }}
             >

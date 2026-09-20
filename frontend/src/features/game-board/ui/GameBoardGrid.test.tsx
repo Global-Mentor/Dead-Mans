@@ -88,7 +88,7 @@ describe('GameBoardGrid', () => {
     expect(columnHeader).toHaveStyle({
       whiteSpace: 'normal',
       overflowWrap: 'anywhere',
-      height: '3rem',
+      height: '2.5rem',
     })
     expect(columnHeader.firstElementChild).toHaveStyle({
       fontSize: 'clamp(0.65rem, 12cqw, 0.95rem)',
