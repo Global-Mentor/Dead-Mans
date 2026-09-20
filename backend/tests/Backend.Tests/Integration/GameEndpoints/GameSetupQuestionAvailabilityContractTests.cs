@@ -42,7 +42,8 @@ public sealed class GameSetupQuestionAvailabilityContractTests(TestWebApplicatio
         {
             "category" => await admin.PatchAsJsonAsync($"/api/game/questions/categories/{first.CategoryId}/enabled", new { isEnabled = false }),
             "edit" => await admin.PutAsJsonAsync($"/api/game/questions/{first.QuestionId}",
-                new UpdateGameQuestionRequestDto(first.CategoryId, first.Text, "Paris", ["Paris"], 1, false)),
+                new UpdateGameQuestionRequestDto(first.CategoryId, first.Text,
+                    [new GameQuestionOptionInputDto("Paris", true), new GameQuestionOptionInputDto("London", false)], 1, false, 0)),
             "delete" => await admin.DeleteAsync($"/api/game/questions/{first.QuestionId}"),
             _ => await admin.PatchAsJsonAsync($"/api/game/questions/{first.QuestionId}/enabled", new { isEnabled = false })
         };
@@ -122,7 +123,9 @@ public sealed class GameSetupQuestionAvailabilityContractTests(TestWebApplicatio
             categoryId = (await createdCategory.Content.ReadFromJsonAsync<GameQuestionCategoryItemDto>())!.Id;
         }
         var response = await admin.PostAsJsonAsync("/api/game/questions",
-            new CreateGameQuestionRequestDto(categoryId, text, "Paris", ["Paris"], 1, IsEnabled: isEnabled));
+            new CreateGameQuestionRequestDto(null, categoryId, text,
+                [new GameQuestionOptionInputDto("Paris", true), new GameQuestionOptionInputDto("London", false)],
+                1, isEnabled, 0));
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<GameQuestionCatalogItemDto>())!;
     }

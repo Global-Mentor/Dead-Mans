@@ -34,7 +34,7 @@ public static partial class ApiContractMapper
     )
     {
         return new UserGameQuestionAnswerHistoryItemDto(
-            item.RoundId.ToString(),
+            item.QuestionSessionId.ToString(),
             item.QuestionId.ToString(),
             item.QuestionText,
             item.CategoryName,
@@ -71,7 +71,7 @@ public static partial class ApiContractMapper
             item.TotalPoints,
             item.GamesPlayed,
             item.MainGameRoundsPlayed,
-            item.QuizRoundsAnswered,
+            item.QuizQuestionsAnswered,
             item.CorrectQuizAnswers,
             item.ModifiersActivated,
             item.LastActivityAtUtc
@@ -88,7 +88,7 @@ public static partial class ApiContractMapper
             item.StartedAtUtc,
             item.FinishedAtUtc,
             item.MainGameRoundCount,
-            item.QuizRoundCount,
+            item.QuizQuestionCount,
             item.UniquePlayerCount
         );
     }
@@ -125,7 +125,7 @@ public static partial class ApiContractMapper
         return new GameHistoryQuizSectionDto(
             item.TotalPoints,
             item.PlayerStats.Select(ToDto).ToArray(),
-            item.Rounds.Select(ToDto).ToArray(),
+            item.QuestionSessions.Select(ToDto).ToArray(),
             item.ManualAwards.Select(ToDto).ToArray()
         );
     }
@@ -137,6 +137,18 @@ public static partial class ApiContractMapper
             item.DisplayName,
             item.Points,
             item.EventCount,
+            item.LastActivityAtUtc
+        );
+    }
+
+    public static GameHistoryQuizPlayerSummaryDto ToDto(this GameHistoryQuizPlayerSummary item)
+    {
+        return new GameHistoryQuizPlayerSummaryDto(
+            item.UserId.ToString(),
+            item.DisplayName,
+            item.Points,
+            item.Attempts,
+            item.CorrectAnswers,
             item.LastActivityAtUtc
         );
     }
@@ -240,10 +252,10 @@ public static partial class ApiContractMapper
         );
     }
 
-    public static GameHistoryQuizRoundItemDto ToDto(this GameHistoryQuizRoundItem item)
+    public static GameHistoryQuizQuestionSessionItemDto ToDto(this GameHistoryQuizQuestionSessionItem item)
     {
-        return new GameHistoryQuizRoundItemDto(
-            item.RoundId.ToString(),
+        return new GameHistoryQuizQuestionSessionItemDto(
+            item.QuestionSessionId.ToString(),
             item.QuestionId.ToString(),
             item.QuestionCode,
             item.QuestionText,
@@ -251,14 +263,14 @@ public static partial class ApiContractMapper
             item.Reward,
             item.Status,
             item.AskedAtUtc,
-            item.AnsweredAtUtc,
-            item.AnsweredByDisplayName,
-            item.AnsweredByUserId?.ToString(),
-            item.AnsweredForUserId?.ToString(),
-            item.AnsweredForDisplayName,
-            item.SubmittedAnswer,
-            item.IsCorrect,
-            item.AwardedPoints
+            item.ClosedAtUtc,
+            item.CorrectOptionId?.ToString(),
+            item.Options.Select(option => new GameQuizOptionDto(
+                option.OptionId.ToString(), option.Text, option.DisplayOrder)).ToArray(),
+            item.Submissions.Select(submission => new GameHistoryQuizSubmissionItemDto(
+                submission.UserId.ToString(), submission.DisplayName,
+                submission.SelectedOptionId.ToString(), submission.SelectedOptionText,
+                submission.IsCorrect, submission.AwardedPoints, submission.SubmittedAtUtc)).ToArray()
         );
     }
 

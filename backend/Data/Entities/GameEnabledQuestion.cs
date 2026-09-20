@@ -16,9 +16,11 @@ public class GameEnabledQuestion
 
     public string QuestionTextSnapshot { get; set; } = string.Empty;
 
-    public string[] AcceptedAnswersSnapshot { get; set; } = Array.Empty<string>();
+    public Guid[] OptionIdsSnapshot { get; set; } = Array.Empty<Guid>();
 
-    public string[] NormalizedAnswersSnapshot { get; set; } = Array.Empty<string>();
+    public string[] OptionTextsSnapshot { get; set; } = Array.Empty<string>();
+
+    public Guid CorrectOptionIdSnapshot { get; set; }
 
     public int RewardSnapshot { get; set; }
 

@@ -6,7 +6,7 @@ public sealed record UserGameModifierActivationHistoryItemDto(
 );
 
 public sealed record UserGameQuestionAnswerHistoryItemDto(
-    string RoundId,
+    string QuestionSessionId,
     string QuestionId,
     string QuestionText,
     string CategoryName,
@@ -47,7 +47,7 @@ public sealed record GameHistoryLeaderboardEntryDto(
     int TotalPoints,
     int GamesPlayed,
     int MainGameRoundsPlayed,
-    int QuizRoundsAnswered,
+    int QuizQuestionsAnswered,
     int CorrectQuizAnswers,
     int ModifiersActivated,
     DateTime? LastActivityAtUtc
@@ -61,7 +61,7 @@ public sealed record GameHistoryGameSummaryDto(
     DateTime? StartedAtUtc,
     DateTime? FinishedAtUtc,
     int MainGameRoundCount,
-    int QuizRoundCount,
+    int QuizQuestionCount,
     int UniquePlayerCount
 );
 
@@ -70,6 +70,15 @@ public sealed record GameHistoryPlayerSummaryDto(
     string DisplayName,
     int Points,
     int EventCount,
+    DateTime? LastActivityAtUtc
+);
+
+public sealed record GameHistoryQuizPlayerSummaryDto(
+    string UserId,
+    string DisplayName,
+    int Points,
+    int Attempts,
+    int CorrectAnswers,
     DateTime? LastActivityAtUtc
 );
 
@@ -186,8 +195,18 @@ public sealed record GameHistoryTeamLeaderboardEntryDto(
     DateTime LastFinishedAtUtc
 );
 
-public sealed record GameHistoryQuizRoundItemDto(
-    string RoundId,
+public sealed record GameHistoryQuizSubmissionItemDto(
+    string UserId,
+    string DisplayName,
+    string SelectedOptionId,
+    string SelectedOptionText,
+    bool IsCorrect,
+    int AwardedPoints,
+    DateTime SubmittedAtUtc
+);
+
+public sealed record GameHistoryQuizQuestionSessionItemDto(
+    string QuestionSessionId,
     string QuestionId,
     string QuestionCode,
     string QuestionText,
@@ -195,14 +214,10 @@ public sealed record GameHistoryQuizRoundItemDto(
     int Reward,
     string Status,
     DateTime AskedAtUtc,
-    DateTime? AnsweredAtUtc,
-    string? AnsweredByDisplayName,
-    string? AnsweredByUserId,
-    string? AnsweredForUserId,
-    string? AnsweredForDisplayName,
-    string? SubmittedAnswer,
-    bool? IsCorrect,
-    int? AwardedPoints
+    DateTime? ClosedAtUtc,
+    string? CorrectOptionId,
+    IReadOnlyList<GameQuizOptionDto> Options,
+    IReadOnlyList<GameHistoryQuizSubmissionItemDto> Submissions
 );
 
 public sealed record GameHistoryQuizManualAwardItemDto(
@@ -226,8 +241,8 @@ public sealed record GameHistoryMainGameSectionDto(
 
 public sealed record GameHistoryQuizSectionDto(
     int TotalPoints,
-    IReadOnlyList<GameHistoryPlayerSummaryDto> PlayerStats,
-    IReadOnlyList<GameHistoryQuizRoundItemDto> Rounds,
+    IReadOnlyList<GameHistoryQuizPlayerSummaryDto> PlayerStats,
+    IReadOnlyList<GameHistoryQuizQuestionSessionItemDto> QuestionSessions,
     IReadOnlyList<GameHistoryQuizManualAwardItemDto> ManualAwards
 );
 

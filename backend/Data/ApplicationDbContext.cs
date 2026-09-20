@@ -42,10 +42,11 @@ public class ApplicationDbContext : DbContext
         Set<ModifierDefinitionVersionConflict>();
     public DbSet<QuestionCategory> QuestionCategories => Set<QuestionCategory>();
     public DbSet<QuestionDefinition> QuestionDefinitions => Set<QuestionDefinition>();
-    public DbSet<QuestionAcceptedAnswer> QuestionAcceptedAnswers =>
-        Set<QuestionAcceptedAnswer>();
-    public DbSet<GameQuizRound> GameQuizRounds => Set<GameQuizRound>();
-    public DbSet<GameQuizCorrectAnswer> GameQuizCorrectAnswers => Set<GameQuizCorrectAnswer>();
+    public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
+
+    public DbSet<GameQuizQuestionSession> GameQuizQuestionSessions => Set<GameQuizQuestionSession>();
+    public DbSet<GameQuizSubmission> GameQuizSubmissions => Set<GameQuizSubmission>();
+
     public DbSet<GameQuizPointLedgerEntry> GameQuizPointLedgerEntries =>
         Set<GameQuizPointLedgerEntry>();
     public DbSet<GameEnabledQuestion> GameEnabledQuestions => Set<GameEnabledQuestion>();
@@ -118,9 +119,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GameModifierActivationConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionDefinitionConfiguration());
-        modelBuilder.ApplyConfiguration(new QuestionAcceptedAnswerConfiguration());
-        modelBuilder.ApplyConfiguration(new GameQuizRoundConfiguration());
-        modelBuilder.ApplyConfiguration(new GameQuizCorrectAnswerConfiguration());
+        modelBuilder.ApplyConfiguration(new QuestionOptionConfiguration());
+        modelBuilder.ApplyConfiguration(new GameQuizQuestionSessionConfiguration());
+        modelBuilder.ApplyConfiguration(new GameQuizSubmissionConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizPointLedgerEntryConfiguration());
         modelBuilder.ApplyConfiguration(new GameEnabledQuestionConfiguration());
         modelBuilder.ApplyConfiguration(new GameUserNotificationConfiguration());

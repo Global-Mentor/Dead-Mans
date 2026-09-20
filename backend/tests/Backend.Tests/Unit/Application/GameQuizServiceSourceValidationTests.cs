@@ -9,16 +9,17 @@ namespace Backend.Tests.Unit.Application;
 public sealed class GameQuizServiceSourceValidationTests
 {
     [Fact]
-    public async Task AskNextQuizQuestionAsync_WhenTwitchDeliveryIsInvalidRejectsBeforeRepository()
+    public async Task AskQuizQuestionAsync_WhenTwitchDeliveryIsInvalidRejectsBeforeRepository()
     {
         var repository = new TrackingQuizRepository();
         var service = CreateService(repository);
 
-        var result = await service.AskNextQuizQuestionAsync(
+        var result = await service.AskQuizQuestionAsync(
+            null,
             new TwitchGameQuizQuestionDelivery(" ", "message")
         );
 
-        Assert.Equal(AskNextGameQuizQuestionOutcome.InvalidDelivery, result.Outcome);
+        Assert.Equal(AskGameQuizQuestionOutcome.InvalidDelivery, result.Outcome);
         Assert.False(repository.WasCalled);
     }
 
@@ -27,7 +28,7 @@ public sealed class GameQuizServiceSourceValidationTests
     [InlineData("123456", " ", "Viewer", "channel", "message")]
     [InlineData("123456", "viewer", "Viewer", " ", "message")]
     [InlineData("123456", "viewer", "Viewer", "channel", " ")]
-    public async Task AnswerQuizRoundAsync_WhenTwitchSourceIsInvalidRejectsBeforeRepository(
+    public async Task SubmitQuizAnswerAsync_WhenTwitchSourceIsInvalidRejectsBeforeRepository(
         string twitchUserId,
         string login,
         string displayName,
@@ -38,10 +39,10 @@ public sealed class GameQuizServiceSourceValidationTests
         var repository = new TrackingQuizRepository();
         var service = CreateService(repository);
 
-        var result = await service.AnswerQuizRoundAsync(
+        var result = await service.SubmitQuizAnswerAsync(
             Guid.NewGuid(),
             new SubmitGameQuizAnswerInput(
-                "answer",
+                Guid.NewGuid(),
                 new TwitchGameQuizAnswerSource(
                     twitchUserId,
                     login,
@@ -52,7 +53,7 @@ public sealed class GameQuizServiceSourceValidationTests
             )
         );
 
-        Assert.Equal(AnswerGameQuizRoundOutcome.InvalidSource, result.Outcome);
+        Assert.Equal(SubmitGameQuizAnswerOutcome.InvalidSource, result.Outcome);
         Assert.False(repository.WasCalled);
     }
 
@@ -70,14 +71,19 @@ public sealed class GameQuizServiceSourceValidationTests
     {
         public bool WasCalled { get; private set; }
 
+        public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
+            CancellationToken cancellationToken = default
+        ) => throw new NotSupportedException();
+
         public Task<Guid?> GetActiveGameIdAsync(CancellationToken cancellationToken = default)
         {
             WasCalled = true;
             throw new NotSupportedException();
         }
 
-        public Task<AskedQuizQuestion?> AskNextQuizQuestionAsync(
+        public Task<AskedQuizQuestion?> AskQuizQuestionAsync(
             Guid gameId,
+            Guid? questionId,
             GameQuizQuestionDelivery delivery,
             CancellationToken cancellationToken = default
         )
@@ -86,8 +92,8 @@ public sealed class GameQuizServiceSourceValidationTests
             throw new NotSupportedException();
         }
 
-        public Task<SubmitQuizAnswerRepositoryResult> AnswerQuizRoundAsync(
-            Guid roundId,
+        public Task<SubmitQuizAnswerRepositoryResult> SubmitQuizAnswerAsync(
+            Guid questionSessionId,
             SubmitGameQuizAnswerInput input,
             CancellationToken cancellationToken = default
         )
@@ -106,8 +112,12 @@ public sealed class GameQuizServiceSourceValidationTests
             CancellationToken cancellationToken = default
         ) => throw new NotSupportedException();
 
-        public Task<GameQuizRoundSummary?> GetQuizRoundAsync(
-            Guid roundId,
+        public Task<CurrentGameQuizState?> GetCurrentQuizStateAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default
+        ) => throw new NotSupportedException();
+
+        public Task<CloseExpiredQuizQuestionSessionsResult> CloseExpiredQuizQuestionSessionsAsync(
             CancellationToken cancellationToken = default
         ) => throw new NotSupportedException();
     }

@@ -129,23 +129,31 @@ public sealed partial class DbGameLifecyclePersistence
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var pendingQuizRounds = await _dbContext.GameQuizRounds
-            .Where(x => x.GameId == gameId && x.Status == GameQuizRoundStatusValue.Asked)
+        var pendingQuizQuestionSessions = await _dbContext.GameQuizQuestionSessions
+            .Where(x => x.GameId == gameId && x.Status == GameQuizQuestionSessionStatusValue.Open)
             .ToArrayAsync(cancellationToken);
         var skippedQuizQuestionCount = 0;
-        foreach (var quizRound in pendingQuizRounds)
+        foreach (var quizQuestionSession in pendingQuizQuestionSessions)
         {
-            if (quizRound.ClosesAtUtc <= now)
+            if (quizQuestionSession.ClosesAtUtc <= now)
             {
-                quizRound.Status = GameQuizRoundStatusValue.Timeout;
-                quizRound.ClosedAtUtc = quizRound.ClosesAtUtc;
+                await GameQuizQuestionSettlement.CloseAsync(_dbContext, quizQuestionSession, cancellationToken);
             }
             else
             {
-                quizRound.Status = GameQuizRoundStatusValue.Skipped;
-                quizRound.ClosedAtUtc = now;
+                quizQuestionSession.Status = GameQuizQuestionSessionStatusValue.Skipped;
+                quizQuestionSession.ClosedAtUtc = now;
                 skippedQuizQuestionCount += 1;
             }
+        }
+
+        if (pendingQuizQuestionSessions.Length > 0)
+        {
+            // Persist rewards before changing the game to finished, but inside the
+            // same transaction. Finalization failure rolls back rewards as well.
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            preview = await BuildActiveFinishPreviewAsync(gameId, cancellationToken)
+                ?? throw new InvalidOperationException("The locked active game disappeared during finalization.");
         }
 
         var finalization = new GameFinalization
@@ -317,8 +325,8 @@ public sealed partial class DbGameLifecyclePersistence
             ))
         );
 
-        var pendingQuizQuestionCount = await _dbContext.GameQuizRounds.AsNoTracking().CountAsync(
-            x => x.GameId == gameId && x.Status == GameQuizRoundStatusValue.Asked,
+        var pendingQuizQuestionCount = await _dbContext.GameQuizQuestionSessions.AsNoTracking().CountAsync(
+            x => x.GameId == gameId && x.Status == GameQuizQuestionSessionStatusValue.Open,
             cancellationToken
         );
         var quizPoints = await _dbContext.GameQuizPointLedgerEntries

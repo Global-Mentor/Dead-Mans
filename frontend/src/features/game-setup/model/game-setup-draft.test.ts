@@ -33,6 +33,7 @@ const snapshot: GameSetupSnapshot = {
   ],
   enabledModifierIds: ['10000000-0000-0000-0000-0000000000a1'],
   enabledQuestionIds: [],
+  quizAnswerDurationSeconds: 60,
 }
 
 function createDraft(): GameSetupDraftState {
@@ -50,6 +51,7 @@ describe('game setup draft', () => {
       cells: [{ id: 'cell-1', row: 0, col: 0, title: '', cost: 100 }],
       enabledModifierIds: ['10000000-0000-0000-0000-0000000000a1'],
       enabledQuestionIds: [],
+      quizAnswerDurationSeconds: 60,
     })
     expect(draft.rowLabels).not.toBe(snapshot.rowLabels)
     expect(draft.enabledModifierIds).not.toBe(snapshot.enabledModifierIds)
@@ -89,6 +91,7 @@ describe('game setup draft', () => {
           '10000000-0000-0000-0000-0000000000a2',
         ],
         enabledQuestionIds: [],
+        quizAnswerDurationSeconds: 60,
       }),
     ).toBe(true)
     expect(
@@ -144,6 +147,7 @@ describe('game setup draft', () => {
         '10000000-0000-0000-0000-0000000000a2',
       ],
       enabledQuestionIds: [],
+      quizAnswerDurationSeconds: 60,
     })
   })
 })

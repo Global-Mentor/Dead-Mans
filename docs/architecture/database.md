@@ -4,6 +4,28 @@ Dead-Mans uses PostgreSQL as the source of truth. Local development can rebuild 
 database from a clean EF Core baseline migration; object storage is intentionally
 outside of database resets and keeps card images/media.
 
+## Pre-release multiple-choice upgrade
+
+`20260919151237_ConvertQuizToMultipleChoice` upgrades the existing database in
+place. It deliberately resets pre-release games (including rosters, rounds,
+history, finalizations, notifications, modifier purchases and the quiz ledger)
+and the old free-text questions. This reset is approved only for the current
+test-data rollout, not a template for future production migrations.
+
+Users, roles, assignments and access audit, question categories, modifier
+definitions/versions and media assets are retained. Storage objects are not
+touched. The reset enumerates its tables explicitly and uses no `CASCADE`;
+unexpected foreign-key dependencies abort it instead of deleting extra data.
+The reset and schema conversion run in the same EF migration transaction.
+Reapplying the completed migration is a no-op and must not reset new games.
+
+Before rollout, take and verify a database backup, stop all application instances
+and workers, apply the migrations once, then start the new application. No
+database recreation or connection-string change is required. Old game history
+is recoverable only from the backup, not by `Down`. Downgrading a populated new
+quiz is explicitly rejected. Test content is loaded separately using
+`seed-local-test-data.ps1`; it is not inserted into production by the migration.
+
 ## Naming
 
 - Physical database names use `snake_case` for tables, columns, indexes, foreign
@@ -36,8 +58,8 @@ outside of database resets and keeps card images/media.
   `modifier_definition_version_conflicts`, `game_enabled_modifiers`,
   `game_modifier_activations`.
 - Quiz catalog and runtime: `question_categories`, `question_definitions`,
-  `question_accepted_answers`, `game_enabled_questions`, `game_quiz_rounds`,
-  `game_quiz_correct_answers`, `game_quiz_point_ledger_entries`.
+  `question_options`, `game_enabled_questions`, `game_quiz_question_sessions`,
+  `game_quiz_submissions`, `game_quiz_point_ledger_entries`.
 - Media catalog: `media_assets`.
 
 ## Integrity Rules
@@ -50,8 +72,8 @@ outside of database resets and keeps card images/media.
   `base_score`.
 - A `users` row is the durable Twitch principal. Its `twitch_user_id` cannot be
   changed and the row cannot be physically deleted; access is revoked with
-  `is_active = false`. A quiz-winner snapshot must identify the same active Twitch
-  principal before the immutable answer fact can be inserted. Email is neither
+  `is_active = false`. A quiz submission snapshot must identify the same active Twitch
+  principal before the answer fact can be inserted. Email is neither
   requested from Twitch nor stored because no current product capability needs it.
 - Every game completion preserves one authoritative `game_finalizations` record and one
   `game_team_final_results` row per confirmed team. The unique request ID provides
@@ -79,7 +101,7 @@ outside of database resets and keeps card images/media.
   - publication requires exactly one complete board and at least one team slot;
     activation requires a settled roster of confirmed teams within the game's size limits;
     the published configuration and active/finished roster are immutable.
-- Round and quiz history enforce resolution facts:
+- Game-round and quiz-question history enforce resolution facts:
   - nonterminal round lifecycle is `awaiting_modifiers` → `preparing` →
     `in_progress` → `reviewing_results`; every mutation advances a monotonic
     `version` and lifecycle timestamps are checked against status;
@@ -91,8 +113,13 @@ outside of database resets and keeps card images/media.
   - an empty-card penalty can only be marked on completed rounds;
   - pending modifier results cannot have resolver data, terminal modifier results
     must have it;
-  - each asked quiz round has at most one immutable first-correct-answer fact; wrong
-    answers are not persisted;
+  - each quiz question session owns one timer and uses `open`, `closed` or `skipped`;
+    it is independent from `game_rounds`, so any number of questions can be asked during
+    one played card round;
+  - `(question_session_id, user_id)` is unique, so every user has at most one submission
+    per question across all transports; both correct and incorrect choices are preserved;
+  - correctness, option distribution and rewards become public only after the question
+    timer closes, and each correct submission has at most one quiz-reward ledger entry;
   - the immutable point-ledger running balance is chained separately for each
     `(game_id, user_id)`, so every game starts at zero and points never carry over.
 - Modifier purchase rows are never deleted to perform a refund:
@@ -140,6 +167,14 @@ outside of database resets and keeps card images/media.
   `SELECT ... FOR UPDATE` lock on the target `game_rounds` row. Commands carrying
   `expectedRoundVersion` reject stale writers with `409`; already-applied refunds
   are recognized before that rejection and remain idempotent.
+- Quiz submissions acquire compatible `FOR SHARE` lifecycle locks in game → question-session
+  order. They query only the current user's submission; the unique `(question_session_id, user_id)`
+  index arbitrates simultaneous choices across transports. A same-choice retry returns the
+  original receipt even after closure, while a different choice returns `already_answered`.
+- Quiz closure acquires `FOR UPDATE` locks in the same order, loads current submissions only
+  after locking, and reads winner balances in one grouped query. A retry after a committed
+  closure cannot award points again. Public reads return only the viewer's submission and
+  aggregate option counts, never load all participant entities for an open question.
 - Catalog create/update/archive and lifecycle publication/start share one transaction-scoped
   PostgreSQL advisory lock; each transition also locks its game row. Compatibility cascades are
   all-or-nothing and recheck
@@ -155,9 +190,10 @@ outside of database resets and keeps card images/media.
   refunds every non-cancelled activation, retires the board cell as `cancelled`, clears
   the active team and advances both round and board versions. Structured reason fields
   and database checks keep cancellation records internally consistent.
-- Whole-game finalization is also one transaction: an open quiz question is closed as
-  `skipped` while its window is live or `timeout` after its deadline,
-  the immutable result is inserted, the active team is cleared, the game becomes
+- Whole-game finalization locks the game before deciding question deadlines.
+  In that same transaction, expired quiz questions are settled as `closed` and
+  rewarded; only still-live questions become `skipped`. The final totals include
+  the new rewards. Then the immutable result is inserted, the active team is cleared, the game becomes
   `finished`, and the board version advances. A failed snapshot insert rolls back every
   one of those writes.
 - Ledger inserts hold a shared lifecycle lock and a transaction-scoped advisory lock for

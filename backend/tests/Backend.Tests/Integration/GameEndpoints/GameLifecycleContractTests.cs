@@ -346,7 +346,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         using (adminClient)
         {
             var gameId = Guid.Parse(board.GameId);
-            var quizRoundId = await SeedAskedQuizAndActiveTeamAsync(gameId);
+            var quizQuestionSessionId = await SeedAskedQuizAndActiveTeamAsync(gameId);
             var preview = await adminClient.GetFromJsonAsync<GameFinishPreviewDto>(
                 $"/api/game/lifecycle/games/{board.GameId}/finish-preview"
             );
@@ -366,11 +366,11 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             using var scope = _factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var game = await db.Games.SingleAsync(x => x.Id == gameId);
-            var quizRound = await db.GameQuizRounds.SingleAsync(x => x.Id == quizRoundId);
+            var quizQuestionSession = await db.GameQuizQuestionSessions.SingleAsync(x => x.Id == quizQuestionSessionId);
             Assert.Null(game.ActiveTeamId);
-            Assert.Equal(GameQuizRoundStatusValue.Skipped, quizRound.Status);
-            Assert.NotNull(quizRound.ClosedAtUtc);
-            Assert.InRange(quizRound.ClosedAtUtc.Value, quizRound.AskedAtUtc, quizRound.ClosesAtUtc);
+            Assert.Equal(GameQuizQuestionSessionStatusValue.Skipped, quizQuestionSession.Status);
+            Assert.NotNull(quizQuestionSession.ClosedAtUtc);
+            Assert.InRange(quizQuestionSession.ClosedAtUtc.Value, quizQuestionSession.AskedAtUtc, quizQuestionSession.ClosesAtUtc);
             Assert.Equal(board.Version + 1, await db.GameBoards
                 .Where(x => x.GameId == gameId)
                 .Select(x => x.Version)
@@ -683,11 +683,16 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var catalog = new backend.Infrastructure.Persistence.DbGameQuestionRepository(db, TimeProvider.System);
         var category = await catalog.CreateCategoryAsync("Publication");
         await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
-            "q-availability", category.Id, "Capital?", "Paris", ["Paris"], 1, true, 0));
+            "q-availability", category.Id, "Capital?",
+            [
+                new GameQuestionOptionInput("Paris", true),
+                new GameQuestionOptionInput("London", false)
+            ],
+            1, true, 0));
         var question = await db.QuestionDefinitions
             .Include(item => item.CategoryDefinition)
-            .Include(item => item.AcceptedAnswers)
-            .FirstAsync(item => item.IsEnabled && !item.IsDeleted);
+            .Include(item => item.Options)
+            .SingleAsync(item => item.ExternalCode == "q-availability");
         var snapshotAt = DateTime.UtcNow.AddMinutes(-1);
         db.GameEnabledQuestions.Add(new GameEnabledQuestion
         {
@@ -699,8 +704,9 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             QuestionCodeSnapshot = question.ExternalCode,
             CategoryNameSnapshot = question.CategoryDefinition!.Name,
             QuestionTextSnapshot = question.Text,
-            AcceptedAnswersSnapshot = question.AcceptedAnswers.OrderBy(item => item.SortOrder).Select(item => item.AnswerText).ToArray(),
-            NormalizedAnswersSnapshot = question.AcceptedAnswers.OrderBy(item => item.SortOrder).Select(item => item.NormalizedAnswer).ToArray(),
+            OptionIdsSnapshot = question.Options.OrderBy(item => item.SortOrder).Select(item => item.Id).ToArray(),
+            OptionTextsSnapshot = question.Options.OrderBy(item => item.SortOrder).Select(item => item.Text).ToArray(),
+            CorrectOptionIdSnapshot = question.Options.Single(item => item.IsCorrect).Id,
             RewardSnapshot = question.Reward,
             PrioritySnapshot = question.Priority
         });
@@ -937,24 +943,29 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             Reward = 5,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
-            AcceptedAnswers =
+            Options =
             [
-                new QuestionAcceptedAnswer
+                new QuestionOption
                 {
                     Id = Guid.NewGuid(),
-                    AnswerText = "Answer",
-                    NormalizedAnswer = "answer",
-                    IsPrimary = true,
+                    Text = "Answer",
+                    NormalizedText = "answer",
+                    IsCorrect = true,
                     SortOrder = 0,
                     CreatedAtUtc = now
+                },
+                new QuestionOption
+                {
+                    Id = Guid.NewGuid(), Text = "Wrong", NormalizedText = "wrong", IsCorrect = false,
+                    SortOrder = 1, CreatedAtUtc = now
                 }
             ]
         };
         var roundId = Guid.NewGuid();
         db.QuestionCategories.Add(category);
         db.QuestionDefinitions.Add(question);
-        db.GameQuizRounds.Add(
-            new GameQuizRound
+        db.GameQuizQuestionSessions.Add(
+            new GameQuizQuestionSession
             {
                 Id = roundId,
                 GameId = gameId,
@@ -962,13 +973,14 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
                 AskOrder = 1,
                 AskedAtUtc = now,
                 ClosesAtUtc = now.AddMinutes(1),
-                Status = GameQuizRoundStatusValue.Asked,
+                Status = GameQuizQuestionSessionStatusValue.Open,
                 QuestionRevisionSnapshot = 1,
                 QuestionCodeSnapshot = question.ExternalCode,
                 CategoryNameSnapshot = category.Name,
                 QuestionTextSnapshot = question.Text,
-                AcceptedAnswersSnapshot = ["Answer"],
-                NormalizedAnswersSnapshot = ["answer"],
+                OptionIdsSnapshot = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Id).ToArray(),
+                OptionTextsSnapshot = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(),
+                CorrectOptionIdSnapshot = question.Options.Single(x => x.IsCorrect).Id,
                 RewardSnapshot = question.Reward,
                 DeliveryKind = "manual"
             }
@@ -1031,8 +1043,8 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         dbContext.GameTeamFinalResults.RemoveRange(dbContext.GameTeamFinalResults);
         dbContext.GameFinalizations.RemoveRange(dbContext.GameFinalizations);
         dbContext.GameQuizPointLedgerEntries.RemoveRange(dbContext.GameQuizPointLedgerEntries);
-        dbContext.GameQuizCorrectAnswers.RemoveRange(dbContext.GameQuizCorrectAnswers);
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizSubmissions.RemoveRange(dbContext.GameQuizSubmissions);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.GameRoundTransitionAudits.RemoveRange(dbContext.GameRoundTransitionAudits);
         dbContext.GameRoundModifierResults.RemoveRange(dbContext.GameRoundModifierResults);
         dbContext.GameRoundParticipants.RemoveRange(dbContext.GameRoundParticipants);

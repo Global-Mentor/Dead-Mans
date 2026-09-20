@@ -100,7 +100,7 @@ export function GameDetailsPanel({
             />
             <MetricChip
               label={t('gameHistory.summary.quizCount')}
-              value={t('gameHistory.countValue', { count: game.quiz.rounds.length })}
+              value={t('gameHistory.countValue', { count: game.quiz.questionSessions.length })}
             />
             <MetricChip
               label={t('gameHistory.summary.quizPoints')}

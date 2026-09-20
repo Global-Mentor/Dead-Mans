@@ -42,7 +42,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         Assert.Equal(80, first.QuizPoints);
         Assert.Equal(180, first.TotalPoints);
         Assert.Equal(1, first.ModifiersActivated);
-        Assert.Equal(1, first.QuizRoundsAnswered);
+        Assert.Equal(1, first.QuizQuestionsAnswered);
         Assert.Equal(1, first.CorrectQuizAnswers);
 
         var second = payload[1];
@@ -68,7 +68,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         Assert.Equal("Stabilization Match", game.GameTitle);
         Assert.Equal(GameStatusValue.Finished, game.GameStatus);
         Assert.Equal(2, game.MainGameRoundCount);
-        Assert.Equal(2, game.QuizRoundCount);
+        Assert.Equal(2, game.QuizQuestionCount);
         Assert.Equal(2, game.UniquePlayerCount);
     }
 
@@ -106,15 +106,15 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
             roundModifier.ResolutionDataJson
         );
 
-        Assert.Equal(2, payload.Quiz.Rounds.Count);
+        Assert.Equal(2, payload.Quiz.QuestionSessions.Count);
         Assert.Equal(2, payload.Quiz.PlayerStats.Count);
         Assert.Equal("Alpha", payload.Quiz.PlayerStats[0].DisplayName);
         Assert.Equal(80, payload.Quiz.PlayerStats[0].Points);
+        Assert.Equal(1, payload.Quiz.PlayerStats[0].Attempts);
+        Assert.Equal(1, payload.Quiz.PlayerStats[0].CorrectAnswers);
         Assert.DoesNotContain(payload.Quiz.PlayerStats, item => item.DisplayName == "Moderator");
-        Assert.Equal("quiz-001", payload.Quiz.Rounds[0].QuestionCode);
-        Assert.Equal("Moderator", payload.Quiz.Rounds[0].AnsweredByDisplayName);
-        Assert.Equal(seeded.AlphaId.ToString(), payload.Quiz.Rounds[0].AnsweredForUserId);
-        Assert.Equal("Alpha", payload.Quiz.Rounds[0].AnsweredForDisplayName);
+        Assert.Equal("quiz-001", payload.Quiz.QuestionSessions[0].QuestionCode);
+        Assert.Equal(80, payload.Quiz.QuestionSessions[0].Submissions.Sum(x => x.AwardedPoints));
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         Assert.Empty(payload.MainGame.ModifierActivations);
         Assert.Empty(payload.MainGame.Rounds);
         Assert.Empty(payload.Quiz.PlayerStats);
-        Assert.Empty(payload.Quiz.Rounds);
+        Assert.Empty(payload.Quiz.QuestionSessions);
     }
 
     [Fact]
@@ -613,11 +613,11 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
     private static async Task ClearHistoryTestDataAsync(ApplicationDbContext dbContext)
     {
         dbContext.GameQuizPointLedgerEntries.RemoveRange(dbContext.GameQuizPointLedgerEntries);
-        dbContext.GameQuizCorrectAnswers.RemoveRange(dbContext.GameQuizCorrectAnswers);
+        dbContext.GameQuizSubmissions.RemoveRange(dbContext.GameQuizSubmissions);
         dbContext.GameRoundModifierResults.RemoveRange(dbContext.GameRoundModifierResults);
         dbContext.GameRoundParticipants.RemoveRange(dbContext.GameRoundParticipants);
         dbContext.GameRounds.RemoveRange(dbContext.GameRounds);
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.GameEnabledQuestions.RemoveRange(dbContext.GameEnabledQuestions);
         dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
         dbContext.QuestionCategories.RemoveRange(dbContext.QuestionCategories);
@@ -656,10 +656,14 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         var roundTwoId = Guid.NewGuid();
         var activationId = Guid.NewGuid();
         var mediaAssetId = Guid.NewGuid();
-        var quizRoundOneId = Guid.NewGuid();
-        var quizRoundTwoId = Guid.NewGuid();
+        var quizQuestionSessionOneId = Guid.NewGuid();
+        var quizQuestionSessionTwoId = Guid.NewGuid();
         var correctAnswerOneId = Guid.NewGuid();
         var correctAnswerTwoId = Guid.NewGuid();
+        var correctOptionOneId = Guid.NewGuid();
+        var wrongOptionOneId = Guid.NewGuid();
+        var correctOptionTwoId = Guid.NewGuid();
+        var wrongOptionTwoId = Guid.NewGuid();
 
         dbContext.Users.AddRange(
             new User
@@ -818,15 +822,26 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 Priority = 1,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
-                AcceptedAnswers =
+                Options =
                 [
-                    new QuestionAcceptedAnswer
+                    new QuestionOption
                     {
-                        Id = Guid.NewGuid(),
-                        AnswerText = "Answer 1",
-                        NormalizedAnswer = "answer 1",
-                        IsPrimary = true,
+                        Id = correctOptionOneId,
+                        QuestionId = questionOneId,
+                        Text = "Answer 1",
+                        NormalizedText = "answer 1",
+                        IsCorrect = true,
                         SortOrder = 0,
+                        CreatedAtUtc = now
+                    },
+                    new QuestionOption
+                    {
+                        Id = wrongOptionOneId,
+                        QuestionId = questionOneId,
+                        Text = "Wrong 1",
+                        NormalizedText = "wrong 1",
+                        IsCorrect = false,
+                        SortOrder = 1,
                         CreatedAtUtc = now
                     }
                 ]
@@ -841,15 +856,26 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 Priority = 2,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
-                AcceptedAnswers =
+                Options =
                 [
-                    new QuestionAcceptedAnswer
+                    new QuestionOption
                     {
-                        Id = Guid.NewGuid(),
-                        AnswerText = "Answer 2",
-                        NormalizedAnswer = "answer 2",
-                        IsPrimary = true,
+                        Id = correctOptionTwoId,
+                        QuestionId = questionTwoId,
+                        Text = "Answer 2",
+                        NormalizedText = "answer 2",
+                        IsCorrect = true,
                         SortOrder = 0,
+                        CreatedAtUtc = now
+                    },
+                    new QuestionOption
+                    {
+                        Id = wrongOptionTwoId,
+                        QuestionId = questionTwoId,
+                        Text = "Wrong 2",
+                        NormalizedText = "wrong 2",
+                        IsCorrect = false,
+                        SortOrder = 1,
                         CreatedAtUtc = now
                     }
                 ]
@@ -956,10 +982,10 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
             }
         );
 
-        dbContext.GameQuizRounds.AddRange(
-            new GameQuizRound
+        dbContext.GameQuizQuestionSessions.AddRange(
+            new GameQuizQuestionSession
             {
-                Id = quizRoundOneId,
+                Id = quizQuestionSessionOneId,
                 GameId = gameId,
                 QuestionId = questionOneId,
                 AskOrder = 1,
@@ -967,19 +993,20 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 ClosesAtUtc = now.AddHours(-1.45),
                 ClosedAtUtc = now.AddHours(-1.5),
                 AskedByUserId = moderatorId,
-                Status = GameQuizRoundStatusValue.AnsweredCorrect,
+                Status = GameQuizQuestionSessionStatusValue.Closed,
                 QuestionRevisionSnapshot = 1,
                 QuestionCodeSnapshot = "quiz-001",
                 CategoryNameSnapshot = "quiz",
                 QuestionTextSnapshot = "First quiz question?",
-                AcceptedAnswersSnapshot = ["Answer 1"],
-                NormalizedAnswersSnapshot = ["answer 1"],
+                OptionIdsSnapshot = [correctOptionOneId, wrongOptionOneId],
+                OptionTextsSnapshot = ["Answer 1", "Wrong 1"],
+                CorrectOptionIdSnapshot = correctOptionOneId,
                 RewardSnapshot = 80,
                 DeliveryKind = "manual"
             },
-            new GameQuizRound
+            new GameQuizQuestionSession
             {
-                Id = quizRoundTwoId,
+                Id = quizQuestionSessionTwoId,
                 GameId = gameId,
                 QuestionId = questionTwoId,
                 AskOrder = 2,
@@ -987,48 +1014,53 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 ClosesAtUtc = now.AddHours(-1.35),
                 ClosedAtUtc = now.AddHours(-1.4),
                 AskedByUserId = moderatorId,
-                Status = GameQuizRoundStatusValue.AnsweredCorrect,
+                Status = GameQuizQuestionSessionStatusValue.Closed,
                 QuestionRevisionSnapshot = 1,
                 QuestionCodeSnapshot = "quiz-002",
                 CategoryNameSnapshot = "quiz",
                 QuestionTextSnapshot = "Second quiz question?",
-                AcceptedAnswersSnapshot = ["Answer 2"],
-                NormalizedAnswersSnapshot = ["answer 2"],
+                OptionIdsSnapshot = [correctOptionTwoId, wrongOptionTwoId],
+                OptionTextsSnapshot = ["Answer 2", "Wrong 2"],
+                CorrectOptionIdSnapshot = correctOptionTwoId,
                 RewardSnapshot = 20,
                 DeliveryKind = "manual"
             }
         );
 
-        dbContext.GameQuizCorrectAnswers.AddRange(
-            new GameQuizCorrectAnswer
+        dbContext.GameQuizSubmissions.AddRange(
+            new GameQuizSubmission
             {
                 Id = correctAnswerOneId,
                 GameId = gameId,
-                QuizRoundId = quizRoundOneId,
-                AwardedToUserId = alphaId,
+                QuestionSessionId = quizQuestionSessionOneId,
+                UserId = alphaId,
                 CapturedByUserId = moderatorId,
+                SelectedOptionId = correctOptionOneId,
+                SelectedOptionTextSnapshot = "Answer 1",
+                IsCorrect = true,
+                AwardedPoints = 80,
                 TwitchUserIdSnapshot = "alpha-user",
                 LoginSnapshot = "alpha",
                 DisplayNameSnapshot = "Alpha",
-                SubmittedAnswer = "Answer 1",
-                NormalizedAnswer = "answer 1",
                 SourceProvider = "manual",
-                AnsweredAtUtc = now.AddHours(-1.5)
+                SubmittedAtUtc = now.AddHours(-1.5)
             },
-            new GameQuizCorrectAnswer
+            new GameQuizSubmission
             {
                 Id = correctAnswerTwoId,
                 GameId = gameId,
-                QuizRoundId = quizRoundTwoId,
-                AwardedToUserId = bravoId,
+                QuestionSessionId = quizQuestionSessionTwoId,
+                UserId = bravoId,
                 CapturedByUserId = moderatorId,
+                SelectedOptionId = correctOptionTwoId,
+                SelectedOptionTextSnapshot = "Answer 2",
+                IsCorrect = true,
+                AwardedPoints = 20,
                 TwitchUserIdSnapshot = "bravo-user",
                 LoginSnapshot = "bravo",
                 DisplayNameSnapshot = "Bravo",
-                SubmittedAnswer = "Answer 2",
-                NormalizedAnswer = "answer 2",
                 SourceProvider = "manual",
-                AnsweredAtUtc = now.AddHours(-1.4)
+                SubmittedAtUtc = now.AddHours(-1.4)
             }
         );
 
@@ -1040,7 +1072,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 UserId = alphaId,
                 EntryType = GameQuizPointEntryTypeValue.QuizReward,
                 PointsDelta = 80,
-                CorrectAnswerId = correctAnswerOneId,
+                QuizSubmissionId = correctAnswerOneId,
                 AvailablePointsBefore = 0,
                 AvailablePointsAfter = 80,
                 OccurredAtUtc = now.AddHours(-1.5)
@@ -1052,7 +1084,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 UserId = bravoId,
                 EntryType = GameQuizPointEntryTypeValue.QuizReward,
                 PointsDelta = 20,
-                CorrectAnswerId = correctAnswerTwoId,
+                QuizSubmissionId = correctAnswerTwoId,
                 AvailablePointsBefore = 0,
                 AvailablePointsAfter = 20,
                 OccurredAtUtc = now.AddHours(-1.4)

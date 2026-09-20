@@ -7,6 +7,7 @@ import {
   manualGameQuizAwardPlayersQueryOptions,
 } from '../game-board/index.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../../shared/realtime/index.ts'
+import { gameQuizQueryKeys } from './api/game-quiz-queries.ts'
 
 const QUIZ_STATE_CHANGED_EVENT = realtimeHubs.gameBoard.events.quizStateChanged
 
@@ -17,6 +18,7 @@ export function GameQuizRealtimeSync() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey }),
       queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+      queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
       queryClient.invalidateQueries({
         queryKey: manualGameQuizAwardPlayersQueryOptions.queryKey,
       }),

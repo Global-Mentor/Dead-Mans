@@ -86,20 +86,20 @@ public sealed class GameQuizControllerTests
     }
 
     [Fact]
-    public async Task AnswerRound_WhenModeratorClaimMissingReturnsBadRequestWithoutCallingService()
+    public async Task SubmitAnswer_WhenUserClaimMissingReturnsBadRequestWithoutCallingService()
     {
         var service = new TrackingGameQuizService();
         var controller = CreateController(service);
 
-        var result = await controller.AnswerRound(
+        var result = await controller.SubmitAnswer(
             Guid.NewGuid(),
-            new ApiContracts.AnswerQuizRoundRequestDto("answer", "Viewer", null),
+            new ApiContracts.SubmitGameQuizAnswerRequestDto(Guid.NewGuid().ToString()),
             CancellationToken.None
         );
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
-        Assert.False(service.AnswerQuizRoundCalled);
+        Assert.False(service.SubmitQuizAnswerCalled);
     }
 
     private static GameQuizController CreateController(
@@ -127,20 +127,30 @@ public sealed class GameQuizControllerTests
     private sealed class TrackingGameQuizService : IGameQuizService
     {
         public bool AwardManualQuizPointsCalled { get; private set; }
-        public bool AnswerQuizRoundCalled { get; private set; }
+        public bool SubmitQuizAnswerCalled { get; private set; }
         public ManualQuizAwardInput? LastManualQuizAwardInput { get; private set; }
         public Guid? LastAwardedByUserId { get; private set; }
         public ManualQuizAwardResult ManualQuizAwardResult { get; init; } =
             new(ManualQuizAwardOutcome.InvalidPoints);
 
-        public Task<AskNextGameQuizQuestionResult> AskNextQuizQuestionAsync(GameQuizQuestionDelivery delivery, CancellationToken cancellationToken = default) =>
+        public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
+            CancellationToken cancellationToken = default
+        ) => throw new NotSupportedException();
+
+        public Task<AskGameQuizQuestionResult> AskQuizQuestionAsync(Guid? questionId, GameQuizQuestionDelivery delivery, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<AnswerGameQuizRoundResult> AnswerQuizRoundAsync(Guid roundId, SubmitGameQuizAnswerInput input, CancellationToken cancellationToken = default)
+        public Task<SubmitGameQuizAnswerResult> SubmitQuizAnswerAsync(Guid questionSessionId, SubmitGameQuizAnswerInput input, CancellationToken cancellationToken = default)
         {
-            AnswerQuizRoundCalled = true;
+            SubmitQuizAnswerCalled = true;
             throw new NotSupportedException();
         }
+
+        public Task<CurrentGameQuizState?> GetCurrentQuizStateAsync(Guid userId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<int> CloseExpiredQuizQuestionSessionsAsync(CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
 
         public Task<ManualQuizAwardResult> AwardManualQuizPointsAsync(ManualQuizAwardInput input, Guid awardedByUserId, CancellationToken cancellationToken = default)
         {

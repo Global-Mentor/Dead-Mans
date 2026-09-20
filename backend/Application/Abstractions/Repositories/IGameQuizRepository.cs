@@ -1,35 +1,57 @@
-using backend.Application.Contracts;
 using backend.Application.Abstractions;
+using backend.Application.Contracts;
 
 namespace backend.Application.Abstractions.Repositories;
 
 public enum SubmitQuizAnswerRepositoryOutcome
 {
-    Correct,
-    Incorrect,
-    RoundNotFound,
-    RoundNotPending,
+    Accepted,
+    Existing,
+    AlreadyAnswered,
+    QuestionSessionNotFound,
+    QuestionSessionClosed,
+    OptionNotFound,
     PlayerNotFound
 }
 
 public sealed record SubmitQuizAnswerRepositoryResult(
     SubmitQuizAnswerRepositoryOutcome Outcome,
-    GameQuizRoundSummary? Round = null
+    GameQuizSubmissionReceipt? Receipt = null,
+    Guid? ClosedGameId = null
+);
+
+public sealed record CloseExpiredQuizQuestionSessionsResult(
+    IReadOnlyList<Guid> ClosedGameIds,
+    int ClosedQuizQuestionCount
 );
 
 public interface IGameQuizRepository
 {
     Task<Guid?> GetActiveGameIdAsync(CancellationToken cancellationToken = default);
 
-    Task<AskedQuizQuestion?> AskNextQuizQuestionAsync(
+    Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
+        CancellationToken cancellationToken = default
+    );
+
+    Task<AskedQuizQuestion?> AskQuizQuestionAsync(
         Guid gameId,
+        Guid? questionId,
         GameQuizQuestionDelivery delivery,
         CancellationToken cancellationToken = default
     );
 
-    Task<SubmitQuizAnswerRepositoryResult> AnswerQuizRoundAsync(
-        Guid roundId,
+    Task<SubmitQuizAnswerRepositoryResult> SubmitQuizAnswerAsync(
+        Guid questionSessionId,
         SubmitGameQuizAnswerInput input,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<CurrentGameQuizState?> GetCurrentQuizStateAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<CloseExpiredQuizQuestionSessionsResult> CloseExpiredQuizQuestionSessionsAsync(
         CancellationToken cancellationToken = default
     );
 
@@ -40,11 +62,6 @@ public interface IGameQuizRepository
     );
 
     Task<IReadOnlyList<ManualQuizAwardPlayer>> GetManualQuizAwardPlayersAsync(
-        CancellationToken cancellationToken = default
-    );
-
-    Task<GameQuizRoundSummary?> GetQuizRoundAsync(
-        Guid roundId,
         CancellationToken cancellationToken = default
     );
 }

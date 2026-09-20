@@ -1,16 +1,24 @@
 namespace backend.Data.Entities;
 
-public sealed class GameQuizCorrectAnswer
+public class GameQuizSubmission
 {
     public Guid Id { get; set; }
 
     public Guid GameId { get; set; }
 
-    public Guid QuizRoundId { get; set; }
+    public Guid QuestionSessionId { get; set; }
 
-    public Guid AwardedToUserId { get; set; }
+    public Guid UserId { get; set; }
 
     public Guid? CapturedByUserId { get; set; }
+
+    public Guid SelectedOptionId { get; set; }
+
+    public string SelectedOptionTextSnapshot { get; set; } = string.Empty;
+
+    public bool IsCorrect { get; set; }
+
+    public int AwardedPoints { get; set; }
 
     public string TwitchUserIdSnapshot { get; set; } = string.Empty;
 
@@ -18,21 +26,17 @@ public sealed class GameQuizCorrectAnswer
 
     public string DisplayNameSnapshot { get; set; } = string.Empty;
 
-    public string SubmittedAnswer { get; set; } = string.Empty;
-
-    public string NormalizedAnswer { get; set; } = string.Empty;
-
     public string SourceProvider { get; set; } = string.Empty;
 
     public string? SourceChannelId { get; set; }
 
     public string? SourceMessageId { get; set; }
 
-    public DateTime AnsweredAtUtc { get; set; }
+    public DateTime SubmittedAtUtc { get; set; }
 
-    public GameQuizRound QuizRound { get; set; } = default!;
+    public GameQuizQuestionSession QuestionSession { get; set; } = default!;
 
-    public User AwardedToUser { get; set; } = default!;
+    public User User { get; set; } = default!;
 
     public User? CapturedByUser { get; set; }
 

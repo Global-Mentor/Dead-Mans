@@ -1580,7 +1580,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         dbContext.GameTeamMembers.RemoveRange(dbContext.GameTeamMembers);
         dbContext.GameTeams.RemoveRange(dbContext.GameTeams);
         dbContext.GameTeamSlots.RemoveRange(dbContext.GameTeamSlots);
-        dbContext.GameQuizRounds.RemoveRange(dbContext.GameQuizRounds);
+        dbContext.GameQuizQuestionSessions.RemoveRange(dbContext.GameQuizQuestionSessions);
         dbContext.GameEnabledQuestions.RemoveRange(dbContext.GameEnabledQuestions);
         dbContext.QuestionDefinitions.RemoveRange(dbContext.QuestionDefinitions);
         dbContext.QuestionCategories.RemoveRange(dbContext.QuestionCategories);

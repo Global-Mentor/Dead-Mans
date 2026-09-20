@@ -175,46 +175,47 @@ SET
   priority = EXCLUDED.priority,
   updated_at_utc = EXCLUDED.updated_at_utc;
 
-DELETE FROM question_accepted_answers AS accepted_answer
+DELETE FROM question_options AS question_option
 USING question_definitions AS question
-WHERE accepted_answer.question_id = question.id
+WHERE question_option.question_id = question.id
   AND question.external_code LIKE 'local-%';
 
-WITH answers(external_code, answer_text, normalized_answer) AS (
+WITH answers(external_code, choices) AS (
   VALUES
-    ('local-pz-001', 'Скрытность', 'скрытность'),
-    ('local-pz-002', 'Заражен', 'заражен'),
-    ('local-pz-003', 'Бинт', 'бинт'),
-    ('local-pz-004', 'Бензин', 'бензин'),
-    ('local-dm-001', '100 очков', '100 очков'),
-    ('local-dm-002', 'Жажда', 'жажда'),
-    ('local-dm-003', '150', '150'),
-    ('local-dm-004', 'Игра карточки', 'игра карточки'),
-    ('local-survival-001', 'Отдых', 'отдых'),
-    ('local-survival-002', 'Топор', 'топор'),
-    ('local-survival-003', 'Свет', 'свет'),
-    ('local-survival-004', 'Кастрюля', 'кастрюля')
+    ('local-pz-001', ARRAY['Скрытность', 'Сила', 'Кулинария', 'Механика']),
+    ('local-pz-002', ARRAY['Заражен', 'Утомлен', 'Сыт', 'Переохлажден']),
+    ('local-pz-003', ARRAY['Бинт', 'Молоток', 'Веревка', 'Батарейка']),
+    ('local-pz-004', ARRAY['Бензин', 'Вода', 'Уголь', 'Дрова']),
+    ('local-dm-001', ARRAY['100 очков', '10 очков', '50 очков', '200 очков']),
+    ('local-dm-002', ARRAY['Жажда', 'Туман', 'Тишина', 'Мороз']),
+    ('local-dm-003', ARRAY['150', '50', '100', '300']),
+    ('local-dm-004', ARRAY['Игра карточки', 'Выбор капитана', 'Публикация игры', 'Архив игры']),
+    ('local-survival-001', ARRAY['Отдых', 'Бензин', 'Металл', 'Патроны']),
+    ('local-survival-002', ARRAY['Топор', 'Ложка', 'Отвертка', 'Иголка']),
+    ('local-survival-003', ARRAY['Свет', 'Шум', 'Голод', 'Холод']),
+    ('local-survival-004', ARRAY['Кастрюля', 'Рюкзак', 'Книга', 'Фонарик'])
 )
-INSERT INTO question_accepted_answers (
+INSERT INTO question_options (
   id,
   question_id,
-  answer_text,
-  normalized_answer,
-  is_primary,
+  text,
+  normalized_text,
+  is_correct,
   sort_order,
   created_at_utc
 )
 SELECT
-  pg_temp.deadmans_seed_uuid('local-test-question-answer-' || answers.external_code),
+  pg_temp.deadmans_seed_uuid('local-test-question-option-' || answers.external_code || '-' || choice.ordinality),
   question.id,
-  answers.answer_text,
-  answers.normalized_answer,
-  true,
-  0,
+  choice.text,
+  lower(choice.text),
+  choice.ordinality = 1,
+  (choice.ordinality - 1)::integer,
   TIMESTAMPTZ '2026-08-07 00:00:00+00'
 FROM answers
 JOIN question_definitions AS question
-  ON question.external_code = answers.external_code;
+  ON question.external_code = answers.external_code
+CROSS JOIN LATERAL unnest(answers.choices) WITH ORDINALITY AS choice(text, ordinality);
 
 UPDATE games
 SET active_team_id = NULL
@@ -516,8 +517,9 @@ INSERT INTO game_enabled_questions (
   question_code_snapshot,
   category_name_snapshot,
   question_text_snapshot,
-  accepted_answers_snapshot,
-  normalized_answers_snapshot,
+  option_ids_snapshot,
+  option_texts_snapshot,
+  correct_option_id_snapshot,
   reward_snapshot,
   priority_snapshot,
   snapshot_at_utc
@@ -530,8 +532,9 @@ SELECT
   question.external_code::text,
   category.name::text,
   question.text,
-  answers.accepted,
-  answers.normalized,
+  answers.option_ids,
+  answers.option_texts,
+  answers.correct_option_id,
   question.reward,
   question.priority,
   TIMESTAMPTZ '2026-08-07 00:30:00+00'
@@ -540,9 +543,10 @@ JOIN question_categories AS category
   ON category.id = question.category_id
 JOIN LATERAL (
   SELECT
-    array_agg(answer.answer_text::text ORDER BY answer.is_primary DESC, answer.sort_order) AS accepted,
-    array_agg(answer.normalized_answer::text ORDER BY answer.is_primary DESC, answer.sort_order) AS normalized
-  FROM question_accepted_answers AS answer
+    array_agg(answer.id ORDER BY answer.sort_order) AS option_ids,
+    array_agg(answer.text::text ORDER BY answer.sort_order) AS option_texts,
+    (array_agg(answer.id) FILTER (WHERE answer.is_correct))[1] AS correct_option_id
+  FROM question_options AS answer
   WHERE answer.question_id = question.id
 ) AS answers ON true
 WHERE question.is_deleted = false

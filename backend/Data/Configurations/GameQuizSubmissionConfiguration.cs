@@ -5,32 +5,36 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace backend.Data.Configurations;
 
-public sealed class GameQuizCorrectAnswerConfiguration
-    : IEntityTypeConfiguration<GameQuizCorrectAnswer>
+public sealed class GameQuizSubmissionConfiguration
+    : IEntityTypeConfiguration<GameQuizSubmission>
 {
-    public void Configure(EntityTypeBuilder<GameQuizCorrectAnswer> builder)
+    public void Configure(EntityTypeBuilder<GameQuizSubmission> builder)
     {
         builder.ToTable(
-            "game_quiz_correct_answers",
+            "game_quiz_submissions",
             table =>
             {
                 table.HasCheckConstraint(
-                    "ck_game_quiz_correct_answers_identity_snapshots_not_blank",
+                    "ck_game_quiz_submissions_identity_snapshots_not_blank",
                     "length(trim(twitch_user_id_snapshot)) > 0 "
                     + "AND length(trim(login_snapshot)) > 0 "
                     + "AND length(trim(display_name_snapshot)) > 0"
                 );
                 table.HasCheckConstraint(
-                    "ck_game_quiz_correct_answers_answer_not_blank",
-                    "length(trim(submitted_answer)) > 0 AND length(trim(normalized_answer)) > 0"
+                    "ck_game_quiz_submissions_option_text_not_blank",
+                    "length(trim(selected_option_text_snapshot)) > 0"
                 );
                 table.HasCheckConstraint(
-                    "ck_game_quiz_correct_answers_source_allowed",
+                    "ck_game_quiz_submissions_award_semantics",
+                    "awarded_points >= 0 AND (is_correct = TRUE OR awarded_points = 0)"
+                );
+                table.HasCheckConstraint(
+                    "ck_game_quiz_submissions_source_allowed",
                     GameQuizAnswerSourceValue.CheckSqlAllowed
                 );
                 table.HasCheckConstraint(
-                    "ck_game_quiz_correct_answers_source_semantics",
-                    "(source_provider = 'manual' AND source_channel_id IS NULL "
+                    "ck_game_quiz_submissions_source_semantics",
+                    "(source_provider IN ('manual','web') AND source_channel_id IS NULL "
                     + "AND source_message_id IS NULL) OR "
                     + "(source_provider = 'twitch' AND source_channel_id IS NOT NULL "
                     + "AND source_message_id IS NOT NULL "
@@ -45,36 +49,33 @@ public sealed class GameQuizCorrectAnswerConfiguration
         builder.Property(x => x.TwitchUserIdSnapshot).HasMaxLength(64).IsRequired();
         builder.Property(x => x.LoginSnapshot).HasMaxLength(64).IsRequired();
         builder.Property(x => x.DisplayNameSnapshot).HasMaxLength(128).IsRequired();
-        builder.Property(x => x.SubmittedAnswer).HasMaxLength(500).IsRequired();
-        builder.Property(x => x.NormalizedAnswer).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.SelectedOptionTextSnapshot).HasMaxLength(500).IsRequired();
         builder.Property(x => x.SourceProvider).HasMaxLength(32).IsRequired();
         builder.Property(x => x.SourceChannelId).HasMaxLength(128);
         builder.Property(x => x.SourceMessageId).HasMaxLength(128);
-        builder.Property(x => x.AnsweredAtUtc).IsRequired();
+        builder.Property(x => x.SubmittedAtUtc).IsRequired();
 
-        builder.HasIndex(x => x.QuizRoundId).IsUnique();
-        builder
-            .HasIndex(x => new { x.GameId, x.AwardedToUserId, x.AnsweredAtUtc })
-            .HasDatabaseName("ix_quiz_answers_game_user_time");
+        builder.HasIndex(x => new { x.QuestionSessionId, x.UserId }).IsUnique();
+        builder.HasIndex(x => new { x.GameId, x.UserId, x.SubmittedAtUtc });
         builder
             .HasIndex(
                 x => new { x.SourceProvider, x.SourceChannelId, x.SourceMessageId },
-                "ux_game_quiz_correct_answers_source_message"
+                "ux_game_quiz_submissions_source_message"
             )
             .IsUnique()
             .HasFilter("source_channel_id IS NOT NULL AND source_message_id IS NOT NULL");
 
         builder
-            .HasOne(x => x.QuizRound)
-            .WithOne(x => x.CorrectAnswer)
-            .HasForeignKey<GameQuizCorrectAnswer>(x => new { x.GameId, x.QuizRoundId })
-            .HasPrincipalKey<GameQuizRound>(x => new { x.GameId, x.Id })
-            .HasConstraintName("fk_quiz_correct_answers_round_same_game")
+            .HasOne(x => x.QuestionSession)
+            .WithMany(x => x.Submissions)
+            .HasForeignKey(x => new { x.GameId, x.QuestionSessionId })
+            .HasPrincipalKey(x => new { x.GameId, x.Id })
+            .HasConstraintName("fk_quiz_submissions_question_session_same_game")
             .OnDelete(DeleteBehavior.Restrict);
         builder
-            .HasOne(x => x.AwardedToUser)
-            .WithMany(x => x.CorrectQuizAnswers)
-            .HasForeignKey(x => x.AwardedToUserId)
+            .HasOne(x => x.User)
+            .WithMany(x => x.QuizSubmissions)
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
         builder
             .HasOne(x => x.CapturedByUser)

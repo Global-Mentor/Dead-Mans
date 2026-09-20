@@ -41,11 +41,8 @@ function isWhiteSpace(character: string): boolean {
   return /\p{White_Space}/u.test(character)
 }
 
-export function getQuestionDisplayAnswers(question: {
-  answer: string
-  answers?: readonly string[] | null
-}): string[] {
-  const rawAnswers = question.answers?.length ? question.answers : [question.answer]
-  const trimmed = rawAnswers.map(trimQuestionAnswer).filter((answer) => answer.length > 0)
-  return trimmed.length > 0 ? trimmed : [question.answer]
+export function getQuestionDisplayOptions(question: {
+  options: readonly { text: string; isCorrect: boolean; sortOrder: number }[]
+}) {
+  return [...question.options].sort((left, right) => left.sortOrder - right.sortOrder)
 }

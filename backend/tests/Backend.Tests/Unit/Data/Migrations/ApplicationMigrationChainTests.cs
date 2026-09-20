@@ -27,7 +27,10 @@ public sealed class ApplicationMigrationChainTests
                 "20260911162438_AllowEquivalentQuestionAnswers",
                 "20260912162321_RemoveUnavailableDraftQuestions",
                 "20260913160212_LimitTeamNameLength",
-                "20260913191016_AddTeamMemberReadiness"
+                "20260913191016_AddTeamMemberReadiness",
+                "20260917140000_AllowAdminTeamManagement",
+                "20260919151237_ConvertQuizToMultipleChoice",
+                "20260919162829_RenameQuizRoundToQuestionSession"
             ],
             migrations
         );
@@ -69,7 +72,43 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("20260913191016_AddTeamMemberReadiness", script, StringComparison.Ordinal);
         Assert.Contains("ready_at_utc", script, StringComparison.Ordinal);
         Assert.Contains("ck_game_team_members_ready_semantics", script, StringComparison.Ordinal);
-        Assert.Contains("at least one accepted answer", script, StringComparison.Ordinal);
+        Assert.Contains("20260919151237_ConvertQuizToMultipleChoice", script, StringComparison.Ordinal);
+        Assert.Contains("20260919162829_RenameQuizRoundToQuestionSession", script, StringComparison.Ordinal);
+        Assert.Contains("game_quiz_submissions", script, StringComparison.Ordinal);
+        Assert.Contains("game_quiz_question_sessions", script, StringComparison.Ordinal);
+        Assert.Contains("question_session_id", script, StringComparison.Ordinal);
+        Assert.Contains("deadmans_assert_question_options", script, StringComparison.Ordinal);
+        Assert.Contains("Quiz rewards must match closed correct submissions exactly once", script, StringComparison.Ordinal);
         Assert.DoesNotContain("game_quiz_manual_awards", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenameQuizQuestionSessionMigration_PreservesExistingRows()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseNpgsql(
+                "Host=localhost;Database=deadmans_migration_script_test;Username=test;Password=test"
+            )
+            .Options;
+        using var dbContext = new ApplicationDbContext(options);
+        var migrator = dbContext.GetService<IMigrator>();
+
+        var script = migrator.GenerateScript(
+            "20260919151237_ConvertQuizToMultipleChoice",
+            "20260919162829_RenameQuizRoundToQuestionSession"
+        );
+
+        Assert.Contains(
+            "ALTER TABLE game_quiz_rounds RENAME TO game_quiz_question_sessions",
+            script,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "RENAME COLUMN quiz_round_id TO question_session_id",
+            script,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("DROP TABLE game_quiz_rounds", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("DROP TABLE game_quiz_question_sessions", script, StringComparison.Ordinal);
     }
 }

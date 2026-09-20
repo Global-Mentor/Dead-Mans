@@ -1,8 +1,7 @@
 using backend.Domain.Persistence;
-
 namespace backend.Data.Entities;
 
-public class GameQuizRound
+public class GameQuizQuestionSession
 {
     public Guid Id { get; set; }
 
@@ -20,7 +19,7 @@ public class GameQuizRound
 
     public Guid? AskedByUserId { get; set; }
 
-    public string Status { get; set; } = GameQuizRoundStatusValue.Asked;
+    public string Status { get; set; } = GameQuizQuestionSessionStatusValue.Open;
 
     public int QuestionRevisionSnapshot { get; set; }
 
@@ -30,9 +29,11 @@ public class GameQuizRound
 
     public string QuestionTextSnapshot { get; set; } = string.Empty;
 
-    public string[] AcceptedAnswersSnapshot { get; set; } = Array.Empty<string>();
+    public Guid[] OptionIdsSnapshot { get; set; } = Array.Empty<Guid>();
 
-    public string[] NormalizedAnswersSnapshot { get; set; } = Array.Empty<string>();
+    public string[] OptionTextsSnapshot { get; set; } = Array.Empty<string>();
+
+    public Guid CorrectOptionIdSnapshot { get; set; }
 
     public int RewardSnapshot { get; set; }
 
@@ -50,5 +51,6 @@ public class GameQuizRound
 
     public User? AskedByUser { get; set; }
 
-    public GameQuizCorrectAnswer? CorrectAnswer { get; set; }
+    public ICollection<GameQuizSubmission> Submissions { get; set; } =
+        new List<GameQuizSubmission>();
 }

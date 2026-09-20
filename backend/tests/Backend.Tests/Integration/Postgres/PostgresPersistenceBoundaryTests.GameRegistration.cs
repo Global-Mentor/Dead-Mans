@@ -25,7 +25,8 @@ public sealed partial class PostgresPersistenceBoundaryTests
         {
             await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
             var memberCount = await db.GameTeamMembers.CountAsync();
-            await db.Database.MigrateAsync();
+            // Keep this historical preservation test before the one-time quiz reset.
+            await db.GetService<IMigrator>().MigrateAsync("20260917140000_AllowAdminTeamManagement");
             Assert.Equal(memberCount, await db.GameTeamMembers.CountAsync());
             Assert.All(await db.GameTeamMembers.AsNoTracking().ToListAsync(), member => Assert.Null(member.ReadyAtUtc));
             var repository = new DbGameRegistrationPersistence(

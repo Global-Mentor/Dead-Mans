@@ -55,7 +55,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
         var publisher = new SignalRGameBoardEventsPublisher(hubContext);
         var payload = new GameQuizStateChangedEvent(
             Guid.NewGuid(),
-            GameQuizStateChangeKinds.QuestionAnswered,
+            GameQuizStateChangeKinds.QuestionClosed,
             DateTime.UtcNow
         );
 

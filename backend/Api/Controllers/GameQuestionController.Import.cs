@@ -118,7 +118,7 @@ public sealed partial class GameQuestionController
             }
 
             inputs.Add(
-                (question ?? new ImportGameQuestionRequestDto(null, null, null, null)).ToInput(
+                (question ?? new ImportGameQuestionRequestDto(null, null, null)).ToInput(
                     index + 1,
                     categoryId
                 )
@@ -150,11 +150,8 @@ public sealed partial class GameQuestionController
                 [
                     "{",
                     "  // Шаблон JSONC для массового импорта вопросов.",
-                    "  // Обязательные поля у вопроса: text, reward и хотя бы один ответ в answer или answers.",
-                    "  // Поле answers (необязательно): список равнозначных корректных ответов.",
-                    "  // Пустые элементы игнорируются. Нужен хотя бы один ответ.",
-                    "  // Не более 10 элементов, каждый до 500 символов после удаления пробелов по краям.",
-                    "  // Если после очистки answers пуст, используется поле answer.",
+                    "  // Обязательные поля: text, reward и options.",
+                    "  // В options должно быть от 2 до 10 уникальных вариантов и ровно один isCorrect: true.",
                     $"  // Если categoryId не указан, вопрос попадёт в категорию \"{QuestionCatalogDefaults.UncategorizedCategoryName}\".",
                     "  // Если isEnabled не указан, вопрос будет загружен выключенным.",
                     "  // Если priority не указан, будет использовано значение 0.",
@@ -165,10 +162,7 @@ public sealed partial class GameQuestionController
                     "  // Описание полей:",
                     "  // - categoryId: необязательный Guid категории. Список доступных Guid указан ниже.",
                     "  // - text: текст вопроса, который увидит ведущий или игрок.",
-                    "  // - answer: правильный ответ на вопрос.",
-                    "  // - answers: необязательный список равнозначных правильных ответов.",
-                    "  //   Если после очистки answers ещё есть значения, они все используются.",
-                    "  //   Если answers нет или он пустой, используется поле answer.",
+                    "  // - options: варианты ответа; у ровно одного варианта isCorrect должен быть true.",
                     "  // - reward: количество очков за правильный ответ.",
                     "  // - isEnabled: станет ли вопрос доступен для выбора в играх сразу после импорта.",
                     "  // - priority: относительный приоритет вопроса (0 - значение по умолчанию). Чем выше значение, тем выше шанс,",
@@ -184,11 +178,8 @@ public sealed partial class GameQuestionController
                 [
                     "{",
                     "  // JSONC template for bulk question import.",
-                    "  // Required fields: text, reward and at least one answer in answer or answers.",
-                    "  // Optional field \"answers\": list of equivalent correct answers.",
-                    "  // Empty items are ignored. At least one answer is required.",
-                    "  // At most 10 entries, each up to 500 characters after trimming.",
-                    "  // If answers is empty after cleanup, the answer field is used.",
+                    "  // Required fields: text, reward, and options.",
+                    "  // Options must contain 2-10 unique values and exactly one isCorrect: true.",
                     $"  // If categoryId is omitted, the question is assigned to \"{QuestionCatalogDefaults.UncategorizedCategoryName}\".",
                     "  // If isEnabled is omitted, the question is imported as disabled.",
                     "  // If priority is omitted, the default value is 0.",
@@ -199,10 +190,7 @@ public sealed partial class GameQuestionController
                     "  // Field guide:",
                     "  // - categoryId: optional category Guid. The available Guid values are listed below.",
                     "  // - text: question text shown to the host or players.",
-                    "  // - answer: the correct answer for the question.",
-                    "  // - answers: optional array of equivalent correct answers (for other languages or alternative wording).",
-                    "  //   If answers still has values after cleanup, all of them are used.",
-                    "  //   If answers is missing or only blank, the answer field is used.",
+                    "  // - options: answer choices; exactly one option must have isCorrect set to true.",
                     "  // - reward: points awarded for a correct answer.",
                     "  // - isEnabled: whether the question becomes selectable for games immediately after import.",
                     "  // - priority: relative question priority (0 is the default value). Higher values make the question more likely",
@@ -241,13 +229,8 @@ public sealed partial class GameQuestionController
         );
         lines.Add(
             useRussian
-                ? "      \"answer\": \"GlobalMentor\","
-                : "      \"answer\": \"GlobalMentor\","
-        );
-        lines.Add(
-            useRussian
-                ? "      \"answers\": [\"GlobalMentor\", \"Глобалментор\"],"
-                : "      \"answers\": [\"GlobalMentor\", \"Global mentor\"],"
+                ? "      \"options\": [{ \"text\": \"GlobalMentor\", \"isCorrect\": true }, { \"text\": \"DeadMan\", \"isCorrect\": false }],"
+                : "      \"options\": [{ \"text\": \"GlobalMentor\", \"isCorrect\": true }, { \"text\": \"DeadMan\", \"isCorrect\": false }],"
         );
         lines.Add(
             useRussian

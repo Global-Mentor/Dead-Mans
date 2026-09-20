@@ -1,16 +1,16 @@
 namespace backend.Data.Entities;
 
-public sealed class QuestionAcceptedAnswer
+public sealed class QuestionOption
 {
     public Guid Id { get; set; }
 
     public Guid QuestionId { get; set; }
 
-    public string AnswerText { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
 
-    public string NormalizedAnswer { get; set; } = string.Empty;
+    public string NormalizedText { get; set; } = string.Empty;
 
-    public bool IsPrimary { get; set; }
+    public bool IsCorrect { get; set; }
 
     public int SortOrder { get; set; }
 

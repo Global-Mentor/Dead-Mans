@@ -12,112 +12,42 @@ public sealed class GameQuestionValidatorTests
     [InlineData("\uFEFFParis\uFEFF", "\uFEFFparis\uFEFF")]
     [InlineData("ΟΣ", "οσ")]
     [InlineData("İ", "İ")]
-    public void AnswerNormalization_PreservesTheExistingUnicodeContract(string input, string expected)
+    public void OptionNormalization_PreservesTheExistingUnicodeContract(string input, string expected)
     {
         Assert.Equal(expected, QuestionAnswerNormalizer.Normalize(input));
     }
 
-    [Fact]
-    public void TryNormalizeCreate_RejectsOversizedDuplicatesBeforeNormalization()
+    [Theory]
+    [MemberData(nameof(InvalidOptions))]
+    public void TryNormalizeCreate_RejectsInvalidOptionSets(IReadOnlyList<GameQuestionOptionInput> options)
     {
-        var input = CreateInput("fallback", ["a b", "a" + new string(' ', 500) + "b"]);
-        Assert.False(GameQuestionValidator.TryNormalizeCreate(input, out _));
+        Assert.False(GameQuestionValidator.TryNormalizeCreate(CreateInput(options), out _));
     }
 
     [Fact]
-    public void TryNormalizeCreate_RejectsOversizedRawAnswerArrayEvenIfAllItemsAreDuplicates()
+    public void TryNormalizeCreate_TrimsAndPreservesOneCorrectOption()
     {
-        var input = CreateInput("fallback", Enumerable.Repeat("Paris", 11).ToArray());
-        Assert.False(GameQuestionValidator.TryNormalizeCreate(input, out _));
-    }
-
-    [Fact]
-    public void TryNormalizeCreate_RejectsMissingAnswersAndAcceptsNullImportItems()
-    {
-        Assert.False(GameQuestionValidator.TryNormalizeCreate(CreateInput("", ["", null!]), out _));
-        Assert.True(GameQuestionValidator.TryNormalizeCreate(CreateInput("", [null!, "Paris"]), out var normalized));
-        Assert.Equal(["Paris"], normalized.Answers);
-    }
-    [Fact]
-    public void TryNormalizeCreate_UsesAnswerWhenAnswersAreBlank()
-    {
-        var input = CreateInput(answer: "Paris", answers: ["", "  "]);
-
-        var accepted = GameQuestionValidator.TryNormalizeCreate(input, out var normalized);
+        var accepted = GameQuestionValidator.TryNormalizeCreate(
+            CreateInput([new("  Paris ", true), new(" London ", false)]),
+            out var normalized);
 
         Assert.True(accepted);
-        Assert.Equal("Paris", normalized.Answer);
-        Assert.Equal(["Paris"], normalized.Answers);
+        Assert.Equal(["Paris", "London"], normalized.Options.Select(x => x.Text));
+        Assert.Single(normalized.Options, x => x.IsCorrect);
     }
 
-    [Fact]
-    public void TryNormalizeCreate_UsesAnswersWhenPresentAndKeepsTheFirstAsLegacyAnswer()
+    public static TheoryData<IReadOnlyList<GameQuestionOptionInput>> InvalidOptions => new()
     {
-        var input = CreateInput(answer: "Paris", answers: ["  Париж ", "Paris"]);
+        Array.Empty<GameQuestionOptionInput>(),
+        new[] { new GameQuestionOptionInput("one", true), null!, new GameQuestionOptionInput("two", false) },
+        new[] { new GameQuestionOptionInput("only", true) },
+        Enumerable.Range(0, 11).Select(index => new GameQuestionOptionInput($"o{index}", index == 0)).ToArray(),
+        new[] { new GameQuestionOptionInput("", true), new GameQuestionOptionInput("valid", false) },
+        new[] { new GameQuestionOptionInput("Paris", true), new GameQuestionOptionInput(" paris ", false) },
+        new[] { new GameQuestionOptionInput("one", false), new GameQuestionOptionInput("two", false) },
+        new[] { new GameQuestionOptionInput("one", true), new GameQuestionOptionInput("two", true) }
+    };
 
-        var accepted = GameQuestionValidator.TryNormalizeCreate(input, out var normalized);
-
-        Assert.True(accepted);
-        Assert.Equal("Париж", normalized.Answer);
-        Assert.Equal(["Париж", "Paris"], normalized.Answers);
-    }
-
-    [Fact]
-    public void TryNormalizeCreate_DeduplicatesByNormalizedForm()
-    {
-        var input = CreateInput(answer: "Paris", answers: ["Paris", "  paris  ", "PARIS"]);
-
-        var accepted = GameQuestionValidator.TryNormalizeCreate(input, out var normalized);
-
-        Assert.True(accepted);
-        Assert.Equal(["Paris"], normalized.Answers);
-    }
-
-    [Fact]
-    public void TryNormalizeCreate_RejectsMoreThanTenAnswers()
-    {
-        var answers = Enumerable.Range(1, 11).Select(index => $"Answer {index}").ToArray();
-        var input = CreateInput(answer: answers[0], answers: answers);
-
-        var accepted = GameQuestionValidator.TryNormalizeCreate(input, out _);
-
-        Assert.False(accepted);
-    }
-
-    [Fact]
-    public void TryNormalizeUpdate_FallsBackToAnswerWhenAnswersNormalizeEmpty()
-    {
-        var input = new UpdateGameQuestionInput(
-            Guid.NewGuid(),
-            "Capital?",
-            "Warsaw",
-            [""],
-            5,
-            true,
-            0
-        );
-
-        var accepted = GameQuestionValidator.TryNormalizeUpdate(input, out var normalized);
-
-        Assert.True(accepted);
-        Assert.Equal("Warsaw", normalized.Answer);
-        Assert.Equal(["Warsaw"], normalized.Answers);
-    }
-
-    private static CreateGameQuestionInput CreateInput(
-        string answer,
-        IReadOnlyList<string> answers
-    )
-    {
-        return new CreateGameQuestionInput(
-            null,
-            Guid.NewGuid(),
-            "What is the capital?",
-            answer,
-            answers,
-            1,
-            true,
-            0
-        );
-    }
+    private static CreateGameQuestionInput CreateInput(IReadOnlyList<GameQuestionOptionInput> options) =>
+        new(null, Guid.NewGuid(), "What is the capital?", options, 1, true, 0);
 }

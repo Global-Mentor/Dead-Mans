@@ -1,4 +1,9 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Api.Contracts;
+
+public sealed record GameQuestionOptionDto(string OptionId, string Text, bool IsCorrect, int SortOrder);
+public sealed record GameQuestionOptionInputDto(string? Text, bool IsCorrect);
 
 public sealed record GameQuestionCatalogItemDto(
     string QuestionId,
@@ -6,44 +11,37 @@ public sealed record GameQuestionCatalogItemDto(
     string CategoryId,
     string CategoryName,
     string Text,
-    string Answer,
-    string[] Answers,
+    GameQuestionOptionDto[] Options,
     int Reward,
     int Priority,
     bool IsEnabled,
     int AskedTotalCount,
-    int CorrectTotalCount,
+    int SubmissionTotalCount,
+    int CorrectSubmissionTotalCount,
+    decimal CorrectPercentage,
     DateTime? LastAskedAtUtc
 );
 
-public sealed record GameQuestionCategoryItemDto(
-    string Id,
-    string Name,
-    int QuestionCount,
-    bool IsProtected
-);
-
+public sealed record GameQuestionCategoryItemDto(string Id, string Name, int QuestionCount, bool IsProtected);
 public sealed record SetGameQuestionEnabledRequestDto(bool IsEnabled);
-
 public sealed record SetGameQuestionCategoryEnabledRequestDto(bool IsEnabled);
 
+[method: JsonConstructor]
 public sealed record CreateGameQuestionRequestDto(
-    string CategoryId,
-    string Text,
-    string? Answer,
-    string[]? Answers,
+    string? ExternalCode,
+    string? CategoryId,
+    string? Text,
+    GameQuestionOptionInputDto[]? Options,
     int Reward,
-    string? ExternalCode = null,
-    bool IsEnabled = true,
-    int Priority = 0
+    bool IsEnabled,
+    int Priority
 );
 
 public sealed record CreateGameQuestionCategoryRequestDto(string Name);
 
 public sealed record ImportGameQuestionRequestDto(
     string? Text,
-    string? Answer,
-    string[]? Answers,
+    GameQuestionOptionInputDto[]? Options,
     int? Reward,
     string? CategoryId = null,
     string? ExternalCode = null,
@@ -53,8 +51,7 @@ public sealed record ImportGameQuestionRequestDto(
 
 public sealed record ImportGameQuestionSourceDto(
     string? Text,
-    string? Answer,
-    string[]? Answers,
+    GameQuestionOptionInputDto[]? Options,
     int? Reward,
     string? CategoryId,
     string? ExternalCode,
@@ -75,54 +72,75 @@ public sealed record ImportGameQuestionsResultDto(
     IReadOnlyList<ImportGameQuestionSkippedItemDto> SkippedQuestions
 );
 
+[method: JsonConstructor]
 public sealed record UpdateGameQuestionRequestDto(
-    string CategoryId,
-    string Text,
-    string? Answer,
-    string[]? Answers,
+    string? CategoryId,
+    string? Text,
+    GameQuestionOptionInputDto[]? Options,
     int Reward,
-    bool IsEnabled = true,
-    int Priority = 0
+    bool IsEnabled,
+    int Priority
+);
+
+public sealed record GameQuizOptionDto(string OptionId, string Text, int DisplayOrder);
+
+public sealed record AvailableGameQuizQuestionDto(
+    string QuestionId,
+    string QuestionCode,
+    string CategoryName,
+    string Text
 );
 
 public sealed record AskedQuizQuestionDto(
-    string RoundId,
+    string QuestionSessionId,
     string GameId,
     int AskOrder,
     string QuestionId,
     string QuestionCode,
     string CategoryName,
     string Text,
+    GameQuizOptionDto[] Options,
     int Reward,
     DateTime AskedAtUtc,
     DateTime ClosesAtUtc
 );
 
-public sealed record AnswerQuizRoundRequestDto(
-    string Answer,
-    string? AnsweredByDisplayName,
-    string? AnsweredForUserId
+public sealed record SubmitGameQuizAnswerRequestDto(string? OptionId);
+
+public sealed record GameQuizSubmissionReceiptDto(
+    string SubmissionId,
+    string QuestionSessionId,
+    string UserId,
+    string SelectedOptionId,
+    DateTime SubmittedAtUtc,
+    bool IsExisting
 );
 
-public sealed record GameQuizRoundSummaryDto(
-    string RoundId,
+public sealed record GameQuizOptionResultDto(string OptionId, int AnswerCount, decimal Percentage);
+
+public sealed record CurrentGameQuizStateDto(
+    string QuestionSessionId,
     string GameId,
     int AskOrder,
     string QuestionId,
-    string QuestionText,
+    string QuestionCode,
     string CategoryName,
-    int Reward,
+    string Text,
+    GameQuizOptionDto[] Options,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Reward,
     string Status,
     DateTime AskedAtUtc,
     DateTime ClosesAtUtc,
-    DateTime? AnsweredAtUtc,
-    string? AnsweredByDisplayName,
-    string? AnsweredByUserId,
-    string? AnsweredForUserId,
-    string? SubmittedAnswer,
-    bool? IsCorrect,
-    int? AwardedPoints
+    DateTime? ClosedAtUtc,
+    string? MySelectedOptionId,
+    DateTime? MySubmittedAtUtc,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CorrectOptionId,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? MyIsCorrect,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MyAwardedPoints,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? TotalSubmissions,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GameQuizOptionResultDto[]? OptionResults
 );
+
 
 public sealed record ManualQuizAwardRequestDto(
     string AwardedToUserId,
@@ -157,8 +175,4 @@ public sealed record ManualQuizAwardSummaryDto(
     DateTime AwardedAtUtc
 );
 
-public sealed record GameQuizStateChangedEventDto(
-    string GameId,
-    string ChangeKind,
-    DateTime OccurredAtUtc
-);
+public sealed record GameQuizStateChangedEventDto(string GameId, string ChangeKind, DateTime OccurredAtUtc);

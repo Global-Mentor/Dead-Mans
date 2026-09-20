@@ -185,7 +185,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
     }
 
     [Fact]
-    public async Task Migration_PreservesLegacyFinalizationButHidesUnplayedTeamsInHistory()
+    public async Task PreQuizMigration_PreservesLegacyFinalization()
     {
         await _database.ResetAsync();
         await using var db = _database.CreateDbContext();
@@ -213,12 +213,11 @@ public sealed partial class PostgresPersistenceBoundaryTests
                 }]
             });
             await db.SaveChangesAsync();
-            await db.Database.MigrateAsync();
-
-            var history = new DbGameHistoryRepository(db, Options.Create(new StorageOptions { PublicBaseUrl = "https://storage.test" }));
-            var details = await history.GetGameDetailsAsync(game.Id);
-            Assert.NotNull(details?.FinalResult);
-            Assert.Empty(details.FinalResult.Teams);
+            // Test the historical migration boundary, not the later explicitly
+            // destructive pre-release quiz conversion. The current history reader
+            // targets the new quiz schema and cannot read this intermediate schema.
+            await db.GetService<IMigrator>().MigrateAsync("20260917140000_AllowAdminTeamManagement");
+            Assert.Equal(game.Id, (await db.GameFinalizations.AsNoTracking().SingleAsync()).GameId);
             Assert.Equal(1, await db.GameTeamFinalResults.CountAsync());
             game.IsDeleted = true;
             game.DeletedAtUtc = DateTime.UtcNow;

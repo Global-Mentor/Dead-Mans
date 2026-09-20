@@ -197,14 +197,15 @@ public sealed partial class DbGameSetupRepository
                         ? question.CategoryDefinition.Name
                         : string.Empty,
                     question.Text,
-                    question.AcceptedAnswers
-                        .OrderBy(answer => answer.SortOrder)
-                        .Select(answer => answer.AnswerText)
+                    question.Options
+                        .OrderBy(option => option.SortOrder)
+                        .Select(option => option.Id)
                         .ToArray(),
-                    question.AcceptedAnswers
-                        .OrderBy(answer => answer.SortOrder)
-                        .Select(answer => answer.NormalizedAnswer)
+                    question.Options
+                        .OrderBy(option => option.SortOrder)
+                        .Select(option => option.Text)
                         .ToArray(),
+                    question.Options.Where(option => option.IsCorrect).Select(option => option.Id).Single(),
                     question.Reward,
                     question.Priority
                 ))
@@ -246,6 +247,7 @@ public sealed partial class DbGameSetupRepository
             }
 
             draftGame.Title = update.Title;
+            draftGame.QuizAnswerDurationSeconds = update.QuizAnswerDurationSeconds;
             board.Rows = rowCount;
             board.Cols = colCount;
             board.RowLabels = update.RowLabels.ToArray();
@@ -299,8 +301,9 @@ public sealed partial class DbGameSetupRepository
         enabledQuestion.QuestionCodeSnapshot = question.ExternalCode;
         enabledQuestion.CategoryNameSnapshot = question.CategoryName;
         enabledQuestion.QuestionTextSnapshot = question.Text;
-        enabledQuestion.AcceptedAnswersSnapshot = question.AcceptedAnswers;
-        enabledQuestion.NormalizedAnswersSnapshot = question.NormalizedAnswers;
+        enabledQuestion.OptionIdsSnapshot = question.OptionIds;
+        enabledQuestion.OptionTextsSnapshot = question.OptionTexts;
+        enabledQuestion.CorrectOptionIdSnapshot = question.CorrectOptionId;
         enabledQuestion.RewardSnapshot = question.Reward;
         enabledQuestion.PrioritySnapshot = question.Priority;
         enabledQuestion.SnapshotAtUtc = snapshotAtUtc;

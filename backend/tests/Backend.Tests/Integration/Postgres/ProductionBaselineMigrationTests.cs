@@ -10,7 +10,7 @@ using Npgsql;
 
 namespace Backend.Tests.Integration.Postgres;
 
-public sealed class ProductionBaselineMigrationTests
+public sealed partial class ProductionBaselineMigrationTests
 {
     private const string DefaultAdminConnectionString =
         "Host=localhost;Port=5432;Database=postgres;Username=deadmans;Password=deadmans_dev_password;SSL Mode=Disable";
@@ -286,7 +286,7 @@ public sealed class ProductionBaselineMigrationTests
     }
 
     [Fact]
-    public async Task CorrectQuizAnswer_RequiresMatchingActiveTwitchPrincipalSnapshot()
+    public async Task QuizSubmission_RequiresMatchingActiveTwitchPrincipalSnapshot()
     {
         await WithDatabaseAsync(async connectionString =>
         {
@@ -303,18 +303,21 @@ public sealed class ProductionBaselineMigrationTests
             };
             var question = CreateQuestion(category.Id, now);
             question.Reward = 0;
-            question.AcceptedAnswers.Add(
-                new QuestionAcceptedAnswer
+            var correctOptionId = Guid.NewGuid();
+            var wrongOptionId = Guid.NewGuid();
+            question.Options =
+            [
+                new QuestionOption
                 {
-                    Id = Guid.NewGuid(),
-                    QuestionId = question.Id,
-                    AnswerText = "Warsaw",
-                    NormalizedAnswer = "warsaw",
-                    IsPrimary = true,
-                    SortOrder = 0,
-                    CreatedAtUtc = now
+                    Id = correctOptionId, QuestionId = question.Id, Text = "Warsaw",
+                    NormalizedText = "warsaw", IsCorrect = true, SortOrder = 0, CreatedAtUtc = now
+                },
+                new QuestionOption
+                {
+                    Id = wrongOptionId, QuestionId = question.Id, Text = "Krakow",
+                    NormalizedText = "krakow", IsCorrect = false, SortOrder = 1, CreatedAtUtc = now
                 }
-            );
+            ];
 
             await using (var seedDb = CreateDbContext(connectionString))
             {
@@ -330,8 +333,9 @@ public sealed class ProductionBaselineMigrationTests
                         QuestionCodeSnapshot = question.ExternalCode,
                         CategoryNameSnapshot = category.Name,
                         QuestionTextSnapshot = question.Text,
-                        AcceptedAnswersSnapshot = ["Warsaw"],
-                        NormalizedAnswersSnapshot = ["warsaw"],
+                        OptionIdsSnapshot = [correctOptionId, wrongOptionId],
+                        OptionTextsSnapshot = ["Warsaw", "Krakow"],
+                        CorrectOptionIdSnapshot = correctOptionId,
                         RewardSnapshot = 0,
                         PrioritySnapshot = question.Priority,
                         SnapshotAtUtc = now
@@ -348,8 +352,8 @@ public sealed class ProductionBaselineMigrationTests
                 await seedDb.SaveChangesAsync();
             }
 
-            var answeredAt = now.AddSeconds(2);
-            var quizRound = new GameQuizRound
+            var submittedAt = now.AddSeconds(2);
+            var quizQuestionSession = new GameQuizQuestionSession
             {
                 Id = Guid.NewGuid(),
                 GameId = game.Id,
@@ -357,42 +361,44 @@ public sealed class ProductionBaselineMigrationTests
                 AskOrder = 1,
                 AskedAtUtc = now.AddSeconds(1),
                 ClosesAtUtc = now.AddSeconds(61),
-                ClosedAtUtc = answeredAt,
                 AskedByUserId = user.Id,
-                Status = GameQuizRoundStatusValue.AnsweredCorrect,
+                Status = GameQuizQuestionSessionStatusValue.Open,
                 QuestionRevisionSnapshot = question.Revision,
                 QuestionCodeSnapshot = question.ExternalCode,
                 CategoryNameSnapshot = category.Name,
                 QuestionTextSnapshot = question.Text,
-                AcceptedAnswersSnapshot = ["Warsaw"],
-                NormalizedAnswersSnapshot = ["warsaw"],
+                OptionIdsSnapshot = [correctOptionId, wrongOptionId],
+                OptionTextsSnapshot = ["Warsaw", "Krakow"],
+                CorrectOptionIdSnapshot = correctOptionId,
                 RewardSnapshot = 0,
                 DeliveryKind = GameQuizDeliveryKindValue.Manual
             };
-            var answer = new GameQuizCorrectAnswer
+            var submission = new GameQuizSubmission
             {
                 Id = Guid.NewGuid(),
                 GameId = game.Id,
-                QuizRoundId = quizRound.Id,
-                AwardedToUserId = user.Id,
+                QuestionSessionId = quizQuestionSession.Id,
+                UserId = user.Id,
                 CapturedByUserId = user.Id,
+                SelectedOptionId = correctOptionId,
+                SelectedOptionTextSnapshot = "Warsaw",
+                IsCorrect = true,
+                AwardedPoints = 0,
                 TwitchUserIdSnapshot = "wrong-twitch-subject",
                 LoginSnapshot = user.Login,
                 DisplayNameSnapshot = user.DisplayName,
-                SubmittedAnswer = "Warsaw",
-                NormalizedAnswer = "warsaw",
                 SourceProvider = GameQuizAnswerSourceValue.Manual,
-                AnsweredAtUtc = answeredAt
+                SubmittedAtUtc = submittedAt
             };
 
             await using var invalidDb = CreateDbContext(connectionString);
-            invalidDb.AddRange(quizRound, answer);
+            invalidDb.AddRange(quizQuestionSession, submission);
             var exception = await Assert.ThrowsAsync<DbUpdateException>(
                 () => invalidDb.SaveChangesAsync()
             );
             AssertCheckViolation(
                 exception,
-                "ck_game_quiz_correct_answers_principal_snapshot"
+                "ck_game_quiz_submissions_principal_snapshot"
             );
         });
     }
@@ -726,7 +732,7 @@ public sealed class ProductionBaselineMigrationTests
     }
 
     [Fact]
-    public async Task QuestionCatalog_RequiresAtLeastOneAcceptedAnswer()
+    public async Task QuestionCatalog_RequiresBetweenTwoAndTenOptions()
     {
         await WithDatabaseAsync(async connectionString =>
         {
@@ -741,18 +747,19 @@ public sealed class ProductionBaselineMigrationTests
             };
 
             var question = CreateQuestion(category.Id, now);
-            question.AcceptedAnswers.Add(
-                new QuestionAcceptedAnswer
+            question.Options =
+            [
+                new QuestionOption
                 {
-                    Id = Guid.NewGuid(),
-                    QuestionId = question.Id,
-                    AnswerText = "Варшава",
-                    NormalizedAnswer = "варшава",
-                    IsPrimary = true,
-                    SortOrder = 0,
-                    CreatedAtUtc = now
+                    Id = Guid.NewGuid(), QuestionId = question.Id, Text = "Варшава",
+                    NormalizedText = "варшава", IsCorrect = true, SortOrder = 0, CreatedAtUtc = now
+                },
+                new QuestionOption
+                {
+                    Id = Guid.NewGuid(), QuestionId = question.Id, Text = "Краков",
+                    NormalizedText = "краков", IsCorrect = false, SortOrder = 1, CreatedAtUtc = now
                 }
-            );
+            ];
             await using (var validDb = CreateDbContext(connectionString))
             {
                 validDb.QuestionCategories.Add(category);
@@ -761,22 +768,22 @@ public sealed class ProductionBaselineMigrationTests
             }
 
             await using var invalidDb = CreateDbContext(connectionString);
-            var onlyAnswer = await invalidDb.QuestionAcceptedAnswers.SingleAsync(
-                answer => answer.QuestionId == question.Id
+            var wrongOption = await invalidDb.QuestionOptions.SingleAsync(
+                option => option.QuestionId == question.Id && !option.IsCorrect
             );
-            invalidDb.QuestionAcceptedAnswers.Remove(onlyAnswer);
+            invalidDb.QuestionOptions.Remove(wrongOption);
             var exception = await Assert.ThrowsAnyAsync<Exception>(
                 () => invalidDb.SaveChangesAsync()
             );
             AssertCheckViolation(
                 exception,
-                "ck_question_accepted_answers_complete_set"
+                "ck_question_options_complete_set"
             );
         });
     }
 
     [Fact]
-    public async Task QuestionCatalog_AllowsEquivalentAnswersWithoutAPrimaryFlag()
+    public async Task QuestionCatalog_RequiresExactlyOneCorrectOption()
     {
         await WithDatabaseAsync(async connectionString =>
         {
@@ -791,26 +798,26 @@ public sealed class ProductionBaselineMigrationTests
             };
 
             var question = CreateQuestion(category.Id, now);
-            question.AcceptedAnswers.Add(
-                new QuestionAcceptedAnswer
+            question.Options.Add(
+                new QuestionOption
                 {
                     Id = Guid.NewGuid(),
                     QuestionId = question.Id,
-                    AnswerText = "Warsaw",
-                    NormalizedAnswer = "warsaw",
-                    IsPrimary = false,
+                    Text = "Warsaw",
+                    NormalizedText = "warsaw",
+                    IsCorrect = false,
                     SortOrder = 0,
                     CreatedAtUtc = now
                 }
             );
-            question.AcceptedAnswers.Add(
-                new QuestionAcceptedAnswer
+            question.Options.Add(
+                new QuestionOption
                 {
                     Id = Guid.NewGuid(),
                     QuestionId = question.Id,
-                    AnswerText = "Варшава",
-                    NormalizedAnswer = "варшава",
-                    IsPrimary = false,
+                    Text = "Варшава",
+                    NormalizedText = "варшава",
+                    IsCorrect = false,
                     SortOrder = 1,
                     CreatedAtUtc = now
                 }
@@ -819,16 +826,8 @@ public sealed class ProductionBaselineMigrationTests
             await using var db = CreateDbContext(connectionString);
             db.QuestionCategories.Add(category);
             db.QuestionDefinitions.Add(question);
-            await db.SaveChangesAsync();
-
-            var stored = await db.QuestionAcceptedAnswers
-                .AsNoTracking()
-                .Where(answer => answer.QuestionId == question.Id)
-                .OrderBy(answer => answer.SortOrder)
-                .ToArrayAsync();
-            Assert.Equal(["Warsaw", "Варшава"], stored.Select(answer => answer.AnswerText).ToArray());
-            Assert.False(stored[0].IsPrimary);
-            Assert.False(stored[1].IsPrimary);
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() => db.SaveChangesAsync());
+            AssertCheckViolation(exception, "ck_question_options_complete_set");
         });
     }
 
@@ -1092,74 +1091,36 @@ public sealed class ProductionBaselineMigrationTests
     }
 
     [Fact]
-    public async Task EquivalentAnswersMigration_PreservesExistingAnswersAndGuardsRollback()
+    public async Task MultipleChoiceMigration_ReplacesLegacyQuizSchema()
     {
         await WithDatabaseAsync(async connectionString =>
         {
-            const string previousMigration = "20260910171900_AllowAdminTeamDisband";
-            await using (var previousDb = CreateDbContext(connectionString))
-            {
-                await previousDb.GetService<IMigrator>().MigrateAsync(previousMigration);
-            }
-
-            var now = DateTime.UtcNow;
-            var category = new QuestionCategory
-            {
-                Id = Guid.NewGuid(),
-                Name = "Migration answers",
-                CreatedAtUtc = now,
-                UpdatedAtUtc = now
-            };
-            var question = CreateQuestion(category.Id, now);
-            var primaryId = Guid.NewGuid();
-            var alternativeId = Guid.NewGuid();
-            question.AcceptedAnswers =
-            [
-                new QuestionAcceptedAnswer
-                {
-                    Id = primaryId, QuestionId = question.Id, AnswerText = "Warsaw", NormalizedAnswer = "warsaw",
-                    IsPrimary = true, SortOrder = 0, CreatedAtUtc = now
-                },
-                new QuestionAcceptedAnswer
-                {
-                    Id = alternativeId, QuestionId = question.Id, AnswerText = "Варшава", NormalizedAnswer = "варшава",
-                    IsPrimary = false, SortOrder = 1, CreatedAtUtc = now
-                }
-            ];
-            await using (var seedDb = CreateDbContext(connectionString))
-            {
-                seedDb.AddRange(category, question);
-                await seedDb.SaveChangesAsync();
-            }
-
             await MigrateAsync(connectionString);
-            await using (var verifyDb = CreateDbContext(connectionString))
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                """
+                SELECT
+                    to_regclass('public.question_options') IS NOT NULL,
+                    to_regclass('public.game_quiz_submissions') IS NOT NULL,
+                    to_regclass('public.question_accepted_answers') IS NULL,
+                    to_regclass('public.game_quiz_correct_answers') IS NULL,
+                    EXISTS (
+                        SELECT 1 FROM pg_proc
+                        WHERE proname = 'deadmans_assert_question_options'
+                    ),
+                    EXISTS (
+                        SELECT 1 FROM pg_proc
+                        WHERE proname = 'deadmans_validate_quiz_submission_insert'
+                    );
+                """;
+            await using var reader = await command.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync());
+            for (var index = 0; index < 6; index++)
             {
-                var answers = await verifyDb.QuestionAcceptedAnswers.OrderBy(item => item.SortOrder).ToArrayAsync();
-                Assert.Equal([primaryId, alternativeId], answers.Select(item => item.Id).ToArray());
-                Assert.Equal(["Warsaw", "Варшава"], answers.Select(item => item.AnswerText).ToArray());
-                // Data compatible with the old rules can still round-trip without loss.
-                await verifyDb.GetService<IMigrator>().MigrateAsync(previousMigration);
+                Assert.True(reader.GetBoolean(index));
             }
-            await MigrateAsync(connectionString);
-
-            await using (var editDb = CreateDbContext(connectionString))
-            {
-                var primary = await editDb.QuestionAcceptedAnswers.SingleAsync(item => item.Id == primaryId);
-                primary.IsPrimary = false;
-                await editDb.SaveChangesAsync();
-            }
-
-            await using (var downDb = CreateDbContext(connectionString))
-            {
-                var exception = await Assert.ThrowsAnyAsync<Exception>(
-                    () => downDb.GetService<IMigrator>().MigrateAsync(previousMigration));
-                AssertSqlState(exception, "55000");
-            }
-            await using var finalDb = CreateDbContext(connectionString);
-            Assert.Contains("20260911162438_AllowEquivalentQuestionAnswers", await finalDb.Database.GetAppliedMigrationsAsync());
-            Assert.Equal(2, await finalDb.QuestionAcceptedAnswers.CountAsync());
-            Assert.False(await finalDb.QuestionAcceptedAnswers.AnyAsync(item => item.IsPrimary));
         });
     }
 

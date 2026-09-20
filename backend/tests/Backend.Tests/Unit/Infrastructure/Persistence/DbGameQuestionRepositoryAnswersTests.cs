@@ -9,7 +9,7 @@ namespace Backend.Tests.Unit.Infrastructure.Persistence;
 public sealed class DbGameQuestionRepositoryAnswersTests
 {
     [Fact]
-    public async Task CreateQuestionAsync_PersistsAllAcceptedAnswers()
+    public async Task CreateQuestionAsync_PersistsOptionsAndOneCorrectChoice()
     {
         var timestamp = new DateTimeOffset(2038, 7, 8, 9, 10, 11, TimeSpan.Zero);
         await using var dbContext = CreateDbContext();
@@ -21,8 +21,7 @@ public sealed class DbGameQuestionRepositoryAnswersTests
                 "q-multi",
                 category.Id,
                 "Capital?",
-                "Paris",
-                ["Paris", "Париж"],
+                [new("Paris", true), new("London", false)],
                 1,
                 true,
                 0
@@ -30,17 +29,17 @@ public sealed class DbGameQuestionRepositoryAnswersTests
         );
 
         Assert.NotNull(created);
-        Assert.Equal("Paris", created.Answer);
-        Assert.Equal(["Paris", "Париж"], created.Answers);
+        Assert.Equal("Paris", Assert.Single(created.Options, x => x.IsCorrect).Text);
+        Assert.Equal(["Paris", "London"], created.Options.Select(x => x.Text));
 
-        var stored = await dbContext.QuestionAcceptedAnswers
+        var stored = await dbContext.QuestionOptions
             .AsNoTracking()
             .Where(answer => answer.QuestionId == created.QuestionId)
             .OrderBy(answer => answer.SortOrder)
             .ToArrayAsync();
-        Assert.Equal(["Paris", "Париж"], stored.Select(answer => answer.AnswerText).ToArray());
-        Assert.True(stored[0].IsPrimary);
-        Assert.False(stored[1].IsPrimary);
+        Assert.Equal(["Paris", "London"], stored.Select(option => option.Text).ToArray());
+        Assert.True(stored[0].IsCorrect);
+        Assert.False(stored[1].IsCorrect);
     }
 
     private static async Task<QuestionCategory> SeedCategoryAsync(

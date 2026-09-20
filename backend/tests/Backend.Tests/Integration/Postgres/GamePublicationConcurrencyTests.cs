@@ -125,7 +125,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
             var catalog = new DbGameQuestionRepository(seedDb, TimeProvider.System);
             var category = await catalog.CreateCategoryAsync("Availability");
             var question = await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
-                "q-availability", category.Id, "Capital?", "Paris", ["Paris", "Париж"], 1, true, 0));
+                "q-availability", category.Id, "Capital?", [new("Paris", true), new("London", false)], 1, true, 0));
             Assert.NotNull(question);
             questionId = question.QuestionId;
             var saved = await Setup(seedDb).UpdateDraftSetupAsync(new GameSetupDraftUpdate(
@@ -231,13 +231,20 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
             var draft = await setup.CreateDraftSetupAsync("Legacy draft");
             Assert.NotNull(draft);
             legacyDraft = (await setup.UpdateDraftSetupAsync(SelectQuestion(draft, questionId))).Snapshot!;
-            await seedDb.GetService<IMigrator>().MigrateAsync("20260911162438_AllowEquivalentQuestionAnswers");
             // Model the pre-fix behavior, which left draft selections attached.
             await seedDb.Database.ExecuteSqlInterpolatedAsync($"UPDATE question_definitions SET is_enabled = false WHERE id = {questionId}");
         }
         await using (var migrateDb = database.CreateDbContext())
         {
-            await migrateDb.Database.MigrateAsync();
+            // Exercise this data migration on the current schema without crossing
+            // the intentionally destructive multiple-choice schema replacement.
+            var migration = new backend.Data.Migrations.RemoveUnavailableDraftQuestions();
+            var commands = migrateDb.GetService<IMigrationsSqlGenerator>()
+                .Generate(migration.UpOperations, migrateDb.Model);
+            foreach (var command in commands)
+            {
+                await migrateDb.Database.ExecuteSqlRawAsync(command.CommandText);
+            }
         }
         await using var verifyDb = database.CreateDbContext();
         var synchronizedDraft = await Setup(verifyDb).GetLatestDraftSetupSnapshotAsync();
@@ -256,7 +263,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         var catalog = new DbGameQuestionRepository(db, TimeProvider.System);
         var category = await catalog.CreateCategoryAsync("Availability");
         var question = await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
-            "q-availability", category.Id, "Capital?", "Paris", ["Paris"], 1, true, 0));
+            "q-availability", category.Id, "Capital?", [new("Paris", true), new("London", false)], 1, true, 0));
         Assert.NotNull(question);
         return question.QuestionId;
     }

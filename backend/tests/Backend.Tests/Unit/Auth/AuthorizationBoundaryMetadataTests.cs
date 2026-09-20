@@ -81,7 +81,17 @@ public sealed class AuthorizationBoundaryMetadataTests
         }
 
         AssertAllHttpActionsHaveRoles(typeof(GameQuestionController), AuthRoleCodes.Admin);
-        AssertAllHttpActionsHaveRoles(typeof(GameQuizController), AuthRoleCodes.ModeratorOrAdmin);
+        foreach (var action in new[]
+        {
+            nameof(GameQuizController.AskNextQuestion),
+            nameof(GameQuizController.AskQuestion),
+            nameof(GameQuizController.GetAvailableQuestions),
+            nameof(GameQuizController.GetManualAwardPlayers),
+            nameof(GameQuizController.AwardManualPoints)
+        })
+        {
+            AssertEffectiveRoles(typeof(GameQuizController), action, AuthRoleCodes.ModeratorOrAdmin);
+        }
 
         var moderatorOrAdminActions = new Dictionary<Type, string[]>
         {

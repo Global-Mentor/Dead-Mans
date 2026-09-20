@@ -106,10 +106,10 @@ public sealed partial class DbGameQuestionRepository
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
-        var acceptedAnswers = BuildAcceptedAnswers(entity.Id, input.Answers, now);
-        foreach (var acceptedAnswer in acceptedAnswers)
+        var options = BuildOptions(entity.Id, input.Options, now);
+        foreach (var option in options)
         {
-            entity.AcceptedAnswers.Add(acceptedAnswer);
+            entity.Options.Add(option);
         }
 
         _dbContext.QuestionDefinitions.Add(entity);
@@ -138,7 +138,7 @@ public sealed partial class DbGameQuestionRepository
         }
 
         var entity = await _dbContext.QuestionDefinitions
-            .Include(question => question.AcceptedAnswers)
+            .Include(question => question.Options)
             .FirstOrDefaultAsync(
             x => x.Id == questionId && !x.IsDeleted,
             cancellationToken
@@ -157,12 +157,12 @@ public sealed partial class DbGameQuestionRepository
         entity.Revision += 1;
         entity.UpdatedAtUtc = now;
 
-        var existingAnswers = entity.AcceptedAnswers.ToList();
-        var nextAnswers = BuildAcceptedAnswers(entity.Id, input.Answers, now);
-        _dbContext.QuestionAcceptedAnswers.RemoveRange(existingAnswers);
-        foreach (var answer in nextAnswers)
+        var existingOptions = entity.Options.ToList();
+        var nextOptions = BuildOptions(entity.Id, input.Options, now);
+        _dbContext.QuestionOptions.RemoveRange(existingOptions);
+        foreach (var option in nextOptions)
         {
-            entity.AcceptedAnswers.Add(answer);
+            entity.Options.Add(option);
         }
 
         if (!entity.IsEnabled)
@@ -179,20 +179,20 @@ public sealed partial class DbGameQuestionRepository
         return result;
     }
 
-    private static List<QuestionAcceptedAnswer> BuildAcceptedAnswers(
+    private static List<QuestionOption> BuildOptions(
         Guid questionId,
-        IReadOnlyList<string> answers,
+        IReadOnlyList<GameQuestionOptionInput> options,
         DateTime createdAt
     )
     {
-        return answers
-            .Select((answer, index) => new QuestionAcceptedAnswer
+        return options
+            .Select((option, index) => new QuestionOption
             {
                 Id = Guid.NewGuid(),
                 QuestionId = questionId,
-                AnswerText = answer,
-                NormalizedAnswer = QuestionAnswerNormalizer.Normalize(answer),
-                IsPrimary = index == 0,
+                Text = option.Text,
+                NormalizedText = QuestionAnswerNormalizer.Normalize(option.Text),
+                IsCorrect = option.IsCorrect,
                 SortOrder = index,
                 CreatedAtUtc = createdAt
             })

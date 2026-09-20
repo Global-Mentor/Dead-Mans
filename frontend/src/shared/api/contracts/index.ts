@@ -47,6 +47,10 @@ export type CreateGameQuestionRequest = components['schemas']['CreateGameQuestio
 export type CreateGameQuestionCategoryRequest =
   components['schemas']['CreateGameQuestionCategoryRequestDto']
 export type UpdateGameQuestionRequest = components['schemas']['UpdateGameQuestionRequestDto']
+export type CurrentGameQuizState = components['schemas']['CurrentGameQuizStateDto']
+export type AvailableGameQuizQuestion = components['schemas']['AvailableGameQuizQuestionDto']
+export type GameQuizSubmissionReceipt = components['schemas']['GameQuizSubmissionReceiptDto']
+export type AskedQuizQuestion = components['schemas']['AskedQuizQuestionDto']
 
 export type AuthRole = components['schemas']['AuthRole']
 export type AuthSession = components['schemas']['AuthSessionDto']

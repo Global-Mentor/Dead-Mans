@@ -39,10 +39,11 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .Select(x => new GamePlayerRow(x.Round.GameId, x.UserId))
             .ToArrayAsync(cancellationToken);
 
-        var quizPlayers = await _dbContext.GameQuizCorrectAnswers
+        var quizPlayers = await _dbContext.GameQuizSubmissions
             .AsNoTracking()
-            .Where(x => !x.QuizRound.Game!.IsDeleted)
-            .Select(x => new GamePlayerRow(x.GameId, x.AwardedToUserId))
+            .Where(x => !x.QuestionSession.Game!.IsDeleted
+                && x.QuestionSession.Status == GameQuizQuestionSessionStatusValue.Closed)
+            .Select(x => new GamePlayerRow(x.GameId, x.UserId))
             .ToArrayAsync(cancellationToken);
 
         var manualQuizPlayers = await _dbContext.GameQuizPointLedgerEntries
@@ -273,35 +274,24 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .ToArray();
     }
 
-    private static GameHistoryPlayerSummary[] BuildQuizPlayerStats(
-        IReadOnlyList<QuizRoundRow> quizRounds,
+    private static GameHistoryQuizPlayerSummary[] BuildQuizPlayerStats(
+        IReadOnlyList<LeaderboardQuizRow> quizSubmissions,
         IReadOnlyList<QuizManualAwardRow> manualAwards,
         IReadOnlyDictionary<Guid, string> userDisplayNames
     )
     {
         var summary = new Dictionary<Guid, PlayerStatsAccumulator>();
-        foreach (var round in quizRounds)
+        foreach (var submission in quizSubmissions)
         {
-            var creditedUserId = round.AnsweredForUserId ?? round.AnsweredByUserId;
-            if (!creditedUserId.HasValue)
-            {
-                continue;
-            }
-
             var row = GetOrCreatePlayerStatsEntry(
                 summary,
-                creditedUserId.Value,
-                round.AnsweredForUserId.HasValue
-                    ? ResolveDisplayName(null, userDisplayNames, creditedUserId.Value)
-                    : ResolveDisplayName(
-                        round.AnsweredByDisplayName,
-                        userDisplayNames,
-                        creditedUserId.Value
-                    )
+                submission.UserId,
+                ResolveDisplayName(submission.DisplayName, userDisplayNames, submission.UserId)
             );
-            row.Points += round.AwardedPoints ?? 0;
+            row.Points += submission.Points;
             row.EventCount += 1;
-            row.LastActivityAtUtc = Max(row.LastActivityAtUtc, round.AnsweredAtUtc ?? round.AskedAtUtc);
+            row.CorrectAnswerCount += submission.IsCorrect ? 1 : 0;
+            row.LastActivityAtUtc = Max(row.LastActivityAtUtc, submission.OccurredAtUtc);
         }
 
         foreach (var award in manualAwards)
@@ -312,23 +302,24 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                 ResolveDisplayName(award.AwardedToDisplayName, userDisplayNames, award.AwardedToUserId)
             );
             row.Points += award.Points;
-            row.EventCount += 1;
             row.LastActivityAtUtc = Max(row.LastActivityAtUtc, award.AwardedAtUtc);
         }
 
         return summary
             .Select(
                 x =>
-                    new GameHistoryPlayerSummary(
+                    new GameHistoryQuizPlayerSummary(
                         x.Key,
                         x.Value.DisplayName,
                         SaturatingInt32.From(x.Value.Points),
                         SaturatingInt32.From(x.Value.EventCount),
+                        SaturatingInt32.From(x.Value.CorrectAnswerCount),
                         x.Value.LastActivityAtUtc
                     )
             )
             .OrderByDescending(x => x.Points)
-            .ThenByDescending(x => x.EventCount)
+            .ThenByDescending(x => x.CorrectAnswers)
+            .ThenByDescending(x => x.Attempts)
             .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -346,7 +337,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             ResolveDisplayName(row.DisplayName, userDisplayNames, row.UserId)
         );
         entry.QuizPoints += row.Points;
-        entry.QuizRoundsAnswered += 1;
+        entry.QuizQuestionsAnswered += 1;
         entry.CorrectQuizAnswers += countAsCorrectAnswer ? 1 : 0;
         entry.GamesPlayed.Add(row.GameId);
         entry.LastActivityAtUtc = Max(entry.LastActivityAtUtc, row.OccurredAtUtc);

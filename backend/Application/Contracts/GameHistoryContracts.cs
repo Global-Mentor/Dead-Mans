@@ -8,7 +8,7 @@ public sealed record UserGameModifierActivationHistoryItem(
 );
 
 public sealed record UserGameQuestionAnswerHistoryItem(
-    Guid RoundId,
+    Guid QuestionSessionId,
     Guid QuestionId,
     string QuestionText,
     string CategoryName,
@@ -49,7 +49,7 @@ public sealed record GameHistoryLeaderboardEntry(
     int TotalPoints,
     int GamesPlayed,
     int MainGameRoundsPlayed,
-    int QuizRoundsAnswered,
+    int QuizQuestionsAnswered,
     int CorrectQuizAnswers,
     int ModifiersActivated,
     DateTime? LastActivityAtUtc
@@ -63,7 +63,7 @@ public sealed record GameHistoryGameSummary(
     DateTime? StartedAtUtc,
     DateTime? FinishedAtUtc,
     int MainGameRoundCount,
-    int QuizRoundCount,
+    int QuizQuestionCount,
     int UniquePlayerCount
 );
 
@@ -72,6 +72,15 @@ public sealed record GameHistoryPlayerSummary(
     string DisplayName,
     int Points,
     int EventCount,
+    DateTime? LastActivityAtUtc
+);
+
+public sealed record GameHistoryQuizPlayerSummary(
+    Guid UserId,
+    string DisplayName,
+    int Points,
+    int Attempts,
+    int CorrectAnswers,
     DateTime? LastActivityAtUtc
 );
 
@@ -189,8 +198,18 @@ public sealed record GameHistoryTeamLeaderboardEntry(
     DateTime LastFinishedAtUtc
 );
 
-public sealed record GameHistoryQuizRoundItem(
-    Guid RoundId,
+public sealed record GameHistoryQuizSubmissionItem(
+    Guid UserId,
+    string DisplayName,
+    Guid SelectedOptionId,
+    string SelectedOptionText,
+    bool IsCorrect,
+    int AwardedPoints,
+    DateTime SubmittedAtUtc
+);
+
+public sealed record GameHistoryQuizQuestionSessionItem(
+    Guid QuestionSessionId,
     Guid QuestionId,
     string QuestionCode,
     string QuestionText,
@@ -198,14 +217,10 @@ public sealed record GameHistoryQuizRoundItem(
     int Reward,
     string Status,
     DateTime AskedAtUtc,
-    DateTime? AnsweredAtUtc,
-    string? AnsweredByDisplayName,
-    Guid? AnsweredByUserId,
-    Guid? AnsweredForUserId,
-    string? AnsweredForDisplayName,
-    string? SubmittedAnswer,
-    bool? IsCorrect,
-    int? AwardedPoints
+    DateTime? ClosedAtUtc,
+    Guid? CorrectOptionId,
+    IReadOnlyList<GameQuizOption> Options,
+    IReadOnlyList<GameHistoryQuizSubmissionItem> Submissions
 );
 
 public sealed record GameHistoryQuizManualAwardItem(
@@ -229,8 +244,8 @@ public sealed record GameHistoryMainGameSection(
 
 public sealed record GameHistoryQuizSection(
     int TotalPoints,
-    IReadOnlyList<GameHistoryPlayerSummary> PlayerStats,
-    IReadOnlyList<GameHistoryQuizRoundItem> Rounds,
+    IReadOnlyList<GameHistoryQuizPlayerSummary> PlayerStats,
+    IReadOnlyList<GameHistoryQuizQuestionSessionItem> QuestionSessions,
     IReadOnlyList<GameHistoryQuizManualAwardItem> ManualAwards
 );
 

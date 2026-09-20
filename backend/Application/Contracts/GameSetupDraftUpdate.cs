@@ -9,5 +9,6 @@ public sealed record GameSetupDraftUpdate(
     IReadOnlyList<string> ColLabels,
     IReadOnlyList<GameSetupCellUpdate> Cells,
     IReadOnlyList<Guid> EnabledModifierIds,
-    IReadOnlyList<Guid> EnabledQuestionIds
+    IReadOnlyList<Guid> EnabledQuestionIds,
+    int QuizAnswerDurationSeconds = 60
 );
