@@ -16,6 +16,7 @@ interface GameSetupQuestionsSectionProps {
   onToggle: (questionId: string, enabled: boolean) => void
   onBulkSetEnabled: (questionIds: readonly string[], enabled: boolean) => void
   onDurationChange: (seconds: number) => void
+  onDurationCommit: () => void
   actions?: ReactNode
 }
 
@@ -24,6 +25,7 @@ export function GameSetupQuestionsSection({
   onToggle,
   onBulkSetEnabled,
   onDurationChange,
+  onDurationCommit,
   actions,
 }: GameSetupQuestionsSectionProps) {
   const { t } = useTranslation()
@@ -60,6 +62,7 @@ export function GameSetupQuestionsSection({
         slotProps={{ htmlInput: { min: 5, max: 3600 } }}
         sx={{ mt: 1.5, maxWidth: 320 }}
         onChange={(event) => onDurationChange(Number(event.target.value))}
+        onBlur={onDurationCommit}
       />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>

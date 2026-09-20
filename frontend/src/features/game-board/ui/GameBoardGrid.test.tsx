@@ -67,6 +67,41 @@ describe('GameBoardGrid', () => {
       '1',
       '2',
     ])
+    expect(screen.getByTitle('A').firstElementChild).toHaveStyle({ fontSize: '0.76rem' })
+  })
+
+  it('keeps long board labels readable within the adaptive header', () => {
+    renderWithAppProviders(
+      <GameBoardGrid
+        snapshot={{
+          ...snapshot,
+          rowLabels: ['Допустим дробовики'],
+          colLabels: ['Допустим дробовики', '2'],
+        }}
+        canOpenCells={false}
+        onCellRequestOpen={vi.fn()}
+        onCellPreviewMedia={vi.fn()}
+      />,
+    )
+
+    const columnHeader = screen.getByRole('columnheader', { name: 'Допустим дробовики' })
+    expect(columnHeader).toHaveStyle({
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+      height: '2.5rem',
+    })
+    expect(columnHeader.firstElementChild).toHaveStyle({
+      fontSize: 'clamp(0.65rem, 12cqw, 0.95rem)',
+    })
+
+    const rowLabel = screen
+      .getAllByText('Допустим дробовики')
+      .map((element) => element.closest('[data-board-row-label]'))
+      .find((element): element is HTMLElement => element instanceof HTMLElement)
+    expect(rowLabel?.firstElementChild).toHaveStyle({
+      fontSize: 'clamp(0.6rem, 22cqw, 0.76rem)',
+    })
+    expect(screen.getAllByText('Допустим дробовики')).toHaveLength(2)
   })
 
   it('renders preview media for an opened cell', () => {

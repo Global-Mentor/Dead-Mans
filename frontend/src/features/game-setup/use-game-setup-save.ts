@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorResponse, GameSetupSnapshot } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
@@ -11,12 +11,20 @@ import {
 } from './model/game-setup-draft-validation.ts'
 import {
   createLoadedDraftState,
+  getSnapshotDraftKey,
   loadGameSetupDraftQueryState,
 } from './model/game-setup-query-state.ts'
 import type { GameSetupDraftController } from './use-game-setup-draft.ts'
 
 export type GameSetupSyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict'
 export type GameSetupSaveErrorKey = GameSetupDraftValidationError | 'saveFailed'
+
+class SupersededGameSetupSaveError extends Error {}
+
+interface SaveDraftVariables {
+  draftToSave: GameSetupDraftState
+  generation: number
+}
 
 function isStaleVersionError(error: unknown): boolean {
   if (!(error instanceof ApiError) || error.status !== 409) {
@@ -51,38 +59,87 @@ export function useGameSetupSave({
 }: UseGameSetupSaveOptions) {
   const [syncStatus, setSyncStatus] = useState<GameSetupSyncStatus>('saved')
   const [saveErrorMessage, setSaveErrorMessage] = useState<GameSetupSaveErrorKey | null>(null)
+  const draftRef = useRef(draft)
+  const snapshotRef = useRef(snapshot)
+  const dirtyRef = useRef(isDirty)
+  const saveGenerationRef = useRef(0)
+
+  useEffect(() => {
+    draftRef.current = draft
+  }, [draft])
+
+  useEffect(() => {
+    if (!isDirty) {
+      snapshotRef.current = snapshot
+    }
+    dirtyRef.current = isDirty
+  }, [isDirty, snapshot])
 
   const handleSaveConflict = useCallback(async () => {
+    saveGenerationRef.current += 1
     const loaded = await loadGameSetupDraftQueryState()
+    snapshotRef.current = loaded.snapshot
+    draftRef.current = loaded.initialDraft
+    dirtyRef.current = false
     applyLoadedDraftState(loaded)
     setSyncStatus('conflict')
     setRemoteChangeNotice(true)
   }, [applyLoadedDraftState, setRemoteChangeNotice])
 
   const { mutateAsync: saveDraftAsync, isPending: isSaving } = useMutation({
-    mutationFn: async ({
-      draftToSave,
-      expectedVersion,
-    }: {
-      draftToSave: GameSetupDraftState
-      expectedVersion: number
-    }) => saveDraftGameSetup(buildUpdateGameSetupRequest(draftToSave, expectedVersion)),
-    onMutate: () => {
+    scope: { id: `game-setup-save:${snapshotDraftKey ?? 'none'}` },
+    mutationFn: async ({ draftToSave, generation }: SaveDraftVariables) => {
+      if (generation !== saveGenerationRef.current) {
+        throw new SupersededGameSetupSaveError()
+      }
+
+      const currentSnapshot = snapshotRef.current
+      if (!currentSnapshot) {
+        throw new Error('Cannot save a game setup draft without a server snapshot.')
+      }
+
+      return saveDraftGameSetup(buildUpdateGameSetupRequest(draftToSave, currentSnapshot.version))
+    },
+    onMutate: ({ generation }) => {
+      if (generation !== saveGenerationRef.current) {
+        return
+      }
       setSyncStatus('saving')
       setSaveErrorMessage(null)
     },
-    onSuccess: (nextSnapshot) => {
+    onSuccess: (nextSnapshot, { draftToSave, generation }) => {
+      if (generation !== saveGenerationRef.current) {
+        return
+      }
+
+      const hasNewerDraft = draftRef.current !== null && draftRef.current !== draftToSave
+      snapshotRef.current = nextSnapshot
       applyLoadedDraftState(createLoadedDraftState(nextSnapshot))
+      if (hasNewerDraft && draftRef.current) {
+        setDraftOverride({
+          key: getSnapshotDraftKey(nextSnapshot),
+          draft: draftRef.current,
+        })
+      }
+      dirtyRef.current = hasNewerDraft
       setSyncStatus('saved')
       setRemoteChangeNotice(false)
     },
-    onError: async (error) => {
+    onError: async (error, { generation }) => {
+      if (
+        generation !== saveGenerationRef.current ||
+        error instanceof SupersededGameSetupSaveError
+      ) {
+        return
+      }
+
       if (isStaleVersionError(error)) {
         await handleSaveConflict()
         return
       }
 
       if (error instanceof ApiError && error.status === 404) {
+        dirtyRef.current = false
         applyLoadedDraftState(createLoadedDraftState(null))
         setSyncStatus('idle')
         return
@@ -102,27 +159,10 @@ export function useGameSetupSave({
     },
   })
 
-  const saveDraft = useCallback(async () => {
-    if (!draft || !snapshot || !isDirty) {
-      return
-    }
-
-    const validationError = getGameSetupDraftValidationError(draft)
-    if (validationError) {
-      setSaveErrorMessage(validationError)
-      setSyncStatus('error')
-      return
-    }
-
-    await saveDraftAsync({
-      draftToSave: draft,
-      expectedVersion: snapshot.version,
-    })
-  }, [draft, isDirty, saveDraftAsync, snapshot])
-
-  const saveDraftWithLayout = useCallback(
-    async (nextDraft: GameSetupDraftState) => {
-      if (!snapshot) {
+  const saveDraft = useCallback(
+    async (draftToSave?: GameSetupDraftState) => {
+      const nextDraft = draftToSave ?? draftRef.current
+      if (!nextDraft || !snapshotRef.current || (!draftToSave && !dirtyRef.current)) {
         return
       }
 
@@ -135,10 +175,31 @@ export function useGameSetupSave({
 
       await saveDraftAsync({
         draftToSave: nextDraft,
-        expectedVersion: snapshot.version,
+        generation: saveGenerationRef.current,
       })
     },
-    [saveDraftAsync, snapshot],
+    [saveDraftAsync],
+  )
+
+  const saveDraftWithLayout = useCallback(
+    async (nextDraft: GameSetupDraftState) => {
+      if (!snapshotRef.current) {
+        return
+      }
+
+      const validationError = getGameSetupDraftValidationError(nextDraft)
+      if (validationError) {
+        setSaveErrorMessage(validationError)
+        setSyncStatus('error')
+        return
+      }
+
+      await saveDraftAsync({
+        draftToSave: nextDraft,
+        generation: saveGenerationRef.current,
+      })
+    },
+    [saveDraftAsync],
   )
 
   const flushDraftSave = useCallback(async () => {
@@ -152,11 +213,17 @@ export function useGameSetupSave({
 
     const previousDraft = draft
     const nextDraft = updater(draft)
+    draftRef.current = nextDraft
+    dirtyRef.current = true
     setDraftOverride({
       key: snapshotDraftKey,
       draft: nextDraft,
     })
     void saveDraftWithLayout(nextDraft).catch((error) => {
+      if (error instanceof SupersededGameSetupSaveError) {
+        return
+      }
+
       if (isStaleVersionError(error)) {
         return
       }
@@ -169,6 +236,8 @@ export function useGameSetupSave({
         key: snapshotDraftKey,
         draft: previousDraft,
       })
+      draftRef.current = previousDraft
+      dirtyRef.current = true
     })
   }
 
@@ -184,17 +253,25 @@ export function useGameSetupSave({
     return 'saved'
   }, [isDirty, syncStatus])
 
-  const handleDraftEdited = useCallback(() => {
+  const handleDraftEdited = useCallback((nextDraft?: GameSetupDraftState) => {
+    if (nextDraft) {
+      draftRef.current = nextDraft
+    }
+    dirtyRef.current = true
     setSaveErrorMessage(null)
     setSyncStatus((current) => (current === 'saved' ? 'idle' : current))
   }, [])
 
   const resetToSaved = useCallback(() => {
+    saveGenerationRef.current += 1
+    dirtyRef.current = false
     setSaveErrorMessage(null)
     setSyncStatus('saved')
   }, [])
 
   const resetToIdle = useCallback(() => {
+    saveGenerationRef.current += 1
+    dirtyRef.current = false
     setSaveErrorMessage(null)
     setSyncStatus('idle')
   }, [])

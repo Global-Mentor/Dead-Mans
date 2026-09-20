@@ -158,4 +158,124 @@ describe('useGameSetupSave', () => {
     expect(result.current.syncStatus).toBe('error')
     expect(result.current.saveErrorMessage).toBe('saveFailed')
   })
+
+  it('serializes rapid auto-saves and uses the version returned by the previous save', async () => {
+    let resolveFirstSave: ((value: GameSetupSnapshot) => void) | undefined
+    apiMocks.saveDraftGameSetup
+      .mockImplementationOnce(
+        () =>
+          new Promise<GameSetupSnapshot>((resolve) => {
+            resolveFirstSave = resolve
+          }),
+      )
+      .mockResolvedValueOnce({ ...snapshot, title: 'Second edit', version: 5 })
+    const { result, draft } = renderSaveHook()
+    const secondDraft = { ...draft, title: 'Second edit' }
+
+    let firstSave: Promise<void>
+    let secondSave: Promise<void>
+    act(() => {
+      firstSave = result.current.saveDraft(draft)
+      result.current.handleDraftEdited(secondDraft)
+      secondSave = result.current.saveDraft(secondDraft)
+    })
+
+    await waitFor(() => expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce())
+
+    await act(async () => {
+      resolveFirstSave?.({ ...snapshot, title: draft.title, version: 4 })
+      await firstSave!
+      await secondSave!
+    })
+
+    expect(apiMocks.saveDraftGameSetup).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ expectedVersion: 4, title: 'Second edit' }),
+    )
+  })
+
+  it('saves an edit committed before the dirty prop rerenders', async () => {
+    const initialDraft = createDraftFromSnapshot(snapshot)
+    const editedDraft = { ...initialDraft, title: 'Immediate blur edit' }
+    apiMocks.saveDraftGameSetup.mockResolvedValue({
+      ...snapshot,
+      title: editedDraft.title,
+      version: 4,
+    })
+    const hook = renderHook(
+      () =>
+        useGameSetupSave({
+          draft: initialDraft,
+          snapshot,
+          snapshotDraftKey: snapshot.gameId,
+          isDirty: false,
+          applyLoadedDraftState: vi.fn(),
+          setDraftOverride: vi.fn(),
+          setRemoteChangeNotice: vi.fn(),
+        }),
+      { wrapper: createQueryWrapper() },
+    )
+
+    act(() => hook.result.current.handleDraftEdited(editedDraft))
+    await act(async () => hook.result.current.saveDraft())
+
+    expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledWith(
+      expect.objectContaining({ title: editedDraft.title, expectedVersion: snapshot.version }),
+    )
+  })
+
+  it('discards queued saves after a version conflict', async () => {
+    const remoteSnapshot = { ...snapshot, title: 'Remote title', version: 4 }
+    apiMocks.saveDraftGameSetup.mockRejectedValueOnce(
+      new ApiError('Conflict', {
+        status: 409,
+        details: { code: API_ERROR_CODES.gameSetupStaleVersion },
+      }),
+    )
+    queryStateMocks.loadGameSetupDraftQueryState.mockResolvedValue(
+      createLoadedDraftState(remoteSnapshot),
+    )
+    const { result, draft } = renderSaveHook()
+    const queuedDraft = { ...draft, title: 'Queued local edit' }
+
+    await act(async () => {
+      const conflictingSave = result.current.saveDraft(draft)
+      result.current.handleDraftEdited(queuedDraft)
+      const queuedSave = result.current.saveDraft(queuedDraft)
+      await Promise.allSettled([conflictingSave, queuedSave])
+    })
+
+    expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce()
+    expect(result.current.syncStatus).toBe('conflict')
+  })
+
+  it('keeps the edited base version when a remote snapshot arrives before blur', async () => {
+    const draft = { ...createDraftFromSnapshot(snapshot), title: 'Local edit' }
+    apiMocks.saveDraftGameSetup.mockResolvedValue({ ...snapshot, title: draft.title, version: 4 })
+    const hook = renderHook(
+      ({ currentSnapshot }: { currentSnapshot: GameSetupSnapshot }) =>
+        useGameSetupSave({
+          draft,
+          snapshot: currentSnapshot,
+          snapshotDraftKey: currentSnapshot.gameId,
+          isDirty: true,
+          applyLoadedDraftState: vi.fn(),
+          setDraftOverride: vi.fn(),
+          setRemoteChangeNotice: vi.fn(),
+        }),
+      {
+        wrapper: createQueryWrapper(),
+        initialProps: { currentSnapshot: snapshot },
+      },
+    )
+
+    hook.rerender({ currentSnapshot: { ...snapshot, title: 'Remote edit', version: 4 } })
+    await act(async () => {
+      await hook.result.current.saveDraft()
+    })
+
+    expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedVersion: 3, title: 'Local edit' }),
+    )
+  })
 })

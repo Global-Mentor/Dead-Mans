@@ -14,13 +14,12 @@ export function AdminGameQuestionsPage() {
     isError,
     syncStatus,
     isDirty,
-    isSaving,
     saveErrorMessage,
     resetErrorMessage,
     cellMediaErrorKey,
     remoteChangeNotice,
     draftRemovedNotice,
-    saveDraft,
+    commitDraft,
     reloadFromServer,
     toggleQuestion,
     setQuestionsEnabled,
@@ -66,14 +65,8 @@ export function AdminGameQuestionsPage() {
         onToggle={toggleQuestion}
         onBulkSetEnabled={setQuestionsEnabled}
         onDurationChange={setQuizAnswerDuration}
-        actions={
-          <GameSetupSyncActions
-            syncStatus={syncStatus}
-            isDirty={isDirty}
-            isSaving={isSaving}
-            onSave={() => void saveDraft()}
-          />
-        }
+        onDurationCommit={commitDraft}
+        actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
 
       <GameSetupBoardNotices

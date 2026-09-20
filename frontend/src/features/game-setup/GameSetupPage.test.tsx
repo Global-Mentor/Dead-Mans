@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
@@ -10,6 +10,10 @@ const pageMocks = vi.hoisted(() => ({
 
 vi.mock('./use-game-setup-page.ts', () => ({
   useGameSetupPage: pageMocks.useGameSetupPage,
+}))
+
+vi.mock('./ui/GameSetupRegistrationPanel.tsx', () => ({
+  GameSetupRegistrationPanel: () => null,
 }))
 
 function createPageController(overrides: Record<string, unknown> = {}) {
@@ -25,8 +29,8 @@ function createPageController(overrides: Record<string, unknown> = {}) {
     saveErrorMessage: null,
     resetErrorMessage: null,
     updateDraft: vi.fn(),
+    commitDraft: vi.fn(),
     applyLayoutChange: vi.fn(),
-    saveDraft: vi.fn(),
     reloadFromServer: vi.fn(),
     createDraft: vi.fn(),
     deleteDraft: vi.fn(),
@@ -87,5 +91,57 @@ describe('GameSetupPage', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Создать игру' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('has no manual save button and commits text fields when they lose focus', () => {
+    const commitDraft = vi.fn()
+    const updateDraft = vi.fn()
+    pageMocks.useGameSetupPage.mockReturnValue(
+      createPageController({
+        snapshot: {
+          gameId: 'draft-1',
+          title: 'Draft',
+          status: 'draft',
+          version: 1,
+          rows: 1,
+          cols: 1,
+          rowLabels: ['100'],
+          colLabels: ['A'],
+          cells: [],
+          enabledModifierIds: [],
+          enabledQuestionIds: [],
+          quizAnswerDurationSeconds: 60,
+        },
+        draft: {
+          title: 'Draft',
+          rowLabels: ['100'],
+          colLabels: ['A'],
+          cells: [],
+          enabledModifierIds: [],
+          enabledQuestionIds: [],
+          quizAnswerDurationSeconds: 60,
+        },
+        updateDraft,
+        commitDraft,
+      }),
+    )
+
+    renderWithAppProviders(<GameSetupPage />)
+
+    expect(screen.queryByRole('button', { name: 'Сохранить изменения' })).not.toBeInTheDocument()
+    const titleInput = screen.getByRole('textbox', { name: 'Название игры' })
+    fireEvent.change(titleInput, { target: { value: 'Новое название' } })
+    expect(updateDraft).toHaveBeenCalledOnce()
+    expect(commitDraft).not.toHaveBeenCalled()
+
+    fireEvent.blur(titleInput)
+    expect(commitDraft).toHaveBeenCalledOnce()
+
+    const columnLabel = screen.getByRole('textbox', { name: 'Подпись колонки 1' })
+    const rowLabel = screen.getByRole('textbox', { name: 'Подпись строки 1' })
+    expect(columnLabel.tagName).toBe('TEXTAREA')
+    expect(rowLabel.tagName).toBe('TEXTAREA')
+    expect(columnLabel).toHaveAttribute('maxlength', '24')
+    expect(rowLabel).toHaveAttribute('maxlength', '24')
   })
 })

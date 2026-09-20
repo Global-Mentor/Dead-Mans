@@ -25,8 +25,8 @@ export function GameSetupPage() {
     saveErrorMessage,
     resetErrorMessage,
     updateDraft,
+    commitDraft,
     applyLayoutChange,
-    saveDraft,
     reloadFromServer,
     createDraft,
     deleteDraft,
@@ -79,6 +79,7 @@ export function GameSetupPage() {
         <GameSetupSettingsSidebar
           draft={draft}
           onDraftChange={updateDraft}
+          onDraftCommit={commitDraft}
           onLayoutChange={applyLayoutChange}
           isResetting={isResetting}
           onReset={deleteDraft}
@@ -108,14 +109,7 @@ export function GameSetupPage() {
             headingLevel="h1"
             title={t('gameSetup.boardTitle')}
             description={t('gameSetup.boardDescription')}
-            actions={
-              <GameSetupSyncActions
-                syncStatus={syncStatus}
-                isDirty={isDirty}
-                isSaving={isSaving}
-                onSave={() => void saveDraft()}
-              />
-            }
+            actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
           />
 
           <Alert severity="info" sx={{ mt: 2 }}>
@@ -137,6 +131,7 @@ export function GameSetupPage() {
               snapshot={snapshot}
               draft={draft}
               onDraftChange={updateDraft}
+              onDraftCommit={commitDraft}
               cellMediaDisplayByCellId={cellMediaDisplayByCellId}
               isCellMediaBusy={isCellMediaBusy}
               onUploadCellMedia={(cellId, file) => void uploadCellMedia(cellId, file)}

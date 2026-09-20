@@ -6,7 +6,7 @@
 
 - Twitch auth
 - game board с чтением снимка, admin-only открытием ячеек и realtime-синхронизацией
-- game setup: один общий admin-черновик в БД, Save + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset через hard-delete только для `draft` (исключение из soft-delete политики), realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
+- game setup: один общий admin-черновик в БД, автосохранение текстовых полей по blur и остальных действий сразу + optimistic concurrency (`expectedVersion` / `409`), cell image upload/delete, draft reset через hard-delete только для `draft` (исключение из soft-delete политики), realtime через SignalR (контракт в OpenAPI `x-signalr`, см. `docs/architecture/realtime.md`)
 - game finalization: admin-only preview + atomic immutable snapshot, documented in [`game-lifecycle.md`](game-lifecycle.md)
 - game modifiers: глобальный каталог, выбор `enabledModifierIds` в draft setup,
   round-scoped покупки игрока и admin proxy activation только в
@@ -88,7 +88,7 @@ flowchart LR
 
 - `features/auth/` - Twitch login, callback, session restore
 - `features/game-board/` - экран игрового поля, open-cell flow и realtime sync
-- `features/game-setup/` - настройка черновика игры, cell media, Save/layout flow, realtime sync
+- `features/game-setup/` - настройка черновика игры, cell media, autosave/layout flow, realtime sync
 - `features/game-modifiers/` - shared feature API каталога модификаторов для game setup
 - `features/game-registration/` - единый typed API-модуль регистрации команд (используют `game-application` и `team-registrations`)
 - `features/game-application/` - страница заявки игрока

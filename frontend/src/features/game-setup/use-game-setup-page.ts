@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { GameSetupDraftState } from './model/game-setup-draft.ts'
 import { useGameSetupCellMedia } from './use-game-setup-cell-media.ts'
 import { useGameSetupDraft } from './use-game-setup-draft.ts'
@@ -5,6 +6,11 @@ import { useGameSetupSave } from './use-game-setup-save.ts'
 
 export function useGameSetupPage() {
   const draft = useGameSetupDraft()
+  const currentDraftRef = useRef(draft.draft)
+  useEffect(() => {
+    currentDraftRef.current = draft.draft
+  }, [draft.draft])
+
   const save = useGameSetupSave({
     draft: draft.draft,
     snapshot: draft.snapshot,
@@ -19,8 +25,32 @@ export function useGameSetupPage() {
   })
 
   const updateDraft = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
-    draft.updateDraft(updater)
-    save.handleDraftEdited()
+    const currentDraft = currentDraftRef.current
+    if (!currentDraft) {
+      return
+    }
+
+    const nextDraft = updater(currentDraft)
+    currentDraftRef.current = nextDraft
+    draft.updateDraft(() => nextDraft)
+    save.handleDraftEdited(nextDraft)
+  }
+
+  const updateDraftAndSave = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
+    const currentDraft = currentDraftRef.current
+    if (!currentDraft) {
+      return
+    }
+
+    const nextDraft = updater(currentDraft)
+    currentDraftRef.current = nextDraft
+    draft.updateDraft(() => nextDraft)
+    save.handleDraftEdited(nextDraft)
+    void save.saveDraft(nextDraft).catch(() => undefined)
+  }
+
+  const commitDraft = () => {
+    void save.saveDraft().catch(() => undefined)
   }
 
   const createDraft: typeof draft.createDraft = async (variables, options) => {
@@ -40,7 +70,7 @@ export function useGameSetupPage() {
   }
 
   const toggleModifier = (modifierId: string, enabled: boolean) => {
-    updateDraft((current) => {
+    updateDraftAndSave((current) => {
       const currentIds = current.enabledModifierIds
       const nextIds = enabled
         ? currentIds.includes(modifierId)
@@ -56,7 +86,7 @@ export function useGameSetupPage() {
   }
 
   const toggleQuestion = (questionId: string, enabled: boolean) => {
-    updateDraft((current) => {
+    updateDraftAndSave((current) => {
       const currentIds = current.enabledQuestionIds
       const nextIds = enabled
         ? currentIds.includes(questionId)
@@ -72,7 +102,7 @@ export function useGameSetupPage() {
   }
 
   const setQuestionsEnabled = (questionIds: readonly string[], enabled: boolean) => {
-    updateDraft((current) => {
+    updateDraftAndSave((current) => {
       if (enabled) {
         const merged = new Set([...current.enabledQuestionIds, ...questionIds])
         return { ...current, enabledQuestionIds: [...merged] }
@@ -105,8 +135,8 @@ export function useGameSetupPage() {
     saveErrorMessage: save.saveErrorMessage,
     resetErrorMessage: draft.resetErrorMessage,
     updateDraft,
+    commitDraft,
     applyLayoutChange: save.applyLayoutChange,
-    saveDraft: save.saveDraft,
     reloadFromServer,
     createDraft,
     deleteDraft,

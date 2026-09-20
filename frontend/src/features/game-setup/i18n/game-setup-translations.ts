@@ -21,7 +21,8 @@ const translations = {
         busy: 'Wait for saving and image uploads to finish.',
         remoteChanges:
           'Another administrator changed the draft. Reload and review it before publishing.',
-        unsaved: 'Save your changes before opening registration.',
+        unsaved:
+          'Finish editing the active field and wait for auto-save before opening registration.',
       },
       errors: {
         stale: 'The draft changed after you reviewed it. Reload and review the latest version.',
@@ -66,10 +67,8 @@ const translations = {
       },
     },
     cellPriceLabel: 'Card value',
-    save: 'Save changes',
-    saving: 'Saving...',
     persistenceHint:
-      'All admins share one draft in the database. Edit fields locally, then click Save. Row and column changes save when you confirm them in the layout dialog. Images upload to storage immediately. Other admins see updates in real time via SignalR.',
+      'All admins share one draft in the database. Text fields save when they lose focus. Selections and layout changes save immediately. Images upload to storage immediately. Other admins see updates in real time via SignalR.',
     modifiers: {
       title: 'Available modifiers for this game',
       description:
@@ -108,19 +107,19 @@ const translations = {
       conflict: 'Reloaded after conflict',
     },
     invalidTitle: 'Game title must be between 1 and 200 characters.',
-    invalidRowLabel: 'Each row label must be between 1 and 100 characters.',
-    invalidColumnLabel: 'Each column label must be between 1 and 100 characters.',
+    invalidRowLabel: 'Each row label must be between 1 and 24 characters.',
+    invalidColumnLabel: 'Each column label must be between 1 and 24 characters.',
     invalidCellTitle: 'Card titles must be at most 200 characters.',
     saveFailed: 'Failed to save game setup. Please try again.',
     resetFailed: 'Failed to reset game setup. Please try again.',
     boardTitle: 'Game board',
     boardDescription:
-      'Row and column labels are titles only and do not set card values. Set each card value separately, then click Save.',
+      'Row and column labels are titles only and do not set card values. New labels can contain up to 24 characters and wrap onto multiple lines. Text fields save when you leave them.',
     settingsSidebar: {
       overline: 'Setup',
       title: 'Game settings',
       description:
-        'Game name and board size. Edit fields locally, then click Save. Images upload to storage immediately.',
+        'Game name and board size. Text fields save when they lose focus; layout changes and images save immediately.',
       boardSizeLabel: 'Current size',
       boardSizeValue: '{{rows}} rows × {{columns}} columns',
       manageLayout: 'Rows and columns…',
@@ -201,7 +200,8 @@ const translations = {
         busy: 'Дождитесь завершения сохранения и загрузки изображений.',
         remoteChanges:
           'Другой администратор изменил черновик. Загрузите и проверьте актуальную версию.',
-        unsaved: 'Сохраните изменения перед открытием регистрации.',
+        unsaved:
+          'Завершите редактирование активного поля и дождитесь автосохранения перед открытием регистрации.',
       },
       errors: {
         stale: 'Черновик изменился после проверки. Загрузите и проверьте актуальную версию.',
@@ -247,10 +247,8 @@ const translations = {
       },
     },
     cellPriceLabel: 'Стоимость карточки',
-    save: 'Сохранить изменения',
-    saving: 'Сохранение...',
     persistenceHint:
-      'Все администраторы работают с одним черновиком в базе. Правьте поля локально и нажимайте «Сохранить». Строки и колонки сохраняются после подтверждения в диалоге. Изображения сразу уходят в storage. Изменения других админов приходят по SignalR в реальном времени.',
+      'Все администраторы работают с одним черновиком в базе. Текстовые поля сохраняются после потери фокуса, а выборы и изменения размера поля — сразу. Изображения сразу уходят в storage. Изменения других админов приходят по SignalR в реальном времени.',
     modifiers: {
       title: 'Доступные модификаторы для этой игры',
       description:
@@ -289,19 +287,19 @@ const translations = {
       conflict: 'Обновлено после конфликта',
     },
     invalidTitle: 'Название игры должно быть длиной от 1 до 200 символов.',
-    invalidRowLabel: 'Каждая метка строки должна быть от 1 до 100 символов.',
-    invalidColumnLabel: 'Каждая метка колонки должна быть от 1 до 100 символов.',
+    invalidRowLabel: 'Каждая метка строки должна быть от 1 до 24 символов.',
+    invalidColumnLabel: 'Каждая метка колонки должна быть от 1 до 24 символов.',
     invalidCellTitle: 'Название карточки — не более 200 символов.',
     saveFailed: 'Не удалось сохранить настройку игры. Попробуйте ещё раз.',
     resetFailed: 'Не удалось сбросить настройку игры. Попробуйте ещё раз.',
     boardTitle: 'Игровая таблица',
     boardDescription:
-      'Подписи строк и колонок — только заголовки и не задают стоимость. Укажите стоимость каждой карточки отдельно, затем нажмите «Сохранить».',
+      'Подписи строк и колонок — только заголовки и не задают стоимость. Новая подпись может содержать до 24 символов и переносится на несколько строк. Текстовые поля сохраняются после выхода из них.',
     settingsSidebar: {
       overline: 'Настройка',
       title: 'Настройки игры',
       description:
-        'Название и размер таблицы. Правьте поля локально и нажимайте «Сохранить». Изображения — сразу в storage.',
+        'Название и размер таблицы. Текстовые поля сохраняются после потери фокуса, а размер и изображения — сразу.',
       boardSizeLabel: 'Текущий размер',
       boardSizeValue: '{{rows}} строк × {{columns}} колонок',
       manageLayout: 'Строки и колонки…',
@@ -381,7 +379,8 @@ const translations = {
         busy: 'Дочекайтеся завершення збереження й завантаження зображень.',
         remoteChanges:
           'Інший адміністратор змінив чернетку. Завантажте й перевірте актуальну версію.',
-        unsaved: 'Збережіть зміни перед відкриттям реєстрації.',
+        unsaved:
+          'Завершіть редагування активного поля й дочекайтеся автозбереження перед відкриттям реєстрації.',
       },
       errors: {
         stale: 'Чернетка змінилася після перевірки. Завантажте й перевірте актуальну версію.',
@@ -427,10 +426,8 @@ const translations = {
       },
     },
     cellPriceLabel: 'Вартість картки',
-    save: 'Зберегти зміни',
-    saving: 'Збереження...',
     persistenceHint:
-      'Усі адміністратори працюють з однією чернеткою в базі. Редагуйте поля локально і натисніть «Зберегти». Рядки та колонки зберігаються після підтвердження в діалозі. Зображення одразу в storage. Зміни інших адмінів надходять через SignalR.',
+      'Усі адміністратори працюють з однією чернеткою в базі. Текстові поля зберігаються після втрати фокуса, а вибір і зміни розміру поля — одразу. Зображення одразу потрапляють у storage. Зміни інших адмінів надходять через SignalR.',
     modifiers: {
       title: 'Доступні модифікатори для цієї гри',
       description:
@@ -470,19 +467,19 @@ const translations = {
       conflict: 'Оновлено після конфлікту',
     },
     invalidTitle: 'Назва гри має бути довжиною від 1 до 200 символів.',
-    invalidRowLabel: 'Кожна мітка рядка має бути від 1 до 100 символів.',
-    invalidColumnLabel: 'Кожна мітка колонки має бути від 1 до 100 символів.',
+    invalidRowLabel: 'Кожна мітка рядка має бути від 1 до 24 символів.',
+    invalidColumnLabel: 'Кожна мітка колонки має бути від 1 до 24 символів.',
     invalidCellTitle: 'Назва картки — не більше 200 символів.',
     saveFailed: 'Не вдалося зберегти налаштування гри. Спробуйте ще раз.',
     resetFailed: 'Не вдалося скинути налаштування гри. Спробуйте ще раз.',
     boardTitle: 'Ігрова таблиця',
     boardDescription:
-      'Підписи рядків і колонок — лише заголовки й не задають вартість. Укажіть вартість кожної картки окремо, потім натисніть «Зберегти».',
+      'Підписи рядків і колонок — лише заголовки й не задають вартість. Новий підпис може містити до 24 символів і переноситься на кілька рядків. Текстові поля зберігаються після виходу з них.',
     settingsSidebar: {
       overline: 'Налаштування',
       title: 'Налаштування гри',
       description:
-        'Назва та розмір таблиці. Правте поля локально й натискайте «Зберегти». Зображення — одразу в storage.',
+        'Назва та розмір таблиці. Текстові поля зберігаються після втрати фокуса, а розмір і зображення — одразу.',
       boardSizeLabel: 'Поточний розмір',
       boardSizeValue: '{{rows}} рядків × {{columns}} колонок',
       manageLayout: 'Рядки та колонки…',
@@ -561,7 +558,7 @@ const translations = {
         currentGame: 'Zapisy lub gra już trwają. Zakończ ją przed publikacją tego szkicu.',
         busy: 'Poczekaj na zakończenie zapisu i przesyłania obrazów.',
         remoteChanges: 'Inny administrator zmienił szkic. Wczytaj i sprawdź aktualną wersję.',
-        unsaved: 'Zapisz zmiany przed otwarciem zapisów.',
+        unsaved: 'Zakończ edycję aktywnego pola i poczekaj na autozapis przed otwarciem zapisów.',
       },
       errors: {
         stale: 'Szkic zmienił się po sprawdzeniu. Wczytaj i sprawdź aktualną wersję.',
@@ -607,10 +604,8 @@ const translations = {
       },
     },
     cellPriceLabel: 'Wartość karty',
-    save: 'Zapisz zmiany',
-    saving: 'Zapisywanie...',
     persistenceHint:
-      'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Edytuj pola lokalnie i kliknij Zapisz. Wiersze i kolumny zapisują się po potwierdzeniu w oknie układu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
+      'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Pola tekstowe zapisują się po utracie fokusu, a wybory i zmiany rozmiaru planszy — od razu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
     modifiers: {
       title: 'Dostępne modyfikatory dla tej gry',
       description:
@@ -650,19 +645,19 @@ const translations = {
       conflict: 'Odświeżono po konflikcie',
     },
     invalidTitle: 'Nazwa gry musi mieć od 1 do 200 znaków.',
-    invalidRowLabel: 'Każda etykieta wiersza musi mieć od 1 do 100 znaków.',
-    invalidColumnLabel: 'Każda etykieta kolumny musi mieć od 1 do 100 znaków.',
+    invalidRowLabel: 'Każda etykieta wiersza musi mieć od 1 do 24 znaków.',
+    invalidColumnLabel: 'Każda etykieta kolumny musi mieć od 1 do 24 znaków.',
     invalidCellTitle: 'Nazwa karty może mieć maksymalnie 200 znaków.',
     saveFailed: 'Nie udało się zapisać konfiguracji gry. Spróbuj ponownie.',
     resetFailed: 'Nie udało się zresetować konfiguracji gry. Spróbuj ponownie.',
     boardTitle: 'Plansza gry',
     boardDescription:
-      'Etykiety wierszy i kolumn są tylko nagłówkami i nie określają wartości. Ustaw wartość każdej karty osobno, potem kliknij Zapisz.',
+      'Etykiety wierszy i kolumn są tylko nagłówkami i nie określają wartości. Nowa etykieta może mieć do 24 znaków i zawija się na kilka wierszy. Pola tekstowe zapisują się po ich opuszczeniu.',
     settingsSidebar: {
       overline: 'Konfiguracja',
       title: 'Ustawienia gry',
       description:
-        'Nazwa i rozmiar planszy. Edytuj pola lokalnie, potem kliknij Zapisz. Obrazy — od razu w storage.',
+        'Nazwa i rozmiar planszy. Pola tekstowe zapisują się po utracie fokusu, a rozmiar i obrazy — od razu.',
       boardSizeLabel: 'Aktualny rozmiar',
       boardSizeValue: '{{rows}} wierszy × {{columns}} kolumn',
       manageLayout: 'Wiersze i kolumny…',
