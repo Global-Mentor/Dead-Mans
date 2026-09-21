@@ -128,8 +128,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameQuizRepository, DbGameQuizRepository>();
         services.AddSingleton<TwitchEventSubHealth>();
         services.AddSingleton<TwitchApplicationTokenCache>();
-        services.AddScoped<ITwitchQuizIntegrationService, TwitchQuizIntegrationService>();
-        services.AddHttpClient<TwitchQuizApiClient>(client =>
+        services.AddScoped<ITwitchBotService, TwitchBotService>();
+        services.AddHttpClient<TwitchBotApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(20);
             client.MaxResponseContentBufferSize = 1024 * 1024;
@@ -161,7 +161,7 @@ public static class ServiceCollectionExtensions
         if (!environment.IsEnvironment("Testing"))
         {
             services.AddHostedService<GameQuizDeadlineWorker>();
-            services.AddHostedService<TwitchQuizWorker>();
+            services.AddHostedService<TwitchBotWorker>();
         }
 
         return services;

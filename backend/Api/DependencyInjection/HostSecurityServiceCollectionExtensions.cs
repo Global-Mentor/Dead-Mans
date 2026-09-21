@@ -93,10 +93,11 @@ public static class HostSecurityServiceCollectionExtensions
             )
             .ValidateOnStart();
         services
-            .AddOptions<TwitchQuizOptions>()
-            .Bind(configuration.GetSection(TwitchQuizOptions.SectionName))
-            .Validate(options => options.IsComplete(), "TwitchQuiz configuration is incomplete while the module is enabled.")
-            .Validate(options => !requiresHttpsExternalUrls || options.UsesHttpsExternalUrls(), "TwitchQuiz external URLs must use HTTPS outside Development and Testing.")
+            .AddOptions<TwitchBotOptions>()
+            .Bind(configuration.GetSection(TwitchBotOptions.LegacySectionName))
+            .Bind(configuration.GetSection(TwitchBotOptions.SectionName))
+            .Validate(options => options.IsComplete(), "TwitchBot configuration is incomplete while the module is enabled.")
+            .Validate(options => !requiresHttpsExternalUrls || options.UsesHttpsExternalUrls(), "TwitchBot external URLs must use HTTPS outside Development and Testing.")
             .ValidateOnStart();
 
         return services;

@@ -21,11 +21,11 @@ import {
   availableGameQuizQuestionsQueryOptions,
   currentGameQuizQueryOptions,
   gameQuizQueryKeys,
-  twitchQuizIntegrationQueryOptions,
+  twitchBotStatusQueryOptions,
 } from './api/game-quiz-queries.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
-import { TwitchQuizIntegrationPanel } from './TwitchQuizIntegrationPanel.tsx'
+import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 
 type QuizQuestionSession = components['schemas']['GameHistoryQuizQuestionSessionItemDto']
 type ManualAward = components['schemas']['GameHistoryQuizManualAwardItemDto']
@@ -70,7 +70,7 @@ export function GameQuizPage() {
   const canAdminTwitch =
     user?.roles.some((role) => role === 'admin' || role === 'superadmin') ?? false
   const twitchStatusQuery = useQuery({
-    ...twitchQuizIntegrationQueryOptions,
+    ...twitchBotStatusQueryOptions,
     enabled: canManageQuiz,
     refetchInterval: (query) => {
       const status = query.state.data
@@ -148,7 +148,7 @@ export function GameQuizPage() {
   )
   const isEmpty = !isLoading && !isError && snapshot == null
   const twitchPanel = twitchStatusQuery.data ? (
-    <TwitchQuizIntegrationPanel
+    <TwitchBotPanel
       status={twitchStatusQuery.data}
       canAdmin={canAdminTwitch}
       busy={publicationMutation.isPending}

@@ -1,10 +1,10 @@
 import { Alert, Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import type { TwitchQuizIntegrationStatus } from '../../shared/api/contracts/index.ts'
+import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
 import { AppButton, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
 
 type Props = {
-  status: TwitchQuizIntegrationStatus
+  status: TwitchBotStatus
   canAdmin: boolean
   busy: boolean
   onRetry: () => void
@@ -12,7 +12,7 @@ type Props = {
   onSkipOutcome: () => void
 }
 
-export function TwitchQuizIntegrationPanel({
+export function TwitchBotPanel({
   status,
   canAdmin,
   busy,

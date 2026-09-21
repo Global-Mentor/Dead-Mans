@@ -1,25 +1,40 @@
-# Twitch quiz bot
+# Twitch Bot
 
-The module is disabled by default and does not reuse Streamer.bot credentials. It uses a dedicated Twitch application Client ID/secret, a bot user grant, and a channel-owner grant. Site sign-in remains `openid` only.
+Twitch Bot is the application's shared Twitch integration. The quiz is its first feature; future chat commands and notifications can use the same bot, channel connection and API client. No separate application or container is needed for each feature.
 
-Use one dedicated Twitch Developer Application for the quiz bot in both local and production environments. Register both OAuth redirect URLs on that application: `http://localhost:5285/api/integrations/twitch/oauth/callback` and the production HTTPS equivalent. Keep the existing site-login Twitch application separate. The EventSub webhook URL is not registered in the Developer Console; the backend supplies the environment-specific callback when creating the subscription.
+The bot is disabled by default and does not reuse Streamer.bot credentials. It uses a dedicated Twitch application Client ID/secret, a bot user grant, and a channel-owner grant. Site sign-in remains `openid` only.
+
+Use one dedicated Twitch Developer Application for the bot in both local and production environments. Register both OAuth redirect URLs on that application: `http://localhost:5285/api/integrations/twitch/oauth/callback` and the production HTTPS equivalent. Keep the existing site-login Twitch application separate. The EventSub webhook URL is not registered in the Developer Console; the backend supplies the environment-specific callback when creating the subscription.
 
 ## Configuration
+
+The canonical configuration section is `TwitchBot` (`TwitchBot__*` environment variables).
+Existing `TwitchQuiz` settings remain a compatibility fallback; explicitly supplied
+`TwitchBot` values take precedence per setting, including `Enabled=false` and empty
+values. The shipped base/development settings deliberately contain neither section:
+defaults come from `TwitchBotOptions`, so they cannot mask existing local secrets or
+production variables. New installations should use only `TwitchBot`.
+
+The existing OAuth routes, database table names and Data Protection purposes are
+unchanged. Renaming the bot does not invalidate encrypted grants or require a
+database migration. Quiz publication records and quiz command names keep `Quiz`
+because they describe that feature, not the bot as a whole. Account controls are
+currently displayed on the quiz page; that location is not a separate bot identity.
 
 Persist the ASP.NET Core Data Protection key ring (`DataProtection__KeysDirectory`) before connecting accounts. OAuth refresh tokens are protected with this key ring; losing it requires reconnecting both Twitch accounts.
 
 Set these environment variables:
 
 ```text
-TwitchQuiz__Enabled=true
-TwitchQuiz__ClientId=<dedicated app client id>
-TwitchQuiz__ClientSecret=<dedicated app secret>
-TwitchQuiz__WebhookSecret=<random 20-100 character secret>
-TwitchQuiz__WebhookCallbackUrl=https://example.test/api/integrations/twitch/eventsub
-TwitchQuiz__OAuthCallbackUrl=https://example.test/api/integrations/twitch/oauth/callback
-TwitchQuiz__FrontendRedirectUrl=https://example.test/panel/game-quiz
-TwitchQuiz__ExpectedBotUserId=<numeric bot Twitch id>
-TwitchQuiz__ExpectedBroadcasterUserId=<numeric channel-owner Twitch id>
+TwitchBot__Enabled=true
+TwitchBot__ClientId=<dedicated app client id>
+TwitchBot__ClientSecret=<dedicated app secret>
+TwitchBot__WebhookSecret=<random 20-100 character secret>
+TwitchBot__WebhookCallbackUrl=https://example.test/api/integrations/twitch/eventsub
+TwitchBot__OAuthCallbackUrl=https://example.test/api/integrations/twitch/oauth/callback
+TwitchBot__FrontendRedirectUrl=https://example.test/panel/game-quiz
+TwitchBot__ExpectedBotUserId=<numeric bot Twitch id>
+TwitchBot__ExpectedBroadcasterUserId=<numeric channel-owner Twitch id>
 ```
 
 The administrator connects the bot account with `user:read:chat`, `user:write:chat`, and `user:bot`, then connects the channel owner with `channel:bot`. The callback verifies the exact expected Twitch user ID and required scopes. Application access tokens use client credentials. User-token refresh is serialized. On startup and during subscription health checks (every five minutes when connected), the worker validates user tokens, application ID, user ID and scopes with Twitch. Revoked grants require reconnecting; a temporary Twitch outage does not revoke a grant.
@@ -35,17 +50,17 @@ Twitch must reach the HTTPS webhook URL. Configure the reverse proxy to preserve
 Start PostgreSQL/MinIO and apply migrations with `setup-local.bat`. Start `npm run fake:twitch`, then use:
 
 ```text
-TwitchQuiz__Enabled=true
-TwitchQuiz__ClientId=local-client
-TwitchQuiz__ClientSecret=local-client-secret
-TwitchQuiz__WebhookSecret=deadmans-local-eventsub-secret
-TwitchQuiz__WebhookCallbackUrl=http://localhost:5285/api/integrations/twitch/eventsub
-TwitchQuiz__OAuthCallbackUrl=http://localhost:5285/api/integrations/twitch/oauth/callback
-TwitchQuiz__FrontendRedirectUrl=http://localhost:5180/panel/game-quiz
-TwitchQuiz__ExpectedBotUserId=100001
-TwitchQuiz__ExpectedBroadcasterUserId=200001
-TwitchQuiz__OAuthBaseUrl=http://localhost:8099
-TwitchQuiz__ApiBaseUrl=http://localhost:8099
+TwitchBot__Enabled=true
+TwitchBot__ClientId=local-client
+TwitchBot__ClientSecret=local-client-secret
+TwitchBot__WebhookSecret=deadmans-local-eventsub-secret
+TwitchBot__WebhookCallbackUrl=http://localhost:5285/api/integrations/twitch/eventsub
+TwitchBot__OAuthCallbackUrl=http://localhost:5285/api/integrations/twitch/oauth/callback
+TwitchBot__FrontendRedirectUrl=http://localhost:5180/panel/game-quiz
+TwitchBot__ExpectedBotUserId=100001
+TwitchBot__ExpectedBroadcasterUserId=200001
+TwitchBot__OAuthBaseUrl=http://localhost:8099
+TwitchBot__ApiBaseUrl=http://localhost:8099
 ```
 
 The stand supports successful delivery, `is_sent=false`, HTTP 429, timeout/unknown delivery, signed messages, repeated IDs, foreign channels, and Shared Chat source IDs. See `tools/fake-twitch/README.md`.
@@ -55,7 +70,7 @@ The stand supports successful delivery, `is_sent=false`, HTTP 429, timeout/unkno
 1. Keep credentials in the ignored `backend/appsettings.Local.json` or .NET user secrets, never in tracked configuration. Use the localhost OAuth callback and frontend URLs from the fake stand, but the real Twitch origins and numeric account IDs.
 2. Start the application with `npm run dev`, then start `npm run dev:twitch-proxy` in a second terminal. The proxy listens on port 5290 and exposes only `POST /api/integrations/twitch/eventsub`, limits bodies to 256 KiB, and preserves the exact bytes used for signature verification. Other paths, query variants and methods are blocked. It binds all interfaces so a Docker tunnel can reach it; stop it when testing is finished.
 3. Point the HTTPS tunnel at port 5290, not the full API on port 5285. For a tunnel running inside Docker on Windows, the upstream is `http://host.docker.internal:5290`.
-4. Set `TwitchQuiz:WebhookCallbackUrl` to the tunnel HTTPS URL plus `/api/integrations/twitch/eventsub`, then restart the backend. A temporary tunnel URL can change after restarting the tunnel; update the callback accordingly. No Twitch Developer Console edit is needed for the webhook URL.
+4. Set `TwitchBot:WebhookCallbackUrl` to the tunnel HTTPS URL plus `/api/integrations/twitch/eventsub`, then restart the backend. A temporary tunnel URL can change after restarting the tunnel; update the callback accordingly. No Twitch Developer Console edit is needed for the webhook URL.
 5. Open `/panel/game-quiz`, connect the two accounts if needed, and wait until bot, channel and EventSub are all connected. Existing encrypted grants survive normal application restarts.
 6. Run the acceptance scenario below. For production use a stable HTTPS domain, persisted Data Protection keys and production secrets, not this development proxy or temporary tunnel.
 

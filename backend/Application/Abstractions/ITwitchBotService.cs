@@ -2,10 +2,10 @@ using backend.Application.Contracts;
 
 namespace backend.Application.Abstractions;
 
-public interface ITwitchQuizIntegrationService
+public interface ITwitchBotService
 {
     bool IsEnabled { get; }
-    Task<TwitchQuizIntegrationStatus> GetStatusAsync(CancellationToken cancellationToken = default);
+    Task<TwitchBotStatus> GetStatusAsync(CancellationToken cancellationToken = default);
     Task<PrepareTwitchQuizQuestionResult> PrepareQuestionAsync(Guid? questionId, CancellationToken cancellationToken = default);
     Task<TwitchQuizPublicationState?> RetryPublicationAsync(Guid publicationId, CancellationToken cancellationToken = default);
     Task<TwitchQuizPublicationState?> CancelPublicationAsync(Guid publicationId, CancellationToken cancellationToken = default);

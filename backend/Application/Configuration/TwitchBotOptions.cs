@@ -1,8 +1,9 @@
 namespace backend.Application.Configuration;
 
-public sealed class TwitchQuizOptions
+public sealed class TwitchBotOptions
 {
-    public const string SectionName = "TwitchQuiz";
+    public const string SectionName = "TwitchBot";
+    public const string LegacySectionName = "TwitchQuiz";
 
     public bool Enabled { get; set; }
     public string ClientId { get; set; } = string.Empty;

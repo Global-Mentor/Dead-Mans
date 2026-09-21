@@ -14,14 +14,14 @@ namespace backend.Controllers;
 [ApiController]
 [Route("api/integrations/twitch")]
 [Authorize]
-public sealed class TwitchQuizIntegrationController : ControllerBase
+public sealed class TwitchBotController : ControllerBase
 {
-    private readonly ITwitchQuizIntegrationService _service;
-    private readonly TwitchQuizOptions _options;
+    private readonly ITwitchBotService _service;
+    private readonly TwitchBotOptions _options;
 
-    public TwitchQuizIntegrationController(
-        ITwitchQuizIntegrationService service,
-        IOptions<TwitchQuizOptions> options)
+    public TwitchBotController(
+        ITwitchBotService service,
+        IOptions<TwitchBotOptions> options)
     { _service = service; _options = options.Value; }
 
     [HttpGet("status")]
@@ -60,7 +60,7 @@ public sealed class TwitchQuizIntegrationController : ControllerBase
     }
 
     private IActionResult OAuthFailure() => this.BadRequestError(
-        "Twitch connection failed. Start a new authorization from the quiz page, choose the configured account and grant all requested permissions.",
+        "Twitch connection failed. Start a new authorization from the bot connection panel, choose the configured account and grant all requested permissions.",
         "twitch_quiz.oauth_failed");
 
     [HttpPost("quiz/questions/prepare")]

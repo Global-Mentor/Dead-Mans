@@ -50,7 +50,7 @@ export type UpdateGameQuestionRequest = components['schemas']['UpdateGameQuestio
 export type CurrentGameQuizState = components['schemas']['CurrentGameQuizStateDto']
 export type AvailableGameQuizQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 export type GameQuizSubmissionReceipt = components['schemas']['GameQuizSubmissionReceiptDto']
-export type TwitchQuizIntegrationStatus = components['schemas']['TwitchQuizIntegrationStatusDto']
+export type TwitchBotStatus = components['schemas']['TwitchBotStatusDto']
 export type TwitchQuizPublicationState = components['schemas']['TwitchQuizPublicationStateDto']
 export type PrepareTwitchQuizQuestionResult =
   components['schemas']['PrepareTwitchQuizQuestionResultDto']

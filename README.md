@@ -43,6 +43,6 @@ Application code lives in `frontend` and `backend`. General documentation is in 
 
 Read [`docs/development.md`](docs/development.md) for the development workflow, [`docs/architecture/overview.md`](docs/architecture/overview.md) for the application structure, and [`deploy/README.md`](deploy/README.md) for production deployment.
 
-Twitch chat quiz bot configuration, local fake stand, and test-channel acceptance steps are documented in [`docs/twitch-quiz-bot.md`](docs/twitch-quiz-bot.md).
+Twitch Bot configuration, local fake stand, and test-channel acceptance steps are documented in [`docs/twitch-bot.md`](docs/twitch-bot.md). The quiz is the bot's first feature, not a separate bot application.
 
 Please follow [`SECURITY.md`](SECURITY.md) if you find a security problem.

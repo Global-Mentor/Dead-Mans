@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Tests.Unit.Infrastructure;
 
-public sealed class TwitchQuizApiClientTests
+public sealed class TwitchBotApiClientTests
 {
     [Fact]
     public async Task Send_UsesAppTokenAndSourceOnly_AndReusesTokenAcrossMessages()
@@ -169,7 +169,7 @@ public sealed class TwitchQuizApiClientTests
         {
             client_id = "client",
             user_id = bot ? "100001" : "200001",
-            scopes = bot ? TwitchQuizOptions.BotScopes : TwitchQuizOptions.BroadcasterScopes,
+            scopes = bot ? TwitchBotOptions.BotScopes : TwitchBotOptions.BroadcasterScopes,
             expires_in = 3600
         });
     }
@@ -184,13 +184,13 @@ public sealed class TwitchQuizApiClientTests
         public ApplicationDbContext Db { get; } = new(new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         public Handler Handler { get; } = new();
-        public TwitchQuizApiClient Client { get; }
+        public TwitchBotApiClient Client { get; }
         private readonly HttpClient _http;
         private readonly TwitchApplicationTokenCache _tokens = new();
         public Fixture()
         {
             _http = new HttpClient(Handler);
-            Client = new TwitchQuizApiClient(_http, Options.Create(new TwitchQuizOptions
+            Client = new TwitchBotApiClient(_http, Options.Create(new TwitchBotOptions
             {
                 ClientId = "client",
                 ClientSecret = "client-secret",
@@ -201,9 +201,9 @@ public sealed class TwitchQuizApiClientTests
         }
         public async Task ConnectAsync()
         {
-            await Client.SaveGrantAsync("bot", new("user-token", "refresh", 3600, TwitchQuizOptions.BotScopes,
+            await Client.SaveGrantAsync("bot", new("user-token", "refresh", 3600, TwitchBotOptions.BotScopes,
                 new("100001", "bot", "Bot")), default);
-            await Client.SaveGrantAsync("broadcaster", new("owner-token", "refresh-owner", 3600, TwitchQuizOptions.BroadcasterScopes,
+            await Client.SaveGrantAsync("broadcaster", new("owner-token", "refresh-owner", 3600, TwitchBotOptions.BroadcasterScopes,
                 new("200001", "owner", "Owner")), default);
         }
         public void Dispose() { _http.Dispose(); _tokens.Dispose(); Db.Dispose(); }

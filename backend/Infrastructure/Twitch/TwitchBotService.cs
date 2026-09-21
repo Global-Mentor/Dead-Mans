@@ -12,21 +12,21 @@ using Microsoft.Extensions.Options;
 
 namespace backend.Infrastructure.Twitch;
 
-internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationService
+internal sealed class TwitchBotService : ITwitchBotService
 {
     private readonly ApplicationDbContext _db;
-    private readonly TwitchQuizOptions _options;
-    private readonly TwitchQuizApiClient _api;
+    private readonly TwitchBotOptions _options;
+    private readonly TwitchBotApiClient _api;
     private readonly IGameQuizService _quiz;
     private readonly IGameBoardEventsPublisher _events;
     private readonly IDataProtector _stateProtector;
     private readonly TwitchEventSubHealth _eventSubHealth;
     private readonly TimeProvider _clock;
 
-    public TwitchQuizIntegrationService(
+    public TwitchBotService(
         ApplicationDbContext db,
-        IOptions<TwitchQuizOptions> options,
-        TwitchQuizApiClient api,
+        IOptions<TwitchBotOptions> options,
+        TwitchBotApiClient api,
         IGameQuizService quiz,
         IGameBoardEventsPublisher events,
         IDataProtectionProvider dataProtectionProvider,
@@ -38,6 +38,7 @@ internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationServi
         _api = api;
         _quiz = quiz;
         _events = events;
+        // Existing authorization states must survive the bot rename.
         _stateProtector = dataProtectionProvider.CreateProtector("DeadMans.TwitchQuiz.OAuthState.v1");
         _eventSubHealth = eventSubHealth;
         _clock = clock;
@@ -46,7 +47,7 @@ internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationServi
     public bool IsEnabled => _options.Enabled;
     internal bool IsEventSubConnected => _eventSubHealth.IsConnected;
 
-    public async Task<TwitchQuizIntegrationStatus> GetStatusAsync(CancellationToken cancellationToken = default)
+    public async Task<TwitchBotStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         if (!IsEnabled) return new(false, false, false, false, false, null, null, null, null);
         var connections = await _db.TwitchQuizConnections.AsNoTracking().ToArrayAsync(cancellationToken);
@@ -57,9 +58,9 @@ internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationServi
         return new(
             true,
             bot is { RevokedAtUtc: null } && bot.TwitchUserId == _options.ExpectedBotUserId
-                && TwitchQuizOptions.BotScopes.All(bot.Scopes.Contains),
+                && TwitchBotOptions.BotScopes.All(bot.Scopes.Contains),
             broadcaster is { RevokedAtUtc: null } && broadcaster.TwitchUserId == _options.ExpectedBroadcasterUserId
-                && TwitchQuizOptions.BroadcasterScopes.All(broadcaster.Scopes.Contains),
+                && TwitchBotOptions.BroadcasterScopes.All(broadcaster.Scopes.Contains),
             _eventSubHealth.IsConnected,
             connections.Any(x => x.RevokedAtUtc != null),
             bot?.TwitchUserId,
@@ -305,7 +306,7 @@ internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationServi
 
     public string BuildAuthorizationUrl(string role, string state)
     {
-        var scopes = role == "bot" ? TwitchQuizOptions.BotScopes : role == "broadcaster" ? TwitchQuizOptions.BroadcasterScopes : throw new ArgumentOutOfRangeException(nameof(role));
+        var scopes = role == "bot" ? TwitchBotOptions.BotScopes : role == "broadcaster" ? TwitchBotOptions.BroadcasterScopes : throw new ArgumentOutOfRangeException(nameof(role));
         return $"{_options.OAuthBaseUrl.TrimEnd('/')}/oauth2/authorize?client_id={Uri.EscapeDataString(_options.ClientId)}&redirect_uri={Uri.EscapeDataString(_options.OAuthCallbackUrl)}&response_type=code&scope={Uri.EscapeDataString(string.Join(' ', scopes))}&state={Uri.EscapeDataString(state)}&force_verify=true";
     }
 
@@ -323,7 +324,7 @@ internal sealed class TwitchQuizIntegrationService : ITwitchQuizIntegrationServi
             throw new InvalidOperationException("OAuth state has expired or belongs to another administrator.");
         var grant = await _api.ExchangeCodeAsync(code, cancellationToken);
         var expectedId = payload.Role == "bot" ? _options.ExpectedBotUserId : _options.ExpectedBroadcasterUserId;
-        var requiredScopes = payload.Role == "bot" ? TwitchQuizOptions.BotScopes : TwitchQuizOptions.BroadcasterScopes;
+        var requiredScopes = payload.Role == "bot" ? TwitchBotOptions.BotScopes : TwitchBotOptions.BroadcasterScopes;
         if (grant.Identity.Id != expectedId || requiredScopes.Except(grant.Scopes, StringComparer.Ordinal).Any())
             throw new InvalidOperationException("Twitch account or granted scopes do not match the configured integration.");
         await _api.SaveGrantAsync(payload.Role, grant, cancellationToken);

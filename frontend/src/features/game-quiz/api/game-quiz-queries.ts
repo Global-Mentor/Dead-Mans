@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query'
 import {
   fetchAvailableGameQuizQuestions,
   fetchCurrentGameQuizState,
-  fetchTwitchQuizIntegrationStatus,
+  fetchTwitchBotStatus,
 } from './game-quiz-api.ts'
 
 export const gameQuizQueryKeys = {
@@ -28,7 +28,7 @@ export const availableGameQuizQuestionsQueryOptions = (gameId: string) =>
     queryFn: fetchAvailableGameQuizQuestions,
   })
 
-export const twitchQuizIntegrationQueryOptions = queryOptions({
+export const twitchBotStatusQueryOptions = queryOptions({
   queryKey: gameQuizQueryKeys.twitchIntegration(),
-  queryFn: fetchTwitchQuizIntegrationStatus,
+  queryFn: fetchTwitchBotStatus,
 })

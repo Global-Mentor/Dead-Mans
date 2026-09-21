@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
-import type { TwitchQuizIntegrationStatus } from '../../shared/api/contracts/index.ts'
+import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
-import { TwitchQuizIntegrationPanel } from './TwitchQuizIntegrationPanel.tsx'
+import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 
 beforeAll(async () => i18n.changeLanguage('en'))
 afterEach(cleanup)
 
-const status: TwitchQuizIntegrationStatus = {
+const status: TwitchBotStatus = {
   enabled: true,
   botConnected: true,
   broadcasterConnected: true,
@@ -33,12 +33,12 @@ const status: TwitchQuizIntegrationStatus = {
   },
 }
 
-describe('TwitchQuizIntegrationPanel', () => {
+describe('TwitchBotPanel', () => {
   it('shows independent connection health and explicit recovery controls', () => {
     const onRetry = vi.fn()
     const onCancel = vi.fn()
     renderWithAppProviders(
-      <TwitchQuizIntegrationPanel
+      <TwitchBotPanel
         status={status}
         canAdmin
         busy={false}
@@ -64,7 +64,7 @@ describe('TwitchQuizIntegrationPanel', () => {
   it('offers retry or skip for a failed result, not cancellation of settled answers', () => {
     const onSkip = vi.fn()
     renderWithAppProviders(
-      <TwitchQuizIntegrationPanel
+      <TwitchBotPanel
         status={{
           ...status,
           publication: {

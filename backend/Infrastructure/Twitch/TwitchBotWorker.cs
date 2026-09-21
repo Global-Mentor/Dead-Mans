@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Infrastructure.Twitch;
 
-internal sealed class TwitchQuizWorker : BackgroundService
+internal sealed class TwitchBotWorker : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<TwitchQuizWorker> _logger;
-    public TwitchQuizWorker(IServiceScopeFactory scopeFactory, ILogger<TwitchQuizWorker> logger)
+    private readonly ILogger<TwitchBotWorker> _logger;
+    public TwitchBotWorker(IServiceScopeFactory scopeFactory, ILogger<TwitchBotWorker> logger)
     { _scopeFactory = scopeFactory; _logger = logger; }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -21,7 +21,7 @@ internal sealed class TwitchQuizWorker : BackgroundService
             try
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
-                var service = (TwitchQuizIntegrationService)scope.ServiceProvider.GetRequiredService<backend.Application.Abstractions.ITwitchQuizIntegrationService>();
+                var service = (TwitchBotService)scope.ServiceProvider.GetRequiredService<backend.Application.Abstractions.ITwitchBotService>();
                 if (!service.IsEnabled) continue;
                 if (++subscriptionTick >= (service.IsEventSubConnected ? 300 : 5))
                 {
@@ -36,7 +36,7 @@ internal sealed class TwitchQuizWorker : BackgroundService
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
-            catch (Exception exception) { _logger.LogError(exception, "Twitch quiz background processing failed."); }
+            catch (Exception exception) { _logger.LogError(exception, "Twitch bot background processing failed."); }
         }
     }
 }

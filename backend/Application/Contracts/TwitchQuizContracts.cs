@@ -206,7 +206,7 @@ public static class TwitchQuizDeliveryStatuses
     public const string Skipped = "skipped";
 }
 
-public sealed record TwitchQuizIntegrationStatus(
+public sealed record TwitchBotStatus(
     bool Enabled,
     bool BotConnected,
     bool BroadcasterConnected,

@@ -571,7 +571,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getTwitchQuizIntegrationStatus"];
+        get: operations["getTwitchBotStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -587,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["connectTwitchQuizAccount"];
+        get: operations["connectTwitchBotAccount"];
         put?: never;
         post?: never;
         delete?: never;
@@ -603,7 +603,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["completeTwitchQuizOAuth"];
+        get: operations["completeTwitchBotOAuth"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2370,7 +2370,7 @@ export interface components {
             /** Format: date-time */
             updatedAtUtc: string;
         };
-        TwitchQuizIntegrationStatusDto: {
+        TwitchBotStatusDto: {
             enabled: boolean;
             botConnected: boolean;
             broadcasterConnected: boolean;
@@ -5252,7 +5252,7 @@ export interface operations {
             };
         };
     };
-    getTwitchQuizIntegrationStatus: {
+    getTwitchBotStatus: {
         parameters: {
             query?: never;
             header?: never;
@@ -5261,18 +5261,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Twitch quiz integration connection and delivery state */
+            /** @description Twitch bot connection state and current quiz delivery */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TwitchQuizIntegrationStatusDto"];
+                    "application/json": components["schemas"]["TwitchBotStatusDto"];
                 };
             };
         };
     };
-    connectTwitchQuizAccount: {
+    connectTwitchBotAccount: {
         parameters: {
             query?: never;
             header?: never;
@@ -5292,7 +5292,7 @@ export interface operations {
             };
         };
     };
-    completeTwitchQuizOAuth: {
+    completeTwitchBotOAuth: {
         parameters: {
             query: {
                 code: string;

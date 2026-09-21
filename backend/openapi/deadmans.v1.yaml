@@ -1445,19 +1445,19 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /integrations/twitch/status:
     get:
-      operationId: getTwitchQuizIntegrationStatus
+      operationId: getTwitchBotStatus
       security:
         - cookieAuth: []
       responses:
         '200':
-          description: Twitch quiz integration connection and delivery state
+          description: Twitch bot connection state and current quiz delivery
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TwitchQuizIntegrationStatusDto'
+                $ref: '#/components/schemas/TwitchBotStatusDto'
   /integrations/twitch/oauth/{role}:
     get:
-      operationId: connectTwitchQuizAccount
+      operationId: connectTwitchBotAccount
       security:
         - cookieAuth: []
       parameters:
@@ -1472,7 +1472,7 @@ paths:
           description: Redirect to Twitch authorization
   /integrations/twitch/oauth/callback:
     get:
-      operationId: completeTwitchQuizOAuth
+      operationId: completeTwitchBotOAuth
       security:
         - cookieAuth: []
       parameters:
@@ -5781,7 +5781,7 @@ components:
         lastError: { type: string, nullable: true }
         createdAtUtc: { type: string, format: date-time }
         updatedAtUtc: { type: string, format: date-time }
-    TwitchQuizIntegrationStatusDto:
+    TwitchBotStatusDto:
       type: object
       required: [enabled, botConnected, broadcasterConnected, eventSubConnected, accessRevoked]
       properties:

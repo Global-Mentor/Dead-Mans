@@ -17,19 +17,19 @@ internal sealed record TwitchChatSendResult(TwitchChatSendOutcome Outcome, strin
 internal sealed record TwitchOAuthIdentity(string Id, string Login, string DisplayName);
 internal sealed record TwitchOAuthGrant(string AccessToken, string RefreshToken, int ExpiresIn, string[] Scopes, TwitchOAuthIdentity Identity);
 
-internal sealed class TwitchQuizApiClient
+internal sealed class TwitchBotApiClient
 {
     private static readonly SemaphoreSlim RefreshLock = new(1, 1);
     private readonly HttpClient _httpClient;
-    private readonly TwitchQuizOptions _options;
+    private readonly TwitchBotOptions _options;
     private readonly ApplicationDbContext _db;
     private readonly IDataProtector _protector;
     private readonly TimeProvider _clock;
     private readonly TwitchApplicationTokenCache _appTokens;
 
-    public TwitchQuizApiClient(
+    public TwitchBotApiClient(
         HttpClient httpClient,
-        IOptions<TwitchQuizOptions> options,
+        IOptions<TwitchBotOptions> options,
         ApplicationDbContext db,
         IDataProtectionProvider dataProtectionProvider,
         TimeProvider clock,
@@ -38,6 +38,7 @@ internal sealed class TwitchQuizApiClient
         _httpClient = httpClient;
         _options = options.Value;
         _db = db;
+        // Keep the persisted protection purpose stable across the bot rename.
         _protector = dataProtectionProvider.CreateProtector("DeadMans.TwitchQuiz.Tokens.v1");
         _clock = clock;
         _appTokens = appTokens;
@@ -152,8 +153,8 @@ internal sealed class TwitchQuizApiClient
         var bot = await GetValidConnectionAsync("bot", cancellationToken);
         var broadcaster = await GetValidConnectionAsync("broadcaster", cancellationToken);
         if (bot is null || broadcaster is null) return false;
-        var botValid = await ValidateConnectionAsync(bot.Value, TwitchQuizOptions.BotScopes, cancellationToken);
-        var broadcasterValid = await ValidateConnectionAsync(broadcaster.Value, TwitchQuizOptions.BroadcasterScopes, cancellationToken);
+        var botValid = await ValidateConnectionAsync(bot.Value, TwitchBotOptions.BotScopes, cancellationToken);
+        var broadcasterValid = await ValidateConnectionAsync(broadcaster.Value, TwitchBotOptions.BroadcasterScopes, cancellationToken);
         if (!botValid || !broadcasterValid) return false;
 
         var appToken = await GetApplicationTokenAsync(cancellationToken);
@@ -215,7 +216,7 @@ internal sealed class TwitchQuizApiClient
         var row = await _db.TwitchQuizConnections.SingleOrDefaultAsync(x => x.Role == role && x.RevokedAtUtc == null, cancellationToken);
         if (row is null) return null;
         var expectedId = role == "bot" ? _options.ExpectedBotUserId : _options.ExpectedBroadcasterUserId;
-        var requiredScopes = role == "bot" ? TwitchQuizOptions.BotScopes : TwitchQuizOptions.BroadcasterScopes;
+        var requiredScopes = role == "bot" ? TwitchBotOptions.BotScopes : TwitchBotOptions.BroadcasterScopes;
         if (row.TwitchUserId != expectedId || requiredScopes.Except(row.Scopes, StringComparer.Ordinal).Any()) return null;
         if (row.ExpiresAtUtc > _clock.GetUtcNow().UtcDateTime.AddMinutes(2))
         {

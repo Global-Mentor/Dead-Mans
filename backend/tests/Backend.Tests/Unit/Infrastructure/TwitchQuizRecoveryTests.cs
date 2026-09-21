@@ -121,13 +121,13 @@ public sealed class TwitchQuizRecoveryTests : IClassFixture<TestWebApplicationFa
         return row;
     }
 
-    private static (ApplicationDbContext Db, TwitchQuizIntegrationService Service) Resolve(IServiceScope scope)
+    private static (ApplicationDbContext Db, TwitchBotService Service) Resolve(IServiceScope scope)
     {
         var services = scope.ServiceProvider;
         var db = services.GetRequiredService<ApplicationDbContext>();
         // Enable only this service instance; the factory's background worker remains disabled.
-        var service = new TwitchQuizIntegrationService(db, Options.Create(new TwitchQuizOptions { Enabled = true }),
-            services.GetRequiredService<TwitchQuizApiClient>(), services.GetRequiredService<IGameQuizService>(),
+        var service = new TwitchBotService(db, Options.Create(new TwitchBotOptions { Enabled = true }),
+            services.GetRequiredService<TwitchBotApiClient>(), services.GetRequiredService<IGameQuizService>(),
             services.GetRequiredService<IGameBoardEventsPublisher>(), services.GetRequiredService<IDataProtectionProvider>(),
             new TwitchEventSubHealth(), TimeProvider.System);
         return (db, service);

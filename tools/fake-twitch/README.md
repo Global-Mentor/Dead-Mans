@@ -6,7 +6,7 @@ Run from the repository root:
 npm run fake:twitch
 ```
 
-Configure the backend with `TwitchQuiz` values from `docs/twitch-quiz-bot.md`, authorize both local identities in the quiz panel, then emit a signed chat message:
+Configure the backend with `TwitchBot` values from `docs/twitch-bot.md`, authorize both local identities in the quiz panel, then emit a signed chat message:
 
 ```powershell
 Invoke-RestMethod -Method Post -ContentType application/json `

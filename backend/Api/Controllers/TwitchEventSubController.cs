@@ -15,10 +15,10 @@ namespace backend.Controllers;
 [AllowAnonymous]
 public sealed class TwitchEventSubController : ControllerBase
 {
-    private readonly ITwitchQuizIntegrationService _service;
-    private readonly TwitchQuizOptions _options;
+    private readonly ITwitchBotService _service;
+    private readonly TwitchBotOptions _options;
     private readonly TimeProvider _clock;
-    public TwitchEventSubController(ITwitchQuizIntegrationService service, IOptions<TwitchQuizOptions> options, TimeProvider clock)
+    public TwitchEventSubController(ITwitchBotService service, IOptions<TwitchBotOptions> options, TimeProvider clock)
     { _service = service; _options = options.Value; _clock = clock; }
 
     [HttpPost]

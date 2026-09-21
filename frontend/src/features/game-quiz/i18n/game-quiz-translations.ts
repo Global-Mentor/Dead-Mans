@@ -48,8 +48,8 @@ const translations = {
     resultWrong: 'That answer was not correct.',
     status: { open: 'Open', closed: 'Closed', skipped: 'Skipped' },
     twitch: {
-      title: 'Twitch chat bot',
-      description: 'Connection and durable delivery state for chat quiz messages.',
+      title: 'Twitch Bot',
+      description: 'Bot and channel connection. Quiz message delivery is shown below.',
       botConnected: 'Bot connected',
       botDisconnected: 'Bot not connected',
       channelConnected: 'Channel connected',
@@ -134,8 +134,8 @@ const translations = {
     resultWrong: 'Ответ неверный.',
     status: { open: 'Открыт', closed: 'Закрыт', skipped: 'Пропущен' },
     twitch: {
-      title: 'Twitch чат-бот',
-      description: 'Подключение и сохраняемое состояние доставки сообщений викторины.',
+      title: 'Twitch-бот',
+      description: 'Подключение бота и канала. Ниже показана доставка сообщений викторины.',
       botConnected: 'Бот подключён',
       botDisconnected: 'Бот не подключён',
       channelConnected: 'Канал подключён',
@@ -219,8 +219,8 @@ const translations = {
     resultWrong: 'Відповідь неправильна.',
     status: { open: 'Відкрито', closed: 'Закрито', skipped: 'Пропущено' },
     twitch: {
-      title: 'Twitch чат-бот',
-      description: 'Підключення та збережений стан доставки повідомлень вікторини.',
+      title: 'Twitch-бот',
+      description: 'Підключення бота й каналу. Нижче показано доставку повідомлень вікторини.',
       botConnected: 'Бота підключено',
       botDisconnected: 'Бота не підключено',
       channelConnected: 'Канал підключено',
@@ -305,8 +305,8 @@ const translations = {
     resultWrong: 'Ta odpowiedź jest błędna.',
     status: { open: 'Otwarte', closed: 'Zamknięte', skipped: 'Pominięte' },
     twitch: {
-      title: 'Bot czatu Twitch',
-      description: 'Połączenie i trwały stan dostarczania wiadomości quizu.',
+      title: 'Bot Twitch',
+      description: 'Połączenie bota i kanału. Poniżej pokazano dostarczanie wiadomości quizu.',
       botConnected: 'Bot połączony',
       botDisconnected: 'Bot niepołączony',
       channelConnected: 'Kanał połączony',

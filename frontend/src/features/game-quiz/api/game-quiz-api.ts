@@ -8,7 +8,7 @@ import type {
   CurrentGameQuizState,
   GameQuizSubmissionReceipt,
   PrepareTwitchQuizQuestionResult,
-  TwitchQuizIntegrationStatus,
+  TwitchBotStatus,
   TwitchQuizPublicationState,
 } from '../../../shared/api/contracts/index.ts'
 import type { paths } from '../../../shared/api/contracts/generated'
@@ -61,7 +61,7 @@ export function askSpecificGameQuizQuestion(questionId: string) {
   )
 }
 
-export function fetchTwitchQuizIntegrationStatus(): Promise<TwitchQuizIntegrationStatus> {
+export function fetchTwitchBotStatus(): Promise<TwitchBotStatus> {
   return unwrapOpenApiData(client.GET('/integrations/twitch/status'))
 }
 
