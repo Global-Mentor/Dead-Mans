@@ -1,5 +1,6 @@
 using backend.Api.Configuration;
 using backend.Application.Abstractions.Auth;
+using backend.Application.Configuration;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.Options;
@@ -90,6 +91,13 @@ public static class HostSecurityServiceCollectionExtensions
                     ),
                 "TwitchAuth:FrontendRedirectUri must be an absolute http/https URL without user info or fragment and must use HTTPS outside Development and Testing."
             )
+            .ValidateOnStart();
+        services
+            .AddOptions<TwitchBotOptions>()
+            .Bind(configuration.GetSection(TwitchBotOptions.LegacySectionName))
+            .Bind(configuration.GetSection(TwitchBotOptions.SectionName))
+            .Validate(options => options.IsComplete(), "TwitchBot configuration is incomplete while the module is enabled.")
+            .Validate(options => !requiresHttpsExternalUrls || options.UsesHttpsExternalUrls(), "TwitchBot external URLs must use HTTPS outside Development and Testing.")
             .ValidateOnStart();
 
         return services;

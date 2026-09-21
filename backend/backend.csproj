@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UserSecretsId>deadmans-local-development</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -11,7 +11,8 @@ public sealed class EndpointAuthorizationRulesTests
     private static readonly HashSet<Type> AnonymousControllerAllowlist =
     [
         typeof(AuthController),
-        typeof(AuthSessionController)
+        typeof(AuthSessionController),
+        typeof(TwitchEventSubController)
     ];
 
     [Fact]

@@ -2650,6 +2650,276 @@ namespace backend.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("backend.Data.Entities.TwitchEventSubReceipt", b =>
+                {
+                    b.Property<string>("NotificationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("notification_id");
+
+                    b.Property<string>("ChatMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTime>("EventTimestampUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("event_timestamp_utc");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("outcome");
+
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at_utc");
+
+                    b.Property<Guid?>("QuestionSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_session_id");
+
+                    b.HasKey("NotificationId")
+                        .HasName("pk_twitch_eventsub_receipts");
+
+                    b.HasIndex("ChatMessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_twitch_eventsub_receipts_chat_message_id")
+                        .HasFilter("chat_message_id IS NOT NULL");
+
+                    b.HasIndex("ProcessedAtUtc")
+                        .HasDatabaseName("ix_twitch_eventsub_receipts_processed_at_utc");
+
+                    b.ToTable("twitch_eventsub_receipts", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.TwitchQuizConnection", b =>
+                {
+                    b.Property<string>("Role")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("display_name");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("login");
+
+                    b.Property<string>("ProtectedAccessToken")
+                        .IsRequired()
+                        .HasMaxLength(8192)
+                        .HasColumnType("character varying(8192)")
+                        .HasColumnName("protected_access_token");
+
+                    b.Property<string>("ProtectedRefreshToken")
+                        .IsRequired()
+                        .HasMaxLength(8192)
+                        .HasColumnType("character varying(8192)")
+                        .HasColumnName("protected_refresh_token");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at_utc");
+
+                    b.PrimitiveCollection<string[]>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("scopes");
+
+                    b.Property<string>("TwitchUserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("twitch_user_id");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Role")
+                        .HasName("pk_twitch_quiz_connections");
+
+                    b.HasIndex("TwitchUserId")
+                        .HasDatabaseName("ix_twitch_quiz_connections_twitch_user_id");
+
+                    b.ToTable("twitch_quiz_connections", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.TwitchQuizPublication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AskOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("ask_order");
+
+                    b.Property<string>("CategoryNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("category_name_snapshot");
+
+                    b.Property<Guid>("CorrectOptionIdSnapshot")
+                        .HasColumnType("uuid")
+                        .HasColumnName("correct_option_id_snapshot");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_seconds");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("game_id");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_error");
+
+                    b.PrimitiveCollection<Guid[]>("OptionIdsSnapshot")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("option_ids_snapshot");
+
+                    b.PrimitiveCollection<string[]>("OptionTextsSnapshot")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("option_texts_snapshot");
+
+                    b.Property<string>("OptionsDeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("options_delivery_status");
+
+                    b.Property<string>("OptionsMessage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("options_message");
+
+                    b.Property<string>("OptionsMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("options_message_id");
+
+                    b.Property<string>("OutcomeDeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("outcome_delivery_status");
+
+                    b.Property<string>("OutcomeMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("outcome_message_id");
+
+                    b.Property<string>("QuestionCodeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("question_code_snapshot");
+
+                    b.Property<string>("QuestionDeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("question_delivery_status");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_id");
+
+                    b.Property<string>("QuestionMessage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("question_message");
+
+                    b.Property<string>("QuestionMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("question_message_id");
+
+                    b.Property<int>("QuestionRevisionSnapshot")
+                        .HasColumnType("integer")
+                        .HasColumnName("question_revision_snapshot");
+
+                    b.Property<Guid?>("QuestionSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_session_id");
+
+                    b.Property<string>("QuestionTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("question_text_snapshot");
+
+                    b.Property<int>("RewardSnapshot")
+                        .HasColumnType("integer")
+                        .HasColumnName("reward_snapshot");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_twitch_quiz_publications");
+
+                    b.HasIndex("QuestionId")
+                        .HasDatabaseName("ix_twitch_quiz_publications_question_id");
+
+                    b.HasIndex("QuestionSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_twitch_quiz_publications_question_session_id");
+
+                    b.HasIndex("GameId", "AskOrder")
+                        .IsUnique()
+                        .HasDatabaseName("ix_twitch_quiz_publications_game_id_ask_order");
+
+                    b.HasIndex("GameId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_twitch_quiz_publications_game_id_question_id")
+                        .HasFilter("status <> 'cancelled'");
+
+                    b.HasIndex(new[] { "GameId" }, "ux_twitch_quiz_publications_active")
+                        .IsUnique()
+                        .HasDatabaseName("ux_twitch_quiz_publications_active")
+                        .HasFilter("status IN ('publishing','failed','uncertain','cancel_pending','open')");
+
+                    b.ToTable("twitch_quiz_publications", (string)null);
+                });
+
             modelBuilder.Entity("backend.Data.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3562,6 +3832,35 @@ namespace backend.Data.Migrations
                         .HasConstraintName("fk_question_options_question_definitions_question_id");
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.TwitchQuizPublication", b =>
+                {
+                    b.HasOne("backend.Data.Entities.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_twitch_quiz_publications_games_game_id");
+
+                    b.HasOne("backend.Data.Entities.QuestionDefinition", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_twitch_quiz_publications_question_definitions_question_id");
+
+                    b.HasOne("backend.Data.Entities.GameQuizQuestionSession", "QuestionSession")
+                        .WithMany()
+                        .HasForeignKey("QuestionSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_twitch_quiz_publications_question_session");
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("QuestionSession");
                 });
 
             modelBuilder.Entity("backend.Data.Entities.UserRole", b =>

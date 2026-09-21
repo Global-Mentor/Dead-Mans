@@ -10,6 +10,7 @@ import {
   gameRegistrationSnapshotQueryOptions,
 } from '../features/game-registration/index.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
+import { gameQuizQueryKeys } from '../features/game-quiz/api/game-quiz-queries.ts'
 
 const eventName = realtimeHubs.gameBoard.events.gameLifecycleChanged
 
@@ -42,11 +43,28 @@ export function GameLifecycleRealtimeSync() {
           ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
         )
       }
+      const teamStateHandler = () => {
+        void Promise.all(
+          [
+            currentGameBoardQueryOptions,
+            currentGameTeamQueueQueryOptions,
+            gameRegistrationSnapshotQueryOptions,
+            gameRegistrationAdminSnapshotQueryOptions,
+          ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
+        )
+      }
+      const twitchQuizHandler = () => {
+        void queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.twitchIntegration() })
+      }
       connection.on(eventName, handler)
       connection.on(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+      connection.on(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
+      connection.on(realtimeHubs.gameBoard.events.twitchQuizStateChanged, twitchQuizHandler)
       return () => {
         connection.off(eventName, handler)
         connection.off(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+        connection.off(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
+        connection.off(realtimeHubs.gameBoard.events.twitchQuizStateChanged, twitchQuizHandler)
       }
     },
     [invalidate, queryClient],

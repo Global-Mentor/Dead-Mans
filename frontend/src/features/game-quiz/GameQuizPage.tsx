@@ -11,15 +11,21 @@ import { QuizQuestionSessionHistoryItem } from './QuizQuestionSessionHistoryItem
 import {
   askNextGameQuizQuestion,
   askSpecificGameQuizQuestion,
+  cancelTwitchQuizPublication,
+  prepareTwitchQuizQuestion,
+  retryTwitchQuizPublication,
+  skipTwitchQuizOutcome,
   submitGameQuizAnswer,
 } from './api/game-quiz-api.ts'
 import {
   availableGameQuizQuestionsQueryOptions,
   currentGameQuizQueryOptions,
   gameQuizQueryKeys,
+  twitchBotStatusQueryOptions,
 } from './api/game-quiz-queries.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
+import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 
 type QuizQuestionSession = components['schemas']['GameHistoryQuizQuestionSessionItemDto']
 type ManualAward = components['schemas']['GameHistoryQuizManualAwardItemDto']
@@ -61,6 +67,26 @@ export function GameQuizPage() {
   const canManageQuiz =
     user?.roles.some((role) => role === 'moderator' || role === 'admin' || role === 'superadmin') ??
     false
+  const canAdminTwitch =
+    user?.roles.some((role) => role === 'admin' || role === 'superadmin') ?? false
+  const twitchStatusQuery = useQuery({
+    ...twitchBotStatusQueryOptions,
+    enabled: canManageQuiz,
+    refetchInterval: (query) => {
+      const status = query.state.data
+      if (
+        status?.enabled &&
+        (!status.botConnected || !status.broadcasterConnected || !status.eventSubConnected)
+      )
+        return 5000
+      const publication = query.state.data?.publication
+      return publication?.status === 'publishing' || publication?.status === 'cancel_pending'
+        ? 1000
+        : status?.enabled
+          ? 15000
+          : false
+    },
+  })
   const availableQuestionsQuery = useQuery({
     ...availableGameQuizQuestionsQueryOptions(gameId),
     enabled: canManageQuiz && gameId !== '',
@@ -83,12 +109,31 @@ export function GameQuizPage() {
     onError: invalidateQuiz,
   })
   const askNextMutation = useMutation({
-    mutationFn: askNextGameQuizQuestion,
+    mutationFn: async () => {
+      if (twitchStatusQuery.data?.enabled) await prepareTwitchQuizQuestion()
+      else await askNextGameQuizQuestion()
+    },
     onSuccess: invalidateQuiz,
   })
   const askSpecificMutation = useMutation({
-    mutationFn: askSpecificGameQuizQuestion,
+    mutationFn: async (questionId: string) => {
+      if (twitchStatusQuery.data?.enabled) await prepareTwitchQuizQuestion(questionId)
+      else await askSpecificGameQuizQuestion(questionId)
+    },
     onSuccess: invalidateQuiz,
+  })
+  const publicationMutation = useMutation({
+    mutationFn: async (action: 'retry' | 'cancel' | 'skip') => {
+      const publicationId = twitchStatusQuery.data?.publication?.publicationId
+      if (!publicationId) throw new Error('No Twitch publication is selected.')
+      if (action === 'retry') return retryTwitchQuizPublication(publicationId)
+      if (action === 'cancel') return cancelTwitchQuizPublication(publicationId)
+      return skipTwitchQuizOutcome(publicationId)
+    },
+    onSuccess: async () => {
+      await twitchStatusQuery.refetch()
+      await invalidateQuiz()
+    },
   })
 
   const isLoading =
@@ -102,17 +147,30 @@ export function GameQuizPage() {
     gameDetailsQuery.data?.quiz.manualAwards ?? [],
   )
   const isEmpty = !isLoading && !isError && snapshot == null
+  const twitchPanel = twitchStatusQuery.data ? (
+    <TwitchBotPanel
+      status={twitchStatusQuery.data}
+      canAdmin={canAdminTwitch}
+      busy={publicationMutation.isPending}
+      onRetry={() => publicationMutation.mutate('retry')}
+      onCancel={() => publicationMutation.mutate('cancel')}
+      onSkipOutcome={() => publicationMutation.mutate('skip')}
+    />
+  ) : null
 
   if (isLoading || isError || isEmpty) {
     return (
-      <PageStatePanel
-        title={t('gameQuiz.title')}
-        message={t(
-          isLoading ? 'gameQuiz.loading' : isError ? 'gameQuiz.errorLoading' : 'gameQuiz.noGame',
-        )}
-        showSpinner={isLoading}
-        tone={isError ? 'error' : 'default'}
-      />
+      <Stack spacing={2}>
+        {twitchPanel}
+        <PageStatePanel
+          title={t('gameQuiz.title')}
+          message={t(
+            isLoading ? 'gameQuiz.loading' : isError ? 'gameQuiz.errorLoading' : 'gameQuiz.noGame',
+          )}
+          showSpinner={isLoading}
+          tone={isError ? 'error' : 'default'}
+        />
+      </Stack>
     )
   }
 
@@ -127,13 +185,24 @@ export function GameQuizPage() {
     >
       <SectionHeader headingLevel="h1" title={t('gameQuiz.title')} />
 
+      {twitchPanel}
+
       <CurrentQuizCard
         state={currentQuizQuery.data ?? null}
         canManage={canManageQuiz}
         questions={availableQuestionsQuery.data ?? []}
         isSubmitting={submitMutation.isPending}
-        isStarting={askNextMutation.isPending || askSpecificMutation.isPending}
-        error={submitMutation.error ?? askNextMutation.error ?? askSpecificMutation.error}
+        isStarting={
+          askNextMutation.isPending ||
+          askSpecificMutation.isPending ||
+          twitchStatusQuery.data?.publication?.status === 'publishing'
+        }
+        error={
+          submitMutation.error ??
+          askNextMutation.error ??
+          askSpecificMutation.error ??
+          publicationMutation.error
+        }
         onSubmit={(questionSessionId, optionId) =>
           submitMutation.mutate({ questionSessionId, optionId })
         }

@@ -13,6 +13,8 @@ public static class RealtimeHubContracts
         public const string QuizStateChangedEvent = "quizStateChanged";
         public const string UserNotificationCreatedEvent = "userNotificationCreated";
         public const string GameLifecycleChangedEvent = "gameLifecycleChanged";
+        public const string TeamStateChangedEvent = "teamStateChanged";
+        public const string TwitchQuizStateChangedEvent = "twitchQuizStateChanged";
         public const string ModifierCatalogChangedEvent = "modifierCatalogChanged";
         public const string RegistrationChangedEvent = "registrationChanged";
     }

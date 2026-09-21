@@ -19,7 +19,11 @@ public sealed record GameQuestionCatalogItem(
     int CorrectSubmissionTotalCount,
     decimal CorrectPercentage,
     DateTime? LastAskedAtUtc
-);
+)
+{
+    public TwitchQuizMessageSet TwitchPreview => TwitchQuizMessageFormatter.FormatForValidation(
+        Text, Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(), 3600, Reward);
+}
 
 public sealed record GameQuestionCategoryItem(Guid Id, string Name, int QuestionCount, bool IsProtected);
 

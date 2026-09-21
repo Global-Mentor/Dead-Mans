@@ -41,6 +41,11 @@ public interface IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     );
 
+    Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default);
+
+    Task PublishTwitchQuizStateChangedAsync(CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
     Task PublishModifierCatalogChangedAsync(
         ModifierCatalogChangedEvent payload,
         CancellationToken cancellationToken = default

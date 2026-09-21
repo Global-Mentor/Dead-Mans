@@ -224,6 +224,24 @@ production by the migration.
 
 ## Migration Policy
 
+### Twitch quiz delivery storage
+
+`20260920180839_AddTwitchQuizIntegration` is additive: it creates three tables and
+their indexes without deleting or rewriting games, answers or points.
+
+- `twitch_quiz_connections` stores the bot and broadcaster grants by role. Tokens
+  are encrypted with the environment's persistent ASP.NET Core Data Protection keys.
+- `twitch_quiz_publications` stores the immutable question/option snapshot and the
+  delivery state of each chat message. A session is opened only after both question
+  messages are confirmed. Delivery recovery never repeats point settlement.
+- `twitch_eventsub_receipts` deduplicates notification IDs and chat message IDs.
+  These are technical receipts, not the source of truth for answers or points.
+
+Workers and operator recovery actions serialize publication through a PostgreSQL
+session advisory lock. The `sending` marker commits before the external request;
+an interrupted delivery requires explicit recovery. Cancellation uses the same
+game/session row-lock order as quiz settlement.
+
 - `20260908003848_ProductionBaseline` is the immutable root of the supported
   migration chain. On an empty database it creates the product schema and seeds
   only technical access roles; later migrations advance that schema to the

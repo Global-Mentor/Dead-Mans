@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-title Dead Mans — только сервер
+title Dead Mans - только сервер
 
 call "%~dp0dev-common.bat" PrintBanner "Только сервер API" "http://localhost:5285"
 if errorlevel 1 exit /b 1

@@ -570,7 +570,7 @@ describe('GameModifiersPage', () => {
     renderGameModifiersPage()
 
     const blockedStatus = screen.getByRole('status', {
-      name: 'Ваша команда сейчас играет этот раунд — активировать модификаторы для неё нельзя.',
+      name: 'Ваша команда сейчас играет этот раунд - активировать модификаторы для неё нельзя.',
     })
     expect(within(blockedStatus).getByText('Ваша команда играет')).toHaveStyle({
       textAlign: 'center',
@@ -582,7 +582,7 @@ describe('GameModifiersPage', () => {
     })
     fireEvent.mouseOver(blockedStatus)
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'Ваша команда сейчас играет этот раунд — активировать модификаторы для неё нельзя.',
+      'Ваша команда сейчас играет этот раунд - активировать модификаторы для неё нельзя.',
     )
   })
 

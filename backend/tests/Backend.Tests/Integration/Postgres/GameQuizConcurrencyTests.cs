@@ -168,19 +168,84 @@ public sealed partial class GameQuizConcurrencyTests(PostgresTestDatabase databa
     }
 
     [Fact]
-    public async Task TwitchTransport_DoesNotCreateUnregisteredPrincipals()
+    public async Task TwitchTransport_CreatesAFirstTimeActivePrincipal()
     {
         var seed = await SeedAsync();
         await using var db = database.CreateDbContext();
         var result = await Repository(db, seed.Now).SubmitQuizAnswerAsync(seed.SessionId,
             new(seed.CorrectId, new TwitchGameQuizAnswerSource("unknown", "unknown", "Unknown", "channel", "message")));
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Accepted, result.Outcome);
+        Assert.Equal(3, await db.Users.CountAsync());
+        Assert.Single(await db.GameQuizSubmissions.ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task TwitchTransport_PreservesAnExistingBlock()
+    {
+        var seed = await SeedAsync();
+        await using var db = database.CreateDbContext();
+        var now = seed.Now;
+        db.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            TwitchUserId = "300002",
+            Login = "blocked",
+            DisplayName = "Blocked",
+            IsActive = false,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        });
+        await db.SaveChangesAsync();
+
+        var result = await Repository(db, now).SubmitQuizAnswerAsync(seed.SessionId,
+            new(seed.CorrectId, new TwitchGameQuizAnswerSource("300002", "renamed", "Renamed", "channel", "blocked-message")));
+
         Assert.Equal(SubmitQuizAnswerRepositoryOutcome.PlayerNotFound, result.Outcome);
-        Assert.Equal(2, await db.Users.CountAsync());
-        Assert.Empty(await db.GameQuizSubmissions.ToArrayAsync());
+        var blocked = await db.Users.SingleAsync(x => x.TwitchUserId == "300002");
+        Assert.False(blocked.IsActive);
+        Assert.Equal("blocked", blocked.Login);
+    }
+
+    [Fact]
+    public async Task TwitchTransport_DoesNotCreateAUserAtTheDeadline()
+    {
+        var seed = await SeedAsync();
+        await using var db = database.CreateDbContext();
+        var result = await Repository(db, seed.Deadline).SubmitQuizAnswerAsync(seed.SessionId,
+            new(seed.CorrectId, new TwitchGameQuizAnswerSource("300004", "lateviewer", "Late Viewer", "channel", "late-message")));
+
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.QuestionSessionClosed, result.Outcome);
+        Assert.False(await db.Users.AnyAsync(x => x.TwitchUserId == "300004"));
+    }
+
+    [Fact]
+    public async Task TwitchTransport_ConcurrentFirstMessagesCreateOnePrincipalAndOneAttempt()
+    {
+        var seed = await SeedAsync();
+        var gate = new SubmissionGate();
+        await using var firstDb = database.CreateDbContext(gate);
+        await using var secondDb = database.CreateDbContext();
+        await secondDb.Database.OpenConnectionAsync();
+        var secondProcessId = ((NpgsqlConnection)secondDb.Database.GetDbConnection()).ProcessID;
+        var first = Repository(firstDb, seed.Now).SubmitQuizAnswerAsync(seed.SessionId,
+            new(seed.CorrectId, new TwitchGameQuizAnswerSource("300003", "newviewer", "New Viewer", "channel", "message-1")));
+        await gate.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var second = Repository(secondDb, seed.Now).SubmitQuizAnswerAsync(seed.SessionId,
+            new(seed.CorrectId, new TwitchGameQuizAnswerSource("300003", "newviewer", "New Viewer", "channel", "message-2")));
+        try { await WaitForLockAsync(secondProcessId); }
+        finally { gate.Release.TrySetResult(); }
+
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Accepted, (await first).Outcome);
+        Assert.Equal(SubmitQuizAnswerRepositoryOutcome.Existing, (await second.WaitAsync(TimeSpan.FromSeconds(10))).Outcome);
+        await using var verifyDb = database.CreateDbContext();
+        Assert.Equal(1, await verifyDb.Users.CountAsync(x => x.TwitchUserId == "300003"));
+        Assert.Equal(1, await verifyDb.GameQuizSubmissions.CountAsync(x => x.User.TwitchUserId == "300003"));
     }
     private async Task WaitForLockAsync(ApplicationDbContext db)
+        => await WaitForLockAsync(((NpgsqlConnection)db.Database.GetDbConnection()).ProcessID);
+
+    private async Task WaitForLockAsync(int processId)
     {
-        var processId = ((NpgsqlConnection)db.Database.GetDbConnection()).ProcessID;
         await using var observer = new NpgsqlConnection(database.ConnectionString);
         await observer.OpenAsync();
         await using var command = new NpgsqlCommand(

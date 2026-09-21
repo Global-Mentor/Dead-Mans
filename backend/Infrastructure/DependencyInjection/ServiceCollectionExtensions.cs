@@ -7,6 +7,7 @@ using backend.Infrastructure.Configuration;
 using backend.Application.Configuration;
 using backend.Infrastructure.Persistence;
 using backend.Infrastructure.Storage;
+using backend.Infrastructure.Twitch;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +126,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameNotificationRepository, DbGameNotificationRepository>();
         services.AddScoped<IGameQuestionRepository, DbGameQuestionRepository>();
         services.AddScoped<IGameQuizRepository, DbGameQuizRepository>();
+        services.AddSingleton<TwitchEventSubHealth>();
+        services.AddSingleton<TwitchApplicationTokenCache>();
+        services.AddScoped<ITwitchBotService, TwitchBotService>();
+        services.AddHttpClient<TwitchBotApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.MaxResponseContentBufferSize = 1024 * 1024;
+        });
         services.AddScoped<IGameRegistrationReadStore, GameRegistrationReadStore>();
         services.AddScoped<IGameRegistrationPersistence, DbGameRegistrationPersistence>();
         services.AddScoped<IGameLifecycleReadStore, GameLifecycleReadStore>();
@@ -152,6 +161,7 @@ public static class ServiceCollectionExtensions
         if (!environment.IsEnvironment("Testing"))
         {
             services.AddHostedService<GameQuizDeadlineWorker>();
+            services.AddHostedService<TwitchBotWorker>();
         }
 
         return services;

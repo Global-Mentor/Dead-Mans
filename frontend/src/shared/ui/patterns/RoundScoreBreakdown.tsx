@@ -178,7 +178,7 @@ function describeLine(line: CalculationLine, value: Record<string, number>, t: T
 }
 
 function operandText(value: number | undefined) {
-  return value === undefined ? '—' : String(value)
+  return value === undefined ? '-' : String(value)
 }
 
 function formatSigned(value: number, showPlus = true) {

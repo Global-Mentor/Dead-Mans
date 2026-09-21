@@ -10,7 +10,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import {
@@ -23,6 +23,7 @@ import type {
   CreateGameQuestionRequest,
   GameQuestionCategoryItem,
   GameQuestionCatalogItem,
+  TwitchQuizPreview,
 } from '../../../shared/api/contracts/index.ts'
 import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
 import {
@@ -32,6 +33,7 @@ import {
   type QuestionFormValues,
 } from '../model/question-form-schema.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
+import { previewTwitchQuizMessages } from '../../game-questions/api/game-questions-api.ts'
 
 const questionFormId = 'catalog-question-form'
 
@@ -116,6 +118,38 @@ function QuestionFormDialogBody({
       resolver: zodResolver(schema),
     })
   const categoryValue = useWatch({ control, name: 'categoryId' }) ?? ''
+  const questionText = useWatch({ control, name: 'text' }) ?? ''
+  const watchedOptions = useWatch({ control, name: 'options' })
+  const rewardValue = useWatch({ control, name: 'reward' }) ?? '0'
+  const [twitchPreview, setTwitchPreview] = useState<TwitchQuizPreview | null>(null)
+  const twitchOptionTexts = useMemo(
+    () => (watchedOptions ?? []).map((option) => option.text),
+    [watchedOptions],
+  )
+  const canPreviewTwitch = twitchOptionTexts.length >= minQuestionAnswers
+  const visibleTwitchPreview = canPreviewTwitch ? twitchPreview : null
+
+  useEffect(() => {
+    if (!canPreviewTwitch) return
+    let active = true
+    const timer = window.setTimeout(() => {
+      void previewTwitchQuizMessages(
+        questionText,
+        twitchOptionTexts,
+        Math.max(0, Number.parseInt(rewardValue, 10) || 0),
+      )
+        .then((preview) => {
+          if (active) setTwitchPreview(preview)
+        })
+        .catch(() => {
+          if (active) setTwitchPreview(null)
+        })
+    }, 250)
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+    }
+  }, [canPreviewTwitch, questionText, rewardValue, twitchOptionTexts])
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -347,6 +381,43 @@ function QuestionFormDialogBody({
               />
             )}
           />
+          {visibleTwitchPreview ? (
+            <Box
+              sx={{
+                border: '1px solid',
+                borderColor: visibleTwitchPreview.isCompatible ? 'divider' : 'error.main',
+                borderRadius: 1,
+                p: 1.5,
+              }}
+            >
+              <Typography variant="subtitle2">
+                {t('gameCatalog.questions.twitchPreview')}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                {visibleTwitchPreview.question}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {visibleTwitchPreview.questionLength} / {visibleTwitchPreview.maximumLength}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                {visibleTwitchPreview.options}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {visibleTwitchPreview.optionsLength} / {visibleTwitchPreview.maximumLength}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                {visibleTwitchPreview.resultTemplate}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {visibleTwitchPreview.resultMaximumLength} / {visibleTwitchPreview.maximumLength}
+              </Typography>
+              {!visibleTwitchPreview.isCompatible ? (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {t('gameCatalog.questions.twitchTooLong')}
+                </Alert>
+              ) : null}
+            </Box>
+          ) : null}
         </Stack>
       </form>
     </AppDialog>

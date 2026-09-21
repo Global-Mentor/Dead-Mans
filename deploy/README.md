@@ -95,7 +95,52 @@ If rollback is necessary, restore the pre-upgrade backup together with the old
 image; neither an image-only rollback nor `Down` restores discarded data. No
 database deletion or connection-string change is needed for the upgrade.
 
-### Routine releases
+### Embedded Twitch Bot rollout
+
+The bot runs inside the existing backend image. No separate bot container,
+development webhook proxy or Cloudflare tunnel is needed in production.
+The current feature is quiz delivery, but the bot configuration is shared. Existing
+`TwitchQuiz__*` variables remain supported; new configuration uses `TwitchBot__*`.
+When renaming existing Coolify variables, preserve their values and runtime-only
+flags. Do not generate new secrets or reconnect accounts just for this rename.
+
+1. Verify the current database already includes the multiple-choice upgrade above.
+   The bot release adds `20260920180839_AddTwitchQuizIntegration`; this migration
+   only creates delivery, OAuth and receipt tables. If an older destructive
+   upgrade is still pending, stop and use its separate maintenance procedure.
+2. Confirm a recent restorable backup and the persistent `/var/lib/deadmans/keys`
+   mount. Keep `DataProtection__KeysDirectory` unchanged; do not copy local tokens
+   or local encryption keys into production.
+3. Register `https://deadman.bug.community/api/integrations/twitch/oauth/callback`
+   in the dedicated bot Twitch application, alongside the localhost callback.
+   Do not replace the existing site-login Twitch application's settings.
+4. In the existing Coolify `deadmans-app` production resource, save the
+   `TwitchBot__*` variables from `.env.example` as runtime-only variables. Use the
+   bot app Client ID/secret and a fresh production-only webhook secret. Keep
+   `TwitchBot__Enabled=false` until the release and all required values are ready.
+   Replace every secret placeholder before enabling. Coolify's Add dialog can
+   also create a Preview entry: keep the preview bot disabled and never copy
+   production secrets into it. Edit secret values in the Production entries only.
+5. Roll out the reviewed release through the existing immutable-image pipeline.
+   The migration runner/startup migration setting must apply the additive migration
+   before the worker starts. Verify `/health/ready` and `X-Release-Sha`.
+6. Enable the module and redeploy that same reviewed digest to load the runtime
+   configuration. As a site administrator, open `/panel/game-quiz`, authorize
+   GlobalMentorBot, then authorize the GlobalMentor channel owner. These interactive
+   OAuth grants are stored and encrypted independently of local development.
+7. Wait for all three connection indicators. Check the public webhook rejects an
+   unsigned POST, and verify quiz delivery in the agreed test window. Do not run
+   local and production quizzes in the same Twitch channel simultaneously.
+
+Until the new image is deployed, bot endpoints on the old release may return 404;
+saved Coolify variables alone do not activate the feature. Disabling
+`TwitchBot__Enabled` and redeploying the same digest stops bot processing without
+removing delivery history, grants or points. Do not downgrade the database.
+
+See the [bot operating guide](../docs/twitch-bot.md) for explicit retry,
+uncertain delivery and result recovery.
+
+### Routine release automation
 
 Add these values to the GitHub `production` environment:
 

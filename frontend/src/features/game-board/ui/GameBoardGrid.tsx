@@ -329,7 +329,7 @@ export function GameBoardGrid({
                   </>
                 ) : (
                   <Typography variant="caption" color="text.disabled">
-                    —
+                    -
                   </Typography>
                 )}
               </Box>

@@ -17,7 +17,8 @@ public sealed class AuthorizationBoundaryMetadataTests
         var intentionallyAnonymousControllers = new HashSet<Type>
         {
             typeof(AuthController),
-            typeof(AuthSessionController)
+            typeof(AuthSessionController),
+            typeof(TwitchEventSubController)
         };
         var controllerTypes = typeof(GameController).Assembly
             .GetTypes()

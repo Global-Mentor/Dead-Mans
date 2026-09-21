@@ -55,7 +55,7 @@ const translations = {
     sectionNavigation: 'Application sections',
     applicationForming: 'You are on a team. The administrator will confirm the roster.',
     applicationConfirmed: 'Your team is confirmed. Wait for the game to start.',
-    teamSize: 'Team size: {{min}}–{{max}}',
+    teamSize: 'Team size: {{min}}-{{max}}',
     noFreeSlots: 'All team slots are taken. Join an open team or accept an invitation.',
     resetFilters: 'Clear filters',
     noMatchingTeams: 'No matching teams. Try another name or remove the filter.',
@@ -176,7 +176,7 @@ const translations = {
       readyTeams: 'Teams with all players ready',
       freePlayersStatus: 'Free players',
       disbandRequestsStatus: 'Disband requests',
-      teamRulesStatus: 'Team size: {{min}}–{{max}}',
+      teamRulesStatus: 'Team size: {{min}}-{{max}}',
       moreTeamActions: 'More team actions',
       hideTeamActions: 'Hide team actions',
       emptyTeams: 'No teams yet. Create an empty roster and assign players manually.',
@@ -226,7 +226,7 @@ const translations = {
         'This roster is confirmed and cannot be changed. You can disband the team.',
       teamPendingInvitesHint: 'Resolve pending invitations before confirming this roster.',
       teamNeedsPlayersHint:
-        'Players can mark ready when all {{max}} places are filled. An administrator may confirm a roster with {{min}}–{{max}} players.',
+        'Players can mark ready when all {{max}} places are filled. An administrator may confirm a roster with {{min}}-{{max}} players.',
       invitePlayer: 'Invite player',
       activeTeamChip: 'Active turn',
       playedTeamChip: 'Played',
@@ -345,7 +345,7 @@ const translations = {
     sectionNavigation: 'Разделы заявки',
     applicationForming: 'Вы в команде. Администратор подтвердит состав перед игрой.',
     applicationConfirmed: 'Команда подтверждена. Ожидайте начала игры.',
-    teamSize: 'В команде: {{min}}–{{max}}',
+    teamSize: 'В команде: {{min}}-{{max}}',
     noFreeSlots:
       'Все слоты для команд заняты. Вступите в открытую команду или примите приглашение.',
     resetFilters: 'Сбросить фильтры',
@@ -468,7 +468,7 @@ const translations = {
       readyTeams: 'Команды с готовым составом',
       freePlayersStatus: 'Свободные игроки',
       disbandRequestsStatus: 'Запросы на роспуск',
-      teamRulesStatus: 'Размер команды: {{min}}–{{max}}',
+      teamRulesStatus: 'Размер команды: {{min}}-{{max}}',
       moreTeamActions: 'Другие действия',
       hideTeamActions: 'Скрыть действия',
       emptyTeams: 'Пока нет команд. Создайте пустой состав и распределите игроков вручную.',
@@ -518,7 +518,7 @@ const translations = {
       teamPendingInvitesHint:
         'Перед подтверждением дождитесь ответа на приглашения или отмените их.',
       teamNeedsPlayersHint:
-        'Игроки смогут отметить готовность при заполнении всех {{max}} мест. Администратор может подтвердить состав из {{min}}–{{max}} игроков.',
+        'Игроки смогут отметить готовность при заполнении всех {{max}} мест. Администратор может подтвердить состав из {{min}}-{{max}} игроков.',
       invitePlayer: 'Пригласить игрока',
       activeTeamChip: 'Активный ход',
       playedTeamChip: 'Отыграла',
@@ -638,7 +638,7 @@ const translations = {
     sectionNavigation: 'Розділи заявки',
     applicationForming: 'Ви в команді. Адміністратор підтвердить склад перед грою.',
     applicationConfirmed: 'Команду підтверджено. Очікуйте початку гри.',
-    teamSize: 'У команді: {{min}}–{{max}}',
+    teamSize: 'У команді: {{min}}-{{max}}',
     noFreeSlots:
       'Усі слоти для команд зайняті. Приєднайтеся до відкритої команди або прийміть запрошення.',
     resetFilters: 'Скинути фільтри',
@@ -760,7 +760,7 @@ const translations = {
       readyTeams: 'Команди з готовим складом',
       freePlayersStatus: 'Вільні гравці',
       disbandRequestsStatus: 'Запити на розформування',
-      teamRulesStatus: 'Розмір команди: {{min}}–{{max}}',
+      teamRulesStatus: 'Розмір команди: {{min}}-{{max}}',
       moreTeamActions: 'Інші дії',
       hideTeamActions: 'Сховати дії',
       emptyTeams: 'Команд поки немає. Створіть порожній склад і розподіліть гравців вручну.',
@@ -810,7 +810,7 @@ const translations = {
       teamPendingInvitesHint:
         'Перед підтвердженням дочекайтеся відповіді на запрошення або скасуйте їх.',
       teamNeedsPlayersHint:
-        'Гравці зможуть позначити готовність після заповнення всіх {{max}} місць. Адміністратор може підтвердити склад із {{min}}–{{max}} гравців.',
+        'Гравці зможуть позначити готовність після заповнення всіх {{max}} місць. Адміністратор може підтвердити склад із {{min}}-{{max}} гравців.',
       invitePlayer: 'Запросити гравця',
       activeTeamChip: 'Активний хід',
       playedTeamChip: 'Відіграла',
@@ -928,7 +928,7 @@ const translations = {
     sectionNavigation: 'Sekcje zgłoszenia',
     applicationForming: 'Jesteś w drużynie. Administrator zatwierdzi skład przed grą.',
     applicationConfirmed: 'Drużyna jest zatwierdzona. Poczekaj na rozpoczęcie gry.',
-    teamSize: 'Liczba graczy: {{min}}–{{max}}',
+    teamSize: 'Liczba graczy: {{min}}-{{max}}',
     noFreeSlots:
       'Wszystkie sloty drużyn są zajęte. Dołącz do otwartej drużyny lub przyjmij zaproszenie.',
     resetFilters: 'Wyczyść filtry',
@@ -1054,7 +1054,7 @@ const translations = {
       readyTeams: 'Drużyny z gotowym składem',
       freePlayersStatus: 'Wolni gracze',
       disbandRequestsStatus: 'Prośby o rozwiązanie',
-      teamRulesStatus: 'Rozmiar drużyny: {{min}}–{{max}}',
+      teamRulesStatus: 'Rozmiar drużyny: {{min}}-{{max}}',
       moreTeamActions: 'Więcej działań',
       hideTeamActions: 'Ukryj działania',
       emptyTeams: 'Nie ma jeszcze drużyn. Utwórz pusty skład i przydziel graczy ręcznie.',
@@ -1105,7 +1105,7 @@ const translations = {
       teamPendingInvitesHint:
         'Przed zatwierdzeniem poczekaj na odpowiedzi lub anuluj oczekujące zaproszenia.',
       teamNeedsPlayersHint:
-        'Gracze mogą oznaczyć gotowość po obsadzeniu wszystkich {{max}} miejsc. Administrator może zatwierdzić skład liczący {{min}}–{{max}} graczy.',
+        'Gracze mogą oznaczyć gotowość po obsadzeniu wszystkich {{max}} miejsc. Administrator może zatwierdzić skład liczący {{min}}-{{max}} graczy.',
       invitePlayer: 'Zaproś gracza',
       activeTeamChip: 'Aktywna tura',
       playedTeamChip: 'Zagrała',

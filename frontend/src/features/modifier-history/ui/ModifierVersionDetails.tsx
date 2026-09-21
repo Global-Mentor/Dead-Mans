@@ -98,8 +98,8 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
               ? t('modifierHistory.unlimited')
               : String(item.activationLimit.count),
           ],
-          [t('modifierHistory.command'), item.activationCommand ?? '—'],
-          [t('modifierHistory.icon'), item.iconEmoji ?? '—'],
+          [t('modifierHistory.command'), item.activationCommand ?? '-'],
+          [t('modifierHistory.icon'), item.iconEmoji ?? '-'],
         ].map(([label, value]) => (
           <Box key={label}>
             <Typography variant="caption" color="text.secondary">
@@ -111,7 +111,7 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
       </Box>
       <Box>
         <Typography variant="subtitle2">{t('modifierHistory.tags')}</Typography>
-        <Typography>{item.normalizedTags.join(', ') || '—'}</Typography>
+        <Typography>{item.normalizedTags.join(', ') || '-'}</Typography>
       </Box>
       <Box>
         <Typography variant="subtitle2">{t('modifierHistory.conflicts')}</Typography>
@@ -147,8 +147,8 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
 }
 
 function flattenObject(value: unknown, prefix = ''): Array<[string, string]> {
-  if (value === null || value === undefined) return [[prefix, '—']]
-  if (Array.isArray(value)) return [[prefix, value.map(String).join(', ') || '—']]
+  if (value === null || value === undefined) return [[prefix, '-']]
+  if (Array.isArray(value)) return [[prefix, value.map(String).join(', ') || '-']]
   if (typeof value !== 'object') return [[prefix, String(value)]]
 
   return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) =>
@@ -157,7 +157,7 @@ function flattenObject(value: unknown, prefix = ''): Array<[string, string]> {
 }
 
 function formatDiffValue(item: ModifierVersionDetail | undefined, field: string, t: TFunction) {
-  if (!item) return '—'
+  if (!item) return '-'
 
   const values: Record<string, unknown> = {
     name: item.name,
@@ -178,5 +178,5 @@ function formatDiffValue(item: ModifierVersionDetail | undefined, field: string,
   }
   const value = values[field]
 
-  return value === null || value === undefined || value === '' ? '—' : String(value)
+  return value === null || value === undefined || value === '' ? '-' : String(value)
 }

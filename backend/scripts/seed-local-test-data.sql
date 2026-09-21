@@ -9,6 +9,19 @@ SELECT EXISTS (
 \quit
 \endif
 
+SELECT EXISTS (
+  SELECT 1
+  FROM games
+  WHERE id <> 'c6c6a0da-0bd1-4f0b-bb2f-9a4c9c8b7f6a'::uuid
+    AND is_deleted = false
+    AND status IN ('ready', 'active')
+) AS deadmans_other_current_game_exists \gset
+
+\if :deadmans_other_current_game_exists
+\echo 'Another ready or active game already exists; local test game seed skipped to preserve it.'
+\quit
+\endif
+
 BEGIN;
 
 CREATE OR REPLACE FUNCTION pg_temp.deadmans_seed_uuid(seed text)

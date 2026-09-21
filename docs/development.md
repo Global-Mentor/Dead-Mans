@@ -46,7 +46,7 @@ pwsh backend/scripts/setup-local.ps1
 ### Единая типографика frontend
 
 Гарнитура Alegreya Variable загружается локально в `frontend/src/main.tsx`.
-Единственное место задания семейства и начертания цифр — CSS-переменные
+Единственное место задания семейства и начертания цифр - CSS-переменные
 `--app-font-family` и `--app-font-numeric` в `frontend/src/index.css`.
 `huntTypography` и тема MUI используют эти переменные; обычные HTML-поля
 наследуют их автоматически, включая элементы в модалках и меню вне `#root`.

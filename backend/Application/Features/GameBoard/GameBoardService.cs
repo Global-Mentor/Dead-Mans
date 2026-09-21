@@ -58,22 +58,42 @@ public sealed class GameBoardService : IGameBoardService
         return _repository.GetCurrentTeamQueueAsync(cancellationToken);
     }
 
-    public Task<SetActiveGameTeamOutcome> SetActiveTeamAsync(
+    public async Task<SetActiveGameTeamOutcome> SetActiveTeamAsync(
         Guid? teamId,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.SetActiveTeamAsync(teamId, cancellationToken);
+        var outcome = await _repository.SetActiveTeamAsync(teamId, cancellationToken);
+        if (outcome == SetActiveGameTeamOutcome.Updated)
+        {
+            await PublishTeamStateChangedBestEffortAsync(teamId);
+        }
+
+        return outcome;
     }
 
-    public Task<SetGameTeamPlayedStateOutcome> SetGameTeamPlayedStateAsync(
+    public async Task<SetGameTeamPlayedStateOutcome> SetGameTeamPlayedStateAsync(
         Guid teamId,
         bool isPlayed,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.SetGameTeamPlayedStateAsync(teamId, isPlayed, cancellationToken);
+        var outcome = await _repository.SetGameTeamPlayedStateAsync(teamId, isPlayed, cancellationToken);
+        if (outcome == SetGameTeamPlayedStateOutcome.Updated)
+        {
+            await PublishTeamStateChangedBestEffortAsync(teamId);
+        }
+
+        return outcome;
     }
+
+    private Task PublishTeamStateChangedBestEffortAsync(Guid? teamId) =>
+        RealtimePublishGuard.TryPublishAsync(
+            publishToken => _eventsPublisher.PublishTeamStateChangedAsync(publishToken),
+            _logger,
+            AppMessages.Logs.RealtimeGameTeamStateChangedPublishFailed,
+            teamId
+        );
 
     public Task<bool> CurrentActiveGameHasActiveTeamAsync(CancellationToken cancellationToken = default)
     {

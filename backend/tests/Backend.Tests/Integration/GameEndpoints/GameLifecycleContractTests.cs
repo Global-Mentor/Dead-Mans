@@ -847,6 +847,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             Lifecycle.Add(payload);
             return failRealtime ? Task.FromException(new InvalidOperationException("Realtime unavailable")) : Task.CompletedTask;
         }
+        public Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task PublishCellOpenedAsync(GameCellOpenedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task PublishModifierActivatedAsync(GameModifierActivatedEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task PublishModifierActivationCancelledAsync(GameModifierActivationCancelledEvent payload, CancellationToken cancellationToken = default) => Task.CompletedTask;

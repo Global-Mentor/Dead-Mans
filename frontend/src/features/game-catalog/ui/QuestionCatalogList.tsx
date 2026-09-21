@@ -140,6 +140,9 @@ function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogI
       {question.isEnabled ? null : (
         <Chip color="error" label={t('gameCatalog.questions.disabledBadge')} />
       )}
+      {question.twitchCompatible ? null : (
+        <Chip color="error" label={t('gameCatalog.questions.twitchIncompatibleBadge')} />
+      )}
     </Stack>
   )
 }

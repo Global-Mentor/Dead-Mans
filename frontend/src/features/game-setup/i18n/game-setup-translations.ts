@@ -166,7 +166,7 @@ const translations = {
     createDialog: {
       promptTitle: 'No draft game yet',
       promptDescription:
-        'There is no game in setup right now. Start creation when you are ready — other admins will see the same draft.',
+        'There is no game in setup right now. Start creation when you are ready - other admins will see the same draft.',
       startCreate: 'Create game',
       title: 'Name the new game',
       detailsDescription: 'Enter a title for the draft. It will be created with a starter board.',
@@ -248,7 +248,7 @@ const translations = {
     },
     cellPriceLabel: 'Стоимость карточки',
     persistenceHint:
-      'Все администраторы работают с одним черновиком в базе. Текстовые поля сохраняются после потери фокуса, а выборы и изменения размера поля — сразу. Изображения сразу уходят в storage. Изменения других админов приходят по SignalR в реальном времени.',
+      'Все администраторы работают с одним черновиком в базе. Текстовые поля сохраняются после потери фокуса, а выборы и изменения размера поля - сразу. Изображения сразу уходят в storage. Изменения других админов приходят по SignalR в реальном времени.',
     modifiers: {
       title: 'Доступные модификаторы для этой игры',
       description:
@@ -289,17 +289,17 @@ const translations = {
     invalidTitle: 'Название игры должно быть длиной от 1 до 200 символов.',
     invalidRowLabel: 'Каждая метка строки должна быть от 1 до 24 символов.',
     invalidColumnLabel: 'Каждая метка колонки должна быть от 1 до 24 символов.',
-    invalidCellTitle: 'Название карточки — не более 200 символов.',
+    invalidCellTitle: 'Название карточки - не более 200 символов.',
     saveFailed: 'Не удалось сохранить настройку игры. Попробуйте ещё раз.',
     resetFailed: 'Не удалось сбросить настройку игры. Попробуйте ещё раз.',
     boardTitle: 'Игровая таблица',
     boardDescription:
-      'Подписи строк и колонок — только заголовки и не задают стоимость. Новая подпись может содержать до 24 символов и переносится на несколько строк. Текстовые поля сохраняются после выхода из них.',
+      'Подписи строк и колонок - только заголовки и не задают стоимость. Новая подпись может содержать до 24 символов и переносится на несколько строк. Текстовые поля сохраняются после выхода из них.',
     settingsSidebar: {
       overline: 'Настройка',
       title: 'Настройки игры',
       description:
-        'Название и размер таблицы. Текстовые поля сохраняются после потери фокуса, а размер и изображения — сразу.',
+        'Название и размер таблицы. Текстовые поля сохраняются после потери фокуса, а размер и изображения - сразу.',
       boardSizeLabel: 'Текущий размер',
       boardSizeValue: '{{rows}} строк × {{columns}} колонок',
       manageLayout: 'Строки и колонки…',
@@ -346,7 +346,7 @@ const translations = {
     createDialog: {
       promptTitle: 'Черновика пока нет',
       promptDescription:
-        'Сейчас нет игры в настройке. Начните создание, когда будете готовы — у всех админов будет один и тот же черновик.',
+        'Сейчас нет игры в настройке. Начните создание, когда будете готовы - у всех админов будет один и тот же черновик.',
       startCreate: 'Создать игру',
       title: 'Название новой игры',
       detailsDescription: 'Введите название черновика. Будет создана таблица-заготовка.',
@@ -427,7 +427,7 @@ const translations = {
     },
     cellPriceLabel: 'Вартість картки',
     persistenceHint:
-      'Усі адміністратори працюють з однією чернеткою в базі. Текстові поля зберігаються після втрати фокуса, а вибір і зміни розміру поля — одразу. Зображення одразу потрапляють у storage. Зміни інших адмінів надходять через SignalR.',
+      'Усі адміністратори працюють з однією чернеткою в базі. Текстові поля зберігаються після втрати фокуса, а вибір і зміни розміру поля - одразу. Зображення одразу потрапляють у storage. Зміни інших адмінів надходять через SignalR.',
     modifiers: {
       title: 'Доступні модифікатори для цієї гри',
       description:
@@ -469,17 +469,17 @@ const translations = {
     invalidTitle: 'Назва гри має бути довжиною від 1 до 200 символів.',
     invalidRowLabel: 'Кожна мітка рядка має бути від 1 до 24 символів.',
     invalidColumnLabel: 'Кожна мітка колонки має бути від 1 до 24 символів.',
-    invalidCellTitle: 'Назва картки — не більше 200 символів.',
+    invalidCellTitle: 'Назва картки - не більше 200 символів.',
     saveFailed: 'Не вдалося зберегти налаштування гри. Спробуйте ще раз.',
     resetFailed: 'Не вдалося скинути налаштування гри. Спробуйте ще раз.',
     boardTitle: 'Ігрова таблиця',
     boardDescription:
-      'Підписи рядків і колонок — лише заголовки й не задають вартість. Новий підпис може містити до 24 символів і переноситься на кілька рядків. Текстові поля зберігаються після виходу з них.',
+      'Підписи рядків і колонок - лише заголовки й не задають вартість. Новий підпис може містити до 24 символів і переноситься на кілька рядків. Текстові поля зберігаються після виходу з них.',
     settingsSidebar: {
       overline: 'Налаштування',
       title: 'Налаштування гри',
       description:
-        'Назва та розмір таблиці. Текстові поля зберігаються після втрати фокуса, а розмір і зображення — одразу.',
+        'Назва та розмір таблиці. Текстові поля зберігаються після втрати фокуса, а розмір і зображення - одразу.',
       boardSizeLabel: 'Поточний розмір',
       boardSizeValue: '{{rows}} рядків × {{columns}} колонок',
       manageLayout: 'Рядки та колонки…',
@@ -526,7 +526,7 @@ const translations = {
     createDialog: {
       promptTitle: 'Чернетки поки немає',
       promptDescription:
-        'Зараз немає гри в налаштуванні. Почніть створення, коли будете готові — у всіх адмінів буде одна й та сама чернетка.',
+        'Зараз немає гри в налаштуванні. Почніть створення, коли будете готові - у всіх адмінів буде одна й та сама чернетка.',
       startCreate: 'Створити гру',
       title: 'Назва нової гри',
       detailsDescription: 'Введіть назву чернетки. Буде створено таблицю-заготовку.',
@@ -605,7 +605,7 @@ const translations = {
     },
     cellPriceLabel: 'Wartość karty',
     persistenceHint:
-      'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Pola tekstowe zapisują się po utracie fokusu, a wybory i zmiany rozmiaru planszy — od razu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
+      'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Pola tekstowe zapisują się po utracie fokusu, a wybory i zmiany rozmiaru planszy - od razu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
     modifiers: {
       title: 'Dostępne modyfikatory dla tej gry',
       description:
@@ -657,7 +657,7 @@ const translations = {
       overline: 'Konfiguracja',
       title: 'Ustawienia gry',
       description:
-        'Nazwa i rozmiar planszy. Pola tekstowe zapisują się po utracie fokusu, a rozmiar i obrazy — od razu.',
+        'Nazwa i rozmiar planszy. Pola tekstowe zapisują się po utracie fokusu, a rozmiar i obrazy - od razu.',
       boardSizeLabel: 'Aktualny rozmiar',
       boardSizeValue: '{{rows}} wierszy × {{columns}} kolumn',
       manageLayout: 'Wiersze i kolumny…',
@@ -704,7 +704,7 @@ const translations = {
     createDialog: {
       promptTitle: 'Brak szkicu gry',
       promptDescription:
-        'Obecnie nie ma gry w konfiguracji. Rozpocznij tworzenie, gdy będziesz gotowy — wszyscy administratorzy zobaczą ten sam szkic.',
+        'Obecnie nie ma gry w konfiguracji. Rozpocznij tworzenie, gdy będziesz gotowy - wszyscy administratorzy zobaczą ten sam szkic.',
       startCreate: 'Utwórz grę',
       title: 'Nazwa nowej gry',
       detailsDescription: 'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',

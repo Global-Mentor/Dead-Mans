@@ -222,6 +222,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task SetActiveTeam_WhenModeratorAndConfirmedTeam_UpdatesCurrentGameSnapshot()
     {
+        var publisher = new RecordingGameBoardEventsPublisher();
         var cellId = await SeedSingleCellAsync(selectActiveTeam: false);
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -230,7 +231,10 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             .SelectMany(cell => dbContext.GameTeams.Where(team => team.GameId == cell.Board.GameId))
             .Select(team => team.Id)
             .SingleAsync();
-        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+        using var moderatorClient = CreateAuthenticatedClient(
+            [AuthRoleCodes.Moderator],
+            publisher: publisher
+        );
 
         var response = await moderatorClient.PutAsJsonAsync(
             "/api/game/active-team",
@@ -244,6 +248,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var snapshot = await snapshotResponse.Content.ReadFromJsonAsync<GameBoardSnapshotDto>();
         Assert.NotNull(snapshot);
         Assert.Equal(teamId.ToString(), snapshot.ActiveTeamId);
+        Assert.Equal(1, publisher.PublishedTeamStateChangedEvents);
     }
 
     [Theory]
@@ -4183,6 +4188,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         public List<GameQuizStateChangedEvent> PublishedQuizStateChangedEvents { get; } = [];
         public List<GameUserNotificationCreatedEvent> PublishedUserNotificationEvents { get; } = [];
         public List<GameLifecycleChangedEvent> PublishedLifecycleChangedEvents { get; } = [];
+        public int PublishedTeamStateChangedEvents { get; private set; }
 
         public Task PublishCellOpenedAsync(
             GameCellOpenedEvent @event,
@@ -4262,6 +4268,12 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         )
         {
             PublishedLifecycleChangedEvents.Add(@event);
+            return Task.CompletedTask;
+        }
+
+        public Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default)
+        {
+            PublishedTeamStateChangedEvents += 1;
             return Task.CompletedTask;
         }
     }

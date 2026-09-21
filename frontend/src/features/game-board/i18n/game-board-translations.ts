@@ -146,7 +146,7 @@ const translations = {
     manualQuizAwardOperationAward: 'Award',
     manualQuizAwardOperationDeduct: 'Deduct',
     manualQuizAwardReasonLabel: 'Reason',
-    manualQuizAwardReasonHint: 'Required, 3–500 characters.',
+    manualQuizAwardReasonHint: 'Required, 3-500 characters.',
     manualQuizAwardBalancePreview: 'Available balance: {{before}} {{sign}} {{points}} = {{after}}.',
     manualQuizAwardAction: 'Apply adjustment',
     manualQuizAwardSaving: 'Saving...',

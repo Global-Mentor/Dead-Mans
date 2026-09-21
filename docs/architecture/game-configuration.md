@@ -9,11 +9,11 @@
 Раньше admin-разделы смешивали два разных понятия. Теперь они явно разделены, и
 у админа в навигации две группы (`PanelAdminNavigation`):
 
-- **Текущая игра** (`adminSection: 'current-game'`): настройка черновика игры —
+- **Текущая игра** (`adminSection: 'current-game'`): настройка черновика игры -
   поле (`game-setup`), выбор модификаторов (`admin-modifiers`), выбор вопросов
   (`admin-questions`), команды (`team-registrations`). Здесь админ выбирает, какое
   подмножество каталога будет участвовать в создаваемой игре.
-- **Глобальный каталог** (`adminSection: 'catalog'`): мастер-данные —
+- **Глобальный каталог** (`adminSection: 'catalog'`): мастер-данные -
   `catalog-modifiers` и `catalog-questions`. Здесь модификаторы и вопросы
   создаются, редактируются и удаляются (soft-delete) независимо от какой-либо игры.
 
@@ -21,24 +21,24 @@
 
 Глобальный каталог:
 
-- `modifier_definitions` — стабильная идентичность модификатора и указатель на текущую
+- `modifier_definitions` - стабильная идентичность модификатора и указатель на текущую
   неизменяемую редакцию. Полная модель: [`modifier-versioning.md`](modifier-versioning.md).
   Soft-delete через `is_archived`.
-  Первичный ключ — суррогатный `Id` (Guid). Модификатор больше не требует
+  Первичный ключ - суррогатный `Id` (Guid). Модификатор больше не требует
   человекочитаемого кода: идентичность и связи держатся на `Id`, а админ
   редактирует только смысловые поля. Для будущего расчёта наград каталог несёт
   типизированное revisioned-поведение `BehaviorV2`: kind, phase, performer,
   host monitoring, rule, stacking policy, resolution, reward и ссылку на одну из
   versioned built-in formulas с закрытыми параметрами. Лимит хранится как
-  `max_activations_per_round`, конфликты — через `conflictingModifierIds`.
+  `max_activations_per_round`, конфликты - через `conflictingModifierIds`.
   UI показывает этапы по-русски (`Перед раундом`, `Во время раунда`,
   `На итог раунда`), а транспорт использует стабильные V2-коды.
-- `question_definitions` — каталог вопросов. Soft-delete через `is_deleted` /
+- `question_definitions` - каталог вопросов. Soft-delete через `is_deleted` /
   `deleted_at_utc` (+ check-constraint, что флаг и метка времени согласованы).
   Каждому вопросу назначается категория через `CategoryId` (FK на
   `question_categories.Id`, `Restrict`).
-- `question_categories` — каталог категорий. Первичный ключ — суррогатный
-  `id` (Guid), `name` — отображаемое название (уникальное, ≤64, читаемое). Кода
+- `question_categories` - каталог категорий. Первичный ключ - суррогатный
+  `id` (Guid), `name` - отображаемое название (уникальное, ≤64, читаемое). Кода
   у категории нет: имя редактируемо, и переименование не ломает ссылки вопросов
   (они держат `CategoryId`, а не строку). Зашитые категории мигрированы в
   читаемые русские имена (`Лор`, `Локации`, `Оружие и предметы`, `Статистика`).
@@ -52,11 +52,11 @@
 
 Привязка к конкретной игре (подмножество каталога):
 
-- `game_enabled_modifiers (game_id, modifier_id)` — какие модификаторы включены
+- `game_enabled_modifiers (game_id, modifier_id)` - какие модификаторы включены
   в игру; `modifier_version_id` пуст в draft/ready и атомарно заполняется для всего набора
   при старте.
-- `game_enabled_questions (game_id, question_id)` — аналог для вопросов:
-  какие вопросы участвуют в игре. FK на игру — `Cascade`, на вопрос — `Restrict`
+- `game_enabled_questions (game_id, question_id)` - аналог для вопросов:
+  какие вопросы участвуют в игре. FK на игру - `Cascade`, на вопрос - `Restrict`
   (вопросы удаляются soft-delete, поэтому жёсткого удаления записи каталога нет).
 
 Оба enabled-набора живут на игре и переживают переходы статуса
@@ -87,7 +87,7 @@
 вопросы с минимальным `AskedTotalCount`, затем среди них приоритет получают
 вопросы с максимальным `Priority`; если кандидатов всё ещё несколько, один из них
 выбирается случайно. **Пустой выбор =
-вопросов нет** (ask-next вернёт `NoAvailableQuestions`) —
+вопросов нет** (ask-next вернёт `NoAvailableQuestions`) -
 выбор вопросов для игры обязателен.
 
 ## 4. API (см. `backend/openapi/deadmans.v1.yaml`)
@@ -103,15 +103,15 @@
   задаёт фазу, исполнителя, наблюдение ведущего, stacking, resolution и одну из
   поддерживаемых versioned formulas; произвольных выражений и ручной поправки
   результата в V2-контракте нет.
-  Чтение — существующий `GET /api/game/modifiers/catalog` (исключает архивные).
+  Чтение - существующий `GET /api/game/modifiers/catalog` (исключает архивные).
   Полная keyset-история доступна всем авторизованным пользователям через
   `/api/game/modifiers/history` и version/detail/games endpoints.
 - Вопросы: `POST /api/game/questions`, `PUT /api/game/questions/{id}`,
-  `DELETE /api/game/questions/{id}` (soft-delete, существовал). Чтение —
+  `DELETE /api/game/questions/{id}` (soft-delete, существовал). Чтение -
   `GET /api/game/questions/catalog`. Bulk-import `POST /api/game/questions/import`
   принимает JSON/JSONC, где обязательны только `text`, `answer`, `reward`; если
   `categoryId` не указан, используется fallback-категория `БЕЗ КАТЕГОРИИ`, если
-  `isEnabled` не указан — импортируется `false`, если `priority` не указан —
+  `isEnabled` не указан - импортируется `false`, если `priority` не указан -
   используется `0`. Невалидные записи не валят весь импорт: backend пропускает их
   и возвращает список пропущенных строк с причинами; нераспознанная категория
   мапится в fallback-категорию `БЕЗ КАТЕГОРИИ`. Один запрос ограничен 5 MiB и
@@ -127,9 +127,9 @@
 
 ## 5. Инварианты
 
-- Каталог редактируется только через catalog-эндпоинты; per-game выбор — через
+- Каталог редактируется только через catalog-эндпоинты; per-game выбор - через
   `PUT /api/game/setup`, с автоматическим снятием недоступных вопросов в черновиках.
-- Удаление в каталоге — всегда soft-delete (история игр не теряется).
+- Удаление в каталоге - всегда soft-delete (история игр не теряется).
 - Транспорт сначала меняется в OpenAPI, затем регенерируются frontend-типы
   (`npm --prefix frontend run generate:transport`).
 - Валидация и нормализация входных данных живут в Application-слое

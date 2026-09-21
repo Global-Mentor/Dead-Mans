@@ -10,6 +10,7 @@ vi.mock('../shared/realtime/index.ts', () => ({
       events: {
         gameLifecycleChanged: 'gameLifecycleChanged',
         registrationChanged: 'registrationChanged',
+        teamStateChanged: 'teamStateChanged',
       },
     },
   },
@@ -59,6 +60,14 @@ describe('GameLifecycleRealtimeSync', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'snapshot'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'adminSnapshot'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentTeamQueue'] })
+    invalidate.mockClear()
+    await act(async () => {
+      handlers.get('teamStateChanged')!()
+    })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentTeamQueue'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'snapshot'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRegistration', 'adminSnapshot'] })
     unregister()
     expect(connection.off).toHaveBeenCalledWith(
       'gameLifecycleChanged',
@@ -67,6 +76,10 @@ describe('GameLifecycleRealtimeSync', () => {
     expect(connection.off).toHaveBeenCalledWith(
       'registrationChanged',
       handlers.get('registrationChanged'),
+    )
+    expect(connection.off).toHaveBeenCalledWith(
+      'teamStateChanged',
+      handlers.get('teamStateChanged'),
     )
   })
 })
