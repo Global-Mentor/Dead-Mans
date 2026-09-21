@@ -46,7 +46,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<GameQuizQuestionSession> GameQuizQuestionSessions => Set<GameQuizQuestionSession>();
     public DbSet<GameQuizSubmission> GameQuizSubmissions => Set<GameQuizSubmission>();
-    public DbSet<TwitchQuizConnection> TwitchQuizConnections => Set<TwitchQuizConnection>();
+    public DbSet<TwitchBotConnection> TwitchBotConnections => Set<TwitchBotConnection>();
     public DbSet<TwitchQuizPublication> TwitchQuizPublications => Set<TwitchQuizPublication>();
     public DbSet<TwitchEventSubReceipt> TwitchEventSubReceipts => Set<TwitchEventSubReceipt>();
 
@@ -125,7 +125,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new QuestionOptionConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizQuestionSessionConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizSubmissionConfiguration());
-        modelBuilder.ApplyConfiguration(new TwitchQuizConnectionConfiguration());
+        modelBuilder.ApplyConfiguration(new TwitchBotConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new TwitchQuizPublicationConfiguration());
         modelBuilder.ApplyConfiguration(new TwitchEventSubReceiptConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizPointLedgerEntryConfiguration());

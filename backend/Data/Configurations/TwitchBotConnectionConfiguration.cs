@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace backend.Data.Configurations;
 
-public sealed class TwitchQuizConnectionConfiguration : IEntityTypeConfiguration<TwitchQuizConnection>
+public sealed class TwitchBotConnectionConfiguration : IEntityTypeConfiguration<TwitchBotConnection>
 {
-    public void Configure(EntityTypeBuilder<TwitchQuizConnection> builder)
+    public void Configure(EntityTypeBuilder<TwitchBotConnection> builder)
     {
+        // Keep the deployed table name; this shared bot entity is not quiz-specific.
         builder.ToTable("twitch_quiz_connections");
         builder.HasKey(x => x.Role);
         builder.Property(x => x.Role).HasMaxLength(32);

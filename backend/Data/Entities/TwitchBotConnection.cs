@@ -1,6 +1,6 @@
 namespace backend.Data.Entities;
 
-public sealed class TwitchQuizConnection
+public sealed class TwitchBotConnection
 {
     public string Role { get; set; } = string.Empty;
     public string TwitchUserId { get; set; } = string.Empty;

@@ -224,12 +224,13 @@ production by the migration.
 
 ## Migration Policy
 
-### Twitch quiz delivery storage
+### Twitch Bot connections and quiz delivery storage
 
 `20260920180839_AddTwitchQuizIntegration` is additive: it creates three tables and
 their indexes without deleting or rewriting games, answers or points.
 
-- `twitch_quiz_connections` stores the bot and broadcaster grants by role. Tokens
+- `twitch_quiz_connections` stores the shared bot and broadcaster grants by role,
+  mapped by `TwitchBotConnection`. The historical SQL name remains unchanged. Tokens
   are encrypted with the environment's persistent ASP.NET Core Data Protection keys.
 - `twitch_quiz_publications` stores the immutable question/option snapshot and the
   delivery state of each chat message. A session is opened only after both question
