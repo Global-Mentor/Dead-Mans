@@ -15,11 +15,20 @@ values. The shipped base/development settings deliberately contain neither secti
 defaults come from `TwitchBotOptions`, so they cannot mask existing local secrets or
 production variables. New installations should use only `TwitchBot`.
 
+Managed local settings, User Secrets and Coolify Production/Preview keys now use
+`TwitchBot`. The fallback is for older external installations and rollback only,
+not the configuration name operators should use.
+
 The existing OAuth routes, database table names and Data Protection purposes are
 unchanged. Renaming the bot does not invalidate encrypted grants or require a
 database migration. Quiz publication records and quiz command names keep `Quiz`
 because they describe that feature, not the bot as a whole. Account controls are
 currently displayed on the quiz page; that location is not a separate bot identity.
+
+The shared OAuth entity is `TwitchBotConnection`, mapped to the existing
+`twitch_quiz_connections` table. Its historical SQL name and the
+`DeadMans.TwitchQuiz.*.v1` encryption purposes are compatibility identifiers, not
+bot branding. Never rename these persisted identifiers by search-and-replace.
 
 Persist the ASP.NET Core Data Protection key ring (`DataProtection__KeysDirectory`) before connecting accounts. OAuth refresh tokens are protected with this key ring; losing it requires reconnecting both Twitch accounts.
 

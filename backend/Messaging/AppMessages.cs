@@ -224,8 +224,8 @@ public static class AppMessages
             "You already selected another answer for this quiz question.";
         public const string GameQuizOptionNotFound =
             "The selected answer option does not belong to this quiz question session.";
-        public const string TwitchQuizDisabled = "The Twitch quiz module is disabled.";
-        public const string TwitchQuizNotConnected = "Connect the configured bot and channel owner, then wait for EventSub to connect before publishing.";
+        public const string TwitchBotDisabled = "The Twitch bot is disabled.";
+        public const string TwitchBotNotConnected = "Connect the configured bot and channel owner, then wait for EventSub to connect before publishing.";
         public const string TwitchQuizPublicationInProgress = "A Twitch question publication is already unresolved.";
         public const string TwitchQuizPendingOutcome = "Deliver or explicitly skip the previous Twitch result first.";
         public const string TwitchQuizIncompatibleQuestion = "The question cannot fit the Twitch 500-character message limit.";
@@ -440,8 +440,8 @@ public static class AppMessages
         public const string GameQuizQuestionSessionClosed = "game_quiz.question_session_closed";
         public const string GameQuizAlreadyAnswered = "game_quiz.already_answered";
         public const string GameQuizOptionNotFound = "game_quiz.option_not_found";
-        public const string TwitchQuizDisabled = "twitch_quiz.disabled";
-        public const string TwitchQuizNotConnected = "twitch_quiz.not_connected";
+        public const string TwitchBotDisabled = "twitch_bot.disabled";
+        public const string TwitchBotNotConnected = "twitch_bot.not_connected";
         public const string TwitchQuizPublicationInProgress = "twitch_quiz.publication_in_progress";
         public const string TwitchQuizPendingOutcome = "twitch_quiz.pending_outcome";
         public const string TwitchQuizIncompatibleQuestion = "twitch_quiz.incompatible_question";

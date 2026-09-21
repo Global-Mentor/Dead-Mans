@@ -2694,7 +2694,7 @@ namespace backend.Data.Migrations
                     b.ToTable("twitch_eventsub_receipts", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.TwitchQuizConnection", b =>
+            modelBuilder.Entity("backend.Data.Entities.TwitchBotConnection", b =>
                 {
                     b.Property<string>("Role")
                         .HasMaxLength(32)

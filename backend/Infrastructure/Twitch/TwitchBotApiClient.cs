@@ -66,10 +66,10 @@ internal sealed class TwitchBotApiClient
 
     public async Task SaveGrantAsync(string role, TwitchOAuthGrant grant, CancellationToken cancellationToken)
     {
-        var row = await _db.TwitchQuizConnections.SingleOrDefaultAsync(x => x.Role == role, cancellationToken);
+        var row = await _db.TwitchBotConnections.SingleOrDefaultAsync(x => x.Role == role, cancellationToken);
         if (row is null)
         {
-            row = new TwitchQuizConnection { Role = role };
+            row = new TwitchBotConnection { Role = role };
             _db.Add(row);
         }
         row.TwitchUserId = grant.Identity.Id;
@@ -211,9 +211,9 @@ internal sealed class TwitchBotApiClient
         return false;
     }
 
-    private async Task<(TwitchQuizConnection Row, string AccessToken)?> GetValidConnectionAsync(string role, CancellationToken cancellationToken)
+    private async Task<(TwitchBotConnection Row, string AccessToken)?> GetValidConnectionAsync(string role, CancellationToken cancellationToken)
     {
-        var row = await _db.TwitchQuizConnections.SingleOrDefaultAsync(x => x.Role == role && x.RevokedAtUtc == null, cancellationToken);
+        var row = await _db.TwitchBotConnections.SingleOrDefaultAsync(x => x.Role == role && x.RevokedAtUtc == null, cancellationToken);
         if (row is null) return null;
         var expectedId = role == "bot" ? _options.ExpectedBotUserId : _options.ExpectedBroadcasterUserId;
         var requiredScopes = role == "bot" ? TwitchBotOptions.BotScopes : TwitchBotOptions.BroadcasterScopes;
@@ -263,7 +263,7 @@ internal sealed class TwitchBotApiClient
         finally { RefreshLock.Release(); }
     }
 
-    private async Task<bool> ValidateConnectionAsync((TwitchQuizConnection Row, string AccessToken) connection,
+    private async Task<bool> ValidateConnectionAsync((TwitchBotConnection Row, string AccessToken) connection,
         string[] requiredScopes, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{_options.OAuthBaseUrl.TrimEnd('/')}/oauth2/validate");

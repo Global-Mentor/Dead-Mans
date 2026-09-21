@@ -8,6 +8,19 @@ namespace Backend.Tests.Unit.Data.Migrations;
 public sealed class ApplicationMigrationChainTests
 {
     [Fact]
+    public void RenamedBotConnection_StillMapsToExistingTableWithoutSchemaChanges()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseNpgsql("Host=localhost;Database=deadmans_migration_chain_test;Username=test;Password=test")
+            .Options;
+        using var dbContext = new ApplicationDbContext(options);
+        var entity = dbContext.Model.FindEntityType(typeof(backend.Data.Entities.TwitchBotConnection));
+        Assert.NotNull(entity);
+        Assert.Equal("twitch_quiz_connections", entity.GetTableName());
+        Assert.False(dbContext.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
     public void GetMigrations_IncludesEveryApplicationMigrationInChronologicalOrder()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()

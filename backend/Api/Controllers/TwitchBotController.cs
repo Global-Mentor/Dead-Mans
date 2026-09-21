@@ -61,7 +61,7 @@ public sealed class TwitchBotController : ControllerBase
 
     private IActionResult OAuthFailure() => this.BadRequestError(
         "Twitch connection failed. Start a new authorization from the bot connection panel, choose the configured account and grant all requested permissions.",
-        "twitch_quiz.oauth_failed");
+        "twitch_bot.oauth_failed");
 
     [HttpPost("quiz/questions/prepare")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
@@ -97,8 +97,8 @@ public sealed class TwitchBotController : ControllerBase
 
     internal static string GetPreparationCode(PrepareTwitchQuizQuestionOutcome outcome) => outcome switch
     {
-        PrepareTwitchQuizQuestionOutcome.Disabled => AppMessages.ErrorCodes.TwitchQuizDisabled,
-        PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.ErrorCodes.TwitchQuizNotConnected,
+        PrepareTwitchQuizQuestionOutcome.Disabled => AppMessages.ErrorCodes.TwitchBotDisabled,
+        PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.ErrorCodes.TwitchBotNotConnected,
         PrepareTwitchQuizQuestionOutcome.NoActiveGame => AppMessages.ErrorCodes.GameQuizNoActiveGame,
         PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions => AppMessages.ErrorCodes.GameQuizNoAvailableQuestions,
         PrepareTwitchQuizQuestionOutcome.PublicationInProgress => AppMessages.ErrorCodes.TwitchQuizPublicationInProgress,
@@ -109,8 +109,8 @@ public sealed class TwitchBotController : ControllerBase
 
     internal static string GetPreparationMessage(PrepareTwitchQuizQuestionOutcome outcome) => outcome switch
     {
-        PrepareTwitchQuizQuestionOutcome.Disabled => AppMessages.Client.TwitchQuizDisabled,
-        PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.Client.TwitchQuizNotConnected,
+        PrepareTwitchQuizQuestionOutcome.Disabled => AppMessages.Client.TwitchBotDisabled,
+        PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.Client.TwitchBotNotConnected,
         PrepareTwitchQuizQuestionOutcome.NoActiveGame => AppMessages.Client.GameQuizNoActiveGame,
         PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions => AppMessages.Client.GameQuizNoAvailableQuestions,
         PrepareTwitchQuizQuestionOutcome.PublicationInProgress => AppMessages.Client.TwitchQuizPublicationInProgress,

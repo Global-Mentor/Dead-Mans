@@ -7821,8 +7821,8 @@ components:
             - game_quiz.manual_award_invalid_reason
             - game_quiz.manual_award_insufficient_points
             - game_quiz.manual_award_duplicate_request_conflict
-            - twitch_quiz.disabled
-            - twitch_quiz.not_connected
+            - twitch_bot.disabled
+            - twitch_bot.not_connected
             - twitch_quiz.publication_in_progress
             - twitch_quiz.pending_outcome
             - twitch_quiz.incompatible_question

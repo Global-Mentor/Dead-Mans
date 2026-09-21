@@ -13,6 +13,17 @@ namespace Backend.Tests.Unit.Infrastructure;
 public sealed class TwitchBotApiClientTests
 {
     [Fact]
+    public async Task RenamedConnection_PreservesExistingTokenProtectionPurpose()
+    {
+        using var fixture = new Fixture();
+        await fixture.ConnectAsync();
+        var bot = await fixture.Db.TwitchBotConnections.SingleAsync(x => x.Role == "bot");
+        var legacyProtector = fixture.DataProtection.CreateProtector("DeadMans.TwitchQuiz.Tokens.v1");
+        Assert.Equal("user-token", legacyProtector.Unprotect(bot.ProtectedAccessToken));
+        Assert.Equal("refresh", legacyProtector.Unprotect(bot.ProtectedRefreshToken));
+    }
+
+    [Fact]
     public async Task Send_UsesAppTokenAndSourceOnly_AndReusesTokenAcrossMessages()
     {
         using var fixture = new Fixture();
@@ -73,7 +84,7 @@ public sealed class TwitchBotApiClientTests
     {
         using var fixture = new Fixture();
         await fixture.ConnectAsync();
-        var bot = await fixture.Db.TwitchQuizConnections.SingleAsync(x => x.Role == "bot");
+        var bot = await fixture.Db.TwitchBotConnections.SingleAsync(x => x.Role == "bot");
         bot.ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1);
         await fixture.Db.SaveChangesAsync();
         fixture.Handler.Handle = request =>
@@ -144,8 +155,8 @@ public sealed class TwitchBotApiClientTests
                 ? Json(new { message = "invalid access token" }, HttpStatusCode.Unauthorized) : ValidGrant(request));
         };
         Assert.False(await fixture.Client.EnsureEventSubSubscriptionAsync(default));
-        Assert.NotNull((await fixture.Db.TwitchQuizConnections.SingleAsync(x => x.Role == "bot")).RevokedAtUtc);
-        Assert.Null((await fixture.Db.TwitchQuizConnections.SingleAsync(x => x.Role == "broadcaster")).RevokedAtUtc);
+        Assert.NotNull((await fixture.Db.TwitchBotConnections.SingleAsync(x => x.Role == "bot")).RevokedAtUtc);
+        Assert.Null((await fixture.Db.TwitchBotConnections.SingleAsync(x => x.Role == "broadcaster")).RevokedAtUtc);
     }
 
     [Fact]
@@ -159,7 +170,7 @@ public sealed class TwitchBotApiClientTests
             return Task.FromResult(Json(new { message = "unavailable" }, HttpStatusCode.ServiceUnavailable));
         };
         await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
-        Assert.All(await fixture.Db.TwitchQuizConnections.ToArrayAsync(), x => Assert.Null(x.RevokedAtUtc));
+        Assert.All(await fixture.Db.TwitchBotConnections.ToArrayAsync(), x => Assert.Null(x.RevokedAtUtc));
     }
 
     private static HttpResponseMessage ValidGrant(HttpRequestMessage request)
@@ -185,6 +196,7 @@ public sealed class TwitchBotApiClientTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         public Handler Handler { get; } = new();
         public TwitchBotApiClient Client { get; }
+        public IDataProtectionProvider DataProtection { get; } = new EphemeralDataProtectionProvider();
         private readonly HttpClient _http;
         private readonly TwitchApplicationTokenCache _tokens = new();
         public Fixture()
@@ -197,7 +209,7 @@ public sealed class TwitchBotApiClientTests
                 ExpectedBotUserId = "100001",
                 ExpectedBroadcasterUserId = "200001",
                 WebhookCallbackUrl = "https://example.test/webhook"
-            }), Db, new EphemeralDataProtectionProvider(), TimeProvider.System, _tokens);
+            }), Db, DataProtection, TimeProvider.System, _tokens);
         }
         public async Task ConnectAsync()
         {

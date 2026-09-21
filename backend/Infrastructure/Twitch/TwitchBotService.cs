@@ -50,7 +50,7 @@ internal sealed class TwitchBotService : ITwitchBotService
     public async Task<TwitchBotStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         if (!IsEnabled) return new(false, false, false, false, false, null, null, null, null);
-        var connections = await _db.TwitchQuizConnections.AsNoTracking().ToArrayAsync(cancellationToken);
+        var connections = await _db.TwitchBotConnections.AsNoTracking().ToArrayAsync(cancellationToken);
         var bot = connections.SingleOrDefault(x => x.Role == "bot");
         var broadcaster = connections.SingleOrDefault(x => x.Role == "broadcaster");
         var publication = await _db.TwitchQuizPublications.AsNoTracking()
@@ -298,7 +298,7 @@ internal sealed class TwitchBotService : ITwitchBotService
     public async Task HandleRevocationAsync(string subscriptionType, string status, CancellationToken cancellationToken = default)
     {
         _eventSubHealth.SetConnected(false);
-        var rows = await _db.TwitchQuizConnections.ToArrayAsync(cancellationToken);
+        var rows = await _db.TwitchBotConnections.ToArrayAsync(cancellationToken);
         foreach (var row in rows) { row.LastError = $"EventSub {subscriptionType} revoked: {status}."; row.UpdatedAtUtc = _clock.GetUtcNow().UtcDateTime; }
         await _db.SaveChangesAsync(cancellationToken);
         await PublishStateChangedAsync(cancellationToken);
