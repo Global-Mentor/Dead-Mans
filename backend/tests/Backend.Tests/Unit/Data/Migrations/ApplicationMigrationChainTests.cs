@@ -31,7 +31,8 @@ public sealed class ApplicationMigrationChainTests
                 "20260917140000_AllowAdminTeamManagement",
                 "20260919151237_ConvertQuizToMultipleChoice",
                 "20260919162829_RenameQuizRoundToQuestionSession",
-                "20260920001406_HardenQuizSubmissionHistory"
+                "20260920001406_HardenQuizSubmissionHistory",
+                "20260920180839_AddTwitchQuizIntegration"
             ],
             migrations
         );
@@ -76,6 +77,9 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("20260919151237_ConvertQuizToMultipleChoice", script, StringComparison.Ordinal);
         Assert.Contains("20260919162829_RenameQuizRoundToQuestionSession", script, StringComparison.Ordinal);
         Assert.Contains("20260920001406_HardenQuizSubmissionHistory", script, StringComparison.Ordinal);
+        Assert.Contains("20260920180839_AddTwitchQuizIntegration", script, StringComparison.Ordinal);
+        Assert.Contains("twitch_quiz_publications", script, StringComparison.Ordinal);
+        Assert.Contains("twitch_eventsub_receipts", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_submissions", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_question_sessions", script, StringComparison.Ordinal);
         Assert.Contains("question_session_id", script, StringComparison.Ordinal);
