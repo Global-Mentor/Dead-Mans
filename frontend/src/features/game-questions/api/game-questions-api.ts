@@ -6,12 +6,19 @@ import {
 import type {
   CreateGameQuestionRequest,
   UpdateGameQuestionRequest,
+  TwitchQuizPreview,
 } from '../../../shared/api/contracts/index.ts'
 import type { operations, paths } from '../../../shared/api/contracts/generated'
 
 const gameQuestionsApiClient =
   createApiClient<
-    Pick<paths, '/game/questions/catalog' | '/game/questions' | '/game/questions/{questionId}'>
+    Pick<
+      paths,
+      | '/game/questions/catalog'
+      | '/game/questions'
+      | '/game/questions/{questionId}'
+      | '/game/questions/twitch-preview'
+    >
   >()
 
 export type GameQuestionCatalogFilters = NonNullable<
@@ -56,6 +63,18 @@ export function deleteGameQuestion(questionId: string) {
       params: {
         path: { questionId },
       },
+    }),
+  )
+}
+
+export function previewTwitchQuizMessages(
+  text: string,
+  options: string[],
+  reward: number,
+): Promise<TwitchQuizPreview> {
+  return unwrapOpenApiData(
+    gameQuestionsApiClient.POST('/game/questions/twitch-preview', {
+      body: { text, options, reward, durationSeconds: 3600 },
     }),
   )
 }

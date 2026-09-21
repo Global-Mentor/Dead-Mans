@@ -1,11 +1,16 @@
 import { queryOptions } from '@tanstack/react-query'
-import { fetchAvailableGameQuizQuestions, fetchCurrentGameQuizState } from './game-quiz-api.ts'
+import {
+  fetchAvailableGameQuizQuestions,
+  fetchCurrentGameQuizState,
+  fetchTwitchQuizIntegrationStatus,
+} from './game-quiz-api.ts'
 
 export const gameQuizQueryKeys = {
   all: ['gameQuiz'] as const,
   current: (gameId: string) => [...gameQuizQueryKeys.all, 'current', gameId] as const,
   availableQuestions: (gameId: string) =>
     [...gameQuizQueryKeys.all, 'availableQuestions', gameId] as const,
+  twitchIntegration: () => [...gameQuizQueryKeys.all, 'twitchIntegration'] as const,
 }
 
 export const currentGameQuizQueryOptions = (gameId: string) =>
@@ -22,3 +27,8 @@ export const availableGameQuizQuestionsQueryOptions = (gameId: string) =>
     queryKey: gameQuizQueryKeys.availableQuestions(gameId),
     queryFn: fetchAvailableGameQuizQuestions,
   })
+
+export const twitchQuizIntegrationQueryOptions = queryOptions({
+  queryKey: gameQuizQueryKeys.twitchIntegration(),
+  queryFn: fetchTwitchQuizIntegrationStatus,
+})

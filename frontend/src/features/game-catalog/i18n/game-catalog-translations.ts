@@ -431,6 +431,10 @@ const translations = {
     },
     questions: {
       title: 'Question catalog',
+      twitchPreview: 'Twitch message preview (worst-case counters)',
+      twitchTooLong:
+        'This question cannot be used in the Twitch chat quiz until its messages fit the 500-character limit.',
+      twitchIncompatibleBadge: 'too long for Twitch',
       description:
         'Master list of quiz questions. Create, edit and remove questions available to any game.',
       add: 'Add question',
@@ -953,6 +957,10 @@ const translations = {
     },
     questions: {
       title: 'Каталог вопросов',
+      twitchPreview: 'Предпросмотр сообщений Twitch (с резервом счётчиков)',
+      twitchTooLong:
+        'Вопрос нельзя использовать в чат-викторине, пока готовые сообщения не уложатся в 500 символов.',
+      twitchIncompatibleBadge: 'слишком длинный для Twitch',
       description:
         'Общий список вопросов викторины. Создавайте, редактируйте и удаляйте вопросы, доступные любым играм.',
       add: 'Добавить вопрос',
@@ -1466,6 +1474,10 @@ const translations = {
     },
     questions: {
       title: 'Каталог запитань',
+      twitchPreview: 'Попередній перегляд повідомлень Twitch (із резервом лічильників)',
+      twitchTooLong:
+        'Запитання не можна використати в чат-вікторині, доки готові повідомлення не вкладуться у 500 символів.',
+      twitchIncompatibleBadge: 'завелике для Twitch',
       description:
         'Загальний список запитань вікторини. Створюйте, редагуйте та видаляйте запитання, доступні будь-яким іграм.',
       add: 'Додати запитання',
@@ -1982,6 +1994,10 @@ const translations = {
     },
     questions: {
       title: 'Katalog pytań',
+      twitchPreview: 'Podgląd wiadomości Twitch (z rezerwą liczników)',
+      twitchTooLong:
+        'Pytania nie można użyć w quizie czatu, dopóki gotowe wiadomości nie mieszczą się w limicie 500 znaków.',
+      twitchIncompatibleBadge: 'za długie dla Twitcha',
       description:
         'Główna lista pytań quizu. Twórz, edytuj i usuwaj pytania dostępne dla dowolnej gry.',
       add: 'Dodaj pytanie',

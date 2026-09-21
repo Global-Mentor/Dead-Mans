@@ -5,9 +5,11 @@ import {
 } from '../../../shared/api/client/openApiClient.ts'
 import type {
   AvailableGameQuizQuestion,
-  AskedQuizQuestion,
   CurrentGameQuizState,
   GameQuizSubmissionReceipt,
+  PrepareTwitchQuizQuestionResult,
+  TwitchQuizIntegrationStatus,
+  TwitchQuizPublicationState,
 } from '../../../shared/api/contracts/index.ts'
 import type { paths } from '../../../shared/api/contracts/generated'
 
@@ -18,6 +20,11 @@ type QuizPaths = Pick<
   | '/game/quiz/questions/ask-next'
   | '/game/quiz/questions/{questionId}/ask'
   | '/game/quiz/question-sessions/{questionSessionId}/submissions'
+  | '/integrations/twitch/status'
+  | '/integrations/twitch/quiz/questions/prepare'
+  | '/integrations/twitch/quiz/publications/{publicationId}/retry'
+  | '/integrations/twitch/quiz/publications/{publicationId}/cancel'
+  | '/integrations/twitch/quiz/publications/{publicationId}/skip-outcome'
 >
 
 const client = createApiClient<QuizPaths>()
@@ -42,14 +49,56 @@ export function submitGameQuizAnswer(
   )
 }
 
-export function askNextGameQuizQuestion(): Promise<AskedQuizQuestion> {
+export function askNextGameQuizQuestion() {
   return unwrapOpenApiData(client.POST('/game/quiz/questions/ask-next'))
 }
 
-export function askSpecificGameQuizQuestion(questionId: string): Promise<AskedQuizQuestion> {
+export function askSpecificGameQuizQuestion(questionId: string) {
   return unwrapOpenApiData(
     client.POST('/game/quiz/questions/{questionId}/ask', {
       params: { path: { questionId } },
+    }),
+  )
+}
+
+export function fetchTwitchQuizIntegrationStatus(): Promise<TwitchQuizIntegrationStatus> {
+  return unwrapOpenApiData(client.GET('/integrations/twitch/status'))
+}
+
+export function prepareTwitchQuizQuestion(
+  questionId?: string,
+): Promise<PrepareTwitchQuizQuestionResult> {
+  return unwrapOpenApiData(
+    client.POST('/integrations/twitch/quiz/questions/prepare', {
+      body: { questionId: questionId ?? null },
+    }),
+  )
+}
+
+export function retryTwitchQuizPublication(
+  publicationId: string,
+): Promise<TwitchQuizPublicationState> {
+  return unwrapOpenApiData(
+    client.POST('/integrations/twitch/quiz/publications/{publicationId}/retry', {
+      params: { path: { publicationId } },
+    }),
+  )
+}
+
+export function cancelTwitchQuizPublication(
+  publicationId: string,
+): Promise<TwitchQuizPublicationState> {
+  return unwrapOpenApiData(
+    client.POST('/integrations/twitch/quiz/publications/{publicationId}/cancel', {
+      params: { path: { publicationId } },
+    }),
+  )
+}
+
+export function skipTwitchQuizOutcome(publicationId: string): Promise<TwitchQuizPublicationState> {
+  return unwrapOpenApiData(
+    client.POST('/integrations/twitch/quiz/publications/{publicationId}/skip-outcome', {
+      params: { path: { publicationId } },
     }),
   )
 }
