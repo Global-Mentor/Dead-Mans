@@ -1254,6 +1254,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/twitch-preview:
+    post:
+      operationId: previewTwitchQuizMessages
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwitchQuizPreviewRequestDto'
+      responses:
+        '200':
+          description: Normalized Twitch message preview and length validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwitchQuizPreviewDto'
+        '400':
+          description: Invalid preview input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/questions/{questionId}/enabled:
     patch:
       operationId: setGameQuestionEnabled
@@ -1419,6 +1443,144 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /integrations/twitch/status:
+    get:
+      operationId: getTwitchQuizIntegrationStatus
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Twitch quiz integration connection and delivery state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwitchQuizIntegrationStatusDto'
+  /integrations/twitch/oauth/{role}:
+    get:
+      operationId: connectTwitchQuizAccount
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [bot, broadcaster]
+      responses:
+        '302':
+          description: Redirect to Twitch authorization
+  /integrations/twitch/oauth/callback:
+    get:
+      operationId: completeTwitchQuizOAuth
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302':
+          description: OAuth grant stored and browser redirected to the quiz panel
+  /integrations/twitch/eventsub:
+    post:
+      operationId: receiveTwitchEventSub
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200':
+          description: Webhook verification challenge
+          content:
+            text/plain:
+              schema: { type: string }
+        '204':
+          description: Notification, duplicate, or revocation handled
+        '401':
+          description: HMAC, timestamp, or required headers invalid
+  /integrations/twitch/quiz/questions/prepare:
+    post:
+      operationId: prepareTwitchQuizQuestion
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareTwitchQuestionRequestDto'
+      responses:
+        '202':
+          description: Durable publication created; timer has not started yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareTwitchQuizQuestionResultDto'
+        '400':
+          description: Integration disabled, disconnected, or question incompatible
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: No active game or available question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Publication or unresolved outcome already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /integrations/twitch/quiz/publications/{publicationId}/retry:
+    post:
+      operationId: retryTwitchQuizPublication
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TwitchPublicationId'
+      responses:
+        '200':
+          description: Failed or uncertain step explicitly queued again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TwitchQuizPublicationStateDto' }
+        '404': { description: Publication not found }
+  /integrations/twitch/quiz/publications/{publicationId}/cancel:
+    post:
+      operationId: cancelTwitchQuizPublication
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TwitchPublicationId'
+      responses:
+        '200':
+          description: Preparation cancelled; a published question receives a cancellation message
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TwitchQuizPublicationStateDto' }
+        '404': { description: Publication not found }
+  /integrations/twitch/quiz/publications/{publicationId}/skip-outcome:
+    post:
+      operationId: skipTwitchQuizOutcome
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TwitchPublicationId'
+      responses:
+        '200':
+          description: Unresolved result delivery explicitly skipped
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TwitchQuizPublicationStateDto' }
+        '404': { description: Publication not found }
   /game/quiz/questions/available:
     get:
       operationId: getAvailableGameQuizQuestions
@@ -1444,11 +1606,17 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: Next question selected and round created
+          description: Next question session created immediately when Twitch module is disabled
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AskedQuizQuestionDto'
+        '202':
+          description: Twitch publication preparation persisted; timer has not started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareTwitchQuizQuestionResultDto'
         '400':
           description: Authenticated principal is missing required identity claims
           content:
@@ -1487,11 +1655,17 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Selected quiz question session created
+          description: Selected quiz question session created immediately when Twitch module is disabled
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AskedQuizQuestionDto'
+        '202':
+          description: Twitch publication preparation persisted; timer has not started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareTwitchQuizQuestionResultDto'
         '401':
           description: Not authenticated
         '403':
@@ -3842,6 +4016,14 @@ paths:
                 type: string
                 format: uri
 components:
+  parameters:
+    TwitchPublicationId:
+      name: publicationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     BadRequest:
       description: Invalid request
@@ -5505,6 +5687,7 @@ components:
         - submissionTotalCount
         - correctSubmissionTotalCount
         - correctPercentage
+        - twitchCompatible
       properties:
         questionId:
           type: string
@@ -5550,6 +5733,88 @@ components:
           type: string
           format: date-time
           nullable: true
+        twitchCompatible:
+          type: boolean
+        twitchCompatibilityErrorCode:
+          type: string
+          nullable: true
+    TwitchQuizPreviewRequestDto:
+      type: object
+      required: [text, options, durationSeconds, reward]
+      properties:
+        text: { type: string, nullable: true }
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items: { type: string, nullable: true }
+        durationSeconds: { type: integer, minimum: 5, maximum: 3600 }
+        reward: { type: integer, minimum: 0 }
+    TwitchQuizPreviewDto:
+      type: object
+      required: [question, options, resultTemplate, questionLength, optionsLength, resultMaximumLength, isCompatible, maximumLength]
+      properties:
+        question: { type: string }
+        options: { type: string }
+        resultTemplate: { type: string }
+        questionLength: { type: integer }
+        optionsLength: { type: integer }
+        resultMaximumLength: { type: integer }
+        isCompatible: { type: boolean }
+        errorCode: { type: string, nullable: true }
+        maximumLength: { type: integer, enum: [500] }
+    TwitchQuizPublicationStateDto:
+      type: object
+      required: [publicationId, gameId, questionId, askOrder, status, questionDeliveryStatus, optionsDeliveryStatus, outcomeDeliveryStatus, questionMessage, optionsMessage, createdAtUtc, updatedAtUtc]
+      properties:
+        publicationId: { type: string, format: uuid }
+        gameId: { type: string, format: uuid }
+        questionId: { type: string, format: uuid }
+        questionSessionId: { type: string, format: uuid, nullable: true }
+        askOrder: { type: integer, minimum: 1 }
+        status: { type: string, enum: [publishing, open, failed, uncertain, cancel_pending, cancelled, completed] }
+        questionDeliveryStatus: { type: string, enum: [pending, sending, sent, failed, uncertain, skipped] }
+        optionsDeliveryStatus: { type: string, enum: [pending, sending, sent, failed, uncertain, skipped] }
+        outcomeDeliveryStatus: { type: string, enum: [pending, sending, sent, failed, uncertain, skipped] }
+        questionMessage: { type: string, maxLength: 500 }
+        optionsMessage: { type: string, maxLength: 500 }
+        lastError: { type: string, nullable: true }
+        createdAtUtc: { type: string, format: date-time }
+        updatedAtUtc: { type: string, format: date-time }
+    TwitchQuizIntegrationStatusDto:
+      type: object
+      required: [enabled, botConnected, broadcasterConnected, eventSubConnected, accessRevoked]
+      properties:
+        enabled: { type: boolean }
+        botConnected: { type: boolean }
+        broadcasterConnected: { type: boolean }
+        eventSubConnected: { type: boolean }
+        accessRevoked: { type: boolean }
+        botUserId: { type: string, nullable: true }
+        broadcasterUserId: { type: string, nullable: true }
+        lastError: { type: string, nullable: true }
+        publication:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/TwitchQuizPublicationStateDto'
+          nullable: true
+    PrepareTwitchQuestionRequestDto:
+      type: object
+      properties:
+        questionId: { type: string, format: uuid, nullable: true }
+    PrepareTwitchQuizQuestionResultDto:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [prepared, disabled, notConnected, noActiveGame, noAvailableQuestions, publicationInProgress, pendingOutcome, incompatibleQuestion]
+        publication:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/TwitchQuizPublicationStateDto'
+          nullable: true
+        errorCode: { type: string, nullable: true }
     GameQuestionCategoryItemDto:
       type: object
       required: [id, name, questionCount, isProtected]
@@ -7556,6 +7821,14 @@ components:
             - game_quiz.manual_award_invalid_reason
             - game_quiz.manual_award_insufficient_points
             - game_quiz.manual_award_duplicate_request_conflict
+            - twitch_quiz.disabled
+            - twitch_quiz.not_connected
+            - twitch_quiz.publication_in_progress
+            - twitch_quiz.pending_outcome
+            - twitch_quiz.incompatible_question
+            - twitch_quiz.question_message_too_long
+            - twitch_quiz.options_message_too_long
+            - twitch_quiz.result_message_too_long
         requestId:
           type: string
           nullable: true
@@ -7671,6 +7944,10 @@ components:
       type: object
       description: Active team or played state changed after commit. No JSON body; authenticated clients refetch the board and team queue.
       additionalProperties: false
+    TwitchQuizStateChangedEventDto:
+      type: object
+      description: Twitch quiz connection or durable publication state changed. No JSON body; clients refetch integration status.
+      additionalProperties: false
     GameSetupDraftChangedEventDto:
       type: object
       description: >
@@ -7698,6 +7975,10 @@ x-signalr:
           summary: Active team selection or team played state changed; clients resync the board and team queue.
           payload:
             $ref: '#/components/schemas/GameTeamStateChangedEventDto'
+        twitchQuizStateChanged:
+          summary: Twitch quiz connection or publication state changed; moderator clients refetch integration status.
+          payload:
+            $ref: '#/components/schemas/TwitchQuizStateChangedEventDto'
         cellOpened:
           summary: A board cell was opened by an admin.
           payload:

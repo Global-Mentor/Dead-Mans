@@ -103,7 +103,9 @@ public static partial class ApiContractMapper
             item.SubmissionTotalCount,
             item.CorrectSubmissionTotalCount,
             item.CorrectPercentage,
-            item.LastAskedAtUtc
+            item.LastAskedAtUtc,
+            item.TwitchPreview.IsCompatible,
+            item.TwitchPreview.ErrorCode
         );
     }
 

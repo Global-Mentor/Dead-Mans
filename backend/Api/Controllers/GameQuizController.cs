@@ -16,10 +16,14 @@ namespace backend.Controllers;
 public sealed class GameQuizController : ControllerBase
 {
     private readonly IGameQuizService _gameQuizService;
+    private readonly ITwitchQuizIntegrationService? _twitchQuiz;
 
-    public GameQuizController(IGameQuizService gameQuizService)
+    public GameQuizController(
+        IGameQuizService gameQuizService,
+        ITwitchQuizIntegrationService? twitchQuiz = null)
     {
         _gameQuizService = gameQuizService;
+        _twitchQuiz = twitchQuiz;
     }
 
     [HttpGet("questions/available")]
@@ -43,6 +47,8 @@ public sealed class GameQuizController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AskNextQuestion(CancellationToken cancellationToken)
     {
+        if (_twitchQuiz?.IsEnabled == true)
+            return MapTwitchPreparation(await _twitchQuiz.PrepareQuestionAsync(null, cancellationToken));
         var askedByUserId = HttpContext.TryGetUserId();
         if (!askedByUserId.HasValue)
         {
@@ -78,6 +84,8 @@ public sealed class GameQuizController : ControllerBase
     [ProducesResponseType(typeof(AskedQuizQuestionDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> AskQuestion(Guid questionId, CancellationToken cancellationToken)
     {
+        if (_twitchQuiz?.IsEnabled == true)
+            return MapTwitchPreparation(await _twitchQuiz.PrepareQuestionAsync(questionId, cancellationToken));
         var askedByUserId = HttpContext.TryGetUserId();
         if (!askedByUserId.HasValue)
         {
@@ -104,6 +112,16 @@ public sealed class GameQuizController : ControllerBase
             _ => this.StatusError(StatusCodes.Status500InternalServerError, AppMessages.Client.UnexpectedServerError)
         };
     }
+
+    private IActionResult MapTwitchPreparation(PrepareTwitchQuizQuestionResult result) => result.Outcome switch
+    {
+        PrepareTwitchQuizQuestionOutcome.Prepared => Accepted(result),
+        PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome =>
+            this.ConflictError(TwitchQuizIntegrationController.GetPreparationMessage(result.Outcome), TwitchQuizIntegrationController.GetPreparationCode(result.Outcome)),
+        PrepareTwitchQuizQuestionOutcome.NoActiveGame or PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions =>
+            this.NotFoundError(TwitchQuizIntegrationController.GetPreparationMessage(result.Outcome), TwitchQuizIntegrationController.GetPreparationCode(result.Outcome)),
+        _ => this.BadRequestError(TwitchQuizIntegrationController.GetPreparationMessage(result.Outcome), result.ErrorCode ?? TwitchQuizIntegrationController.GetPreparationCode(result.Outcome))
+    };
 
     [HttpGet("current")]
     [ProducesResponseType(typeof(CurrentGameQuizStateDto), StatusCodes.Status200OK)]

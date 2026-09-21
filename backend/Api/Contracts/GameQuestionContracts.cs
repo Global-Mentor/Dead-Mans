@@ -5,6 +5,19 @@ namespace backend.Api.Contracts;
 public sealed record GameQuestionOptionDto(string OptionId, string Text, bool IsCorrect, int SortOrder);
 public sealed record GameQuestionOptionInputDto(string? Text, bool IsCorrect);
 
+public sealed record TwitchQuizPreviewRequestDto(string? Text, string?[]? Options, int DurationSeconds, int Reward);
+public sealed record TwitchQuizPreviewDto(
+    string Question,
+    string Options,
+    string ResultTemplate,
+    int QuestionLength,
+    int OptionsLength,
+    int ResultMaximumLength,
+    bool IsCompatible,
+    string? ErrorCode,
+    int MaximumLength
+);
+
 public sealed record GameQuestionCatalogItemDto(
     string QuestionId,
     string QuestionCode,
@@ -19,7 +32,9 @@ public sealed record GameQuestionCatalogItemDto(
     int SubmissionTotalCount,
     int CorrectSubmissionTotalCount,
     decimal CorrectPercentage,
-    DateTime? LastAskedAtUtc
+    DateTime? LastAskedAtUtc,
+    bool TwitchCompatible,
+    string? TwitchCompatibilityErrorCode
 );
 
 public sealed record GameQuestionCategoryItemDto(string Id, string Name, int QuestionCount, bool IsProtected);

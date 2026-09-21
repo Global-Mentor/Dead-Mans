@@ -23,6 +23,8 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         RealtimeHubContracts.GameBoard.GameLifecycleChangedEvent;
     public const string TeamStateChangedEventName =
         RealtimeHubContracts.GameBoard.TeamStateChangedEvent;
+    public const string TwitchQuizStateChangedEventName =
+        RealtimeHubContracts.GameBoard.TwitchQuizStateChangedEvent;
     public const string ModifierCatalogChangedEventName =
         RealtimeHubContracts.GameBoard.ModifierCatalogChangedEvent;
 
@@ -128,6 +130,14 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
     {
         return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             TeamStateChangedEventName,
+            cancellationToken: cancellationToken
+        );
+    }
+
+    public Task PublishTwitchQuizStateChangedAsync(CancellationToken cancellationToken = default)
+    {
+        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+            TwitchQuizStateChangedEventName,
             cancellationToken: cancellationToken
         );
     }

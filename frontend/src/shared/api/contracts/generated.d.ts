@@ -500,6 +500,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/questions/twitch-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewTwitchQuizMessages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/questions/{questionId}/enabled": {
         parameters: {
             query?: never;
@@ -546,6 +562,134 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["setGameQuestionCategoryEnabled"];
+        trace?: never;
+    };
+    "/integrations/twitch/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getTwitchQuizIntegrationStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/oauth/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["connectTwitchQuizAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/oauth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["completeTwitchQuizOAuth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/eventsub": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receiveTwitchEventSub"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/quiz/questions/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["prepareTwitchQuizQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/quiz/publications/{publicationId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryTwitchQuizPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/quiz/publications/{publicationId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelTwitchQuizPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/twitch/quiz/publications/{publicationId}/skip-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["skipTwitchQuizOutcome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/game/quiz/questions/available": {
@@ -2179,6 +2323,73 @@ export interface components {
             correctPercentage: number;
             /** Format: date-time */
             lastAskedAtUtc?: string | null;
+            twitchCompatible: boolean;
+            twitchCompatibilityErrorCode?: string | null;
+        };
+        TwitchQuizPreviewRequestDto: {
+            text: string | null;
+            options: (string | null)[];
+            durationSeconds: number;
+            reward: number;
+        };
+        TwitchQuizPreviewDto: {
+            question: string;
+            options: string;
+            resultTemplate: string;
+            questionLength: number;
+            optionsLength: number;
+            resultMaximumLength: number;
+            isCompatible: boolean;
+            errorCode?: string | null;
+            /** @enum {integer} */
+            maximumLength: 500;
+        };
+        TwitchQuizPublicationStateDto: {
+            /** Format: uuid */
+            publicationId: string;
+            /** Format: uuid */
+            gameId: string;
+            /** Format: uuid */
+            questionId: string;
+            /** Format: uuid */
+            questionSessionId?: string | null;
+            askOrder: number;
+            /** @enum {string} */
+            status: "publishing" | "open" | "failed" | "uncertain" | "cancel_pending" | "cancelled" | "completed";
+            /** @enum {string} */
+            questionDeliveryStatus: "pending" | "sending" | "sent" | "failed" | "uncertain" | "skipped";
+            /** @enum {string} */
+            optionsDeliveryStatus: "pending" | "sending" | "sent" | "failed" | "uncertain" | "skipped";
+            /** @enum {string} */
+            outcomeDeliveryStatus: "pending" | "sending" | "sent" | "failed" | "uncertain" | "skipped";
+            questionMessage: string;
+            optionsMessage: string;
+            lastError?: string | null;
+            /** Format: date-time */
+            createdAtUtc: string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+        };
+        TwitchQuizIntegrationStatusDto: {
+            enabled: boolean;
+            botConnected: boolean;
+            broadcasterConnected: boolean;
+            eventSubConnected: boolean;
+            accessRevoked: boolean;
+            botUserId?: string | null;
+            broadcasterUserId?: string | null;
+            lastError?: string | null;
+            publication?: components["schemas"]["TwitchQuizPublicationStateDto"] | null;
+        };
+        PrepareTwitchQuestionRequestDto: {
+            /** Format: uuid */
+            questionId?: string | null;
+        };
+        PrepareTwitchQuizQuestionResultDto: {
+            /** @enum {string} */
+            outcome: "prepared" | "disabled" | "notConnected" | "noActiveGame" | "noAvailableQuestions" | "publicationInProgress" | "pendingOutcome" | "incompatibleQuestion";
+            publication?: components["schemas"]["TwitchQuizPublicationStateDto"] | null;
+            errorCode?: string | null;
         };
         GameQuestionCategoryItemDto: {
             /** Format: uuid */
@@ -2948,7 +3159,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | null;
+            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_quiz.disabled" | "twitch_quiz.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -3017,6 +3228,8 @@ export interface components {
         GameRegistrationChangedEventDto: Record<string, never>;
         /** @description Active team or played state changed after commit. No JSON body; authenticated clients refetch the board and team queue. */
         GameTeamStateChangedEventDto: Record<string, never>;
+        /** @description Twitch quiz connection or durable publication state changed. No JSON body; clients refetch integration status. */
+        TwitchQuizStateChangedEventDto: Record<string, never>;
         /** @description SignalR payload for game-setup hub event draftChanged. The server sends no JSON body; clients refetch GET /api/game/setup after receiving the event. */
         GameSetupDraftChangedEventDto: Record<string, never>;
     };
@@ -3058,7 +3271,9 @@ export interface components {
             };
         };
     };
-    parameters: never;
+    parameters: {
+        TwitchPublicationId: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -4784,6 +4999,39 @@ export interface operations {
             };
         };
     };
+    previewTwitchQuizMessages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwitchQuizPreviewRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Normalized Twitch message preview and length validation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwitchQuizPreviewDto"];
+                };
+            };
+            /** @description Invalid preview input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     setGameQuestionEnabled: {
         parameters: {
             query?: never;
@@ -5004,6 +5252,243 @@ export interface operations {
             };
         };
     };
+    getTwitchQuizIntegrationStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Twitch quiz integration connection and delivery state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwitchQuizIntegrationStatusDto"];
+                };
+            };
+        };
+    };
+    connectTwitchQuizAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: "bot" | "broadcaster";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to Twitch authorization */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    completeTwitchQuizOAuth: {
+        parameters: {
+            query: {
+                code: string;
+                state: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OAuth grant stored and browser redirected to the quiz panel */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    receiveTwitchEventSub: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Webhook verification challenge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Notification, duplicate, or revocation handled */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description HMAC, timestamp, or required headers invalid */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    prepareTwitchQuizQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrepareTwitchQuestionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Durable publication created; timer has not started yet */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrepareTwitchQuizQuestionResultDto"];
+                };
+            };
+            /** @description Integration disabled, disconnected, or question incompatible */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No active game or available question */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Publication or unresolved outcome already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    retryTwitchQuizPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: components["parameters"]["TwitchPublicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Failed or uncertain step explicitly queued again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwitchQuizPublicationStateDto"];
+                };
+            };
+            /** @description Publication not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelTwitchQuizPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: components["parameters"]["TwitchPublicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preparation cancelled; a published question receives a cancellation message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwitchQuizPublicationStateDto"];
+                };
+            };
+            /** @description Publication not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    skipTwitchQuizOutcome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: components["parameters"]["TwitchPublicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unresolved result delivery explicitly skipped */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwitchQuizPublicationStateDto"];
+                };
+            };
+            /** @description Publication not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getAvailableGameQuizQuestions: {
         parameters: {
             query?: never;
@@ -5047,13 +5532,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Next question selected and round created */
+            /** @description Next question session created immediately when Twitch module is disabled */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AskedQuizQuestionDto"];
+                };
+            };
+            /** @description Twitch publication preparation persisted; timer has not started */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrepareTwitchQuizQuestionResultDto"];
                 };
             };
             /** @description Authenticated principal is missing required identity claims */
@@ -5105,13 +5599,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Selected quiz question session created */
+            /** @description Selected quiz question session created immediately when Twitch module is disabled */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AskedQuizQuestionDto"];
+                };
+            };
+            /** @description Twitch publication preparation persisted; timer has not started */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrepareTwitchQuizQuestionResultDto"];
                 };
             };
             /** @description Not authenticated */

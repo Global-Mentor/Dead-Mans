@@ -7,6 +7,7 @@ export const realtimeHubs = {
     events: {
       registrationChanged: 'registrationChanged',
       teamStateChanged: 'teamStateChanged',
+      twitchQuizStateChanged: 'twitchQuizStateChanged',
       cellOpened: 'cellOpened',
       modifierActivated: 'modifierActivated',
       modifierActivationCancelled: 'modifierActivationCancelled',

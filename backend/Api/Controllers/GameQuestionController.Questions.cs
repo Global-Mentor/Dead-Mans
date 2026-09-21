@@ -15,6 +15,24 @@ namespace backend.Controllers;
 
 public sealed partial class GameQuestionController
 {
+    [HttpPost("twitch-preview")]
+    [Authorize(Roles = AuthRoleCodes.Admin)]
+    public IActionResult TwitchPreview([FromBody] TwitchQuizPreviewRequestDto? request)
+    {
+        if (request?.Options is null || request.Options.Length is < 2 or > 10
+            || request.DurationSeconds is < 5 or > 3600 || request.Reward < 0)
+            return this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest, AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+        var preview = TwitchQuizMessageFormatter.FormatForValidation(
+            request.Text ?? string.Empty,
+            request.Options.Select(x => x ?? string.Empty).ToArray(),
+            request.DurationSeconds,
+            request.Reward);
+        return Ok(new TwitchQuizPreviewDto(
+            preview.Question, preview.Options, preview.ResultTemplate,
+            preview.QuestionLength, preview.OptionsLength, preview.ResultMaximumLength,
+            preview.IsCompatible, preview.ErrorCode, TwitchQuizMessageFormatter.MaximumMessageLength));
+    }
+
     [HttpPost]
     [Authorize(Roles = AuthRoleCodes.Admin)]
     [ProducesResponseType(typeof(GameQuestionCatalogItemDto), StatusCodes.Status201Created)]

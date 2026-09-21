@@ -150,6 +150,21 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             enabledQuestion.OptionTextsSnapshot = options
                 .Select(option => option.Text)
                 .ToArray();
+            var twitchValidation = TwitchQuizMessageFormatter.FormatForValidation(
+                question.Text,
+                enabledQuestion.OptionTextsSnapshot,
+                draft.QuizAnswerDurationSeconds,
+                question.Reward
+            );
+            if (!twitchValidation.IsCompatible)
+            {
+                _logger.LogWarning(
+                    "Question {QuestionId} is incompatible with Twitch chat at game {GameId} snapshot publication: {ErrorCode}.",
+                    question.Id,
+                    draft.Id,
+                    twitchValidation.ErrorCode
+                );
+            }
             enabledQuestion.CorrectOptionIdSnapshot = options.Single(option => option.IsCorrect).Id;
             enabledQuestion.RewardSnapshot = question.Reward;
             enabledQuestion.PrioritySnapshot = question.Priority;
