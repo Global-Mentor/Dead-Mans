@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-title Dead Mans — только сайт
+title Dead Mans - только сайт
 
 call "%~dp0dev-common.bat" PrintBanner "Только сайт" "http://localhost:5180"
 if errorlevel 1 exit /b 1

@@ -11,7 +11,8 @@
     "validate:openapi": "redocly lint backend/openapi/deadmans.v1.yaml --config redocly.yaml",
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "dotnet run --project backend/backend.csproj",
-    "dev:frontend": "npm --prefix frontend run dev"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "check:text-style": "node tools/check-text-style.mjs"
   },
   "devDependencies": {
     "@redocly/cli": "2.51.2",

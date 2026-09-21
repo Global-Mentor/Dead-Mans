@@ -2,11 +2,11 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-title Dead Mans — сброс локальных данных (БД и MinIO)
+title Dead Mans - сброс локальных данных (БД и MinIO)
 
 echo.
 echo   ВНИМАНИЕ: будут удалены локальные данные PostgreSQL и MinIO в Docker для этого проекта.
-echo   Папка проекта может быть любой — запускайте из корня репозитория.
+echo   Папка проекта может быть любой - запускайте из корня репозитория.
 echo   Docker Desktop должен быть запущен.
 echo.
 pause

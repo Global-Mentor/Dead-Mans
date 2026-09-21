@@ -656,7 +656,7 @@ const translations = {
         stepDescriptions: {
           0: 'Опишите модификатор так, как его увидит игрок в каталоге.',
           1: 'Укажите, кто и когда выполняет правило, сколько стоит активация и с чем она несовместима.',
-          2: 'Сначала выберите, что мы считаем, а затем — что даёт каждая учтённая единица.',
+          2: 'Сначала выберите, что мы считаем, а затем - что даёт каждая учтённая единица.',
           3: 'Сверьте карточки игрока и ведущего и проверьте расчётный пример перед сохранением.',
         },
         sections: {
@@ -716,7 +716,7 @@ const translations = {
           no: 'Правило действует без обратного отсчёта.',
         },
         durationHint: 'Необязательно. Оставьте пустым, если таймера нет.',
-        commandHint: 'Оставьте пустым — команда сформируется из названия.',
+        commandHint: 'Оставьте пустым - команда сформируется из названия.',
         advancedSettings: 'Дополнительные настройки',
         advancedSettingsDescription: 'Команда активации обычно создаётся автоматически.',
         reward: 'Что изменяется',
@@ -815,7 +815,7 @@ const translations = {
           activationLimitCount:
             'Максимальное число активаций этого модификатора в одном раунде. Пустое поле снимает лимит.',
           conflicts:
-            'Если выбранный модификатор уже активен в раунде, купить этот будет нельзя — и наоборот.',
+            'Если выбранный модификатор уже активен в раунде, купить этот будет нельзя - и наоборот.',
           activationCommand:
             'Команда, которой игрок заказывает модификатор. Если оставить пустой, она создастся из названия.',
           formulaCode:
@@ -964,7 +964,7 @@ const translations = {
       importGroupExpand: 'Развернуть импорт из JSON',
       importGroupCollapse: 'Свернуть импорт из JSON',
       categoryGroupDescription:
-        'Здесь можно создать категорию. Чтобы переименовать или удалить — выберите её в списке ниже. «БЕЗ КАТЕГОРИИ» изменить нельзя.',
+        'Здесь можно создать категорию. Чтобы переименовать или удалить - выберите её в списке ниже. «БЕЗ КАТЕГОРИИ» изменить нельзя.',
       categoryGroupExpand: 'Развернуть управление категориями',
       categoryGroupCollapse: 'Свернуть управление категориями',
       importSuccess: 'Импортировано вопросов: {{count}}.',
@@ -1021,7 +1021,7 @@ const translations = {
         answer: 'Ответ',
         correctAnswer: 'Правильный ответ',
         correctAnswerPlaceholder: 'Напишите верный ответ',
-        answersHint: 'Первый ответ — правильный. Для игроков варианты будут перемешаны.',
+        answersHint: 'Первый ответ - правильный. Для игроков варианты будут перемешаны.',
         answerCount: '{{count}} / {{max}} вариантов',
         answers: 'Варианты ответа',
         answerAlternative: 'Неверный вариант {{number}}',
@@ -1177,7 +1177,7 @@ const translations = {
         stepDescriptions: {
           0: 'Опишіть модифікатор так, як його побачить гравець у каталозі.',
           1: 'Вкажіть, хто й коли виконує правило, скільки коштує активація та з чим вона несумісна.',
-          2: 'Спочатку оберіть, що рахуємо, а потім — що дає кожна врахована одиниця.',
+          2: 'Спочатку оберіть, що рахуємо, а потім - що дає кожна врахована одиниця.',
           3: 'Звірте картки гравця й ведучого та перевірте розрахунковий приклад перед збереженням.',
         },
         sections: {
@@ -1236,7 +1236,7 @@ const translations = {
           no: 'Правило діє без зворотного відліку.',
         },
         durationHint: 'Необов’язково. Залиште порожнім, якщо таймера немає.',
-        commandHint: 'Залиште порожнім — команда сформується з назви.',
+        commandHint: 'Залиште порожнім - команда сформується з назви.',
         advancedSettings: 'Додаткові налаштування',
         advancedSettingsDescription: 'Команда активації зазвичай створюється автоматично.',
         reward: 'Що змінюється',
@@ -1333,7 +1333,7 @@ const translations = {
           activationLimitCount:
             'Максимальна кількість активацій у межах одного раунду. Порожнє поле знімає ліміт.',
           conflicts:
-            'Якщо обраний модифікатор уже активний у раунді, цей купити не можна — і навпаки.',
+            'Якщо обраний модифікатор уже активний у раунді, цей купити не можна - і навпаки.',
           activationCommand:
             'Команда для замовлення модифікатора. Якщо залишити порожньою, вона створиться з назви.',
           formulaCode:
@@ -1477,7 +1477,7 @@ const translations = {
       importGroupExpand: 'Розгорнути імпорт з JSON',
       importGroupCollapse: 'Згорнути імпорт з JSON',
       categoryGroupDescription:
-        'Тут можна створити категорію. Щоб перейменувати або видалити — оберіть її в списку нижче. «БЕЗ КАТЕГОРИИ» змінити не можна.',
+        'Тут можна створити категорію. Щоб перейменувати або видалити - оберіть її в списку нижче. «БЕЗ КАТЕГОРИИ» змінити не можна.',
       categoryGroupExpand: 'Розгорнути керування категоріями',
       categoryGroupCollapse: 'Згорнути керування категоріями',
       importSuccess: 'Імпортовано запитань: {{count}}.',
@@ -1534,7 +1534,7 @@ const translations = {
         answer: 'Відповідь',
         correctAnswer: 'Правильна відповідь',
         correctAnswerPlaceholder: 'Напишіть правильну відповідь',
-        answersHint: 'Перша відповідь — правильна. Для гравців варіанти будуть перемішані.',
+        answersHint: 'Перша відповідь - правильна. Для гравців варіанти будуть перемішані.',
         answerCount: '{{count}} / {{max}} варіантів',
         answers: 'Варіанти відповідей',
         answerAlternative: 'Неправильний варіант {{number}}',
@@ -1849,7 +1849,7 @@ const translations = {
           activationLimitCount:
             'Maksymalna liczba aktywacji w jednej rundzie. Puste pole oznacza brak limitu.',
           conflicts:
-            'Jeśli wybrany modyfikator jest już aktywny w rundzie, tego nie można kupić — i odwrotnie.',
+            'Jeśli wybrany modyfikator jest już aktywny w rundzie, tego nie można kupić - i odwrotnie.',
           activationCommand:
             'Komenda służąca do zamówienia modyfikatora. Puste pole wygeneruje ją z nazwy.',
           formulaCode:
@@ -1993,7 +1993,7 @@ const translations = {
       importGroupExpand: 'Rozwiń import z JSON',
       importGroupCollapse: 'Zwiń import z JSON',
       categoryGroupDescription:
-        'Tu dodasz kategorię. Aby zmienić nazwę lub usunąć — najpierw wybierz ją na liście poniżej. Kategorii systemowej nie można edytować.',
+        'Tu dodasz kategorię. Aby zmienić nazwę lub usunąć - najpierw wybierz ją na liście poniżej. Kategorii systemowej nie można edytować.',
       categoryGroupExpand: 'Rozwiń zarządzanie kategoriami',
       categoryGroupCollapse: 'Zwiń zarządzanie kategoriami',
       importSuccess: 'Zaimportowano pytań: {{count}}.',

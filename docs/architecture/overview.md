@@ -32,10 +32,10 @@
   monotonic `roundVersion` и серверные timestamps
 - round summary использует exact resolution groups/instances, authoritative preview hash и
   optimistic version gate; confirmed notes/outcomes видны authenticated visitors, draft и
-  formula trace — только moderator/admin. Completed и technically cancelled rounds в history
+  formula trace - только moderator/admin. Completed и technically cancelled rounds в history
   агрегируются раздельно, cancelled rounds не влияют на leaderboard
 - preparing-round rebuild полностью refund'ит заказ и возвращает ordering в
-  `awaiting_modifiers`, сохраняя выбранные карточку и команду; technical cancel — отдельный
+  `awaiting_modifiers`, сохраняя выбранные карточку и команду; technical cancel - отдельный
   terminal path с нулевым score, retired-card state, освобождением команды и append-only
   transition audit
 - game questions: каталог multiple-choice вопросов с поиском/фильтрацией и
@@ -137,7 +137,7 @@ flowchart LR
 
 ## Локальное развертывание
 
-Общий workflow: [`docs/development.md`](../development.md). Скрипты bootstrap/reset: `backend/scripts/setup-local.ps1` и `backend/scripts/reset-local.ps1`. В Windows в корне — `setup-local.bat` / `reset-local.bat` как обёртки над теми же `.ps1`.
+Общий workflow: [`docs/development.md`](../development.md). Скрипты bootstrap/reset: `backend/scripts/setup-local.ps1` и `backend/scripts/reset-local.ps1`. В Windows в корне - `setup-local.bat` / `reset-local.bat` как обёртки над теми же `.ps1`.
 
 ## Контракты
 

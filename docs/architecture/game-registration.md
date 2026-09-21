@@ -9,11 +9,11 @@
 
 Admin transitions (`POST`, admin role):
 
-- `/api/game/lifecycle/open-registration` — draft → ready
+- `/api/game/lifecycle/open-registration` - draft → ready
 - Opening registration accepts an optional `{ gameId, expectedVersion }` body. The setup UI sends the reviewed draft identity and board version; stale drafts return `409` and replaced drafts return `404`. Empty-body requests remain supported for existing clients.
-- `/api/game/lifecycle/start` — ready → active
-- `GET /api/game/lifecycle/games/{gameId}/finish-preview` — authoritative completion preview
-- `POST /api/game/lifecycle/games/{gameId}/finish` — active → finished with optimistic board versioning and an immutable result snapshot
+- `/api/game/lifecycle/start` - ready → active
+- `GET /api/game/lifecycle/games/{gameId}/finish-preview` - authoritative completion preview
+- `POST /api/game/lifecycle/games/{gameId}/finish` - active → finished with optimistic board versioning and an immutable result snapshot
 
 Full finalization rules, warnings, ranking and idempotency are documented in
 [`game-lifecycle.md`](game-lifecycle.md).
@@ -30,7 +30,7 @@ Partial unique indexes: one `draft`, one `ready`, one `active` game at a time; o
 
 ## Team names and application display
 
-Player-created teams require a name of 3–18 characters after whitespace normalization; players cannot
+Player-created teams require a name of 3-18 characters after whitespace normalization; players cannot
 clear an existing name. All creation and rename paths, including admin actions, reject
 names equivalent to another forming/confirmed team in the same game. Comparison removes
 all whitespace and ignores case; display names retain normalized word spacing. The
@@ -82,29 +82,29 @@ after a failed request, allowing a retry; it closes only after success or cancel
 
 ## Registration API
 
-- `GET /api/game/registration` — snapshot for the ready game
-- `POST /api/game/registration/teams` — create team on a public team slot
-- `PATCH /api/game/registration/my-team/readiness` — mark or withdraw the current player's own readiness for a forming team
-- `POST /api/game/registration/teams/{teamId}/join` — open team only
-- `POST /api/game/registration/teams/leave` — while game is ready; confirmed teams cannot be left directly
-- `POST /api/game/registration/my-team/disband-request` — confirmed team member asks an admin to disband the team
-- `DELETE /api/game/registration/my-team/disband-request` — only the requesting player may withdraw it while still a member and registration remains open; the team remains confirmed. Another member receives `403 game_registration.disband_request_not_owned`. The player UI confirms both actions in a dialog.
-- `GET /api/game/registration/teams` — compact team list for registration screens
-- `GET /api/game/registration/admin` — moderator/admin workspace snapshot with available players
-- `POST /api/game/registration/admin/teams` — moderator/admin creates an empty open or closed team on the first free queue position, or on an explicit team slot when needed by tooling
-- `POST /api/game/registration/admin/teams/{teamId}/assign` — moderator/admin assigns a free player or moves a player between forming teams; confirmed rosters cannot be changed
-- `POST /api/game/registration/admin/teams/{teamId}/members/{userId}/remove` — removes a player from a forming team; removing the last member automatically disbands the team, cancels pending invitations and frees its slot
-- `POST /api/game/registration/admin/teams/{teamId}/move` — moderator/admin moves a team to another queue position, swapping with the occupying team when needed
-- `POST /api/game/registration/teams/{teamId}/disband` — moderator/admin disbands a forming or confirmed team, including an empty team, during registration or an active game; closes memberships and pending team invitations. No player request is required. An active team/round returns `409 game_registration.team_active_in_game`; a team marked played or with any round (opening a card creates one, including later cancellation) returns `409 game_registration.team_already_played`.
-- `POST /api/game/registration/teams/{teamId}/confirm` / `reject` — approve or reject a team for play
-- `POST /api/game/registration/invitations` — create admin invitations for reserved or curated flows
+- `GET /api/game/registration` - snapshot for the ready game
+- `POST /api/game/registration/teams` - create team on a public team slot
+- `PATCH /api/game/registration/my-team/readiness` - mark or withdraw the current player's own readiness for a forming team
+- `POST /api/game/registration/teams/{teamId}/join` - open team only
+- `POST /api/game/registration/teams/leave` - while game is ready; confirmed teams cannot be left directly
+- `POST /api/game/registration/my-team/disband-request` - confirmed team member asks an admin to disband the team
+- `DELETE /api/game/registration/my-team/disband-request` - only the requesting player may withdraw it while still a member and registration remains open; the team remains confirmed. Another member receives `403 game_registration.disband_request_not_owned`. The player UI confirms both actions in a dialog.
+- `GET /api/game/registration/teams` - compact team list for registration screens
+- `GET /api/game/registration/admin` - moderator/admin workspace snapshot with available players
+- `POST /api/game/registration/admin/teams` - moderator/admin creates an empty open or closed team on the first free queue position, or on an explicit team slot when needed by tooling
+- `POST /api/game/registration/admin/teams/{teamId}/assign` - moderator/admin assigns a free player or moves a player between forming teams; confirmed rosters cannot be changed
+- `POST /api/game/registration/admin/teams/{teamId}/members/{userId}/remove` - removes a player from a forming team; removing the last member automatically disbands the team, cancels pending invitations and frees its slot
+- `POST /api/game/registration/admin/teams/{teamId}/move` - moderator/admin moves a team to another queue position, swapping with the occupying team when needed
+- `POST /api/game/registration/teams/{teamId}/disband` - moderator/admin disbands a forming or confirmed team, including an empty team, during registration or an active game; closes memberships and pending team invitations. No player request is required. An active team/round returns `409 game_registration.team_active_in_game`; a team marked played or with any round (opening a card creates one, including later cancellation) returns `409 game_registration.team_already_played`.
+- `POST /api/game/registration/teams/{teamId}/confirm` / `reject` - approve or reject a team for play
+- `POST /api/game/registration/invitations` - create admin invitations for reserved or curated flows
 
 Draft setup creates six default public team slots (`GameRegistrationDefaults`). Team size is enforced from the ready-game configuration, and the current baseline is 2 players per team.
 
 ## Panel routes
 
-- `/panel/game-application` — player entry flow plus admin roster management when the current user has game setup capability
-- `/panel/team-registrations` — dedicated moderator/admin registration workspace backed by the same registration snapshot and actions
+- `/panel/game-application` - player entry flow plus admin roster management when the current user has game setup capability
+- `/panel/team-registrations` - dedicated moderator/admin registration workspace backed by the same registration snapshot and actions
 
 ## Current UI behavior
 

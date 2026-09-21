@@ -16,7 +16,7 @@
 - `DELETE /api/game/questions/{questionId}` -> **soft-delete** вопроса (`question_definitions.is_deleted`, `question_definitions.deleted_at_utc`).
 - каталог модификаторов -> **soft archive** через `modifier_definitions.is_archived` и
   admin `DELETE /api/game/modifiers/{modifierId}`; definition из active game content-locked.
-  `modifier_definition_versions` и их conflict-name snapshots — append-only: прикладные и
+  `modifier_definition_versions` и их conflict-name snapshots - append-only: прикладные и
   PostgreSQL guards запрещают update/delete, а архивирование не переписывает связи.
 - история отыгрышей карточек (`game_rounds`, `game_round_participants`, `game_round_cell_media`, `game_round_modifier_results`) -> **исторические факты**, не удалять каскадно из-за изменений справочников, медиа карточки или состава команды.
 - пользователи -> только **deactivate** через `users.is_active`; PostgreSQL запрещает
@@ -41,7 +41,7 @@
 ## Правило для новых изменений
 
 - Для временных рабочих сущностей допускается hard-delete только по явно задокументированному исключению.
-- Для исторически значимых бизнес-сущностей — только soft-delete/archive/deactivate.
+- Для исторически значимых бизнес-сущностей - только soft-delete/archive/deactivate.
 - Любое изменение политики удаления должно сопровождаться:
   - обновлением OpenAPI;
   - обновлением backend/frontend generated contracts;

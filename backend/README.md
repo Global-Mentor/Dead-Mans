@@ -4,24 +4,24 @@ Backend поддерживает auth, game board, game setup (admin draft), mod
 
 ## Что есть в коде
 
-- `Controllers/` — auth, game board, modifiers, questions, history, game setup, registration и lifecycle.
-- `Application/` — use-case сервисы (`GameBoard`, `GameModifiers`, `GameQuestions`, `GameHistory`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
-- `Api/` — transport contracts, mapping, HTTP middleware, rate limiting and SignalR hubs/publishers.
-- `Infrastructure/` — Twitch auth, EF repositories (`DbGame*Repository`) and object storage.
-- `Data/` — `ApplicationDbContext`, entities, configurations, migrations.
-- `openapi/deadmans.v1.yaml` — канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
-- `Api/Contracts/RealtimeHubContracts.cs` — hub paths и event names (синхронно с OpenAPI).
+- `Controllers/` - auth, game board, modifiers, questions, history, game setup, registration и lifecycle.
+- `Application/` - use-case сервисы (`GameBoard`, `GameModifiers`, `GameQuestions`, `GameHistory`, `GameSetup`, `GameRegistration`, `GameLifecycle`) и repository ports.
+- `Api/` - transport contracts, mapping, HTTP middleware, rate limiting and SignalR hubs/publishers.
+- `Infrastructure/` - Twitch auth, EF repositories (`DbGame*Repository`) and object storage.
+- `Data/` - `ApplicationDbContext`, entities, configurations, migrations.
+- `openapi/deadmans.v1.yaml` - канонический контракт (HTTP + SignalR `x-signalr`); см. `docs/architecture/realtime.md`.
+- `Api/Contracts/RealtimeHubContracts.cs` - hub paths и event names (синхронно с OpenAPI).
 
 ## Архитектурные границы сборки
 
 Backend разделен на layer-проекты и собирается как единая `backend.slnx`:
 
-- `backend.Domain.csproj` — domain-модели и value objects.
-- `backend.Application.csproj` — use-cases и порты (без зависимости на `Microsoft.AspNetCore.App`).
-- `backend.Data.csproj` — EF Core persistence model и migrations.
-- `backend.Api.csproj` — transport contracts / API mapping helpers.
-- `backend.Infrastructure.csproj` — реализации портов, auth, realtime, storage, DI.
-- `backend.csproj` — web host (`Program` + `Controllers`), компоновка слоев.
+- `backend.Domain.csproj` - domain-модели и value objects.
+- `backend.Application.csproj` - use-cases и порты (без зависимости на `Microsoft.AspNetCore.App`).
+- `backend.Data.csproj` - EF Core persistence model и migrations.
+- `backend.Api.csproj` - transport contracts / API mapping helpers.
+- `backend.Infrastructure.csproj` - реализации портов, auth, realtime, storage, DI.
+- `backend.csproj` - web host (`Program` + `Controllers`), компоновка слоев.
 
 Guardrails:
 
@@ -65,7 +65,7 @@ return the original receipt even after the timer; changing an accepted choice re
 
 ## Локальный запуск
 
-Bootstrap и сброс: [`docs/development.md`](../docs/development.md) (`backend/scripts/setup-local.ps1`, `backend/scripts/reset-local.ps1`; на Windows — `setup-local.bat`, `reset-local.bat` в корне репо).
+Bootstrap и сброс: [`docs/development.md`](../docs/development.md) (`backend/scripts/setup-local.ps1`, `backend/scripts/reset-local.ps1`; на Windows - `setup-local.bat`, `reset-local.bat` в корне репо).
 
 Сервер из каталога `backend/`:
 
@@ -83,8 +83,8 @@ dotnet run --project backend.csproj
 
 Game setup (admin draft):
 
-- `GET/POST/PUT/DELETE /api/game/setup` — черновик и пакетное сохранение текстовых полей.
-- `POST/DELETE /api/game/setup/cells/{cellId}/media` — загрузка/удаление изображения ячейки (multipart, admin only).
+- `GET/POST/PUT/DELETE /api/game/setup` - черновик и пакетное сохранение текстовых полей.
+- `POST/DELETE /api/game/setup/cells/{cellId}/media` - загрузка/удаление изображения ячейки (multipart, admin only).
 - Object key: `{Storage:GamesPrefix}/{gameId}/{Storage:CardsGroup}/{col}-{row}.{ext}` (см. `GameMediaObjectKeyFormat`).
 - `DELETE /api/game/setup` выполняет hard-delete только для текущего черновика (`draft`) и очищает связанные draft media-артефакты; это исключение из общей soft-delete политики.
 

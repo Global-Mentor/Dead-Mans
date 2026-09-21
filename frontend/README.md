@@ -23,27 +23,27 @@ Frontend - активный SPA-пакет проекта Dead-Mans. Он раб
 - страница `game-setup` (admin): общий черновик в БД (`GET/POST/PUT/DELETE /api/game/setup`), выбор enabled modifiers в draft (`enabledModifierIds`), медиа ячеек (`POST/DELETE /api/game/setup/cells/{cellId}/media`), Save + layout confirm, realtime через `/hubs/game-setup`;
 - полный контур модификаторов: выбор каталога в `game-setup`, runtime activation, versioned lifecycle раунда, server-authoritative preview/finalize, итоговый breakdown и frozen history;
 - блок вопросов в `game-setup`: каталог (`GET /api/game/questions/catalog`) с поиском/фильтрацией и enable/disable вопросов/категорий; runtime ask/answer/history endpoints пока доступны только на backend и через generated-контракты;
-- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) — HTTP через `src/features/game-registration/api/`; состав confirmed-команд нельзя менять, а роспуск целиком доступен в панели команд без обязательной заявки игрока. Активную команду, команду с открытой ранее карточкой или отмеченную отыгравшей распустить нельзя; причина отказа показывается в уведомлении.
+- страницы регистрации: `game-application` (игроки) и `team-registrations` (moderator/admin) - HTTP через `src/features/game-registration/api/`; состав confirmed-команд нельзя менять, а роспуск целиком доступен в панели команд без обязательной заявки игрока. Активную команду, команду с открытой ранее карточкой или отмеченную отыгравшей распустить нельзя; причина отказа показывается в уведомлении.
 
 ## Структура API-слоя
 
-- `src/shared/api/client/openApiClient.ts` — `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
-- `src/shared/api/contracts/` — generated transport types;
+- `src/shared/api/client/openApiClient.ts` - `openapi-fetch` клиенты поверх generated `paths`, общие credentials/header и перевод error-result в `ApiError`;
+- `src/shared/api/contracts/` - generated transport types;
 - `GET /api/game` возвращает `204 No Content`, если доступной доски нет; `unwrapOpenApiDataOrNullOnNoContent` преобразует этот ответ в штатное пустое состояние;
-- `src/shared/api/parse-api-response.ts` — единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
-- `src/features/*/api/*-queries.ts` — feature-local query keys и `queryOptions`;
+- `src/shared/api/parse-api-response.ts` - единая fail-fast обёртка для выборочной Zod-валидации критичных API-ответов;
+- `src/features/*/api/*-queries.ts` - feature-local query keys и `queryOptions`;
 - feature mutation modules используют `mutationOptions` для общих invalidation/error policies;
-- `src/shared/realtime/signalr-connection-manager.ts` — одно общее соединение на hub в пределах сессии, reconnect/start/stop и повторная синхронизация подписчиков; event handlers остаются в `features/*/realtime/`;
-- `src/features/game-registration/api/` — registration transport (не routed page; используют `game-application` и `team-registrations`);
-- `src/features/game-registration/index.ts` — public API registration feature (без deep imports из соседних фич);
-- `src/features/game-modifiers/index.ts` — public API modifiers feature;
-- `src/app/panel-route-metadata.ts` — metadata/source of truth for route ids, paths, labels and access;
-- `src/app/panel-route-config.tsx` — lazy page wiring and optional realtime-sync on top of route metadata;
-- `src/app/AppRoutes.tsx` + `src/app/app-route-tree.tsx` — дерево маршрутов (`useRoutes`);
-- `src/routes/app-routes.ts` — re-export метаданных, guards и access helpers;
-- `src/layouts/` — shell-компоненты панели (`MainLayout`, `PanelNavigation` + `PanelPrimaryNavigation`/`PanelProfileMenu`);
-- `src/shared/auth/panel-capabilities.ts` — capability-level access helpers поверх route-level role checks;
-- `src/features/*` — feature-first модули; page entrypoints остаются в корне фичи, а нетривиальные внутренности разделяются на `ui/`, `model/`, `api/`, `realtime/`, `theme/` и `lib/` по необходимости.
+- `src/shared/realtime/signalr-connection-manager.ts` - одно общее соединение на hub в пределах сессии, reconnect/start/stop и повторная синхронизация подписчиков; event handlers остаются в `features/*/realtime/`;
+- `src/features/game-registration/api/` - registration transport (не routed page; используют `game-application` и `team-registrations`);
+- `src/features/game-registration/index.ts` - public API registration feature (без deep imports из соседних фич);
+- `src/features/game-modifiers/index.ts` - public API modifiers feature;
+- `src/app/panel-route-metadata.ts` - metadata/source of truth for route ids, paths, labels and access;
+- `src/app/panel-route-config.tsx` - lazy page wiring and optional realtime-sync on top of route metadata;
+- `src/app/AppRoutes.tsx` + `src/app/app-route-tree.tsx` - дерево маршрутов (`useRoutes`);
+- `src/routes/app-routes.ts` - re-export метаданных, guards и access helpers;
+- `src/layouts/` - shell-компоненты панели (`MainLayout`, `PanelNavigation` + `PanelPrimaryNavigation`/`PanelProfileMenu`);
+- `src/shared/auth/panel-capabilities.ts` - capability-level access helpers поверх route-level role checks;
+- `src/features/*` - feature-first модули; page entrypoints остаются в корне фичи, а нетривиальные внутренности разделяются на `ui/`, `model/`, `api/`, `realtime/`, `theme/` и `lib/` по необходимости.
 - Крупные экраны раскладываются на section-компоненты в `features/<feature>/ui/` (например, `game-application/ui/*`, `game-setup/ui/GameSetupSyncActions|BoardNotices|EmptyState`), а крупные orchestration-хуки делятся на focused hooks по одной зоне ответственности (`game-setup`: `use-game-setup-draft` / `use-game-setup-save` / `use-game-setup-cell-media`, собранные тонким `use-game-setup-page`). Одноразовые компоненты не оборачиваются в абстракции.
 
 ## Инженерный baseline
@@ -73,16 +73,16 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 
 Фронтенд использует один визуальный baseline в стиле Hunt: Showdown (мрачный фронтир, латунь, мох, пергамент):
 
-- `src/shared/theme/hunt-palette.ts` — каноническая палитра (единственный источник raw colors);
-- `src/shared/theme/tokens.ts` — `huntTypography`, spacing и brand tokens;
-- `src/shared/theme/surface-sx.ts` — семантические поверхности (`getAppSurfaceSx`) и title/auth presets;
-- `src/app/theme/palette.ts` — MUI palette и app gradients;
-- `src/app/theme/typography.ts` — typography options;
-- `src/app/theme/component-overrides.ts` — глобальные MUI component overrides;
-- `src/app/theme/button-overrides.ts` — размеры, состояния и материалы кнопок; `input-overrides.ts` — отдельные настройки полей, включая фокус, ошибки и disabled;
-- `src/shared/ui/primitives/ChoiceCard.tsx` — карточка выбора внутри `RadioGroup`, с нативной навигацией стрелками; не заменять её стили глобальными селекторами для всех `ButtonBase`;
-- `src/shared/theme/hunt-materials.ts` — фактура и рамка; фактурный слой основных кнопок настраивается в `button-overrides.ts`, цвет основы — через палитру;
-- `src/app/theme/appTheme.ts` — тонкая композиция theme modules и `theme.custom.gradients`;
+- `src/shared/theme/hunt-palette.ts` - каноническая палитра (единственный источник raw colors);
+- `src/shared/theme/tokens.ts` - `huntTypography`, spacing и brand tokens;
+- `src/shared/theme/surface-sx.ts` - семантические поверхности (`getAppSurfaceSx`) и title/auth presets;
+- `src/app/theme/palette.ts` - MUI palette и app gradients;
+- `src/app/theme/typography.ts` - typography options;
+- `src/app/theme/component-overrides.ts` - глобальные MUI component overrides;
+- `src/app/theme/button-overrides.ts` - размеры, состояния и материалы кнопок; `input-overrides.ts` - отдельные настройки полей, включая фокус, ошибки и disabled;
+- `src/shared/ui/primitives/ChoiceCard.tsx` - карточка выбора внутри `RadioGroup`, с нативной навигацией стрелками; не заменять её стили глобальными селекторами для всех `ButtonBase`;
+- `src/shared/theme/hunt-materials.ts` - фактура и рамка; фактурный слой основных кнопок настраивается в `button-overrides.ts`, цвет основы - через палитру;
+- `src/app/theme/appTheme.ts` - тонкая композиция theme modules и `theme.custom.gradients`;
 - feature-local presets живут в `features/<feature>/theme/`:
   - `game-board/theme/board-cell-sx.ts`
   - `game-setup/theme/layout-sx.ts`, `setup-cell-sx.ts`, `cell-image-sx.ts`;
@@ -100,9 +100,9 @@ Production CSP запрещает inline JavaScript и `eval`. Конструк�
 
 Правило миграции и дальнейшей разработки:
 
-- layout-уникальность — локально в `sx`;
-- повторяемые visual patterns — только через theme override или `shared/ui`;
-- межфичевые импорты — через public API (`features/<feature>/index.ts`), без deep-import в `api/`/`model/` соседа;
+- layout-уникальность - локально в `sx`;
+- повторяемые visual patterns - только через theme override или `shared/ui`;
+- межфичевые импорты - через public API (`features/<feature>/index.ts`), без deep-import в `api/`/`model/` соседа;
 - не вводим второй styling-подход параллельно MUI (`CSS Modules`, `Tailwind`, отдельный runtime-styling).
 
 Подробный выбор вариантов, границы ответственности и допустимые исключения описаны в
@@ -131,7 +131,7 @@ Frontend не держит transport-контракты вручную как о
 npm run generate:transport
 ```
 
-(`generate:contracts` — HTTP/OpenAPI schemas; `generate:realtime` — hub paths и event names из `x-signalr`.)
+(`generate:contracts` - HTTP/OpenAPI schemas; `generate:realtime` - hub paths и event names из `x-signalr`.)
 
 ## Режим API
 
@@ -189,7 +189,7 @@ production-сборку. Отдельный локальный прогон cove
 
 Playwright входит в CI smoke gate и проверяет anonymous redirect, role-based routing и
 доступ администратора к каталогу вопросов без внешнего Twitch или тестовой БД. Следующий
-e2e-этап — добавить стабильные сценарии для game board, game setup save/conflict и registration
+e2e-этап - добавить стабильные сценарии для game board, game setup save/conflict и registration
 flow после подготовки управляемых test data и auth fixture.
 
 ## Ограничение текущего скоупа

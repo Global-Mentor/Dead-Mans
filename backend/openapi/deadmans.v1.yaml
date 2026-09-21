@@ -4476,7 +4476,7 @@ components:
           type: string
           maxLength: 18
           minLength: 3
-          description: Required; 3–18 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace.
+          description: Required; 3-18 characters after whitespace normalization. Unique among current teams in this game ignoring case and all whitespace.
     CreateAdminRegistrationTeamRequestDto:
       type: object
       required: [recruitmentOpen]

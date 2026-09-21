@@ -70,6 +70,9 @@ jobs:
       - name: Test production deployment orchestration
         run: node --test deploy/coolify-deploy.test.mjs
 
+      - name: Check project text style
+        run: npm run check:text-style
+
       - name: Generate frontend transport artifacts
         run: npm --prefix frontend run generate:transport
 

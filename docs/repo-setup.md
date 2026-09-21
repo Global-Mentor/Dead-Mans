@@ -51,13 +51,13 @@ git push -u origin feat/my-change
 #    The branch is deleted automatically after merge.
 ```
 
-Never commit directly to `main` — the branch protection will reject the push.
+Never commit directly to `main` - the branch protection will reject the push.
 
 ## `main` branch protection (ruleset)
 
 Enforced via **Settings → Rules → Rulesets** (target: default branch). Active rules:
 
-- **Require a pull request before merging** — no direct pushes to `main`.
+- **Require a pull request before merging** - no direct pushes to `main`.
   - 1 approval required.
   - Dismiss stale approvals when new commits are pushed.
   - Require review from Code Owners (`.github/CODEOWNERS`).
@@ -85,7 +85,7 @@ emergencies) and rely on real reviews.
 
 Configured in **Settings → General → Pull Requests**.
 
-- **Squash merging only** — merge commits and rebase merging are disabled, so
+- **Squash merging only** - merge commits and rebase merging are disabled, so
   `main` stays a clean linear history (one commit per PR).
 - **Automatically delete head branches** after merge.
 - **Always suggest updating pull request branches**.
@@ -97,7 +97,7 @@ Configured in **Settings → General → Pull Requests**.
 
 Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `build`, `perf`.
 
-With squash merge, the PR title becomes the squashed commit message — write PR
+With squash merge, the PR title becomes the squashed commit message - write PR
 titles in this format.
 
 ### Author identity / email privacy
@@ -130,10 +130,10 @@ Configured in `.github/dependabot.yml`. Key choices:
 
 Manage Dependabot PRs by commenting on them:
 
-- `@dependabot squash and merge` — merge once CI is green.
-- `@dependabot rebase` — rebase onto latest `main`.
-- `@dependabot close` — close and delete the branch.
-- `@dependabot ignore this major version` — skip a specific major.
+- `@dependabot squash and merge` - merge once CI is green.
+- `@dependabot rebase` - rebase onto latest `main`.
+- `@dependabot close` - close and delete the branch.
+- `@dependabot ignore this major version` - skip a specific major.
 
 ## Security
 

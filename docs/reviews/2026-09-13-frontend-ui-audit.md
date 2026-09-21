@@ -1,4 +1,4 @@
-# Frontend UI and HTML audit — 2026-09-13
+# Frontend UI and HTML audit - 2026-09-13
 
 ## Scope and baseline
 
