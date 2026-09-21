@@ -21,6 +21,8 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         RealtimeHubContracts.GameBoard.UserNotificationCreatedEvent;
     public const string GameLifecycleChangedEventName =
         RealtimeHubContracts.GameBoard.GameLifecycleChangedEvent;
+    public const string TeamStateChangedEventName =
+        RealtimeHubContracts.GameBoard.TeamStateChangedEvent;
     public const string ModifierCatalogChangedEventName =
         RealtimeHubContracts.GameBoard.ModifierCatalogChangedEvent;
 
@@ -119,6 +121,14 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
             GameLifecycleChangedEventName,
             payload.ToDto(),
             cancellationToken
+        );
+    }
+
+    public Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default)
+    {
+        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+            TeamStateChangedEventName,
+            cancellationToken: cancellationToken
         );
     }
 

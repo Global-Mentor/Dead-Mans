@@ -3015,6 +3015,8 @@ export interface components {
         };
         /** @description Registration changed after commit. No JSON body; authenticated clients refetch their own registration snapshot. */
         GameRegistrationChangedEventDto: Record<string, never>;
+        /** @description Active team or played state changed after commit. No JSON body; authenticated clients refetch the board and team queue. */
+        GameTeamStateChangedEventDto: Record<string, never>;
         /** @description SignalR payload for game-setup hub event draftChanged. The server sends no JSON body; clients refetch GET /api/game/setup after receiving the event. */
         GameSetupDraftChangedEventDto: Record<string, never>;
     };

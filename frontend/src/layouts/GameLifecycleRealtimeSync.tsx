@@ -42,11 +42,23 @@ export function GameLifecycleRealtimeSync() {
           ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
         )
       }
+      const teamStateHandler = () => {
+        void Promise.all(
+          [
+            currentGameBoardQueryOptions,
+            currentGameTeamQueueQueryOptions,
+            gameRegistrationSnapshotQueryOptions,
+            gameRegistrationAdminSnapshotQueryOptions,
+          ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
+        )
+      }
       connection.on(eventName, handler)
       connection.on(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+      connection.on(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
       return () => {
         connection.off(eventName, handler)
         connection.off(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
+        connection.off(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
       }
     },
     [invalidate, queryClient],

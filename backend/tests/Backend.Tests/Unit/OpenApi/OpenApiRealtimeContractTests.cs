@@ -42,7 +42,9 @@ public sealed class OpenApiRealtimeContractTests
 
         Assert.Contains($"path: {RealtimeHubContracts.GameBoard.HubPath}", yaml, StringComparison.Ordinal);
         Assert.Contains(RealtimeHubContracts.GameBoard.CellOpenedEvent + ":", yaml, StringComparison.Ordinal);
+        Assert.Contains(RealtimeHubContracts.GameBoard.TeamStateChangedEvent + ":", yaml, StringComparison.Ordinal);
         Assert.Contains("GameCellOpenedEventDto:", yaml, StringComparison.Ordinal);
+        Assert.Contains("GameTeamStateChangedEventDto:", yaml, StringComparison.Ordinal);
     }
 
     [Fact]

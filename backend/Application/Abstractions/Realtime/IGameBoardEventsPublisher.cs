@@ -41,6 +41,8 @@ public interface IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     );
 
+    Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default);
+
     Task PublishModifierCatalogChangedAsync(
         ModifierCatalogChangedEvent payload,
         CancellationToken cancellationToken = default
