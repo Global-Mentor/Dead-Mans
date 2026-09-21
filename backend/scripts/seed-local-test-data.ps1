@@ -60,16 +60,21 @@ $databaseUser = if ([string]::IsNullOrWhiteSpace($User)) {
 }
 
 Push-Location $repoRoot
-$previousOutputEncoding = $OutputEncoding
+$containerSeedPath = "/tmp/deadmans-seed-local-test-data.sql"
 try {
-  $OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-  Get-Content -Raw -Encoding UTF8 $seedSqlPath | docker exec -i $DatabaseContainer psql `
+  # Avoid the Windows PowerShell native pipeline: it can replace non-ASCII SQL
+  # text with question marks before Docker receives it, despite OutputEncoding.
+  docker cp $seedSqlPath "${DatabaseContainer}:$containerSeedPath"
+  Assert-LastExitCode -Step "copy seed-local-test-data"
+
+  docker exec $DatabaseContainer psql `
     -U $databaseUser `
     -d $databaseName `
-    -v ON_ERROR_STOP=1
+    -v ON_ERROR_STOP=1 `
+    -f $containerSeedPath
   Assert-LastExitCode -Step "seed-local-test-data"
 }
 finally {
-  $OutputEncoding = $previousOutputEncoding
+  docker exec $DatabaseContainer rm -f $containerSeedPath | Out-Null
   Pop-Location
 }
