@@ -56,19 +56,14 @@ public sealed partial class DbGameQuizRepository
         var session = await _dbContext.GameQuizQuestionSessions.AsNoTracking()
             .SingleAsync(x => x.Id == questionSessionId, cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var attribution = await ResolveAnswerAttributionAsync(input.Source, cancellationToken);
-        if (attribution is null)
-        {
-            return new(SubmitQuizAnswerRepositoryOutcome.PlayerNotFound);
-        }
-
-        var existing = await FindSubmissionAsync(questionSessionId, attribution.UserId, cancellationToken);
-        if (existing is not null)
-        {
-            return ExistingSubmissionResult(existing, input.SelectedOptionId);
-        }
         if (session.Status != GameQuizQuestionSessionStatusValue.Open || now >= session.ClosesAtUtc)
         {
+            var knownAttribution = await ResolveAnswerAttributionAsync(input.Source, false, cancellationToken);
+            if (knownAttribution is not null)
+            {
+                var accepted = await FindSubmissionAsync(questionSessionId, knownAttribution.UserId, cancellationToken);
+                if (accepted is not null) return ExistingSubmissionResult(accepted, input.SelectedOptionId);
+            }
             return new(SubmitQuizAnswerRepositoryOutcome.QuestionSessionClosed);
         }
 
@@ -76,6 +71,16 @@ public sealed partial class DbGameQuizRepository
         if (optionIndex < 0)
         {
             return new(SubmitQuizAnswerRepositoryOutcome.OptionNotFound);
+        }
+        var attribution = await ResolveAnswerAttributionAsync(input.Source, true, cancellationToken);
+        if (attribution is null)
+        {
+            return new(SubmitQuizAnswerRepositoryOutcome.PlayerNotFound);
+        }
+        var existing = await FindSubmissionAsync(questionSessionId, attribution.UserId, cancellationToken);
+        if (existing is not null)
+        {
+            return ExistingSubmissionResult(existing, input.SelectedOptionId);
         }
 
         var submission = new GameQuizSubmission
@@ -146,6 +151,7 @@ public sealed partial class DbGameQuizRepository
 
     private async Task<ResolvedQuizAnswerAttribution?> ResolveAnswerAttributionAsync(
         GameQuizAnswerSource source,
+        bool createTwitchUser,
         CancellationToken cancellationToken
     )
     {
@@ -173,6 +179,35 @@ public sealed partial class DbGameQuizRepository
         }
 
         var twitchUserId = twitch.TwitchUserId.Trim();
+        var login = twitch.Login.Trim();
+        var displayName = twitch.DisplayName.Trim();
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (createTwitchUser && _dbContext.Database.IsRelational())
+        {
+            // Chat participants do not need to sign in first. The upsert is intentionally
+            // conditional: a blocked account is never reactivated or overwritten by chat.
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($$"""
+                INSERT INTO users (id, twitch_user_id, login, display_name, is_active, created_at_utc, updated_at_utc)
+                VALUES ({{Guid.NewGuid()}}, {{twitchUserId}}, {{login}}, {{displayName}}, TRUE, {{now}}, {{now}})
+                ON CONFLICT (twitch_user_id) DO UPDATE
+                SET login = EXCLUDED.login, display_name = EXCLUDED.display_name, updated_at_utc = EXCLUDED.updated_at_utc
+                WHERE users.is_active = TRUE
+                """, cancellationToken);
+        }
+        else if (createTwitchUser && !await _dbContext.Users.AnyAsync(user => user.TwitchUserId == twitchUserId, cancellationToken))
+        {
+            _dbContext.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                TwitchUserId = twitchUserId,
+                Login = login,
+                DisplayName = displayName,
+                IsActive = true,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            });
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
         var userEntity = await _dbContext.Users.AsNoTracking().SingleOrDefaultAsync(
             user => user.TwitchUserId == twitchUserId && user.IsActive, cancellationToken);
         if (userEntity is null) return null;
