@@ -56,7 +56,9 @@ export function FinalResultSnapshot({
               key={team.teamId}
               sx={(theme) => ({
                 borderRadius: 2,
-                border: `1px solid ${alpha(theme.palette.divider, 0.85)}`,
+                backgroundColor: alpha(theme.palette.common.black, 0.2),
+                '&:nth-of-type(even)': { backgroundColor: alpha(theme.palette.primary.main, 0.07) },
+                overflowWrap: 'anywhere',
                 px: 1.25,
                 py: 1.05,
               })}

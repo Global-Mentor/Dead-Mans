@@ -201,19 +201,29 @@ export function GameSummaryButton({
     <Box
       component="button"
       type="button"
+      aria-pressed={isSelected}
       onClick={onClick}
       sx={(theme) => ({
         width: '100%',
         textAlign: 'left',
-        border: `1px solid ${
-          isSelected ? theme.palette.primary.main : alpha(theme.palette.divider, 0.9)
-        }`,
+        border: '1px solid transparent',
+        color: 'inherit',
+        boxShadow: isSelected ? `inset 3px 0 ${theme.palette.primary.main}` : 'none',
         backgroundColor: isSelected
-          ? alpha(theme.palette.primary.main, 0.1)
-          : alpha(theme.palette.background.paper, 0.72),
+          ? alpha(theme.palette.primary.main, 0.18)
+          : alpha(theme.palette.common.black, 0.2),
+        '&:nth-of-type(even)': {
+          backgroundColor: alpha(theme.palette.primary.main, isSelected ? 0.18 : 0.06),
+        },
         borderRadius: 2,
-        px: 1.5,
-        py: 1.4,
+        px: 1.1,
+        py: 1,
+        overflowWrap: 'anywhere',
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: -2,
+        },
         cursor: 'pointer',
         transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease',
         '&:hover': {
@@ -228,13 +238,6 @@ export function GameSummaryButton({
           <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 0, flex: 1 }}>
             {game.gameTitle}
           </Typography>
-          <Chip
-            size="small"
-            label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`, {
-              defaultValue: t('gameHistory.notAvailable'),
-            })}
-            color={getGameStatusColor(game.gameStatus)}
-          />
         </Stack>
 
         <Typography variant="caption" color="text.secondary">

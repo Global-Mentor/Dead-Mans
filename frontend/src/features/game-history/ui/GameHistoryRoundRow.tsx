@@ -139,7 +139,7 @@ export function RoundHistoryRow({
                     sx={(theme) => ({
                       minWidth: 0,
                       borderRadius: 1.5,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                       px: 1,
                       py: 0.8,
                     })}

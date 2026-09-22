@@ -31,7 +31,14 @@ export function AccordionSurface({
   highlighted?: boolean
 }) {
   return (
-    <AppAccordion defaultExpanded={defaultExpanded} tone={highlighted ? 'warning' : 'default'}>
+    <AppAccordion
+      defaultExpanded={defaultExpanded}
+      tone={highlighted ? 'warning' : 'default'}
+      sx={(theme) => ({
+        borderColor: alpha(theme.palette.primary.main, 0.2),
+        '&:nth-of-type(even)': { backgroundColor: alpha(theme.palette.primary.main, 0.055) },
+      })}
+    >
       {children}
     </AppAccordion>
   )
@@ -53,7 +60,15 @@ export function CollapsibleSection({
   nested?: boolean
 }) {
   return (
-    <AppAccordion defaultExpanded={defaultExpanded} surface={nested ? 'inset' : 'plain'}>
+    <AppAccordion
+      defaultExpanded={defaultExpanded}
+      surface={nested ? 'inset' : 'plain'}
+      sx={{
+        '& .MuiAccordionSummary-root:not(.Mui-expanded) .history-section-description': {
+          display: 'none',
+        },
+      }}
+    >
       <AppAccordionSummary expandIcon={<ExpandGlyph />}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Stack
@@ -62,10 +77,14 @@ export function CollapsibleSection({
             alignItems={{ xs: 'flex-start', sm: 'center' }}
           >
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography variant="overline" color="text.secondary">
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                 {title}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                className="history-section-description"
+                variant="body2"
+                color="text.secondary"
+              >
                 {description}
               </Typography>
             </Box>
@@ -92,7 +111,7 @@ export function MetricChip({ label, value }: { label: string; value: string }) {
     <Box
       sx={(theme) => ({
         borderRadius: 999,
-        border: `1px solid ${alpha(theme.palette.divider, 0.88)}`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
         backgroundColor: alpha(theme.palette.background.paper, 0.54),
         minWidth: 0,
         px: 1,

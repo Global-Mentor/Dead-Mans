@@ -39,14 +39,13 @@ export function GameDetailsPanel({
   const cancelledRounds = game.mainGame.rounds.filter((round) => round.status === 'cancelled')
 
   return (
-    <Stack spacing={2} sx={{ mt: 1.5 }}>
+    <Stack spacing={1} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
       <Box
         sx={(theme) => ({
           borderRadius: 2.5,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
           background: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 100%)`,
-          px: { xs: 1.75, sm: 2 },
-          py: { xs: 1.75, sm: 2 },
+          p: 1.25,
         })}
       >
         <Stack spacing={1.25}>
@@ -66,7 +65,7 @@ export function GameDetailsPanel({
                 />
               </Stack>
 
-              <Typography variant="h5" sx={{ mt: 1, fontWeight: 800 }}>
+              <Typography component="h2" variant="h5" sx={{ mt: 0.75, fontWeight: 800 }}>
                 {game.gameTitle}
               </Typography>
             </Box>
@@ -146,6 +145,7 @@ export function GameDetailsPanel({
         rounds={completedRounds}
         snapshots={game.modifierSnapshots}
         snapshotStatus={game.modifierSnapshotStatus}
+        collapsible
       />
 
       <SectionCard surface="inset" sx={{ p: 0 }}>
@@ -167,7 +167,10 @@ export function GameDetailsPanel({
                   key={activation.activationId}
                   sx={(theme) => ({
                     borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.88)}`,
+                    backgroundColor: alpha(theme.palette.common.black, 0.2),
+                    '&:nth-of-type(even)': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.07),
+                    },
                     px: 1.5,
                     py: 1.25,
                   })}
