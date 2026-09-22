@@ -1,4 +1,4 @@
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -109,21 +109,33 @@ export function GameHistoryPage({
   return (
     <PageShell
       sx={{
-        maxWidth: 'none',
+        maxWidth: 1800,
         width: '100%',
+        mx: 'auto',
+        p: { xs: 0, md: 0 },
       }}
     >
-      <SectionHeader
-        headingLevel="h1"
-        title={t(
-          activeBoard === 'history' ? 'gameHistory.archivePageTitle' : 'gameHistory.realtimeTitle',
-        )}
-        description={t(
-          activeBoard === 'history'
-            ? 'gameHistory.archivePageDescription'
-            : 'gameHistory.realtimeDescription',
-        )}
-      />
+      {activeBoard === 'history' ? (
+        <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 850 }}>
+          {t('gameHistory.archivePageTitle')}
+        </Typography>
+      ) : (
+        <Typography
+          component="h1"
+          sx={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            p: 0,
+            m: -1,
+            overflow: 'hidden',
+            clipPath: 'inset(50%)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {t('gameHistory.realtimeTitle')}
+        </Typography>
+      )}
 
       {isBoardSwitcherVisible ? (
         <SectionCard sx={{ mt: 1.5 }}>
@@ -166,7 +178,10 @@ export function GameHistoryPage({
             />
           ) : null}
 
-          <SectionCard sx={{ mt: currentGameSummary ? 1.5 : 0 }}>
+          <SectionCard
+            data-testid="current-leaderboard-surface"
+            sx={{ mt: currentGameSummary ? 1 : 0, p: { xs: 0.75, sm: 1 } }}
+          >
             <AsyncSection
               isLoading={
                 currentGameQuery.isLoading ||

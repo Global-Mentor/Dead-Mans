@@ -96,104 +96,93 @@ export function CurrentGameLeaderboardSummary({
     value === null ? '-' : t('gameHistory.pointsValue', { points: value })
 
   return (
-    <Stack spacing={1}>
-      <Box
-        sx={(theme) => ({
-          borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.14)} 0%, ${alpha(
-            theme.palette.background.paper,
-            0.66,
-          )} 100%)`,
-          px: { xs: 1.4, sm: 1.75 },
-          py: { xs: 1.2, sm: 1.45 },
-          textAlign: 'center',
-        })}
+    <Box
+      component="section"
+      aria-label={t('gameHistory.currentGameSummaryTitle')}
+      data-testid="current-game-summary"
+      sx={(theme) => ({
+        borderRadius: '12px',
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.26)}`,
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(
+          theme.palette.background.paper,
+          0.42,
+        )})`,
+        p: { xs: 0.75, sm: 1 },
+      })}
+    >
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={0.75}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        justifyContent="space-between"
+        sx={{ mb: 0.75 }}
       >
-        <Stack spacing={0.85} alignItems="center" sx={{ minWidth: 0 }}>
-          <Stack
-            direction="row"
-            spacing={0.75}
-            alignItems="center"
-            justifyContent="center"
-            flexWrap="wrap"
-            useFlexGap
-          >
-            <Chip label={t('gameHistory.currentGameSummaryTitle')} color="warning" size="small" />
-            <Chip
-              label={t(`gameHistory.status.${normalizeStatus(status)}`, {
-                defaultValue: t('gameHistory.notAvailable'),
-              })}
-              color={getGameStatusColor(status)}
-              variant="outlined"
-              size="small"
-            />
-          </Stack>
-
-          <Typography
-            component="p"
-            variant="h5"
-            sx={{ maxWidth: 920, fontWeight: 900, lineHeight: 1.16 }}
-          >
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 750 }}>
+            {t('gameHistory.currentGameSummaryTitle')}
+          </Typography>
+          <Typography component="p" variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.15 }}>
             {title}
           </Typography>
-        </Stack>
-      </Box>
+        </Box>
+        <Chip
+          label={t(`gameHistory.status.${normalizeStatus(status)}`, {
+            defaultValue: t('gameHistory.notAvailable'),
+          })}
+          color={getGameStatusColor(status)}
+          variant="outlined"
+          size="small"
+          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, flexShrink: 0 }}
+        />
+      </Stack>
 
       <Box
-        sx={(theme) => ({
-          borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.warning.main, 0.24)}`,
-          backgroundColor: alpha(theme.palette.background.paper, 0.58),
-          px: { xs: 1.1, sm: 1.25 },
-          py: { xs: 1.05, sm: 1.15 },
-        })}
+        sx={{
+          display: 'grid',
+          gap: 0.6,
+          gridTemplateColumns: {
+            xs: 'repeat(2, minmax(0, 1fr))',
+            sm: 'repeat(4, minmax(0, 1fr))',
+          },
+          '@media (min-width: 1200px)': {
+            gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+          },
+        }}
       >
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 0.8,
-            gridTemplateColumns: {
-              xs: 'repeat(2, minmax(0, 1fr))',
-              sm: 'repeat(4, minmax(0, 1fr))',
-            },
-          }}
-        >
-          <CompactMetric
-            label={t('gameHistory.summary.playedTeamCount')}
-            value={formatCount(playedTeamCount)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.playedRoundCount')}
-            value={formatCount(playedRoundCount)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.activatedModifierCount')}
-            value={formatCount(activatedModifierCount)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.quizPointsEarned')}
-            value={formatPoints(quizPoints)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.totalKills')}
-            value={formatCount(totalKills)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.totalBounties')}
-            value={formatCount(totalTokens)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.penaltyTotal')}
-            value={formatPoints(penaltyTotal)}
-          />
-          <CompactMetric
-            label={t('gameHistory.summary.teamFinalScoreTotal')}
-            value={formatPoints(teamFinalScoreTotal)}
-          />
-        </Box>
+        <CompactMetric
+          label={t('gameHistory.currentSummary.teams')}
+          value={formatCount(playedTeamCount)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.rounds')}
+          value={formatCount(playedRoundCount)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.score')}
+          value={formatPoints(teamFinalScoreTotal)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.penalties')}
+          value={formatPoints(penaltyTotal)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.quiz')}
+          value={formatPoints(quizPoints)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.modifiers')}
+          value={formatCount(activatedModifierCount)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.kills')}
+          value={formatCount(totalKills)}
+        />
+        <CompactMetric
+          label={t('gameHistory.currentSummary.bounties')}
+          value={formatCount(totalTokens)}
+        />
       </Box>
-    </Stack>
+    </Box>
   )
 }
 
