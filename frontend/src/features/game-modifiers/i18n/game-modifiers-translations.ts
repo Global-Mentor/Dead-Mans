@@ -1,5 +1,6 @@
 const translations = {
   en: {
+    clearSearch: 'Clear',
     loading: 'Loading modifiers...',
     errorLoading: 'Failed to load modifiers.',
     noGame: 'No active game. Modifiers will be available once the game starts.',
@@ -182,6 +183,7 @@ const translations = {
     },
   },
   ru: {
+    clearSearch: 'Очистить',
     loading: 'Загрузка модификаторов...',
     errorLoading: 'Не удалось загрузить модификаторы.',
     noGame: 'Активной игры нет. Модификаторы появятся после старта.',
@@ -365,6 +367,7 @@ const translations = {
     },
   },
   uk: {
+    clearSearch: 'Очистити',
     loading: 'Завантаження модифікаторів...',
     errorLoading: 'Не вдалося завантажити модифікатори.',
     noGame: 'Немає активної гри. Модифікатори будуть доступні після старту.',
@@ -548,6 +551,7 @@ const translations = {
     },
   },
   pl: {
+    clearSearch: 'Wyczyść',
     loading: 'Ładowanie modyfikatorów...',
     errorLoading: 'Nie udało się załadować modyfikatorów.',
     noGame: 'Brak aktywnej gry. Modyfikatory będą dostępne po rozpoczęciu gry.',

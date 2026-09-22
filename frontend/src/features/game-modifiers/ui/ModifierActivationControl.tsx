@@ -26,7 +26,7 @@ export function ModifierActivationControl({
   return (
     <Box
       sx={{
-        width: { xs: '100%', sm: 192 },
+        width: { xs: '100%', sm: 168 },
         flexShrink: 0,
         display: 'flex',
         justifyContent: { xs: 'stretch', sm: 'flex-end' },
@@ -42,6 +42,7 @@ export function ModifierActivationControl({
           sx={{
             height: 32,
             minHeight: 32,
+            '@media (max-width: 599px)': { height: 'auto', minHeight: 44 },
             borderRadius: '8px',
             fontSize: '0.75rem',
             lineHeight: 1.15,
@@ -70,6 +71,7 @@ export function ModifierActivationControl({
               sx={{
                 height: 32,
                 minHeight: 32,
+                '@media (max-width: 599px)': { height: 'auto', minHeight: 44 },
                 borderRadius: '8px',
                 pointerEvents: 'none',
                 fontSize: '0.75rem',

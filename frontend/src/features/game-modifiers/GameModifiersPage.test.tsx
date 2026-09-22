@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import { alpha } from '@mui/material/styles'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { AuthContext, type AuthContextValue } from '../../shared/auth/auth-context.ts'
@@ -272,9 +271,7 @@ describe('GameModifiersPage', () => {
     const summary = screen.getByRole('region', { name: 'Краткая сводка' })
     expect(within(summary).getByRole('status')).toHaveTextContent('Заказ открыт')
     expect(screen.getByTestId('modifier-summary-row')).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'row',
-      flexWrap: 'nowrap',
+      display: 'grid',
     })
     expect(within(summary).getByText('Текущая команда')).toBeInTheDocument()
     expect(within(summary).getByText('Морские волки')).toBeInTheDocument()
@@ -294,8 +291,7 @@ describe('GameModifiersPage', () => {
       textAlign: 'center',
     })
     const viewCardButton = within(summary).getByRole('button', { name: 'Посмотреть карточку' })
-    expect(viewCardButton).toHaveStyle({ minWidth: '148px' })
-    expect(viewCardButton.parentElement).toHaveStyle({ paddingTop: '4.8px' })
+    expect(viewCardButton).toHaveStyle({ minHeight: '28px' })
 
     const summaryText = summary.textContent ?? ''
     expect(summaryText.indexOf('Краткая сводка')).toBeLessThan(
@@ -348,7 +344,7 @@ describe('GameModifiersPage', () => {
     expect(screen.getAllByText('9 очк.')).toHaveLength(2)
     expect(screen.getAllByText('Активны в этой игре')).toHaveLength(1)
     expect(screen.getByText('3 модификатора')).toBeInTheDocument()
-    expect(screen.getAllByText('1 модификатор')).toHaveLength(1)
+    expect(screen.getAllByText('1 модификатор')).toHaveLength(2)
     expect(screen.queryByText('1 модификаторов')).not.toBeInTheDocument()
     expect(screen.queryByText('Текущий игрок')).not.toBeInTheDocument()
     expect(screen.queryByText(/Последний:/)).not.toBeInTheDocument()
@@ -495,7 +491,7 @@ describe('GameModifiersPage', () => {
     const orderingDescription = within(orderingAlert).getByText(
       'Сейчас не фаза заказа модификаторов.',
     )
-    expect(orderingDescription).toHaveStyle({ color: alpha(huntPalette.parchment, 0.84) })
+    expect(orderingDescription).toHaveStyle({ color: huntPalette.parchmentMuted })
     expect(
       screen.queryAllByText('Заказ закрыт: сейчас не фаза заказа модификаторов.'),
     ).toHaveLength(0)

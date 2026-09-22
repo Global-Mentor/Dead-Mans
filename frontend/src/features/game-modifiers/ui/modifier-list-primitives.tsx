@@ -6,13 +6,10 @@ import type { GameModifierAvailability } from '../../../shared/api/contracts/ind
 
 export function ModifierSectionHeading({ title, count }: { title: string; count?: number }) {
   return (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }}
-      spacing={0.75}
-      justifyContent="space-between"
-      alignItems={{ xs: 'flex-start', sm: 'center' }}
-    >
-      <Typography variant="subtitle1">{title}</Typography>
+    <Stack direction="row" spacing={0.75} justifyContent="space-between" alignItems="center">
+      <Typography component="h2" variant="subtitle2" sx={{ fontWeight: 850 }}>
+        {title}
+      </Typography>
       {count === undefined ? null : <ModifierCountBadge count={count} />}
     </Stack>
   )
@@ -27,12 +24,12 @@ export function ModifierCountBadge({ count }: { count: number }) {
       sx={(theme) => ({
         display: 'inline-flex',
         alignItems: 'center',
-        minHeight: 28,
+        minHeight: 24,
         borderRadius: '999px',
         border: `1px solid ${alpha(theme.palette.primary.main, 0.56)}`,
         backgroundColor: alpha(theme.palette.primary.main, 0.12),
         color: 'text.primary',
-        px: 1,
+        px: 0.8,
         typography: 'caption',
         fontWeight: 850,
         whiteSpace: 'nowrap',
@@ -55,7 +52,7 @@ export function ModifierIcon({ emoji }: { emoji: string | null | undefined }) {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: alpha(theme.palette.background.paper, 0.52),
-        border: `1px solid ${alpha(theme.palette.divider, 0.68)}`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
         flexShrink: 0,
       })}
     >
@@ -82,7 +79,7 @@ export function InlineMetaPill({
               ? theme.palette.warning.main
               : tone === 'error'
                 ? theme.palette.error.main
-                : theme.palette.divider
+                : theme.palette.primary.main
 
         return {
           display: 'inline-flex',
@@ -90,14 +87,16 @@ export function InlineMetaPill({
           minWidth: 0,
           minHeight: 24,
           borderRadius: '999px',
-          border: `1px solid ${alpha(accent, tone === 'default' ? 0.74 : 0.52)}`,
+          border: `1px solid ${alpha(accent, tone === 'default' ? 0.16 : 0.38)}`,
           backgroundColor:
             tone === 'default' ? alpha(theme.palette.background.paper, 0.42) : alpha(accent, 0.12),
           px: 0.75,
           typography: 'caption',
-          color: tone === 'default' ? 'text.primary' : `${tone}.light`,
+          color: tone === 'default' ? 'text.secondary' : `${tone}.light`,
           fontWeight: 700,
-          lineHeight: 1,
+          lineHeight: 1.3,
+          py: 0.2,
+          overflowWrap: 'anywhere',
         }
       }}
     >
@@ -126,12 +125,11 @@ export function ModifierCategorySection({
               : theme.palette.warning.main
 
         return {
-          border: `1px solid ${alpha(accent, 0.42)}`,
-          borderLeftWidth: 3,
-          borderRadius: '10px',
-          backgroundColor: alpha(accent, 0.045),
-          px: { xs: 0.9, sm: 1.1 },
-          py: 0.9,
+          borderRadius: '8px',
+          backgroundColor: alpha(accent, 0.04),
+          boxShadow: `inset 2px 0 0 ${alpha(accent, 0.62)}`,
+          px: { xs: 0.7, sm: 0.85 },
+          py: 0.7,
         }
       }}
     >
