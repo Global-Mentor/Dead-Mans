@@ -55,14 +55,12 @@ export function PlayedCardResultPanel({
       data-testid="played-card-result-panel"
       sx={(theme) => ({
         minWidth: 0,
-        maxHeight: 'min(68vh, 720px)',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
+        overflowWrap: 'anywhere',
         borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.42),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        backgroundColor: alpha(theme.palette.primary.main, 0.04),
         pl: 1.1,
-        pr: { xs: 1.1, lg: 0.75 },
+        pr: 1.1,
         py: 1,
       })}
     >
@@ -110,6 +108,7 @@ export function PlayedCardResultPanel({
               <PlayedCardResultMetric
                 label={t('gameHistory.summary.finalScore')}
                 value={t('gameHistory.pointsValue', { points: finalScore })}
+                emphasize
               />
               {penaltyTotal > 0 ? (
                 <PlayedCardResultMetric
@@ -127,7 +126,15 @@ export function PlayedCardResultPanel({
               />
             </Box>
 
-            <RoundScoreBreakdown score={round.scoreDetails} />
+            <Box
+              sx={(theme) => ({
+                '& [data-testid="round-score-breakdown"]': {
+                  borderColor: alpha(theme.palette.primary.main, 0.2),
+                },
+              })}
+            >
+              <RoundScoreBreakdown score={round.scoreDetails} />
+            </Box>
 
             <Stack spacing={0.55}>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
@@ -162,8 +169,9 @@ function PlayedCardModifierItem({ modifier }: { modifier: PlayedCardModifierGrou
       sx={(theme) => ({
         minWidth: 0,
         borderRadius: 1.5,
-        border: `1px solid ${alpha(theme.palette.divider, 0.66)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.3),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        backgroundColor: alpha(theme.palette.common.black, 0.18),
+        '&:nth-of-type(even)': { backgroundColor: alpha(theme.palette.primary.main, 0.07) },
         px: 0.85,
         py: 0.75,
       })}
@@ -177,7 +185,10 @@ function PlayedCardModifierItem({ modifier }: { modifier: PlayedCardModifierGrou
           flexWrap="wrap"
           useFlexGap
         >
-          <Typography variant="body2" sx={{ minWidth: 0, fontWeight: 820 }} noWrap>
+          <Typography
+            variant="body2"
+            sx={{ minWidth: 0, fontWeight: 820, overflowWrap: 'anywhere' }}
+          >
             {modifierTitle}
           </Typography>
           <Stack direction="row" spacing={0.35} flexWrap="wrap" useFlexGap>
@@ -349,22 +360,37 @@ function formatSignedNumber(value: number) {
   return value > 0 ? `+${value}` : `${value}`
 }
 
-function PlayedCardResultMetric({ label, value }: { label: string; value: string }) {
+function PlayedCardResultMetric({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string
+  value: string
+  emphasize?: boolean
+}) {
   return (
     <Box
       sx={(theme) => ({
         minWidth: 0,
         borderRadius: 1.4,
-        border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.34),
+        border: `1px solid ${alpha(theme.palette.primary.main, emphasize ? 0.35 : 0.14)}`,
+        backgroundColor: alpha(theme.palette.primary.main, emphasize ? 0.12 : 0.03),
         px: 0.8,
         py: 0.65,
       })}
     >
-      <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 850 }} noWrap>
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 850,
+          color: emphasize ? 'primary.light' : 'text.primary',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
         {value}
       </Typography>
     </Box>
