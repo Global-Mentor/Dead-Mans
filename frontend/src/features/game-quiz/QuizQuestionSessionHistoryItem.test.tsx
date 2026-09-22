@@ -24,15 +24,6 @@ const session = {
   ],
   submissions: [
     {
-      userId: 'alice',
-      displayName: 'Alice',
-      selectedOptionId: 'right',
-      selectedOptionText: 'Paris',
-      isCorrect: true,
-      awardedPoints: 5,
-      submittedAtUtc: '2026-09-19T10:00:10Z',
-    },
-    {
       userId: 'bob',
       displayName: 'Bob',
       selectedOptionId: 'wrong',
@@ -41,12 +32,21 @@ const session = {
       awardedPoints: 0,
       submittedAtUtc: '2026-09-19T10:00:20Z',
     },
+    {
+      userId: 'alice',
+      displayName: 'Alice',
+      selectedOptionId: 'right',
+      selectedOptionText: 'Paris',
+      isCorrect: true,
+      awardedPoints: 5,
+      submittedAtUtc: '2026-09-19T10:00:10Z',
+    },
   ],
 }
 
 describe('quiz submission history', () => {
   it('preserves each participant and the personal result after the next question starts', () => {
-    renderWithAppProviders(
+    const view = renderWithAppProviders(
       <QuizQuestionSessionHistoryItem questionSession={session} currentUserId="alice" />,
     )
     expect(
@@ -56,10 +56,18 @@ describe('quiz submission history', () => {
       i18n.t('gameQuiz.resultCorrect', { points: 5 }),
     )
     expect(
-      screen.getByText(i18n.t('gameQuiz.answerStats', { correct: 1, attempts: 2 })),
+      screen.getByText(i18n.t('gameQuiz.answerResultsSummary', { correct: 1, incorrect: 1 })),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Alice: Paris/)).toBeInTheDocument()
-    expect(screen.getByText(/Bob: London/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(i18n.t('gameQuiz.questionLabel', { order: 'q1' })),
+    ).not.toBeInTheDocument()
+    const results = [...view.container.querySelectorAll('[data-answer-result]')]
+    expect(results.map((item) => item.getAttribute('data-answer-result'))).toEqual([
+      'correct',
+      'incorrect',
+    ])
+    expect(results[0]).toHaveTextContent('Alice')
+    expect(results[1]).toHaveTextContent('Bob')
     expect(screen.queryByText(i18n.t('gameQuiz.notAnswered'))).not.toBeInTheDocument()
   })
 
