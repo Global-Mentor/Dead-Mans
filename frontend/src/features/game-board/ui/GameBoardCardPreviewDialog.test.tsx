@@ -63,7 +63,7 @@ describe('GameBoardCardPreviewDialog', () => {
     expect(screen.queryByText('Player One, Player Two')).not.toBeInTheDocument()
   })
 
-  it('keeps a large modifier list inside a scrollable result panel', () => {
+  it('keeps a large modifier list in the dialog scroll area without nested scrolling', () => {
     const modifiers = Array.from({ length: 18 }, (_, index) =>
       createModifier({
         modifierResultId: `modifier-result-${index}`,
@@ -86,9 +86,11 @@ describe('GameBoardCardPreviewDialog', () => {
 
     expect(screen.getByText('Модификатор 1')).toBeInTheDocument()
     expect(screen.getByText('Модификатор 18')).toBeInTheDocument()
-    expect(screen.getByTestId('played-card-result-panel')).toHaveStyle({
+    const resultPanel = screen.getByTestId('played-card-result-panel')
+    expect(resultPanel).not.toHaveStyle({ overflowY: 'auto' })
+    expect(resultPanel).not.toHaveStyle({ maxHeight: 'min(68vh, 720px)' })
+    expect(resultPanel.closest('.MuiDialogContent-root')).toHaveStyle({
       overflowY: 'auto',
-      maxHeight: 'min(68vh, 720px)',
     })
   })
 

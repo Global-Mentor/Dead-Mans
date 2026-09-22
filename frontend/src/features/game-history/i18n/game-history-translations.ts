@@ -1,5 +1,7 @@
 const translations = {
   en: {
+    searchGames: 'Search games',
+    searchEmpty: 'No games found. Try another title.',
     title: 'Leaderboard',
     description:
       'Track the live standings of the current game separately from the archive of completed games.',
@@ -43,6 +45,16 @@ const translations = {
     errorGameDetails: 'Failed to load the selected game.',
     selectGamePrompt: 'Choose a game from the list to view its history.',
     currentGameSummaryTitle: 'Game pulse',
+    currentSummary: {
+      teams: 'Teams',
+      rounds: 'Rounds',
+      score: 'Team total',
+      penalties: 'Penalties',
+      quiz: 'Quiz',
+      modifiers: 'Modifiers',
+      kills: 'Kills',
+      bounties: 'Bounties',
+    },
     statusChipArchived: 'Archive',
     currentTableTitle: 'Team standings',
     currentTableDescription:
@@ -58,6 +70,13 @@ const translations = {
     modifierSummary: {
       title: 'Modifier result summary',
       description: 'Frozen revisions and their confirmed contribution across completed rounds.',
+      snapshotActivated: 'Activated',
+      snapshotNotActivated: 'Not activated',
+      snapshotCancelled: 'Cancelled: {{count}}',
+      snapshotResults: 'Results: {{count}}',
+      snapshotEmergency: 'Emergency-disabled',
+      legacyUnavailable:
+        'Older games may only contain activation and result snapshots. Missing revisions are not rebuilt from the current catalog.',
       activations: '{{count}} activations',
       rounds: '{{count}} rounds',
       points: '{{points}} pts',
@@ -181,7 +200,7 @@ const translations = {
       roundCountShort: '{{count}} rounds',
       quizCountShort: '{{count}} quiz',
       playerCountShort: '{{count}} players',
-      teamCountShort: '{{count}} teams',
+      teamCountShort: 'Teams: {{count}}',
       modifierCountShort: '{{count}} mods',
       roundsPlayedShort: '{{count}} played',
       bestAndPenaltyShort: 'Best {{best}} · Penalties {{penalty}}',
@@ -201,6 +220,8 @@ const translations = {
     },
   },
   ru: {
+    searchGames: 'Поиск игр',
+    searchEmpty: 'Игры не найдены. Попробуйте другое название.',
     title: 'Лидерборд',
     description:
       'Следите отдельно за live-рейтингом текущей игры и отдельно за архивом завершённых игр.',
@@ -244,6 +265,16 @@ const translations = {
     errorGameDetails: 'Не удалось загрузить выбранную игру.',
     selectGamePrompt: 'Выберите игру в списке, чтобы посмотреть её историю.',
     currentGameSummaryTitle: 'Пульс игры',
+    currentSummary: {
+      teams: 'Команды',
+      rounds: 'Раунды',
+      score: 'Итог команд',
+      penalties: 'Штрафы',
+      quiz: 'Викторина',
+      modifiers: 'Модификаторы',
+      kills: 'Убийства',
+      bounties: 'Награды',
+    },
     statusChipArchived: 'Архив',
     currentTableTitle: 'Таблица команд',
     currentTableDescription:
@@ -259,6 +290,13 @@ const translations = {
     modifierSummary: {
       title: 'Итоги модификаторов',
       description: 'Зафиксированные редакции и их вклад по завершённым раундам.',
+      snapshotActivated: 'Активирован',
+      snapshotNotActivated: 'Не активирован',
+      snapshotCancelled: 'Отменено: {{count}}',
+      snapshotResults: 'Результатов: {{count}}',
+      snapshotEmergency: 'Аварийно отключён',
+      legacyUnavailable:
+        'В старых играх могут быть доступны только снимки активаций и результатов. Недостающие редакции не восстанавливаются из текущего каталога.',
       activations: 'Активаций: {{count}}',
       rounds: 'Раундов: {{count}}',
       points: '{{points}} очк.',
@@ -382,7 +420,7 @@ const translations = {
       roundCountShort: '{{count}} раунд.',
       quizCountShort: '{{count}} виктор.',
       playerCountShort: '{{count}} игрок.',
-      teamCountShort: '{{count}} команд',
+      teamCountShort: 'Команды: {{count}}',
       modifierCountShort: '{{count}} мод.',
       roundsPlayedShort: '{{count}} сыгр.',
       bestAndPenaltyShort: 'Лучший {{best}} · Штрафы {{penalty}}',
@@ -403,6 +441,8 @@ const translations = {
     },
   },
   uk: {
+    searchGames: 'Пошук ігор',
+    searchEmpty: 'Ігор не знайдено. Спробуйте іншу назву.',
     title: 'Лідерборд',
     description:
       'Стежте окремо за live-рейтингом поточної гри та окремо за архівом завершених ігор.',
@@ -446,6 +486,16 @@ const translations = {
     errorGameDetails: 'Не вдалося завантажити вибрану гру.',
     selectGamePrompt: 'Виберіть гру зі списку, щоб переглянути її історію.',
     currentGameSummaryTitle: 'Пульс гри',
+    currentSummary: {
+      teams: 'Команди',
+      rounds: 'Раунди',
+      score: 'Підсумок команд',
+      penalties: 'Штрафи',
+      quiz: 'Вікторина',
+      modifiers: 'Модифікатори',
+      kills: 'Убивства',
+      bounties: 'Нагороди',
+    },
     statusChipArchived: 'Архів',
     currentTableTitle: 'Таблиця команд',
     currentTableDescription:
@@ -461,6 +511,13 @@ const translations = {
     modifierSummary: {
       title: 'Підсумки модифікаторів',
       description: 'Зафіксовані редакції та їхній внесок у завершених раундах.',
+      snapshotActivated: 'Активовано',
+      snapshotNotActivated: 'Не активовано',
+      snapshotCancelled: 'Скасовано: {{count}}',
+      snapshotResults: 'Результатів: {{count}}',
+      snapshotEmergency: 'Аварійно вимкнено',
+      legacyUnavailable:
+        'У старих іграх можуть бути лише знімки активацій і результатів. Відсутні редакції не відновлюються з поточного каталогу.',
       activations: 'Активацій: {{count}}',
       rounds: 'Раундів: {{count}}',
       points: '{{points}} оч.',
@@ -585,7 +642,7 @@ const translations = {
       roundCountShort: '{{count}} раунд.',
       quizCountShort: '{{count}} віктор.',
       playerCountShort: '{{count}} гравц.',
-      teamCountShort: '{{count}} команд',
+      teamCountShort: 'Команди: {{count}}',
       modifierCountShort: '{{count}} мод.',
       roundsPlayedShort: '{{count}} зігр.',
       bestAndPenaltyShort: 'Найкращий {{best}} · Штрафи {{penalty}}',
@@ -605,6 +662,8 @@ const translations = {
     },
   },
   pl: {
+    searchGames: 'Szukaj gier',
+    searchEmpty: 'Nie znaleziono gier. Spróbuj innej nazwy.',
     title: 'Ranking',
     description: 'Śledź osobno ranking na żywo bieżącej gry i osobno archiwum zakończonych gier.',
     archivePageTitle: 'Historia gier',
@@ -647,6 +706,16 @@ const translations = {
     errorGameDetails: 'Nie udało się załadować wybranej gry.',
     selectGamePrompt: 'Wybierz grę z listy, aby zobaczyć jej historię.',
     currentGameSummaryTitle: 'Puls gry',
+    currentSummary: {
+      teams: 'Drużyny',
+      rounds: 'Rundy',
+      score: 'Suma drużyn',
+      penalties: 'Kary',
+      quiz: 'Quiz',
+      modifiers: 'Modyfikatory',
+      kills: 'Zabójstwa',
+      bounties: 'Nagrody',
+    },
     statusChipArchived: 'Archiwum',
     currentTableTitle: 'Tabela drużyn',
     currentTableDescription:
@@ -662,6 +731,13 @@ const translations = {
     modifierSummary: {
       title: 'Podsumowanie modyfikatorów',
       description: 'Utrwalone wersje i ich wkład w ukończonych rundach.',
+      snapshotActivated: 'Aktywowano',
+      snapshotNotActivated: 'Nie aktywowano',
+      snapshotCancelled: 'Anulowano: {{count}}',
+      snapshotResults: 'Wyniki: {{count}}',
+      snapshotEmergency: 'Wyłączono awaryjnie',
+      legacyUnavailable:
+        'Starsze gry mogą zawierać tylko zapisane aktywacje i wyniki. Brakujące wersje nie są odtwarzane z bieżącego katalogu.',
       activations: 'Aktywacje: {{count}}',
       rounds: 'Rundy: {{count}}',
       points: '{{points}} pkt',
@@ -785,7 +861,7 @@ const translations = {
       roundCountShort: '{{count}} rund',
       quizCountShort: '{{count}} quiz',
       playerCountShort: '{{count}} graczy',
-      teamCountShort: '{{count}} drużyn',
+      teamCountShort: 'Drużyny: {{count}}',
       modifierCountShort: '{{count}} mod.',
       roundsPlayedShort: '{{count}} rozegr.',
       bestAndPenaltyShort: 'Najl. {{best}} · Kary {{penalty}}',

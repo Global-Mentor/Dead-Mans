@@ -9,7 +9,13 @@ import {
 import { realtimeHubs, useSignalrHubSubscription } from '../../shared/realtime/index.ts'
 import { gameQuizQueryKeys } from './api/game-quiz-queries.ts'
 
-const QUIZ_STATE_CHANGED_EVENT = realtimeHubs.gameBoard.events.quizStateChanged
+const QUIZ_EVENTS = [
+  realtimeHubs.gameBoard.events.quizStateChanged,
+  realtimeHubs.gameBoard.events.twitchQuizStateChanged,
+  realtimeHubs.gameBoard.events.modifierActivated,
+  realtimeHubs.gameBoard.events.modifierActivationCancelled,
+  realtimeHubs.gameBoard.events.roundStateChanged,
+]
 
 export function GameQuizRealtimeSync() {
   const queryClient = useQueryClient()
@@ -31,10 +37,10 @@ export function GameQuizRealtimeSync() {
         void syncQuizState()
       }
 
-      connection.on(QUIZ_STATE_CHANGED_EVENT, handleQuizStateChanged)
+      for (const event of QUIZ_EVENTS) connection.on(event, handleQuizStateChanged)
 
       return () => {
-        connection.off(QUIZ_STATE_CHANGED_EVENT, handleQuizStateChanged)
+        for (const event of QUIZ_EVENTS) connection.off(event, handleQuizStateChanged)
       }
     },
     [syncQuizState],

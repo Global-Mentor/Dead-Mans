@@ -40,15 +40,40 @@ export function ActiveModifiersSection({
 }: ActiveModifiersSectionProps) {
   const { t } = useTranslation()
   return (
-    <SectionCard sx={{ p: { xs: 1.25, sm: 1.5 } }}>
-      <ModifierSectionHeading title={t('gameModifiers.activeTitle')} count={activationsCount} />
+    <SectionCard
+      data-testid="active-modifiers-section"
+      sx={{
+        p: 0,
+        overflow: 'hidden',
+        '@media (min-width: 1000px) and (min-height: 680px)': {
+          maxHeight: 'var(--modifier-panel-height)',
+          overflowY: 'auto',
+          overscrollBehaviorY: 'contain',
+          scrollbarGutter: 'stable',
+        },
+      }}
+    >
+      <Box
+        sx={(theme) => ({
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          px: { xs: 1.1, sm: 1.35 },
+          py: 0.85,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          backgroundColor: alpha(theme.palette.background.paper, 0.96),
+          backdropFilter: 'blur(8px)',
+        })}
+      >
+        <ModifierSectionHeading title={t('gameModifiers.activeTitle')} count={activationsCount} />
+      </Box>
 
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ px: 1.35, py: 1.5 }}>
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.activeEmpty')}
         </Typography>
       ) : (
-        <List disablePadding component="ul" sx={{ mt: 0.55 }}>
+        <List disablePadding component="ul" sx={{ p: 0.75 }}>
           {groups.map((group) => {
             const definition = definitionsById.get(group.modifierId)
 
@@ -95,10 +120,15 @@ function ActiveModifierRow({
       component="li"
       sx={(theme) => ({
         listStyle: 'none',
-        py: 1.05,
-        '&:not(:last-child)': {
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.36)}`,
+        px: 0.85,
+        py: 0.8,
+        borderRadius: '8px',
+        backgroundColor: alpha(theme.palette.common.black, 0.26),
+        '&:nth-of-type(even)': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.09),
         },
+        '& + &': { mt: 0.6 },
+        overflowWrap: 'anywhere',
       })}
     >
       <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -108,6 +138,8 @@ function ActiveModifierRow({
             direction={{ xs: 'column', sm: 'row' }}
             spacing={{ xs: 0.35, sm: 0.8 }}
             alignItems={{ xs: 'flex-start', sm: 'center' }}
+            flexWrap="wrap"
+            useFlexGap
           >
             <Typography variant="subtitle2">{group.modifierName}</Typography>
             <InlineMetaPill label={t('gameModifiers.activeTag')} tone="success" />

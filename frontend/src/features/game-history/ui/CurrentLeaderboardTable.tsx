@@ -6,8 +6,6 @@ import {
   getTeamBestScore,
   getTeamFinalScore,
   getTeamPenaltyTotal,
-  getTeamTotalBounties,
-  getTeamTotalKills,
   type GameHistoryTeamLeaderboardEntry,
 } from '../model/game-history-team-leaderboard.ts'
 import { ColumnLabel, MiniMetricChip, RankBadge, TableValue } from './game-history-display.tsx'
@@ -25,11 +23,20 @@ export function CurrentLeaderboardTable({
 
   return (
     <Box
+      data-testid="current-leaderboard-table"
       sx={(theme) => ({
+        containerType: 'inline-size',
+        containerName: 'standings',
         overflow: 'hidden',
+        minWidth: 0,
         borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.divider, 0.86)}`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
         backgroundColor: alpha(theme.palette.background.paper, 0.5),
+        display: 'flex',
+        flexDirection: 'column',
+        '@media (min-width: 1000px) and (min-height: 680px)': {
+          maxHeight: 'var(--leaderboard-panel-height)',
+        },
       })}
     >
       <Stack
@@ -40,7 +47,8 @@ export function CurrentLeaderboardTable({
         sx={(theme) => ({
           px: 1.25,
           py: 1,
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+          flexShrink: 0,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
         })}
       >
         <Box sx={{ minWidth: 0 }}>
@@ -48,7 +56,7 @@ export function CurrentLeaderboardTable({
             {t('gameHistory.currentTableTitle')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {t('gameHistory.currentTableDescription')}
+            {t('gameHistory.summary.bestTeamsDescription')}
           </Typography>
         </Box>
         <MiniMetricChip
@@ -56,38 +64,48 @@ export function CurrentLeaderboardTable({
         />
       </Stack>
 
-      <Box
-        sx={(theme) => ({
-          display: { xs: 'none', md: 'grid' },
-          gridTemplateColumns: '70px minmax(180px, 1.4fr) repeat(6, minmax(82px, 0.55fr))',
-          gap: 1,
-          px: 1.25,
-          py: 0.65,
-          color: 'text.secondary',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
-        })}
-      >
-        <ColumnLabel>{t('gameHistory.table.rank')}</ColumnLabel>
-        <ColumnLabel>{t('common.entities.team')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.final')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.penalties')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.best')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.rounds')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.kills')}</ColumnLabel>
-        <ColumnLabel align="right">{t('gameHistory.table.bounties')}</ColumnLabel>
-      </Box>
+      <Box sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}>
+        <Box
+          sx={(theme) => ({
+            display: 'grid',
+            gridTemplateColumns: '52px minmax(0, 1fr) 68px',
+            gap: 0.75,
+            flexShrink: 0,
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            backgroundColor: theme.palette.background.paper,
+            px: 1.25,
+            py: 0.65,
+            color: 'text.secondary',
+            borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            '& > :nth-of-type(n+4)': { display: 'none' },
+            '@container standings (min-width: 620px)': {
+              gridTemplateColumns: '52px minmax(0, 1fr) repeat(4, 68px)',
+              '& > :nth-of-type(n+4)': { display: 'block' },
+            },
+          })}
+        >
+          <ColumnLabel>{t('gameHistory.table.rank')}</ColumnLabel>
+          <ColumnLabel>{t('common.entities.team')}</ColumnLabel>
+          <ColumnLabel align="right">{t('gameHistory.table.final')}</ColumnLabel>
+          <ColumnLabel align="right">{t('gameHistory.table.penalties')}</ColumnLabel>
+          <ColumnLabel align="right">{t('gameHistory.table.best')}</ColumnLabel>
+          <ColumnLabel align="right">{t('gameHistory.table.rounds')}</ColumnLabel>
+        </Box>
 
-      <Stack>
-        {entries.map((entry, index) => (
-          <CurrentLeaderboardTableRow
-            key={entry.teamId}
-            entry={entry}
-            rank={index + 1}
-            isSelected={entry.teamId === selectedTeamId}
-            onSelect={() => onSelectTeam(entry.teamId)}
-          />
-        ))}
-      </Stack>
+        <Stack>
+          {entries.map((entry, index) => (
+            <CurrentLeaderboardTableRow
+              key={entry.teamId}
+              entry={entry}
+              rank={index + 1}
+              isSelected={entry.teamId === selectedTeamId}
+              onSelect={() => onSelectTeam(entry.teamId)}
+            />
+          ))}
+        </Stack>
+      </Box>
     </Box>
   )
 }
@@ -107,22 +125,24 @@ function CurrentLeaderboardTableRow({
   const bestScore = getTeamBestScore(entry)
   const finalScore = getTeamFinalScore(entry)
   const penaltyTotal = getTeamPenaltyTotal(entry)
-  const totalKills = getTeamTotalKills(entry)
-  const totalBounties = getTeamTotalBounties(entry)
 
   return (
     <Box
       component="button"
       type="button"
+      aria-pressed={isSelected}
+      aria-controls="leaderboard-team-details"
       onClick={onSelect}
       sx={(theme) => ({
         width: '100%',
         minWidth: 0,
         border: 0,
-        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.62)}`,
         backgroundColor: isSelected
-          ? alpha(theme.palette.primary.main, 0.12)
-          : alpha(theme.palette.background.paper, 0),
+          ? alpha(theme.palette.primary.main, 0.19)
+          : rank % 2 === 0
+            ? alpha(theme.palette.primary.main, 0.065)
+            : alpha(theme.palette.common.black, 0.16),
+        boxShadow: isSelected ? `inset 3px 0 ${theme.palette.primary.main}` : 'none',
         color: 'inherit',
         cursor: 'pointer',
         textAlign: 'left',
@@ -130,20 +150,21 @@ function CurrentLeaderboardTableRow({
         py: 0.85,
         transition: 'background-color 0.15s ease',
         '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
+          backgroundColor: alpha(theme.palette.primary.main, 0.15),
         },
-        '&:last-of-type': {
-          borderBottom: 0,
+        '&:focus-visible': {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: -2,
         },
       })}
     >
       <Box
         sx={{
           display: 'grid',
-          gap: { xs: 0.65, md: 1 },
-          gridTemplateColumns: {
-            xs: '42px minmax(0, 1fr) auto',
-            md: '70px minmax(180px, 1.4fr) repeat(6, minmax(82px, 0.55fr))',
+          gap: 0.75,
+          gridTemplateColumns: '52px minmax(0, 1fr) 68px',
+          '@container standings (min-width: 620px)': {
+            gridTemplateColumns: '52px minmax(0, 1fr) repeat(4, 68px)',
           },
           alignItems: 'center',
         }}
@@ -163,7 +184,10 @@ function CurrentLeaderboardTableRow({
             variant="caption"
             color="text.secondary"
             noWrap
-            sx={{ display: { xs: 'block', md: 'none' } }}
+            sx={{
+              display: 'block',
+              '@container standings (min-width: 620px)': { display: 'none' },
+            }}
           >
             {t('gameHistory.summary.bestAndPenaltyShort', {
               best: bestScore,
@@ -174,12 +198,8 @@ function CurrentLeaderboardTableRow({
 
         <TableValue strong>{finalScore}</TableValue>
         <TableValue hideOnMobile>{penaltyTotal}</TableValue>
-        <TableValue strong hideOnMobile>
-          {bestScore}
-        </TableValue>
+        <TableValue hideOnMobile>{bestScore}</TableValue>
         <TableValue hideOnMobile>{entry.roundsPlayed}</TableValue>
-        <TableValue hideOnMobile>{totalKills}</TableValue>
-        <TableValue hideOnMobile>{totalBounties}</TableValue>
       </Box>
     </Box>
   )

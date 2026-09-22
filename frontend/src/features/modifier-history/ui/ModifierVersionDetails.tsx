@@ -1,4 +1,5 @@
 import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { ModifierVersionDetail } from '../../../shared/api/contracts/index.ts'
@@ -7,19 +8,21 @@ import { SectionCard } from '../../../shared/ui/index.ts'
 export function ModifierVersionDetails({
   item,
   previous,
+  previousState,
   locale,
 }: {
   item: ModifierVersionDetail
   previous?: ModifierVersionDetail | undefined
+  previousState?: 'loading' | 'error' | undefined
   locale?: string | undefined
 }) {
   const { t } = useTranslation()
 
   return (
-    <SectionCard>
+    <SectionCard sx={{ p: 1.25, overflowWrap: 'anywhere', containerType: 'inline-size' }}>
       <Stack spacing={1.5}>
         <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center">
-          <Typography variant="h5">
+          <Typography component="h2" variant="h5" sx={{ fontWeight: 850 }}>
             {item.iconEmoji ? `${item.iconEmoji} ` : ''}
             {item.name}
           </Typography>
@@ -28,6 +31,7 @@ export function ModifierVersionDetails({
             <Chip color="warning" label={t('modifierHistory.archivedBadge')} />
           ) : null}
           <Chip label={t(`modifierHistory.changeTypes.${item.changeType}`)} />
+          <Chip label={t('modifierHistory.revision', { revision: String(item.revision) })} />
         </Stack>
         <Typography color="text.secondary">
           {t('modifierHistory.by', {
@@ -35,20 +39,28 @@ export function ModifierVersionDetails({
             date: new Intl.DateTimeFormat(locale).format(new Date(item.createdAtUtc)),
           })}
         </Typography>
-        <Typography sx={{ whiteSpace: 'pre-wrap' }}>
-          {item.changeNote ?? t('modifierHistory.noNote')}
-        </Typography>
+        {item.changeNote ? (
+          <Typography sx={{ whiteSpace: 'pre-wrap' }}>{item.changeNote}</Typography>
+        ) : null}
         <Box>
           <Typography variant="subtitle2">{t('modifierHistory.changedFields')}</Typography>
           <Stack spacing={0.75} sx={{ mt: 0.75 }}>
             {item.changedFields.map((field) => (
               <Box
                 key={field}
-                sx={{
+                sx={(theme) => ({
                   display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '180px 1fr 1fr' },
-                  gap: 1,
-                }}
+                  gridTemplateColumns: 'minmax(0, 1fr)',
+                  '@container (min-width: 650px)': {
+                    gridTemplateColumns: '150px minmax(0, 1fr) minmax(0, 1fr)',
+                  },
+                  gap: 0.75,
+                  p: 1,
+                  backgroundColor: alpha(theme.palette.common.black, 0.18),
+                  '&:nth-of-type(even)': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.065),
+                  },
+                })}
               >
                 <Typography variant="body2" fontWeight={700}>
                   {t(`modifierHistory.fields.${field}`, { defaultValue: field })}
@@ -58,7 +70,10 @@ export function ModifierVersionDetails({
                   color="text.secondary"
                   sx={{ overflowWrap: 'anywhere' }}
                 >
-                  {t('modifierHistory.before')}: {formatDiffValue(previous, field, t)}
+                  {t('modifierHistory.before')}:{' '}
+                  {previousState
+                    ? t(`modifierHistory.${previousState}`)
+                    : formatDiffValue(previous, field, t)}
                 </Typography>
                 <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
                   {t('modifierHistory.after')}: {formatDiffValue(item, field, t)}
@@ -85,12 +100,12 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gap: 1,
         }}
       >
         {[
-          [t('modifierHistory.category'), item.category],
+          [t('modifierHistory.category'), t(`common.modifiers.categories.${item.category}`)],
           [t('modifierHistory.cost'), String(item.activationCost)],
           [
             t('modifierHistory.limit'),
@@ -99,7 +114,6 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
               : String(item.activationLimit.count),
           ],
           [t('modifierHistory.command'), item.activationCommand ?? '-'],
-          [t('modifierHistory.icon'), item.iconEmoji ?? '-'],
         ].map(([label, value]) => (
           <Box key={label}>
             <Typography variant="caption" color="text.secondary">
@@ -109,23 +123,36 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
           </Box>
         ))}
       </Box>
-      <Box>
-        <Typography variant="subtitle2">{t('modifierHistory.tags')}</Typography>
-        <Typography>{item.normalizedTags.join(', ') || '-'}</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+        <Box>
+          <Typography variant="subtitle2">{t('modifierHistory.tags')}</Typography>
+          <Typography>{item.normalizedTags.join(', ') || '-'}</Typography>
+        </Box>
+        <Box>
+          <Typography variant="subtitle2">{t('modifierHistory.conflicts')}</Typography>
+          <Typography>
+            {item.conflicts.map((conflict) => conflict.name).join(', ') ||
+              t('modifierHistory.noConflicts')}
+          </Typography>
+        </Box>
       </Box>
-      <Box>
-        <Typography variant="subtitle2">{t('modifierHistory.conflicts')}</Typography>
-        <Typography>
-          {item.conflicts.map((conflict) => conflict.name).join(', ') ||
-            t('modifierHistory.noConflicts')}
+      <Box component="details">
+        <Typography
+          component="summary"
+          variant="subtitle2"
+          sx={{
+            cursor: 'pointer',
+            py: 0.75,
+            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+          }}
+        >
+          {t('modifierHistory.behavior')}
         </Typography>
-      </Box>
-      <Box>
-        <Typography variant="subtitle2">{t('modifierHistory.behavior')}</Typography>
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '220px 1fr' },
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            '@container (min-width: 650px)': { gridTemplateColumns: '220px minmax(0, 1fr)' },
             gap: 0.75,
             mt: 0.75,
           }}

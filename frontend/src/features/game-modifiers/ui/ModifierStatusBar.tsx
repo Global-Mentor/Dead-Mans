@@ -1,4 +1,4 @@
-import { Box, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, InputAdornment, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
@@ -38,34 +38,28 @@ export function ModifierStatusBar({
       component="section"
       aria-label={t('gameModifiers.summaryTitle')}
       sx={(theme) => ({
-        mt: 1.25,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.34)}`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.26)}`,
         borderRadius: '12px',
-        backgroundColor: alpha(theme.palette.background.paper, 0.5),
-        px: { xs: 1.25, sm: 1.5 },
-        py: { xs: 1.15, sm: 1.25 },
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.055)}, ${alpha(
+          theme.palette.background.paper,
+          0.38,
+        )})`,
+        p: { xs: 0.75, sm: 1 },
       })}
     >
       <Box
         data-testid="modifier-summary-row"
-        sx={(theme) => ({
-          display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'nowrap',
-          alignItems: 'stretch',
-          width: '100%',
-          overflowX: 'auto',
-          overscrollBehaviorX: 'contain',
-          scrollbarWidth: 'thin',
-          pb: 0.2,
-          '& > *': {
-            borderLeft: `1px solid ${alpha(theme.palette.divider, 0.58)}`,
-            alignSelf: 'stretch',
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(2, minmax(0, 1fr))',
+            sm: 'repeat(4, minmax(0, 1fr))',
           },
-          '& > :first-of-type': {
-            borderLeft: 0,
+          gap: 0.75,
+          '@media (min-width: 1100px)': {
+            gridTemplateColumns: '1.15fr repeat(3, minmax(105px, 0.8fr)) 1.65fr 1.45fr',
           },
-        })}
+        }}
       >
         <StatusMetric
           label={t('gameModifiers.summaryTitle')}
@@ -77,9 +71,11 @@ export function ModifierStatusBar({
           tone={state.isOrderingOpen ? 'success' : 'error'}
           description={state.isOrderingOpen ? undefined : t('gameModifiers.orderingClosedSummary')}
           tooltip={t('gameModifiers.summaryOrderingStatusTooltip')}
+          sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
         />
         <StatusMetric
           label={t('gameModifiers.summaryAvailablePoints')}
+          tone="primary"
           value={t('gameModifiers.myPointsValue', { points: state.availableQuizPoints })}
           tooltip={t('gameModifiers.summaryAvailablePointsTooltip')}
         />
@@ -92,6 +88,7 @@ export function ModifierStatusBar({
           label={t('gameModifiers.summaryRoundSpentPoints')}
           value={t('gameModifiers.myPointsValue', { points: activeRoundSpentPoints })}
           tooltip={t('gameModifiers.summaryRoundSpentPointsTooltip')}
+          sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
         />
         <TeamContextSummary
           label={t('gameModifiers.summaryCurrentTeam')}
@@ -114,11 +111,33 @@ export function ModifierStatusBar({
         value={search}
         label={t('common.modifiers.searchLabel')}
         onChange={(event) => onSearchChange(event.target.value)}
-        sx={{ mt: 1 }}
+        slotProps={{
+          input: {
+            endAdornment: search ? (
+              <InputAdornment position="end">
+                <AppButton tone="ghost" size="small" onClick={() => onSearchChange('')}>
+                  {t('gameModifiers.clearSearch')}
+                </AppButton>
+              </InputAdornment>
+            ) : null,
+          },
+        }}
+        sx={{ mt: 0.75 }}
       />
     </Box>
   )
 }
+
+const summaryTileSx = {
+  minWidth: 0,
+  minHeight: 60,
+  borderRadius: '9px',
+  px: 1,
+  py: 0.7,
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+} as const
 
 function TeamContextSummary({
   label,
@@ -138,45 +157,35 @@ function TeamContextSummary({
       <Stack
         tabIndex={0}
         spacing={0.12}
-        alignItems="center"
-        justifyContent="center"
-        sx={{
-          minWidth: 220,
-          flex: '1.35 0 220px',
-          px: 1.25,
-          textAlign: 'center',
+        sx={(theme) => ({
+          ...summaryTileSx,
+          gridColumn: { sm: 'span 2' },
+          '@media (min-width: 1100px)': { gridColumn: 'auto' },
+          backgroundColor: alpha(theme.palette.background.paper, 0.34),
           cursor: 'help',
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',
             outlineOffset: 2,
           },
-        }}
+        })}
       >
+        <SummaryLabel>{label}</SummaryLabel>
         <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontWeight: 750, letterSpacing: '0.02em', lineHeight: 1.2 }}
+          variant="body2"
+          sx={{ maxWidth: '100%', fontWeight: 850, lineHeight: 1.2, overflowWrap: 'anywhere' }}
         >
-          {label}
-        </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 850, lineHeight: 1.25 }}>
           {teamName}
         </Typography>
         <Box
           sx={(theme) => ({
             minWidth: 0,
-            width: '100%',
-            pt: 0.1,
+            maxWidth: '100%',
             color: 'primary.light',
-            '& ul': { alignItems: 'center' },
-            '& li': {
-              px: 0.25,
-              fontWeight: 700,
-              textAlign: 'center',
-            },
+            '& ul': { justifyContent: 'center', flexWrap: 'wrap' },
+            '& li': { px: 0.25, fontWeight: 700 },
             '& li + li': {
-              pl: 1,
+              pl: 0.75,
               borderLeft: `1px solid ${alpha(theme.palette.primary.main, 0.42)}`,
             },
           })}
@@ -213,46 +222,51 @@ function CardContextSummary({
     <Tooltip title={tooltip} arrow describeChild enterDelay={150} enterTouchDelay={0}>
       <Stack
         tabIndex={canOpen ? undefined : 0}
-        spacing={0.12}
-        alignItems="center"
-        justifyContent="center"
-        sx={{
-          minWidth: 200,
-          flex: '1 0 200px',
-          px: 1.25,
-          textAlign: 'center',
+        spacing={0.18}
+        sx={(theme) => ({
+          ...summaryTileSx,
+          gridColumn: { sm: 'span 2' },
+          '@media (min-width: 1100px)': { gridColumn: 'auto' },
+          backgroundColor: alpha(theme.palette.background.paper, 0.34),
           cursor: 'help',
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',
             outlineOffset: 2,
           },
-        }}
+        })}
       >
+        <SummaryLabel>{label}</SummaryLabel>
         <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontWeight: 750, letterSpacing: '0.02em', lineHeight: 1.2 }}
+          variant="body2"
+          sx={{ maxWidth: '100%', fontWeight: 850, lineHeight: 1.2, overflowWrap: 'anywhere' }}
         >
-          {label}
-        </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 850, lineHeight: 1.25 }}>
           {cardName}
         </Typography>
         {canOpen ? (
-          <Box sx={{ pt: 0.6 }}>
-            <AppButton
-              tone="secondary"
-              size="small"
-              onClick={onOpen}
-              sx={{ minWidth: 148, flexShrink: 0 }}
-            >
-              {openLabel}
-            </AppButton>
-          </Box>
+          <AppButton
+            tone="ghost"
+            size="small"
+            onClick={onOpen}
+            sx={{ minHeight: 28, px: 1, py: 0.25 }}
+          >
+            {openLabel}
+          </AppButton>
         ) : null}
       </Stack>
     </Tooltip>
+  )
+}
+
+function SummaryLabel({ children }: { children: string }) {
+  return (
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{ maxWidth: '100%', fontWeight: 750, letterSpacing: '0.015em', lineHeight: 1.15 }}
+    >
+      {children}
+    </Typography>
   )
 }
 
@@ -262,84 +276,61 @@ function StatusMetric({
   tooltip,
   tone = 'default',
   description,
+  sx,
 }: {
   label: string
   value: string
   tooltip: string
-  tone?: 'default' | 'success' | 'error'
+  tone?: 'default' | 'primary' | 'success' | 'error'
   description?: string | undefined
+  sx?: object
 }) {
   return (
     <Tooltip title={tooltip} arrow describeChild enterDelay={150} enterTouchDelay={0}>
       <Stack
+        role={tone === 'error' || tone === 'success' ? 'status' : undefined}
         tabIndex={0}
-        spacing={0.1}
-        sx={{
-          minWidth: 120,
-          flex: '1 0 120px',
-          px: 1.25,
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
+        spacing={0.12}
+        sx={(theme) => ({
+          ...summaryTileSx,
+          backgroundColor:
+            tone === 'default'
+              ? alpha(theme.palette.background.paper, 0.34)
+              : alpha(theme.palette[tone].main, 0.1),
+          border: `1px solid ${
+            tone === 'default' ? 'transparent' : alpha(theme.palette[tone].main, 0.42)
+          }`,
           cursor: 'help',
-          borderRadius: 1,
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',
             outlineOffset: 2,
           },
-        }}
+          ...sx,
+        })}
       >
-        <Typography variant="caption" color="text.secondary" noWrap>
-          {label}
-        </Typography>
-        <Box
-          role={tone === 'error' || tone === 'success' ? 'status' : undefined}
+        <SummaryLabel>{label}</SummaryLabel>
+        <Typography
+          variant="body2"
           sx={(theme) => ({
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            ...(tone === 'error' || tone === 'success'
-              ? {
-                  px: 0.9,
-                  py: 0.55,
-                  border: `1px solid ${alpha(theme.palette[tone].main, 0.68)}`,
-                  borderRadius: 1,
-                  backgroundColor: alpha(theme.palette[tone].main, 0.14),
-                }
-              : {}),
+            color: tone === 'default' ? theme.palette.text.primary : theme.palette[tone].light,
+            fontWeight: 850,
+            fontSize: tone === 'primary' ? '1.4rem' : undefined,
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1.15,
           })}
+          noWrap
         >
+          {value}
+        </Typography>
+        {description ? (
           <Typography
-            variant="body2"
-            sx={(theme) => ({
-              color: tone === 'default' ? theme.palette.text.primary : theme.palette[tone].light,
-              fontWeight: 750,
-            })}
-            noWrap
+            variant="caption"
+            sx={{ color: 'text.secondary', fontWeight: 650, lineHeight: 1.15 }}
           >
-            {value}
+            {description}
           </Typography>
-          {description ? (
-            <Typography
-              variant="caption"
-              sx={(theme) => ({
-                mt: 0.25,
-                maxWidth: 360,
-                color:
-                  tone === 'default'
-                    ? theme.palette.text.secondary
-                    : tone === 'error'
-                      ? alpha(theme.palette.text.primary, 0.84)
-                      : theme.palette[tone].light,
-                fontWeight: 650,
-                lineHeight: 1.25,
-              })}
-            >
-              {description}
-            </Typography>
-          ) : null}
-        </Box>
+        ) : null}
       </Stack>
     </Tooltip>
   )

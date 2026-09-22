@@ -1,10 +1,11 @@
-import { Box, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, CircularProgress, Stack, Typography, useMediaQuery } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../api/contracts/generated'
 import { resolveBackendMediaUrl } from '../../api/media-url.ts'
 import { AppDialog } from '../feedback/AppDialog.tsx'
+import { AppButton } from '../primitives/AppButton.tsx'
 import { PlayedCardResultPanel } from './PlayedCardResultPanel.tsx'
 
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
@@ -34,19 +35,42 @@ export function PlayedCardPreviewDialog({
   const { t } = useTranslation()
   const previewCard = round ? getCardFromRound(round) : card
   const media = previewCard?.media ?? []
+  const isPhone = useMediaQuery('(max-width: 599px)')
 
   return (
     <AppDialog
       open={previewCard !== null}
       onClose={onClose}
-      maxWidth="lg"
-      appearance="preview"
+      maxWidth={media.length > 0 ? 'lg' : 'sm'}
+      fullScreen={isPhone}
+      actions={
+        <AppButton tone="secondary" onClick={onClose}>
+          {t('common.actions.close')}
+        </AppButton>
+      }
+      sx={(theme) => ({
+        '& .MuiDialog-paper': {
+          borderColor: alpha(theme.palette.primary.main, 0.3),
+          backgroundColor: theme.palette.background.paper,
+        },
+        '& .MuiDialogTitle-root': {
+          px: { xs: 1.5, sm: 2 },
+          py: 1.5,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        },
+        '& .MuiDialogContent-root': { p: { xs: 1.5, sm: 2 } },
+        '& .MuiDialogActions-root': {
+          px: { xs: 1.5, sm: 2 },
+          py: 1,
+          borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        },
+      })}
       title={
         previewCard ? (
           <Typography
             component="span"
             variant="h6"
-            sx={{ minWidth: 0, fontWeight: 850, lineHeight: 1.25 }}
+            sx={{ minWidth: 0, fontWeight: 850, lineHeight: 1.25, overflowWrap: 'anywhere' }}
           >
             {previewCard.title || t('gameHistory.cardDialogFallbackTitle')}
           </Typography>
@@ -61,13 +85,16 @@ export function PlayedCardPreviewDialog({
             <Box
               sx={(theme) => ({
                 borderRadius: 1.5,
-                border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-                backgroundColor: alpha(theme.palette.background.paper, 0.38),
+                backgroundColor: alpha(theme.palette.primary.main, 0.06),
                 px: 1.15,
                 py: 0.95,
               })}
             >
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}
+              >
                 {previewCard.description}
               </Typography>
             </Box>
@@ -77,43 +104,43 @@ export function PlayedCardPreviewDialog({
             sx={{
               display: 'grid',
               gap: 1.25,
-              gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 320px' },
+              gridTemplateColumns:
+                media.length > 0
+                  ? { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1.2fr) minmax(300px, 0.8fr)' }
+                  : 'minmax(0, 1fr)',
               alignItems: 'start',
             }}
           >
-            <Box
-              sx={(theme) => ({
-                display: 'grid',
-                gap: 1,
-                gridTemplateColumns: '1fr',
-                justifyItems: 'center',
-                alignItems: 'center',
-                borderRadius: 2,
-                border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-                background: `linear-gradient(180deg, ${alpha(
-                  theme.palette.background.paper,
-                  0.42,
-                )}, ${alpha(theme.palette.common.black, 0.1)})`,
-                boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.06)}`,
-                px: { xs: 0.75, sm: 1.1 },
-                py: { xs: 0.75, sm: 1.1 },
-                minHeight: { xs: 220, sm: 280 },
-              })}
-            >
-              {media.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameHistory.cardMediaEmpty')}
-                </Typography>
-              ) : (
-                media.map((item, index) => (
+            {media.length > 0 ? (
+              <Box
+                sx={(theme) => ({
+                  display: 'grid',
+                  gap: 1,
+                  gridTemplateColumns: '1fr',
+                  justifyItems: 'center',
+                  alignItems: 'center',
+                  borderRadius: 2,
+                  minWidth: 0,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  background: `linear-gradient(180deg, ${alpha(
+                    theme.palette.background.paper,
+                    0.42,
+                  )}, ${alpha(theme.palette.common.black, 0.1)})`,
+                  boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.06)}`,
+                  px: { xs: 0.75, sm: 1.1 },
+                  py: { xs: 0.75, sm: 1.1 },
+                  minHeight: { xs: 220, sm: 280 },
+                })}
+              >
+                {media.map((item, index) => (
                   <PlayedCardMediaImage
                     key={`${item.url}-${index}`}
                     url={item.url}
                     title={previewCard.title}
                   />
-                ))
-              )}
-            </Box>
+                ))}
+              </Box>
+            ) : null}
 
             <PlayedCardResultPanel
               cardCost={previewCard.cost}
@@ -122,6 +149,11 @@ export function PlayedCardPreviewDialog({
               isError={isError}
             />
           </Box>
+          {media.length === 0 ? (
+            <Typography variant="caption" color="text.secondary">
+              {t('gameHistory.cardMediaEmpty')}
+            </Typography>
+          ) : null}
         </Stack>
       ) : null}
     </AppDialog>

@@ -48,8 +48,8 @@ export function CompactMetric({ label, value }: { label: string; value: string }
       sx={(theme) => ({
         minWidth: 0,
         borderRadius: 1.5,
-        border: `1px solid ${alpha(theme.palette.divider, 0.78)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.44),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+        backgroundColor: alpha(theme.palette.background.paper, 0.3),
         px: 0.9,
         py: 0.75,
       })}
@@ -98,8 +98,17 @@ export function TableValue({
     <Typography
       variant="body2"
       sx={{
-        display: hideOnMobile ? { xs: 'none', md: 'block' } : 'block',
+        display: hideOnMobile ? 'none' : 'block',
+        ...(hideOnMobile
+          ? {
+              '@container standings (min-width: 620px)': {
+                display: 'block',
+              },
+            }
+          : {}),
         fontWeight: strong ? 900 : 750,
+        color: strong ? 'primary.light' : 'text.secondary',
+        fontVariantNumeric: 'tabular-nums',
         textAlign: 'right',
       }}
     >

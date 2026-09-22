@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../../i18n.ts'
 import type { components } from '../../api/contracts/generated'
@@ -14,6 +14,17 @@ beforeAll(async () => {
 afterEach(cleanup)
 
 describe('PlayedCardPreviewDialog', () => {
+  it('provides an explicit close action when the card has no media', () => {
+    const onClose = vi.fn()
+    renderWithAppProviders(
+      <PlayedCardPreviewDialog card={null} round={createRound()} onClose={onClose} />,
+    )
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(screen.getByText(i18n.t('gameHistory.cardMediaEmpty'))).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.actions.close') }))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
   it('shows stacked modifier impact as one truthful total in the played-card summary', () => {
     renderWithAppProviders(
       <PlayedCardPreviewDialog card={null} round={createRound()} onClose={vi.fn()} />,

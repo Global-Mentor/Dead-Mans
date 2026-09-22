@@ -1,10 +1,16 @@
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import type { components } from '../../shared/api/contracts/generated'
-import { AsyncSection, PageShell, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import {
+  AsyncSection,
+  FormTextField,
+  PageShell,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import {
   gameHistoryGameDetailsQueryOptions,
@@ -43,6 +49,9 @@ export function GameHistoryPage({
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedGameId = searchParams.get('gameId')
+  const [search, setSearch] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const isWide = useMediaQuery('(min-width: 1000px)')
   const [previewRound, setPreviewRound] = useState<GameHistoryRound | null>(null)
   const [activeBoardState, setActiveBoardState] = useState<GameHistoryBoard>(initialBoard)
   const activeBoard = lockedBoard ?? activeBoardState
@@ -58,6 +67,10 @@ export function GameHistoryPage({
     requestedGameId && completedGames.some((game) => game.gameId === requestedGameId)
       ? requestedGameId
       : (completedGames[0]?.gameId ?? null)
+  const visibleGames = completedGames.filter((game) =>
+    game.gameTitle.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  )
+  const selectedGame = completedGames.find((game) => game.gameId === selectedCompletedGameId)
 
   const currentGameDetailsQuery = useQuery({
     ...gameHistoryGameDetailsQueryOptions(currentGameId ?? ''),
@@ -109,21 +122,33 @@ export function GameHistoryPage({
   return (
     <PageShell
       sx={{
-        maxWidth: 'none',
+        maxWidth: 1800,
         width: '100%',
+        mx: 'auto',
+        p: { xs: 0, md: 0 },
       }}
     >
-      <SectionHeader
-        headingLevel="h1"
-        title={t(
-          activeBoard === 'history' ? 'gameHistory.archivePageTitle' : 'gameHistory.realtimeTitle',
-        )}
-        description={t(
-          activeBoard === 'history'
-            ? 'gameHistory.archivePageDescription'
-            : 'gameHistory.realtimeDescription',
-        )}
-      />
+      {activeBoard === 'history' ? (
+        <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 850 }}>
+          {t('gameHistory.archivePageTitle')}
+        </Typography>
+      ) : (
+        <Typography
+          component="h1"
+          sx={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            p: 0,
+            m: -1,
+            overflow: 'hidden',
+            clipPath: 'inset(50%)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {t('gameHistory.realtimeTitle')}
+        </Typography>
+      )}
 
       {isBoardSwitcherVisible ? (
         <SectionCard sx={{ mt: 1.5 }}>
@@ -166,7 +191,10 @@ export function GameHistoryPage({
             />
           ) : null}
 
-          <SectionCard sx={{ mt: currentGameSummary ? 1.5 : 0 }}>
+          <SectionCard
+            data-testid="current-leaderboard-surface"
+            sx={{ mt: currentGameSummary ? 1 : 0, p: { xs: 0.75, sm: 1 } }}
+          >
             <AsyncSection
               isLoading={
                 currentGameQuery.isLoading ||
@@ -190,50 +218,88 @@ export function GameHistoryPage({
         <Box
           sx={{
             display: 'grid',
-            gap: 2,
-            mt: 2,
+            gap: 1,
+            mt: 0,
             alignItems: 'start',
-            gridTemplateColumns: {
-              xs: '1fr',
-              xl: '340px minmax(0, 1fr)',
-            },
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            '@media (min-width: 1000px)': { gridTemplateColumns: '300px minmax(0, 1fr)' },
           }}
         >
-          <SectionCard sx={{ minWidth: 0 }}>
-            <SectionHeader
-              title={t('gameHistory.completedGamesListTitle')}
-              description={t('gameHistory.completedGamesListDescription')}
-            />
+          <SectionCard
+            sx={{
+              minWidth: 0,
+              p: 1,
+              '@media (min-width: 1000px)': { position: 'sticky', top: 80 },
+            }}
+          >
+            <Box component="details" open={isWide || pickerOpen || !selectedGame}>
+              <Box
+                component="summary"
+                onClick={(event) => {
+                  event.preventDefault()
+                  setPickerOpen(!pickerOpen)
+                }}
+                sx={{
+                  display: isWide ? 'none' : 'list-item',
+                  cursor: 'pointer',
+                  p: 0.5,
+                  overflowWrap: 'anywhere',
+                  '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+                }}
+              >
+                {t('gameHistory.completedGamesListTitle')}
+                {selectedGame ? ` · ${selectedGame.gameTitle}` : ''}
+              </Box>
+              <Typography
+                component="h2"
+                variant="subtitle2"
+                sx={{ fontWeight: 850, mb: 1, display: isWide ? 'block' : 'none' }}
+              >
+                {t('gameHistory.completedGamesListTitle')}
+              </Typography>
+              <FormTextField
+                label={t('gameHistory.searchGames')}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                sx={{ my: 0.5 }}
+              />
 
-            <AsyncSection
-              isLoading={gamesQuery.isLoading}
-              isError={gamesQuery.isError}
-              isEmpty={completedGames.length === 0}
-              loadingMessage={t('gameHistory.loadingGames')}
-              errorMessage={t('gameHistory.errorGames')}
-              emptyMessage={t('gameHistory.completedGamesEmpty')}
-            >
-              <Stack spacing={1.1} sx={{ mt: 1.5 }}>
-                {completedGames.map((game) => (
-                  <GameSummaryButton
-                    key={game.gameId}
-                    game={game}
-                    isSelected={game.gameId === selectedCompletedGameId}
-                    onClick={() => {
-                      setSearchParams({ gameId: game.gameId }, { replace: true })
-                    }}
-                  />
-                ))}
-              </Stack>
-            </AsyncSection>
+              <AsyncSection
+                isLoading={gamesQuery.isLoading}
+                isError={gamesQuery.isError}
+                isEmpty={visibleGames.length === 0}
+                loadingMessage={t('gameHistory.loadingGames')}
+                errorMessage={t('gameHistory.errorGames')}
+                emptyMessage={t(
+                  search.trim() ? 'gameHistory.searchEmpty' : 'gameHistory.completedGamesEmpty',
+                )}
+              >
+                <Stack
+                  spacing={0.6}
+                  sx={{
+                    mt: 1,
+                    maxHeight: 'max(280px, calc(100dvh - 260px))',
+                    overflowY: 'auto',
+                    overscrollBehaviorY: 'contain',
+                  }}
+                >
+                  {visibleGames.map((game) => (
+                    <GameSummaryButton
+                      key={game.gameId}
+                      game={game}
+                      isSelected={game.gameId === selectedCompletedGameId}
+                      onClick={() => {
+                        setSearchParams({ gameId: game.gameId }, { replace: true })
+                        setPickerOpen(false)
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </AsyncSection>
+            </Box>
           </SectionCard>
 
-          <SectionCard sx={{ minWidth: 0 }}>
-            <SectionHeader
-              title={t('gameHistory.completedGamesTitle')}
-              description={t('gameHistory.completedGamesDescription')}
-            />
-
+          <Box key={selectedCompletedGameId} sx={{ minWidth: 0 }}>
             <AsyncSection
               isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
               isError={selectedGameDetailsQuery.isError}
@@ -247,7 +313,7 @@ export function GameHistoryPage({
                 onPreviewCard={setPreviewRound}
               />
             </AsyncSection>
-          </SectionCard>
+          </Box>
         </Box>
       )}
 

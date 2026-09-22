@@ -147,6 +147,8 @@ public static partial class ApiContractMapper
             item.UserId.ToString(),
             item.DisplayName,
             item.Points,
+            item.SpentPoints,
+            item.AvailablePoints,
             item.Attempts,
             item.CorrectAnswers,
             item.LastActivityAtUtc

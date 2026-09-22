@@ -281,6 +281,20 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                     AvailablePointsBefore = secondBalance,
                     AvailablePointsAfter = secondBalance + int.MaxValue,
                     OccurredAtUtc = now.AddSeconds(1)
+                },
+                new GameQuizPointLedgerEntry
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = seeded.GameId,
+                    UserId = seeded.AlphaId,
+                    EntryType = GameQuizPointEntryTypeValue.ModifierPurchase,
+                    PointsDelta = -100,
+                    ModifierActivationId = await dbContext.GameModifierActivations
+                        .Where(x => x.GameId == seeded.GameId && x.ActivatedByUserId == seeded.AlphaId)
+                        .Select(x => x.Id).FirstAsync(),
+                    AvailablePointsBefore = secondBalance + int.MaxValue,
+                    AvailablePointsAfter = secondBalance + int.MaxValue - 100,
+                    OccurredAtUtc = now.AddSeconds(2)
                 }
             );
             await dbContext.SaveChangesAsync();
@@ -301,6 +315,8 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
             player => player.UserId == seeded.AlphaId.ToString()
         );
         Assert.Equal(int.MaxValue, alphaQuiz.Points);
+        Assert.Equal(100, alphaQuiz.SpentPoints);
+        Assert.Equal(int.MaxValue, alphaQuiz.AvailablePoints);
 
         Assert.NotNull(leaderboard);
         var alphaTotal = Assert.Single(
@@ -309,6 +325,56 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         );
         Assert.Equal(int.MaxValue, alphaTotal.QuizPoints);
         Assert.Equal(int.MaxValue, alphaTotal.TotalPoints);
+    }
+
+    [Theory]
+    [InlineData(false, 50, 30)]
+    [InlineData(true, 0, 80)]
+    public async Task GetGameDetails_QuizBalanceIncludesPurchasesAndRefundsWithoutReducingEarnedPoints(
+        bool refunded, int expectedSpent, int expectedAvailable)
+    {
+        var seeded = await SeedHistoryAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var activationId = await db.GameModifierActivations
+                .Where(x => x.GameId == seeded.GameId && x.ActivatedByUserId == seeded.AlphaId)
+                .Select(x => x.Id).FirstAsync();
+            db.GameQuizPointLedgerEntries.Add(
+                new GameQuizPointLedgerEntry
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = seeded.GameId,
+                    UserId = seeded.AlphaId,
+                    EntryType = GameQuizPointEntryTypeValue.ModifierPurchase,
+                    PointsDelta = -50,
+                    ModifierActivationId = activationId,
+                    AvailablePointsBefore = 80,
+                    AvailablePointsAfter = 30,
+                    OccurredAtUtc = DateTime.UtcNow
+                });
+            if (refunded) db.GameQuizPointLedgerEntries.Add(
+                new GameQuizPointLedgerEntry
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = seeded.GameId,
+                    UserId = seeded.AlphaId,
+                    EntryType = GameQuizPointEntryTypeValue.ModifierRefund,
+                    PointsDelta = 50,
+                    ModifierActivationId = activationId,
+                    AvailablePointsBefore = 30,
+                    AvailablePointsAfter = 80,
+                    OccurredAtUtc = DateTime.UtcNow.AddSeconds(1)
+                });
+            await db.SaveChangesAsync();
+        }
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+            $"/api/game/history/games/{seeded.GameId}");
+        var alpha = Assert.Single(details!.Quiz.PlayerStats, x => x.UserId == seeded.AlphaId.ToString());
+        Assert.Equal(80, alpha.Points);
+        Assert.Equal(expectedSpent, alpha.SpentPoints);
+        Assert.Equal(expectedAvailable, alpha.AvailablePoints);
     }
 
     [Fact]

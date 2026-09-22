@@ -40,15 +40,43 @@ export function AvailableModifiersSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard sx={{ p: { xs: 1.25, sm: 1.5 } }}>
-      <ModifierSectionHeading title={t('gameModifiers.availableTitle')} />
+    <SectionCard
+      data-testid="available-modifiers-section"
+      sx={{
+        p: 0,
+        overflow: 'hidden',
+        '@media (min-width: 1000px) and (min-height: 680px)': {
+          maxHeight: 'var(--modifier-panel-height)',
+          overflowY: 'auto',
+          overscrollBehaviorY: 'contain',
+          scrollbarGutter: 'stable',
+        },
+      }}
+    >
+      <Box
+        sx={(theme) => ({
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          px: { xs: 1.1, sm: 1.35 },
+          py: 0.85,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          backgroundColor: alpha(theme.palette.background.paper, 0.96),
+          backdropFilter: 'blur(8px)',
+        })}
+      >
+        <ModifierSectionHeading
+          title={t('gameModifiers.availableTitle')}
+          count={groups.reduce((total, group) => total + group.items.length, 0)}
+        />
+      </Box>
 
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ px: 1.35, py: 1.5 }}>
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.availableEmpty')}
         </Typography>
       ) : (
-        <Stack spacing={1.25} sx={{ mt: 0.7 }}>
+        <Stack spacing={0.75} sx={{ p: 0.75 }}>
           {groups.map((group) => (
             <ModifierCategorySection key={group.category} category={group.category}>
               <Stack spacing={0.35}>
@@ -135,31 +163,33 @@ function AvailableModifierRow({
       component="li"
       sx={(theme) => ({
         listStyle: 'none',
-        py: 1,
-        '&:not(:last-child)': {
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.32)}`,
+        px: { xs: 0.75, sm: 0.85 },
+        py: 0.8,
+        borderRadius: '8px',
+        backgroundColor: alpha(theme.palette.common.black, 0.26),
+        '&:nth-of-type(even)': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.09),
         },
+        '& + &': { mt: 0.6 },
+        overflowWrap: 'anywhere',
       })}
     >
       <Stack spacing={0.65}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
+          spacing={0.8}
           justifyContent="space-between"
           alignItems={{ xs: 'stretch', sm: 'flex-start' }}
         >
           <Stack direction="row" spacing={0.9} sx={{ minWidth: 0, flex: 1 }}>
             <ModifierIcon emoji={definition.iconEmoji} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                spacing={{ xs: 0.25, md: 0.8 }}
-                alignItems={{ xs: 'flex-start', md: 'center' }}
-              >
+              <Stack direction="row" spacing={0.6} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Typography variant="subtitle2">{definition.name}</Typography>
-                <Typography variant="body2" color="warning.light" sx={{ fontWeight: 700 }}>
-                  {t('gameModifiers.costLabel', { cost: definition.activationCost })}
-                </Typography>
+                <InlineMetaPill
+                  tone="warning"
+                  label={t('gameModifiers.costLabel', { cost: definition.activationCost })}
+                />
               </Stack>
               <Typography
                 variant="body2"
@@ -212,7 +242,7 @@ function AvailableModifierRow({
             aria-expanded={isDetailsOpen}
             aria-controls={detailsId}
             onClick={() => setIsDetailsOpen((current) => !current)}
-            sx={{ minHeight: 44, px: 0.75 }}
+            sx={{ minHeight: { xs: 40, sm: 28 }, px: 0.75, py: 0.2 }}
           >
             {isDetailsOpen
               ? t('gameModifiers.hideDetailsAction')

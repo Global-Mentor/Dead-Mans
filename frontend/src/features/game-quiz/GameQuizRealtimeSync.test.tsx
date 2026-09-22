@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSignalrHubSubscription } from '../../shared/realtime/use-signalr-hub-subscription.ts'
 import { GameQuizRealtimeSync } from './GameQuizRealtimeSync.tsx'
 import { gameQuizQueryKeys } from './api/game-quiz-queries.ts'
+import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
 
 vi.mock('../../shared/realtime/use-signalr-hub-subscription.ts', () => ({
   useSignalrHubSubscription: vi.fn(),
@@ -34,10 +35,20 @@ describe('quiz realtime reconciliation', () => {
       on,
       off,
     } as unknown as HubConnection)
-    const [event, handler] = on.mock.calls[0] as [string, () => void]
-    handler()
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: gameQuizQueryKeys.all })
+    expect(on.mock.calls.map(([event]) => event)).toEqual([
+      'quizStateChanged',
+      'twitchQuizStateChanged',
+      'modifierActivated',
+      'modifierActivationCancelled',
+      'roundStateChanged',
+    ])
+    for (const [, handler] of on.mock.calls as [string, () => void][]) {
+      invalidate.mockClear()
+      handler()
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: gameQuizQueryKeys.all })
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: gameHistoryQueryKeys.all })
+    }
     unsubscribe?.()
-    expect(off).toHaveBeenCalledWith(event, handler)
+    expect(off.mock.calls).toEqual(on.mock.calls)
   })
 })

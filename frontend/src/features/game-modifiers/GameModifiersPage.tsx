@@ -1,4 +1,4 @@
-import { Box } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,13 +8,7 @@ import type {
   GameModifierState,
 } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import {
-  AppToast,
-  ConfirmDialog,
-  PageShell,
-  PageStatePanel,
-  SectionHeader,
-} from '../../shared/ui/index.ts'
+import { AppToast, ConfirmDialog, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { GameBoardCardPreviewDialog } from '../game-board/ui/GameBoardCardPreviewDialog.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
@@ -35,6 +29,7 @@ import { AvailableModifiersSection } from './ui/AvailableModifiersSection.tsx'
 import { ModifierRuntimePanel } from './ui/ModifierRuntimePanel.tsx'
 import { ModifierStatusBar } from './ui/ModifierStatusBar.tsx'
 import { useActivateGameModifier } from './use-activate-game-modifier.ts'
+import { useModifierViewport } from './use-modifier-viewport.ts'
 
 export function GameModifiersPage() {
   const { t, i18n } = useTranslation()
@@ -45,6 +40,7 @@ export function GameModifiersPage() {
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const activeRoundQuery = useQuery(activeGameRoundQueryOptions)
   const activation = useActivateGameModifier()
+  const sectionsGridRef = useModifierViewport()
   const [search, setSearch] = useState('')
   const [activationToConfirmId, setActivationToConfirmId] = useState<string | null>(null)
   const [selfCancelToConfirm, setSelfCancelToConfirm] = useState<GameModifierActivation | null>(
@@ -202,14 +198,28 @@ export function GameModifiersPage() {
     <PageShell
       data-testid="game-modifiers-page"
       sx={{
-        maxWidth: 'none',
+        maxWidth: 1800,
         width: { xs: '100%', md: hasAdminPanel ? 'calc(100% - 72px)' : '100%' },
         ml: { xs: 0, md: 'auto' },
         mr: { xs: 0, md: hasAdminPanel ? 9 : 0 },
         px: { xs: 0, sm: 0 },
       }}
     >
-      <SectionHeader headingLevel="h1" title={t('common.entities.modifiers')} />
+      <Typography
+        component="h1"
+        sx={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          p: 0,
+          m: -1,
+          overflow: 'hidden',
+          clipPath: 'inset(50%)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {t('common.entities.modifiers')}
+      </Typography>
 
       {state ? (
         <>
@@ -236,33 +246,44 @@ export function GameModifiersPage() {
           />
 
           <Box
+            ref={sectionsGridRef}
+            data-testid="modifier-sections-grid"
             sx={{
-              mt: 1.5,
+              mt: 1,
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-              gap: 1.5,
+              gridTemplateAreas: { xs: '"available" "active"' },
+              gridTemplateColumns: 'minmax(0, 1fr)',
+              gap: 1,
               alignItems: 'start',
+              '@media (min-width: 1000px)': {
+                gridTemplateAreas: '"available active"',
+                gridTemplateColumns: 'minmax(0, 1.42fr) minmax(280px, 0.78fr)',
+              },
             }}
           >
-            <ActiveModifiersSection
-              groups={activeGroups}
-              activationsCount={state.activeModifiers.length}
-              definitionsById={availableDefinitionsById}
-              currentUserId={user?.id ?? null}
-              canSelfCancel={state.isOrderingOpen}
-              isCancelling={selfCancelMutation.isPending}
-              hasSearch={hasSearch}
-              onSelfCancel={setSelfCancelToConfirm}
-            />
-            <AvailableModifiersSection
-              groups={availableGroups}
-              modifierNamesById={modifierNamesById}
-              activeModifierIds={activeModifierIds}
-              hasSearch={hasSearch}
-              isBusy={activation.isActivating}
-              pendingModifierId={activation.pendingModifierId}
-              onActivate={setActivationToConfirmId}
-            />
+            <Box sx={{ gridArea: 'available', minWidth: 0 }}>
+              <AvailableModifiersSection
+                groups={availableGroups}
+                modifierNamesById={modifierNamesById}
+                activeModifierIds={activeModifierIds}
+                hasSearch={hasSearch}
+                isBusy={activation.isActivating}
+                pendingModifierId={activation.pendingModifierId}
+                onActivate={setActivationToConfirmId}
+              />
+            </Box>
+            <Box sx={{ gridArea: 'active', minWidth: 0 }}>
+              <ActiveModifiersSection
+                groups={activeGroups}
+                activationsCount={state.activeModifiers.length}
+                definitionsById={availableDefinitionsById}
+                currentUserId={user?.id ?? null}
+                canSelfCancel={state.isOrderingOpen}
+                isCancelling={selfCancelMutation.isPending}
+                hasSearch={hasSearch}
+                onSelfCancel={setSelfCancelToConfirm}
+              />
+            </Box>
           </Box>
         </>
       ) : null}

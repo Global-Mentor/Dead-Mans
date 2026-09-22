@@ -2712,6 +2712,8 @@ export interface components {
             userId: string;
             displayName: string;
             points: number;
+            spentPoints: number;
+            availablePoints: number;
             attempts: number;
             correctAnswers: number;
             /** Format: date-time */

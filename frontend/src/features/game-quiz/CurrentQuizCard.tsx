@@ -1,10 +1,13 @@
-import { Alert, Chip, LinearProgress, Stack, Typography } from '@mui/material'
+import { Alert, Box, Chip, LinearProgress, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
-import { AppButton, FormSelect, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
+import { ApiError } from '../../shared/api/errors/ApiError.ts'
+import { AppButton, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
@@ -12,6 +15,9 @@ type CurrentQuizCardProps = {
   state: CurrentGameQuizState | null
   canManage: boolean
   questions: readonly AvailableQuestion[]
+  questionsLoading?: boolean
+  questionsError?: boolean
+  onRetryQuestions?: () => void
   isSubmitting: boolean
   isStarting: boolean
   error: Error | null
@@ -25,6 +31,9 @@ export function CurrentQuizCard({
   state,
   canManage,
   questions,
+  questionsLoading = false,
+  questionsError = false,
+  onRetryQuestions,
   isSubmitting,
   isStarting,
   error,
@@ -39,16 +48,11 @@ export function CurrentQuizCard({
     state?.status === 'open' ? state.closesAtUtc : null,
     onDeadline,
   )
-  const [selectedQuestionId, setSelectedQuestionId] = useState('')
+  const [questionPickerOpen, setQuestionPickerOpen] = useState(false)
   const usedQuestionIds = useMemo(() => new Set(state ? [state.questionId] : []), [state])
   const selectableQuestions = questions.filter(
     (question) => !usedQuestionIds.has(question.questionId),
   )
-  const validSelectedQuestionId = selectableQuestions.some(
-    (question) => question.questionId === selectedQuestionId,
-  )
-    ? selectedQuestionId
-    : ''
   const isOpen = state?.status === 'open'
   const hasAnswered = state?.mySelectedOptionId != null
   const description = !state
@@ -58,44 +62,71 @@ export function CurrentQuizCard({
       : state.status === 'closed'
         ? t('gameQuiz.closedDescription')
         : t('gameQuiz.skippedDescription')
+  const errorCode =
+    error instanceof ApiError && error.details && typeof error.details === 'object'
+      ? Reflect.get(error.details, 'code')
+      : null
+  const errorMessageKey =
+    errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions
+      ? 'gameQuiz.noAvailableQuestionsError'
+      : 'gameQuiz.actionError'
 
   return (
-    <SectionCard sx={{ mt: 1 }}>
+    <SectionCard
+      component="section"
+      sx={{
+        minWidth: 0,
+        p: { xs: 1.5, sm: 2 },
+      }}
+    >
       <SectionHeader
         title={state ? t('gameQuiz.currentTitle') : t('gameQuiz.waitingTitle')}
         description={description}
-        actions={
-          canManage ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <AppButton size="small" disabled={isOpen || isStarting} onClick={onAskNext}>
-                {t('gameQuiz.nextQuestion')}
-              </AppButton>
-              <FormSelect
-                value={validSelectedQuestionId}
-                label={t('gameQuiz.chooseQuestion')}
-                options={selectableQuestions.map((question) => ({
-                  value: question.questionId,
-                  label: question.text,
-                }))}
-                disabled={isOpen || isStarting}
-                onChange={(value) => setSelectedQuestionId(String(value))}
-              />
-              <AppButton
-                size="small"
-                tone="secondary"
-                disabled={isOpen || isStarting || validSelectedQuestionId === ''}
-                onClick={() => onAskSpecific(validSelectedQuestionId)}
-              >
-                {t('gameQuiz.startSelected')}
-              </AppButton>
-            </Stack>
-          ) : null
-        }
       />
 
+      {canManage ? (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ sm: 'stretch' }}
+          sx={(theme) => ({
+            mt: 1.5,
+            pb: 1.5,
+            borderBottom: '1px solid',
+            borderColor: alpha(theme.palette.primary.main, 0.2),
+          })}
+        >
+          <AppButton
+            size="small"
+            disabled={isOpen || isStarting}
+            onClick={onAskNext}
+            sx={{
+              flexShrink: 0,
+              whiteSpace: 'normal',
+              lineHeight: 1.3,
+              minHeight: 40,
+            }}
+          >
+            {t('gameQuiz.nextQuestion')}
+          </AppButton>
+          <AppButton
+            size="small"
+            tone="secondary"
+            disabled={isOpen || isStarting}
+            onClick={() => setQuestionPickerOpen(true)}
+            sx={{ minHeight: 40 }}
+          >
+            {t('gameQuiz.askSpecificQuestion')}
+          </AppButton>
+        </Stack>
+      ) : null}
+
       {error ? (
-        <Alert severity="error" sx={{ mt: 1.5 }}>
-          {t('gameQuiz.actionError')}
+        <Alert
+          severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
+          sx={{ mt: 1.5 }}
+        >
+          {t(errorMessageKey)}
         </Alert>
       ) : null}
       {!state ? (
@@ -103,7 +134,7 @@ export function CurrentQuizCard({
           {t('gameQuiz.noCurrentQuestion')}
         </Typography>
       ) : (
-        <Stack spacing={1.5} sx={{ mt: 2 }}>
+        <Stack spacing={1.25} sx={{ mt: 1.5 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Chip label={state.categoryName} size="small" />
             {isOpen ? (
@@ -120,8 +151,24 @@ export function CurrentQuizCard({
             {!isOpen ? <Chip label={t('gameQuiz.rewardLabel', { reward: state.reward })} /> : null}
           </Stack>
           {isOpen ? <LinearProgress variant="determinate" value={countdown.progress} /> : null}
-          <Typography variant="h6">{state.text}</Typography>
-          <Stack spacing={1}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              fontWeight: 700,
+              lineHeight: 1.35,
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {state.text}
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1,
+            }}
+          >
             {state.options.map((option) => {
               const isSelected = state.mySelectedOptionId === option.optionId
               const isCorrect = state.correctOptionId === option.optionId
@@ -143,6 +190,27 @@ export function CurrentQuizCard({
                   sx={(theme) => ({
                     justifyContent: 'space-between',
                     textAlign: 'left',
+                    minWidth: 0,
+                    minHeight: 52,
+                    px: 1.5,
+                    textTransform: 'none',
+                    letterSpacing: 'normal',
+                    gap: 1.5,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
+                    backgroundColor: alpha(theme.palette.primary.main, isSelected ? 0.12 : 0.04),
+                    '&.Mui-disabled': {
+                      opacity: 1,
+                      color: theme.palette.text.secondary,
+                    },
+                    '& > span:first-of-type': { overflowWrap: 'anywhere' },
+                    '& > span:last-of-type:not(:first-of-type)': {
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                    },
+                    '& > span': {
+                      minWidth: 0,
+                      gap: theme.spacing(1),
+                    },
                     ...(resultKind === 'correct' && {
                       '&.Mui-disabled': {
                         color: theme.palette.success.light,
@@ -162,6 +230,15 @@ export function CurrentQuizCard({
                   <span>
                     {option.text}
                     {isSelected ? ` · ${t('gameQuiz.yourChoice')}` : ''}
+                    {resultKind === 'correct' ? (
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        sx={{ display: 'block', fontWeight: 700 }}
+                      >
+                        {t('gameQuiz.answerCorrectStatus')}
+                      </Typography>
+                    ) : null}
                   </span>
                   {!isOpen && result ? (
                     <span>
@@ -171,7 +248,7 @@ export function CurrentQuizCard({
                 </AppButton>
               )
             })}
-          </Stack>
+          </Box>
           {isOpen && hasAnswered ? (
             <Alert severity="info">{t('gameQuiz.answerAccepted')}</Alert>
           ) : null}
@@ -184,6 +261,16 @@ export function CurrentQuizCard({
           ) : null}
         </Stack>
       )}
+      <QuizQuestionPickerDialog
+        open={questionPickerOpen}
+        questions={selectableQuestions}
+        busy={isStarting || isOpen}
+        loading={questionsLoading}
+        error={questionsError}
+        {...(onRetryQuestions ? { onRetry: onRetryQuestions } : {})}
+        onClose={() => setQuestionPickerOpen(false)}
+        onSelect={onAskSpecific}
+      />
     </SectionCard>
   )
 }

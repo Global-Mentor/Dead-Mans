@@ -48,7 +48,7 @@ export function TeamLeaderboardRow({
   const totalBounties = getTeamTotalBounties(entry)
 
   return (
-    <AccordionSurface defaultExpanded={rank <= 3}>
+    <AccordionSurface>
       <AppAccordionSummary density="compact" expandIcon={<ExpandGlyph />}>
         <Box sx={{ width: '100%' }}>
           <Stack spacing={0.9}>
@@ -171,7 +171,7 @@ export function TeamLeaderboardRow({
                 lg: 'repeat(4, minmax(0, 1fr))',
               },
               borderRadius: 2,
-              border: `1px solid ${alpha(theme.palette.divider, 0.78)}`,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
               backgroundColor: alpha(theme.palette.background.paper, 0.42),
               p: 0.9,
             })}
@@ -247,7 +247,9 @@ function RecentRoundPill({
         minWidth: 0,
         borderRadius: 1.5,
         border: `1px solid ${
-          isBestRound ? alpha(theme.palette.warning.main, 0.52) : alpha(theme.palette.divider, 0.82)
+          isBestRound
+            ? alpha(theme.palette.warning.main, 0.4)
+            : alpha(theme.palette.primary.main, 0.2)
         }`,
         background: isBestRound
           ? `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.15)}, ${alpha(

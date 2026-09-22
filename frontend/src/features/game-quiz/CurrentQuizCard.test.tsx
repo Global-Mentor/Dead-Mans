@@ -2,6 +2,8 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
+import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
+import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
 
@@ -57,6 +59,60 @@ describe('CurrentQuizCard', () => {
     expect(next).toBeEnabled()
     fireEvent.click(next)
     expect(props.onAskNext).toHaveBeenCalledOnce()
+  })
+
+  it('explains when every available question has already been asked', () => {
+    renderCard(null, {
+      canManage: true,
+      error: new ApiError('HTTP 404', {
+        status: 404,
+        details: { code: API_ERROR_CODES.gameQuizNoAvailableQuestions },
+      }),
+    })
+
+    expect(screen.getByText(i18n.t('gameQuiz.noAvailableQuestionsError'))).toBeInTheDocument()
+  })
+
+  it('opens a searchable picker for a specific question', () => {
+    const props = renderCard(null, {
+      canManage: true,
+      questions: [
+        {
+          questionId: '66666666-6666-6666-6666-666666666666',
+          questionCode: 'q-2',
+          categoryName: 'Science',
+          text: 'Which planet is closest to the Sun?',
+        },
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Which planet is closest to the Sun?')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.selectQuestion') }))
+    expect(props.onAskSpecific).toHaveBeenCalledWith('66666666-6666-6666-6666-666666666666')
+  })
+
+  it('distinguishes loading, failed loading, and an exhausted picker', () => {
+    renderCard(null, { canManage: true, questionsLoading: true })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }))
+    expect(screen.getByRole('progressbar')).toBeInTheDocument()
+    expect(screen.queryByText(i18n.t('gameQuiz.noQuestionsAvailable'))).not.toBeInTheDocument()
+    cleanup()
+
+    const retry = vi.fn()
+    renderCard(null, { canManage: true, questionsError: true, onRetryQuestions: retry })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }))
+    expect(screen.getByText(i18n.t('gameQuiz.questionsLoadError'))).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.retryQuestions') }))
+    expect(retry).toHaveBeenCalledOnce()
+    cleanup()
+
+    renderCard(null, { canManage: true })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }))
+    expect(screen.getByText(i18n.t('gameQuiz.noQuestionsAvailable'))).toBeInTheDocument()
+    expect(screen.queryByText(i18n.t('gameQuiz.noQuestionsMatched'))).not.toBeInTheDocument()
   })
 
   it('requests authoritative state when the local timer reaches its deadline', () => {

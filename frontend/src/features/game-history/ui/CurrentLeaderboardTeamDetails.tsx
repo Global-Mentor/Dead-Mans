@@ -41,37 +41,66 @@ export function CurrentLeaderboardTeamDetails({
 
   return (
     <Box
+      id="leaderboard-team-details"
+      data-testid="current-leaderboard-team-details"
       sx={(theme) => ({
-        position: { xl: 'sticky' },
-        top: { xl: 92 },
         minWidth: 0,
         borderRadius: 2,
         border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
         backgroundColor: alpha(theme.palette.background.paper, 0.58),
         overflow: 'hidden',
+        '@media (min-width: 1000px) and (min-height: 680px)': {
+          maxHeight: 'var(--leaderboard-panel-height)',
+          overflowY: 'auto',
+          overscrollBehaviorY: 'contain',
+          scrollbarGutter: 'stable',
+        },
       })}
     >
       <Box
         sx={(theme) => ({
           px: 1.35,
           py: 1.2,
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.78)}`,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(
-            theme.palette.background.paper,
-            0.35,
-          )})`,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          backgroundColor: theme.palette.background.paper,
+          '@media (min-width: 1000px) and (min-height: 680px)': {
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            backdropFilter: 'blur(8px)',
+          },
         })}
       >
         <Stack direction="row" spacing={1} alignItems="center">
           <RankBadge rank={rank} />
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 900 }} noWrap>
+            <Typography
+              component="h2"
+              variant="subtitle1"
+              sx={{ fontWeight: 900, overflowWrap: 'anywhere' }}
+            >
               {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
               {entry.participantNames.length > 0
                 ? entry.participantNames.join(', ')
                 : t('gameHistory.noParticipants')}
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+            <Typography variant="caption" color="text.secondary">
+              {t('gameHistory.table.final')}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: '1.6rem',
+                fontWeight: 900,
+                lineHeight: 1.1,
+                color: 'primary.light',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {finalScore}
             </Typography>
           </Box>
         </Stack>
@@ -86,8 +115,8 @@ export function CurrentLeaderboardTeamDetails({
           }}
         >
           <CompactMetric
-            label={t('gameHistory.summary.finalScore')}
-            value={t('gameHistory.pointsValue', { points: finalScore })}
+            label={t('gameHistory.table.rounds')}
+            value={t('gameHistory.countValue', { count: entry.roundsPlayed })}
           />
           <CompactMetric
             label={t('gameHistory.summary.penaltyTotal')}
@@ -112,12 +141,20 @@ export function CurrentLeaderboardTeamDetails({
         </Box>
 
         <Box
+          component="button"
+          type="button"
+          onClick={() => onPreviewCard(entry.bestRound)}
           sx={(theme) => ({
             borderRadius: 1.5,
             border: `1px solid ${alpha(theme.palette.warning.main, 0.28)}`,
             backgroundColor: alpha(theme.palette.warning.main, 0.08),
             px: 1,
             py: 0.9,
+            cursor: 'pointer',
+            color: 'inherit',
+            textAlign: 'left',
+            '&:hover': { backgroundColor: alpha(theme.palette.warning.main, 0.16) },
+            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
           })}
         >
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -130,7 +167,7 @@ export function CurrentLeaderboardTeamDetails({
 
         <Stack spacing={0.7}>
           <Typography variant="overline" color="text.secondary">
-            {t('gameHistory.summary.recentRounds')}
+            {t('gameHistory.summary.allRoundsTitle')}
           </Typography>
           {roundsByPlaySequence.map((round) => (
             <CurrentLeaderboardRoundRow
@@ -162,14 +199,17 @@ function CurrentLeaderboardRoundRow({
     <Box
       sx={(theme) => ({
         borderRadius: 1.5,
-        border: `1px solid ${
-          isBestRound ? alpha(theme.palette.warning.main, 0.72) : alpha(theme.palette.divider, 0.78)
-        }`,
+        border: '1px solid transparent',
         backgroundColor: isBestRound
           ? alpha(theme.palette.warning.main, 0.1)
-          : alpha(theme.palette.background.paper, 0.45),
+          : alpha(theme.palette.common.black, 0.18),
+        '&:nth-of-type(even)': {
+          backgroundColor: isBestRound
+            ? alpha(theme.palette.warning.main, 0.1)
+            : alpha(theme.palette.primary.main, 0.065),
+        },
         boxShadow: isBestRound
-          ? `inset 0 0 0 1px ${alpha(theme.palette.warning.main, 0.48)}`
+          ? `inset 0 0 0 1px ${alpha(theme.palette.warning.main, 0.28)}`
           : 'none',
         px: 1,
         py: 0.85,
@@ -178,7 +218,7 @@ function CurrentLeaderboardRoundRow({
       <Stack spacing={0.7}>
         <Stack direction="row" spacing={0.8} alignItems="flex-start">
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
+            <Typography variant="body2" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>
               {round.cellTitle || t('gameHistory.cardDialogFallbackTitle')}
             </Typography>
           </Box>
