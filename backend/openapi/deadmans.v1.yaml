@@ -6540,7 +6540,8 @@ components:
           nullable: true
     GameHistoryQuizPlayerSummaryDto:
       type: object
-      required: [userId, displayName, points, attempts, correctAnswers]
+      required:
+        [userId, displayName, points, spentPoints, availablePoints, attempts, correctAnswers]
       properties:
         userId:
           type: string
@@ -6549,6 +6550,12 @@ components:
           type: string
         points:
           type: integer
+        spentPoints:
+          type: integer
+          minimum: 0
+        availablePoints:
+          type: integer
+          minimum: 0
         attempts:
           type: integer
           minimum: 0

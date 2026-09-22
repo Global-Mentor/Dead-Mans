@@ -77,6 +77,8 @@ public sealed record GameHistoryQuizPlayerSummaryDto(
     string UserId,
     string DisplayName,
     int Points,
+    int SpentPoints,
+    int AvailablePoints,
     int Attempts,
     int CorrectAnswers,
     DateTime? LastActivityAtUtc

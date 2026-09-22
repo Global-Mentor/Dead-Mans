@@ -286,6 +286,19 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             )
             .ToArrayAsync(cancellationToken);
 
+        var spentQuizPointsByUserId = await _dbContext.GameQuizPointLedgerEntries
+            .AsNoTracking()
+            .Where(x =>
+                x.GameId == gameId
+                && (
+                    x.EntryType == GameQuizPointEntryTypeValue.ModifierPurchase
+                    || x.EntryType == GameQuizPointEntryTypeValue.ModifierRefund
+                )
+            )
+            .GroupBy(x => x.UserId)
+            .Select(group => new { UserId = group.Key, Points = -group.Sum(x => (long)x.PointsDelta) })
+            .ToDictionaryAsync(x => x.UserId, x => Math.Max(0L, x.Points), cancellationToken);
+
         var userDisplayNames = await LoadUserDisplayNamesAsync(
             participants.Select(x => x.UserId)
                 .Concat(modifierActivations.Select(x => x.ActivatedByUserId))
@@ -356,7 +369,12 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             successfulModifierActivations,
             userDisplayNames
         );
-        var quizPlayerStats = BuildQuizPlayerStats(quizSubmissionRows, manualQuizAwards, userDisplayNames);
+        var quizPlayerStats = BuildQuizPlayerStats(
+            quizSubmissionRows,
+            manualQuizAwards,
+            userDisplayNames,
+            spentQuizPointsByUserId
+        );
         var mainModifierActivations = modifierActivations
             .Select(
                 x =>

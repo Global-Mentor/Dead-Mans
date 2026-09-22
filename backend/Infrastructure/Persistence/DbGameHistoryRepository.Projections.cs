@@ -277,7 +277,8 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
     private static GameHistoryQuizPlayerSummary[] BuildQuizPlayerStats(
         IReadOnlyList<LeaderboardQuizRow> quizSubmissions,
         IReadOnlyList<QuizManualAwardRow> manualAwards,
-        IReadOnlyDictionary<Guid, string> userDisplayNames
+        IReadOnlyDictionary<Guid, string> userDisplayNames,
+        IReadOnlyDictionary<Guid, long> spentQuizPointsByUserId
     )
     {
         var summary = new Dictionary<Guid, PlayerStatsAccumulator>();
@@ -306,17 +307,21 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         }
 
         return summary
-            .Select(
-                x =>
-                    new GameHistoryQuizPlayerSummary(
-                        x.Key,
-                        x.Value.DisplayName,
-                        SaturatingInt32.From(x.Value.Points),
-                        SaturatingInt32.From(x.Value.EventCount),
-                        SaturatingInt32.From(x.Value.CorrectAnswerCount),
-                        x.Value.LastActivityAtUtc
-                    )
-            )
+            .Select(x =>
+            {
+                var earnedPoints = SaturatingInt32.From(x.Value.Points);
+                var spentPoints = spentQuizPointsByUserId.GetValueOrDefault(x.Key);
+                return new GameHistoryQuizPlayerSummary(
+                    x.Key,
+                    x.Value.DisplayName,
+                    earnedPoints,
+                    SaturatingInt32.From(spentPoints),
+                    SaturatingInt32.From(Math.Max(0L, x.Value.Points - spentPoints)),
+                    SaturatingInt32.From(x.Value.EventCount),
+                    SaturatingInt32.From(x.Value.CorrectAnswerCount),
+                    x.Value.LastActivityAtUtc
+                );
+            })
             .OrderByDescending(x => x.Points)
             .ThenByDescending(x => x.CorrectAnswers)
             .ThenByDescending(x => x.Attempts)
