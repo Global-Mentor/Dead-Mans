@@ -182,6 +182,11 @@ public sealed partial class DbGameQuestionRepository
             return DeleteGameQuestionCategoryOutcome.NotFound;
         }
 
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+
         var category = await _dbContext.QuestionCategories.FirstOrDefaultAsync(
             x => x.Id == categoryId,
             cancellationToken
@@ -207,8 +212,38 @@ public sealed partial class DbGameQuestionRepository
             return DeleteGameQuestionCategoryOutcome.Protected;
         }
 
+        var fallbackCategory = await EnsureFallbackCategoryAsync(cancellationToken);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (_dbContext.Database.IsRelational())
+        {
+            await _dbContext.QuestionDefinitions
+                .Where(x => x.CategoryId == categoryId && x.IsDeleted)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(x => x.CategoryId, fallbackCategory.Id)
+                        .SetProperty(x => x.UpdatedAtUtc, now),
+                    cancellationToken
+                );
+        }
+        else
+        {
+            var deletedQuestions = await _dbContext.QuestionDefinitions
+                .Where(x => x.CategoryId == categoryId && x.IsDeleted)
+                .ToArrayAsync(cancellationToken);
+            foreach (var question in deletedQuestions)
+            {
+                question.CategoryId = fallbackCategory.Id;
+                question.UpdatedAtUtc = now;
+            }
+        }
+
         _dbContext.QuestionCategories.Remove(category);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         return DeleteGameQuestionCategoryOutcome.Deleted;
     }
 
