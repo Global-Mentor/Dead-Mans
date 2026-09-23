@@ -37,8 +37,8 @@ public sealed partial class ProductionBaselineMigrationTests
             Assert.Single(await db.UserRoleAuditEvents.ToArrayAsync());
             Assert.Single(await db.MediaAssets.ToArrayAsync());
             Assert.Single(await db.QuestionCategories.ToArrayAsync());
-            Assert.Single(await db.ModifierDefinitions.ToArrayAsync());
-            Assert.Single(await db.ModifierDefinitionVersions.ToArrayAsync());
+            Assert.Equal(16, await db.ModifierDefinitions.CountAsync());
+            Assert.Equal(16, await db.ModifierDefinitionVersions.CountAsync());
             Assert.Empty(await db.Games.ToArrayAsync());
             Assert.Empty(await db.GameTeams.ToArrayAsync());
             Assert.Empty(await db.GameEnabledQuestions.ToArrayAsync());

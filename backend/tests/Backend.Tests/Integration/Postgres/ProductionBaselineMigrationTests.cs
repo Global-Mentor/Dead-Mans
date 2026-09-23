@@ -16,7 +16,7 @@ public sealed partial class ProductionBaselineMigrationTests
         "Host=localhost;Port=5432;Database=postgres;Username=deadmans;Password=deadmans_dev_password;SSL Mode=Disable";
 
     [Fact]
-    public async Task CleanBaseline_SeedsOnlyAccessRolesAndCreatesRequiredExtensions()
+    public async Task CleanBaseline_SeedsAccessRolesAndBaseModifiersAndCreatesRequiredExtensions()
     {
         await WithDatabaseAsync(async connectionString =>
         {
@@ -27,7 +27,8 @@ public sealed partial class ProductionBaselineMigrationTests
             Assert.Empty(await db.Users.ToArrayAsync());
             Assert.Empty(await db.UserRoleAuditEvents.ToArrayAsync());
             Assert.Empty(await db.Games.ToArrayAsync());
-            Assert.Empty(await db.ModifierDefinitions.ToArrayAsync());
+            Assert.Equal(15, await db.ModifierDefinitions.CountAsync());
+            Assert.Equal(15, await db.ModifierDefinitionVersions.CountAsync());
             Assert.Empty(await db.QuestionDefinitions.ToArrayAsync());
 
             await using var connection = new NpgsqlConnection(connectionString);
