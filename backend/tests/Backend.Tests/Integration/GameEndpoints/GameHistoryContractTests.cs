@@ -24,6 +24,55 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
     }
 
     [Fact]
+    public async Task GetGameDetails_WhenAnonymous_ReturnsUnauthorized()
+    {
+        var seeded = await SeedHistoryAsync();
+        using var client = _factory.CreateClient(new() { AllowAutoRedirect = false });
+
+        var response = await client.GetAsync($"/api/game/history/games/{seeded.GameId}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(GameQuizQuestionSessionStatusValue.Open)]
+    [InlineData(GameQuizQuestionSessionStatusValue.Skipped)]
+    public async Task GetGameDetails_ExcludesUnsettledAnswersFromQuizStandings(string status)
+    {
+        var seeded = await SeedHistoryAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var game = await db.Games.SingleAsync(x => x.Id == seeded.GameId);
+            game.Status = GameStatusValue.Active;
+            game.FinishedAtUtc = null;
+            var session = await db.GameQuizQuestionSessions.SingleAsync(
+                x => x.GameId == seeded.GameId && x.QuestionCodeSnapshot == "quiz-001");
+            session.Status = status;
+            session.ClosedAtUtc = null;
+            await db.SaveChangesAsync();
+        }
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+            $"/api/game/history/games/{seeded.GameId}");
+
+        Assert.NotNull(details);
+        Assert.DoesNotContain(details.Quiz.PlayerStats, x => x.UserId == seeded.AlphaId.ToString());
+        Assert.Equal(20, details.Quiz.TotalPoints);
+        if (status == GameQuizQuestionSessionStatusValue.Open)
+        {
+            Assert.DoesNotContain(details.Quiz.QuestionSessions, x => x.QuestionCode == "quiz-001");
+        }
+        else
+        {
+            var skipped = Assert.Single(details.Quiz.QuestionSessions, x => x.QuestionCode == "quiz-001");
+            Assert.Null(skipped.CorrectOptionId);
+            Assert.Empty(skipped.Submissions);
+        }
+    }
+
+    [Fact]
     public async Task GetLeaderboard_WhenAuthenticated_ReturnsCombinedStatsOrdered()
     {
         await SeedHistoryAsync();
