@@ -88,6 +88,11 @@ function createPageQuery(overrides: Record<string, unknown> = {}) {
       playedTeams: 0,
       remainingTeams: 0,
     },
+    hasTeamQueueData: true,
+    isTeamQueueRefreshing: false,
+    retryTeamQueue: vi.fn(),
+    retry: vi.fn(),
+    isRefreshing: false,
     isTeamQueueLoading: false,
     isTeamQueueError: false,
     ...overrides,
@@ -274,6 +279,16 @@ afterEach(() => {
 })
 
 describe('GameBoardPage', () => {
+  it('offers a retry when the board cannot be loaded', () => {
+    const retry = vi.fn()
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({ isError: true, data: undefined, retry }),
+    )
+    renderWithAppProviders(<GameBoardPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Повторить' }))
+    expect(retry).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps a finished board read-only and links to its immutable result', () => {
     pageMocks.useGameBoardPage.mockReturnValue(
       createPageQuery({ data: { ...readySnapshot, status: 'finished' } }),

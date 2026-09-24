@@ -1,3 +1,4 @@
+import { TeamIdentity } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import type { TFunction } from 'i18next'
 import { useId, useState, type ReactNode } from 'react'
@@ -5,7 +6,8 @@ import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import {
   ActionIcon,
-  BulletList,
+  AppButton,
+  AsyncSection,
   FormTextField,
   FormSection,
   ItemCard,
@@ -19,10 +21,21 @@ interface TeamQueuePanelProps {
   teams: readonly GameTeamQueueItem[]
   isLoading: boolean
   isError: boolean
+  hasData: boolean
+  isRefreshing: boolean
+  onRetry: () => void
   activeTeamId?: string | null
 }
 
-export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: TeamQueuePanelProps) {
+export function TeamQueuePanel({
+  teams,
+  isLoading,
+  isError,
+  hasData,
+  isRefreshing,
+  onRetry,
+  activeTeamId,
+}: TeamQueuePanelProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const panelId = useId()
@@ -55,11 +68,11 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
         onClick={() => setIsOpen(true)}
       >
         <Stack direction="row" spacing={1} useFlexGap alignItems="center">
-          <Typography component="span" variant="body2" fontWeight={700}>
+          <Typography component="span" variant="body2" fontWeight={700} fontSize="inherit">
             {t('common.entities.teams')}
           </Typography>
-          {!isLoading && !isError ? (
-            <Typography component="span" variant="body2" color="primary.light">
+          {hasData ? (
+            <Typography component="span" variant="body2" color="primary.light" fontSize="inherit">
               {teams.length}
             </Typography>
           ) : null}
@@ -75,7 +88,7 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
         closeLabel={t('gameBoard.teamQueueClose')}
         bodyTestId="team-queue-scroll-body"
         header={
-          !isLoading && !isError && teams.length > 0 ? (
+          hasData && teams.length > 0 ? (
             <FormTextField
               label={t('gameBoard.teamQueueSearch')}
               value={search}
@@ -100,54 +113,57 @@ export function TeamQueuePanel({ teams, isLoading, isError, activeTeamId }: Team
           ) : null
         }
       >
-        {isLoading ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameBoard.teamQueueLoading')}
-          </Typography>
-        ) : isError ? (
-          <Typography variant="body2" color="error">
-            {t('gameBoard.teamQueueError')}
-          </Typography>
-        ) : teams.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameBoard.teamQueueEmpty')}
-          </Typography>
-        ) : matchingTeams.length === 0 ? (
-          <Typography role="status" variant="body2" color="text.secondary">
-            {t('gameBoard.teamQueueNoResults')}
-          </Typography>
-        ) : (
-          <Stack spacing={2.5}>
-            <TeamQueueSection
-              title={t('gameBoard.teamQueueRemainingTitle')}
-              count={remainingTeams.length}
-              emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
-            >
-              {remainingTeams.map(({ team }) => (
-                <TeamQueueCard
-                  key={team.teamId}
-                  team={team}
-                  isActive={team.teamId === activeTeamId}
-                />
-              ))}
-            </TeamQueueSection>
+        <AsyncSection
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={teams.length === 0}
+          hasData={hasData}
+          loadingMessage={t('gameBoard.teamQueueLoading')}
+          errorMessage={t('gameBoard.teamQueueError')}
+          emptyMessage={t('gameBoard.teamQueueEmpty')}
+          retryAction={
+            <AppButton tone="secondary" onClick={onRetry} loading={isRefreshing}>
+              {t('common.actions.retry')}
+            </AppButton>
+          }
+        >
+          {matchingTeams.length === 0 ? (
+            <Typography role="status" variant="body2" color="text.secondary">
+              {t('gameBoard.teamQueueNoResults')}
+            </Typography>
+          ) : (
+            <Stack spacing={2.5}>
+              <TeamQueueSection
+                title={t('gameBoard.teamQueueRemainingTitle')}
+                count={remainingTeams.length}
+                emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
+              >
+                {remainingTeams.map(({ team }) => (
+                  <TeamQueueCard
+                    key={team.teamId}
+                    team={team}
+                    isActive={team.teamId === activeTeamId}
+                  />
+                ))}
+              </TeamQueueSection>
 
-            <TeamQueueSection
-              title={t('gameBoard.teamQueuePlayedTitle')}
-              count={playedTeams.length}
-              emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
-            >
-              {playedTeams.map(({ team, playedOrder }) => (
-                <TeamQueueCard
-                  key={team.teamId}
-                  team={team}
-                  isActive={team.teamId === activeTeamId}
-                  playedOrder={playedOrder}
-                />
-              ))}
-            </TeamQueueSection>
-          </Stack>
-        )}
+              <TeamQueueSection
+                title={t('gameBoard.teamQueuePlayedTitle')}
+                count={playedTeams.length}
+                emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
+              >
+                {playedTeams.map(({ team, playedOrder }) => (
+                  <TeamQueueCard
+                    key={team.teamId}
+                    team={team}
+                    isActive={team.teamId === activeTeamId}
+                    playedOrder={playedOrder}
+                  />
+                ))}
+              </TeamQueueSection>
+            </Stack>
+          )}
+        </AsyncSection>
       </SidePanel>
     </>
   )
@@ -247,54 +263,32 @@ function TeamQueueCard({
       aria-label={formatTeamQueueName(t, team.teamName)}
       emphasis={isActive ? 'selected' : 'none'}
     >
-      <Stack spacing={1}>
-        <Stack direction="row" spacing={1.15} alignItems="center">
-          <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
-            <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography
-                component="h4"
-                variant="subtitle1"
-                fontWeight={700}
-                sx={{ fontSize: 24, lineHeight: 1.15, overflowWrap: 'anywhere' }}
-              >
-                {formatTeamQueueName(t, team.teamName)}
-              </Typography>
-              {playedOrder ? (
-                <StatusBadge
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  appearance="plain"
-                  label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
-                />
-              ) : null}
-              {isActive ? (
-                <StatusBadge
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-
-                  label={t('gameBoard.teamQueueActiveChip')}
-                />
-              ) : null}
-            </Stack>
+      <TeamIdentity
+        name={formatTeamQueueName(t, team.teamName)}
+        participants={team.participants.map((participant) => participant.displayName)}
+        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
+        status={
+          <Stack direction="row" gap={1} flexWrap="wrap">
+            {playedOrder ? (
+              <StatusBadge
+                size="small"
+                color="success"
+                variant="outlined"
+                appearance="plain"
+                label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
+              />
+            ) : null}
+            {isActive ? (
+              <StatusBadge
+                size="small"
+                color="primary"
+                variant="outlined"
+                label={t('gameBoard.teamQueueActiveChip')}
+              />
+            ) : null}
           </Stack>
-        </Stack>
-
-        <BulletList>
-          {team.participants.map((participant) => (
-            <Box component="li" key={participant.userId}>
-              <Typography
-                variant="body2"
-                title={participant.displayName}
-                sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
-              >
-                {participant.displayName}
-              </Typography>
-            </Box>
-          ))}
-        </BulletList>
-      </Stack>
+        }
+      />
     </ItemCard>
   )
 }

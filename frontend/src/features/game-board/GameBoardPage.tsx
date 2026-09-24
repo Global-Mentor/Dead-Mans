@@ -7,7 +7,13 @@ import {
   gameModifiersRoute,
 } from '../../routes/app-routes.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
-import { AppToast, ConfirmDialog, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  AppToast,
+  ConfirmDialog,
+  PageShell,
+  PageStatePanel,
+} from '../../shared/ui/index.ts'
 import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from './model/game-management-flow.ts'
@@ -24,8 +30,20 @@ import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
 export function GameBoardPage() {
   const { t } = useTranslation()
   const [previewCell, setPreviewCell] = useState<GameBoardCell | null>(null)
-  const { data, activeRound, teamQueue, isTeamQueueError, isTeamQueueLoading, isError, isLoading } =
-    useGameBoardPage()
+  const {
+    data,
+    activeRound,
+    teamQueue,
+    isTeamQueueError,
+    isTeamQueueLoading,
+    hasTeamQueueData,
+    isTeamQueueRefreshing,
+    retryTeamQueue,
+    retry,
+    isRefreshing,
+    isError,
+    isLoading,
+  } = useGameBoardPage()
   const {
     pendingCell,
     toastMessage,
@@ -54,6 +72,11 @@ export function GameBoardPage() {
         title={t('gameBoard.title')}
         message={t('gameBoard.errorLoading')}
         tone="error"
+        actions={
+          <AppButton onClick={retry} loading={isRefreshing}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
       />
     )
   if (data === null)
@@ -163,6 +186,9 @@ export function GameBoardPage() {
               teams={teamQueue}
               isLoading={isTeamQueueLoading}
               isError={isTeamQueueError}
+              hasData={hasTeamQueueData}
+              isRefreshing={isTeamQueueRefreshing}
+              onRetry={retryTeamQueue}
               activeTeamId={currentActiveTeamId}
             />
           }
