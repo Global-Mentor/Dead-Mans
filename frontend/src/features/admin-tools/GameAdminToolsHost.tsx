@@ -1,16 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { gameModifiersRoute } from '../../routes/app-routes.ts'
+import type { PanelTriggerPlacement } from '../../shared/ui/index.ts'
 import { AppToast } from '../../shared/ui/index.ts'
 import { GameManagementTool } from '../game-board/ui/GameManagementPanel.tsx'
 import { useActiveGameTeam } from '../game-board/use-active-game-team.ts'
 import { useGameBoardLaunchPanel } from '../game-board/use-game-board-launch-panel.ts'
 import { useGameBoardPage } from '../game-board/use-game-board-page.ts'
-import { useGameTeamPlayedState } from '../game-board/use-game-team-played-state.ts'
-import { useManualQuizAward } from '../game-board/use-manual-quiz-award.ts'
-import { useManualQuizAwardPlayers } from '../game-board/use-manual-quiz-award-players.ts'
-import { useStartGameRound } from '../game-board/use-start-game-round.ts'
 import { useGameFinish } from '../game-board/use-game-finish.ts'
+import { useGameTeamPlayedState } from '../game-board/use-game-team-played-state.ts'
+import { useManualQuizAwardPlayers } from '../game-board/use-manual-quiz-award-players.ts'
+import { useManualQuizAward } from '../game-board/use-manual-quiz-award.ts'
+import { useStartGameRound } from '../game-board/use-start-game-round.ts'
 import { AdminModifierTool } from '../game-modifiers/AdminModifierPanel.tsx'
 import { AdminToolDrawer, type AdminToolDescriptor } from './ui/AdminToolDrawer.tsx'
 
@@ -29,10 +30,10 @@ export function GameAdminToolsHost() {
 
 export function GameAdminToolsPanel({
   initialToolId,
-  inlineTrigger = false,
+  triggerPlacement = 'edge',
 }: {
   initialToolId: AdminToolId
-  inlineTrigger?: boolean
+  triggerPlacement?: PanelTriggerPlacement
 }) {
   const { t } = useTranslation()
   const { data, activeRound, teamQueue, isTeamQueueError, isTeamQueueLoading, isError, isLoading } =
@@ -103,7 +104,7 @@ export function GameAdminToolsPanel({
       <AdminToolDrawer
         tools={tools}
         initialToolId={resolvedInitialToolId}
-        inlineTrigger={inlineTrigger}
+        triggerPlacement={triggerPlacement}
       />
 
       <AppToast

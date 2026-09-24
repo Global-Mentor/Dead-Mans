@@ -1,8 +1,13 @@
-import { Alert, CircularProgress, Divider, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { SectionCard } from '../../../shared/ui/index.ts'
 import { RoundScoreBreakdown } from '../../../shared/game-ui/index.ts'
+import {
+  BusyIndicator,
+  InlineNotice,
+  SectionCard,
+  SectionDivider,
+} from '../../../shared/ui/index.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ScorePreview = components['schemas']['GameRoundScorePreviewDto']
@@ -29,32 +34,32 @@ export function GameRoundPreviewSection({
     <SectionCard surface="inset">
       <Stack spacing={1.25}>
         <Typography variant="subtitle2">{t('gameBoard.roundSummaryScoreTitle')}</Typography>
-        <Divider />
+        <SectionDivider />
         {state.status === 'incomplete' ? (
-          <Alert severity="warning" variant="outlined">
+          <InlineNotice severity="warning" variant="outlined">
             {t('gameBoard.roundSummaryPreviewIncomplete')}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {state.status === 'debouncing' || state.status === 'loading' ? (
-          <Alert severity="info" variant="outlined" icon={<CircularProgress size={18} />}>
+          <InlineNotice severity="info" variant="outlined" icon={<BusyIndicator size={18} />}>
             {t(
               state.status === 'debouncing'
                 ? 'gameBoard.roundSummaryPreviewWaiting'
                 : 'gameBoard.roundSummaryPreviewLoading',
             )}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {state.status === 'error' ? (
-          <Alert severity="error" variant="outlined">
+          <InlineNotice severity="error" variant="outlined">
             {t('gameBoard.roundSummaryPreviewFailed', {
               reason: state.errorCode ?? t('gameBoard.roundSummaryPreviewFailedFallback'),
             })}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {state.status === 'stale' ? (
-          <Alert severity="error" variant="outlined">
+          <InlineNotice severity="error" variant="outlined">
             {t('gameBoard.roundSummaryPreviewStale')}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {state.status === 'success' && score ? (
           <>

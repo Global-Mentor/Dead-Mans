@@ -1,6 +1,6 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../../shared/ui/index.ts'
+import { AppButton, StatusBadge } from '../../../../shared/ui/index.ts'
 import type { RoundActionModel } from '../../model/game-management-panel.ts'
 import { ManagementControlSurface, ManagementSectionTitle } from './ManagementPanelSurfaces.tsx'
 
@@ -39,7 +39,7 @@ export function RoundAssistantSection({
               </Typography>
             ) : null}
             {roundAction.statusLabel !== roundAction.title ? (
-              <Chip
+              <StatusBadge
                 size="small"
                 color={roundAction.statusTone}
                 variant="outlined"
@@ -72,7 +72,6 @@ export function RoundAssistantSection({
             fullWidth
             disabled={isChangingRoundStage}
             onClick={roundAction.onAction}
-            sx={{ minHeight: 46, fontWeight: 850 }}
           >
             {roundAction.actionLabel}
           </AppButton>

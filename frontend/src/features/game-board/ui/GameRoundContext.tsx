@@ -1,13 +1,14 @@
-import { Chip, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
-import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
+import { StatusBadge } from '../../../shared/ui/index.ts'
 import {
   buildModifierRuntimeUnits,
   calculateModifierRuntimeClock,
   formatRuntimeDuration,
 } from '../../game-modifiers/model/modifier-runtime.ts'
+import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 
@@ -26,7 +27,7 @@ export function GameRoundContext({ activeRound }: { activeRound: GameRoundDetail
 
   return (
     <Stack direction="row" spacing={1} alignItems="flex-start" flexWrap="wrap" useFlexGap>
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={formatTeamNameWithFallback(
@@ -34,25 +35,25 @@ export function GameRoundContext({ activeRound }: { activeRound: GameRoundDetail
           t('common.teamWithSlot', { slot: activeRound.teamSlotIndex }),
         )}
       />
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={t('gameBoard.roundSummaryRoundVersion', { version: activeRound.roundVersion })}
       />
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={t('gameBoard.roundSummaryCard', {
           card: activeRound.cellTitle ?? t('gameBoard.roundSummaryCardFallback'),
         })}
       />
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={t('gameBoard.roundSummaryFrozenCardValue', { value: activeRound.baseScore })}
       />
       {gameplayDuration !== null ? (
-        <Chip
+        <StatusBadge
           size="small"
           variant="outlined"
           label={t('gameBoard.roundSummaryGameplayDuration', {
@@ -61,7 +62,7 @@ export function GameRoundContext({ activeRound }: { activeRound: GameRoundDetail
         />
       ) : null}
       {expiredTimers.map((timer) => (
-        <Chip
+        <StatusBadge
           key={timer.key}
           size="small"
           color="warning"

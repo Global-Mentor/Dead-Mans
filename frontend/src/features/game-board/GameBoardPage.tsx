@@ -1,27 +1,21 @@
-import { Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import {
   gameApplicationRoute,
   gameHistoryRoute,
   gameModifiersRoute,
 } from '../../routes/app-routes.ts'
-import {
-  AppToast,
-  ConfirmDialog,
-  PageShell,
-  PageStatePanel,
-  SectionCard,
-} from '../../shared/ui/index.ts'
-import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
+import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
+import { AppToast, ConfirmDialog, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
 import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
+import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
+import { buildGameManagementFlow } from './model/game-management-flow.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
-import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
+import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
 import { TeamQueuePanel } from './ui/TeamQueuePanel.tsx'
-import { buildGameManagementFlow } from './model/game-management-flow.ts'
 import { useCardPlayResult } from './use-card-play-result.ts'
 import { useGameBoardCellResults } from './use-game-board-cell-results.ts'
 import { useGameBoardPage } from './use-game-board-page.ts'
@@ -102,17 +96,15 @@ export function GameBoardPage() {
       >
         {title}
       </Typography>
-      <SectionCard
+      <Box
         component="section"
         aria-labelledby="game-board-title"
+        data-testid="game-board-surface"
         sx={{
           width: '100%',
           maxWidth: 1440,
           minWidth: 0,
           p: 0,
-          border: 0,
-          boxShadow: 'none',
-          background: 'none',
         }}
       >
         <GameBoardLayout
@@ -174,7 +166,9 @@ export function GameBoardPage() {
               activeTeamId={currentActiveTeamId}
             />
           }
-          management={<GameAdminToolsPanel initialToolId="game" inlineTrigger />}
+          management={
+            <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
+          }
         >
           <GameBoardGrid
             key={snapshot.gameId}
@@ -186,7 +180,7 @@ export function GameBoardPage() {
             onCellPreviewMedia={setPreviewCell}
           />
         </GameBoardLayout>
-      </SectionCard>
+      </Box>
       <ConfirmDialog
         open={pendingCell !== null}
         onClose={dismissPendingCell}

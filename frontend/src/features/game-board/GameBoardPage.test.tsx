@@ -370,7 +370,7 @@ describe('GameBoardPage', () => {
 
     renderWithAppProviders(<GameBoardPage />)
 
-    const boardCard = screen.getByTestId('game-board-grid').closest('.MuiPaper-root')
+    const boardCard = screen.getByTestId('game-board-surface')
     expect(boardCard).not.toBeNull()
 
     expect(screen.getByText('Команда #2')).toBeVisible()
@@ -500,7 +500,7 @@ describe('GameBoardPage', () => {
 
     renderWithAppProviders(<GameBoardPage />)
 
-    const boardCard = screen.getByTestId('game-board-grid').closest('.MuiPaper-root')
+    const boardCard = screen.getByTestId('game-board-surface')
     expect(boardCard).not.toBeNull()
     expect(within(boardCard as HTMLElement).getByText('Активная команда')).toBeVisible()
     expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
@@ -751,7 +751,7 @@ describe('GameBoardPage', () => {
     expect(
       screen.getByRole('complementary', { name: 'Инструменты управления игрой' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Блокеров: 1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Запуск игры' })).toHaveTextContent('Блокеров: 1')
   })
 
   it('shows management status without launch action for moderators', () => {

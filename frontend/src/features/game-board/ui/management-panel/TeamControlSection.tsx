@@ -1,8 +1,12 @@
-import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../../shared/ui/index.ts'
+import {
+  AppButton,
+  SectionDivider,
+  SelectionRow,
+  StatusBadge,
+} from '../../../../shared/ui/index.ts'
 import { formatManagementTeamName } from '../../model/game-management-panel.ts'
 import {
   ManagementControlSurface,
@@ -59,10 +63,10 @@ export function TeamControlSection({
             title={t('gameBoard.managementActiveTeamTitle')}
             tooltip={t('gameBoard.managementActiveTeamTooltip')}
           />
-          <Chip
+          <StatusBadge
             size="small"
             variant="outlined"
-            sx={{ border: 0, bgcolor: 'transparent', color: 'text.secondary' }}
+            appearance="plain"
             label={t('gameBoard.managementTeamsRemainingMetricValue', {
               count: selectableTeams.length,
             })}
@@ -122,13 +126,11 @@ export function TeamControlSection({
             >
               {resumableTeam && !currentActiveTeam ? (
                 <AppButton
-                  size="small"
                   tone="secondary"
                   disabled={isTeamControlBusy || isActiveTeamLocked}
                   onClick={() =>
                     onSetTeamPlayedState({ teamId: resumableTeam.teamId, isPlayed: true })
                   }
-                  sx={{ minHeight: 44, textTransform: 'none', fontSize: 14, lineHeight: 1.4 }}
                 >
                   {t('gameBoard.teamPlayedMarkAction')}
                 </AppButton>
@@ -138,15 +140,12 @@ export function TeamControlSection({
                 <>
                   <AppButton
                     tone="secondary"
-                    size="small"
                     onClick={() => onSelectActiveTeam(null)}
                     disabled={isTeamControlBusy || isActiveTeamLocked}
-                    sx={{ minHeight: 44, textTransform: 'none', fontSize: 14, lineHeight: 1.4 }}
                   >
                     {t('gameBoard.managementActiveTeamClearAction')}
                   </AppButton>
                   <AppButton
-                    size="small"
                     tone="secondary"
                     disabled={isTeamControlBusy || isActiveTeamLocked}
                     onClick={() =>
@@ -155,7 +154,6 @@ export function TeamControlSection({
                         isPlayed: !currentActiveTeam.isPlayed,
                       })
                     }
-                    sx={{ minHeight: 44, textTransform: 'none', fontSize: 14, lineHeight: 1.4 }}
                   >
                     {currentActiveTeam.isPlayed
                       ? t('gameBoard.teamPlayedResetAction')
@@ -167,7 +165,7 @@ export function TeamControlSection({
 
             {otherTeams.length > 0 ? (
               <>
-                <Divider />
+                <SectionDivider />
 
                 <Stack spacing={0.65}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 850 }}>
@@ -236,16 +234,11 @@ function TeamSpotlight({
               : t('gameBoard.managementActiveTeamNone')}
           </Typography>
           {isCurrent ? (
-            <Chip
+            <StatusBadge
               size="small"
               color="success"
               variant="filled"
-              sx={(theme) => ({
-                border: 0,
-                borderRadius: 0,
-                bgcolor: alpha(theme.palette.success.main, 0.1),
-                color: 'success.light',
-              })}
+
               label={t('gameBoard.teamQueueActiveChip')}
             />
           ) : null}
@@ -294,66 +287,14 @@ function CompactTeamRow({
   const { t } = useTranslation()
 
   return (
-    <Box
-      component="button"
+    <SelectionRow
       type="button"
       disabled={disabled}
-      aria-pressed={isCurrent}
+      selected={isCurrent}
       onClick={onSelect}
-      sx={(theme) => ({
-        width: '100%',
-        minWidth: 0,
-        minHeight: 52,
-        display: 'grid',
-        gridTemplateColumns: '34px minmax(0, 1fr) auto',
-        gap: 0.8,
-        alignItems: 'center',
-        borderRadius: 0,
-        border: `1px solid ${
-          isCurrent
-            ? alpha(theme.palette.success.main, 0.42)
-            : team.isPlayed
-              ? alpha(theme.palette.success.main, 0.22)
-              : alpha(theme.palette.divider, 0.76)
-        }`,
-        backgroundColor: isCurrent
-          ? alpha(theme.palette.success.main, 0.12)
-          : team.isPlayed
-            ? alpha(theme.palette.success.main, 0.05)
-            : alpha(theme.palette.background.paper, 0.34),
-        color: 'inherit',
-        cursor: disabled ? 'default' : 'pointer',
-        textAlign: 'left',
-        px: 0.85,
-        py: 0.65,
-        opacity: team.isPlayed && !isCurrent ? 0.68 : 1,
-        transition: 'background-color 0.15s ease, border-color 0.15s ease',
-        '&:hover:not(:disabled)': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          borderColor: alpha(theme.palette.primary.main, 0.36),
-        },
-        '&:focus-visible': {
-          outline: '2px solid',
-          outlineColor: theme.palette.primary.main,
-          outlineOffset: 2,
-        },
-      })}
+      sx={{ display: 'grid', gridTemplateColumns: '34px minmax(0, 1fr) auto', gap: 0.8 }}
     >
-      <Box
-        sx={(theme) => ({
-          width: 28,
-          height: 28,
-          borderRadius: 0,
-          display: 'grid',
-          placeItems: 'center',
-          border: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
-          backgroundColor: alpha(theme.palette.common.black, 0.1),
-          fontSize: '0.78rem',
-          fontWeight: 900,
-        })}
-      >
-        #{team.teamSlotIndex}
-      </Box>
+      <StatusBadge label={`#${team.teamSlotIndex}`} />
 
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="body2" sx={{ fontWeight: 820 }} noWrap>
@@ -368,7 +309,7 @@ function CompactTeamRow({
 
       <Stack direction="row" spacing={0.35} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
         {isCurrent ? (
-          <Chip
+          <StatusBadge
             size="small"
             color="success"
             variant="filled"
@@ -376,7 +317,7 @@ function CompactTeamRow({
           />
         ) : null}
         {team.isPlayed ? (
-          <Chip
+          <StatusBadge
             size="small"
             color="success"
             variant="outlined"
@@ -384,6 +325,6 @@ function CompactTeamRow({
           />
         ) : null}
       </Stack>
-    </Box>
+    </SelectionRow>
   )
 }

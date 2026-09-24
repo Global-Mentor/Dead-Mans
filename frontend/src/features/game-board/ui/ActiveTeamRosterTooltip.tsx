@@ -1,8 +1,9 @@
-import { Box, ClickAwayListener, Tooltip, Typography } from '@mui/material'
+import { Box, ClickAwayListener, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
+import { HelpTooltip, SurfaceButton } from '../../../shared/ui/index.ts'
 
 interface ActiveTeamRosterTooltipProps {
   title: string
@@ -22,7 +23,7 @@ export function ActiveTeamRosterTooltip({
 
   return (
     <ClickAwayListener onClickAway={() => setOpen(false)}>
-      <Tooltip
+      <HelpTooltip
         arrow
         describeChild
         placement="bottom-start"
@@ -47,8 +48,7 @@ export function ActiveTeamRosterTooltip({
           },
         }}
       >
-        <Box
-          component="button"
+        <SurfaceButton
           type="button"
           aria-label={title}
           onClick={() => setOpen(true)}
@@ -75,8 +75,8 @@ export function ActiveTeamRosterTooltip({
           ]}
         >
           {children}
-        </Box>
-      </Tooltip>
+        </SurfaceButton>
+      </HelpTooltip>
     </ClickAwayListener>
   )
 }

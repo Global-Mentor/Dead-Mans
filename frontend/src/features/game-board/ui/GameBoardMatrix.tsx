@@ -1,8 +1,8 @@
-import { Box, Stack, Tab, Tabs, Typography, useMediaQuery } from '@mui/material'
+import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
 import { useId, useState, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/index.ts'
 import { BoardMatrix } from '../../../shared/game-ui/index.ts'
+import { AppButton, TabOption, TabStrip } from '../../../shared/ui/index.ts'
 import { ViewportBoard } from './ViewportBoard.tsx'
 
 interface GameBoardMatrixProps extends ComponentProps<typeof BoardMatrix> {
@@ -45,17 +45,18 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
         ) : null}
       </Stack>
       <Stack direction="row" alignItems="center" sx={{ mb: 1, minWidth: 0 }}>
-        <Tabs
+        <TabStrip
           value={column}
           onChange={(_, value: number) => setSelectedColumn(value)}
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
           aria-label={t('gameBoard.mobileCategories')}
-          sx={{ minWidth: 0, flex: 1, minHeight: 48, '& .MuiTabs-scrollButtons': { width: 24 } }}
+          appearance="category"
+          sx={{ flex: 1 }}
         >
           {props.colLabels.map((label, index) => (
-            <Tab
+            <TabOption
               key={index}
               id={`${id}-tab-${index}`}
               aria-controls={`${id}-panel`}
@@ -91,16 +92,10 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
                   ) : null}
                 </Box>
               }
-              sx={{
-                minWidth: 64,
-                minHeight: 48,
-                maxWidth: 'min(76vw, 240px)',
-                textTransform: 'none',
-                fontSize: 'clamp(0.78rem, 3.8vw, 0.9rem)',
-              }}
+              appearance="category"
             />
           ))}
-        </Tabs>
+        </TabStrip>
       </Stack>
       <ViewportBoard columns={2} rows={Math.ceil(props.rowLabels.length / 2)} gap={8} mobile>
         <Box

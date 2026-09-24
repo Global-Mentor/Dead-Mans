@@ -269,9 +269,16 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
     await expect(management.getByRole('heading', { name: 'Активная команда' })).toBeVisible()
     for (const section of ['round', 'team', 'manual-quiz', 'finish-game']) {
       const block = management.getByTestId(`management-${section}-section`)
-      expect(
-        await block.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth)),
-      ).toBeGreaterThanOrEqual(1)
+      await expect(block).toBeVisible()
+      if (section === 'manual-quiz' || section === 'finish-game') {
+        const trigger = block.getByRole('button').first()
+        await expect(trigger).toHaveAttribute('aria-expanded', /true|false/)
+        await expect(trigger).toHaveAttribute('aria-controls', /.+/)
+      } else {
+        expect(
+          await block.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth)),
+        ).toBeGreaterThanOrEqual(1)
+      }
     }
     const assistantBounds = await management.getByTestId('management-round-section').boundingBox()
     const teamBounds = await management.getByTestId('management-team-section').boundingBox()
@@ -507,3 +514,19 @@ for (const width of [320, 390, 1440]) {
     expect(cardBoxAfter).toEqual(cardBoxBefore)
   })
 }
+
+test('side panels honour reduced motion and expose modal semantics', async ({ page }) => {
+  await mockGame(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 390, height: 640 })
+  await page.goto('/panel/game-board')
+  const opener = page.getByRole('button', { name: 'Открыть очередь команд' })
+  await opener.click()
+  const panel = page.getByRole('dialog', { name: 'Очередь команд' })
+  await expect(panel).toBeVisible()
+  await expect(panel).toHaveAttribute('aria-modal', 'true')
+  await expect(panel).toHaveCSS('transition-duration', '0s')
+  await page.keyboard.press('Escape')
+  await expect(opener).toBeFocused()
+  await expect(opener).toHaveCSS('transition-duration', '0s')
+})

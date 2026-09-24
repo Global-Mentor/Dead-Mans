@@ -1,12 +1,17 @@
-import { Chip, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { ControlledFormTextField, FormSelect, SectionCard } from '../../../shared/ui/index.ts'
+import {
+  ControlledFormTextField,
+  FormSelect,
+  SectionCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import {
   gameRoundRuleOutcomeStatuses,
-  type GameRoundSummaryFormValues,
   type GameRoundSummaryFormInput,
+  type GameRoundSummaryFormValues,
 } from '../model/game-round-summary-form.ts'
 
 type SummaryControl = ReturnType<
@@ -44,7 +49,7 @@ export function GameRoundRuleGroupCard({
       <Stack spacing={1.25}>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           <Typography variant="subtitle2">{group.modifierName}</Typography>
-          <Chip
+          <StatusBadge
             size="small"
             color="secondary"
             variant="outlined"
@@ -113,7 +118,7 @@ export function GameRoundScoringInstanceCard({
         {instance.memberResultIds.length > 1 ? (
           <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
             <Typography variant="subtitle2">{instance.modifierName}</Typography>
-            <Chip
+            <StatusBadge
               size="small"
               variant="outlined"
               label={t('gameBoard.roundSummaryModifierStackCount', {
@@ -190,7 +195,7 @@ export function GameRoundModifierHeading({
   return (
     <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
       <Typography variant="subtitle2">{name}</Typography>
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={t('gameBoard.roundSummaryActivationLabel', { index, count })}

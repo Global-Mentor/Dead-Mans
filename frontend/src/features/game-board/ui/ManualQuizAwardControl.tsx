@@ -1,11 +1,18 @@
-import { Alert, Stack, TextField, Typography } from '@mui/material'
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
+import { Stack, Typography } from '@mui/material'
+import {
+  AppButton,
+  Combobox,
+  ConfirmDialog,
+  createFilterOptions,
+  FormSelect,
+  FormTextField,
+  InlineNotice,
+} from '../../../shared/ui/index.ts'
+
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton, ConfirmDialog, FormSelect, FormTextField } from '../../../shared/ui/index.ts'
-
 type ManualQuizAwardPlayer = components['schemas']['ManualQuizAwardPlayerDto']
 
 interface ManualQuizAwardControlProps {
@@ -102,7 +109,7 @@ export function ManualQuizAwardControl({
           </Typography>
         ) : (
           <>
-            <Autocomplete
+            <Combobox
               size="small"
               fullWidth
               autoHighlight
@@ -125,7 +132,7 @@ export function ManualQuizAwardControl({
                 },
               }}
               renderInput={(params) => (
-                <TextField {...params} label={t('common.entities.player')} />
+                <FormTextField {...params} label={t('common.entities.player')} />
               )}
             />
 
@@ -161,14 +168,17 @@ export function ManualQuizAwardControl({
             />
 
             {selectedPlayer ? (
-              <Alert severity={exceedsAvailableBalance ? 'error' : 'info'} variant="outlined">
+              <InlineNotice
+                severity={exceedsAvailableBalance ? 'error' : 'info'}
+                variant="outlined"
+              >
                 {t('gameBoard.manualQuizAwardBalancePreview', {
                   before: selectedPlayer.availableQuizPoints,
                   sign: pointsDelta >= 0 ? '+' : '−',
                   points: Number.isFinite(pointsNumber) ? Math.abs(pointsNumber) : 0,
                   after: availableAfter ?? selectedPlayer.availableQuizPoints,
                 })}
-              </Alert>
+              </InlineNotice>
             ) : null}
 
             <AppButton
