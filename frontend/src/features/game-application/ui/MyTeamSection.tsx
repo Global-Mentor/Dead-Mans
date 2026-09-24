@@ -1,4 +1,4 @@
-import { Box, Chip, Stack, SvgIcon, Tooltip, Typography } from '@mui/material'
+import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,16 +6,24 @@ import type {
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AppDialog, ConfirmDialog, FormTextField } from '../../../shared/ui/index.ts'
-import { InviteTeammateSection } from './InviteTeammateSection.tsx'
+import {
+  AppButton,
+  AppDialog,
+  ConfirmDialog,
+  FormSection,
+  FormTextField,
+  HelpTooltip,
+  SectionCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import {
   isTeamNameTaken,
   normalizeTeamNameInput,
   TEAM_NAME_MAX_LENGTH,
   TEAM_NAME_MIN_LENGTH,
 } from '../../game-registration/index.ts'
+import { InviteTeammateSection } from './InviteTeammateSection.tsx'
 import { TeamSummary } from './TeamSummary.tsx'
-import { ApplicationSection } from './ApplicationSection.tsx'
 
 interface MyTeamSectionProps {
   team: RegistrationTeam
@@ -138,11 +146,12 @@ export function MyTeamSection({
   }
 
   return (
-    <ApplicationSection
+    <FormSection
       title={t('gameApplication.myTeamTitle')}
       action={
         isConfirmedTeam ? (
-          <Chip
+          <StatusBadge
+            textFlow="singleLine"
             size="small"
             variant="outlined"
             color={hasDisbandRequest ? 'warning' : 'primary'}
@@ -165,7 +174,7 @@ export function MyTeamSection({
           showReadiness
           nameAction={
             canEditName ? (
-              <Tooltip title={t('gameApplication.editTeamName')} describeChild arrow>
+              <HelpTooltip title={t('gameApplication.editTeamName')} describeChild arrow>
                 <AppButton
                   tone="secondary"
                   size="small"
@@ -193,7 +202,7 @@ export function MyTeamSection({
                   </SvgIcon>
                   {t('common.actions.edit')}
                 </AppButton>
-              </Tooltip>
+              </HelpTooltip>
             ) : undefined
           }
         />
@@ -245,16 +254,10 @@ export function MyTeamSection({
           </Box>
 
           {team.status === 'forming' ? (
-            <Box
-              sx={(theme) => ({
-                p: 1.5,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: theme.shape.borderRadius,
-                backgroundColor: theme.palette.action.hover,
-              })}
-            >
+            <SectionCard surface="muted" sx={{ p: 1.5 }}>
               <Stack spacing={1} alignItems="flex-start">
-                <Chip
+                <StatusBadge
+                  textFlow="singleLine"
                   size="small"
                   color={team.isReady ? 'success' : 'default'}
                   variant={team.isReady ? 'filled' : 'outlined'}
@@ -271,7 +274,7 @@ export function MyTeamSection({
                   {t(readinessHelperKey)}
                 </Typography>
               </Stack>
-            </Box>
+            </SectionCard>
           ) : null}
 
           {!isConfirmedTeam || !hasDisbandRequest || canCancelDisbandRequest ? (
@@ -424,7 +427,6 @@ export function MyTeamSection({
               : 'gameApplication.requestDisbandConfirmAction',
         )}
         cancelLabel={t('common.actions.cancel')}
-        cancelTone="secondary"
         confirmTone={confirmation === 'cancel' ? 'primary' : 'danger'}
         isBusy={disabled}
         confirmDisabled={
@@ -447,6 +449,6 @@ export function MyTeamSection({
           }
         }}
       />
-    </ApplicationSection>
+    </FormSection>
   )
 }

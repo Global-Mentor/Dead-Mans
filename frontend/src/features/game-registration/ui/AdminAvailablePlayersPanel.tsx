@@ -1,8 +1,8 @@
-import { Chip, Stack, Tooltip, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useMemo, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer } from '../../../shared/api/contracts/index.ts'
-import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { FormTextField, HelpTooltip, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import { searchRegistrationPlayers } from '../model/player-search.ts'
 import { AdminRegistrationPlayerCard } from './admin-registration-components.tsx'
 import {
@@ -60,19 +60,20 @@ export function AdminAvailablePlayersPanel({
           <Typography variant="subtitle2">
             {t('gameApplication.adminPanel.availablePlayers')}
           </Typography>
-          <Tooltip
+          <HelpTooltip
             title={t('gameApplication.adminPanel.availablePlayersDescription')}
             describeChild
             arrow
           >
-            <Chip
+            <StatusBadge
+              textFlow="singleLine"
               size="small"
               variant="outlined"
               label={players.length}
               aria-label={`${t('gameApplication.adminPanel.availablePlayers')}: ${players.length}`}
               tabIndex={0}
             />
-          </Tooltip>
+          </HelpTooltip>
         </Stack>
 
         <FormTextField

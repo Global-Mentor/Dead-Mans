@@ -1,8 +1,8 @@
-import { Chip, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import { AdminRegistrationPlayerCard } from './admin-registration-components.tsx'
 import { teamActionButtonSx, type RegistrationDragPayload } from './admin-registration-support.ts'
 
@@ -44,19 +44,11 @@ export function AdminRegistrationTeamRoster({
       })}
     >
       {team.members.length === 0 && pendingInvitations.length === 0 ? (
-        <Stack
-          component="li"
-          sx={(theme) => ({
-            listStyle: 'none',
-            p: 1.5,
-            border: `1px dashed ${theme.palette.divider}`,
-            borderRadius: theme.shape.borderRadius,
-          })}
-        >
+        <SectionCard component="li" surface="inset" borderStyle="dashed" sx={{ listStyle: 'none' }}>
           <Typography variant="body2" color="text.secondary">
             {t('gameApplication.adminPanel.emptyTeam')}
           </Typography>
-        </Stack>
+        </SectionCard>
       ) : null}
 
       {team.members.map((member) => (
@@ -68,7 +60,8 @@ export function AdminRegistrationTeamRoster({
           actions={
             canEditRoster ? (
               <Stack direction="row" spacing={0.75} alignItems="center">
-                <Chip
+                <StatusBadge
+                  textFlow="singleLine"
                   size="small"
                   color={member.readyAtUtc ? 'success' : 'default'}
                   variant={member.readyAtUtc ? 'filled' : 'outlined'}
@@ -112,28 +105,26 @@ export function AdminRegistrationTeamRoster({
       ))}
 
       {pendingInvitations.map((invitation) => (
-        <Stack
+        <SectionCard
           component="li"
+          surface="muted"
           key={invitation.invitationId}
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          justifyContent="space-between"
-          sx={(theme) => ({
+          sx={{
             listStyle: 'none',
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             gap: 1,
-            py: 1,
-            px: 1,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.action.hover,
-          })}
+            alignItems: { xs: 'stretch', sm: 'center' },
+            justifyContent: 'space-between',
+          }}
         >
           <Stack spacing={0.25} sx={{ minWidth: 0 }}>
             <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
               <Typography variant="body2" fontWeight={700} noWrap>
                 {invitation.player.displayName}
               </Typography>
-              <Chip
+              <StatusBadge
+                textFlow="singleLine"
                 size="small"
                 color="warning"
                 label={t('gameApplication.adminPanel.pendingInviteChip')}
@@ -152,7 +143,7 @@ export function AdminRegistrationTeamRoster({
           >
             {t('gameApplication.adminPanel.cancelPendingInvite')}
           </AppButton>
-        </Stack>
+        </SectionCard>
       ))}
     </Stack>
   )

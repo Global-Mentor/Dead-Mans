@@ -23,6 +23,7 @@ async function expectValidFormLabels(page: Page) {
 
 for (const viewport of [
   { width: 1440, height: 1000, suffix: '1440' },
+  { width: 768, height: 1000, suffix: '768' },
   { width: 390, height: 1000, suffix: '390' },
   { width: 320, height: 700, suffix: '320' },
   { width: 390, height: 600, suffix: '390-short' },
@@ -32,6 +33,7 @@ for (const viewport of [
   }) => {
     const { width, height, suffix } = viewport
     await page.setViewportSize({ width, height })
+    await page.clock.setFixedTime(new Date('2026-09-23T12:00:00Z'))
     await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
     const userId = 'a518e557-2910-4111-97fb-86eb7a079101'
     const mine: RegistrationTeam = {
@@ -192,10 +194,11 @@ for (const viewport of [
       const teams = await page.locator('#application-teams').boundingBox()
       expect(roster?.y).toBe(teams?.y)
     }
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-create-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-create-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     const createButton = page.getByRole('button', { name: 'Создать команду' })
     await expectValidFormLabels(page)
@@ -204,10 +207,11 @@ for (const viewport of [
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toBeFocused()
     await expectValidFormLabels(page)
     expect(creates).toBe(0)
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-hint-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-hint-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     await page.getByRole('textbox', { name: 'Название команды' }).fill('ab')
     await createButton.click()
@@ -231,10 +235,11 @@ for (const viewport of [
       'border-bottom-style',
       'solid',
     )
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-leave-dialog-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-leave-dialog-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     await leaveDialog.getByRole('button', { name: 'Отмена' }).click()
     await expect(leaveDialog).toHaveCount(0)
@@ -265,10 +270,11 @@ for (const viewport of [
     expect(disabledSurface.textureOpacity).toBeGreaterThan(0)
     expect(disabledSurface.textureOpacity).toBeLessThan(activeSurface.textureOpacity)
     expect(disabledSurface.height).toBe(activeSurface.height)
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-readiness-disabled-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-readiness-disabled-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     mine.members.push({
       player: { userId: 'teammate', displayName: 'Напарник', login: 'teammate' },
@@ -296,10 +302,11 @@ for (const viewport of [
     const readinessDescriptionBox = await readinessDescription.boundingBox()
     expect(readinessDescriptionBox!.y).toBeGreaterThan(readyBadgeBox!.y + readyBadgeBox!.height)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-readiness-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-readiness-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     await page.getByRole('button', { name: 'Снять готовность' }).click()
     await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
@@ -313,10 +320,11 @@ for (const viewport of [
     mine.name = 'Ночной дозор'
     publishRegistration()
     await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-forming-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-forming-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     await expect(
       page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
@@ -369,10 +377,11 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Изменить название команды' }).click()
     await expectUnifiedTypography(page)
     await expectValidFormLabels(page)
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-name-dialog-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-name-dialog-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое имя')
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Сохранить' })).toHaveClass(
@@ -402,19 +411,21 @@ for (const viewport of [
     ).toHaveCount(2)
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
     await page.evaluate(() => window.scrollTo(0, 0))
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.getByRole('button', { name: 'Попросить распустить команду' }).click()
     await expectUnifiedTypography(page)
     expect(posts).toBe(0)
-    await page.screenshot({
-      path: `../.tmp/ui-audit/after/application-disband-dialog-${suffix}.png`,
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
+    await expect(page).toHaveScreenshot(`application-disband-dialog-${suffix}.png`, {
       fullPage: true,
       animations: 'disabled',
+      maxDiffPixels: 0,
     })
     const disbandDialog = page.getByRole('dialog')
     const cancelButtonBox = await disbandDialog

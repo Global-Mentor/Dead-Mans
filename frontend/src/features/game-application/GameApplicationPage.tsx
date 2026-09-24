@@ -8,6 +8,8 @@ import {
   AppToast,
   PageShell,
   PageStatePanel,
+  SectionNavigation,
+  SummaryMetrics,
 } from '../../shared/ui/index.ts'
 import { CreateTeamSection } from './ui/CreateTeamSection.tsx'
 import { MyTeamSection } from './ui/MyTeamSection.tsx'
@@ -133,83 +135,24 @@ export function GameApplicationPage() {
           >
             {t('gameApplication.teamsOverview')}
           </Typography>
-          <Box
-            component="dl"
-            aria-label={t('gameApplication.teamsOverview')}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
-              columnGap: 0,
-              rowGap: 1.5,
-              m: 0,
-              mt: 0.5,
-              py: 1.5,
-              borderBlock: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            {(
+          <SummaryMetrics
+            label={t('gameApplication.teamsOverview')}
+            items={(
               [
                 ['confirmedTeamsCount', confirmedTeamsCount],
                 ['openTeamsCount', openTeamsCount],
                 ['closedTeamsCount', closedTeamsCount],
                 ['totalTeamsCount', snapshot.teams.length],
               ] as const
-            ).map(([key, count], index) => (
-              <Box
-                key={key}
-                sx={{
-                  minWidth: 0,
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  gap: 1,
-                  px: { xs: 1, sm: 2 },
-                  borderLeftStyle: 'solid',
-                  borderLeftWidth: {
-                    xs: index % 2 === 1 ? 1 : 0,
-                    sm: index > 0 ? 1 : 0,
-                  },
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography component="dt" variant="body2" color="text.secondary">
-                  {t(`gameApplication.${key}`)}
-                </Typography>
-                <Typography
-                  component="dd"
-                  variant="h5"
-                  sx={{
-                    m: 0,
-                    color: key === 'confirmedTeamsCount' ? 'primary.light' : 'text.primary',
-                  }}
-                >
-                  {count}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+            ).map(([key, value]) => ({
+              label: t(`gameApplication.${key}`),
+              value,
+              emphasis: key === 'confirmedTeamsCount',
+            }))}
+          />
         </Box>
 
-        <Stack
-          component="nav"
-          aria-label={t('gameApplication.sectionNavigation')}
-          direction="row"
-          spacing={1}
-          sx={(theme) => ({
-            display: { xs: 'flex', md: 'none' },
-            position: 'sticky',
-            top: { xs: 148, sm: 76 },
-            zIndex: theme.zIndex.appBar - 1,
-            mx: { xs: -1, sm: 0 },
-            p: 1,
-            borderBlock: '1px solid',
-            borderColor: 'divider',
-            backgroundColor: 'background.default',
-            backgroundImage: theme.custom.gradients.panelAccentSoft,
-            boxShadow: `0 8px 18px ${theme.palette.background.default}`,
-          })}
-        >
+        <SectionNavigation label={t('gameApplication.sectionNavigation')}>
           <AppButton tone="secondary" href="#application-roster" sx={{ flex: 1, minWidth: 0 }}>
             {t(
               snapshot.myTeam ? 'gameApplication.myTeamTitle' : 'gameApplication.createTeamAction',
@@ -218,7 +161,7 @@ export function GameApplicationPage() {
           <AppButton tone="secondary" href="#application-teams" sx={{ flex: 1, minWidth: 0 }}>
             {t('gameApplication.createdTeamsTitle')}
           </AppButton>
-        </Stack>
+        </SectionNavigation>
 
         <PendingInvitationsSection
           invitations={snapshot.myPendingInvitations}
