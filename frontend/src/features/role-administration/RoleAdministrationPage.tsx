@@ -1,31 +1,27 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import {
-  Alert,
-  Box,
-  Checkbox,
-  Chip,
-  FormControlLabel,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography,
-} from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { AuthRole, RoleAdministrationUser } from '../../shared/api/contracts/index.ts'
+import type {
+  AuthRole,
+  RoleAdministrationUser,
+  RoleAdministrationPage as UsersPage,
+} from '../../shared/api/contracts/index.ts'
 import {
   AppButton,
-  AppToast,
+  ChoiceLabel,
+  DataTable,
+  DataTableCell,
+  DataTableRow,
+  FormCheckbox,
   FormTextField,
+  InlineNotice,
+  PagePagination,
   PageShell,
   PageStatePanel,
   SectionCard,
   SectionHeader,
+  StatusBadge,
 } from '../../shared/ui/index.ts'
 import {
   roleAdministrationQueryKeys,
@@ -38,26 +34,10 @@ const managedRoles = ['moderator', 'admin', 'superadmin'] as const satisfies rea
 
 export function RoleAdministrationPage() {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const usersQuery = useQuery(roleAdministrationUsersQueryOptions(search, page, pageSize))
-  const updateMutation = useMutation({
-    mutationFn: ({ userId, roles }: { userId: string; roles: AuthRole[] }) =>
-      updateRoleAdministrationUserRoles(userId, roles),
-    onSuccess: async (user) => {
-      setErrorMessage(null)
-      setSuccessMessage(t('roleAdministration.saved', { name: user.displayName }))
-      await queryClient.invalidateQueries({ queryKey: roleAdministrationQueryKeys.all })
-    },
-    onError: () => {
-      setSuccessMessage(null)
-      setErrorMessage(t('roleAdministration.saveError'))
-    },
-  })
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
@@ -79,9 +59,9 @@ export function RoleAdministrationPage() {
         description={t('roleAdministration.description')}
       />
 
-      <Alert severity="info" sx={{ mt: 2 }}>
+      <InlineNotice severity="info" sx={{ mt: 2 }}>
         {t('roleAdministration.viewerNotice')}
-      </Alert>
+      </InlineNotice>
 
       <SectionCard sx={{ mt: 2 }}>
         <Stack
@@ -122,72 +102,72 @@ export function RoleAdministrationPage() {
       ) : null}
       {usersQuery.data && usersQuery.data.items.length > 0 ? (
         <SectionCard sx={{ mt: 2, p: 0, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table aria-label={t('roleAdministration.title')} sx={{ minWidth: 840 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('roleAdministration.user')}</TableCell>
-                  <TableCell>{t('roleAdministration.status')}</TableCell>
-                  <TableCell>{t('roleAdministration.roles')}</TableCell>
-                  <TableCell align="right" />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {usersQuery.data.items.map((user) => (
-                  <RoleEditorRow
-                    key={`${user.userId}:${managedRoles.filter((role) => user.roles.includes(role)).join(',')}`}
-                    user={user}
-                    isSaving={
-                      updateMutation.isPending && updateMutation.variables?.userId === user.userId
-                    }
-                    onSave={(roles) => updateMutation.mutate({ userId: user.userId, roles })}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={usersQuery.data.totalCount}
-            page={usersQuery.data.page - 1}
-            rowsPerPage={usersQuery.data.pageSize}
-            rowsPerPageOptions={[pageSize]}
-            onPageChange={(_event, nextPage) => setPage(nextPage + 1)}
-            onRowsPerPageChange={() => undefined}
+          <DataTable
+            label={t('roleAdministration.title')}
+            columns={[
+              t('roleAdministration.user'),
+              t('roleAdministration.status'),
+              t('roleAdministration.roles'),
+              t('common.actions.save'),
+            ]}
+          >
+            {usersQuery.data.items.map((user) => (
+              <RoleEditorRow key={user.userId} user={user} />
+            ))}
+          </DataTable>
+          <PagePagination
+            total={usersQuery.data.totalCount}
+            page={usersQuery.data.page}
+            pageSize={usersQuery.data.pageSize}
+            onChange={setPage}
+            previousLabel={t('common.actions.back')}
+            nextLabel={t('common.actions.next')}
+            summary={t('common.pagination.summary', {
+              from: (usersQuery.data.page - 1) * usersQuery.data.pageSize + 1,
+              to: Math.min(
+                usersQuery.data.page * usersQuery.data.pageSize,
+                usersQuery.data.totalCount,
+              ),
+              total: usersQuery.data.totalCount,
+            })}
           />
         </SectionCard>
       ) : null}
-
-      <AppToast
-        message={successMessage}
-        severity="success"
-        onClose={() => setSuccessMessage(null)}
-      />
-      <AppToast
-        message={errorMessage}
-        severity="error"
-        autoHideDuration={6000}
-        onClose={() => setErrorMessage(null)}
-      />
     </PageShell>
   )
 }
 
-function RoleEditorRow({
-  user,
-  isSaving,
-  onSave,
-}: {
-  user: RoleAdministrationUser
-  isSaving: boolean
-  onSave: (roles: AuthRole[]) => void
-}) {
+function RoleEditorRow({ user }: { user: RoleAdministrationUser }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [draftRoles, setDraftRoles] = useState<AuthRole[] | null>(null)
+  const update = useMutation({
+    mutationFn: (roles: AuthRole[]) => updateRoleAdministrationUserRoles(user.userId, roles),
+    onSuccess: async (savedUser) => {
+      // The mutation response is authoritative even if the following refresh fails.
+      await queryClient.cancelQueries({ queryKey: roleAdministrationQueryKeys.all })
+      queryClient.setQueriesData<UsersPage>(
+        { queryKey: roleAdministrationQueryKeys.all },
+        (page) =>
+          page
+            ? {
+                ...page,
+                items: page.items.map((item) =>
+                  item.userId === savedUser.userId ? savedUser : item,
+                ),
+              }
+            : page,
+      )
+      setDraftRoles(null)
+      await queryClient.invalidateQueries({ queryKey: roleAdministrationQueryKeys.all })
+    },
+  })
+  const isSaving = update.isPending
   const initialRoles = useMemo(
     () => managedRoles.filter((role) => user.roles.includes(role)),
     [user.roles],
   )
-  const [selectedRoles, setSelectedRoles] = useState<AuthRole[]>(initialRoles)
+  const selectedRoles = draftRoles ?? initialRoles
 
   const isDirty = managedRoles.some(
     (role) => selectedRoles.includes(role) !== initialRoles.includes(role),
@@ -195,8 +175,9 @@ function RoleEditorRow({
   const hasSuperAdmin = selectedRoles.includes('superadmin')
 
   const setRole = (role: AuthRole, checked: boolean) => {
-    setSelectedRoles((current) => {
-      const next = new Set(current)
+    update.reset()
+    setDraftRoles((current) => {
+      const next = new Set(current ?? initialRoles)
       if (checked) {
         next.add(role)
       } else {
@@ -210,8 +191,8 @@ function RoleEditorRow({
   }
 
   return (
-    <TableRow hover>
-      <TableCell>
+    <DataTableRow aria-label={user.displayName}>
+      <DataTableCell>
         <Stack spacing={0.25}>
           <Typography variant="body2" fontWeight={700}>
             {user.displayName}
@@ -220,7 +201,7 @@ function RoleEditorRow({
             @{user.twitchLogin}
           </Typography>
           {user.isPermanentSuperAdmin ? (
-            <Chip
+            <StatusBadge
               label={t('roleAdministration.permanentOwner')}
               color="warning"
               size="small"
@@ -228,25 +209,25 @@ function RoleEditorRow({
             />
           ) : null}
         </Stack>
-      </TableCell>
-      <TableCell>
-        <Chip
+      </DataTableCell>
+      <DataTableCell>
+        <StatusBadge
           label={user.isActive ? t('roleAdministration.active') : t('roleAdministration.inactive')}
           color={user.isActive ? 'success' : 'default'}
           size="small"
         />
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           {managedRoles.map((role) => {
             const isPermanentRole =
               user.isPermanentSuperAdmin && (role === 'superadmin' || role === 'admin')
             const isInheritedAdmin = role === 'admin' && hasSuperAdmin
             return (
-              <FormControlLabel
+              <ChoiceLabel
                 key={role}
                 control={
-                  <Checkbox
+                  <FormCheckbox
                     size="small"
                     checked={selectedRoles.includes(role)}
                     disabled={isSaving || isPermanentRole || isInheritedAdmin}
@@ -259,16 +240,41 @@ function RoleEditorRow({
             )
           })}
         </Stack>
-      </TableCell>
-      <TableCell align="right">
+      </DataTableCell>
+      <DataTableCell>
         <AppButton
-          size="small"
+          fullWidth
+          loading={isSaving}
           disabled={!isDirty || isSaving}
-          onClick={() => onSave(selectedRoles)}
+          onClick={() => {
+            if (!isSaving) update.mutate(selectedRoles)
+          }}
         >
           {t('roleAdministration.save')}
         </AppButton>
-      </TableCell>
-    </TableRow>
+        {update.isError ? (
+          <InlineNotice severity="error" sx={{ mt: 1 }}>
+            {t('roleAdministration.saveError')}
+          </InlineNotice>
+        ) : null}
+        {update.isSuccess ? (
+          <Typography role="status" color="success.main" variant="body2" sx={{ mt: 1 }}>
+            {t('roleAdministration.saved', { name: user.displayName })}
+          </Typography>
+        ) : null}
+        {isDirty ? (
+          <AppButton
+            tone="ghost"
+            disabled={isSaving}
+            onClick={() => {
+              setDraftRoles(null)
+              update.reset()
+            }}
+          >
+            {t('common.actions.cancel')}
+          </AppButton>
+        ) : null}
+      </DataTableCell>
+    </DataTableRow>
   )
 }
