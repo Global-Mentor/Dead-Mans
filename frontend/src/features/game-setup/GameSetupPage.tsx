@@ -1,11 +1,17 @@
+import { Box } from '@mui/material'
 import { useState } from 'react'
-import { GameSetupRegistrationPanel } from './ui/GameSetupRegistrationPanel.tsx'
-import { Alert, Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { PageShell, PageStatePanel, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import {
+  InlineNotice,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+  SectionHeader,
+} from '../../shared/ui/index.ts'
 import { GameSetupBoardNotices } from './ui/GameSetupBoardNotices.tsx'
 import { GameSetupEmptyState } from './ui/GameSetupEmptyState.tsx'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
+import { GameSetupRegistrationPanel } from './ui/GameSetupRegistrationPanel.tsx'
 import { GameSetupSettingsSidebar } from './ui/GameSetupSettingsSidebar.tsx'
 import { GameSetupSyncActions } from './ui/GameSetupSyncActions.tsx'
 import { useGameSetupPage } from './use-game-setup-page.ts'
@@ -112,9 +118,9 @@ export function GameSetupPage() {
             actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
           />
 
-          <Alert severity="info" sx={{ mt: 2 }}>
+          <InlineNotice severity="info" sx={{ mt: 2 }}>
             {t('gameSetup.persistenceHint')}
-          </Alert>
+          </InlineNotice>
 
           <GameSetupBoardNotices
             remoteChangeNotice={remoteChangeNotice}

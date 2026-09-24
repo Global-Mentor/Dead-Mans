@@ -1,8 +1,19 @@
-import { Box, Checkbox, Chip, FormControlLabel, FormGroup, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  AsyncSection,
+  CheckboxGroup,
+  ChoiceLabel,
+  FormCheckbox,
+  FormTextField,
+  ItemCard,
+  SectionCard,
+  SectionHeader,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import {
   gameModifierCatalogQueryOptions,
   modifierCategoryCodes,
@@ -10,13 +21,6 @@ import {
 import { deriveModifierRoundSummaryMeta } from '../../game-modifiers/model/modifier-round-summary.ts'
 import { matchesModifierSearch } from '../../game-modifiers/model/modifier-search.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
-import {
-  AsyncSection,
-  FormTextField,
-  SectionCard,
-  SectionHeader,
-} from '../../../shared/ui/index.ts'
-
 interface GameSetupModifiersSectionProps {
   draft: GameSetupDraftState
   onToggle: (modifierId: string, enabled: boolean) => void
@@ -72,6 +76,7 @@ export function GameSetupModifiersSection({
   return (
     <SectionCard>
       <SectionHeader
+        headingLevel="h1"
         title={t('gameSetup.modifiers.title')}
         description={t('gameSetup.modifiers.description')}
         actions={actions}
@@ -79,6 +84,7 @@ export function GameSetupModifiersSection({
       <AsyncSection
         isLoading={catalogQuery.isLoading}
         isError={catalogQuery.isError}
+        hasData={catalogQuery.data != null}
         isEmpty={!catalogQuery.isLoading && !catalogQuery.isError && groupedModifiers.length === 0}
         loadingMessage={t('gameSetup.modifiers.loading')}
         errorMessage={t('gameSetup.modifiers.error')}
@@ -101,28 +107,16 @@ export function GameSetupModifiersSection({
                 {categoryLabels[group.category]}
               </Typography>
 
-              <FormGroup>
+              <CheckboxGroup>
                 {group.items.map((modifier) => {
                   const checked = draft.enabledModifierIds.includes(modifier.id)
                   const roundSummaryMeta = deriveModifierRoundSummaryMeta(modifier)
 
                   return (
-                    <Box
-                      key={modifier.id}
-                      sx={(theme) => ({
-                        py: 0.85,
-                        px: 1,
-                        borderRadius: 1.25,
-                        border: `1px solid ${theme.palette.divider}`,
-                        backgroundColor: checked ? 'action.selected' : 'transparent',
-                        '& + &': {
-                          mt: 0.75,
-                        },
-                      })}
-                    >
-                      <FormControlLabel
+                    <ItemCard key={modifier.id} emphasis={checked ? 'selected' : 'none'}>
+                      <ChoiceLabel
                         control={
-                          <Checkbox
+                          <FormCheckbox
                             checked={checked}
                             onChange={(event) => onToggle(modifier.id, event.target.checked)}
                           />
@@ -137,14 +131,14 @@ export function GameSetupModifiersSection({
                         useFlexGap
                         sx={{ ml: 4.5, mt: 0.35 }}
                       >
-                        <Chip
+                        <StatusBadge
                           size="small"
                           variant="outlined"
                           label={t(
                             `gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`,
                           )}
                         />
-                        <Chip
+                        <StatusBadge
                           size="small"
                           color={roundSummaryMeta.includeInRoundSummary ? 'secondary' : 'default'}
                           variant="outlined"
@@ -153,7 +147,7 @@ export function GameSetupModifiersSection({
                           )}
                         />
                         {modifier.behaviorV2.requiresHostMonitoring ? (
-                          <Chip
+                          <StatusBadge
                             size="small"
                             color="error"
                             variant="outlined"
@@ -169,10 +163,10 @@ export function GameSetupModifiersSection({
                       >
                         {modifier.description}
                       </Typography>
-                    </Box>
+                    </ItemCard>
                   )
                 })}
-              </FormGroup>
+              </CheckboxGroup>
             </Box>
           ))}
         </Stack>

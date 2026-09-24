@@ -1,6 +1,6 @@
-import { Alert, Stack } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, InlineNotice } from '../../../shared/ui/index.ts'
 import type { GameSetupCellMediaErrorKey } from '../use-game-setup-cell-media.ts'
 import type { GameSetupResetErrorKey } from '../use-game-setup-draft.ts'
 import type { GameSetupSaveErrorKey } from '../use-game-setup-save.ts'
@@ -38,7 +38,7 @@ export function GameSetupBoardNotices({
   return (
     <Stack spacing={2} sx={{ mt: 2 }}>
       {remoteChangeNotice ? (
-        <Alert
+        <InlineNotice
           severity="warning"
           onClose={onDismissRemoteChange}
           action={
@@ -48,23 +48,25 @@ export function GameSetupBoardNotices({
           }
         >
           {t('gameSetup.remoteChangeNotice')}
-        </Alert>
+        </InlineNotice>
       ) : null}
 
       {saveErrorMessage ? (
-        <Alert severity="error">
+        <InlineNotice severity="error">
           {saveErrorMessage === 'saveFailed'
             ? t('gameSetup.saveFailed')
             : t(`gameSetup.${saveErrorMessage}`)}
-        </Alert>
+        </InlineNotice>
       ) : null}
 
-      {resetErrorMessage ? <Alert severity="error">{t('gameSetup.resetFailed')}</Alert> : null}
+      {resetErrorMessage ? (
+        <InlineNotice severity="error">{t('gameSetup.resetFailed')}</InlineNotice>
+      ) : null}
 
       {cellMediaErrorKey ? (
-        <Alert severity="error" onClose={onDismissCellMediaError}>
+        <InlineNotice severity="error" onClose={onDismissCellMediaError}>
           {t(`gameSetup.cellMedia.errors.${cellMediaErrorKey}`)}
-        </Alert>
+        </InlineNotice>
       ) : null}
     </Stack>
   )

@@ -1,7 +1,7 @@
-import { Alert, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, AppDialog, FormSelect } from '../../../shared/ui/index.ts'
+import { AppButton, AppDialog, FormSelect, InlineNotice } from '../../../shared/ui/index.ts'
 import {
   applyGameSetupBoardLayoutChange,
   canApplyBoardLayoutChange,
@@ -169,15 +169,17 @@ export function GameSetupBoardLayoutDialog({
           />
 
           {!canApply ? (
-            <Alert severity="warning">{t('gameSetup.layoutDialog.limitReached')}</Alert>
+            <InlineNotice severity="warning">
+              {t('gameSetup.layoutDialog.limitReached')}
+            </InlineNotice>
           ) : null}
         </Stack>
       ) : (
-        <Alert severity="warning">
+        <InlineNotice severity="warning">
           {t(confirmationKey, {
             target: getPositionLabel(selectedPositionIndex),
           })}
-        </Alert>
+        </InlineNotice>
       )}
     </AppDialog>
   )

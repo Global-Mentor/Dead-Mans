@@ -2,15 +2,15 @@ import { Box } from '@mui/material'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
-import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
 import { BoardMatrix } from '../../../shared/game-ui/index.ts'
+import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import type { GameSetupCellMediaDisplayState } from '../model/game-setup-cell-media-display.ts'
+import { resolveGameSetupCellImageUrl } from '../model/game-setup-cell-media-display.ts'
 import {
   getGameSetupCellAt,
   upsertGameSetupCellDraft,
   type GameSetupDraftState,
 } from '../model/game-setup-draft.ts'
-import type { GameSetupCellMediaDisplayState } from '../model/game-setup-cell-media-display.ts'
-import { resolveGameSetupCellImageUrl } from '../model/game-setup-cell-media-display.ts'
 import {
   GAME_SETUP_MAX_CELL_TITLE_LENGTH,
   GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
@@ -78,18 +78,8 @@ export function GameSetupGrid({
             inputProps={{
               maxLength: GAME_SETUP_MAX_COLUMN_LABEL_LENGTH,
             }}
-            sx={{
-              mt: 1.25,
-              '& .MuiInputLabel-root': {
-                lineHeight: 1.2,
-              },
-              '& .MuiInputBase-input': {
-                px: 1.25,
-                lineHeight: 1.2,
-                overflow: 'hidden',
-                overflowWrap: 'anywhere',
-              },
-            }}
+            layout="matrixColumn"
+            sx={{ mt: 1.25 }}
           />
         )}
         renderRowLabel={(rowLabel, rowIndex) => (
@@ -113,21 +103,8 @@ export function GameSetupGrid({
             inputProps={{
               maxLength: GAME_SETUP_MAX_ROW_LABEL_LENGTH,
             }}
-            sx={{
-              alignSelf: 'center',
-              '& .MuiInputBase-root': {
-                minHeight: 72,
-              },
-              '& .MuiInputBase-input': {
-                px: 1,
-                py: 2,
-                textAlign: 'center',
-                fontWeight: 600,
-                lineHeight: 1.2,
-                overflow: 'hidden',
-                overflowWrap: 'anywhere',
-              },
-            }}
+            layout="matrixRow"
+            sx={{ alignSelf: 'center' }}
           />
         )}
         renderCell={(rowIndex, colIndex, rowLabel) => {

@@ -1,7 +1,13 @@
-import { Box, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, BusyIndicator, FilePickerInput } from '../../../shared/ui/index.ts'
+import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
+import {
+  dataTransferHasImageFiles,
+  extractGameSetupCellMediaFileFromDataTransfer,
+  GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES,
+} from '../model/game-setup-cell-media-limits.ts'
 import {
   createSetupCellDropzoneSx,
   setupCellBusyOverlaySx,
@@ -10,12 +16,6 @@ import {
   setupCellImagePreviewSx,
   setupCellMediaActionsSx,
 } from '../theme/cell-image-sx.ts'
-import {
-  dataTransferHasImageFiles,
-  extractGameSetupCellMediaFileFromDataTransfer,
-  GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES,
-} from '../model/game-setup-cell-media-limits.ts'
-import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
 
 interface GameSetupCellImageProps {
   imageUrl: string | undefined
@@ -230,7 +230,7 @@ export function GameSetupCellImage({
 
         {isBusy ? (
           <Box sx={setupCellBusyOverlaySx}>
-            <CircularProgress size={28} color="inherit" />
+            <BusyIndicator size={28} color="inherit" />
             {statusLabel ? (
               <Typography variant="caption" sx={{ color: 'common.white', px: 1 }}>
                 {statusLabel}
@@ -267,11 +267,9 @@ export function GameSetupCellImage({
         </Stack>
       ) : null}
 
-      <input
+      <FilePickerInput
         ref={inputRef}
         id={inputId}
-        type="file"
-        hidden
         accept={GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES.join(',')}
         onChange={(event) => {
           const file = event.target.files?.[0]

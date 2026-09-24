@@ -1,12 +1,16 @@
-import { Box, Checkbox, Chip, FormControlLabel, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AppButton,
   AsyncSection,
+  ChoiceLabel,
+  FormCheckbox,
   FormTextField,
+  ItemCard,
   SectionCard,
   SectionHeader,
+  StatusBadge,
 } from '../../../shared/ui/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { useGameSetupQuestionsCatalog } from '../use-game-setup-questions-catalog.ts'
@@ -46,6 +50,7 @@ export function GameSetupQuestionsSection({
   return (
     <SectionCard>
       <SectionHeader
+        headingLevel="h1"
         title={t('gameSetup.questions.title')}
         description={t('gameSetup.questions.enabledDescription')}
         actions={actions}
@@ -74,13 +79,13 @@ export function GameSetupQuestionsSection({
       </Stack>
 
       <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', rowGap: 1 }}>
-        <Chip
+        <StatusBadge
           label={t('common.filters.allCategories')}
           color={activeCategory === null ? 'primary' : 'default'}
           onClick={() => setActiveCategory(null)}
         />
         {categories.map((category) => (
-          <Chip
+          <StatusBadge
             key={category}
             label={category}
             color={activeCategory === category ? 'primary' : 'default'}
@@ -110,6 +115,7 @@ export function GameSetupQuestionsSection({
       <AsyncSection
         isLoading={catalogQuery.isLoading}
         isError={catalogQuery.isError}
+        hasData={catalogQuery.data != null}
         isEmpty={visibleQuestions.length === 0}
         loadingMessage={t('gameSetup.questions.loading')}
         errorMessage={t('gameSetup.questions.error')}
@@ -117,17 +123,10 @@ export function GameSetupQuestionsSection({
       >
         <Stack spacing={0.5} sx={{ mt: 1.5 }}>
           {visibleQuestions.map((question) => (
-            <Box
-              key={question.questionId}
-              sx={{
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                p: 1,
-              }}
-            >
-              <FormControlLabel
+            <ItemCard key={question.questionId}>
+              <ChoiceLabel
                 control={
-                  <Checkbox
+                  <FormCheckbox
                     checked={enabledQuestionIds.has(question.questionId)}
                     onChange={(event) => onToggle(question.questionId, event.target.checked)}
                   />
@@ -151,7 +150,7 @@ export function GameSetupQuestionsSection({
                   correct: question.correctSubmissionTotalCount,
                 })}
               </Typography>
-            </Box>
+            </ItemCard>
           ))}
         </Stack>
       </AsyncSection>
