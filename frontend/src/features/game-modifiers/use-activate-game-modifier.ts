@@ -5,6 +5,7 @@ import type { ErrorResponse, GameModifierState } from '../../shared/api/contract
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
+import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { activateGameModifier } from './api/game-modifiers-api.ts'
 import { gameModifierQueryKeys } from './api/game-modifier-queries.ts'
 
@@ -30,25 +31,40 @@ export function useActivateGameModifier() {
 
   const mutation = useMutation({
     mutationKey: activateGameModifierMutationKey,
+    onMutate: () => ({
+      gameId: queryClient.getQueryData<GameModifierState | null>(gameModifierQueryKeys.state())
+        ?.gameId,
+    }),
     mutationFn: (modifierId: string) => activateGameModifier(modifierId),
     onSuccess: () => {
       setToastMessage(t('gameModifiers.activateSuccess'))
 
       void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
       void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+      void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
     },
-    onError: (error, modifierId) => {
+    onError: (error, modifierId, context) => {
       setToastMessage(t(resolveActivationErrorKey(error)))
-      queryClient.setQueryData<GameModifierState | null>(gameModifierQueryKeys.state(), (current) =>
-        applyActivationErrorState(current, modifierId, error),
+      queryClient.setQueryData<GameModifierState | null>(
+        gameModifierQueryKeys.state(),
+        (current) =>
+          current?.gameId === context?.gameId
+            ? applyActivationErrorState(current, modifierId, error)
+            : current,
       )
       void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
       void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+      void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
     },
   })
 
   return {
-    activate: mutation.mutate,
+    activateAsync: mutation.mutateAsync,
+    errorMessage: mutation.isError ? toastMessage : null,
+    reset: () => {
+      mutation.reset()
+      setToastMessage(null)
+    },
     isActivating: pendingModifierIds.length > 0,
     pendingModifierId: pendingModifierIds.at(-1) ?? null,
     toastMessage,
@@ -114,8 +130,8 @@ function resolveBlockedReasonFromError(
     return null
   }
 
-  const payload = error.details as Partial<ErrorResponse>
-  switch (payload.code) {
+  const payload = error.details as Partial<ErrorResponse> | null | undefined
+  switch (payload?.code) {
     case API_ERROR_CODES.gameModifierOrderingClosed:
       return 'ordering_closed'
     case API_ERROR_CODES.gameModifierActiveTeamMember:
@@ -136,8 +152,8 @@ function resolveActivationErrorKey(error: unknown) {
     return 'gameModifiers.activateFailed'
   }
 
-  const payload = error.details as Partial<ErrorResponse>
-  switch (payload.code) {
+  const payload = error.details as Partial<ErrorResponse> | null | undefined
+  switch (payload?.code) {
     case API_ERROR_CODES.gameModifierNotEnabled:
       return 'gameModifiers.notEnabled'
     case API_ERROR_CODES.gameModifierGameNotActive:

@@ -65,6 +65,7 @@ const translations = {
       '{{modifier}} will be cancelled and {{cost}} quiz points will be refunded. This is available only while ordering is open.',
     selfCancelSuccess: 'Purchase cancelled and quiz points refunded.',
     selfCancelFailed: 'Could not cancel the purchase. Refresh the round and try again.',
+    actionUnavailable: 'This action is no longer available. Refresh the modifiers and try again.',
     runtime: {
       title: 'Host runtime',
       description: 'Live instructions and countdowns restored from the server round timeline.',
@@ -248,6 +249,7 @@ const translations = {
       '«{{modifier}}» будет отменён, а {{cost}} очк. викторины вернутся. Это доступно только пока заказ открыт.',
     selfCancelSuccess: 'Покупка отменена, очки викторины возвращены.',
     selfCancelFailed: 'Не удалось отменить покупку. Обновите раунд и попробуйте снова.',
+    actionUnavailable: 'Действие больше недоступно. Обновите модификаторы и попробуйте снова.',
     runtime: {
       title: 'Мониторинг ведущего',
       description: 'Живые инструкции и таймеры, восстановленные по серверной шкале раунда.',
@@ -432,6 +434,7 @@ const translations = {
       '«{{modifier}}» буде скасовано, а {{cost}} очк. вікторини повернуться. Це доступно лише поки замовлення відкрите.',
     selfCancelSuccess: 'Покупку скасовано, очки вікторини повернено.',
     selfCancelFailed: 'Не вдалося скасувати покупку. Оновіть раунд і спробуйте знову.',
+    actionUnavailable: 'Дія більше недоступна. Оновіть модифікатори та спробуйте знову.',
     runtime: {
       title: 'Моніторинг ведучого',
       description: 'Живі інструкції та таймери, відновлені за серверною шкалою раунду.',
@@ -616,6 +619,7 @@ const translations = {
       '„{{modifier}}” zostanie cofnięty, a {{cost}} punktów quizowych zwrócone. Jest to możliwe tylko przy otwartym zamawianiu.',
     selfCancelSuccess: 'Zakup cofnięty, a punkty quizowe zwrócone.',
     selfCancelFailed: 'Nie udało się cofnąć zakupu. Odśwież rundę i spróbuj ponownie.',
+    actionUnavailable: 'Ta akcja nie jest już dostępna. Odśwież modyfikatory i spróbuj ponownie.',
     runtime: {
       title: 'Monitoring prowadzącego',
       description: 'Instrukcje i liczniki odtworzone z serwerowej osi czasu rundy.',

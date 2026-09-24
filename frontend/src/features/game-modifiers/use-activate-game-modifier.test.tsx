@@ -164,7 +164,7 @@ describe('useActivateGameModifier', () => {
     })
 
     act(() => {
-      result.current.activate('modifier-1')
+      result.current.activateAsync('modifier-1').catch(() => undefined)
     })
 
     await waitFor(() => {
@@ -197,7 +197,7 @@ describe('useActivateGameModifier', () => {
     })
 
     act(() => {
-      firstRender.result.current.activate('modifier-1')
+      firstRender.result.current.activateAsync('modifier-1').catch(() => undefined)
     })
 
     await waitFor(() => {
@@ -236,7 +236,7 @@ describe('useActivateGameModifier', () => {
     })
 
     await act(async () => {
-      result.current.activate('modifier-1')
+      result.current.activateAsync('modifier-1').catch(() => undefined)
       await Promise.resolve()
     })
 
@@ -269,7 +269,7 @@ describe('useActivateGameModifier', () => {
     })
 
     await act(async () => {
-      result.current.activate('modifier-1')
+      result.current.activateAsync('modifier-1').catch(() => undefined)
       await Promise.resolve()
     })
 
@@ -281,6 +281,54 @@ describe('useActivateGameModifier', () => {
       })
       expect(result.current.toastMessage).toBe(i18n.t('gameModifiers.blockedReasons.limit_reached'))
     })
+  })
+
+  it('does not apply a delayed rejection to the next game', async () => {
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(gameModifierQueryKeys.state(), baseState)
+    let reject!: (error: Error) => void
+    apiMocks.activateGameModifier.mockReturnValue(
+      new Promise((_, fail) => {
+        reject = fail
+      }),
+    )
+    const { result } = renderHook(() => useActivateGameModifier(), {
+      wrapper: createWrapper(queryClient),
+    })
+    act(() => {
+      void result.current.activateAsync('modifier-1').catch(() => undefined)
+    })
+    await waitFor(() => expect(apiMocks.activateGameModifier).toHaveBeenCalledOnce())
+    const nextGame = { ...baseState, gameId: 'game-2' }
+    queryClient.setQueryData(gameModifierQueryKeys.state(), nextGame)
+
+    await act(async () => {
+      reject(
+        new ApiError('HTTP 409', {
+          status: 409,
+          details: { code: API_ERROR_CODES.gameModifierLimitReached },
+        }),
+      )
+    })
+
+    await waitFor(() => expect(result.current.isActivating).toBe(false))
+    expect(queryClient.getQueryData(gameModifierQueryKeys.state())).toEqual(nextGame)
+  })
+
+  it('reports an empty server error without losing the modifier state', async () => {
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(gameModifierQueryKeys.state(), baseState)
+    apiMocks.activateGameModifier.mockRejectedValue(new ApiError('HTTP 500', { status: 500 }))
+    const { result } = renderHook(() => useActivateGameModifier(), {
+      wrapper: createWrapper(queryClient),
+    })
+    await act(async () => {
+      await result.current.activateAsync('modifier-1').catch(() => undefined)
+    })
+    await waitFor(() =>
+      expect(result.current.errorMessage).toBe(i18n.t('gameModifiers.activateFailed')),
+    )
+    expect(queryClient.getQueryData(gameModifierQueryKeys.state())).toEqual(baseState)
   })
 
   it('blocks every modifier immediately after the server identifies an active-team member', async () => {
@@ -301,7 +349,7 @@ describe('useActivateGameModifier', () => {
     })
 
     await act(async () => {
-      result.current.activate('modifier-1')
+      result.current.activateAsync('modifier-1').catch(() => undefined)
       await Promise.resolve()
     })
 

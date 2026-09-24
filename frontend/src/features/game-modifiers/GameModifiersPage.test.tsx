@@ -71,6 +71,7 @@ function renderGameModifiersPage() {
 
 function createState() {
   return {
+    gameId: 'game-1',
     availableQuizPoints: 24,
     spentQuizPoints: 9,
     earnedQuizPoints: 33,
@@ -242,7 +243,9 @@ beforeEach(() => {
   modifierMocks.useActivateGameModifier.mockReturnValue({
     isActivating: false,
     pendingModifierId: null,
-    activate: vi.fn(),
+    activateAsync: vi.fn().mockResolvedValue(undefined),
+    reset: vi.fn(),
+    errorMessage: null,
     toastMessage: null,
     dismissToast: vi.fn(),
   })
@@ -416,7 +419,7 @@ describe('GameModifiersPage', () => {
 
   it('asks for confirmation before activating a modifier', async () => {
     renderGameModifiersPage()
-    const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activate
+    const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
     const activateButton = screen.getByRole('button', { name: 'Активировать модификатор' })
 
     expect(activateButton).toHaveStyle({
