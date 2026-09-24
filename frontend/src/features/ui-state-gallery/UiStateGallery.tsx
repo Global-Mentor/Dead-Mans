@@ -1,19 +1,20 @@
-import { AccordionDetails, RadioGroup, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AppAccordion,
+  AppAccordionDetails,
   AppAccordionSummary,
   AppButton,
   AppDialog,
   ChoiceCard,
+  ChoiceGroup,
   FormSelect,
   FormTextField,
   PageShell,
   SectionCard,
   SectionHeader,
 } from '../../shared/ui/index.ts'
-
 export function UiStateGallery() {
   const { t } = useTranslation()
   const [choice, setChoice] = useState('primary')
@@ -66,7 +67,7 @@ export function UiStateGallery() {
           </Stack>
         </SectionCard>
 
-        <RadioGroup value={choice} onChange={(event) => setChoice(event.target.value)}>
+        <ChoiceGroup value={choice} onChange={(event) => setChoice(event.target.value)}>
           <ChoiceCard
             value="primary"
             selected={choice === 'primary'}
@@ -79,15 +80,15 @@ export function UiStateGallery() {
             title={t('common.actions.cancel')}
             description={description}
           />
-        </RadioGroup>
+        </ChoiceGroup>
 
         <AppAccordion surface="inset">
           <AppAccordionSummary>
             <Typography variant="subtitle2">{t('navigation.uiStateGallery.title')}</Typography>
           </AppAccordionSummary>
-          <AccordionDetails>
+          <AppAccordionDetails>
             <Typography color="text.secondary">{description}</Typography>
-          </AccordionDetails>
+          </AppAccordionDetails>
         </AppAccordion>
 
         <AppButton tone="secondary" onClick={() => setDialogOpen(true)}>

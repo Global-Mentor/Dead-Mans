@@ -47,12 +47,19 @@ for (const viewport of [
     if (compactNavigation) {
       await primaryNavigation.getByRole('button', { name: 'Open navigation' }).click()
     }
-    for (const label of ['Game', 'Leaderboard', 'Apply', 'Modifiers', 'Quiz']) {
+    for (const label of ['Game', 'Leaderboard']) {
       await expect(
         compactNavigation
           ? page.getByRole('menuitem', { name: label, exact: true })
           : primaryNavigation.getByRole('link', { name: label, exact: true }),
       ).toBeVisible()
+    }
+    for (const label of ['Apply', 'Modifiers', 'Quiz']) {
+      await expect(
+        compactNavigation
+          ? page.getByRole('menuitem', { name: label, exact: true })
+          : primaryNavigation.getByRole('link', { name: label, exact: true }),
+      ).toHaveCount(0)
     }
     if (!compactNavigation) await primaryNavigation.getByRole('button', { name: 'History' }).click()
     await expect(page.getByRole('menuitem', { name: 'Game history', exact: true })).toBeVisible()
