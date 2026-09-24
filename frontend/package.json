@@ -18,7 +18,7 @@
     "check:locales": "node scripts/check-locale-keys.mjs",
     "check:hardcoded-ui": "node scripts/check-hardcoded-ui-text.mjs",
     "check:i18n": "npm run check:locales && npm run check:hardcoded-ui",
-    "check:ui-architecture": "node scripts/check-ui-architecture.mjs",
+    "check:ui-architecture": "node --test scripts/ui-architecture-rules.test.mjs && node scripts/check-ui-architecture.mjs",
     "audit:i18n-duplicates": "node scripts/audit-duplicate-translations.mjs",
     "knip": "knip",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run check:i18n && npm run check:ui-architecture && npm run test:coverage && npm run knip && npm run build",
