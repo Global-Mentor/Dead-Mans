@@ -278,20 +278,18 @@ describe('GameModifiersPage', () => {
     expect(within(summary).queryByText('Участники команды')).not.toBeInTheDocument()
     expect(within(summary).getByText('Капитан Флинт')).toBeInTheDocument()
     expect(within(summary).getByText('Энн Бонни')).toBeInTheDocument()
-    expect(within(summary).getByText('Энн Бонни')).toHaveStyle({ borderLeftWidth: '1px' })
     expect(within(summary).getByText('Активная карточка')).toBeInTheDocument()
     expect(within(summary).getByText('Битва в порту')).toBeInTheDocument()
     expect(within(summary).getByText('Посмотреть карточку')).toBeInTheDocument()
     expect(within(summary).getByRole('list')).toHaveStyle({ flexDirection: 'row' })
 
-    const pointsMetric = within(summary).getByText('Доступно очков').parentElement
-    expect(pointsMetric).toHaveStyle({
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-    })
+    const pointsMetric = within(summary).getByRole('group', { name: 'Доступно очков' })
+    expect(pointsMetric).toHaveAttribute('tabindex', '0')
+    expect(pointsMetric.querySelector('dt')).toHaveTextContent('Доступно очков')
+    expect(pointsMetric.querySelector('dd')).not.toBeEmptyDOMElement()
     const viewCardButton = within(summary).getByRole('button', { name: 'Посмотреть карточку' })
-    expect(viewCardButton).toHaveStyle({ minHeight: '28px' })
+    expect(viewCardButton).toBeEnabled()
+    expect(viewCardButton).toHaveStyle({ borderRadius: '0px' })
 
     const summaryText = summary.textContent ?? ''
     expect(summaryText.indexOf('Краткая сводка')).toBeLessThan(
@@ -395,7 +393,7 @@ describe('GameModifiersPage', () => {
     ]
 
     for (const metric of metrics) {
-      const metricElement = screen.getByText(metric.label).parentElement
+      const metricElement = screen.getByText(metric.label, { selector: 'dt' }).closest('[tabindex]')
       if (!metricElement) {
         throw new Error(`Metric container not found: ${metric.label}`)
       }
@@ -410,7 +408,9 @@ describe('GameModifiersPage', () => {
       'Краткая сводка',
       'Текущая команда',
     ]) {
-      expect(screen.getByText(focusableLabel).parentElement).toHaveAttribute('tabindex', '0')
+      expect(
+        screen.getByText(focusableLabel, { selector: 'dt' }).closest('[tabindex]'),
+      ).toHaveAttribute('tabindex', '0')
     }
   })
 
@@ -420,10 +420,8 @@ describe('GameModifiersPage', () => {
     const activateButton = screen.getByRole('button', { name: 'Активировать модификатор' })
 
     expect(activateButton).toHaveStyle({
-      height: '32px',
-      minHeight: '32px',
-      borderRadius: '8px',
-      fontSize: '0.75rem',
+      minHeight: '44px',
+      borderRadius: '0px',
     })
 
     fireEvent.click(activateButton)
@@ -498,12 +496,8 @@ describe('GameModifiersPage', () => {
     expect(screen.getAllByText('Сейчас не фаза заказа модификаторов.')).toHaveLength(1)
     const blockedButton = screen.getByRole('button', { name: 'Заказ закрыт' })
     expect(blockedButton).toBeDisabled()
-    expect(blockedButton).toHaveStyle({ height: '32px', minHeight: '32px' })
-    expect(within(blockedButton).getByText('?')).toHaveStyle({
-      position: 'absolute',
-      left: 0,
-      top: '50%',
-    })
+    expect(blockedButton).toHaveStyle({ minHeight: '44px' })
+    expect(blockedButton.parentElement).toHaveAttribute('tabindex', '0')
     fireEvent.mouseOver(blockedButton.parentElement as HTMLElement)
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Заказ закрыт: сейчас не фаза заказа модификаторов.',
@@ -537,13 +531,9 @@ describe('GameModifiersPage', () => {
     const blockedStatus = screen.getByRole('status', {
       name: 'Заблокирован конфликтом с: Расходники',
     })
-    expect(blockedStatus).toHaveStyle({ height: '32px', minHeight: '32px' })
-    expect(within(blockedStatus).getByText('Есть конфликт')).toHaveStyle({ textAlign: 'center' })
-    expect(within(blockedStatus).getByText('?')).toHaveStyle({
-      position: 'absolute',
-      left: '6px',
-      top: '50%',
-    })
+    expect(blockedStatus).toHaveStyle({ height: 'auto', borderRadius: '0px' })
+    expect(within(blockedStatus).getByText('Есть конфликт')).toBeVisible()
+    expect(blockedStatus.parentElement).toHaveAttribute('tabindex', '0')
     fireEvent.mouseOver(blockedStatus)
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Заблокирован конфликтом с: Расходники',
@@ -568,14 +558,8 @@ describe('GameModifiersPage', () => {
     const blockedStatus = screen.getByRole('status', {
       name: 'Ваша команда сейчас играет этот раунд - активировать модификаторы для неё нельзя.',
     })
-    expect(within(blockedStatus).getByText('Ваша команда играет')).toHaveStyle({
-      textAlign: 'center',
-    })
-    expect(within(blockedStatus).getByText('?')).toHaveStyle({
-      position: 'absolute',
-      left: '6px',
-      top: '50%',
-    })
+    expect(within(blockedStatus).getByText('Ваша команда играет')).toBeVisible()
+    expect(blockedStatus.parentElement).toHaveAttribute('tabindex', '0')
     fireEvent.mouseOver(blockedStatus)
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Ваша команда сейчас играет этот раунд - активировать модификаторы для неё нельзя.',

@@ -1,4 +1,4 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,13 +7,15 @@ import type {
   GameModifierAdminPlayersResult,
 } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import { AppToast, ConfirmDialog, SectionCard } from '../../shared/ui/index.ts'
-import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import {
-  adminActivateGameModifier,
-  cancelGameModifierActivation,
-  emergencyDisableGameModifier,
-} from './api/game-modifiers-api.ts'
+  AppToast,
+  ConfirmDialog,
+  FieldHelp,
+  Metric,
+  SectionCard,
+  StatusBadge,
+} from '../../shared/ui/index.ts'
+import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import {
   adminGameModifierActivationsQueryOptions,
   adminGameModifierPlayersQueryOptions,
@@ -21,13 +23,17 @@ import {
   gameModifierQueryKeys,
 } from './api/game-modifier-queries.ts'
 import {
+  adminActivateGameModifier,
+  cancelGameModifierActivation,
+  emergencyDisableGameModifier,
+} from './api/game-modifiers-api.ts'
+import {
   buildCancelModifierOptions,
   resolveAdminActivateErrorKey,
   resolveAdminCancelErrorKey,
 } from './model/admin-modifier-support.ts'
 import { AdminModifierActivationBlock } from './ui/AdminModifierActivationBlock.tsx'
 import { AdminModifierCancellationBlock } from './ui/AdminModifierCancellationBlock.tsx'
-import { AdminModifierHint, AdminModifierMetric } from './ui/admin-modifier-panel-primitives.tsx'
 
 const emptyAdminPlayers: readonly GameModifierAdminPlayer[] = []
 const emptyAdminPlayersSummary: GameModifierAdminPlayersResult['summary'] = {
@@ -175,7 +181,7 @@ export function AdminModifierTool() {
     <>
       <Stack data-testid="modifier-management-tool" spacing={2}>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          <Chip
+          <StatusBadge
             color="warning"
             variant="outlined"
             label={t('gameModifiers.adminPanel.summaryUsedCount', {
@@ -190,7 +196,7 @@ export function AdminModifierTool() {
               <Typography variant="subtitle2">
                 {t('gameModifiers.adminPanel.summaryTitle')}
               </Typography>
-              <AdminModifierHint title={t('gameModifiers.adminPanel.summaryTooltip')} />
+              <FieldHelp title={t('gameModifiers.adminPanel.summaryTooltip')} />
             </Stack>
             <Box
               sx={{
@@ -199,25 +205,25 @@ export function AdminModifierTool() {
                 gap: 1,
               }}
             >
-              <AdminModifierMetric
+              <Metric
                 label={t('gameModifiers.adminPanel.summaryAvailablePoints')}
                 value={t('gameModifiers.myPointsValue', {
                   points: summary.totalAvailableQuizPoints,
                 })}
               />
-              <AdminModifierMetric
+              <Metric
                 label={t('gameModifiers.adminPanel.summarySpentPoints')}
                 value={t('gameModifiers.myPointsValue', {
                   points: summary.totalSpentQuizPoints,
                 })}
               />
-              <AdminModifierMetric
+              <Metric
                 label={t('gameModifiers.adminPanel.summaryEarnedPoints')}
                 value={t('gameModifiers.myPointsValue', {
                   points: summary.totalEarnedQuizPoints,
                 })}
               />
-              <AdminModifierMetric
+              <Metric
                 label={t('gameModifiers.adminPanel.summaryUsedLabel')}
                 value={String(activeActivations.length)}
               />

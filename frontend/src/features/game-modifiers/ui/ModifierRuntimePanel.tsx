@@ -1,9 +1,8 @@
-import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { SectionCard } from '../../../shared/ui/index.ts'
+import { InlineNotice, ItemCard, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   buildModifierRuntimeUnits,
   calculateModifierRuntimeClock,
@@ -57,7 +56,7 @@ export function ModifierRuntimePanel({
               {t('gameModifiers.runtime.description')}
             </Typography>
           </Box>
-          <Chip
+          <StatusBadge
             size="small"
             color={isOffline ? 'warning' : 'success'}
             variant="outlined"
@@ -68,9 +67,9 @@ export function ModifierRuntimePanel({
         </Stack>
 
         {isOffline ? (
-          <Alert severity="warning" variant="outlined">
+          <InlineNotice severity="warning" variant="outlined">
             {t('gameModifiers.runtime.offlineHint')}
-          </Alert>
+          </InlineNotice>
         ) : null}
 
         <Box
@@ -87,25 +86,14 @@ export function ModifierRuntimePanel({
               clientNowMs + serverClockOffset,
             )
             return (
-              <Box
-                key={unit.key}
-                sx={(theme) => ({
-                  borderRadius: 1.75,
-                  border: `1px solid ${alpha(
-                    clock.state === 'expired' ? theme.palette.warning.main : theme.palette.divider,
-                    0.72,
-                  )}`,
-                  backgroundColor: alpha(theme.palette.background.paper, 0.36),
-                  p: 1,
-                })}
-              >
+              <ItemCard key={unit.key}>
                 <Stack spacing={0.7}>
                   <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap>
                     <Typography variant="subtitle2" sx={{ flex: 1 }}>
                       {unit.modifierName}
                     </Typography>
                     {unit.activationCount > 1 ? (
-                      <Chip
+                      <StatusBadge
                         size="small"
                         variant="outlined"
                         label={t('gameModifiers.runtime.stackCount', {
@@ -114,7 +102,7 @@ export function ModifierRuntimePanel({
                       />
                     ) : null}
                     {unit.requiresHostMonitoring ? (
-                      <Chip
+                      <StatusBadge
                         size="small"
                         color="warning"
                         variant="outlined"
@@ -126,12 +114,12 @@ export function ModifierRuntimePanel({
                     {unit.rule}
                   </Typography>
                   <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap>
-                    <Chip
+                    <StatusBadge
                       size="small"
                       variant="outlined"
                       label={t(`gameModifiers.runtime.performer.${unit.performer}`)}
                     />
-                    <Chip
+                    <StatusBadge
                       size="small"
                       color={clock.state === 'expired' ? 'warning' : 'default'}
                       label={
@@ -142,14 +130,14 @@ export function ModifierRuntimePanel({
                             })
                       }
                     />
-                    <Chip
+                    <StatusBadge
                       size="small"
                       variant="outlined"
                       label={t(`gameModifiers.runtime.state.${clock.state}`)}
                     />
                   </Stack>
                 </Stack>
-              </Box>
+              </ItemCard>
             )
           })}
         </Box>
