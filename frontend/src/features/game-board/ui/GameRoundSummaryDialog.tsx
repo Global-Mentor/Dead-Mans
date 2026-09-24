@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Box, Divider, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -10,7 +10,10 @@ import {
   AppDialog,
   ConfirmDialog,
   ControlledFormTextField,
+  InlineNotice,
   SectionCard,
+  SectionDivider,
+  useDirtyClose,
 } from '../../../shared/ui/index.ts'
 import { previewGameRoundScore } from '../../game-rounds/api/game-rounds-api.ts'
 import { getGameRoundPreviewErrorCode } from '../model/game-round-preview-error.ts'
@@ -22,9 +25,13 @@ import {
   serializeGameRoundPreviewInput,
   type CompleteRoundInput,
   type GameRoundPostRoundAction,
-  type GameRoundSummaryFormValues,
   type GameRoundSummaryFormInput,
+  type GameRoundSummaryFormValues,
 } from '../model/game-round-summary-form.ts'
+import {
+  hasGameRoundDraftChanges,
+  reconcileGameRoundDraft,
+} from '../model/reconcile-game-round-draft.ts'
 import { GameRoundContext } from './GameRoundContext.tsx'
 import { GameRoundPostRoundSection } from './GameRoundPostRoundSection.tsx'
 import { GameRoundPreviewSection, type GameRoundPreviewState } from './GameRoundPreviewSection.tsx'
@@ -48,13 +55,16 @@ interface GameRoundSummaryDialogProps {
   }) => void | Promise<void>
 }
 
-export function GameRoundSummaryDialog({
-  open,
+export function GameRoundSummaryDialog({ open, ...props }: GameRoundSummaryDialogProps) {
+  return open ? <GameRoundSummaryDialogBody key={props.activeRound.roundId} {...props} /> : null
+}
+
+function GameRoundSummaryDialogBody({
   activeRound,
   isSubmitting,
   onClose,
   onSubmit,
-}: GameRoundSummaryDialogProps) {
+}: Omit<GameRoundSummaryDialogProps, 'open'>) {
   const { t } = useTranslation()
   const formId = useId()
   const requestSequence = useRef(0)
@@ -62,13 +72,11 @@ export function GameRoundSummaryDialog({
     () => buildGameRoundSummaryDefaultValues(activeRound),
     [activeRound],
   )
-  const {
-    control,
-    getValues,
-    handleSubmit,
-    reset,
-    formState: { isDirty },
-  } = useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>({
+  const { control, handleSubmit, reset, getValues } = useForm<
+    GameRoundSummaryFormInput,
+    unknown,
+    GameRoundSummaryFormValues
+  >({
     resolver: zodResolver(gameRoundSummaryFormSchema),
     defaultValues,
     mode: 'onChange',
@@ -80,7 +88,13 @@ export function GameRoundSummaryDialog({
     inputKey: null,
     errorCode: null,
   })
-  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
+  const editingDefaults = useRef<GameRoundSummaryFormInput>(defaultValues)
+  const close = useDirtyClose({
+    // Watch updates synchronously with input; resolver-backed isDirty can lag a close click.
+    dirty: hasGameRoundDraftChanges(defaultValues, getValues()),
+    busy: isSubmitting,
+    onClose,
+  })
   const parsedValues = useMemo(
     () => gameRoundSummaryFormSchema.safeParse(watchedValues),
     [watchedValues],
@@ -109,13 +123,16 @@ export function GameRoundSummaryDialog({
       : previewState
 
   useEffect(() => {
-    if (!open) return
+    if (editingDefaults.current === defaultValues) return
+    const draft = reconcileGameRoundDraft(editingDefaults.current, getValues(), defaultValues)
+    // Establish the refreshed baseline, then restore only actual user edits.
     reset(defaultValues)
-  }, [defaultValues, open, reset])
+    reset(draft, { keepDefaultValues: true })
+    editingDefaults.current = defaultValues
+  }, [defaultValues, getValues, reset])
 
   useEffect(() => {
     const sequence = ++requestSequence.current
-    if (!open) return
     if (!previewInput || !previewInputKey) return
     const timer = window.setTimeout(() => {
       if (requestSequence.current !== sequence) return
@@ -170,27 +187,19 @@ export function GameRoundSummaryDialog({
     }, 350)
 
     return () => window.clearTimeout(timer)
-  }, [activeRound.roundId, activeRound.roundVersion, open, previewInput, previewInputKey])
-
-  const requestClose = () => {
-    if (isDirty || JSON.stringify(getValues()) !== JSON.stringify(defaultValues)) {
-      setIsCloseConfirmOpen(true)
-      return
-    }
-    onClose()
-  }
+  }, [activeRound.roundId, activeRound.roundVersion, previewInput, previewInputKey])
 
   return (
     <>
       <AppDialog
-        open={open}
-        onClose={isSubmitting ? undefined : requestClose}
+        open
+        onClose={isSubmitting ? undefined : close.requestClose}
         maxWidth="md"
         title={t('gameBoard.roundSummaryDialogTitle')}
         description={t('gameBoard.roundSummaryDialogDescription')}
         actions={
           <>
-            <AppButton tone="ghost" onClick={requestClose} disabled={isSubmitting}>
+            <AppButton tone="ghost" onClick={close.requestClose} disabled={isSubmitting}>
               {t('common.actions.close')}
             </AppButton>
             <AppButton type="submit" form={formId} disabled={isSubmitting || !isPreviewFresh}>
@@ -216,9 +225,9 @@ export function GameRoundSummaryDialog({
           })}
         >
           <Stack spacing={2}>
-            <Alert severity="info" variant="outlined">
+            <InlineNotice severity="info" variant="outlined">
               {t('gameBoard.roundSummaryFormulaHint', { scoreUnit: activeRound.baseScore })}
-            </Alert>
+            </InlineNotice>
 
             <GameRoundContext activeRound={activeRound} />
 
@@ -227,7 +236,7 @@ export function GameRoundSummaryDialog({
                 <Typography variant="subtitle2">
                   {t('gameBoard.roundSummaryResultTitle')}
                 </Typography>
-                <Divider />
+                <SectionDivider />
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}>
                   <ControlledFormTextField
                     control={control}
@@ -312,17 +321,14 @@ export function GameRoundSummaryDialog({
       </AppDialog>
 
       <ConfirmDialog
-        open={isCloseConfirmOpen}
+        open={close.confirmOpen}
         title={t('gameBoard.roundSummaryCloseConfirmTitle')}
         description={t('gameBoard.roundSummaryCloseConfirmDescription')}
         confirmLabel={t('gameBoard.roundSummaryCloseConfirmAction')}
         cancelLabel={t('gameBoard.roundSummaryCloseConfirmCancel')}
         confirmTone="danger"
-        onClose={() => setIsCloseConfirmOpen(false)}
-        onConfirm={() => {
-          setIsCloseConfirmOpen(false)
-          onClose()
-        }}
+        onClose={close.keepEditing}
+        onConfirm={close.discard}
       />
     </>
   )

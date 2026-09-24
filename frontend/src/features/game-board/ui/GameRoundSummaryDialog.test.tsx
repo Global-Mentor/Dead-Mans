@@ -50,6 +50,114 @@ describe('GameRoundSummaryDialog', () => {
     )
   })
 
+  it('keeps an edited draft during a refresh and resets it for another round', () => {
+    const round = createRound()
+    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const { rerender } = renderWithAppProviders(
+      <GameRoundSummaryDialog {...props} activeRound={round} />,
+    )
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Убитые враги' }), {
+      target: { value: '7' },
+    })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Заметка о раунде' }), {
+      target: { value: 'Черновик ведущего' },
+    })
+    rerender(
+      <GameRoundSummaryDialog
+        {...props}
+        activeRound={{ ...round, roundVersion: round.roundVersion + 1 }}
+      />,
+    )
+    expect(screen.getByRole('spinbutton', { name: 'Убитые враги' })).toHaveValue(7)
+    expect(screen.getByRole('textbox', { name: 'Заметка о раунде' })).toHaveValue(
+      'Черновик ведущего',
+    )
+    rerender(
+      <GameRoundSummaryDialog {...props} activeRound={{ ...round, roundId: 'another-round' }} />,
+    )
+    expect(screen.getByRole('spinbutton', { name: 'Убитые враги' })).not.toHaveValue(7)
+    expect(screen.getByRole('textbox', { name: 'Заметка о раунде' })).not.toHaveValue(
+      'Черновик ведущего',
+    )
+  })
+
+  it('keeps modifier drafts attached to their identities when refreshed rows change order', () => {
+    const first = createModifier({
+      modifierResultId: 'first',
+      modifierId: 'first-modifier',
+      resolutionKind: 'nonNegativeCount',
+      runtimeBehavior: { ...createRuntimeBehavior(), resolutionInputLabel: 'First count' },
+    })
+    const second = createModifier({
+      modifierResultId: 'second',
+      modifierId: 'second-modifier',
+      resolutionKind: 'nonNegativeCount',
+      runtimeBehavior: { ...createRuntimeBehavior(), resolutionInputLabel: 'Second count' },
+    })
+    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const round = createRound({ modifierResults: [first, second] })
+    const { rerender } = renderWithAppProviders(
+      <GameRoundSummaryDialog {...props} activeRound={round} />,
+    )
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'First count' }), {
+      target: { value: '3' },
+    })
+    rerender(
+      <GameRoundSummaryDialog
+        {...props}
+        activeRound={{ ...round, roundVersion: 5, modifierResults: [second, first] }}
+      />,
+    )
+    expect(screen.getByRole('spinbutton', { name: 'First count' })).toHaveValue(3)
+    expect(screen.getByRole('spinbutton', { name: 'Second count' })).toHaveValue(0)
+  })
+
+  it('does not ask to discard a numeric input restored to its original value', () => {
+    const onClose = vi.fn()
+    renderDialog(createRound(), { onClose })
+    const input = screen.getByRole('spinbutton', { name: 'Убитые враги' })
+    fireEvent.change(input, { target: { value: '7' } })
+    fireEvent.change(input, { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('closes a refreshed unedited round without asking to discard changes', () => {
+    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const round = createRound({ modifierResults: [createModifier()] })
+    const { rerender } = renderWithAppProviders(
+      <GameRoundSummaryDialog {...props} activeRound={round} />,
+    )
+    rerender(<GameRoundSummaryDialog {...props} activeRound={{ ...round, roundVersion: 5 }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+    expect(props.onClose).toHaveBeenCalledOnce()
+  })
+
+  it('ends the discard confirmation with its editing session', () => {
+    const props = {
+      open: true,
+      isSubmitting: false,
+      onClose: vi.fn(),
+      onSubmit: vi.fn(),
+      activeRound: createRound(),
+    }
+    const { rerender } = renderWithAppProviders(<GameRoundSummaryDialog {...props} />)
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Убитые враги' }), {
+      target: { value: '2' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+    expect(
+      screen.getByRole('dialog', { name: 'Закрыть итоги без сохранения?' }),
+    ).toBeInTheDocument()
+    rerender(<GameRoundSummaryDialog {...props} open={false} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    rerender(<GameRoundSummaryDialog {...props} />)
+    expect(
+      screen.queryByRole('dialog', { name: 'Закрыть итоги без сохранения?' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: 'Убитые враги' })).toHaveValue(0)
+  })
+
   it('shows grouped rule members, independent Shot rows, and waits for required inputs', async () => {
     const round = createRound({
       modifierResults: [
