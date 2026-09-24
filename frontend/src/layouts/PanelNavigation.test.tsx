@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { ThemeProvider } from '@mui/material'
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -152,26 +152,35 @@ function createDraftSnapshot(): GameSetupSnapshot {
 }
 
 describe('PanelNavigation', () => {
-  it('keeps the primary navigation focused on player tasks', () => {
-    renderNavigation({
-      id: 'viewer-1',
-      displayName: 'Player',
-      roles: ['viewer'],
-    })
+  it('shows registration but hides active-game actions while the current game is ready', () => {
+    renderNavigation(
+      {
+        id: 'viewer-1',
+        displayName: 'Player',
+        roles: ['viewer'],
+      },
+      '/panel/game-board',
+      createDraftSnapshot(),
+      null,
+      null,
+      'ready',
+    )
 
     const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    for (const label of ['Игра', 'Лидерборд', 'Подать заявку', 'Модификаторы', 'Викторина']) {
+    for (const label of ['Игра', 'Лидерборд', 'Подать заявку']) {
       expect(within(navigation).getByRole('link', { name: label })).toBeInTheDocument()
     }
+    expect(within(navigation).queryByRole('link', { name: 'Модификаторы' })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: 'Викторина' })).not.toBeInTheDocument()
 
     fireEvent.click(within(navigation).getByRole('button', { name: 'История' }))
     expect(screen.getByRole('menuitem', { name: 'История игр' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'История модификаторов' })).toBeInTheDocument()
   })
 
-  it('shows an invitation bell with the pending invite count', () => {
-    renderNavigation(
+  it('shows invitations only for the current game while registration is open', async () => {
+    const { queryClient } = renderNavigation(
       {
         id: 'viewer-1',
         displayName: 'Player',
@@ -213,10 +222,23 @@ describe('PanelNavigation', () => {
     expect(
       screen.getByRole('menuitem', { name: /Captain One пригласил вас в команду/i }),
     ).toBeInTheDocument()
+
+    for (const update of [
+      { gameId: 'game-1', status: 'active' },
+      { gameId: 'game-1', status: 'finished' },
+      { gameId: 'game-2', status: 'ready' },
+    ]) {
+      await act(async () => {
+        queryClient.setQueryData(currentGameBoardQueryOptions.queryKey, update)
+      })
+      await waitFor(() => {
+        expect(screen.queryByText(/Captain One пригласил вас в команду/i)).not.toBeInTheDocument()
+      })
+    }
   })
 
-  it('shows important disband requests in the notification bell for admins', () => {
-    renderNavigation(
+  it('hides cached staff requests after the game finishes or changes', async () => {
+    const { queryClient } = renderNavigation(
       {
         id: 'admin-1',
         displayName: 'Admin',
@@ -267,6 +289,18 @@ describe('PanelNavigation', () => {
       screen.getByRole('menuitem', { name: /Player One просит распустить команду/i }),
     ).toBeInTheDocument()
     expect(screen.getByText(/Очередь 1/i)).toBeInTheDocument()
+
+    for (const update of [
+      { gameId: 'game-1', status: 'finished' },
+      { gameId: 'game-2', status: 'ready' },
+    ]) {
+      await act(async () => {
+        queryClient.setQueryData(currentGameBoardQueryOptions.queryKey, update)
+      })
+      await waitFor(() => {
+        expect(screen.queryByText(/Player One просит распустить команду/i)).not.toBeInTheDocument()
+      })
+    }
   })
 
   it('shows modifier cancellation notifications for players', () => {
@@ -352,8 +386,40 @@ describe('PanelNavigation', () => {
 
     expect(within(navigation).getByRole('link', { name: 'Игра' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Лидерборд' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Модификаторы' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Викторина' })).toBeInTheDocument()
     expect(
       within(navigation).queryByRole('link', { name: 'Подать заявку' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('hides registration and active-game actions after the current game is finished', () => {
+    renderNavigation(
+      {
+        id: 'viewer-1',
+        displayName: 'Player',
+        roles: ['viewer'],
+      },
+      '/panel/game-board',
+      createDraftSnapshot(),
+      null,
+      null,
+      'finished',
+    )
+
+    const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
+
+    expect(within(navigation).getByRole('link', { name: 'Игра' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Лидерборд' })).toBeInTheDocument()
+    expect(
+      within(navigation).queryByRole('link', { name: 'Подать заявку' }),
+    ).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: 'Модификаторы' })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: 'Викторина' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть уведомления' }))
+    expect(
+      screen.queryByRole('menuitem', { name: 'Открыть страницу заявки' }),
     ).not.toBeInTheDocument()
   })
 

@@ -1,5 +1,12 @@
+import {
+  SectionDivider,
+  ActionMenu,
+  ActionMenuItem,
+  NavigationButton,
+  StatusBadge,
+} from '../shared/ui/index.ts'
 import { useState, type MouseEvent } from 'react'
-import { Box, ButtonBase, Chip, Divider, Menu, MenuItem, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -7,7 +14,6 @@ import type { AuthContextValue, AuthUser } from '../shared/auth/auth-context.ts'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
-import { navigationButtonSx } from './navigation-styles.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
 
 interface PanelProfileMenuProps {
@@ -39,18 +45,14 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
 
   return (
     <>
-      <ButtonBase
+      <NavigationButton
         aria-label={user.displayName}
         aria-controls={profileAnchor ? 'profile-menu' : undefined}
         aria-haspopup="menu"
         aria-expanded={profileAnchor ? 'true' : undefined}
         onClick={handleProfileOpen}
-        sx={(theme) => ({
-          ...navigationButtonSx(Boolean(profileAnchor))(theme),
-          maxWidth: 200,
-          minWidth: 44,
-          px: 0.75,
-        })}
+        active={Boolean(profileAnchor)}
+        layout="profile"
       >
         <Box
           component="span"
@@ -82,9 +84,9 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
         <Box component="span" aria-hidden sx={{ display: { xs: 'none', xl: 'flex' } }}>
           <NavigationChevron open={Boolean(profileAnchor)} />
         </Box>
-      </ButtonBase>
+      </NavigationButton>
 
-      <Menu
+      <ActionMenu
         id="profile-menu"
         anchorEl={profileAnchor}
         open={Boolean(profileAnchor)}
@@ -102,14 +104,14 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           </Typography>
         </Box>
 
-        <Divider />
+        <SectionDivider />
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="overline" sx={huntOverlineSx}>
             {t('navigation.accessRoles')}
           </Typography>
           <Stack direction="row" gap={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 0.75 }}>
             {user.roles.map((role) => (
-              <Chip
+              <StatusBadge
                 key={role}
                 size="small"
                 color={roleColor(role)}
@@ -120,16 +122,18 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           </Stack>
         </Box>
 
-        <Divider />
+        <SectionDivider />
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="overline" sx={huntOverlineSx}>
             {t('navigation.language')}
           </Typography>
           <LanguageSwitcher sx={{ mt: 0.75, width: '100%' }} />
         </Box>
-        <Divider />
-        <MenuItem onClick={() => void handleLogout()}>{t('navigation.logout')}</MenuItem>
-      </Menu>
+        <SectionDivider />
+        <ActionMenuItem onClick={() => void handleLogout()}>
+          {t('navigation.logout')}
+        </ActionMenuItem>
+      </ActionMenu>
     </>
   )
 }

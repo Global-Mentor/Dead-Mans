@@ -1,11 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Navigate } from 'react-router-dom'
 import { panelRootPath } from '../../routes/app-routes.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher.tsx'
 import { huntAuthCardSx, huntBrassTitleSx, huntOverlineSx } from '../../shared/theme/surface-sx.ts'
-import { uiTokens } from '../../shared/theme/tokens.ts'
 import { AppButton, AuthScreenShell, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
 
 export function AuthLandingPage() {
@@ -53,23 +52,7 @@ export function AuthLandingPage() {
             </Typography>
           </Box>
 
-          <AppButton
-            size="large"
-            onClick={startTwitchLogin}
-            sx={{
-              mt: 1,
-              px: 4,
-              py: 1.2,
-              backgroundColor: uiTokens.brand.twitch,
-              border: 'none',
-              backgroundImage: 'none',
-              color: 'common.white',
-              '&:hover': {
-                backgroundColor: uiTokens.brand.twitchHover,
-                backgroundImage: 'none',
-              },
-            }}
-          >
+          <AppButton size="large" onClick={startTwitchLogin} brand="twitch" sx={{ mt: 1 }}>
             {t('auth.button')}
           </AppButton>
         </Stack>

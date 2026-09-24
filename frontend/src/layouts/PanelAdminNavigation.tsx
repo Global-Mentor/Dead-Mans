@@ -1,14 +1,12 @@
-import { useId, useState, type MouseEvent } from 'react'
 import {
-  Box,
-  ButtonBase,
-  ListSubheader,
-  Menu,
-  MenuItem,
-  SvgIcon,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+  MenuGroupLabel,
+  ActionMenu,
+  ActionMenuItem,
+  NavigationButton,
+  HelpTooltip,
+} from '../shared/ui/index.ts'
+import { useId, useState, type MouseEvent } from 'react'
+import { Box, SvgIcon, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
@@ -22,7 +20,6 @@ import {
   type PanelAdminSection,
 } from '../routes/app-routes.ts'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
-import { navigationButtonSx } from './navigation-styles.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
 
 const adminSections: ReadonlyArray<{
@@ -85,8 +82,8 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
 
   return (
     <nav aria-label={t('navigation.adminNavigation')}>
-      <Tooltip title={t('navigation.administration')}>
-        <ButtonBase
+      <HelpTooltip title={t('navigation.administration')}>
+        <NavigationButton
           id={triggerId}
           aria-label={t('navigation.administration')}
           aria-controls={anchor ? `${triggerId}-menu` : undefined}
@@ -94,11 +91,8 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
           aria-haspopup="menu"
           aria-current={isActive ? 'page' : undefined}
           onClick={openMenu}
-          sx={(theme) => ({
-            ...navigationButtonSx(isActive)(theme),
-            minWidth: 44,
-            px: { xs: 1.25, lg: 1.5 },
-          })}
+          active={isActive}
+          layout="management"
         >
           <SvgIcon aria-hidden sx={{ fontSize: 19 }}>
             <path
@@ -118,10 +112,10 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
           <Box component="span" sx={{ display: { xs: 'none', lg: 'flex' } }}>
             <NavigationChevron open={Boolean(anchor)} />
           </Box>
-        </ButtonBase>
-      </Tooltip>
+        </NavigationButton>
+      </HelpTooltip>
 
-      <Menu
+      <ActionMenu
         id={`${triggerId}-menu`}
         anchorEl={anchor}
         open={Boolean(anchor)}
@@ -134,7 +128,7 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
         }}
       >
         {accessibleSections.map((section, index) => [
-          <ListSubheader
+          <MenuGroupLabel
             key={`${section.id}-heading`}
             disableSticky
             sx={(theme) => ({
@@ -172,16 +166,16 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
               />
             </SvgIcon>
             {t(section.labelKey)}
-          </ListSubheader>,
+          </MenuGroupLabel>,
           ...section.routes.map((route) => {
             const isDisabled = draftDependentRouteIds.has(route.id) && !hasDraftGame
 
             return isDisabled ? (
-              <MenuItem key={route.id} disabled sx={{ minHeight: 44, whiteSpace: 'normal' }}>
+              <ActionMenuItem key={route.id} disabled sx={{ minHeight: 44, whiteSpace: 'normal' }}>
                 {t(route.labelKey)}
-              </MenuItem>
+              </ActionMenuItem>
             ) : (
-              <MenuItem
+              <ActionMenuItem
                 key={route.id}
                 component={RouterLink}
                 to={route.fullPath}
@@ -191,11 +185,11 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
                 sx={{ minHeight: 44, whiteSpace: 'normal' }}
               >
                 {t(route.labelKey)}
-              </MenuItem>
+              </ActionMenuItem>
             )
           }),
         ])}
-      </Menu>
+      </ActionMenu>
     </nav>
   )
 }

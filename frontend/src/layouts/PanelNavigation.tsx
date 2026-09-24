@@ -1,6 +1,12 @@
+import {
+  NotificationCount,
+  ActionMenu,
+  ActionMenuItem,
+  NavigationButton,
+} from '../shared/ui/index.ts'
 import type { TFunction } from 'i18next'
 import { useCallback, useState, type MouseEvent } from 'react'
-import { Badge, Box, ButtonBase, Menu, MenuItem, Stack, SvgIcon, Typography } from '@mui/material'
+import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +35,6 @@ import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
-import { navigationButtonSx } from './navigation-styles.ts'
 
 const USER_NOTIFICATION_CREATED_EVENT = realtimeHubs.gameBoard.events.userNotificationCreated
 
@@ -45,10 +50,9 @@ export function PanelNavigation() {
     ...currentGameBoardQueryOptions,
     enabled: user != null,
   })
-  const isRegistrationOpen = gameBoardQuery.data?.status === 'ready'
-  const shouldShowGameApplicationNavigation = gameBoardQuery.data?.status !== 'active'
-  const isTeamManagementAvailable =
-    gameBoardQuery.data?.status === 'ready' || gameBoardQuery.data?.status === 'active'
+  const currentGameStatus = gameBoardQuery.data?.status
+  const isRegistrationOpen = currentGameStatus === 'ready'
+  const isTeamManagementAvailable = currentGameStatus === 'ready' || currentGameStatus === 'active'
   const snapshotQuery = useQuery({
     ...gameRegistrationSnapshotQueryOptions,
     enabled: user != null && isRegistrationOpen,
@@ -73,12 +77,20 @@ export function PanelNavigation() {
     return null
   }
 
-  const pendingInvitationsCount = snapshotQuery.data?.myPendingInvitations.length ?? 0
-  const pendingInvitations = snapshotQuery.data?.myPendingInvitations ?? []
+  // Disabled queries retain cached data, possibly belonging to the previous game.
+  const pendingInvitations =
+    isRegistrationOpen && snapshotQuery.data?.gameId === gameBoardQuery.data?.gameId
+      ? (snapshotQuery.data?.myPendingInvitations ?? [])
+      : []
+  const pendingInvitationsCount = pendingInvitations.length
   const disbandRequestTeams =
-    adminSnapshotQuery.data?.teams.filter(
-      (team) => team.status === 'confirmed' && team.disbandRequestedAtUtc != null,
-    ) ?? []
+    canSeeStaffNotifications &&
+    isTeamManagementAvailable &&
+    adminSnapshotQuery.data?.gameId === gameBoardQuery.data?.gameId
+      ? (adminSnapshotQuery.data?.teams.filter(
+          (team) => team.status === 'confirmed' && team.disbandRequestedAtUtc != null,
+        ) ?? [])
+      : []
   const gameNotifications = gameNotificationsQuery.data ?? []
   const importantNotificationsCount = disbandRequestTeams.length
   const modifierNotificationsCount = gameNotifications.length
@@ -196,7 +208,7 @@ export function PanelNavigation() {
             <Box sx={{ gridColumn: 2, gridRow: 1, minWidth: 0 }}>
               <PanelPrimaryNavigation
                 activeRouteId={activeRoute?.id}
-                showGameApplication={shouldShowGameApplicationNavigation}
+                gameStatus={currentGameStatus}
               />
             </Box>
 
@@ -207,19 +219,16 @@ export function PanelNavigation() {
               sx={{ gridColumn: 3, gridRow: 1, flexShrink: 0, justifySelf: 'end' }}
             >
               <PanelAdminNavigation activeRouteId={activeRoute?.id} roles={user.roles} />
-              <ButtonBase
+              <NavigationButton
                 aria-controls={notificationAnchor ? 'notification-menu' : undefined}
                 aria-expanded={notificationAnchor ? 'true' : undefined}
                 aria-haspopup="menu"
                 aria-label={t('navigation.openNotifications')}
                 onClick={openNotificationMenu}
-                sx={(theme) => ({
-                  ...navigationButtonSx(Boolean(notificationAnchor))(theme),
-                  width: 44,
-                  height: 44,
-                })}
+                active={Boolean(notificationAnchor)}
+                layout="icon"
               >
-                <Badge color="warning" badgeContent={totalNotificationsCount} max={9}>
+                <NotificationCount color="warning" badgeContent={totalNotificationsCount} max={9}>
                   <SvgIcon sx={{ fontSize: 20 }}>
                     <path
                       d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
@@ -230,10 +239,10 @@ export function PanelNavigation() {
                       strokeLinejoin="round"
                     />
                   </SvgIcon>
-                </Badge>
-              </ButtonBase>
+                </NotificationCount>
+              </NavigationButton>
 
-              <Menu
+              <ActionMenu
                 id="notification-menu"
                 anchorEl={notificationAnchor}
                 open={Boolean(notificationAnchor)}
@@ -251,18 +260,18 @@ export function PanelNavigation() {
                   </Typography>
                 </Box>
 
-                {totalNotificationsCount === 0 ? (
-                  <MenuItem
+                {totalNotificationsCount === 0 && isRegistrationOpen ? (
+                  <ActionMenuItem
                     component={RouterLink}
                     to={gameApplicationRoute.fullPath}
                     onClick={closeNotificationMenu}
                   >
                     {t('navigation.openApplicationPage')}
-                  </MenuItem>
-                ) : (
+                  </ActionMenuItem>
+                ) : totalNotificationsCount > 0 ? (
                   [
                     ...gameNotifications.map((notification) => (
-                      <MenuItem
+                      <ActionMenuItem
                         key={`game-notification-${notification.notificationId}`}
                         component={RouterLink}
                         to={gameModifiersRoute.fullPath}
@@ -277,10 +286,10 @@ export function PanelNavigation() {
                             {getGameNotificationDescription(t, notification)}
                           </Typography>
                         </Stack>
-                      </MenuItem>
+                      </ActionMenuItem>
                     )),
                     ...disbandRequestTeams.map((team) => (
-                      <MenuItem
+                      <ActionMenuItem
                         key={`disband-${team.teamId}`}
                         component={RouterLink}
                         to={teamRegistrationsRoute.fullPath}
@@ -299,10 +308,10 @@ export function PanelNavigation() {
                             })}
                           </Typography>
                         </Stack>
-                      </MenuItem>
+                      </ActionMenuItem>
                     )),
                     ...pendingInvitations.map((invitation) => (
-                      <MenuItem
+                      <ActionMenuItem
                         key={`invitation-${invitation.invitationId}`}
                         component={RouterLink}
                         to={gameApplicationRoute.fullPath}
@@ -321,11 +330,11 @@ export function PanelNavigation() {
                             })}
                           </Typography>
                         </Stack>
-                      </MenuItem>
+                      </ActionMenuItem>
                     )),
                   ]
-                )}
-              </Menu>
+                ) : null}
+              </ActionMenu>
 
               <PanelProfileMenu user={user} onLogout={logout} />
             </Stack>
