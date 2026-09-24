@@ -155,8 +155,8 @@ export function PanelNavigation() {
                 xs: 'auto minmax(0, 1fr) auto',
                 lg: 'minmax(0, 1fr) auto minmax(0, 1fr)',
               },
-              minHeight: { xs: 56, lg: 64 },
-              columnGap: { xs: 0.5, sm: 2, xl: 4 },
+              minHeight: { xs: 50, lg: 58 },
+              columnGap: { xs: 0.5, sm: 1.75, xl: 3.5 },
               alignItems: 'center',
             }}
           >
@@ -168,7 +168,7 @@ export function PanelNavigation() {
               sx={{
                 ...huntBrassTitleSx,
                 color: 'primary.light',
-                fontSize: 22,
+                fontSize: 20,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -194,7 +194,7 @@ export function PanelNavigation() {
                 sx={{
                   display: { xs: 'inline', sm: 'none' },
                   color: 'primary.main',
-                  fontSize: 19,
+                  fontSize: 17,
                   letterSpacing: '-0.08em',
                 }}
               >
@@ -229,7 +229,7 @@ export function PanelNavigation() {
                 layout="icon"
               >
                 <NotificationCount color="warning" badgeContent={totalNotificationsCount} max={9}>
-                  <SvgIcon sx={{ fontSize: 20 }}>
+                  <SvgIcon sx={{ fontSize: 18 }}>
                     <path
                       d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
                       fill="none"

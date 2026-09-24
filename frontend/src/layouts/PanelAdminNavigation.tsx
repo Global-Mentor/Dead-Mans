@@ -94,7 +94,7 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
           active={isActive}
           layout="management"
         >
-          <SvgIcon aria-hidden sx={{ fontSize: 19 }}>
+          <SvgIcon aria-hidden sx={{ fontSize: 17 }}>
             <path
               d="M5 4v16M12 4v16M19 4v16M2 8h6M9 16h6M16 9h6"
               fill="none"

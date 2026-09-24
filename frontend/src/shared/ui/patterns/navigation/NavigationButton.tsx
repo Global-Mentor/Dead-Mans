@@ -13,12 +13,12 @@ function navigationSx(theme: Theme, active: boolean, layout: NavigationLayout) {
   return {
     position: 'relative',
     minHeight: 44,
-    px: 1.25,
-    gap: 0.75,
+    px: 1.125,
+    gap: 0.675,
     flexShrink: 0,
     borderRadius: '4px',
     fontFamily: theme.typography.fontFamily ?? 'inherit',
-    fontSize: 16,
+    fontSize: 14.4,
     fontWeight: active ? 700 : 500,
     whiteSpace: 'nowrap',
     textDecoration: 'none',
@@ -41,8 +41,8 @@ function navigationSx(theme: Theme, active: boolean, layout: NavigationLayout) {
     ...(layout === 'compact'
       ? { width: '100%', justifyContent: 'flex-start', px: 1, minWidth: 0 }
       : {}),
-    ...(layout === 'profile' ? { maxWidth: 200, minWidth: 44, px: 0.75 } : {}),
-    ...(layout === 'management' ? { minWidth: 44, px: { xs: 1.25, lg: 1.5 } } : {}),
+    ...(layout === 'profile' ? { maxWidth: 180, minWidth: 44, px: 0.675 } : {}),
+    ...(layout === 'management' ? { minWidth: 44, px: { xs: 1.125, lg: 1.35 } } : {}),
     ...(layout === 'icon' ? { width: 44, height: 44 } : {}),
   } as const
 }

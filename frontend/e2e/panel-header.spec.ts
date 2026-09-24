@@ -37,7 +37,7 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
       expect(Math.abs(navigationBox!.x + navigationBox!.width / 2 - width / 2)).toBeLessThan(1)
     }
     const headerBox = await header.boundingBox()
-    expect(headerBox?.height).toBeLessThanOrEqual(compact ? 57 : 65)
+    expect(headerBox?.height).toBeLessThanOrEqual(compact ? 51 : 59)
     const controls = header.locator('a:visible, button:visible')
     const boxes = await controls.evaluateAll((elements) =>
       elements.map((element) => {

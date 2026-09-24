@@ -58,8 +58,8 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           component="span"
           aria-hidden
           sx={(theme) => ({
-            width: 30,
-            height: 30,
+            width: 27,
+            height: 27,
             display: 'grid',
             placeItems: 'center',
             flexShrink: 0,
@@ -67,7 +67,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
             backgroundColor: alpha(theme.palette.primary.main, 0.14),
             border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
             color: 'primary.light',
-            fontSize: 15,
+            fontSize: 13.5,
             fontWeight: 700,
           })}
         >
@@ -77,7 +77,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           variant="body2"
           fontWeight={700}
           noWrap
-          sx={{ display: { xs: 'none', xl: 'block' } }}
+          sx={{ display: { xs: 'none', xl: 'block' }, fontSize: 14.4 }}
         >
           {user.displayName}
         </Typography>
