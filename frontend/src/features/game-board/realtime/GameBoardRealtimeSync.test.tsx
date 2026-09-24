@@ -17,6 +17,7 @@ vi.mock('../../../shared/realtime/index.ts', () => ({
         modifierActivated: 'modifierActivated',
         modifierActivationCancelled: 'modifierActivationCancelled',
         gameLifecycleChanged: 'gameLifecycleChanged',
+        modifierAvailabilityChanged: 'modifierAvailabilityChanged',
       },
     },
   },
@@ -30,6 +31,25 @@ vi.mock('../api/game-board-data-access.ts', () => ({
 
 describe('GameBoardRealtimeSync', () => {
   afterEach(() => vi.clearAllMocks())
+
+  it('refreshes the round and modifiers when the connection is restored', async () => {
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
+    mocks.fetchSnapshot.mockResolvedValue(null)
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GameBoardRealtimeSync />
+      </QueryClientProvider>,
+    )
+
+    await act(async () => {
+      await mocks.useSignalrHubSubscription.mock.calls[0]?.[0].onConnected()
+    })
+
+    expect(mocks.fetchSnapshot).toHaveBeenCalledOnce()
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRounds', 'active'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameModifiers'] })
+  })
 
   it('refreshes board-specific completion views without repeating the shared lifecycle invalidation', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

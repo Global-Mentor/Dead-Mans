@@ -28,6 +28,8 @@ const ROUND_STATE_CHANGED_EVENT = realtimeHubs.gameBoard.events.roundStateChange
 const MODIFIER_ACTIVATED_EVENT = realtimeHubs.gameBoard.events.modifierActivated
 const MODIFIER_CANCELLED_EVENT = realtimeHubs.gameBoard.events.modifierActivationCancelled
 const GAME_LIFECYCLE_CHANGED_EVENT = realtimeHubs.gameBoard.events.gameLifecycleChanged
+const MODIFIER_AVAILABILITY_CHANGED_EVENT =
+  realtimeHubs.gameBoard.events.modifierAvailabilityChanged
 
 export function GameBoardRealtimeSync() {
   const queryClient = useQueryClient()
@@ -46,6 +48,14 @@ export function GameBoardRealtimeSync() {
       (current) => selectNewerGameBoardSnapshot(current, freshSnapshot),
     )
   }, [queryClient])
+
+  const reconnect = useCallback(async () => {
+    await Promise.all([
+      syncFromServerIfNewer(),
+      queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey }),
+      queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all }),
+    ])
+  }, [queryClient, syncFromServerIfNewer])
 
   const registerEventHandlers = useCallback(
     (connection: HubConnection) => {
@@ -125,6 +135,7 @@ export function GameBoardRealtimeSync() {
       connection.on(MODIFIER_ACTIVATED_EVENT, handleModifierActivated)
       connection.on(MODIFIER_CANCELLED_EVENT, handleModifierCancelled)
       connection.on(GAME_LIFECYCLE_CHANGED_EVENT, handleGameLifecycleChanged)
+      connection.on(MODIFIER_AVAILABILITY_CHANGED_EVENT, handleRoundStateChanged)
 
       return () => {
         connection.off(CELL_OPENED_EVENT, handleCellOpened)
@@ -132,6 +143,7 @@ export function GameBoardRealtimeSync() {
         connection.off(MODIFIER_ACTIVATED_EVENT, handleModifierActivated)
         connection.off(MODIFIER_CANCELLED_EVENT, handleModifierCancelled)
         connection.off(GAME_LIFECYCLE_CHANGED_EVENT, handleGameLifecycleChanged)
+        connection.off(MODIFIER_AVAILABILITY_CHANGED_EVENT, handleRoundStateChanged)
       }
     },
     [queryClient, syncFromServerIfNewer],
@@ -140,7 +152,7 @@ export function GameBoardRealtimeSync() {
   useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game board',
-    onConnected: syncFromServerIfNewer,
+    onConnected: reconnect,
     registerEventHandlers,
   })
 
