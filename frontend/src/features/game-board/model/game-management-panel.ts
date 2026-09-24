@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
-import type { GameBoardSnapshot, GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import type { AppButtonTone } from '../../../shared/ui/primitives/app-button-tone.ts'
+import type { GameBoardSnapshot, GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
+import type { AppButtonTone } from '../../../shared/ui/primitives/buttons/app-button-tone.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import type { GameManagementFlowStepId } from './game-management-flow.ts'
 

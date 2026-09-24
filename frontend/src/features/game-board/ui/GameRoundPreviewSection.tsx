@@ -1,7 +1,8 @@
 import { Alert, CircularProgress, Divider, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { RoundScoreBreakdown, SectionCard } from '../../../shared/ui/index.ts'
+import { SectionCard } from '../../../shared/ui/index.ts'
+import { RoundScoreBreakdown } from '../../../shared/game-ui/index.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ScorePreview = components['schemas']['GameRoundScorePreviewDto']

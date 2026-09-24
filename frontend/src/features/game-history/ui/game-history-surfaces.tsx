@@ -2,11 +2,8 @@ import { AccordionDetails, Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import type { components } from '../../../shared/api/contracts/generated'
-import {
-  AppAccordion,
-  AppAccordionSummary,
-  PlayedCardPreviewDialog,
-} from '../../../shared/ui/index.ts'
+import { AppAccordion, AppAccordionSummary } from '../../../shared/ui/index.ts'
+import { PlayedCardPreviewDialog } from '../../../shared/game-ui/index.ts'
 import { MiniMetricChip } from './game-history-display.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']

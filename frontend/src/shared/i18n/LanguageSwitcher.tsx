@@ -1,4 +1,3 @@
-import { alpha } from '@mui/material/styles'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { FormSelect } from '../ui/index.ts'
@@ -21,7 +20,7 @@ export function LanguageSwitcher({ sx }: LanguageSwitcherProps) {
 
   return (
     <FormSelect
-      density="compact"
+      appearance="toolbar"
       label=""
       ariaLabel={t('languageSwitcher.ariaLabel')}
       value={value}
@@ -30,16 +29,7 @@ export function LanguageSwitcher({ sx }: LanguageSwitcherProps) {
         value: languageCode,
         label: t(`languageSwitcher.languages.${languageCode}`),
       }))}
-      sx={[
-        (theme) => ({
-          minWidth: 70,
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: alpha(theme.palette.primary.main, 0.35),
-          },
-          '& .MuiInputLabel-root': { display: 'none' },
-        }),
-        ...(Array.isArray(sx) ? sx : [sx]),
-      ]}
+      sx={sx}
     />
   )
 }

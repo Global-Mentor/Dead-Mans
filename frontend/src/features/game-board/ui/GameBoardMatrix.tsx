@@ -1,7 +1,8 @@
 import { Box, Stack, Tab, Tabs, Typography, useMediaQuery } from '@mui/material'
 import { useId, useState, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, BoardMatrix } from '../../../shared/ui/index.ts'
+import { AppButton } from '../../../shared/ui/index.ts'
+import { BoardMatrix } from '../../../shared/game-ui/index.ts'
 import { ViewportBoard } from './ViewportBoard.tsx'
 
 interface GameBoardMatrixProps extends ComponentProps<typeof BoardMatrix> {

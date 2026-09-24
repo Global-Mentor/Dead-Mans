@@ -2,7 +2,8 @@ import { Box, InputAdornment, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
-import { AppButton, FormTextField, ParticipantNamesList } from '../../../shared/ui/index.ts'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
+import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
 
 interface ModifierStatusBarProps {
   state: GameModifierState

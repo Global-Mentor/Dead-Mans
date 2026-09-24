@@ -1,5 +1,11 @@
 const translations = {
   en: {
+    pagination: { summary: '{{from}}–{{to}} of {{total}}' },
+    discardChanges: {
+      title: 'Discard unsaved changes?',
+      description: 'Your changes will be lost.',
+      confirm: 'Discard',
+    },
     actions: {
       back: 'Back',
       cancel: 'Cancel',
@@ -68,6 +74,12 @@ const translations = {
     },
   },
   ru: {
+    pagination: { summary: '{{from}}–{{to}} из {{total}}' },
+    discardChanges: {
+      title: 'Отменить несохранённые изменения?',
+      description: 'Введённые изменения будут потеряны.',
+      confirm: 'Отменить изменения',
+    },
     actions: {
       back: 'Назад',
       cancel: 'Отмена',
@@ -136,6 +148,12 @@ const translations = {
     },
   },
   uk: {
+    pagination: { summary: '{{from}}–{{to}} з {{total}}' },
+    discardChanges: {
+      title: 'Відкинути незбережені зміни?',
+      description: 'Введені зміни буде втрачено.',
+      confirm: 'Відкинути',
+    },
     actions: {
       back: 'Назад',
       cancel: 'Скасувати',
@@ -204,6 +222,12 @@ const translations = {
     },
   },
   pl: {
+    pagination: { summary: '{{from}}–{{to}} z {{total}}' },
+    discardChanges: {
+      title: 'Odrzucić niezapisane zmiany?',
+      description: 'Wprowadzone zmiany zostaną utracone.',
+      confirm: 'Odrzuć',
+    },
     actions: {
       back: 'Wstecz',
       cancel: 'Anuluj',

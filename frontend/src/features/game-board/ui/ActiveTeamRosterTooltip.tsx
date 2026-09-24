@@ -2,7 +2,7 @@ import { Box, ClickAwayListener, Tooltip, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ParticipantNamesList } from '../../../shared/ui/index.ts'
+import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
 
 interface ActiveTeamRosterTooltipProps {
   title: string

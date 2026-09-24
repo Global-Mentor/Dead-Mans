@@ -14,6 +14,6 @@ describe('AppToast', () => {
   it('renders a non-empty message', async () => {
     render(<AppToast message="Saved" severity="success" onClose={vi.fn()} />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Saved')
+    expect(await screen.findByRole('status')).toHaveTextContent('Saved')
   })
 })

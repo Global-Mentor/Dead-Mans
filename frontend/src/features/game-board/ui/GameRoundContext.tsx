@@ -1,7 +1,7 @@
 import { Chip, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { ParticipantNamesList } from '../../../shared/ui/index.ts'
+import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import {
   buildModifierRuntimeUnits,

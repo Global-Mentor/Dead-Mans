@@ -2,7 +2,8 @@ import { Box } from '@mui/material'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
-import { BoardMatrix, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { BoardMatrix } from '../../../shared/game-ui/index.ts'
 import {
   getGameSetupCellAt,
   upsertGameSetupCellDraft,
