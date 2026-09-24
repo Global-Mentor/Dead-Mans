@@ -131,6 +131,7 @@ export function GameBoardPage() {
         }}
       >
         <GameBoardLayout
+          columns={snapshot.colLabels.length}
           context={
             <GameBoardStatusBar
               title={
@@ -175,7 +176,6 @@ export function GameBoardPage() {
                         to: gameModifiersRoute.fullPath,
                         label: phaseLabel,
                         accessibleLabel: t('gameBoard.flowOpenModifiersAction'),
-                        compactLabel: true,
                       }
                     : undefined
               }
@@ -196,15 +196,18 @@ export function GameBoardPage() {
             <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
           }
         >
-          <GameBoardGrid
-            key={snapshot.gameId}
-            snapshot={snapshot}
-            playResultsByCellId={boardCellResults.playResultsByCellId}
-            activeCellId={activeRound?.cellId ?? null}
-            canOpenCells={canOpenCells}
-            onCellRequestOpen={requestOpenCell}
-            onCellPreviewMedia={setPreviewCell}
-          />
+          {(categoryLayout) => (
+            <GameBoardGrid
+              categoryLayout={categoryLayout}
+              key={snapshot.gameId}
+              snapshot={snapshot}
+              playResultsByCellId={boardCellResults.playResultsByCellId}
+              activeCellId={activeRound?.cellId ?? null}
+              canOpenCells={canOpenCells}
+              onCellRequestOpen={requestOpenCell}
+              onCellPreviewMedia={setPreviewCell}
+            />
+          )}
         </GameBoardLayout>
       </Box>
       <ConfirmDialog

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import type { GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
 
 const categories = ['Охота', 'Оружие', 'Легенды', 'Болота', 'Контракты']
@@ -105,6 +105,16 @@ async function mockGame(
   return writes
 }
 
+async function expectHorizontallyCentered(content: Locator, half: Locator) {
+  const contentBox = await content.boundingBox()
+  const halfBox = await half.boundingBox()
+  expect(contentBox).not.toBeNull()
+  expect(halfBox).not.toBeNull()
+  expect(
+    Math.abs(contentBox!.x + contentBox!.width / 2 - halfBox!.x - halfBox!.width / 2),
+  ).toBeLessThanOrEqual(2)
+}
+
 for (const touch of [false, true]) {
   test(`active team roster tooltip works with ${touch ? 'touch' : 'mouse and keyboard'}`, async ({
     browser,
@@ -151,10 +161,20 @@ for (const touch of [false, true]) {
   })
 }
 
-for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
+for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
   test(`game board is readable and operable at ${width}px`, async ({ page }) => {
     const height =
-      width === 320 ? 700 : width === 390 ? 844 : width === 768 ? 800 : width === 1440 ? 900 : 1080
+      width === 320
+        ? 700
+        : width === 390
+          ? 844
+          : width === 768
+            ? 800
+            : width === 1440
+              ? 900
+              : width === 2560
+                ? 1440
+                : 1080
     await page.setViewportSize({ width, height })
     const writes = await mockGame(page)
     await page.goto('/panel/game-board')
@@ -166,6 +186,10 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
     expect(firstCardBox!.y).toBeLessThan(width < 1200 ? 280 : 210)
     const statusBox = await page.getByTestId('game-board-context').boundingBox()
     expect(statusBox!.height).toBeLessThanOrEqual(76)
+    if (width >= 1200) {
+      expect((await page.getByRole('banner').boundingBox())!.height).toBe(58)
+      expect(statusBox!.width).toBeLessThanOrEqual(541)
+    }
     const rightCardBox = await region
       .locator(`[data-cell-id="${width < 600 ? 'card-5' : 'card-4'}"]`)
       .boundingBox()
@@ -182,12 +206,15 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
       expect(managementBox!.x + managementBox!.width).toBe(width)
       expect(teamsBox!.width).toBe(44)
       expect(managementBox!.width).toBe(44)
+      expect(teamsBox!.height).toBe(130)
+      expect(managementBox!.height).toBe(130)
       expect(Math.abs(teamsBox!.y + teamsBox!.height / 2 - height / 2)).toBeLessThan(1)
       expect(teamsBox!.x + teamsBox!.width).toBeLessThan(firstCardBox!.x)
       const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
       expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
       expect(Math.abs(managementBox!.y - teamsBox!.y)).toBeLessThan(1)
     } else {
+      expect(teamsBox!.x + teamsBox!.width).toBeLessThanOrEqual(managementBox!.x - 4)
       expect(teamsBox!.height).toBe(44)
       expect(managementBox!.height).toBe(44)
       expect(teamsBox!.y + teamsBox!.height).toBeLessThan(firstCardBox!.y)
@@ -217,14 +244,27 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
       })),
     )
     for (const cell of cells) {
-      expect(cell.width).toBeGreaterThanOrEqual(44)
-      expect(cell.bottom).toBeLessThanOrEqual(height)
+      expect(cell.width).toBeGreaterThanOrEqual(width < 600 ? 111 : 79)
       expect(Math.abs(cell.height - cell.width * 1.5)).toBeLessThan(1)
       expect(cell.scroll).toBeLessThanOrEqual(cell.client + 1)
+      if (width >= 1024) expect(cell.bottom).toBeLessThanOrEqual(height)
     }
-    expect(
-      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
-    ).toBe(true)
+    if (width === 1920 || width === 2560) {
+      const valueSize = await region
+        .locator('[data-cell-id="card-2"] [data-card-value]')
+        .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
+      if (width === 1920) expect(valueSize).toBeLessThanOrEqual(20)
+      else expect(valueSize).toBeGreaterThanOrEqual(24)
+      const statusSize = await page
+        .getByTestId('game-board-status-title')
+        .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
+      expect(statusSize).toBe(14.4)
+    }
+    if (width >= 1024) {
+      expect(
+        await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+      ).toBe(true)
+    }
     await page.screenshot({ path: `../.tmp/game-board-design/board-${width}.png`, fullPage: true })
     await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toBeVisible()
     await page.getByRole('button', { name: 'Открыть очередь команд' }).click()
@@ -321,13 +361,13 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920]) {
           region
             .locator('[data-cell-id]')
             .evaluateAll((elements) =>
-              elements.every((element) => element.getBoundingClientRect().bottom <= innerHeight),
+              elements.every((element) => element.getBoundingClientRect().width >= 79),
             ),
         )
         .toBe(true)
-      expect(
-        await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
-      ).toBe(true)
+      await region.locator('[data-cell-id]').last().scrollIntoViewIfNeeded()
+      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+      await expect(region.locator('[data-cell-id]').last()).toBeInViewport()
     }
   })
 }
@@ -346,6 +386,11 @@ test('edge tabs adapt to mobile without losing the open panel or focus', async (
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect.poll(async () => (await teams.boundingBox())!.x).toBe(0)
   expect((await teams.boundingBox())!.width).toBe(44)
+  const management = page.getByRole('button', { name: 'Управление игрой', exact: true })
+  const teamsBox = await teams.boundingBox()
+  const managementBox = await management.boundingBox()
+  expect(teamsBox!.y + teamsBox!.height / 2).toBe(450)
+  expect(managementBox!.y + managementBox!.height / 2).toBe(450)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('complementary', { name: 'Очередь команд' })).toBeVisible()
   await page.keyboard.press('Escape')
@@ -364,9 +409,13 @@ for (const status of ['ready', 'finished'] as const) {
       await expect(action).toBeVisible()
       await expect(action).toHaveClass(/MuiButton-containedPrimary/)
       const label = action.getByTitle(actionLabel)
-      expect(
-        await label.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
-      ).toBeGreaterThanOrEqual(16)
+      const typography = (element: Element) => {
+        const style = getComputedStyle(element)
+        return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
+      }
+      expect(await label.evaluate(typography)).toEqual(
+        await page.getByTestId('game-board-status-title').evaluate(typography),
+      )
       expect(
         await label.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
       ).toBe(true)
@@ -436,6 +485,22 @@ for (const width of [320, 390, 1440]) {
     const teamName =
       width === 320 ? 'ОченьДлинноеНазваниеКомандыБезПробеловДляПроверки' : 'Ночные странники'
     await mockGame(page, 'active', 'viewer', teamName)
+    await page.route('**/api/game', (route) =>
+      route.fulfill({
+        json: {
+          ...board,
+          cells: board.cells.map((cell, index) =>
+            index === 0 ? { ...cell, media: [{ url: '/media/cards/current-round.svg' }] } : cell,
+          ),
+        },
+      }),
+    )
+    await page.route('**/media/cards/current-round.svg', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120"><rect width="80" height="120" fill="gold"/></svg>',
+      }),
+    )
     let roundStatus = 'awaiting_modifiers'
     await page.route('**/api/game/rounds/active', (route) =>
       route.fulfill({
@@ -452,39 +517,61 @@ for (const width of [320, 390, 1440]) {
       }),
     )
     await page.goto('/panel/game-board')
-    await expect(page.locator('[data-cell-id="card-0"]')).toContainText('Текущий раунд')
+    const currentCard = page.locator('[data-cell-id="card-0"]')
+    await expect(currentCard).toHaveText('Текущий раунд')
+    await expect(currentCard.locator('img')).toBeVisible()
+    expect(
+      await currentCard.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth),
+    ).toBe(80)
     if (width < 600) {
       await page.getByRole('tab', { name: 'Оружие', exact: true }).click()
       await page.getByRole('button', { name: 'Текущий раунд', exact: true }).click()
     }
     await expect(page.locator('[data-cell-id="card-0"]')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toBeVisible()
-    const modifierAction = page.getByRole('link', { name: 'Перейти к модификаторам' })
+    const modifierAction = page.getByTestId('game-board-context').getByRole('link', {
+      name: 'Перейти к модификаторам',
+    })
     await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
     const modifierLabel = modifierAction.getByTitle('Активировать модификаторы')
-    expect(
-      await modifierLabel.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
-    ).toBe(width < 600 ? 15 : 16)
+    const teamValue = page.getByTestId('game-board-status-title')
+    const typography = (element: Element) => {
+      const style = getComputedStyle(element)
+      return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
+    }
+    expect(await modifierLabel.evaluate(typography)).toEqual(await teamValue.evaluate(typography))
     expect(
       await modifierLabel.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
     ).toBe(true)
     await expect(page.getByTestId('game-board-context')).toContainText(teamName)
     await expect(page.getByTestId('game-board-context')).toContainText('Активная команда')
     await expect(page.getByTestId('game-board-context')).toContainText('Фаза раунда')
-    const actionBox = await page
-      .getByRole('link', { name: 'Перейти к модификаторам' })
-      .boundingBox()
+    const actionBox = await modifierAction.boundingBox()
     const statusBox = await page.getByTestId('game-board-context').boundingBox()
     const phaseCaptionBox = await modifierAction.getByTitle('Фаза раунда').boundingBox()
     const teamCaptionBox = await page
       .getByTestId('game-board-context')
       .getByTitle('Активная команда')
       .boundingBox()
+    const contextHalves = page.getByTestId('game-board-context').locator(':scope > div > *')
+    await expectHorizontallyCentered(
+      page.getByTestId('game-board-context').getByTitle('Активная команда').locator('..'),
+      contextHalves.nth(0),
+    )
+    await expectHorizontallyCentered(
+      page.getByTestId('game-board-status-title'),
+      contextHalves.nth(0),
+    )
+    await expectHorizontallyCentered(
+      modifierAction.getByTitle('Фаза раунда').locator('..'),
+      contextHalves.nth(1),
+    )
+    await expectHorizontallyCentered(modifierLabel, contextHalves.nth(1))
     expect(phaseCaptionBox!.y - actionBox!.y).toBeGreaterThanOrEqual(7)
     expect(Math.abs(phaseCaptionBox!.y - teamCaptionBox!.y)).toBeLessThanOrEqual(2)
     expect(actionBox!.height).toBeGreaterThanOrEqual(44)
     expect(statusBox!.height).toBeLessThanOrEqual(76)
-    expect(statusBox!.height).toBe(64)
+    expect(statusBox!.height).toBe(58)
     expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(statusBox!.x + statusBox!.width)
     await expect(page.getByRole('button', { name: 'Меню игры' })).toHaveCount(0)
     expect(
@@ -509,6 +596,13 @@ for (const width of [320, 390, 1440]) {
     await page.reload()
     await expect(page.getByTestId('game-board-context')).toContainText('Провести игру')
     await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toHaveCount(0)
+    expect(
+      await page.getByTestId('game-board-context').getByTitle('Провести игру').evaluate(typography),
+    ).toEqual(await teamValue.evaluate(typography))
+    await expectHorizontallyCentered(
+      page.getByTestId('game-board-context').getByTitle('Фаза раунда').locator('..'),
+      page.getByTestId('game-board-context').locator(':scope > div > *').nth(1),
+    )
     const teamBoxAfter = await page
       .getByTestId('game-board-context')
       .getByTestId('game-board-status-title')
@@ -534,6 +628,88 @@ test('side panels honour reduced motion and expose modal semantics', async ({ pa
   await page.keyboard.press('Escape')
   await expect(opener).toBeFocused()
   await expect(opener).toHaveCSS('transition-duration', '0s')
+})
+
+for (const viewport of [
+  { width: 844, height: 390 },
+  { width: 390, height: 500 },
+]) {
+  test(`short viewport preserves readable cards and native keyboard actions at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport)
+    const writes = await mockGame(page)
+    await page.goto('/panel/game-board')
+    const cards = page.locator('[data-cell-id]')
+    await expect(cards.first()).toBeVisible()
+    const sizes = await cards.evaluateAll((elements) =>
+      elements.map((element) => ({
+        width: element.getBoundingClientRect().width,
+        scroll: element.scrollHeight,
+        client: element.clientHeight,
+        tag: element.tagName,
+      })),
+    )
+    for (const card of sizes) {
+      expect(card.width).toBeGreaterThanOrEqual(viewport.width < 600 ? 111 : 79)
+      expect(card.scroll).toBeLessThanOrEqual(card.client + 1)
+      expect(card.tag).toBe('BUTTON')
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const last = cards.last()
+    await last.scrollIntoViewIfNeeded()
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+    await expect(last).toBeInViewport()
+    await page.locator('[data-cell-id="card-0"]').focus()
+    await page.keyboard.press('Space')
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('[data-cell-id="card-0"]')).toBeFocused()
+    expect(writes).toEqual([])
+  })
+}
+
+test('a twelve-column board uses categories when its container cannot keep cards readable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 900 })
+  await mockGame(page)
+  const largeBoard = {
+    ...board,
+    cols: 12,
+    colLabels: Array.from({ length: 12 }, (_, index) => `Категория ${index + 1}`),
+    cells: Array.from({ length: 60 }, (_, index) => ({
+      ...board.cells[index % 25]!,
+      id: `large-${index}`,
+      row: Math.floor(index / 12),
+      col: index % 12,
+    })),
+  }
+  await page.route('**/api/game', (route) => route.fulfill({ json: largeBoard }))
+  await page.goto('/panel/game-board')
+  const categories = page.getByRole('tablist', { name: 'Категории поля' })
+  await expect(categories).toBeVisible()
+  await expect(page.locator('[data-cell-id]')).toHaveCount(5)
+  await page.getByRole('tab', { name: 'Категория 2', exact: true }).click()
+  await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Категория 2')
+  const status = await page.getByTestId('game-board-context').boundingBox()
+  const first = await page.locator('[data-cell-id="large-1"]').boundingBox()
+  const second = await page.locator('[data-cell-id="large-13"]').boundingBox()
+  expect(
+    Math.abs(status!.x + status!.width / 2 - (first!.x + second!.x + second!.width) / 2),
+  ).toBeLessThan(1)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(page.locator('[data-cell-id]')).toHaveCount(60)
+  expect(
+    await page
+      .locator('[data-cell-id]')
+      .evaluateAll((elements) =>
+        elements.every((element) => element.getBoundingClientRect().width >= 79),
+      ),
+  ).toBe(true)
+  await page.setViewportSize({ width: 768, height: 900 })
+  await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Категория 2')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
 for (const width of [320, 1440]) {
@@ -628,7 +804,7 @@ for (const width of [320, 1440]) {
   })
 }
 
-test('card preview loads through the shared image component', async ({ page }) => {
+test('card background and preview load through the shared image component', async ({ page }) => {
   const writes = await mockGame(page)
   await page.route('**/media/cards/ui-check.svg', (route) =>
     route.fulfill({
@@ -648,8 +824,101 @@ test('card preview loads through the shared image component', async ({ page }) =
   )
   await page.goto('/panel/game-board')
   const card = page.locator('[data-cell-id="card-0"]')
+  await expect(card.locator('img')).toBeVisible()
+  expect(await card.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(
+    80,
+  )
   await card.click()
   const dialog = page.getByRole('dialog', { name: 'Следы на болотах', exact: true })
   await expect(dialog.getByRole('img', { name: 'Следы на болотах' })).toBeVisible()
   expect(writes).toEqual([])
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`played card keeps its two-line result readable at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 768 ? 800 : 900 })
+    const writes = await mockGame(page)
+    const finalScore = width === 1440 ? 1234 : 145
+    await page.route('**/api/game/history/games/board-layout', (route) =>
+      route.fulfill({
+        json: {
+          mainGame: {
+            rounds: [
+              {
+                roundId: 'played-round',
+                cellId: 'card-0',
+                cellTitle: 'Следы на болотах',
+                cellDescription: '',
+                cellCost: 100,
+                cellMedia: [],
+                teamName: 'Ночные призраки',
+                teamSlotIndex: 1,
+                finalScore,
+                baseScore: 100,
+                emptyCardPenaltyApplied: false,
+                scoreDetails: {
+                  scoreUnit: 100,
+                  killsScore: 100,
+                  bountyScore: 0,
+                  modifierKillDelta: 0,
+                  modifierKillScore: 0,
+                  modifierScoreDelta: finalScore - 100,
+                  emptyCardPenaltyApplied: false,
+                  emptyCardPenaltyScore: 0,
+                  penaltyTotal: 0,
+                  bonusDelta: finalScore - 100,
+                  totalKillCount: 1,
+                  finalScore,
+                  calculationLines: [],
+                },
+                killsCount: 1,
+                bountyCount: 0,
+                status: 'completed',
+                finishedAtUtc: '2026-09-01T12:00:00Z',
+                modifiers: [],
+                participants: [
+                  { userId: 'p1', displayName: 'Александр Неверовский' },
+                  { userId: 'p2', displayName: 'Екатерина Савельева' },
+                  { userId: 'p3', displayName: 'Игрок с длинным именем' },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    )
+    await page.goto('/panel/game-board')
+    const card = page.locator('[data-cell-id="card-0"]')
+    const label = card.getByTestId('played-cell-result-label')
+    const points = card.getByTestId('played-cell-result-points')
+    await expect(label).toHaveText('Итог')
+    await expect(points).toHaveText(`${finalScore} очк.`)
+    await expect(card).not.toContainText('Ночные призраки')
+    await expect(card).not.toContainText('Александр Неверовский')
+    const labelBox = await label.boundingBox()
+    const pointsBox = await points.boundingBox()
+    expect(labelBox!.y + labelBox!.height).toBeLessThan(pointsBox!.y)
+    await expect(label).toHaveCSS('white-space', 'nowrap')
+    await expect(points).toHaveCSS('white-space', 'nowrap')
+    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    )
+    expect(await points.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    )
+    expect(await card.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
+      true,
+    )
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    if (width >= 768) {
+      const last = await page.locator('[data-cell-id="card-24"]').boundingBox()
+      if (width === 1440) expect(last!.y + last!.height).toBeLessThanOrEqual(900)
+      const bounds = await card.boundingBox()
+      expect(bounds!.width).toBeGreaterThanOrEqual(width === 768 ? 79 : 80)
+    }
+    await page.screenshot({ path: testInfo.outputPath('played-board.png'), fullPage: true })
+    expect(writes).toEqual([])
+  })
+}

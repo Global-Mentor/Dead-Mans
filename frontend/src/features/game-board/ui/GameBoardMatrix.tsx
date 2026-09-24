@@ -1,29 +1,35 @@
-import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useId, useState, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BoardMatrix } from '../../../shared/game-ui/index.ts'
 import { AppButton, TabOption, TabStrip } from '../../../shared/ui/index.ts'
 import { ViewportBoard } from './ViewportBoard.tsx'
+import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardMatrixProps extends ComponentProps<typeof BoardMatrix> {
+  categoryLayout?: boolean
   activeColumnIndex?: number | undefined
 }
 
-export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrixProps) {
+export function GameBoardMatrix({
+  categoryLayout = false,
+  activeColumnIndex,
+  ...props
+}: GameBoardMatrixProps) {
   const { t } = useTranslation()
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'))
   const [selectedColumn, setSelectedColumn] = useState<number | null>(null)
   const id = useId()
   const candidateColumn = selectedColumn ?? activeColumnIndex ?? 0
   const column =
     candidateColumn >= 0 && candidateColumn < props.colLabels.length ? candidateColumn : 0
 
-  if (!isMobile || props.colLabels.length === 0)
+  if (!categoryLayout || props.colLabels.length === 0)
     return (
       <ViewportBoard
         columns={props.colLabels.length}
         rows={props.rowLabels.length}
         gap={(props.gap ?? 0.75) * 8}
+        cardAspectRatio={boardGridMetrics.cardAspectRatio}
         leadWidth={typeof props.leadColumnWidth === 'number' ? props.leadColumnWidth : 40}
       >
         <BoardMatrix {...props} minWidth={0} />
@@ -97,7 +103,13 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
           ))}
         </TabStrip>
       </Stack>
-      <ViewportBoard columns={2} rows={Math.ceil(props.rowLabels.length / 2)} gap={8} mobile>
+      <ViewportBoard
+        columns={2}
+        rows={Math.ceil(props.rowLabels.length / 2)}
+        gap={8}
+        cardAspectRatio={boardGridMetrics.cardAspectRatio}
+        mobile
+      >
         <Box
           role="tabpanel"
           id={`${id}-panel`}

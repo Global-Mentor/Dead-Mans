@@ -9,26 +9,30 @@ interface GameBoardStatusBarProps {
   participantNames?: readonly string[] | undefined
   phase: string
   phaseCaption?: string | undefined
-  action?:
-    { to: string; label: string; accessibleLabel?: string; compactLabel?: boolean } | undefined
+  action?: { to: string; label: string; accessibleLabel?: string } | undefined
 }
 
 const groupSx = {
   display: 'grid',
-  gridTemplateRows: '14px 36px',
+  gridTemplateRows: '13px 32px',
   rowGap: 0,
   alignContent: 'center',
+  justifyItems: 'center',
+  textAlign: 'center',
   minWidth: 0,
   height: '100%',
-  px: { xs: 1.25, sm: 1.75 },
-  pt: '8px',
-  pb: '4px',
+  px: { xs: 1.125, sm: 1.575 },
+  pt: '7px',
+  pb: '3px',
 } as const
 
 const valueSx = {
   alignSelf: 'center',
-  fontSize: { xs: 14, sm: 16 },
-  lineHeight: '18px',
+  justifySelf: 'center',
+  textAlign: 'center',
+  fontSize: { xs: 12.6, sm: 14.4 },
+  lineHeight: { xs: '16px', sm: '18px' },
+  fontWeight: 750,
   overflowWrap: 'anywhere',
   display: '-webkit-box',
   WebkitBoxOrient: 'vertical',
@@ -49,19 +53,20 @@ function StatusCaption({
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 0.75,
+        justifyContent: 'center',
+        gap: 0.675,
         minWidth: 0,
         color: highlighted ? 'text.primary' : 'text.secondary',
-        fontSize: 11,
-        lineHeight: '14px',
+        fontSize: 10,
+        lineHeight: '13px',
       }}
     >
       <Box
         component="span"
         aria-hidden
         sx={{
-          width: 5,
-          height: 5,
+          width: 4.5,
+          height: 4.5,
           flexShrink: 0,
           bgcolor: highlighted ? 'text.primary' : 'primary.main',
           transform: 'rotate(45deg)',
@@ -93,7 +98,7 @@ export function GameBoardStatusBar({
         component="span"
         data-testid="game-board-status-title"
         title={participantNames?.length ? undefined : title}
-        sx={{ ...valueSx, fontWeight: 750 }}
+        sx={valueSx}
       >
         {title}
       </Typography>
@@ -109,23 +114,13 @@ export function GameBoardStatusBar({
         title={action?.label ?? phase}
         sx={{
           ...valueSx,
-          pr: 2.5,
           color: action ? 'text.primary' : 'text.secondary',
-          ...(action
-            ? {
-                fontSize: action.compactLabel ? { xs: 15, sm: 16 } : { xs: 16, sm: 18 },
-                lineHeight: action.compactLabel ? '20px' : { xs: '20px', sm: '22px' },
-                fontWeight: 700,
-                pr: { xs: 0, sm: 2.5 },
-              }
-            : {}),
         }}
       >
         {action?.label ?? phase}
       </Typography>
     </>
   )
-
   return (
     <Box
       sx={(theme) => ({
@@ -136,7 +131,7 @@ export function GameBoardStatusBar({
         },
         minWidth: 0,
         // Reserve the same two-line value slot in every phase, including actionable ones.
-        height: 64,
+        height: 58,
         border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
         borderRadius: 0,
         background: `linear-gradient(110deg, ${alpha(theme.palette.primary.main, 0.09)}, ${alpha(theme.palette.background.paper, 0.88)} 60%)`,
@@ -160,14 +155,12 @@ export function GameBoardStatusBar({
             sx={(theme) => ({
               ...groupSx,
               gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr',
-              // Account for the button border to align captions with the adjacent group.
-              pt: '7px',
-              pb: '3px',
-              position: 'relative',
+              pt: '6px',
+              pb: '2px',
               width: '100%',
               minHeight: 44,
               justifyContent: 'stretch',
-              textAlign: 'left',
+              textAlign: 'center',
               textTransform: 'none',
               whiteSpace: 'normal',
               borderRadius: 0,
@@ -179,25 +172,6 @@ export function GameBoardStatusBar({
             })}
           >
             {phaseContent}
-            <Box
-              component="svg"
-              aria-hidden
-              viewBox="0 0 20 20"
-              sx={{
-                position: 'absolute',
-                display: { xs: 'none', sm: 'block' },
-                right: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 16,
-                height: 16,
-                fill: 'none',
-                stroke: 'currentColor',
-                strokeWidth: 1.5,
-              }}
-            >
-              <path d="M4 10h11m-4-4 4 4-4 4" />
-            </Box>
           </AppLinkButton>
         ) : (
           <Box

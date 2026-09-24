@@ -1,15 +1,10 @@
 import { ThemeProvider } from '@mui/material'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactElement } from 'react'
-import { afterEach, beforeAll, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, expect, it } from 'vitest'
 import { appTheme } from '../../../app/theme/appTheme.ts'
 import i18n from '../../../i18n.ts'
 import { GameBoardMatrix } from './GameBoardMatrix.tsx'
-
-vi.mock('@mui/material', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@mui/material')>()),
-  useMediaQuery: () => true,
-}))
 
 afterEach(cleanup)
 beforeAll(async () => {
@@ -23,6 +18,7 @@ function renderWithAppProviders(ui: ReactElement) {
 }
 
 const props = {
+  categoryLayout: true,
   colLabels: ['Hunt', 'Weapons', 'Legends'],
   rowLabels: ['100', '200'],
   renderColumnLabel: (label: string) => label,

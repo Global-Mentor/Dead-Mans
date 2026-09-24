@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { boardGridMetrics } from './board-grid-metrics.ts'
 
 interface BoardCellSxOptions {
   isOpen: boolean
@@ -33,7 +34,7 @@ export function createBoardCellSx({
     width: '100%',
     minWidth: 0,
     minHeight: 0,
-    aspectRatio: '2 / 3',
+    aspectRatio: boardGridMetrics.cardAspectRatio,
     containerType: 'inline-size',
     gap: 0.35,
     p: 1,

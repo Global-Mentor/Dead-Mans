@@ -1,26 +1,62 @@
-import { Box } from '@mui/material'
-import type { ReactNode } from 'react'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardLayoutProps {
+  columns: number
   context: ReactNode
   teams: ReactNode
   management: ReactNode
-  children: ReactNode
+  children: (categoryLayout: boolean) => ReactNode
 }
 
 // Edge tabs stay out of the board's flow; on smaller screens they become normal buttons.
-export function GameBoardLayout({ context, teams, management, children }: GameBoardLayoutProps) {
+export function GameBoardLayout({
+  columns,
+  context,
+  teams,
+  management,
+  children,
+}: GameBoardLayoutProps) {
+  const theme = useTheme()
+  const smallScreen = useMediaQuery(theme.breakpoints.down('sm'))
+  const container = useRef<HTMLDivElement>(null)
+  const [availableWidth, setAvailableWidth] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const element = container.current
+    if (!element) return
+    const measure = () => {
+      const styles = getComputedStyle(element)
+      const width =
+        element.clientWidth -
+        parseFloat(styles.paddingLeft || '0') -
+        parseFloat(styles.paddingRight || '0')
+      if (width > 0) setAvailableWidth(width)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const minimumMatrixWidth =
+    boardGridMetrics.leadColumnWidth +
+    columns *
+      (boardGridMetrics.minimumCardWidth.desktop + parseFloat(theme.spacing(boardGridMetrics.gap)))
+  const categoryLayout =
+    smallScreen || (availableWidth !== null && availableWidth < minimumMatrixWidth)
+
   return (
     <Box
+      ref={container}
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) auto',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
         gridTemplateAreas: {
           xs: '"teams management" "context context" "board board"',
           lg: '"context context" "board board"',
         },
-        gap: 1,
+        gap: 0.9,
         alignItems: 'start',
         minWidth: 0,
         // Keep full-width boards clear of the 44px edge tabs too.
@@ -36,11 +72,11 @@ export function GameBoardLayout({ context, teams, management, children }: GameBo
           return {
             gridArea: 'context',
             minWidth: 0,
-            width: { xs: '100%', sm: `calc(100% - ${labelGutter}px)` },
-            maxWidth: 600,
+            width: categoryLayout ? '100%' : `calc(100% - ${labelGutter}px)`,
+            maxWidth: boardGridMetrics.statusMaxWidth,
             justifySelf: 'center',
             // The row-price gutter belongs to the matrix, not to the visual card field.
-            transform: { sm: `translateX(${labelGutter / 2}px)` },
+            transform: categoryLayout ? undefined : `translateX(${labelGutter / 2}px)`,
           }
         }}
       >
@@ -50,6 +86,7 @@ export function GameBoardLayout({ context, teams, management, children }: GameBo
         data-testid="game-board-teams"
         sx={{
           gridArea: 'teams',
+          minWidth: 0,
           display: { lg: 'contents' },
         }}
       >
@@ -59,12 +96,13 @@ export function GameBoardLayout({ context, teams, management, children }: GameBo
         data-testid="game-board-management"
         sx={{
           gridArea: 'management',
+          minWidth: 0,
           display: { lg: 'contents' },
         }}
       >
         {management}
       </Box>
-      <Box sx={{ gridArea: 'board', minWidth: 0 }}>{children}</Box>
+      <Box sx={{ gridArea: 'board', minWidth: 0 }}>{children(categoryLayout)}</Box>
     </Box>
   )
 }

@@ -1,5 +1,6 @@
 import type { Theme } from '@mui/material/styles'
 import type { ComponentProps } from 'react'
+import { uiTokens } from '../../../theme/tokens.ts'
 import { AppButton } from '../../primitives/buttons/AppButton.tsx'
 
 export type PanelTriggerPlacement = 'inline' | 'edge' | 'responsiveEdge'
@@ -14,7 +15,7 @@ function edgeTabSx(theme: Theme, side: 'left' | 'right') {
       zIndex: theme.zIndex.drawer - 1,
       width: 44,
       minWidth: 44,
-      height: 144,
+      height: 130,
       writingMode: 'vertical-rl',
       whiteSpace: 'nowrap',
     },
@@ -30,18 +31,26 @@ interface PanelTriggerProps extends Omit<ComponentProps<typeof AppButton>, 'tone
 export function PanelTrigger({
   placement = 'inline',
   side = 'right',
+  size = placement === 'responsiveEdge' ? 'small' : 'medium',
   ...props
 }: PanelTriggerProps) {
   return (
     <AppButton
       {...props}
-      tone={placement === 'edge' ? 'secondary' : 'ghost'}
+      tone="secondary"
+      size={size}
       aria-haspopup="dialog"
       sx={(theme) =>
         placement === 'responsiveEdge'
-          ? edgeTabSx(theme, side)
+          ? {
+              width: '100%',
+              minWidth: 0,
+              minHeight: uiTokens.control.height.standard,
+              fontSize: '0.9rem',
+              ...edgeTabSx(theme, side),
+            }
           : placement === 'inline'
-            ? {}
+            ? { minHeight: uiTokens.control.height.standard }
             : {
                 position: 'fixed',
                 zIndex: theme.zIndex.drawer - 1,

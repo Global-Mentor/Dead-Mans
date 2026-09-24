@@ -24,7 +24,9 @@ export function TabStrip({
                 '& .MuiTabs-indicator': { display: 'none' },
               }
             : {}),
-          ...(appearance === 'category' ? { '& .MuiTabs-scrollButtons': { width: 24 } } : {}),
+          ...(appearance === 'category'
+            ? { '& .MuiTabs-scrollButtons': { width: uiTokens.control.height.standard } }
+            : {}),
         },
         sx,
       )}
