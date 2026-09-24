@@ -18,6 +18,7 @@ import {
   gameHistoryQueryKeys,
 } from '../game-history/api/game-history-queries.ts'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
+import { useSubmitQuizAnswer } from './use-submit-quiz-answer.ts'
 import { QuizQuestionSessionHistoryItem } from './QuizQuestionSessionHistoryItem.tsx'
 import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 import {
@@ -27,7 +28,6 @@ import {
   prepareTwitchQuizQuestion,
   retryTwitchQuizPublication,
   skipTwitchQuizOutcome,
-  submitGameQuizAnswer,
 } from './api/game-quiz-api.ts'
 import {
   availableGameQuizQuestionsQueryOptions,
@@ -56,11 +56,6 @@ export function GameQuizPage() {
   const currentQuizQuery = useQuery({
     ...currentGameQuizQueryOptions(gameId),
     enabled: gameId !== '',
-    refetchOnWindowFocus: 'always',
-    refetchInterval: (query) => {
-      const state = query.state.data
-      return state?.status === 'open' && Date.now() >= Date.parse(state.closesAtUtc) ? 1000 : false
-    },
   })
   const canManageQuiz =
     user?.roles.some((role) => role === 'moderator' || role === 'admin' || role === 'superadmin') ??
@@ -95,21 +90,7 @@ export function GameQuizPage() {
       queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
     ])
   }
-  const submitMutation = useMutation({
-    mutationFn: ({
-      questionSessionId,
-      optionId,
-    }: {
-      questionSessionId: string
-      optionId: string
-    }) => submitGameQuizAnswer(questionSessionId, optionId),
-    onSuccess: invalidateQuiz,
-    onMutate: () => setActionError(null),
-    onError: async (error) => {
-      setActionError({ gameId, error })
-      await invalidateQuiz()
-    },
-  })
+  const submitMutation = useSubmitQuizAnswer(gameId)
   const askNextMutation = useMutation({
     mutationFn: async () => {
       if (twitchStatusQuery.data?.enabled) await prepareTwitchQuizQuestion()
@@ -231,10 +212,18 @@ export function GameQuizPage() {
             askSpecificMutation.isPending ||
             twitchStatusQuery.data?.publication?.status === 'publishing'
           }
-          error={actionError?.gameId === gameId ? actionError.error : null}
-          onSubmit={(questionSessionId, optionId) =>
-            submitMutation.mutate({ questionSessionId, optionId })
+          error={
+            actionError?.gameId === gameId
+              ? actionError.error
+              : submitMutation.variables?.questionSessionId ===
+                  currentQuizQuery.data?.questionSessionId
+                ? submitMutation.error
+                : null
           }
+          onSubmit={(questionSessionId, optionId) => {
+            setActionError(null)
+            submitMutation.mutate({ questionSessionId, optionId })
+          }}
           onAskNext={() => askNextMutation.mutate()}
           onAskSpecific={(questionId) => askSpecificMutation.mutate(questionId)}
           onDeadline={() => void currentQuizQuery.refetch()}

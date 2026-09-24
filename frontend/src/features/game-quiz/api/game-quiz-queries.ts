@@ -16,6 +16,11 @@ export const gameQuizQueryKeys = {
 export const currentGameQuizQueryOptions = (gameId: string) =>
   queryOptions({
     queryKey: gameQuizQueryKeys.current(gameId),
+    refetchOnWindowFocus: 'always',
+    refetchInterval: (query) => {
+      const state = query.state.data
+      return state?.status === 'open' && Date.now() >= Date.parse(state.closesAtUtc) ? 1000 : false
+    },
     queryFn: async () => {
       const state = await fetchCurrentGameQuizState()
       return state?.gameId === gameId ? state : null

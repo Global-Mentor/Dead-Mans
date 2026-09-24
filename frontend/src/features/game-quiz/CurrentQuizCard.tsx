@@ -27,11 +27,12 @@ type CurrentQuizCardProps = {
   questionsError?: boolean
   onRetryQuestions?: () => void
   isSubmitting: boolean
+  answerDisabled?: boolean
   isStarting: boolean
   error: Error | null
   onSubmit: (questionSessionId: string, optionId: string) => void
-  onAskNext: () => void
-  onAskSpecific: (questionId: string) => void
+  onAskNext?: () => void
+  onAskSpecific?: (questionId: string) => void
   onDeadline: () => void
 }
 
@@ -43,6 +44,7 @@ export function CurrentQuizCard({
   questionsError = false,
   onRetryQuestions,
   isSubmitting,
+  answerDisabled = false,
   isStarting,
   error,
   onSubmit,
@@ -92,7 +94,7 @@ export function CurrentQuizCard({
         description={description}
       />
 
-      {canManage ? (
+      {canManage && onAskNext && onAskSpecific ? (
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
@@ -189,7 +191,13 @@ export function CurrentQuizCard({
                   key={option.optionId}
                   tone="ghost"
                   data-quiz-result={resultKind}
-                  disabled={!isOpen || hasAnswered || isSubmitting}
+                  disabled={
+                    !isOpen ||
+                    countdown.secondsLeft === 0 ||
+                    hasAnswered ||
+                    isSubmitting ||
+                    answerDisabled
+                  }
                   onClick={() => onSubmit(state.questionSessionId, option.optionId)}
                   selected={isSelected}
                   outcome={
@@ -234,16 +242,18 @@ export function CurrentQuizCard({
           ) : null}
         </Stack>
       )}
-      <QuizQuestionPickerDialog
-        open={questionPickerOpen}
-        questions={selectableQuestions}
-        busy={isStarting || isOpen}
-        loading={questionsLoading}
-        error={questionsError}
-        {...(onRetryQuestions ? { onRetry: onRetryQuestions } : {})}
-        onClose={() => setQuestionPickerOpen(false)}
-        onSelect={onAskSpecific}
-      />
+      {canManage && onAskSpecific ? (
+        <QuizQuestionPickerDialog
+          open={questionPickerOpen}
+          questions={selectableQuestions}
+          busy={isStarting || isOpen}
+          loading={questionsLoading}
+          error={questionsError}
+          {...(onRetryQuestions ? { onRetry: onRetryQuestions } : {})}
+          onClose={() => setQuestionPickerOpen(false)}
+          onSelect={onAskSpecific}
+        />
+      ) : null}
     </SectionCard>
   )
 }
