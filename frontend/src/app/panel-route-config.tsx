@@ -100,7 +100,14 @@ const gameSetupRealtimeSync = lazyPanelPage(
   'GameSetupRealtimeSync',
 )
 
+const gameHistoryRealtimeSync = lazyPanelPage(
+  () => import('../features/game-history/GameHistoryRealtimeSync.tsx'),
+  'GameHistoryRealtimeSync',
+)
+
 const panelSyncComponents = {
+  'game-history': gameHistoryRealtimeSync,
+  'game-leaderboard': gameHistoryRealtimeSync,
   'game-board': lazyPanelPage(
     () => import('../features/game-board/realtime/GameBoardRealtimeSync.tsx'),
     'GameBoardRealtimeSync',

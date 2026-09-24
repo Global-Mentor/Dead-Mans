@@ -1,20 +1,24 @@
-import { AccordionDetails, Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppAccordionSummary, AppButton } from '../../../shared/ui/index.ts'
 import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
-import { getRoundBonusDelta, getRoundScore } from '../model/game-history-team-leaderboard.ts'
+import {
+  AppAccordion,
+  AppAccordionDetails,
+  AppAccordionSummary,
+  AppButton,
+  DisclosureSection,
+  ItemCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import { formatCardLabel, formatHistoryTeamName } from '../model/game-history-formatters.ts'
+import { getRoundBonusDelta, getRoundScore } from '../model/game-history-team-leaderboard.ts'
 import {
   formatOptionalDateTime,
   formatSignedNumber,
   getRoundStatusColor,
   normalizeRoundStatus,
 } from '../model/game-history-view.ts'
-import { MiniMetricChip } from './game-history-display.tsx'
-import { AccordionSurface, CollapsibleSection, ExpandGlyph } from './game-history-surfaces.tsx'
-
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 
 export function RoundHistoryRow({
@@ -30,8 +34,8 @@ export function RoundHistoryRow({
   const modifierScoreDelta = round.scoreDetails.modifierScoreDelta
 
   return (
-    <AccordionSurface>
-      <AppAccordionSummary expandIcon={<ExpandGlyph />}>
+    <AppAccordion>
+      <AppAccordionSummary>
         <Box sx={{ width: '100%' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems="flex-start">
             <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -39,14 +43,14 @@ export function RoundHistoryRow({
                 <Typography variant="body1" sx={{ fontWeight: 800 }}>
                   {formatHistoryTeamName(t, round.teamName, round.teamSlotIndex)}
                 </Typography>
-                <Chip
+                <StatusBadge
                   size="small"
                   label={t(`gameHistory.roundStatus.${normalizeRoundStatus(round.status)}`, {
                     defaultValue: t('gameHistory.notAvailable'),
                   })}
                   color={getRoundStatusColor(round.status)}
                 />
-                <Chip
+                <StatusBadge
                   size="small"
                   variant="outlined"
                   label={t('gameHistory.pointsValue', { points: getRoundScore(round) })}
@@ -59,16 +63,26 @@ export function RoundHistoryRow({
             </Box>
 
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-              <MiniMetricChip label={t('gameHistory.cardCostLabel', { cost: round.cellCost })} />
-              <MiniMetricChip
+              <StatusBadge
+                density="compact"
+                variant="outlined"
+                label={t('gameHistory.cardCostLabel', { cost: round.cellCost })}
+              />
+              <StatusBadge
+                density="compact"
+                variant="outlined"
                 label={t('gameHistory.summary.killsShort', {
                   count: round.scoreDetails.totalKillCount,
                 })}
               />
-              <MiniMetricChip
+              <StatusBadge
+                density="compact"
+                variant="outlined"
                 label={t('gameHistory.summary.bountiesShort', { count: round.bountyCount })}
               />
-              <MiniMetricChip
+              <StatusBadge
+                density="compact"
+                variant="outlined"
                 label={t('gameHistory.summary.bonusShort', {
                   value: formatSignedNumber(getRoundBonusDelta(round)),
                 })}
@@ -78,7 +92,7 @@ export function RoundHistoryRow({
         </Box>
       </AppAccordionSummary>
 
-      <AccordionDetails sx={{ px: 1.75, pt: 0, pb: 1.75 }}>
+      <AppAccordionDetails sx={{ px: 1.75, pt: 0, pb: 1.75 }}>
         <Stack spacing={1.2}>
           <Typography variant="caption" color="text.secondary">
             {formatOptionalDateTime(
@@ -89,13 +103,17 @@ export function RoundHistoryRow({
           </Typography>
 
           <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-            <MiniMetricChip
+            <StatusBadge
+              density="compact"
+              variant="outlined"
               label={t('gameHistory.summary.baseScoreShort', {
                 points: round.baseScore,
               })}
             />
             {modifierScoreDelta !== 0 ? (
-              <MiniMetricChip
+              <StatusBadge
+                density="compact"
+                variant="outlined"
                 label={t('gameHistory.summary.modifierDeltaShort', {
                   value: formatSignedNumber(modifierScoreDelta),
                 })}
@@ -125,26 +143,16 @@ export function RoundHistoryRow({
           </Stack>
 
           {modifiers.length > 0 ? (
-            <CollapsibleSection
+            <DisclosureSection
               title={t('common.entities.modifiers')}
               description={t('gameHistory.summary.roundModifierDescription')}
               countLabel={t('gameHistory.summary.modifierCountShort', {
                 count: modifiers.length,
               })}
-              nested
             >
               <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
                 {modifiers.map((modifier) => (
-                  <Box
-                    key={modifier.modifierResultId}
-                    sx={(theme) => ({
-                      minWidth: 0,
-                      borderRadius: 1.5,
-                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                      px: 1,
-                      py: 0.8,
-                    })}
-                  >
+                  <ItemCard key={modifier.modifierResultId} sx={{ minWidth: 0 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
                       {t('gameHistory.modifierChipLabel', {
                         modifier: modifier.modifierName,
@@ -160,10 +168,10 @@ export function RoundHistoryRow({
                         {modifier.modifierDescription}
                       </Typography>
                     ) : null}
-                  </Box>
+                  </ItemCard>
                 ))}
               </Stack>
-            </CollapsibleSection>
+            </DisclosureSection>
           ) : null}
 
           {round.notes ? (
@@ -172,7 +180,7 @@ export function RoundHistoryRow({
             </Typography>
           ) : null}
         </Stack>
-      </AccordionDetails>
-    </AccordionSurface>
+      </AppAccordionDetails>
+    </AppAccordion>
   )
 }

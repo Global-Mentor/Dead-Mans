@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type WebSocketRoute } from '@playwright/test'
 
 const gameId = '11111111-1111-4111-8111-111111111111'
 
@@ -121,6 +121,10 @@ function createSnapshot(name: string, successfulActivationsCount: number) {
 }
 
 async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia = false) {
+  let quizPoints = 25
+  let gameStatus = 'active'
+  let socket: WebSocketRoute | undefined
+  let connections = 0
   const withCardMedia = (round: ReturnType<typeof createRound>) => ({
     ...round,
     cellMedia: withMedia ? [{ url: '/card-preview-test.svg' }] : [],
@@ -132,9 +136,13 @@ async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia =
     rounds: team.rounds.map(withCardMedia),
   }))
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
-  await page.routeWebSocket(/\/hubs\/game-board/, (socket) => {
-    socket.onMessage((message) => {
-      if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
+  await page.routeWebSocket(/\/hubs\/game-board/, (route) => {
+    socket = route
+    route.onMessage((message) => {
+      if (message.toString().includes('"protocol"')) {
+        route.send('{}\u001e')
+        connections += 1
+      }
     })
   })
   await page.route(
@@ -166,7 +174,7 @@ async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia =
         return route.fulfill({
           json: {
             gameId,
-            status: 'active',
+            status: gameStatus,
             title: 'Большая командная игра',
             version: 1,
             rows: 1,
@@ -185,7 +193,7 @@ async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia =
           json: {
             gameId,
             gameTitle: 'Большая командная игра',
-            gameStatus: 'active',
+            gameStatus,
             createdAtUtc: '2026-09-21T10:00:00Z',
             startedAtUtc: '2026-09-21T10:01:00Z',
             finishedAtUtc: null,
@@ -196,8 +204,29 @@ async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia =
               rounds: selectedTeams.flatMap((team) => team.rounds),
             },
             quiz: {
-              totalPoints: 35,
-              playerStats: [],
+              totalPoints: quizPoints + 10,
+              playerStats: [
+                {
+                  userId: '10000000-0000-4000-8000-000000000001',
+                  displayName: 'Лучший знаток',
+                  points: quizPoints,
+                  spentPoints: 10,
+                  availablePoints: quizPoints - 10,
+                  attempts: 4,
+                  correctAnswers: 3,
+                  lastActivityAtUtc: '2026-09-21T11:00:00Z',
+                },
+                {
+                  userId: '10000000-0000-4000-8000-000000000002',
+                  displayName: 'Второй знаток',
+                  points: 10,
+                  spentPoints: 0,
+                  availablePoints: 10,
+                  attempts: 3,
+                  correctAnswers: 1,
+                  lastActivityAtUtc: '2026-09-21T10:55:00Z',
+                },
+              ],
               questionSessions: [],
               manualAwards: [],
             },
@@ -212,11 +241,70 @@ async function mockLeaderboard(page: Page, teamCount = teams.length, withMedia =
       return route.fulfill({ status: 204 })
     },
   )
+  return {
+    setQuizPoints: (points: number) => {
+      quizPoints = points
+    },
+    finish: () => {
+      gameStatus = 'finished'
+    },
+    connectionCount: () => connections,
+    ping: () => socket!.send(JSON.stringify({ type: 6 }) + '\u001e'),
+    emit: (target: string) =>
+      socket!.send(JSON.stringify({ type: 1, target, arguments: [] }) + '\u001e'),
+    disconnect: () => socket!.close({ code: 1012 }),
+  }
 }
+
+test('quiz standings update live and recover missed results after reconnect', async ({ page }) => {
+  const server = await mockLeaderboard(page, 1)
+  await page.goto('/panel/game-leaderboard')
+  await page.getByRole('tab', { name: 'Лидерборд викторины' }).click()
+  const leaderboard = page.getByTestId('quiz-leaderboard')
+  await expect(leaderboard.getByText('25 очк.')).toBeVisible()
+  await expect.poll(server.connectionCount).toBe(1)
+
+  server.setQuizPoints(40)
+  server.emit('quizStateChanged')
+  await expect(leaderboard.getByText('40 очк.')).toBeVisible()
+
+  // Points change while disconnected, with no quiz event to replay.
+  await server.disconnect()
+  server.setQuizPoints(55)
+  await expect.poll(server.connectionCount, { timeout: 15_000 }).toBe(2)
+  await expect(leaderboard.getByText('55 очк.')).toBeVisible()
+
+  server.setQuizPoints(60)
+  server.finish()
+  server.emit('gameLifecycleChanged')
+  await expect(leaderboard.getByText('60 очк.')).toBeVisible()
+  const navigation = page.getByRole('navigation', { name: 'Основная навигация' })
+  await expect(navigation.getByRole('link', { name: 'Викторина' })).toHaveCount(0)
+})
+
+test('quiz standings recover a lost event through the active-game fallback refresh', async ({
+  page,
+}) => {
+  await page.clock.install()
+  const server = await mockLeaderboard(page, 1)
+  await page.goto('/panel/game-leaderboard')
+  await page.getByRole('tab', { name: 'Лидерборд викторины' }).click()
+  const leaderboard = page.getByTestId('quiz-leaderboard')
+  await expect(leaderboard.getByText('25 очк.')).toBeVisible()
+  await expect.poll(server.connectionCount).toBe(1)
+  server.setQuizPoints(45)
+  await page.clock.fastForward(15_000)
+  server.ping()
+  // Deliver the ping before advancing past the server timeout window.
+  await expect.poll(server.connectionCount).toBe(1)
+  await page.clock.fastForward(16_000)
+  await expect(leaderboard.getByText('45 очк.')).toBeVisible()
+  expect(server.connectionCount()).toBe(1)
+})
 
 for (const size of [
   { width: 1366, height: 768 },
-  { width: 1400, height: 900 },
+  { width: 1440, height: 900 },
   { width: 1600, height: 900 },
   { width: 1920, height: 1080 },
   { width: 2560, height: 1440 },
@@ -234,6 +322,15 @@ for (const size of [
     await expect(summary).toBeVisible()
     await expect(table).toBeVisible()
     await expect(details).toBeVisible()
+    const quizTab = page.getByRole('tab', { name: 'Лидерборд викторины' })
+    await expect(quizTab).toBeInViewport()
+    await quizTab.click()
+    const quizLeaderboard = page.getByTestId('quiz-leaderboard')
+    await expect(quizLeaderboard).toBeVisible()
+    await expect(quizLeaderboard.getByText('Лучший знаток')).toBeVisible()
+    await expect(quizLeaderboard.getByText('25 очк.')).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('quiz-leaderboard.png') })
+    await page.getByRole('tab', { name: 'Команды', exact: true }).click()
     const rows = table.getByRole('button')
     expect(
       await rows.evaluateAll((elements) =>
@@ -265,15 +362,23 @@ for (const size of [
     const modifierSummary = page.getByTestId('modifier-summary-disclosure')
     const activeModifier = page.getByText('Использованный модификатор', { exact: false })
     await expect(modifierSummary).not.toHaveAttribute('open', '')
-    await expect(modifierSummary.locator('.modifier-summary-description')).not.toBeVisible()
+    await expect(
+      modifierSummary.getByText('Зафиксированные редакции и их вклад по завершённым раундам.', {
+        exact: true,
+      }),
+    ).not.toBeVisible()
     await expect(activeModifier).not.toBeVisible()
     await modifierSummary.locator('summary').click()
-    await expect(modifierSummary.locator('.modifier-summary-description')).toBeVisible()
+    await expect(
+      modifierSummary.getByText('Зафиксированные редакции и их вклад по завершённым раундам.', {
+        exact: true,
+      }),
+    ).toBeVisible()
     await expect(activeModifier).toBeVisible()
   })
 }
 
-for (const width of [390, 800]) {
+for (const width of [320, 390, 768]) {
   test(`leaderboard opens team details without scrolling at ${width}px`, async ({
     page,
   }, testInfo) => {
@@ -356,9 +461,9 @@ test('a short leaderboard fills the row width without reserving an empty scrollb
   await mockLeaderboard(page, 1)
   await page.goto('/panel/game-leaderboard')
   const table = page.getByTestId('current-leaderboard-table')
-  const row = table.getByRole('button')
+  const row = table.getByRole('row').last()
   await expect(row).toBeVisible()
-  const tableBounds = await table.boundingBox()
+  const tableBounds = await table.getByRole('table').boundingBox()
   const rowBounds = await row.boundingBox()
   expect(
     Math.abs(tableBounds!.x + tableBounds!.width - rowBounds!.x - rowBounds!.width),

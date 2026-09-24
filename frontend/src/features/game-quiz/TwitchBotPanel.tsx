@@ -1,8 +1,7 @@
-import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../shared/ui/index.ts'
-
+import { AppButton, InlineNotice, SectionCard, StatusBadge } from '../../shared/ui/index.ts'
 type Props = {
   status: TwitchBotStatus
   canAdmin: boolean
@@ -43,7 +42,7 @@ export function TwitchBotPanel({
             </Typography>
           </Box>
           <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ flex: 1 }}>
-            <Chip
+            <StatusBadge
               size="small"
               color={status.botConnected ? 'success' : 'warning'}
               label={t(
@@ -52,7 +51,7 @@ export function TwitchBotPanel({
                   : 'gameQuiz.twitch.botDisconnected',
               )}
             />
-            <Chip
+            <StatusBadge
               size="small"
               color={status.broadcasterConnected ? 'success' : 'warning'}
               label={t(
@@ -61,7 +60,7 @@ export function TwitchBotPanel({
                   : 'gameQuiz.twitch.channelDisconnected',
               )}
             />
-            <Chip
+            <StatusBadge
               size="small"
               color={status.eventSubConnected ? 'success' : 'warning'}
               label={t(
@@ -71,7 +70,7 @@ export function TwitchBotPanel({
               )}
             />
             {publication ? (
-              <Chip size="small" label={t(`gameQuiz.twitch.status.${publication.status}`)} />
+              <StatusBadge size="small" label={t(`gameQuiz.twitch.status.${publication.status}`)} />
             ) : null}
           </Stack>
         </Stack>
@@ -106,15 +105,15 @@ export function TwitchBotPanel({
           </Stack>
         ) : null}
         {publication?.status === 'publishing' ? (
-          <Alert severity="info">{t('gameQuiz.twitch.publishing')}</Alert>
+          <InlineNotice severity="info">{t('gameQuiz.twitch.publishing')}</InlineNotice>
         ) : null}
         {publication?.status === 'uncertain' ? (
-          <Alert severity="warning">{t('gameQuiz.twitch.uncertainWarning')}</Alert>
+          <InlineNotice severity="warning">{t('gameQuiz.twitch.uncertainWarning')}</InlineNotice>
         ) : null}
         {publication?.lastError || status.lastError ? (
-          <Alert severity={publication?.status === 'uncertain' ? 'warning' : 'error'}>
+          <InlineNotice severity={publication?.status === 'uncertain' ? 'warning' : 'error'}>
             {publication?.lastError ?? status.lastError}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {needsRecovery || unresolvedOutcome ? (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>

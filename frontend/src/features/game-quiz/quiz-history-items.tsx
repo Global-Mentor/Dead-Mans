@@ -1,46 +1,33 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
+import { ItemCard, StatusBadge } from '../../shared/ui/index.ts'
 
 type ManualAward = components['schemas']['GameHistoryQuizManualAwardItemDto']
 
 export function ManualAwardHistoryItem({
   award,
   currentUserId,
-  alternate = false,
 }: {
   award: ManualAward
   currentUserId: string | null
-  alternate?: boolean
 }) {
   const { t, i18n } = useTranslation()
-  const isMyAward = award.awardedToUserId === currentUserId
   const isDeduction = award.operationType === 'deduct' || award.awardedPoints < 0
 
   return (
-    <Box
-      data-history-tone={alternate ? 'light' : 'dark'}
-      sx={(theme) => ({
-        px: 2,
-        py: 1.5,
-        backgroundColor: alternate
-          ? alpha(theme.palette.common.white, isMyAward ? 0.07 : 0.055)
-          : alpha(theme.palette.common.black, isMyAward ? 0.16 : 0.22),
-      })}
-    >
+    <ItemCard emphasis={award.awardedToUserId === currentUserId ? 'selected' : 'none'}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
             {t(isDeduction ? 'gameQuiz.manualDeductionLabel' : 'gameQuiz.manualAwardLabel')}
           </Typography>
-          <Chip
+          <StatusBadge
             label={t('gameQuiz.pointsAdjusted', {
               value: `${award.awardedPoints > 0 ? '+' : ''}${award.awardedPoints}`,
             })}
             color={isDeduction ? 'error' : 'success'}
             size="small"
-            sx={{ height: 20, fontSize: '0.68rem' }}
           />
           <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
             {formatHistoryTime(award.awardedAtUtc, i18n.resolvedLanguage)}
@@ -62,7 +49,7 @@ export function ManualAwardHistoryItem({
           </Typography>
         ) : null}
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }
 

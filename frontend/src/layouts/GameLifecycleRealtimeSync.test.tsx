@@ -11,6 +11,7 @@ vi.mock('../shared/realtime/index.ts', () => ({
         gameLifecycleChanged: 'gameLifecycleChanged',
         registrationChanged: 'registrationChanged',
         teamStateChanged: 'teamStateChanged',
+        twitchQuizStateChanged: 'twitchQuizStateChanged',
       },
     },
   },

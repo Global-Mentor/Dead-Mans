@@ -1,13 +1,25 @@
-import { Box, Stack, Tab, Tabs, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import { PageShell, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
+import { useViewportPanelHeight } from '../../shared/lib/use-viewport-panel-height.ts'
+import {
+  PageShell,
+  PageStatePanel,
+  RankingList,
+  SectionCard,
+  TabOption,
+  TabStrip,
+} from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
-import { gameHistoryGameDetailsQueryOptions } from '../game-history/api/game-history-queries.ts'
+import {
+  gameHistoryGameDetailsQueryOptions,
+  gameHistoryQueryKeys,
+} from '../game-history/api/game-history-queries.ts'
+import { CurrentQuizCard } from './CurrentQuizCard.tsx'
 import { QuizQuestionSessionHistoryItem } from './QuizQuestionSessionHistoryItem.tsx'
+import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 import {
   askNextGameQuizQuestion,
   askSpecificGameQuizQuestion,
@@ -23,18 +35,14 @@ import {
   gameQuizQueryKeys,
   twitchBotStatusQueryOptions,
 } from './api/game-quiz-queries.ts'
-import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
-import { CurrentQuizCard } from './CurrentQuizCard.tsx'
-import { TwitchBotPanel } from './TwitchBotPanel.tsx'
 import { ManualAwardHistoryItem } from './quiz-history-items.tsx'
 import { getQuizHistoryItems } from './quiz-history-model.ts'
-import { useQuizViewport } from './use-quiz-viewport.ts'
 
 export function GameQuizPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const gridRef = useQuizViewport()
+  const gridRef = useViewportPanelHeight('--quiz-panel-height', 320)
   const [actionError, setActionError] = useState<{ gameId: string; error: Error } | null>(null)
   const [activityTab, setActivityTab] = useState<'leaderboard' | 'history'>('leaderboard')
   const [leaderboardMode, setLeaderboardMode] = useState<'available' | 'earned'>('available')
@@ -244,28 +252,29 @@ export function GameQuizPage() {
             },
           }}
         >
-          <Tabs
+          <TabStrip
             value={activityTab}
             onChange={(_event, value: 'leaderboard' | 'history') => setActivityTab(value)}
             variant="fullWidth"
             aria-label={t('gameQuiz.title')}
-            sx={{ borderBottom: '1px solid', borderColor: 'divider', minHeight: 42, flexShrink: 0 }}
+            appearance="underline"
+            sx={{ borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}
           >
-            <Tab
+            <TabOption
               id="quiz-leaderboard-tab"
               aria-controls="quiz-activity-panel"
               value="leaderboard"
               label={t('gameQuiz.leaderboardTitle')}
-              sx={{ minHeight: 42 }}
+              appearance="underline"
             />
-            <Tab
+            <TabOption
               id="quiz-history-tab"
               aria-controls="quiz-activity-panel"
               value="history"
               label={t('gameQuiz.historyTitle')}
-              sx={{ minHeight: 42 }}
+              appearance="underline"
             />
-          </Tabs>
+          </TabStrip>
 
           <Box
             id="quiz-activity-panel"
@@ -283,24 +292,25 @@ export function GameQuizPage() {
             }}
           >
             {activityTab === 'leaderboard' ? (
-              <Tabs
+              <TabStrip
                 value={leaderboardMode}
                 onChange={(_event, value: 'available' | 'earned') => setLeaderboardMode(value)}
                 variant="fullWidth"
                 aria-label={t('gameQuiz.leaderboardTitle')}
-                sx={{ minHeight: 36, borderBottom: '1px solid', borderColor: 'divider' }}
+                appearance="underline"
+                sx={{ borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}
               >
-                <Tab
+                <TabOption
                   value="available"
                   label={t('gameQuiz.leaderboardAvailableTitle')}
-                  sx={{ minHeight: 36, py: 0.5, fontSize: '0.72rem' }}
+                  appearance="underline"
                 />
-                <Tab
+                <TabOption
                   value="earned"
                   label={t('gameQuiz.leaderboardEarnedTitle')}
-                  sx={{ minHeight: 36, py: 0.5, fontSize: '0.72rem' }}
+                  appearance="underline"
                 />
-              </Tabs>
+              </TabStrip>
             ) : null}
 
             <Typography
@@ -323,66 +333,34 @@ export function GameQuizPage() {
                   {t('gameQuiz.noLeaderboardEntries')}
                 </Typography>
               ) : (
-                displayedLeaderboard.map((entry, index) => (
-                  <Box key={entry.userId}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={(theme) => ({
-                        px: 1.5,
-                        py: 1,
-                        backgroundColor:
-                          entry.userId === user?.id
-                            ? alpha(theme.palette.primary.main, 0.17)
-                            : index % 2 === 0
-                              ? alpha(theme.palette.primary.main, 0.055)
-                              : alpha(theme.palette.common.black, 0.18),
-                      })}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ minWidth: 20, fontWeight: 700 }}
-                      >
-                        {index + 1}
-                      </Typography>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography
-                          variant="body2"
-                          fontWeight={entry.userId === user?.id ? 700 : 500}
-                          noWrap
-                        >
-                          {entry.displayName}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{ overflowWrap: 'anywhere' }}
-                        >
-                          {t('gameQuiz.answerStats', {
-                            attempts: entry.attempts,
-                            correct: entry.correctAnswers,
-                          })}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" fontWeight={700} color="primary.main" noWrap>
-                        {t(
-                          leaderboardMode === 'available'
-                            ? 'gameQuiz.availablePointsValue'
-                            : 'gameQuiz.earnedPointsValue',
-                          {
-                            points:
-                              leaderboardMode === 'available'
-                                ? entry.availablePoints
-                                : entry.points,
-                          },
-                        )}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                ))
+                <RankingList
+                  label={t('gameQuiz.leaderboardTitle')}
+                  rankLabel={t('gameQuiz.rankLabel')}
+                  nameLabel={t('common.entities.player')}
+                  valueLabel={t(
+                    leaderboardMode === 'available'
+                      ? 'gameQuiz.leaderboardAvailableTitle'
+                      : 'gameQuiz.leaderboardEarnedTitle',
+                  )}
+                  entries={displayedLeaderboard.map((entry) => ({
+                    id: entry.userId,
+                    name: entry.displayName,
+                    highlighted: entry.userId === user?.id,
+                    value: t(
+                      leaderboardMode === 'available'
+                        ? 'gameQuiz.availablePointsValue'
+                        : 'gameQuiz.earnedPointsValue',
+                      {
+                        points:
+                          leaderboardMode === 'available' ? entry.availablePoints : entry.points,
+                      },
+                    ),
+                    detail: t('gameQuiz.answerStats', {
+                      attempts: entry.attempts,
+                      correct: entry.correctAnswers,
+                    }),
+                  }))}
+                />
               )
             ) : historyItems.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ px: 1.5, pb: 2 }}>
@@ -390,20 +368,15 @@ export function GameQuizPage() {
               </Typography>
             ) : (
               <Stack spacing={0.75} sx={{ px: 0.75, pb: 0.75 }}>
-                {historyItems.map((item, index) => (
+                {historyItems.map((item) => (
                   <Box key={item.id}>
                     {item.kind === 'questionSession' ? (
                       <QuizQuestionSessionHistoryItem
                         questionSession={item.questionSession}
                         currentUserId={user?.id ?? null}
-                        alternate={index % 2 === 0}
                       />
                     ) : (
-                      <ManualAwardHistoryItem
-                        award={item.award}
-                        currentUserId={user?.id ?? null}
-                        alternate={index % 2 === 0}
-                      />
+                      <ManualAwardHistoryItem award={item.award} currentUserId={user?.id ?? null} />
                     )}
                   </Box>
                 ))}

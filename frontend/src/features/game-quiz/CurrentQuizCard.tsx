@@ -1,4 +1,4 @@
-import { Alert, Box, Chip, LinearProgress, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,7 +6,15 @@ import type { components } from '../../shared/api/contracts/generated'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
-import { AppButton, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  InlineNotice,
+  SectionCard,
+  SectionHeader,
+  SelectionAction,
+  StatusBadge,
+  TaskProgress,
+} from '../../shared/ui/index.ts'
 import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
@@ -100,12 +108,7 @@ export function CurrentQuizCard({
             size="small"
             disabled={isOpen || isStarting}
             onClick={onAskNext}
-            sx={{
-              flexShrink: 0,
-              whiteSpace: 'normal',
-              lineHeight: 1.3,
-              minHeight: 40,
-            }}
+            sx={{ flexShrink: 0, whiteSpace: 'normal' }}
           >
             {t('gameQuiz.nextQuestion')}
           </AppButton>
@@ -114,7 +117,6 @@ export function CurrentQuizCard({
             tone="secondary"
             disabled={isOpen || isStarting}
             onClick={() => setQuestionPickerOpen(true)}
-            sx={{ minHeight: 40 }}
           >
             {t('gameQuiz.askSpecificQuestion')}
           </AppButton>
@@ -122,12 +124,12 @@ export function CurrentQuizCard({
       ) : null}
 
       {error ? (
-        <Alert
+        <InlineNotice
           severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
           sx={{ mt: 1.5 }}
         >
           {t(errorMessageKey)}
-        </Alert>
+        </InlineNotice>
       ) : null}
       {!state ? (
         <Typography color="text.secondary" sx={{ mt: 2 }}>
@@ -136,21 +138,23 @@ export function CurrentQuizCard({
       ) : (
         <Stack spacing={1.25} sx={{ mt: 1.5 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Chip label={state.categoryName} size="small" />
+            <StatusBadge label={state.categoryName} size="small" />
             {isOpen ? (
-              <Chip
+              <StatusBadge
                 color="warning"
                 label={t('gameQuiz.timeLeft', { seconds: countdown.secondsLeft })}
               />
             ) : (
-              <Chip
+              <StatusBadge
                 color={state.status === 'closed' ? 'success' : 'default'}
                 label={t(`gameQuiz.status.${state.status}`)}
               />
             )}
-            {!isOpen ? <Chip label={t('gameQuiz.rewardLabel', { reward: state.reward })} /> : null}
+            {!isOpen ? (
+              <StatusBadge label={t('gameQuiz.rewardLabel', { reward: state.reward })} />
+            ) : null}
           </Stack>
-          {isOpen ? <LinearProgress variant="determinate" value={countdown.progress} /> : null}
+          {isOpen ? <TaskProgress variant="determinate" value={countdown.progress} /> : null}
           <Typography
             variant="h6"
             sx={{
@@ -181,51 +185,20 @@ export function CurrentQuizCard({
                 : undefined
               const result = state.optionResults?.find((item) => item.optionId === option.optionId)
               return (
-                <AppButton
+                <SelectionAction
                   key={option.optionId}
                   tone="ghost"
                   data-quiz-result={resultKind}
                   disabled={!isOpen || hasAnswered || isSubmitting}
                   onClick={() => onSubmit(state.questionSessionId, option.optionId)}
-                  sx={(theme) => ({
-                    justifyContent: 'space-between',
-                    textAlign: 'left',
-                    minWidth: 0,
-                    minHeight: 52,
-                    px: 1.5,
-                    textTransform: 'none',
-                    letterSpacing: 'normal',
-                    gap: 1.5,
-                    border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
-                    backgroundColor: alpha(theme.palette.primary.main, isSelected ? 0.12 : 0.04),
-                    '&.Mui-disabled': {
-                      opacity: 1,
-                      color: theme.palette.text.secondary,
-                    },
-                    '& > span:first-of-type': { overflowWrap: 'anywhere' },
-                    '& > span:last-of-type:not(:first-of-type)': {
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                    },
-                    '& > span': {
-                      minWidth: 0,
-                      gap: theme.spacing(1),
-                    },
-                    ...(resultKind === 'correct' && {
-                      '&.Mui-disabled': {
-                        color: theme.palette.success.light,
-                        borderColor: alpha(theme.palette.success.main, 0.7),
-                        backgroundColor: alpha(theme.palette.success.main, 0.18),
-                      },
-                    }),
-                    ...(resultKind === 'selected-wrong' && {
-                      '&.Mui-disabled': {
-                        color: theme.palette.error.light,
-                        borderColor: alpha(theme.palette.error.main, 0.7),
-                        backgroundColor: alpha(theme.palette.error.main, 0.18),
-                      },
-                    }),
-                  })}
+                  selected={isSelected}
+                  outcome={
+                    resultKind === 'correct'
+                      ? 'success'
+                      : resultKind === 'selected-wrong'
+                        ? 'error'
+                        : undefined
+                  }
                 >
                   <span>
                     {option.text}
@@ -245,19 +218,19 @@ export function CurrentQuizCard({
                       {result.answerCount} · {result.percentage}%
                     </span>
                   ) : null}
-                </AppButton>
+                </SelectionAction>
               )
             })}
           </Box>
           {isOpen && hasAnswered ? (
-            <Alert severity="info">{t('gameQuiz.answerAccepted')}</Alert>
+            <InlineNotice severity="info">{t('gameQuiz.answerAccepted')}</InlineNotice>
           ) : null}
           {!isOpen && state.status === 'closed' && state.mySelectedOptionId ? (
-            <Alert severity={state.myIsCorrect ? 'success' : 'error'}>
+            <InlineNotice severity={state.myIsCorrect ? 'success' : 'error'}>
               {state.myIsCorrect
                 ? t('gameQuiz.resultCorrect', { points: state.myAwardedPoints ?? 0 })
                 : t('gameQuiz.resultWrong')}
-            </Alert>
+            </InlineNotice>
           ) : null}
         </Stack>
       )}

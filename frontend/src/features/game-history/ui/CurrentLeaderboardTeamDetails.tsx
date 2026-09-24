@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton } from '../../../shared/ui/index.ts'
+import { AppButton, ItemCard, Metric, RankBadge, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName, formatShortCardLabel } from '../model/game-history-formatters.ts'
 import {
   getRoundScore,
@@ -14,7 +14,6 @@ import {
   sortRoundsByPlaySequence,
   type GameHistoryTeamLeaderboardEntry,
 } from '../model/game-history-team-leaderboard.ts'
-import { CompactMetric, MiniMetricChip, RankBadge } from './game-history-display.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 
@@ -40,14 +39,11 @@ export function CurrentLeaderboardTeamDetails({
   const roundsByPlaySequence = sortRoundsByPlaySequence(entry.rounds)
 
   return (
-    <Box
+    <ItemCard
       id="leaderboard-team-details"
       data-testid="current-leaderboard-team-details"
-      sx={(theme) => ({
+      sx={{
         minWidth: 0,
-        borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.58),
         overflow: 'hidden',
         '@media (min-width: 1000px) and (min-height: 680px)': {
           maxHeight: 'var(--leaderboard-panel-height)',
@@ -55,7 +51,7 @@ export function CurrentLeaderboardTeamDetails({
           overscrollBehaviorY: 'contain',
           scrollbarGutter: 'stable',
         },
-      })}
+      }}
     >
       <Box
         sx={(theme) => ({
@@ -87,7 +83,7 @@ export function CurrentLeaderboardTeamDetails({
                 : t('gameHistory.noParticipants')}
             </Typography>
           </Box>
-          <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+          <Box sx={{ textAlign: 'right', minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary">
               {t('gameHistory.table.final')}
             </Typography>
@@ -114,48 +110,36 @@ export function CurrentLeaderboardTeamDetails({
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           }}
         >
-          <CompactMetric
+          <Metric
             label={t('gameHistory.table.rounds')}
             value={t('gameHistory.countValue', { count: entry.roundsPlayed })}
           />
-          <CompactMetric
+          <Metric
             label={t('gameHistory.summary.penaltyTotal')}
             value={t('gameHistory.pointsValue', { points: penaltyTotal })}
           />
-          <CompactMetric
+          <Metric
             label={t('gameHistory.summary.bestScore')}
             value={t('gameHistory.pointsValue', { points: bestScore })}
           />
-          <CompactMetric
+          <Metric
             label={t('gameHistory.summary.averageScore')}
             value={t('gameHistory.pointsValue', { points: entry.averageScore })}
           />
-          <CompactMetric
+          <Metric
             label={t('gameHistory.summary.totalKills')}
             value={t('gameHistory.countValue', { count: totalKills })}
           />
-          <CompactMetric
+          <Metric
             label={t('gameHistory.summary.totalBounties')}
             value={t('gameHistory.countValue', { count: totalBounties })}
           />
         </Box>
 
-        <Box
-          component="button"
-          type="button"
+        <AppButton
+          tone="secondary"
           onClick={() => onPreviewCard(entry.bestRound)}
-          sx={(theme) => ({
-            borderRadius: 1.5,
-            border: `1px solid ${alpha(theme.palette.warning.main, 0.28)}`,
-            backgroundColor: alpha(theme.palette.warning.main, 0.08),
-            px: 1,
-            py: 0.9,
-            cursor: 'pointer',
-            color: 'inherit',
-            textAlign: 'left',
-            '&:hover': { backgroundColor: alpha(theme.palette.warning.main, 0.16) },
-            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-          })}
+          sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
         >
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             {t('gameHistory.summary.bestCard')}
@@ -163,7 +147,7 @@ export function CurrentLeaderboardTeamDetails({
           <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.25 }}>
             {formatShortCardLabel(entry.bestRound, t)}
           </Typography>
-        </Box>
+        </AppButton>
 
         <Stack spacing={0.7}>
           <Typography variant="overline" color="text.secondary">
@@ -179,7 +163,7 @@ export function CurrentLeaderboardTeamDetails({
           ))}
         </Stack>
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }
 
@@ -196,25 +180,7 @@ function CurrentLeaderboardRoundRow({
   const modifiersCount = round.modifiers?.length ?? 0
 
   return (
-    <Box
-      sx={(theme) => ({
-        borderRadius: 1.5,
-        border: '1px solid transparent',
-        backgroundColor: isBestRound
-          ? alpha(theme.palette.warning.main, 0.1)
-          : alpha(theme.palette.common.black, 0.18),
-        '&:nth-of-type(even)': {
-          backgroundColor: isBestRound
-            ? alpha(theme.palette.warning.main, 0.1)
-            : alpha(theme.palette.primary.main, 0.065),
-        },
-        boxShadow: isBestRound
-          ? `inset 0 0 0 1px ${alpha(theme.palette.warning.main, 0.28)}`
-          : 'none',
-        px: 1,
-        py: 0.85,
-      })}
-    >
+    <ItemCard emphasis={isBestRound ? 'selected' : 'none'}>
       <Stack spacing={0.7}>
         <Stack direction="row" spacing={0.8} alignItems="flex-start">
           <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -237,16 +203,26 @@ function CurrentLeaderboardRoundRow({
           }}
         >
           <Stack direction="row" spacing={0.55} alignItems="center" flexWrap="wrap" useFlexGap>
-            <MiniMetricChip label={t('gameHistory.cardCostLabel', { cost: round.cellCost })} />
-            <MiniMetricChip
+            <StatusBadge
+              density="compact"
+              variant="outlined"
+              label={t('gameHistory.cardCostLabel', { cost: round.cellCost })}
+            />
+            <StatusBadge
+              density="compact"
+              variant="outlined"
               label={t('gameHistory.summary.killsShort', {
                 count: round.scoreDetails.totalKillCount,
               })}
             />
-            <MiniMetricChip
+            <StatusBadge
+              density="compact"
+              variant="outlined"
               label={t('gameHistory.summary.bountiesShort', { count: round.bountyCount })}
             />
-            <MiniMetricChip
+            <StatusBadge
+              density="compact"
+              variant="outlined"
               label={t('gameHistory.summary.modifierCountShort', { count: modifiersCount })}
             />
           </Stack>
@@ -260,6 +236,6 @@ function CurrentLeaderboardRoundRow({
           </AppButton>
         </Box>
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }

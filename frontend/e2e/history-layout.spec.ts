@@ -67,7 +67,33 @@ async function mockHistory(page: Page) {
           json: {
             ...game,
             mainGame: { teamStats: [], playerStats: [], rounds: [], modifierActivations: [] },
-            quiz: { totalPoints: 35, playerStats: [], questionSessions: [], manualAwards: [] },
+            quiz: {
+              totalPoints: 35,
+              playerStats: [
+                {
+                  userId: '10000000-0000-4000-8000-000000000001',
+                  displayName: 'Архивный знаток',
+                  points: 25,
+                  spentPoints: 10,
+                  availablePoints: 15,
+                  attempts: 4,
+                  correctAnswers: 3,
+                  lastActivityAtUtc: date,
+                },
+                {
+                  userId: '10000000-0000-4000-8000-000000000002',
+                  displayName: 'Второй архивный знаток',
+                  points: 10,
+                  spentPoints: 0,
+                  availablePoints: 10,
+                  attempts: 3,
+                  correctAnswers: 1,
+                  lastActivityAtUtc: date,
+                },
+              ],
+              questionSessions: [],
+              manualAwards: [],
+            },
             modifierSnapshotStatus: 'complete',
             modifierSnapshots: [],
             finalResult: {
@@ -182,6 +208,10 @@ for (const width of [390, 800, 1366, 2560]) {
     await page.getByRole('textbox', { name: 'Поиск игр' }).fill('игра 25')
     await picker.getByRole('button', { name: /Архивная игра 25/ }).click()
     await expect(page.getByRole('heading', { name: 'Архивная игра 25', exact: true })).toBeVisible()
+    await page.getByRole('tab', { name: 'Лидерборд викторины' }).click()
+    const quizLeaderboard = page.getByTestId('quiz-leaderboard')
+    await expect(quizLeaderboard.getByText('Архивный знаток', { exact: true })).toBeVisible()
+    await expect(quizLeaderboard.getByText('25 очк.')).toBeVisible()
     if (width < 1000) await expect(picker).not.toHaveAttribute('open', '')
     await expect(page).toHaveURL(/gameId=game-24/)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

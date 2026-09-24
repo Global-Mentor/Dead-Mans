@@ -1,8 +1,13 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { CompactMetric, MiniMetricChip } from './game-history-display.tsx'
+import {
+  ItemCard,
+  Metric,
+  NativeDisclosure,
+  SelectionRow,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import {
   formatGameTimeLabel,
   getGameStatusColor,
@@ -10,61 +15,6 @@ import {
 } from '../model/game-history-view.ts'
 
 type GameHistoryGameSummary = components['schemas']['GameHistoryGameSummaryDto']
-
-export function BoardSwitchCard({
-  title,
-  description,
-  isActive,
-  onClick,
-}: {
-  title: string
-  description: string
-  isActive: boolean
-  onClick: () => void
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <Box
-      component="button"
-      type="button"
-      onClick={onClick}
-      sx={(theme) => ({
-        flex: 1,
-        minWidth: 0,
-        textAlign: 'left',
-        borderRadius: 2.5,
-        border: `1px solid ${
-          isActive ? theme.palette.primary.main : alpha(theme.palette.divider, 0.9)
-        }`,
-        background: isActive
-          ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.16)} 0%, ${alpha(theme.palette.info.main, 0.14)} 100%)`
-          : alpha(theme.palette.background.paper, 0.68),
-        px: 1.6,
-        py: 1.5,
-        cursor: 'pointer',
-        transition: 'border-color 0.15s ease, transform 0.15s ease, background-color 0.15s ease',
-        '&:hover': {
-          borderColor: theme.palette.primary.light,
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          transform: 'translateY(-1px)',
-        },
-      })}
-    >
-      <Stack spacing={0.7}>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-            {title}
-          </Typography>
-          {isActive ? <MiniMetricChip label={t('gameHistory.boardActiveChip')} /> : null}
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Stack>
-    </Box>
-  )
-}
 
 export function CurrentGameLeaderboardSummary({
   title,
@@ -96,19 +46,10 @@ export function CurrentGameLeaderboardSummary({
     value === null ? '-' : t('gameHistory.pointsValue', { points: value })
 
   return (
-    <Box
+    <ItemCard
       component="section"
       aria-label={t('gameHistory.currentGameSummaryTitle')}
       data-testid="current-game-summary"
-      sx={(theme) => ({
-        borderRadius: '12px',
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.26)}`,
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(
-          theme.palette.background.paper,
-          0.42,
-        )})`,
-        p: { xs: 0.75, sm: 1 },
-      })}
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -125,7 +66,7 @@ export function CurrentGameLeaderboardSummary({
             {title}
           </Typography>
         </Box>
-        <Chip
+        <StatusBadge
           label={t(`gameHistory.status.${normalizeStatus(status)}`, {
             defaultValue: t('gameHistory.notAvailable'),
           })}
@@ -136,53 +77,49 @@ export function CurrentGameLeaderboardSummary({
         />
       </Stack>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 0.6,
-          gridTemplateColumns: {
-            xs: 'repeat(2, minmax(0, 1fr))',
-            sm: 'repeat(4, minmax(0, 1fr))',
-          },
-          '@media (min-width: 1200px)': {
-            gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
-          },
-        }}
-      >
-        <CompactMetric
-          label={t('gameHistory.currentSummary.teams')}
-          value={formatCount(playedTeamCount)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.rounds')}
-          value={formatCount(playedRoundCount)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.score')}
-          value={formatPoints(teamFinalScoreTotal)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.penalties')}
-          value={formatPoints(penaltyTotal)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.quiz')}
-          value={formatPoints(quizPoints)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.modifiers')}
-          value={formatCount(activatedModifierCount)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.kills')}
-          value={formatCount(totalKills)}
-        />
-        <CompactMetric
-          label={t('gameHistory.currentSummary.bounties')}
-          value={formatCount(totalTokens)}
-        />
-      </Box>
-    </Box>
+      <NativeDisclosure summary={<>{t('gameHistory.aggregateStatistics')}</>}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 0.6,
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              sm: 'repeat(4, minmax(0, 1fr))',
+            },
+            '@media (min-width: 1200px)': {
+              gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+            },
+          }}
+        >
+          <Metric
+            label={t('gameHistory.currentSummary.teams')}
+            value={formatCount(playedTeamCount)}
+          />
+          <Metric
+            label={t('gameHistory.currentSummary.rounds')}
+            value={formatCount(playedRoundCount)}
+          />
+          <Metric
+            label={t('gameHistory.currentSummary.score')}
+            value={formatPoints(teamFinalScoreTotal)}
+          />
+          <Metric
+            label={t('gameHistory.currentSummary.penalties')}
+            value={formatPoints(penaltyTotal)}
+          />
+          <Metric label={t('gameHistory.currentSummary.quiz')} value={formatPoints(quizPoints)} />
+          <Metric
+            label={t('gameHistory.currentSummary.modifiers')}
+            value={formatCount(activatedModifierCount)}
+          />
+          <Metric label={t('gameHistory.currentSummary.kills')} value={formatCount(totalKills)} />
+          <Metric
+            label={t('gameHistory.currentSummary.bounties')}
+            value={formatCount(totalTokens)}
+          />
+        </Box>
+      </NativeDisclosure>
+    </ItemCard>
   )
 }
 
@@ -198,41 +135,7 @@ export function GameSummaryButton({
   const { t, i18n } = useTranslation()
 
   return (
-    <Box
-      component="button"
-      type="button"
-      aria-pressed={isSelected}
-      onClick={onClick}
-      sx={(theme) => ({
-        width: '100%',
-        textAlign: 'left',
-        border: '1px solid transparent',
-        color: 'inherit',
-        boxShadow: isSelected ? `inset 3px 0 ${theme.palette.primary.main}` : 'none',
-        backgroundColor: isSelected
-          ? alpha(theme.palette.primary.main, 0.18)
-          : alpha(theme.palette.common.black, 0.2),
-        '&:nth-of-type(even)': {
-          backgroundColor: alpha(theme.palette.primary.main, isSelected ? 0.18 : 0.06),
-        },
-        borderRadius: 2,
-        px: 1.1,
-        py: 1,
-        overflowWrap: 'anywhere',
-        '&:focus-visible': {
-          outline: '2px solid',
-          outlineColor: 'primary.main',
-          outlineOffset: -2,
-        },
-        cursor: 'pointer',
-        transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease',
-        '&:hover': {
-          borderColor: theme.palette.primary.light,
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          transform: 'translateY(-1px)',
-        },
-      })}
-    >
+    <SelectionRow type="button" selected={isSelected} onClick={onClick}>
       <Stack spacing={0.9}>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 0, flex: 1 }}>
@@ -245,23 +148,29 @@ export function GameSummaryButton({
         </Typography>
 
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          <MiniMetricChip
+          <StatusBadge
+            density="compact"
+            variant="outlined"
             label={t('gameHistory.summary.roundCountShort', {
               count: game.mainGameRoundCount,
             })}
           />
-          <MiniMetricChip
+          <StatusBadge
+            density="compact"
+            variant="outlined"
             label={t('gameHistory.summary.quizCountShort', {
               count: game.quizQuestionCount,
             })}
           />
-          <MiniMetricChip
+          <StatusBadge
+            density="compact"
+            variant="outlined"
             label={t('gameHistory.summary.playerCountShort', {
               count: game.uniquePlayerCount,
             })}
           />
         </Stack>
       </Stack>
-    </Box>
+    </SelectionRow>
   )
 }

@@ -1,18 +1,16 @@
-import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
+import { InlineNotice, ItemCard, NativeDisclosure, StatusBadge } from '../../shared/ui/index.ts'
 
 type QuestionSession = components['schemas']['GameHistoryQuizQuestionSessionItemDto']
 
 export function QuizQuestionSessionHistoryItem({
   questionSession,
   currentUserId,
-  alternate = false,
 }: {
   questionSession: QuestionSession
   currentUserId: string | null
-  alternate?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const own = questionSession.submissions.find((item) => item.userId === currentUserId)
@@ -28,17 +26,7 @@ export function QuizQuestionSessionHistoryItem({
   )
 
   return (
-    <Box
-      data-history-tone={alternate ? 'light' : 'dark'}
-      sx={(theme) => ({
-        px: 1.5,
-        py: 1.25,
-        overflowWrap: 'anywhere',
-        backgroundColor: alternate
-          ? alpha(theme.palette.common.white, 0.055)
-          : alpha(theme.palette.common.black, 0.22),
-      })}
-    >
+    <ItemCard sx={{ overflowWrap: 'anywhere' }}>
       <Stack spacing={0.75}>
         <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="caption" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
@@ -73,70 +61,36 @@ export function QuizQuestionSessionHistoryItem({
           </Typography>
         ) : null}
         {own ? (
-          <Alert
+          <InlineNotice
             severity={own.isCorrect ? 'success' : 'error'}
             variant="outlined"
             icon={false}
-            sx={{
-              p: 0,
-              border: 0,
-              background: 'none',
-              '& .MuiAlert-message': { p: 0, fontSize: '0.78rem', lineHeight: 1.35 },
-            }}
+            appearance="inline"
           >
             {t('gameQuiz.answerLabel', { answer: own.selectedOptionText })}
             {' · '}
             {own.isCorrect
               ? t('gameQuiz.resultCorrect', { points: own.awardedPoints })
               : t('gameQuiz.resultWrong')}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {questionSession.status === 'closed' ? (
-          <Box
-            component="details"
-            sx={{
-              '&[open] > summary': { color: 'text.primary' },
-            }}
+          <NativeDisclosure
+            summary={
+              <>
+                {t('gameQuiz.answerResultsSummary', {
+                  correct: correctCount,
+                  incorrect: incorrectCount,
+                })}
+              </>
+            }
           >
-            <Typography
-              component="summary"
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                cursor: 'pointer',
-                py: 0.75,
-                fontWeight: 700,
-                minHeight: 32,
-                '&:focus-visible': {
-                  outline: '2px solid',
-                  outlineColor: 'primary.main',
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              {t('gameQuiz.answerResultsSummary', {
-                correct: correctCount,
-                incorrect: incorrectCount,
-              })}
-            </Typography>
             <Stack component="ul" spacing={0.5} sx={{ m: 0, mt: 0.5, p: 0, listStyle: 'none' }}>
               {sortedSubmissions.map((submission) => (
-                <Box
+                <ItemCard
                   component="li"
                   key={submission.userId}
                   data-answer-result={submission.isCorrect ? 'correct' : 'incorrect'}
-                  sx={(theme) => {
-                    const tone = submission.isCorrect
-                      ? theme.palette.success.main
-                      : theme.palette.error.main
-                    return {
-                      px: 0.75,
-                      py: 0.5,
-                      border: '1px solid',
-                      borderColor: alpha(tone, 0.55),
-                      backgroundColor: alpha(tone, 0.06),
-                    }
-                  }}
                 >
                   <Stack direction="row" spacing={0.75} alignItems="flex-start">
                     <Typography
@@ -149,7 +103,7 @@ export function QuizQuestionSessionHistoryItem({
                       </Box>{' '}
                       {submission.selectedOptionText}
                     </Typography>
-                    <Chip
+                    <StatusBadge
                       size="small"
                       color={submission.isCorrect ? 'success' : 'error'}
                       label={t(
@@ -157,15 +111,15 @@ export function QuizQuestionSessionHistoryItem({
                           ? 'gameQuiz.answerCorrectStatus'
                           : 'gameQuiz.answerWrongStatus',
                       )}
-                      sx={{ height: 18, fontSize: '0.62rem', flexShrink: 0 }}
+                      sx={{ flexShrink: 0 }}
                     />
                   </Stack>
-                </Box>
+                </ItemCard>
               ))}
             </Stack>
-          </Box>
+          </NativeDisclosure>
         ) : null}
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }

@@ -1,5 +1,6 @@
 const translations = {
   en: {
+    rankLabel: 'Rank',
     title: 'Quiz',
     loading: 'Loading quiz data...',
     errorLoading: 'Failed to load quiz data.',
@@ -111,6 +112,7 @@ const translations = {
     },
   },
   ru: {
+    rankLabel: 'Место',
     title: 'Викторина',
     loading: 'Загрузка данных викторины...',
     errorLoading: 'Не удалось загрузить данные викторины.',
@@ -221,6 +223,7 @@ const translations = {
     },
   },
   uk: {
+    rankLabel: 'Місце',
     title: 'Вікторина',
     loading: 'Завантаження даних вікторини...',
     errorLoading: 'Не вдалося завантажити дані вікторини.',
@@ -335,6 +338,7 @@ const translations = {
     },
   },
   pl: {
+    rankLabel: 'Miejsce',
     title: 'Quiz',
     loading: 'Ładowanie danych quizu...',
     errorLoading: 'Nie udało się załadować danych quizu.',

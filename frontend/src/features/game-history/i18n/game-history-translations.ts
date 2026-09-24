@@ -1,10 +1,16 @@
 const translations = {
   en: {
+    aggregateStatistics: 'Game statistics · all teams and players',
     searchGames: 'Search games',
     searchEmpty: 'No games found. Try another title.',
     title: 'Leaderboard',
     description:
       'Track the live standings of the current game separately from the archive of completed games.',
+    quizLeaderboardTitle: 'Quiz leaderboard',
+    quizLeaderboardDescription: 'All quiz points earned during this game, before spending.',
+    quizLeaderboardEarned: 'Earned',
+    quizLeaderboardEmpty: 'No quiz participants yet.',
+    quizLeaderboardAnswerStats: '{{correct}} correct of {{attempts}} attempts',
     archivePageTitle: 'Game history',
     archivePageDescription:
       'Archive of completed games with their final leaderboard, modifiers, quiz totals, and round history.',
@@ -220,11 +226,17 @@ const translations = {
     },
   },
   ru: {
+    aggregateStatistics: 'Статистика игры · все команды и игроки',
     searchGames: 'Поиск игр',
     searchEmpty: 'Игры не найдены. Попробуйте другое название.',
     title: 'Лидерборд',
     description:
       'Следите отдельно за live-рейтингом текущей игры и отдельно за архивом завершённых игр.',
+    quizLeaderboardTitle: 'Лидерборд викторины',
+    quizLeaderboardDescription: 'Все очки, заработанные в викторине за эту игру, без учёта трат.',
+    quizLeaderboardEarned: 'Заработано',
+    quizLeaderboardEmpty: 'Участников викторины пока нет.',
+    quizLeaderboardAnswerStats: 'Верных ответов: {{correct}} из {{attempts}}',
     archivePageTitle: 'История игр',
     archivePageDescription:
       'Архив завершённых игр с финальным рейтингом, модификаторами, очками викторины и историей раундов.',
@@ -441,11 +453,17 @@ const translations = {
     },
   },
   uk: {
+    aggregateStatistics: 'Статистика гри · усі команди та гравці',
     searchGames: 'Пошук ігор',
     searchEmpty: 'Ігор не знайдено. Спробуйте іншу назву.',
     title: 'Лідерборд',
     description:
       'Стежте окремо за live-рейтингом поточної гри та окремо за архівом завершених ігор.',
+    quizLeaderboardTitle: 'Лідерборд вікторини',
+    quizLeaderboardDescription: 'Усі очки, зароблені у вікторині за цю гру, без урахування витрат.',
+    quizLeaderboardEarned: 'Зароблено',
+    quizLeaderboardEmpty: 'Учасників вікторини ще немає.',
+    quizLeaderboardAnswerStats: 'Правильних відповідей: {{correct}} з {{attempts}}',
     archivePageTitle: 'Історія ігор',
     archivePageDescription:
       'Архів завершених ігор із фінальним рейтингом, модифікаторами, очками вікторини та історією раундів.',
@@ -662,10 +680,16 @@ const translations = {
     },
   },
   pl: {
+    aggregateStatistics: 'Statystyki gry · wszystkie drużyny i gracze',
     searchGames: 'Szukaj gier',
     searchEmpty: 'Nie znaleziono gier. Spróbuj innej nazwy.',
     title: 'Ranking',
     description: 'Śledź osobno ranking na żywo bieżącej gry i osobno archiwum zakończonych gier.',
+    quizLeaderboardTitle: 'Ranking quizu',
+    quizLeaderboardDescription: 'Wszystkie punkty quizu zdobyte w tej grze, przed wydatkami.',
+    quizLeaderboardEarned: 'Zdobyte',
+    quizLeaderboardEmpty: 'Nie ma jeszcze uczestników quizu.',
+    quizLeaderboardAnswerStats: 'Poprawne: {{correct}} z {{attempts}} prób',
     archivePageTitle: 'Historia gier',
     archivePageDescription:
       'Archiwum zakończonych gier z finalnym rankingiem, modyfikatorami, punktami quizu i historią rund.',

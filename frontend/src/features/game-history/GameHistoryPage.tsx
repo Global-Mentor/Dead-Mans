@@ -4,12 +4,16 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import type { components } from '../../shared/api/contracts/generated'
+import { PlayedCardPreviewDialog } from '../../shared/game-ui/index.ts'
 import {
+  AppButton,
   AsyncSection,
   FormTextField,
+  NativeDisclosure,
   PageShell,
   SectionCard,
   SectionHeader,
+  SelectionTile,
 } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import {
@@ -23,12 +27,7 @@ import {
 import { isCountedRound, normalizeStatus } from './model/game-history-view.ts'
 import { CurrentGameLeaderboard } from './ui/CurrentGameLeaderboard.tsx'
 import { GameDetailsPanel } from './ui/GameHistoryDetailsPanel.tsx'
-import {
-  BoardSwitchCard,
-  CurrentGameLeaderboardSummary,
-  GameSummaryButton,
-} from './ui/GameHistoryOverview.tsx'
-import { CardPreviewDialog } from './ui/game-history-surfaces.tsx'
+import { CurrentGameLeaderboardSummary, GameSummaryButton } from './ui/GameHistoryOverview.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 type GameHistoryBoard = 'realtime' | 'history'
@@ -74,11 +73,14 @@ export function GameHistoryPage({
 
   const currentGameDetailsQuery = useQuery({
     ...gameHistoryGameDetailsQueryOptions(currentGameId ?? ''),
-    enabled: currentGameId !== null,
+    enabled: activeBoard === 'realtime' && currentGameId !== null,
+    // Recover even when a best-effort realtime notification was lost.
+    refetchInterval: (query) =>
+      (query.state.data?.gameStatus ?? currentGameQuery.data?.status) === 'active' ? 30_000 : false,
   })
   const selectedGameDetailsQuery = useQuery({
     ...gameHistoryGameDetailsQueryOptions(selectedCompletedGameId ?? ''),
-    enabled: selectedCompletedGameId !== null,
+    enabled: activeBoard === 'history' && selectedCompletedGameId !== null,
   })
 
   const currentGameLeaderboard = sortTeamLeaderboardEntries(
@@ -133,20 +135,8 @@ export function GameHistoryPage({
           {t('gameHistory.archivePageTitle')}
         </Typography>
       ) : (
-        <Typography
-          component="h1"
-          sx={{
-            position: 'absolute',
-            width: '1px',
-            height: '1px',
-            p: 0,
-            m: -1,
-            overflow: 'hidden',
-            clipPath: 'inset(50%)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {t('gameHistory.realtimeTitle')}
+        <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 850 }}>
+          {t('gameHistory.title')}
         </Typography>
       )}
 
@@ -158,16 +148,16 @@ export function GameHistoryPage({
           />
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} sx={{ mt: 1.5 }}>
-            <BoardSwitchCard
+            <SelectionTile
               title={t('gameHistory.realtimeTitle')}
               description={t('gameHistory.realtimeDescription')}
-              isActive={activeBoard === 'realtime'}
+              selected={activeBoard === 'realtime'}
               onClick={() => setActiveBoardState('realtime')}
             />
-            <BoardSwitchCard
+            <SelectionTile
               title={t('gameHistory.completedGamesTitle')}
               description={t('gameHistory.completedGamesDescription')}
-              isActive={activeBoard === 'history'}
+              selected={activeBoard === 'history'}
               onClick={() => setActiveBoardState('history')}
             />
           </Stack>
@@ -201,12 +191,25 @@ export function GameHistoryPage({
                 (currentGameId !== null && currentGameDetailsQuery.isLoading)
               }
               isError={currentGameQuery.isError || currentGameDetailsQuery.isError}
+              hasData={currentGameDetailsQuery.data != null}
+              retryAction={
+                <AppButton
+                  tone="ghost"
+                  onClick={() => {
+                    void currentGameQuery.refetch()
+                    void currentGameDetailsQuery.refetch()
+                  }}
+                >
+                  {t('common.actions.retry')}
+                </AppButton>
+              }
               isEmpty={currentGameId === null}
               loadingMessage={t('gameHistory.loadingCurrentGame')}
               errorMessage={t('gameHistory.errorCurrentGame')}
               emptyMessage={t('gameHistory.currentGameMissing')}
             >
               <CurrentGameLeaderboard
+                key={currentGameId}
                 gameDetails={currentGameDetailsQuery.data ?? null}
                 leaderboard={currentGameLeaderboard}
                 onPreviewCard={setPreviewRound}
@@ -232,24 +235,17 @@ export function GameHistoryPage({
               '@media (min-width: 1000px)': { position: 'sticky', top: 80 },
             }}
           >
-            <Box component="details" open={isWide || pickerOpen || !selectedGame}>
-              <Box
-                component="summary"
-                onClick={(event) => {
-                  event.preventDefault()
-                  setPickerOpen(!pickerOpen)
-                }}
-                sx={{
-                  display: isWide ? 'none' : 'list-item',
-                  cursor: 'pointer',
-                  p: 0.5,
-                  overflowWrap: 'anywhere',
-                  '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-                }}
-              >
-                {t('gameHistory.completedGamesListTitle')}
-                {selectedGame ? ` · ${selectedGame.gameTitle}` : ''}
-              </Box>
+            <NativeDisclosure
+              open={isWide || pickerOpen || !selectedGame}
+              pinned={isWide}
+              onExpandedChange={setPickerOpen}
+              summary={
+                <>
+                  {t('gameHistory.completedGamesListTitle')}
+                  {selectedGame ? ` · ${selectedGame.gameTitle}` : ''}
+                </>
+              }
+            >
               <Typography
                 component="h2"
                 variant="subtitle2"
@@ -267,6 +263,12 @@ export function GameHistoryPage({
               <AsyncSection
                 isLoading={gamesQuery.isLoading}
                 isError={gamesQuery.isError}
+                hasData={gamesQuery.data != null}
+                retryAction={
+                  <AppButton tone="ghost" onClick={() => void gamesQuery.refetch()}>
+                    {t('common.actions.retry')}
+                  </AppButton>
+                }
                 isEmpty={visibleGames.length === 0}
                 loadingMessage={t('gameHistory.loadingGames')}
                 errorMessage={t('gameHistory.errorGames')}
@@ -296,13 +298,19 @@ export function GameHistoryPage({
                   ))}
                 </Stack>
               </AsyncSection>
-            </Box>
+            </NativeDisclosure>
           </SectionCard>
 
           <Box key={selectedCompletedGameId} sx={{ minWidth: 0 }}>
             <AsyncSection
               isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
               isError={selectedGameDetailsQuery.isError}
+              hasData={selectedGameDetailsQuery.data != null}
+              retryAction={
+                <AppButton tone="ghost" onClick={() => void selectedGameDetailsQuery.refetch()}>
+                  {t('common.actions.retry')}
+                </AppButton>
+              }
               isEmpty={selectedCompletedGameId === null}
               loadingMessage={t('gameHistory.loadingGameDetails')}
               errorMessage={t('gameHistory.errorGameDetails')}
@@ -317,7 +325,11 @@ export function GameHistoryPage({
         </Box>
       )}
 
-      <CardPreviewDialog round={previewRound} onClose={() => setPreviewRound(null)} />
+      <PlayedCardPreviewDialog
+        card={null}
+        round={previewRound}
+        onClose={() => setPreviewRound(null)}
+      />
     </PageShell>
   )
 }

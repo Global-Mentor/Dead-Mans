@@ -1,7 +1,17 @@
-import { AccordionDetails, Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
+import {
+  AppAccordion,
+  AppAccordionDetails,
+  AppAccordionSummary,
+  DisclosureSection,
+  ItemCard,
+  Metric,
+  RankBadge,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
+import { formatHistoryTeamName, formatShortCardLabel } from '../model/game-history-formatters.ts'
 import {
   getRoundScore,
   getTeamBestScore,
@@ -12,21 +22,7 @@ import {
   sortRoundsByPlaySequence,
   type GameHistoryTeamLeaderboardEntry,
 } from '../model/game-history-team-leaderboard.ts'
-import {
-  formatHistoryTeamName,
-  formatShortCardLabel,
-  getRankColor,
-} from '../model/game-history-formatters.ts'
-import { MiniMetricChip } from './game-history-display.tsx'
-import { AppAccordionSummary } from '../../../shared/ui/index.ts'
 import { LeaderboardRoundCard } from './GameHistoryLeaderboardRound.tsx'
-import {
-  AccordionSurface,
-  CollapsibleSection,
-  ExpandGlyph,
-  MetricChip,
-} from './game-history-surfaces.tsx'
-
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 
 export function TeamLeaderboardRow({
@@ -48,28 +44,13 @@ export function TeamLeaderboardRow({
   const totalBounties = getTeamTotalBounties(entry)
 
   return (
-    <AccordionSurface>
-      <AppAccordionSummary density="compact" expandIcon={<ExpandGlyph />}>
+    <AppAccordion>
+      <AppAccordionSummary density="compact">
         <Box sx={{ width: '100%' }}>
           <Stack spacing={0.9}>
             <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} alignItems="flex-start">
               <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-                <Box
-                  sx={(theme) => ({
-                    minWidth: 34,
-                    height: 34,
-                    borderRadius: 1.5,
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontWeight: 800,
-                    color: theme.palette.common.white,
-                    backgroundColor: getRankColor(theme, rank),
-                    flexShrink: 0,
-                    boxShadow: `0 10px 18px ${alpha(theme.palette.common.black, 0.18)}`,
-                  })}
-                >
-                  {rank}
-                </Box>
+                <RankBadge rank={rank} />
 
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Stack
@@ -83,13 +64,15 @@ export function TeamLeaderboardRow({
                       {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
                     </Typography>
                     {rank === 1 || rank === 2 || rank === 3 ? (
-                      <Chip
+                      <StatusBadge
                         size="small"
                         color={rank === 1 ? 'warning' : rank === 2 ? 'default' : 'secondary'}
                         label={t('gameHistory.rank', { returnObjects: true })[rank]}
                       />
                     ) : null}
-                    <MiniMetricChip
+                    <StatusBadge
+                      density="compact"
+                      variant="outlined"
                       label={t('gameHistory.summary.roundCountShort', {
                         count: entry.roundsPlayed,
                       })}
@@ -115,26 +98,38 @@ export function TeamLeaderboardRow({
               </Stack>
 
               <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap>
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.finalScoreShort', { points: finalScore })}
                 />
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.penaltyTotalShort', {
                     points: penaltyTotal,
                   })}
                 />
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.bestScoreShort', { points: bestScore })}
                 />
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.averageScoreShort', {
                     points: entry.averageScore,
                   })}
                 />
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.killsShort', { count: totalKills })}
                 />
-                <MiniMetricChip
+                <StatusBadge
+                  density="compact"
+                  variant="outlined"
                   label={t('gameHistory.summary.bountiesShort', {
                     count: totalBounties,
                   })}
@@ -160,59 +155,54 @@ export function TeamLeaderboardRow({
         </Box>
       </AppAccordionSummary>
 
-      <AccordionDetails sx={{ px: 1.4, pt: 0, pb: 1.4 }}>
+      <AppAccordionDetails sx={{ px: 1.4, pt: 0, pb: 1.4 }}>
         <Stack spacing={1.25}>
-          <Box
-            sx={(theme) => ({
+          <ItemCard
+            sx={{
               display: 'grid',
               gap: 0.75,
               gridTemplateColumns: {
                 xs: 'repeat(2, minmax(0, 1fr))',
                 lg: 'repeat(4, minmax(0, 1fr))',
               },
-              borderRadius: 2,
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-              backgroundColor: alpha(theme.palette.background.paper, 0.42),
-              p: 0.9,
-            })}
+            }}
           >
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.finalScore')}
               value={t('gameHistory.pointsValue', { points: finalScore })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.penaltyTotal')}
               value={t('gameHistory.pointsValue', { points: penaltyTotal })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.bestScore')}
               value={t('gameHistory.pointsValue', { points: bestScore })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.averageScore')}
               value={t('gameHistory.pointsValue', { points: entry.averageScore })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.totalKills')}
               value={t('gameHistory.countValue', { count: totalKills })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.totalBounties')}
               value={t('gameHistory.countValue', { count: totalBounties })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.bestCard')}
               value={formatShortCardLabel(entry.bestRound, t)}
             />
-          </Box>
+          </ItemCard>
 
-          <CollapsibleSection
+          <DisclosureSection
             title={t('gameHistory.summary.allRoundsTitle')}
             description={t('gameHistory.summary.allRoundsDescription')}
             countLabel={t('gameHistory.summary.roundCountShort', {
               count: entry.rounds.length,
             })}
-            nested
             defaultExpanded={rank === 1}
           >
             <Stack spacing={1}>
@@ -225,10 +215,10 @@ export function TeamLeaderboardRow({
                 />
               ))}
             </Stack>
-          </CollapsibleSection>
+          </DisclosureSection>
         </Stack>
-      </AccordionDetails>
-    </AccordionSurface>
+      </AppAccordionDetails>
+    </AppAccordion>
   )
 }
 
@@ -242,25 +232,7 @@ function RecentRoundPill({
   const { t } = useTranslation()
 
   return (
-    <Box
-      sx={(theme) => ({
-        minWidth: 0,
-        borderRadius: 1.5,
-        border: `1px solid ${
-          isBestRound
-            ? alpha(theme.palette.warning.main, 0.4)
-            : alpha(theme.palette.primary.main, 0.2)
-        }`,
-        background: isBestRound
-          ? `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.15)}, ${alpha(
-              theme.palette.background.paper,
-              0.66,
-            )})`
-          : alpha(theme.palette.background.paper, 0.54),
-        px: 0.9,
-        py: 0.65,
-      })}
-    >
+    <ItemCard emphasis={isBestRound ? 'selected' : 'none'} sx={{ minWidth: 0 }}>
       <Stack spacing={0.25}>
         <Stack direction="row" spacing={0.6} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="caption" sx={{ fontWeight: 800 }}>
@@ -277,6 +249,6 @@ function RecentRoundPill({
           · {t('gameHistory.summary.bountiesShort', { count: round.bountyCount })}
         </Typography>
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }

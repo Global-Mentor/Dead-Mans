@@ -175,8 +175,8 @@ for (const size of [
   })
 }
 
-for (const width of [390, 800]) {
-  test(`quiz uses a readable single column at ${width}px`, async ({ page }) => {
+for (const width of [320, 390, 768, 1440]) {
+  test(`quiz uses a readable single column at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 })
     await mockQuiz(page)
     await page.goto('/panel/game-quiz')
@@ -189,7 +189,12 @@ for (const width of [390, 800]) {
     const history = await page
       .getByRole('tablist', { name: 'Викторина', exact: true })
       .boundingBox()
-    expect(history!.y).toBeGreaterThan(current!.y + current!.height)
+    if (width < 1000) expect(history!.y).toBeGreaterThan(current!.y + current!.height)
+    await page.screenshot({
+      path: info.outputPath('quiz-history.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
   })
 }
 
