@@ -530,3 +530,29 @@ test('side panels honour reduced motion and expose modal semantics', async ({ pa
   await expect(opener).toBeFocused()
   await expect(opener).toHaveCSS('transition-duration', '0s')
 })
+
+test('card preview loads through the shared image component', async ({ page }) => {
+  const writes = await mockGame(page)
+  await page.route('**/media/cards/ui-check.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120"><rect width="80" height="120" fill="gold"/></svg>',
+    }),
+  )
+  await page.route('**/api/game', (route) =>
+    route.fulfill({
+      json: {
+        ...board,
+        cells: board.cells.map((cell, index) =>
+          index === 0 ? { ...cell, media: [{ url: '/media/cards/ui-check.svg' }] } : cell,
+        ),
+      },
+    }),
+  )
+  await page.goto('/panel/game-board')
+  const card = page.locator('[data-cell-id="card-0"]')
+  await card.click()
+  const dialog = page.getByRole('dialog', { name: 'Следы на болотах', exact: true })
+  await expect(dialog.getByRole('img', { name: 'Следы на болотах' })).toBeVisible()
+  expect(writes).toEqual([])
+})

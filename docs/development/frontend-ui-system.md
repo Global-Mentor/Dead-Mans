@@ -44,6 +44,7 @@ Page `sx` owns placement and external spacing. A component owns its internals. D
 | Selection | `FormSelect`, `Combobox`, `FormCheckbox`, `FormSwitch`, `ChoiceLabel`, `ChoiceGroup`, `CheckboxGroup`, `ChoiceCard`, `SelectionTile`, `SelectionAction` |
 | Surfaces/disclosure | `SectionCard`, `ItemCard`, `SectionDivider`, `AppAccordion`, `AppAccordionSummary`, `AppAccordionDetails` |
 | Status/metrics | `StatusBadge`, `NotificationCount`, `Metric`, `SummaryMetrics`, `RankBadge` |
+| Media | `ImageFrame` with loading/error states, contain/cover sizing and decorative backgrounds |
 | Feedback | `InlineNotice`, `BusyIndicator`, `TaskProgress`, `HelpTooltip`, `FieldHelp`, `AppToast`, `PageStatePanel`, `CenteredProgress` |
 | Dialogs | `AppDialog`, `ConfirmDialog`, `DiscardChangesDialog`, `useDirtyClose` |
 | Layout | `PageShell`, `SectionHeader`, `AuthScreenShell`, `FormSection`, `SidePanel`, `DisclosureSection`, `NativeDisclosure`, `CatalogWorkspace` |
@@ -158,3 +159,7 @@ Run `npm --prefix frontend run check`, `npm --prefix frontend run test:e2e`, and
 ## Surface checks
 
 The architecture check also rejects local corner-radius recipes in features, layouts and shared game compositions; circles for intrinsic marks and the common theme radius remain valid. This is a guard against one concrete regression, not proof of complete visual migration. The preserved site header, board cards and board context remain independently owned responsive compositions. No page-specific compact-button variant was added.
+
+## Game board compositions
+
+- `ImageFrame` owns image loading/failure and resets on source changes. Card backgrounds are decorative and fail silently; preview and setup images show localized feedback. Consumers own the frame geometry, while the shared component owns the image fit and visibility. Media messages belong to the common locale bundle.
