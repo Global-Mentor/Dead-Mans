@@ -1,17 +1,18 @@
+import { Stack } from '@mui/material'
+import type { Control, UseFormSetValue } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import type { DefaultTranslation } from '../../../locales/index.ts'
 import {
-  Alert,
-  FormControl,
-  FormHelperText,
-  FormLabel,
-  InputAdornment,
-  RadioGroup,
-  Stack,
-} from '@mui/material'
-import { Controller, useWatch } from 'react-hook-form'
-import type { Control, UseFormSetValue } from 'react-hook-form'
-import { useTranslation } from 'react-i18next'
-import { ChoiceCard, ControlledFormTextField } from '../../../shared/ui/index.ts'
+  ChoiceCard,
+  ChoiceGroup,
+  ControlledFormTextField,
+  FieldAdornment,
+  FieldGroup,
+  FieldWithHelp,
+  FormSection,
+  InlineNotice,
+} from '../../../shared/ui/index.ts'
 import {
   modifierEventMaximumKinds,
   modifierEventMeasurementModes,
@@ -21,7 +22,6 @@ import {
   modifierPayoutKinds,
   type ModifierFormValues,
 } from '../model/modifier-form-schema.ts'
-import { FieldWithHelp, WizardSection } from './modifier-form-fields.tsx'
 
 export function ModifierImpactStep({
   control,
@@ -61,7 +61,7 @@ export function ModifierImpactStep({
 
   return (
     <Stack spacing={2}>
-      <WizardSection
+      <FormSection
         title={t('gameCatalog.modifiers.wizard.measurement.title')}
         description={t('gameCatalog.modifiers.wizard.measurement.description')}
       >
@@ -69,11 +69,14 @@ export function ModifierImpactStep({
           control={control}
           name="measurementDomain"
           render={({ field, fieldState }) => (
-            <FormControl component="fieldset" error={fieldState.invalid} fullWidth>
-              <FormLabel component="legend">
-                {t('gameCatalog.modifiers.wizard.measurement.question')}
-              </FormLabel>
-              <RadioGroup
+            <FieldGroup
+              component="fieldset"
+              error={fieldState.invalid}
+              fullWidth
+              label={<>{t('gameCatalog.modifiers.wizard.measurement.question')}</>}
+              helperText={fieldState.error?.message}
+            >
+              <ChoiceGroup
                 value={field.value ?? ''}
                 onChange={(_, value) => field.onChange(value)}
                 sx={{
@@ -86,11 +89,8 @@ export function ModifierImpactStep({
                 {cards(modifierMeasurementDomains, field.value, (value, part) =>
                   t(`gameCatalog.modifiers.wizard.measurement.domains.${value}.${part}`),
                 )}
-              </RadioGroup>
-              {fieldState.error ? (
-                <FormHelperText>{fieldState.error.message}</FormHelperText>
-              ) : null}
-            </FormControl>
+              </ChoiceGroup>
+            </FieldGroup>
           )}
         />
 
@@ -99,16 +99,17 @@ export function ModifierImpactStep({
             control={control}
             name="killMeasurementMode"
             render={({ field }) => (
-              <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">
-                  {t('gameCatalog.modifiers.wizard.measurement.killQuestion')}
-                </FormLabel>
-                <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
+              <FieldGroup
+                component="fieldset"
+                fullWidth
+                label={<>{t('gameCatalog.modifiers.wizard.measurement.killQuestion')}</>}
+              >
+                <ChoiceGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
                   {cards(modifierKillMeasurementModes, field.value, (value, part) =>
                     t(`gameCatalog.modifiers.wizard.measurement.killModes.${value}.${part}`),
                   )}
-                </RadioGroup>
-              </FormControl>
+                </ChoiceGroup>
+              </FieldGroup>
             )}
           />
         ) : null}
@@ -118,16 +119,17 @@ export function ModifierImpactStep({
             control={control}
             name="eventMeasurementMode"
             render={({ field }) => (
-              <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">
-                  {t('gameCatalog.modifiers.wizard.measurement.eventQuestion')}
-                </FormLabel>
-                <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
+              <FieldGroup
+                component="fieldset"
+                fullWidth
+                label={<>{t('gameCatalog.modifiers.wizard.measurement.eventQuestion')}</>}
+              >
+                <ChoiceGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
                   {cards(modifierEventMeasurementModes, field.value, (value, part) =>
                     t(`gameCatalog.modifiers.wizard.measurement.eventModes.${value}.${part}`),
                   )}
-                </RadioGroup>
-              </FormControl>
+                </ChoiceGroup>
+              </FieldGroup>
             )}
           />
         ) : null}
@@ -154,11 +156,12 @@ export function ModifierImpactStep({
               control={control}
               name="eventMaximumKind"
               render={({ field }) => (
-                <FormControl component="fieldset" fullWidth>
-                  <FormLabel component="legend">
-                    {t('gameCatalog.modifiers.wizard.measurement.maximumQuestion')}
-                  </FormLabel>
-                  <RadioGroup
+                <FieldGroup
+                  component="fieldset"
+                  fullWidth
+                  label={<>{t('gameCatalog.modifiers.wizard.measurement.maximumQuestion')}</>}
+                >
+                  <ChoiceGroup
                     {...field}
                     sx={{
                       mt: 0.75,
@@ -170,8 +173,8 @@ export function ModifierImpactStep({
                     {cards(modifierEventMaximumKinds, field.value, (value, part) =>
                       t(`gameCatalog.modifiers.wizard.measurement.maximumKinds.${value}.${part}`),
                     )}
-                  </RadioGroup>
-                </FormControl>
+                  </ChoiceGroup>
+                </FieldGroup>
               )}
             />
             {eventMaximumKind === 'activations' ? (
@@ -186,9 +189,9 @@ export function ModifierImpactStep({
             ) : null}
           </>
         ) : null}
-      </WizardSection>
+      </FormSection>
 
-      <WizardSection
+      <FormSection
         title={t('gameCatalog.modifiers.wizard.payout.title')}
         description={t('gameCatalog.modifiers.wizard.payout.description')}
       >
@@ -196,11 +199,14 @@ export function ModifierImpactStep({
           control={control}
           name="payoutKind"
           render={({ field, fieldState }) => (
-            <FormControl component="fieldset" error={fieldState.invalid} fullWidth>
-              <FormLabel component="legend">
-                {t('gameCatalog.modifiers.wizard.payout.question')}
-              </FormLabel>
-              <RadioGroup
+            <FieldGroup
+              component="fieldset"
+              error={fieldState.invalid}
+              fullWidth
+              label={<>{t('gameCatalog.modifiers.wizard.payout.question')}</>}
+              helperText={fieldState.error?.message}
+            >
+              <ChoiceGroup
                 value={field.value ?? ''}
                 onChange={(_, value) => {
                   if (field.value !== value) {
@@ -222,11 +228,8 @@ export function ModifierImpactStep({
                 {cards(modifierPayoutKinds, field.value, (value, part) =>
                   t(`gameCatalog.modifiers.wizard.payout.kinds.${value}.${part}`),
                 )}
-              </RadioGroup>
-              {fieldState.error ? (
-                <FormHelperText>{fieldState.error.message}</FormHelperText>
-              ) : null}
-            </FormControl>
+              </ChoiceGroup>
+            </FieldGroup>
           )}
         />
 
@@ -242,7 +245,7 @@ export function ModifierImpactStep({
               input: {
                 endAdornment:
                   payoutKind === 'cardPercent' ? (
-                    <InputAdornment position="end">%</InputAdornment>
+                    <FieldAdornment position="end">%</FieldAdornment>
                   ) : undefined,
               },
             }}
@@ -258,10 +261,10 @@ export function ModifierImpactStep({
             disabled={disabled}
           />
         ) : null}
-      </WizardSection>
+      </FormSection>
 
       {measurementDomain && payoutKind ? (
-        <Alert severity="info">
+        <InlineNotice severity="info">
           {t('gameCatalog.modifiers.wizard.payout.summary', {
             source: t(
               `gameCatalog.modifiers.wizard.measurement.domains.${measurementDomain}.title`,
@@ -269,7 +272,7 @@ export function ModifierImpactStep({
             effect: t(`gameCatalog.modifiers.wizard.payout.kinds.${payoutKind}.title`),
             value: payoutValue,
           })}
-        </Alert>
+        </InlineNotice>
       ) : null}
     </Stack>
   )

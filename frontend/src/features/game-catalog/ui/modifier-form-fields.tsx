@@ -1,94 +1,14 @@
-import {
-  Autocomplete,
-  Box,
-  Chip,
-  IconButton,
-  LinearProgress,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
-import type { ReactNode } from 'react'
-import { Controller } from 'react-hook-form'
+import { Box, Stack, Typography } from '@mui/material'
 import type { Control } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
+import { Combobox, FormTextField, StatusBadge, TaskProgress } from '../../../shared/ui/index.ts'
 import {
   normalizeModifierTags,
   suggestedModifierTags,
   type ModifierFormValues,
 } from '../model/modifier-form-schema.ts'
-
-function HintTooltip({ label, title }: { label: string; title: string }) {
-  return (
-    <Tooltip title={title} arrow placement="top" enterTouchDelay={0} leaveTouchDelay={5000}>
-      <IconButton
-        size="small"
-        aria-label={`${label}. ${title}`}
-        sx={{ width: 40, height: 40, color: 'text.secondary', flexShrink: 0 }}
-      >
-        <Box
-          component="span"
-          aria-hidden
-          sx={{
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            border: 1,
-            borderColor: 'divider',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.7rem',
-            fontWeight: 700,
-          }}
-        >
-          ?
-        </Box>
-      </IconButton>
-    </Tooltip>
-  )
-}
-
-export function FieldWithHelp({
-  children,
-  help,
-  label,
-}: {
-  children: ReactNode
-  help: string
-  label: string
-}) {
-  return (
-    <Stack direction="row" spacing={0.5} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
-      <Box sx={{ minWidth: 0, flex: 1 }}>{children}</Box>
-      <HintTooltip label={label} title={help} />
-    </Stack>
-  )
-}
-
-export function WizardSection({
-  children,
-  description,
-  title,
-}: {
-  children: ReactNode
-  description: string
-  title: string
-}) {
-  return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-      <Typography variant="subtitle2">{title}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-        {description}
-      </Typography>
-      <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-        {children}
-      </Stack>
-    </Box>
-  )
-}
 
 export function ModifierConflictField({
   control,
@@ -109,7 +29,7 @@ export function ModifierConflictField({
       control={control}
       name="conflictingModifierIds"
       render={({ field, fieldState }) => (
-        <Autocomplete
+        <Combobox
           multiple
           disabled={disabled}
           options={options}
@@ -118,7 +38,7 @@ export function ModifierConflictField({
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(_, value) => field.onChange(value.map((option) => option.id))}
           renderInput={(params) => (
-            <TextField
+            <FormTextField
               {...params}
               label={t('gameCatalog.modifiers.fields.conflicts')}
               error={fieldState.invalid}
@@ -146,7 +66,7 @@ export function ModifierTagField({
       control={control}
       name="tags"
       render={({ field, fieldState }) => (
-        <Autocomplete
+        <Combobox
           multiple
           freeSolo
           disabled={disabled}
@@ -157,11 +77,11 @@ export function ModifierTagField({
           onChange={(_, value) => field.onChange(normalizeModifierTags(value))}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => (
-              <Chip label={option} size="small" {...getTagProps({ index })} key={option} />
+              <StatusBadge label={option} size="small" {...getTagProps({ index })} key={option} />
             ))
           }
           renderInput={(params) => (
-            <TextField
+            <FormTextField
               {...params}
               label={t('gameCatalog.modifiers.wizard.tags')}
               error={fieldState.invalid}
@@ -196,7 +116,7 @@ export function ModifierWizardProgress({
           {t('gameCatalog.modifiers.wizard.steps', { returnObjects: true })[step]}
         </Typography>
       </Stack>
-      <LinearProgress variant="determinate" value={(current / total) * 100} aria-hidden />
+      <TaskProgress variant="determinate" value={(current / total) * 100} aria-hidden />
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {t('gameCatalog.modifiers.wizard.stepDescriptions', { returnObjects: true })[step]}
       </Typography>

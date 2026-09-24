@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, useState } from 'react'
-import { Controller, useForm, useWatch } from 'react-hook-form'
 import type { FieldPath } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type {
   CreateGameModifierRequest,
@@ -12,18 +12,20 @@ import type {
 import {
   AppButton,
   AppDialog,
-  ConfirmDialog,
+  DiscardChangesDialog,
   FormTextField,
+  InlineNotice,
   SectionCard,
+  useDirtyClose,
 } from '../../../shared/ui/index.ts'
 import { previewGameModifier } from '../api/catalog-modifiers-api.ts'
+import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 import {
   createDefaultModifierFormValues,
   createModifierFormSchema,
   toModifierRequest,
   type ModifierFormValues,
 } from '../model/modifier-form-schema.ts'
-import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 import { ModifierActivationStep } from './ModifierActivationStep.tsx'
 import { ModifierCardStep } from './ModifierCardStep.tsx'
 import { ModifierImpactStep } from './ModifierImpactStep.tsx'
@@ -89,7 +91,6 @@ function ModifierFormDialogBody({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [step, setStep] = useState(0)
-  const [showDiscardConfirmation, setShowDiscardConfirmation] = useState(false)
   const [preview, setPreview] = useState<GameModifierDraftPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
@@ -109,8 +110,9 @@ function ModifierFormDialogBody({
       resolver: zodResolver(schema),
     })
   const kind = useWatch({ control, name: 'kind' })
-  const disabled = isBusy || isReadOnly
-  const isDirty = formState.isDirty
+  const busy = isBusy || formState.isSubmitting || isPreviewLoading
+  const disabled = busy || isReadOnly
+  const close = useDirtyClose({ dirty: !isReadOnly && formState.isDirty, busy, onClose })
 
   const loadPreview = async () => {
     setIsPreviewLoading(true)
@@ -137,13 +139,6 @@ function ModifierFormDialogBody({
   }
 
   const goBack = () => setStep(step === 3 && kind === 'rule' ? 1 : Math.max(0, step - 1))
-  const requestClose = () => {
-    if (!isReadOnly && isDirty) {
-      setShowDiscardConfirmation(true)
-      return
-    }
-    onClose()
-  }
   const submit = handleSubmit(async (values) => {
     if (!preview) {
       setStep(3)
@@ -163,7 +158,7 @@ function ModifierFormDialogBody({
         open
         maxWidth="md"
         fullScreen={isMobile}
-        onClose={isBusy ? undefined : requestClose}
+        onClose={close.requestClose}
         title={
           mode === 'create'
             ? t('gameCatalog.modifiers.createTitle')
@@ -171,24 +166,24 @@ function ModifierFormDialogBody({
         }
         actions={
           <Stack direction="row" spacing={1} width="100%" justifyContent="space-between">
-            <AppButton tone="ghost" onClick={requestClose} disabled={isBusy}>
+            <AppButton tone="ghost" onClick={close.requestClose} disabled={busy}>
               {isReadOnly ? t('common.actions.close') : t('common.actions.cancel')}
             </AppButton>
             <Stack direction="row" spacing={1}>
               {step > 0 ? (
-                <AppButton tone="secondary" onClick={goBack} disabled={isBusy}>
+                <AppButton tone="secondary" onClick={goBack} disabled={busy}>
                   {t('common.actions.back')}
                 </AppButton>
               ) : null}
               {step < 3 ? (
-                <AppButton onClick={() => void goNext()} disabled={isBusy}>
+                <AppButton onClick={() => void goNext()} disabled={busy}>
                   {t('common.actions.next')}
                 </AppButton>
               ) : isReadOnly ? null : (
                 <AppButton
                   type="submit"
                   form={modifierFormId}
-                  disabled={isBusy || isPreviewLoading || !preview}
+                  disabled={busy || isPreviewLoading || !preview}
                 >
                   {t('common.actions.save')}
                 </AppButton>
@@ -199,12 +194,12 @@ function ModifierFormDialogBody({
       >
         <ModifierWizardProgress step={step} kind={kind} />
         {formState.errors.root ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <InlineNotice severity="error" sx={{ mb: 2 }}>
             {formState.errors.root.message}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {hasStaleConflict ? (
-          <Alert
+          <InlineNotice
             severity="warning"
             sx={{ mb: 2 }}
             action={
@@ -216,7 +211,7 @@ function ModifierFormDialogBody({
             }
           >
             {t('gameCatalog.modifiers.staleDraftPreserved')}
-          </Alert>
+          </InlineNotice>
         ) : null}
         {staleLatest ? (
           <SectionCard surface="plain" sx={{ p: 1.5, mb: 2 }}>
@@ -238,9 +233,9 @@ function ModifierFormDialogBody({
           </SectionCard>
         ) : null}
         {isReadOnly ? (
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <InlineNotice severity="info" sx={{ mb: 2 }}>
             {t('gameCatalog.modifiers.contentLockedReason')}
-          </Alert>
+          </InlineNotice>
         ) : null}
         <form id={modifierFormId} onSubmit={(event) => void submit(event)}>
           {step === 0 ? <ModifierCardStep control={control} disabled={disabled} /> : null}
@@ -289,15 +284,11 @@ function ModifierFormDialogBody({
           ) : null}
         </form>
       </AppDialog>
-      <ConfirmDialog
-        open={showDiscardConfirmation}
-        title={t('gameCatalog.modifiers.wizard.discardTitle')}
-        description={t('gameCatalog.modifiers.wizard.discardDescription')}
-        confirmLabel={t('gameCatalog.modifiers.wizard.discardConfirm')}
-        cancelLabel={t('common.actions.cancel')}
-        confirmTone="danger"
-        onClose={() => setShowDiscardConfirmation(false)}
-        onConfirm={onClose}
+      <DiscardChangesDialog
+        open={close.confirmOpen}
+        busy={busy}
+        onClose={close.keepEditing}
+        onDiscard={close.discard}
       />
     </>
   )

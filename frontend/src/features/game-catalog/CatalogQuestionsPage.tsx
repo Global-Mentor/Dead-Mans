@@ -1,9 +1,17 @@
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ImportGameQuestionSkippedItem } from '../../shared/api/contracts/index.ts'
 import { downloadTextFile } from '../../shared/lib/download-file.ts'
-import { AppButton, AppDialog, ConfirmDialog, PageShell } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  AppDialog,
+  CatalogWorkspace,
+  ConfirmDialog,
+  FilePickerInput,
+  InlineNotice,
+  PageShell,
+} from '../../shared/ui/index.ts'
 import { resolveCatalogErrorMessage } from './model/catalog-error.ts'
 import {
   downloadQuestionImportFailureReport,
@@ -177,7 +185,7 @@ export function CatalogQuestionsPage() {
   return (
     <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
       {listError ? (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={clearListError}>
+        <InlineNotice severity="error" sx={{ mb: 2 }} onClose={clearListError}>
           <Stack spacing={1}>
             <Typography variant="body2">{listError}</Typography>
             {importReport?.errorMessage ? (
@@ -196,17 +204,17 @@ export function CatalogQuestionsPage() {
               </>
             ) : null}
           </Stack>
-        </Alert>
+        </InlineNotice>
       ) : null}
 
       {successMessage ? (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={clearSuccessMessage}>
+        <InlineNotice severity="success" sx={{ mb: 2 }} onClose={clearSuccessMessage}>
           {successMessage}
-        </Alert>
+        </InlineNotice>
       ) : null}
 
       {importReport && importReport.skippedQuestions.length > 0 ? (
-        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setImportReport(null)}>
+        <InlineNotice severity="warning" sx={{ mb: 2 }} onClose={() => setImportReport(null)}>
           <Stack spacing={1}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
@@ -238,24 +246,43 @@ export function CatalogQuestionsPage() {
               ))}
             </Stack>
           </Stack>
-        </Alert>
+        </InlineNotice>
       ) : null}
 
-      <input
+      <FilePickerInput
         ref={importInputRef}
-        type="file"
         accept=".json,.jsonc,application/json"
-        hidden
         onChange={(event) => void handleImportFileSelected(event)}
       />
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2,
-          alignItems: 'stretch',
-          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) minmax(320px, 360px)' },
-        }}
+      <CatalogWorkspace
+        toolsLabel={t('gameCatalog.questions.menuTitle')}
+        tools={
+          <Box sx={{ minWidth: 0 }}>
+            <QuestionCatalogMenu
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              canAddQuestion={canAddQuestion}
+              canRenameCategory={
+                selectedCategory !== null && !isSelectedCategoryProtected && !isSavingCategory
+              }
+              canDeleteCategory={
+                selectedCategory !== null && !isSelectedCategoryProtected && !isDeletingCategory
+              }
+              isCategoriesLoading={categoriesQuery.isLoading}
+              isCategoriesError={categoriesQuery.isError}
+              isImportingQuestions={isImportingQuestions}
+              isDownloadingTemplate={isDownloadingTemplate}
+              onSelectCategory={setSelectedCategoryId}
+              onCreateQuestion={openCreate}
+              onDownloadTemplate={() => void handleDownloadTemplate()}
+              onUploadQuestions={() => importInputRef.current?.click()}
+              onCreateCategory={openCreateCategory}
+              onRenameCategory={handleRenameCategoryClick}
+              onDeleteCategory={handleDeleteCategoryClick}
+            />
+          </Box>
+        }
       >
         <Box sx={{ minWidth: 0 }}>
           <QuestionCatalogList
@@ -269,31 +296,7 @@ export function CatalogQuestionsPage() {
             onDelete={requestDelete}
           />
         </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <QuestionCatalogMenu
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            canAddQuestion={canAddQuestion}
-            canRenameCategory={
-              selectedCategory !== null && !isSelectedCategoryProtected && !isSavingCategory
-            }
-            canDeleteCategory={
-              selectedCategory !== null && !isSelectedCategoryProtected && !isDeletingCategory
-            }
-            isCategoriesLoading={categoriesQuery.isLoading}
-            isCategoriesError={categoriesQuery.isError}
-            isImportingQuestions={isImportingQuestions}
-            isDownloadingTemplate={isDownloadingTemplate}
-            onSelectCategory={setSelectedCategoryId}
-            onCreateQuestion={openCreate}
-            onDownloadTemplate={() => void handleDownloadTemplate()}
-            onUploadQuestions={() => importInputRef.current?.click()}
-            onCreateCategory={openCreateCategory}
-            onRenameCategory={handleRenameCategoryClick}
-            onDeleteCategory={handleDeleteCategoryClick}
-          />
-        </Box>
-      </Box>
+      </CatalogWorkspace>
 
       <QuestionFormDialog
         open={dialog !== null}
@@ -307,6 +310,7 @@ export function CatalogQuestionsPage() {
       <QuestionCategoryDialog
         open={categoryDialog !== null}
         mode={categoryDialog?.mode ?? 'create'}
+        categoryId={categoryDialog?.mode === 'edit' ? categoryDialog.category.id : undefined}
         initialName={categoryDialog?.mode === 'edit' ? categoryDialog.category.name : ''}
         isBusy={isSavingCategory}
         onClose={closeCreateCategory}

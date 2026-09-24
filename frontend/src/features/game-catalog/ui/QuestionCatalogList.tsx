@@ -1,4 +1,4 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type {
   GameQuestionCatalogItem,
@@ -8,8 +8,10 @@ import {
   AppButton,
   AsyncSection,
   FormTextField,
+  RecordRow,
   SectionCard,
   SectionHeader,
+  StatusBadge,
 } from '../../../shared/ui/index.ts'
 import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
 
@@ -59,6 +61,7 @@ export function QuestionCatalogList({
       <AsyncSection
         isLoading={isLoading}
         isError={isError}
+        hasData={questions.length > 0}
         isEmpty={questions.length === 0}
         loadingMessage={t('gameCatalog.questions.loading')}
         errorMessage={t('gameCatalog.questions.error')}
@@ -66,34 +69,24 @@ export function QuestionCatalogList({
       >
         <Stack spacing={1} sx={{ mt: 1.5 }}>
           {questions.map((question) => (
-            <Box
+            <RecordRow
               key={question.questionId}
-              sx={{
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                p: 1.25,
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 1,
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-              }}
+              actions={
+                <>
+                  <AppButton size="small" tone="secondary" onClick={() => onEdit(question)}>
+                    {t('gameCatalog.actions.edit')}
+                  </AppButton>
+                  <AppButton size="small" tone="danger" onClick={() => onDelete(question)}>
+                    {t('gameCatalog.actions.delete')}
+                  </AppButton>
+                </>
+              }
             >
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-                  {question.text}
-                </Typography>
-                <QuestionCatalogMetaChips question={question} />
-              </Box>
-              <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-                <AppButton size="small" tone="secondary" onClick={() => onEdit(question)}>
-                  {t('gameCatalog.actions.edit')}
-                </AppButton>
-                <AppButton size="small" tone="danger" onClick={() => onDelete(question)}>
-                  {t('gameCatalog.actions.delete')}
-                </AppButton>
-              </Stack>
-            </Box>
+              <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+                {question.text}
+              </Typography>
+              <QuestionCatalogMetaChips question={question} />
+            </RecordRow>
           ))}
         </Stack>
       </AsyncSection>
@@ -107,41 +100,36 @@ function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogI
 
   return (
     <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}>
-      <Chip
+      <StatusBadge
         color="info"
         label={t('gameCatalog.questions.categoryMeta', {
           category: question.categoryName,
         })}
       />
-      <Chip
+      <StatusBadge
         color="warning"
         label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
       />
       {options.map((option, index) => (
-        <Chip
+        <StatusBadge
           key={`${question.questionId}-option-${index}`}
           color={option.isCorrect ? 'success' : 'default'}
           label={t('gameCatalog.questions.answerMeta', { answer: option.text })}
-          sx={{
-            maxWidth: '100%',
-            height: 'auto',
-            '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: 0.5 },
-          }}
         />
       ))}
-      <Chip
+      <StatusBadge
         label={t('gameCatalog.questions.askedMeta', {
           asked: question.askedTotalCount,
         })}
       />
-      <Chip
+      <StatusBadge
         label={`${question.correctSubmissionTotalCount}/${question.submissionTotalCount} · ${question.correctPercentage}%`}
       />
       {question.isEnabled ? null : (
-        <Chip color="error" label={t('gameCatalog.questions.disabledBadge')} />
+        <StatusBadge color="error" label={t('gameCatalog.questions.disabledBadge')} />
       )}
       {question.twitchCompatible ? null : (
-        <Chip color="error" label={t('gameCatalog.questions.twitchIncompatibleBadge')} />
+        <StatusBadge color="error" label={t('gameCatalog.questions.twitchIncompatibleBadge')} />
       )}
     </Stack>
   )

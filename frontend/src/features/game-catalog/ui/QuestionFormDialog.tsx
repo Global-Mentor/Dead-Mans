@@ -1,30 +1,30 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Alert,
-  Box,
-  FormControlLabel,
-  IconButton,
-  Stack,
-  SvgIcon,
-  Switch,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import {
-  AppButton,
-  AppDialog,
-  ControlledFormTextField,
-  FormSelect,
-} from '../../../shared/ui/index.ts'
 import type {
   CreateGameQuestionRequest,
-  GameQuestionCategoryItem,
   GameQuestionCatalogItem,
+  GameQuestionCategoryItem,
   TwitchQuizPreview,
 } from '../../../shared/api/contracts/index.ts'
+import {
+  ActionIcon,
+  AppButton,
+  AppDialog,
+  ChoiceLabel,
+  ControlledFormTextField,
+  DiscardChangesDialog,
+  FormSelect,
+  FormSwitch,
+  HelpTooltip,
+  InlineNotice,
+  ItemCard,
+  useDirtyClose,
+} from '../../../shared/ui/index.ts'
+import { previewTwitchQuizMessages } from '../../game-questions/api/game-questions-api.ts'
+import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
 import {
   createQuestionFormSchema,
@@ -32,8 +32,6 @@ import {
   minQuestionAnswers,
   type QuestionFormValues,
 } from '../model/question-form-schema.ts'
-import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
-import { previewTwitchQuizMessages } from '../../game-questions/api/game-questions-api.ts'
 
 const questionFormId = 'catalog-question-form'
 
@@ -117,6 +115,8 @@ function QuestionFormDialogBody({
       defaultValues: toDefaultValues(initial, categories),
       resolver: zodResolver(schema),
     })
+  const busy = isBusy || formState.isSubmitting
+  const close = useDirtyClose({ dirty: formState.isDirty, busy, onClose })
   const categoryValue = useWatch({ control, name: 'categoryId' }) ?? ''
   const questionText = useWatch({ control, name: 'text' }) ?? ''
   const watchedOptions = useWatch({ control, name: 'options' })
@@ -191,236 +191,246 @@ function QuestionFormDialogBody({
   })
 
   return (
-    <AppDialog
-      open
-      onClose={isBusy ? undefined : onClose}
-      title={
-        mode === 'create'
-          ? t('gameCatalog.questions.createTitle')
-          : t('gameCatalog.questions.editTitle')
-      }
-      actions={
-        <>
-          <AppButton tone="ghost" onClick={onClose} disabled={isBusy}>
-            {t('common.actions.cancel')}
-          </AppButton>
-          <AppButton type="submit" form={questionFormId} disabled={isBusy || !hasCategories}>
-            {t('common.actions.save')}
-          </AppButton>
-        </>
-      }
-    >
-      {formState.errors.root ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {formState.errors.root.message}
-        </Alert>
-      ) : null}
-      {optionsRootError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {optionsRootError}
-        </Alert>
-      ) : null}
-      {!hasCategories ? (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {t('gameCatalog.questions.noCategories')}
-        </Alert>
-      ) : null}
-      <form id={questionFormId} onSubmit={(event) => void submit(event)}>
-        <Stack spacing={2} sx={{ pt: 0.5 }}>
-          <Controller
-            control={control}
-            name="categoryId"
-            render={({ field, fieldState }) => (
-              <FormSelect
-                value={field.value}
-                options={categoryOptions}
-                label={t('gameCatalog.questions.fields.category')}
-                disabled={isBusy || !hasCategories}
-                error={fieldState.invalid}
-                helperText={fieldState.error?.message}
-                onChange={field.onChange}
-              />
-            )}
-          />
-          <ControlledFormTextField
-            control={control}
-            name="text"
-            label={t('gameCatalog.questions.fields.text')}
-            multiline
-            minRows={2}
-            disabled={isBusy}
-          />
-          <Stack spacing={1.5}>
-            <Box>
-              <Typography variant="subtitle2">
-                {t('gameCatalog.questions.fields.answers')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('gameCatalog.questions.fields.answersHint')}
-              </Typography>
-            </Box>
-            <Box sx={{ borderLeft: '3px solid', borderColor: 'success.main', pl: 1.5 }}>
+    <>
+      <AppDialog
+        open
+        onClose={close.requestClose}
+        title={
+          mode === 'create'
+            ? t('gameCatalog.questions.createTitle')
+            : t('gameCatalog.questions.editTitle')
+        }
+        actions={
+          <>
+            <AppButton tone="ghost" onClick={close.requestClose} disabled={busy}>
+              {t('common.actions.cancel')}
+            </AppButton>
+            <AppButton
+              type="submit"
+              form={questionFormId}
+              loading={busy}
+              disabled={busy || !hasCategories}
+            >
+              {t('common.actions.save')}
+            </AppButton>
+          </>
+        }
+      >
+        {formState.errors.root ? (
+          <InlineNotice severity="error" sx={{ mb: 2 }}>
+            {formState.errors.root.message}
+          </InlineNotice>
+        ) : null}
+        {optionsRootError ? (
+          <InlineNotice severity="error" sx={{ mb: 2 }}>
+            {optionsRootError}
+          </InlineNotice>
+        ) : null}
+        {!hasCategories ? (
+          <InlineNotice severity="warning" sx={{ mb: 2 }}>
+            {t('gameCatalog.questions.noCategories')}
+          </InlineNotice>
+        ) : null}
+        <form noValidate id={questionFormId} onSubmit={(event) => void submit(event)}>
+          <Stack spacing={2} sx={{ pt: 0.5 }}>
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field, fieldState }) => (
+                <FormSelect
+                  required
+                  value={field.value}
+                  options={categoryOptions}
+                  label={t('gameCatalog.questions.fields.category')}
+                  disabled={busy || !hasCategories}
+                  error={fieldState.invalid}
+                  helperText={fieldState.error?.message}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <ControlledFormTextField
+              control={control}
+              name="text"
+              required
+              label={t('gameCatalog.questions.fields.text')}
+              multiline
+              minRows={2}
+              disabled={busy}
+            />
+            <Stack spacing={1.5}>
+              <Box>
+                <Typography variant="subtitle2">
+                  {t('gameCatalog.questions.fields.answers')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('gameCatalog.questions.fields.answersHint')}
+                </Typography>
+              </Box>
+              <Box sx={{ borderLeft: '3px solid', borderColor: 'success.main', pl: 1.5 }}>
+                <ControlledFormTextField
+                  control={control}
+                  name="options.0.text"
+                  required
+                  label={t('gameCatalog.questions.fields.correctAnswer')}
+                  placeholder={t('gameCatalog.questions.fields.correctAnswerPlaceholder')}
+                  disabled={busy}
+                />
+              </Box>
+              {fields.slice(1).map((field, alternativeIndex) => {
+                const index = alternativeIndex + 1
+                const removeLabel = t('gameCatalog.questions.fields.removeAnswer', {
+                  number: index,
+                })
+                return (
+                  <Stack
+                    key={field.id}
+                    direction="row"
+                    spacing={0.5}
+                    alignItems="flex-start"
+                    sx={{ borderLeft: '3px solid', borderColor: 'error.main', pl: 1.5 }}
+                  >
+                    <ControlledFormTextField
+                      control={control}
+                      name={`options.${index}.text`}
+                      label={t('gameCatalog.questions.fields.answerAlternative', { number: index })}
+                      disabled={busy}
+                    />
+                    <HelpTooltip title={removeLabel}>
+                      <span>
+                        <ActionIcon
+                          aria-label={removeLabel}
+                          size="small"
+                          disabled={busy || fields.length <= minQuestionAnswers}
+                          onClick={() => {
+                            remove(index)
+                            requestAnimationFrame(() =>
+                              setFocus(`options.${Math.min(index, fields.length - 2)}.text`),
+                            )
+                          }}
+                        >
+                          <SvgIcon fontSize="small">
+                            <path
+                              d="m6 6 12 12M6 18 18 6"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                            />
+                          </SvgIcon>
+                        </ActionIcon>
+                      </span>
+                    </HelpTooltip>
+                  </Stack>
+                )
+              })}
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                <AppButton
+                  tone="ghost"
+                  size="small"
+                  type="button"
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <path
+                        d="M12 5v14M5 12h14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </SvgIcon>
+                  }
+                  disabled={busy || !canAddAnswer}
+                  onClick={() =>
+                    append(
+                      { text: '', isCorrect: false },
+                      { focusName: `options.${fields.length}.text` },
+                    )
+                  }
+                  sx={{ flexShrink: 0 }}
+                >
+                  {t('gameCatalog.questions.fields.addAnswer')}
+                </AppButton>
+                <Typography variant="caption" color="text.secondary" aria-live="polite">
+                  {t('gameCatalog.questions.fields.answerCount', {
+                    count: fields.length,
+                    max: maxQuestionAnswers,
+                  })}
+                </Typography>
+              </Stack>
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <ControlledFormTextField
                 control={control}
-                name="options.0.text"
-                label={t('gameCatalog.questions.fields.correctAnswer')}
-                placeholder={t('gameCatalog.questions.fields.correctAnswerPlaceholder')}
-                disabled={isBusy}
+                name="reward"
+                type="number"
+                label={t('gameCatalog.questions.fields.reward')}
+                disabled={busy}
               />
-            </Box>
-            {fields.slice(1).map((field, alternativeIndex) => {
-              const index = alternativeIndex + 1
-              const removeLabel = t('gameCatalog.questions.fields.removeAnswer', { number: index })
-              return (
-                <Stack
-                  key={field.id}
-                  direction="row"
-                  spacing={0.5}
-                  alignItems="flex-start"
-                  sx={{ borderLeft: '3px solid', borderColor: 'error.main', pl: 1.5 }}
-                >
-                  <ControlledFormTextField
-                    control={control}
-                    name={`options.${index}.text`}
-                    label={t('gameCatalog.questions.fields.answerAlternative', { number: index })}
-                    disabled={isBusy}
-                  />
-                  <Tooltip title={removeLabel}>
-                    <span>
-                      <IconButton
-                        aria-label={removeLabel}
-                        size="small"
-                        disabled={isBusy || fields.length <= minQuestionAnswers}
-                        onClick={() => {
-                          remove(index)
-                          requestAnimationFrame(() =>
-                            setFocus(`options.${Math.min(index, fields.length - 2)}.text`),
-                          )
-                        }}
-                        sx={{ width: 40, height: 40, color: 'text.secondary' }}
-                      >
-                        <SvgIcon fontSize="small">
-                          <path
-                            d="m6 6 12 12M6 18 18 6"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                          />
-                        </SvgIcon>
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Stack>
-              )
-            })}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-              <AppButton
-                tone="ghost"
-                size="small"
-                type="button"
-                startIcon={
-                  <SvgIcon fontSize="small">
-                    <path
-                      d="M12 5v14M5 12h14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </SvgIcon>
-                }
-                disabled={isBusy || !canAddAnswer}
-                onClick={() =>
-                  append(
-                    { text: '', isCorrect: false },
-                    { focusName: `options.${fields.length}.text` },
-                  )
-                }
-                sx={{ flexShrink: 0 }}
-              >
-                {t('gameCatalog.questions.fields.addAnswer')}
-              </AppButton>
-              <Typography variant="caption" color="text.secondary" aria-live="polite">
-                {t('gameCatalog.questions.fields.answerCount', {
-                  count: fields.length,
-                  max: maxQuestionAnswers,
-                })}
-              </Typography>
+              <ControlledFormTextField
+                control={control}
+                name="priority"
+                type="number"
+                label={t('gameCatalog.questions.fields.priority')}
+                disabled={busy}
+              />
             </Stack>
-          </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <ControlledFormTextField
+            <Controller
               control={control}
-              name="reward"
-              type="number"
-              label={t('gameCatalog.questions.fields.reward')}
-              disabled={isBusy}
+              name="isEnabled"
+              render={({ field }) => (
+                <ChoiceLabel
+                  control={
+                    <FormSwitch
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={busy}
+                    />
+                  }
+                  label={t('gameCatalog.questions.fields.isEnabled')}
+                />
+              )}
             />
-            <ControlledFormTextField
-              control={control}
-              name="priority"
-              type="number"
-              label={t('gameCatalog.questions.fields.priority')}
-              disabled={isBusy}
-            />
+            {visibleTwitchPreview ? (
+              <ItemCard>
+                <Typography variant="subtitle2">
+                  {t('gameCatalog.questions.twitchPreview')}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                  {visibleTwitchPreview.question}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {visibleTwitchPreview.questionLength} / {visibleTwitchPreview.maximumLength}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                  {visibleTwitchPreview.options}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {visibleTwitchPreview.optionsLength} / {visibleTwitchPreview.maximumLength}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                  {visibleTwitchPreview.resultTemplate}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {visibleTwitchPreview.resultMaximumLength} / {visibleTwitchPreview.maximumLength}
+                </Typography>
+                {!visibleTwitchPreview.isCompatible ? (
+                  <InlineNotice severity="error" sx={{ mt: 1 }}>
+                    {t('gameCatalog.questions.twitchTooLong')}
+                  </InlineNotice>
+                ) : null}
+              </ItemCard>
+            ) : null}
           </Stack>
-          <Controller
-            control={control}
-            name="isEnabled"
-            render={({ field }) => (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={field.value}
-                    onChange={(event) => field.onChange(event.target.checked)}
-                    disabled={isBusy}
-                  />
-                }
-                label={t('gameCatalog.questions.fields.isEnabled')}
-              />
-            )}
-          />
-          {visibleTwitchPreview ? (
-            <Box
-              sx={{
-                border: '1px solid',
-                borderColor: visibleTwitchPreview.isCompatible ? 'divider' : 'error.main',
-                borderRadius: 1,
-                p: 1.5,
-              }}
-            >
-              <Typography variant="subtitle2">
-                {t('gameCatalog.questions.twitchPreview')}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                {visibleTwitchPreview.question}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {visibleTwitchPreview.questionLength} / {visibleTwitchPreview.maximumLength}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                {visibleTwitchPreview.options}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {visibleTwitchPreview.optionsLength} / {visibleTwitchPreview.maximumLength}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                {visibleTwitchPreview.resultTemplate}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {visibleTwitchPreview.resultMaximumLength} / {visibleTwitchPreview.maximumLength}
-              </Typography>
-              {!visibleTwitchPreview.isCompatible ? (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  {t('gameCatalog.questions.twitchTooLong')}
-                </Alert>
-              ) : null}
-            </Box>
-          ) : null}
-        </Stack>
-      </form>
-    </AppDialog>
+        </form>
+      </AppDialog>
+      <DiscardChangesDialog
+        open={close.confirmOpen}
+        busy={busy}
+        onClose={close.keepEditing}
+        onDiscard={close.discard}
+      />
+    </>
   )
 }
 

@@ -1,9 +1,15 @@
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCategoryItem } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AsyncSection, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
-import { CollapsibleToolGroup } from './CollapsibleToolGroup.tsx'
-
+import {
+  AppButton,
+  AsyncSection,
+  DisclosureSection,
+  InlineNotice,
+  SectionCard,
+  SectionHeader,
+  SelectionTile,
+} from '../../../shared/ui/index.ts'
 interface QuestionCatalogMenuProps {
   categories: readonly GameQuestionCategoryItem[]
   selectedCategoryId: string | null
@@ -56,12 +62,14 @@ export function QuestionCatalogMenu({
             {t('gameCatalog.questions.add')}
           </AppButton>
 
-          <CollapsibleToolGroup
+          <DisclosureSection
             panelId="catalog-question-import-panel"
             title={t('gameCatalog.questions.importGroupTitle')}
             description={t('gameCatalog.questions.importGroupDescription')}
-            expandLabel={t('gameCatalog.questions.importGroupExpand')}
-            collapseLabel={t('gameCatalog.questions.importGroupCollapse')}
+            toggleLabels={{
+              expand: t('gameCatalog.questions.importGroupExpand'),
+              collapse: t('gameCatalog.questions.importGroupCollapse'),
+            }}
           >
             <AppButton
               fullWidth
@@ -79,14 +87,16 @@ export function QuestionCatalogMenu({
             >
               {t('gameCatalog.questions.importJson')}
             </AppButton>
-          </CollapsibleToolGroup>
+          </DisclosureSection>
 
-          <CollapsibleToolGroup
+          <DisclosureSection
             panelId="catalog-question-category-panel"
             title={t('common.entities.categories')}
             description={t('gameCatalog.questions.categoryGroupDescription')}
-            expandLabel={t('gameCatalog.questions.categoryGroupExpand')}
-            collapseLabel={t('gameCatalog.questions.categoryGroupCollapse')}
+            toggleLabels={{
+              expand: t('gameCatalog.questions.categoryGroupExpand'),
+              collapse: t('gameCatalog.questions.categoryGroupCollapse'),
+            }}
           >
             <AppButton fullWidth tone="secondary" onClick={onCreateCategory}>
               {t('gameCatalog.questions.addCategory')}
@@ -108,9 +118,11 @@ export function QuestionCatalogMenu({
               {t('gameCatalog.questions.deleteCategory')}
             </AppButton>
             {!canAddQuestion ? (
-              <Alert severity="warning">{t('gameCatalog.questions.noCategories')}</Alert>
+              <InlineNotice severity="warning">
+                {t('gameCatalog.questions.noCategories')}
+              </InlineNotice>
             ) : null}
-          </CollapsibleToolGroup>
+          </DisclosureSection>
         </Stack>
 
         <Box>
@@ -118,10 +130,10 @@ export function QuestionCatalogMenu({
             {t('common.entities.categories')}
           </Typography>
           <Stack spacing={1}>
-            <CategoryOption
-              isSelected={selectedCategoryId === null}
+            <SelectionTile
+              selected={selectedCategoryId === null}
               onClick={() => onSelectCategory(null)}
-              name={t('common.filters.allCategories')}
+              title={t('common.filters.allCategories')}
             />
 
             <AsyncSection
@@ -134,12 +146,14 @@ export function QuestionCatalogMenu({
             >
               <Stack spacing={1}>
                 {categories.map((category) => (
-                  <CategoryOption
+                  <SelectionTile
                     key={category.id}
-                    isSelected={selectedCategoryId === category.id}
+                    selected={selectedCategoryId === category.id}
                     onClick={() => onSelectCategory(category.id)}
-                    name={category.name}
-                    count={category.questionCount}
+                    title={category.name}
+                    description={t('gameCatalog.questions.categoryCount', {
+                      count: category.questionCount,
+                    })}
                   />
                 ))}
               </Stack>
@@ -148,42 +162,5 @@ export function QuestionCatalogMenu({
         </Box>
       </Stack>
     </SectionCard>
-  )
-}
-
-function CategoryOption({
-  isSelected,
-  onClick,
-  name,
-  count,
-}: {
-  isSelected: boolean
-  onClick: () => void
-  name: string
-  count?: number
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <Box
-      onClick={onClick}
-      sx={{
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-        borderColor: isSelected ? 'primary.main' : 'divider',
-        bgcolor: isSelected ? 'action.selected' : 'transparent',
-        borderRadius: 1,
-        p: 1.25,
-        cursor: 'pointer',
-      }}
-    >
-      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-        {name}
-      </Typography>
-      {count === undefined ? null : (
-        <Typography variant="caption" color="text.secondary">
-          {t('gameCatalog.questions.categoryCount', { count })}
-        </Typography>
-      )}
-    </Box>
   )
 }
