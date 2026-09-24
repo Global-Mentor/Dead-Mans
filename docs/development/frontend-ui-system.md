@@ -40,7 +40,7 @@ Page `sx` owns placement and external spacing. A component owns its internals. D
 | Family | Public components and contract |
 | --- | --- |
 | Buttons | `AppButton`, `AppLinkButton`, `ActionIcon`, `SurfaceButton` |
-| Fields | `FormTextField`, `ControlledFormTextField`, `FieldGroup`, `FieldAdornment`, `FieldWithHelp`, `FilePickerInput` |
+| Fields | `FormTextField`, `ControlledFormTextField`, `FormNumberField`, `ControlledFormNumberField`, `FieldGroup`, `FieldAdornment`, `FieldWithHelp`, `FilePickerInput` |
 | Selection | `FormSelect`, `Combobox`, `FormCheckbox`, `FormSwitch`, `ChoiceLabel`, `ChoiceGroup`, `CheckboxGroup`, `ChoiceCard`, `SelectionTile`, `SelectionAction` |
 | Surfaces/disclosure | `SectionCard`, `ItemCard`, `SectionDivider`, `AppAccordion`, `AppAccordionSummary`, `AppAccordionDetails` |
 | Status/metrics | `StatusBadge`, `NotificationCount`, `Metric`, `SummaryMetrics`, `RankBadge` |
@@ -163,3 +163,5 @@ The architecture check also rejects local corner-radius recipes in features, lay
 ## Game board compositions
 
 - `ImageFrame` owns image loading/failure and resets on source changes. Card backgrounds are decorative and fail silently; preview and setup images show localized feedback. Consumers own the frame geometry, while the shared component owns the image fit and visibility. Media messages belong to the common locale bundle.
+- `FormNumberField` composes the existing text field and action buttons for integer quantities. Manual input remains editable, including an empty value; native/schema validation remains authoritative. Step actions respect the current minimum/maximum and do not submit the form. `ControlledFormNumberField` integrates those edits with React Hook Form dirty tracking and reset. Use these fields for board result counts and manual quiz point adjustments.
+- Round result sections use `FormSection` and existing `Metric`/`RoundScoreBreakdown` presentations. Manual point adjustment uses `AsyncSection` so background errors retain available content.

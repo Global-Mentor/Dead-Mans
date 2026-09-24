@@ -1,9 +1,9 @@
 import { Stack, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import {
   ControlledFormTextField,
+  ControlledFormNumberField,
   FormSelect,
   SectionCard,
   StatusBadge,
@@ -17,21 +17,6 @@ import {
 type SummaryControl = ReturnType<
   typeof useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>
 >['control']
-
-export function GameRoundSummarySection({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
-  return (
-    <Stack spacing={1.5}>
-      <Typography variant="subtitle2">{title}</Typography>
-      {children}
-    </Stack>
-  )
-}
 
 export function GameRoundRuleGroupCard({
   index,
@@ -157,10 +142,9 @@ export function GameRoundScoringInstanceCard({
             )}
           />
         ) : (
-          <ControlledFormTextField
+          <ControlledFormNumberField
             control={control}
             name={`scoringInstances.${index}.countValue`}
-            type="number"
             label={instance.inputLabel ?? t('gameBoard.roundSummaryCountValue')}
             helperText={
               instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
@@ -169,12 +153,12 @@ export function GameRoundScoringInstanceCard({
                   })
                 : undefined
             }
-            inputProps={{
-              min: 0,
-              ...(instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
-                ? { max: instance.memberResultIds.length * instance.maximumPerActivation }
-                : {}),
-            }}
+            min={0}
+            max={
+              instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
+                ? instance.memberResultIds.length * instance.maximumPerActivation
+                : undefined
+            }
           />
         )}
       </Stack>

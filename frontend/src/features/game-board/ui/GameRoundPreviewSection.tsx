@@ -1,13 +1,8 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { RoundScoreBreakdown } from '../../../shared/game-ui/index.ts'
-import {
-  BusyIndicator,
-  InlineNotice,
-  SectionCard,
-  SectionDivider,
-} from '../../../shared/ui/index.ts'
+import { BusyIndicator, InlineNotice, FormSection, Metric } from '../../../shared/ui/index.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ScorePreview = components['schemas']['GameRoundScorePreviewDto']
@@ -31,10 +26,8 @@ export function GameRoundPreviewSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard surface="inset">
+    <FormSection title={t('gameBoard.roundSummaryScoreTitle')}>
       <Stack spacing={1.25}>
-        <Typography variant="subtitle2">{t('gameBoard.roundSummaryScoreTitle')}</Typography>
-        <SectionDivider />
         {state.status === 'incomplete' ? (
           <InlineNotice severity="warning" variant="outlined">
             {t('gameBoard.roundSummaryPreviewIncomplete')}
@@ -63,47 +56,55 @@ export function GameRoundPreviewSection({
         ) : null}
         {state.status === 'success' && score ? (
           <>
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryScoreUnit')}
-              value={t('gameBoard.roundSummaryScoreValue', { value: score.scoreUnit })}
-            />
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryKillsScore')}
-              value={t('gameBoard.roundSummaryScoreValue', { value: score.killsScore })}
-            />
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryBountiesScore')}
-              value={t('gameBoard.roundSummaryScoreValue', { value: score.bountyScore })}
-            />
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryModifierKills')}
-              value={t('gameBoard.roundSummaryModifierKillsValue', {
-                kills: score.modifierKillDelta,
-                score: score.modifierKillScore,
-              })}
-            />
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryModifierPoints')}
-              value={t('gameBoard.roundSummaryScoreValue', { value: score.modifierScoreDelta })}
-            />
-            {score.emptyCardPenaltyScore ? (
-              <SummaryMetric
-                label={t('gameBoard.roundSummaryEmptyCardPenalty')}
-                value={t('gameBoard.roundSummaryScoreValue', {
-                  value: score.emptyCardPenaltyScore,
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+                gap: 1,
+              }}
+            >
+              <Metric
+                label={t('gameBoard.roundSummaryScoreUnit')}
+                value={t('gameBoard.roundSummaryScoreValue', { value: score.scoreUnit })}
+              />
+              <Metric
+                label={t('gameBoard.roundSummaryKillsScore')}
+                value={t('gameBoard.roundSummaryScoreValue', { value: score.killsScore })}
+              />
+              <Metric
+                label={t('gameBoard.roundSummaryBountiesScore')}
+                value={t('gameBoard.roundSummaryScoreValue', { value: score.bountyScore })}
+              />
+              <Metric
+                label={t('gameBoard.roundSummaryModifierKills')}
+                value={t('gameBoard.roundSummaryModifierKillsValue', {
+                  kills: score.modifierKillDelta,
+                  score: score.modifierKillScore,
                 })}
               />
-            ) : null}
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryTotalKills')}
-              value={String(score.totalKillCount)}
-              emphasize
-            />
-            <SummaryMetric
-              label={t('gameBoard.roundSummaryFinalScore')}
-              value={t('gameBoard.roundSummaryScoreValue', { value: score.finalScore })}
-              emphasize
-            />
+              <Metric
+                label={t('gameBoard.roundSummaryModifierPoints')}
+                value={t('gameBoard.roundSummaryScoreValue', { value: score.modifierScoreDelta })}
+              />
+              {score.emptyCardPenaltyScore ? (
+                <Metric
+                  label={t('gameBoard.roundSummaryEmptyCardPenalty')}
+                  value={t('gameBoard.roundSummaryScoreValue', {
+                    value: score.emptyCardPenaltyScore,
+                  })}
+                />
+              ) : null}
+              <Metric
+                label={t('gameBoard.roundSummaryTotalKills')}
+                value={String(score.totalKillCount)}
+                emphasis="result"
+              />
+              <Metric
+                label={t('gameBoard.roundSummaryFinalScore')}
+                value={t('gameBoard.roundSummaryScoreValue', { value: score.finalScore })}
+                emphasis="result"
+              />
+            </Box>
             <RoundScoreBreakdown score={score} />
             {state.data?.calculationTrace.length ? (
               <Stack spacing={0.75}>
@@ -133,27 +134,6 @@ export function GameRoundPreviewSection({
           </>
         ) : null}
       </Stack>
-    </SectionCard>
-  )
-}
-
-function SummaryMetric({
-  label,
-  value,
-  emphasize = false,
-}: {
-  label: string
-  value: string
-  emphasize?: boolean
-}) {
-  return (
-    <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant={emphasize ? 'subtitle2' : 'body2'} fontWeight={emphasize ? 700 : 500}>
-        {value}
-      </Typography>
-    </Stack>
+    </FormSection>
   )
 }

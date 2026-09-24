@@ -10,9 +10,10 @@ import {
   AppDialog,
   ConfirmDialog,
   ControlledFormTextField,
+  ControlledFormNumberField,
   InlineNotice,
   SectionCard,
-  SectionDivider,
+  FormSection,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
 import { previewGameRoundScore } from '../../game-rounds/api/game-rounds-api.ts'
@@ -39,7 +40,6 @@ import {
   GameRoundModifierHeading,
   GameRoundRuleGroupCard,
   GameRoundScoringInstanceCard,
-  GameRoundSummarySection,
 } from './GameRoundResolutionFields.tsx'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
@@ -202,7 +202,12 @@ function GameRoundSummaryDialogBody({
             <AppButton tone="ghost" onClick={close.requestClose} disabled={isSubmitting}>
               {t('common.actions.close')}
             </AppButton>
-            <AppButton type="submit" form={formId} disabled={isSubmitting || !isPreviewFresh}>
+            <AppButton
+              type="submit"
+              form={formId}
+              loading={isSubmitting}
+              disabled={isSubmitting || !isPreviewFresh}
+            >
               {t('gameBoard.roundSummarySubmit')}
             </AppButton>
           </>
@@ -231,26 +236,20 @@ function GameRoundSummaryDialogBody({
 
             <GameRoundContext activeRound={activeRound} />
 
-            <SectionCard surface="inset">
+            <FormSection title={t('gameBoard.roundSummaryResultTitle')}>
               <Stack spacing={1.5}>
-                <Typography variant="subtitle2">
-                  {t('gameBoard.roundSummaryResultTitle')}
-                </Typography>
-                <SectionDivider />
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}>
-                  <ControlledFormTextField
+                  <ControlledFormNumberField
                     control={control}
                     name="killsCount"
-                    type="number"
                     label={t('gameBoard.roundSummaryKills')}
-                    inputProps={{ min: 0 }}
+                    min={0}
                   />
-                  <ControlledFormTextField
+                  <ControlledFormNumberField
                     control={control}
                     name="bountyCount"
-                    type="number"
                     label={t('gameBoard.roundSummaryBounties')}
-                    inputProps={{ min: 0 }}
+                    min={0}
                   />
                 </Stack>
                 <ControlledFormTextField
@@ -263,47 +262,53 @@ function GameRoundSummaryDialogBody({
                   helperText={t('gameBoard.roundSummaryNotesHint')}
                 />
               </Stack>
-            </SectionCard>
+            </FormSection>
 
             {defaultValues.ruleGroups.length > 0 ? (
-              <GameRoundSummarySection title={t('gameBoard.roundSummaryRulesTitle')}>
-                {defaultValues.ruleGroups.map((group, index) => (
-                  <GameRoundRuleGroupCard
-                    key={group.resolutionGroupId}
-                    index={index}
-                    control={control}
-                  />
-                ))}
-              </GameRoundSummarySection>
+              <FormSection title={t('gameBoard.roundSummaryRulesTitle')}>
+                <Stack spacing={1.5}>
+                  {defaultValues.ruleGroups.map((group, index) => (
+                    <GameRoundRuleGroupCard
+                      key={group.resolutionGroupId}
+                      index={index}
+                      control={control}
+                    />
+                  ))}
+                </Stack>
+              </FormSection>
             ) : null}
 
             {defaultValues.scoringInstances.length > 0 ? (
-              <GameRoundSummarySection title={t('gameBoard.roundSummaryConditionsTitle')}>
-                {defaultValues.scoringInstances.map((instance, index) => (
-                  <GameRoundScoringInstanceCard
-                    key={instance.modifierResultId}
-                    index={index}
-                    control={control}
-                  />
-                ))}
-              </GameRoundSummarySection>
+              <FormSection title={t('gameBoard.roundSummaryConditionsTitle')}>
+                <Stack spacing={1.5}>
+                  {defaultValues.scoringInstances.map((instance, index) => (
+                    <GameRoundScoringInstanceCard
+                      key={instance.modifierResultId}
+                      index={index}
+                      control={control}
+                    />
+                  ))}
+                </Stack>
+              </FormSection>
             ) : null}
 
             {defaultValues.automaticInstances.length > 0 ? (
-              <GameRoundSummarySection title={t('gameBoard.roundSummaryAutomaticTitle')}>
-                {defaultValues.automaticInstances.map((instance) => (
-                  <SectionCard key={instance.modifierResultId} surface="inset">
-                    <GameRoundModifierHeading
-                      name={instance.modifierName}
-                      index={instance.activationIndex}
-                      count={instance.activationCount}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {t('gameBoard.roundSummaryAutomaticHint')}
-                    </Typography>
-                  </SectionCard>
-                ))}
-              </GameRoundSummarySection>
+              <FormSection title={t('gameBoard.roundSummaryAutomaticTitle')}>
+                <Stack spacing={1.5}>
+                  {defaultValues.automaticInstances.map((instance) => (
+                    <SectionCard key={instance.modifierResultId} surface="inset">
+                      <GameRoundModifierHeading
+                        name={instance.modifierName}
+                        index={instance.activationIndex}
+                        count={instance.activationCount}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {t('gameBoard.roundSummaryAutomaticHint')}
+                      </Typography>
+                    </SectionCard>
+                  ))}
+                </Stack>
+              </FormSection>
             ) : null}
 
             {activeRound.modifierResults.length === 0 ? (

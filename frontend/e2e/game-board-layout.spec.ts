@@ -531,6 +531,98 @@ test('side panels honour reduced motion and expose modal semantics', async ({ pa
   await expect(opener).toHaveCSS('transition-duration', '0s')
 })
 
+for (const width of [320, 1440]) {
+  test(`round result counters preserve a draft across resize at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 })
+    const writes = await mockGame(page)
+    const score = {
+      scoreUnit: 100,
+      killsScore: 0,
+      bountyScore: 0,
+      modifierKillDelta: 0,
+      modifierKillScore: 0,
+      modifierScoreDelta: 0,
+      emptyCardPenaltyApplied: false,
+      emptyCardPenaltyScore: 0,
+      penaltyTotal: 0,
+      bonusDelta: 0,
+      totalKillCount: 0,
+      finalScore: 0,
+      calculationLines: [],
+    }
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({
+        json: {
+          roundId: 'round-one',
+          gameId: 'board-layout',
+          cellId: 'card-0',
+          cellTitle: 'Следы на болотах',
+          teamId: 'team-one',
+          teamName: 'Ночные странники',
+          teamSlotIndex: 1,
+          status: 'reviewing_results',
+          baseScore: 100,
+          roundVersion: 1,
+          startedAtUtc: '2026-09-01T12:00:00Z',
+          gameplayStartedAtUtc: '2026-09-01T12:00:00Z',
+          reviewedAtUtc: '2026-09-01T12:02:00Z',
+          serverNowUtc: '2026-09-01T12:02:00Z',
+          participants: [],
+          modifierResults: [],
+          killsCount: 0,
+          bountyCount: 0,
+          emptyCardPenaltyApplied: false,
+          scoreDetails: score,
+        },
+      }),
+    )
+    await page.route('**/api/game/rounds/round-one/score-preview', (route) =>
+      route.fulfill({
+        json: {
+          scoreDetails: score,
+          modifierResults: [],
+          roundVersion: 1,
+          normalizedInputHash: 'preview-hash',
+          calculationTrace: [],
+        },
+      }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('button', { name: 'Заполнить итоги раунда', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Итоги раунда', exact: true })
+    const kills = dialog.getByRole('spinbutton', { name: 'Убитые враги', exact: true })
+    const plus = dialog.getByRole('button', { name: 'Увеличить: Убитые враги', exact: true })
+    const minus = dialog.getByRole('button', { name: 'Уменьшить: Убитые враги', exact: true })
+    await expect(minus).toBeDisabled()
+    await plus.focus()
+    await page.keyboard.press('Space')
+    await expect(kills).toHaveValue('1')
+    const buttonBox = await plus.boundingBox()
+    expect(buttonBox!.width).toBeGreaterThanOrEqual(44)
+    expect(buttonBox!.height).toBeGreaterThanOrEqual(44)
+    await kills.fill('7')
+    await page.setViewportSize({ width: width === 320 ? 1440 : 320, height: 900 })
+    await expect(kills).toHaveValue('7')
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    const confirmation = page.getByRole('dialog', { name: 'Закрыть итоги без сохранения?' })
+    await confirmation.getByRole('button', { name: 'Продолжить редактирование' }).click()
+    await expect(kills).toHaveValue('7')
+    await page.setViewportSize({ width, height: 900 })
+    await kills.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: testInfo.outputPath('result-form.png'),
+      animations: 'disabled',
+    })
+    expect(writes).toEqual([])
+  })
+}
+
 test('card preview loads through the shared image component', async ({ page }) => {
   const writes = await mockGame(page)
   await page.route('**/media/cards/ui-check.svg', (route) =>

@@ -8,6 +8,8 @@ const translations = {
       confirm: 'Discard',
     },
     actions: {
+      increaseValue: 'Increase {{field}}',
+      decreaseValue: 'Decrease {{field}}',
       back: 'Back',
       cancel: 'Cancel',
       close: 'Close',
@@ -86,6 +88,8 @@ const translations = {
       confirm: 'Отменить изменения',
     },
     actions: {
+      increaseValue: 'Увеличить: {{field}}',
+      decreaseValue: 'Уменьшить: {{field}}',
       back: 'Назад',
       cancel: 'Отмена',
       close: 'Закрыть',
@@ -164,6 +168,8 @@ const translations = {
       confirm: 'Відкинути',
     },
     actions: {
+      increaseValue: 'Збільшити: {{field}}',
+      decreaseValue: 'Зменшити: {{field}}',
       back: 'Назад',
       cancel: 'Скасувати',
       close: 'Закрити',
@@ -239,6 +245,8 @@ const translations = {
       confirm: 'Odrzuć',
     },
     actions: {
+      increaseValue: 'Zwiększ: {{field}}',
+      decreaseValue: 'Zmniejsz: {{field}}',
       back: 'Wstecz',
       cancel: 'Anuluj',
       close: 'Zamknij',

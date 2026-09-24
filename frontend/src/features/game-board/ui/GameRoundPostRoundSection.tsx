@@ -1,7 +1,7 @@
 import { Stack, Typography } from '@mui/material'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, FormSection } from '../../../shared/ui/index.ts'
 import {
   gameRoundPostRoundActions,
   type GameRoundSummaryFormInput,
@@ -18,12 +18,11 @@ export function GameRoundPostRoundSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard surface="inset">
+    <FormSection
+      title={t('gameBoard.roundSummaryPostRoundTitle')}
+      description={t('gameBoard.roundSummaryPostRoundDescription')}
+    >
       <Stack spacing={1.25}>
-        <Typography variant="subtitle2">{t('gameBoard.roundSummaryPostRoundTitle')}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('gameBoard.roundSummaryPostRoundDescription')}
-        </Typography>
         <Controller
           control={control}
           name="postRoundAction"
@@ -52,6 +51,6 @@ export function GameRoundPostRoundSection({
           )}
         />
       </Stack>
-    </SectionCard>
+    </FormSection>
   )
 }
