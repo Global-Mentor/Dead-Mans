@@ -5,6 +5,30 @@ test.beforeAll(async () => {
   await mkdir('../.tmp/header-design', { recursive: true })
 })
 
+test('round navigation is translated before any board bundle is loaded', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
+  await page.route(
+    (url) => url.pathname === '/auth/me' || url.pathname.startsWith('/api/'),
+    (route) =>
+      route.fulfill(
+        new URL(route.request().url()).pathname === '/auth/me'
+          ? {
+              json: {
+                userId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
+                displayName: 'Охотник',
+                roles: ['viewer'],
+              },
+            }
+          : { status: 204 },
+      ),
+  )
+  await page.goto('/panel/game-application')
+  await expect(
+    page.getByRole('banner').getByRole('link', { name: 'Текущий раунд', exact: true }),
+  ).toHaveAttribute('href', '/panel/game-round')
+})
+
 for (const width of [320, 390, 768, 1200, 1440, 1920]) {
   test(`header navigation stays usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
@@ -31,10 +55,11 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
     await expect(header).toBeVisible()
     const compact = width < 1200
     if (!compact) {
-      const navigationBox = await header
-        .getByRole('navigation', { name: 'Основная навигация' })
-        .boundingBox()
+      const navigation = header.getByRole('navigation', { name: 'Основная навигация' })
+      const navigationBox = await navigation.boundingBox()
       expect(Math.abs(navigationBox!.x + navigationBox!.width / 2 - width / 2)).toBeLessThan(1)
+      await expect(navigation.getByRole('link').nth(0)).toHaveText('Доска')
+      await expect(navigation.getByRole('link').nth(1)).toHaveText('Текущий раунд')
     }
     const headerBox = await header.boundingBox()
     expect(headerBox?.height).toBeLessThanOrEqual(compact ? 51 : 59)
@@ -67,10 +92,11 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
     const history = page.getByRole('menuitem', { name: 'История игр', exact: true })
     await expect(history).toBeVisible()
     if (compact) {
-      await expect(page.getByRole('menuitem', { name: 'Игра', exact: true })).toHaveAttribute(
+      await expect(page.getByRole('menuitem', { name: 'Доска', exact: true })).toHaveAttribute(
         'aria-current',
         'page',
       )
+      await expect(page.getByRole('menuitem').nth(1)).toHaveText('Текущий раунд')
       await page.screenshot({
         path: `../.tmp/header-design/menu-${width}.png`,
         animations: 'disabled',

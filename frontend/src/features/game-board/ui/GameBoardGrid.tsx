@@ -14,6 +14,7 @@ interface GameBoardGridProps {
   canOpenCells: boolean
   onCellRequestOpen: (cell: GameBoardCell) => void
   onCellPreviewMedia: (cell: GameBoardCell) => void
+  onCellOpenCurrentRound?: ((cell: GameBoardCell) => void) | undefined
 }
 
 export function GameBoardGrid({
@@ -24,6 +25,7 @@ export function GameBoardGrid({
   canOpenCells,
   onCellRequestOpen,
   onCellPreviewMedia,
+  onCellOpenCurrentRound,
 }: GameBoardGridProps) {
   const cellMap = useMemo(() => {
     return new Map(snapshot.cells.map((cell) => [`${cell.row}:${cell.col}`, cell] as const))
@@ -114,6 +116,7 @@ export function GameBoardGrid({
               canOpenCells={canOpenCells}
               onCellRequestOpen={onCellRequestOpen}
               onCellPreviewMedia={onCellPreviewMedia}
+              onCellOpenCurrentRound={onCellOpenCurrentRound}
             />
           )
         }}

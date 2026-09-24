@@ -33,12 +33,16 @@ async function mockGame(
   status: 'active' | 'ready' | 'finished' = 'active',
   role = 'admin',
   teamName = 'Ночные странники',
+  onGameBoardSocket?: (send: (message: string) => void) => void,
 ) {
   const writes: string[] = []
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
   await page.routeWebSocket(/\/hubs\/game-board/, (socket) => {
     socket.onMessage((message) => {
-      if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
+      if (message.toString().includes('"protocol"')) {
+        socket.send('{}\u001e')
+        onGameBoardSocket?.((event) => socket.send(event))
+      }
     })
   })
   await page.route(
@@ -105,6 +109,28 @@ async function mockGame(
   return writes
 }
 
+const activeRoundFixture = {
+  roundId: 'round-one',
+  gameId: board.gameId,
+  cellId: 'card-0',
+  cellTitle: 'Следы на болотах',
+  cellDescription: 'Описание испытания, доступное после открытия карточки.',
+  teamId: 'team-one',
+  teamName: 'Ночные странники',
+  teamSlotIndex: 1,
+  status: 'awaiting_modifiers',
+  roundVersion: 1,
+  startedAtUtc: '2026-09-01T12:00:00Z',
+  serverNowUtc: '2026-09-01T12:00:00Z',
+  baseScore: 100,
+  participants: [{ userId: 'player-one', displayName: 'Ворон' }],
+  modifierResults: [],
+  emptyCardPenaltyApplied: false,
+  killsCount: 0,
+  bountyCount: 0,
+  scoreDetails: { finalScore: 0, calculationLines: [] },
+}
+
 async function expectHorizontallyCentered(content: Locator, half: Locator) {
   const contentBox = await content.boundingBox()
   const halfBox = await half.boundingBox()
@@ -114,6 +140,376 @@ async function expectHorizontallyCentered(content: Locator, half: Locator) {
     Math.abs(contentBox!.x + contentBox!.width / 2 - halfBox!.x - halfBox!.width / 2),
   ).toBeLessThanOrEqual(2)
 }
+
+for (const width of [390, 1440]) {
+  test(`current round keeps the board one action away at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 })
+    const writes = await mockGame(page, 'active', 'viewer')
+    let activated = false
+    let activationAttempts = 0
+    const activation = {
+      activationId: 'activation-one',
+      roundId: 'round-one',
+      roundVersion: 1,
+      modifierId: 'modifier-one',
+      modifierName: 'Защитный знак',
+      activatedByUserId: 'viewer-one',
+      activatedByDisplayName: 'Охотник',
+      activationCost: 1,
+      activatedAtUtc: '2026-09-01T12:01:00Z',
+    }
+    const modifier = {
+      id: 'modifier-one',
+      category: 'preparation',
+      name: 'Защитный знак',
+      description: 'Защищает команду в раунде.',
+      activationCost: 1,
+      activationLimit: null,
+      conflictingModifierIds: [],
+      iconEmoji: '🛡️',
+      activationCommand: null,
+      revision: 1,
+      normalizedTags: [],
+      behaviorV2: {
+        schemaVersion: 2,
+        kind: 'rule',
+        phase: 'round',
+        performer: 'activeTeam',
+        requiresHostMonitoring: false,
+        rule: 'Защитное правило',
+        stackingPolicy: 'aggregateParameters',
+        resolution: { type: 'ruleStatus' },
+        reward: 'none',
+        formulaReference: null,
+      },
+    }
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({
+        json: activeRoundFixture,
+      }),
+    )
+    await page.route('**/api/game/modifiers/state', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          availableQuizPoints: 10,
+          earnedQuizPoints: 10,
+          spentQuizPoints: 0,
+          isOrderingOpen: true,
+          activeModifiers: activated ? [activation] : [],
+          availableModifiers: [
+            {
+              modifier,
+              isActive: activated,
+              canActivate: !activated,
+              blockedReason: activated ? 'limit_reached' : null,
+              activationsCount: activated ? 1 : 0,
+              limit: activated ? 1 : null,
+            },
+          ],
+        },
+      }),
+    )
+    await page.route('**/api/game/modifiers/modifier-one/activate', (route) => {
+      activationAttempts += 1
+      if (activationAttempts === 1) return route.fulfill({ status: 500 })
+      activated = true
+      return route.fulfill({ json: activation })
+    })
+    await page.goto('/panel/game-round')
+    const modifiers = page.getByRole('dialog', { name: 'Модификаторы' })
+    await expect(modifiers).toBeVisible()
+    await modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }).click()
+    const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+    await confirmation
+      .getByRole('button', { name: 'Активировать модификатор', exact: true })
+      .click()
+    await expect(confirmation.getByRole('alert')).toBeVisible()
+    await expect(confirmation).toBeVisible()
+    expect(activationAttempts).toBe(1)
+    await confirmation
+      .getByRole('button', { name: 'Активировать модификатор', exact: true })
+      .click()
+    await expect(confirmation).not.toBeVisible()
+    expect(activationAttempts).toBe(2)
+    await expect(modifiers).toContainText('Защитный знак')
+    await modifiers.getByRole('button', { name: 'Закрыть модификаторы' }).click()
+    const overview = page.getByTestId('current-round-overview')
+    await expect(overview).toContainText('Следы на болотах')
+    await expect(overview).toContainText('Ночные странники')
+    await expect(overview).toContainText('Ворон')
+    await expect(overview).toContainText('Защитный знак')
+    await page.screenshot({
+      path: testInfo.outputPath('current-round.png'),
+      animations: 'disabled',
+    })
+    await page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }).click()
+    await expect(page).toHaveURL(/\/panel\/game-board$/)
+    await expect(page.getByTestId('game-board-surface')).toBeVisible()
+    await page.getByRole('link', { name: 'Открыть текущий раунд' }).click()
+    await expect(page).toHaveURL(/\/panel\/game-round$/)
+    expect(writes).toEqual([])
+  })
+}
+
+for (const role of ['viewer', 'admin']) {
+  test(`opening a card ${role === 'viewer' ? 'moves a player' : 'keeps staff'} on the board`, async ({
+    page,
+  }) => {
+    let sendEvent: ((message: string) => void) | undefined
+    let roundOpened = false
+    await mockGame(page, 'active', role, 'Ночные странники', (send) => {
+      sendEvent = send
+    })
+    await page.route('**/api/game/rounds/active', (route) =>
+      roundOpened
+        ? route.fulfill({ json: { ...activeRoundFixture, status: 'preparing' } })
+        : route.fulfill({ status: 204 }),
+    )
+    await page.route('**/api/game/modifiers/state', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          availableQuizPoints: 10,
+          earnedQuizPoints: 10,
+          spentQuizPoints: 0,
+          isOrderingOpen: false,
+          activeModifiers: [],
+          availableModifiers: [],
+        },
+      }),
+    )
+    const initialRoundResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/game/rounds/active'),
+    )
+    await page.goto('/panel/game-board')
+    await expect(page.getByTestId('game-board-surface')).toBeVisible()
+    await initialRoundResponse
+    await expect.poll(() => Boolean(sendEvent)).toBe(true)
+    roundOpened = true
+    sendEvent?.(
+      JSON.stringify({
+        type: 1,
+        target: 'cellOpened',
+        arguments: [{ gameId: board.gameId, version: 2, cell: board.cells[0] }],
+      }) + '\u001e',
+    )
+    if (role === 'viewer') {
+      await expect(page).toHaveURL(/\/panel\/game-round$/)
+      await page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }).click()
+      await expect(page).toHaveURL(/\/panel\/game-board$/)
+      await expect(page.getByTestId('game-board-surface')).toBeVisible()
+    } else {
+      await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
+      await expect(page).toHaveURL(/\/panel\/game-board$/)
+    }
+  })
+}
+
+test('a player can reopen the active round by clicking its card on the board', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+  )
+  await page.goto('/panel/game-board')
+
+  const card = page.locator('[data-cell-id="card-0"]')
+  await expect(card).toHaveAttribute('aria-label', 'Открыть текущий раунд')
+  await card.click()
+
+  await expect(page).toHaveURL(/\/panel\/game-round$/)
+})
+
+test('staff also opens the active round from its card', async ({ page }) => {
+  await mockGame(page, 'active', 'admin')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+  )
+  await page.goto('/panel/game-board')
+
+  await page.locator('[data-cell-id="card-0"]').click()
+
+  await expect(page).toHaveURL(/\/panel\/game-round$/)
+})
+
+test('a question opens on the round screen and accepts an answer without leaving it', async ({
+  page,
+}) => {
+  let selectedOptionId: string | null = null
+  const writes = await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+  )
+  await page.route('**/api/game/modifiers/state', (route) =>
+    route.fulfill({
+      json: {
+        gameId: board.gameId,
+        availableQuizPoints: 10,
+        earnedQuizPoints: 10,
+        spentQuizPoints: 0,
+        isOrderingOpen: false,
+        activeModifiers: [],
+        availableModifiers: [],
+      },
+    }),
+  )
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-one',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-one',
+        questionCode: 'Q-1',
+        categoryName: 'Охота',
+        text: 'Куда ведут следы?',
+        options: [
+          { optionId: 'option-one', text: 'К болоту', displayOrder: 1 },
+          { optionId: 'option-two', text: 'К лесу', displayOrder: 2 },
+        ],
+        status: selectedOptionId ? 'closed' : 'open',
+        correctOptionId: selectedOptionId,
+        myIsCorrect: selectedOptionId ? true : null,
+        myAwardedPoints: selectedOptionId ? 10 : null,
+        reward: 10,
+        askedAtUtc: new Date(Date.now() - 1_000).toISOString(),
+        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+        mySelectedOptionId: selectedOptionId,
+      },
+    }),
+  )
+  await page.route('**/api/game/quiz/question-sessions/quiz-one/submissions', (route) => {
+    selectedOptionId = 'option-one'
+    return route.fulfill({
+      json: {
+        submissionId: 'submission-one',
+        questionSessionId: 'quiz-one',
+        userId: 'player-one',
+        selectedOptionId,
+        submittedAtUtc: new Date().toISOString(),
+        isExisting: false,
+      },
+    })
+  })
+  await page.goto('/panel/game-round')
+  const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  await expect(question).toBeVisible()
+  await expect(question).toContainText('Куда ведут следы?')
+  await question.getByRole('button', { name: 'К болоту' }).click()
+  await expect(question).toBeVisible()
+  await expect(question.locator('[data-quiz-result="correct"]')).toContainText('К болоту')
+  await expect(question.getByRole('button', { name: /К болоту/ })).toBeDisabled()
+  await question.getByRole('button', { name: 'Закрыть вопрос' }).click()
+  await page.getByRole('button', { name: 'Открыть вопрос' }).click()
+  await expect(question.locator('[data-quiz-result="correct"]')).toBeVisible()
+  await expect(page).toHaveURL(/\/panel\/game-round$/)
+  expect(writes).toEqual([])
+})
+
+test('round refresh errors preserve content and ordering takes priority over the quiz', async ({
+  page,
+}) => {
+  let sendEvent: ((message: string) => void) | undefined
+  let phase = 'in_progress'
+  let refreshFails = false
+  await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+    sendEvent = send
+  })
+  await page.route('**/api/game/rounds/active', (route) =>
+    refreshFails
+      ? route.fulfill({ status: 500 })
+      : route.fulfill({ json: { ...activeRoundFixture, status: phase } }),
+  )
+  await page.route('**/api/game/modifiers/state', (route) =>
+    route.fulfill({
+      json: {
+        gameId: board.gameId,
+        availableQuizPoints: 10,
+        earnedQuizPoints: 10,
+        spentQuizPoints: 0,
+        isOrderingOpen: phase === 'awaiting_modifiers',
+        activeModifiers: [],
+        availableModifiers: [],
+      },
+    }),
+  )
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-priority',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-priority',
+        questionCode: 'Q-3',
+        categoryName: 'Охота',
+        text: 'Какой путь выбрать?',
+        options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
+        status: 'open',
+        askedAtUtc: new Date().toISOString(),
+        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }),
+  )
+  const update = () =>
+    sendEvent?.(
+      JSON.stringify({ type: 1, target: 'roundStateChanged', arguments: [{}] }) + '\u001e',
+    )
+  await page.goto('/panel/game-round')
+  const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  const modifiers = page.getByRole('dialog', { name: 'Модификаторы', exact: true })
+  await expect(question).toBeVisible()
+  await expect.poll(() => Boolean(sendEvent)).toBe(true)
+  phase = 'awaiting_modifiers'
+  update()
+  await expect(modifiers).toBeVisible()
+  await expect(question).not.toBeVisible()
+  await modifiers.getByRole('button', { name: 'Закрыть модификаторы' }).click()
+  refreshFails = true
+  update()
+  const overview = page.getByTestId('current-round-overview')
+  await expect(
+    page.getByRole('main').getByRole('button', { name: 'Повторить', exact: true }),
+  ).toBeVisible()
+  await expect(overview).toContainText('Следы на болотах')
+  await expect(question).not.toBeVisible()
+  refreshFails = false
+  phase = 'in_progress'
+  await page.getByRole('main').getByRole('button', { name: 'Повторить', exact: true }).click()
+  await expect(question).toBeVisible()
+  await expect(modifiers).not.toBeVisible()
+  await expect(page).toHaveURL(/\/panel\/game-round$/)
+})
+
+test('a question also reaches a player on the board between rounds', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-between-rounds',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-between-rounds',
+        questionCode: 'Q-2',
+        categoryName: 'Охота',
+        text: 'Какой путь выбрать?',
+        options: [{ optionId: 'option-one', text: 'К берегу', displayOrder: 1 }],
+        status: 'open',
+        askedAtUtc: new Date(Date.now() - 1_000).toISOString(),
+        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }),
+  )
+  await page.goto('/panel/game-board')
+  const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  await expect(question).toContainText('Какой путь выбрать?')
+  await question.getByRole('button', { name: 'Закрыть вопрос' }).click()
+  await expect(page.getByTestId('game-board-surface')).toBeVisible()
+  await page.getByRole('button', { name: 'Открыть вопрос' }).click()
+  await expect(question).toBeVisible()
+  await expect(page).toHaveURL(/\/panel\/game-board$/)
+})
 
 for (const touch of [false, true]) {
   test(`active team roster tooltip works with ${touch ? 'touch' : 'mouse and keyboard'}`, async ({
@@ -437,7 +833,7 @@ for (const width of [320, 1440]) {
     await page.route('**/api/game/rounds/active', (route) =>
       route.fulfill({
         json: {
-          roundId: 'round-one',
+          ...activeRoundFixture,
           cellId: 'card-0',
           teamId: 'team-one',
           teamName: 'Ночные странники',
@@ -505,7 +901,7 @@ for (const width of [320, 390, 1440]) {
     await page.route('**/api/game/rounds/active', (route) =>
       route.fulfill({
         json: {
-          roundId: 'round-one',
+          ...activeRoundFixture,
           cellId: 'card-0',
           teamId: 'team-one',
           teamName: 'Ночные странники',
@@ -528,9 +924,9 @@ for (const width of [320, 390, 1440]) {
       await page.getByRole('button', { name: 'Текущий раунд', exact: true }).click()
     }
     await expect(page.locator('[data-cell-id="card-0"]')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
     const modifierAction = page.getByTestId('game-board-context').getByRole('link', {
-      name: 'Перейти к модификаторам',
+      name: 'Открыть текущий раунд',
     })
     await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
     const modifierLabel = modifierAction.getByTitle('Активировать модификаторы')
@@ -586,7 +982,7 @@ for (const width of [320, 390, 1440]) {
       path: `../.tmp/game-board-design/live-round-${width}.png`,
       fullPage: true,
     })
-    // Switching between an action and a passive phase must not move the team or cards.
+    // A phase change keeps the round action and board geometry stable.
     const teamBoxBefore = await page
       .getByTestId('game-board-context')
       .getByTestId('game-board-status-title')
@@ -595,7 +991,7 @@ for (const width of [320, 390, 1440]) {
     roundStatus = 'in_progress'
     await page.reload()
     await expect(page.getByTestId('game-board-context')).toContainText('Провести игру')
-    await expect(page.getByRole('link', { name: 'Перейти к модификаторам' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
     expect(
       await page.getByTestId('game-board-context').getByTitle('Провести игру').evaluate(typography),
     ).toEqual(await teamValue.evaluate(typography))

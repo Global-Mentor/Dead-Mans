@@ -189,6 +189,26 @@ describe('GameBoardGrid', () => {
     expect(onCellPreviewMedia).toHaveBeenCalledWith(snapshot.cells[0])
   })
 
+  it('opens the current round from its card when that action is available', () => {
+    const onCellOpenCurrentRound = vi.fn()
+    const onCellPreviewMedia = vi.fn()
+    renderWithAppProviders(
+      <GameBoardGrid
+        snapshot={snapshot}
+        activeCellId="cell-1"
+        canOpenCells={false}
+        onCellRequestOpen={vi.fn()}
+        onCellPreviewMedia={onCellPreviewMedia}
+        onCellOpenCurrentRound={onCellOpenCurrentRound}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть текущий раунд' }))
+
+    expect(onCellOpenCurrentRound).toHaveBeenCalledWith(snapshot.cells[0])
+    expect(onCellPreviewMedia).not.toHaveBeenCalled()
+  })
+
   it('opens the preview dialog when an opened cell is clicked', () => {
     const onCellPreviewMedia = vi.fn()
 

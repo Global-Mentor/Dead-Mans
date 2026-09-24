@@ -32,9 +32,20 @@ const panelPages = {
     [
       translations.gameBoard,
       translations.gameModifiers,
+      translations.gameQuiz,
       translations.gameCatalog,
       translations.gameHistory,
       translations.gameRegistration,
+    ],
+  ),
+  'game-round': lazyPanelPage(
+    () => import('../features/game-board/GameRoundPage.tsx'),
+    'GameRoundPage',
+    [
+      translations.gameBoard,
+      translations.gameModifiers,
+      translations.gameCatalog,
+      translations.gameQuiz,
     ],
   ),
   'game-application': lazyPanelPage(
@@ -105,13 +116,16 @@ const gameHistoryRealtimeSync = lazyPanelPage(
   'GameHistoryRealtimeSync',
 )
 
+const gameBoardQuizRealtimeSync = lazyPanelPage(
+  () => import('../features/game-board/realtime/GameBoardQuizRealtimeSync.tsx'),
+  'GameBoardQuizRealtimeSync',
+)
+
 const panelSyncComponents = {
   'game-history': gameHistoryRealtimeSync,
   'game-leaderboard': gameHistoryRealtimeSync,
-  'game-board': lazyPanelPage(
-    () => import('../features/game-board/realtime/GameBoardRealtimeSync.tsx'),
-    'GameBoardRealtimeSync',
-  ),
+  'game-board': gameBoardQuizRealtimeSync,
+  'game-round': gameBoardQuizRealtimeSync,
   'game-modifiers': lazyPanelPage(
     () => import('../features/game-modifiers/realtime/GameModifiersRealtimeSync.tsx'),
     'GameModifiersRealtimeSync',

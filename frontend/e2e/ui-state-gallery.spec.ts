@@ -47,7 +47,7 @@ for (const viewport of [
     if (compactNavigation) {
       await primaryNavigation.getByRole('button', { name: 'Open navigation' }).click()
     }
-    for (const label of ['Game', 'Leaderboard']) {
+    for (const label of ['Board', 'Current round', 'Leaderboard']) {
       await expect(
         compactNavigation
           ? page.getByRole('menuitem', { name: label, exact: true })

@@ -168,7 +168,7 @@ describe('PanelNavigation', () => {
 
     const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    for (const label of ['Игра', 'Лидерборд', 'Подать заявку']) {
+    for (const label of ['Доска', 'Текущий раунд', 'Лидерборд', 'Подать заявку']) {
       expect(within(navigation).getByRole('link', { name: label })).toBeInTheDocument()
     }
     expect(within(navigation).queryByRole('link', { name: 'Модификаторы' })).not.toBeInTheDocument()
@@ -384,7 +384,8 @@ describe('PanelNavigation', () => {
 
     const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    expect(within(navigation).getByRole('link', { name: 'Игра' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Доска' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Текущий раунд' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Лидерборд' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Модификаторы' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Викторина' })).toBeInTheDocument()
@@ -409,7 +410,8 @@ describe('PanelNavigation', () => {
 
     const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
 
-    expect(within(navigation).getByRole('link', { name: 'Игра' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Доска' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Текущий раунд' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Лидерборд' })).toBeInTheDocument()
     expect(
       within(navigation).queryByRole('link', { name: 'Подать заявку' }),

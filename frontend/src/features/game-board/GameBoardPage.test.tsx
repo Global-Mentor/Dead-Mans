@@ -182,6 +182,22 @@ vi.mock('./ui/GameBoardGrid.tsx', () => ({
   GameBoardGrid: () => <div data-testid="game-board-grid" />,
 }))
 
+vi.mock('./ui/GameBoardRoundRedirect.tsx', () => ({
+  GameBoardRoundRedirect: () => null,
+}))
+
+vi.mock('./ui/GameQuizDrawer.tsx', () => ({
+  GameQuizDrawer: () => null,
+}))
+
+function renderBoard() {
+  return renderWithAppProviders(
+    <MemoryRouter>
+      <GameBoardPage />
+    </MemoryRouter>,
+  )
+}
+
 beforeAll(async () => {
   await i18n.changeLanguage('ru')
 })
@@ -284,7 +300,7 @@ describe('GameBoardPage', () => {
     pageMocks.useGameBoardPage.mockReturnValue(
       createPageQuery({ isError: true, data: undefined, retry }),
     )
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     fireEvent.click(screen.getByRole('button', { name: 'Повторить' }))
     expect(retry).toHaveBeenCalledTimes(1)
   })
@@ -318,17 +334,17 @@ describe('GameBoardPage', () => {
 
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isError: true }))
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     expect(screen.getByText('Не удалось загрузить игровое поле.')).toBeInTheDocument()
 
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ data: null }))
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     expect(screen.getByText('Игровое поле сейчас недоступно.')).toBeInTheDocument()
   })
 
   it('keeps labeled controls and the current step visible without a menu', () => {
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     expect(screen.getByRole('heading', { name: 'Тестовая игра' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Тестовая игра' })).toBeInTheDocument()
@@ -383,7 +399,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     const boardCard = screen.getByTestId('game-board-surface')
     expect(boardCard).not.toBeNull()
@@ -454,7 +470,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть очередь команд' }))
 
     const queuePanel = screen.getByRole('complementary', { name: 'Очередь команд' })
@@ -513,7 +529,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     const boardCard = screen.getByTestId('game-board-surface')
     expect(boardCard).not.toBeNull()
@@ -581,9 +597,9 @@ describe('GameBoardPage', () => {
         'Сейчас открыто окно модификаторов. Дайте игрокам активировать их, затем начните раунд.',
       ),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Перейти к модификаторам' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Открыть текущий раунд' })).toHaveAttribute(
       'href',
-      '/panel/game-modifiers',
+      '/panel/game-round',
     )
   })
 
@@ -613,7 +629,7 @@ describe('GameBoardPage', () => {
   })
 
   it('opens the newly revealed card in the shared expanded preview', () => {
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     const hookOptions = pageMocks.useOpenGameBoardCell.mock.calls.at(-1)?.[0] as
       { onCellOpened?: (cell: Record<string, unknown>) => void } | undefined
 
@@ -655,7 +671,7 @@ describe('GameBoardPage', () => {
       dismissToast: vi.fn(),
     })
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     expect(
       screen.getByText(
@@ -865,7 +881,7 @@ describe('GameBoardPage', () => {
       dismissToast: vi.fn(),
     })
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -924,7 +940,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -976,7 +992,7 @@ describe('GameBoardPage', () => {
       createLaunchPanelState({ canManageGame: true }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     openManagementPanel()
 
     const managementPanel = screen.getByRole('complementary', {
@@ -1028,7 +1044,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -1094,7 +1110,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -1174,7 +1190,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -1283,9 +1299,9 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('link', { name: 'Перейти к модификаторам' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Открыть текущий раунд' })).toHaveAttribute(
       'href',
-      '/panel/game-modifiers',
+      '/panel/game-round',
     )
 
     openManagementPanel()
@@ -1339,7 +1355,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
 
     openManagementPanel()
 
@@ -1380,7 +1396,7 @@ describe('GameBoardPage', () => {
       }),
     )
 
-    renderWithAppProviders(<GameBoardPage />)
+    renderBoard()
     openManagementPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Игра началась' }))
 

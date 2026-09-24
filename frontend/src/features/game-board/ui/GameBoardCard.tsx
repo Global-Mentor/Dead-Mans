@@ -16,6 +16,7 @@ interface GameBoardCardProps {
   canOpenCells: boolean
   onCellRequestOpen: (cell: GameBoardCell) => void
   onCellPreviewMedia: (cell: GameBoardCell) => void
+  onCellOpenCurrentRound?: ((cell: GameBoardCell) => void) | undefined
 }
 
 export function GameBoardCard({
@@ -27,6 +28,7 @@ export function GameBoardCard({
   canOpenCells,
   onCellRequestOpen,
   onCellPreviewMedia,
+  onCellOpenCurrentRound,
 }: GameBoardCardProps) {
   const { t } = useTranslation()
   const isOpen = cell?.state === 'open'
@@ -36,6 +38,7 @@ export function GameBoardCard({
   const isPlayed = Boolean(playResult)
   const isActiveRound = cell?.id === activeCellId
   const isCurrentRoundCell = isActiveRound && !isPlayed
+  const opensCurrentRound = isCurrentRoundCell && isOpen && Boolean(onCellOpenCurrentRound)
   const previewMediaUrl = isRevealed ? resolveBackendMediaUrl(cell?.media[0]?.url) : ''
   const hasPreviewMedia = previewMediaUrl.length > 0
   const isPreviewable = Boolean(cell) && isRevealed
@@ -50,17 +53,24 @@ export function GameBoardCard({
       title={cell ? `${category} · ${rowLabel}` : undefined}
       aria-label={
         cell
-          ? isPreviewable
-            ? t('gameBoard.cellMediaPreviewAction', {
-                title: cell.title || t('gameBoard.cellLabel'),
-              })
-            : t('gameBoard.cellOpenAction', {
-                title: cell.title || t('gameBoard.cellLabel'),
-                cost: cell.cost,
-              })
+          ? opensCurrentRound
+            ? t('gameBoard.currentRoundScreen.open')
+            : isPreviewable
+              ? t('gameBoard.cellMediaPreviewAction', {
+                  title: cell.title || t('gameBoard.cellLabel'),
+                })
+              : t('gameBoard.cellOpenAction', {
+                  title: cell.title || t('gameBoard.cellLabel'),
+                  cost: cell.cost,
+                })
           : undefined
       }
       onClick={() => {
+        if (cell && opensCurrentRound) {
+          onCellOpenCurrentRound?.(cell)
+          return
+        }
+
         if (cell?.state === 'closed' && canOpenCells) {
           onCellRequestOpen(cell)
           return

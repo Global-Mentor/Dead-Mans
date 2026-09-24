@@ -7,6 +7,7 @@ export {
   catalogQuestionsRoute,
   gameApplicationRoute,
   gameBoardRoute,
+  gameRoundRoute,
   gameHistoryRoute,
   modifierHistoryRoute,
   gameLeaderboardRoute,

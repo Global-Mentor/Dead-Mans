@@ -52,6 +52,13 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'player',
   }),
   createPanelRouteDefinition({
+    id: 'game-round',
+    path: 'game-round',
+    labelKey: 'navigation.items.gameRound.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'player',
+  }),
+  createPanelRouteDefinition({
     id: 'game-application',
     path: 'game-application',
     labelKey: 'navigation.items.gameApplication.label',
@@ -163,6 +170,7 @@ function requirePanelRoute(routeId: PanelRouteId): PanelRouteDefinition {
 }
 
 export const gameBoardRoute = requirePanelRoute('game-board')
+export const gameRoundRoute = requirePanelRoute('game-round')
 export const gameLeaderboardRoute = requirePanelRoute('game-leaderboard')
 export const gameHistoryRoute = requirePanelRoute('game-history')
 export const modifierHistoryRoute = requirePanelRoute('modifier-history')

@@ -1,16 +1,14 @@
 import { Box, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  gameApplicationRoute,
-  gameHistoryRoute,
-  gameModifiersRoute,
-} from '../../routes/app-routes.ts'
+import { useNavigate } from 'react-router-dom'
+import { gameApplicationRoute, gameHistoryRoute, gameRoundRoute } from '../../routes/app-routes.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import {
   AppButton,
   AppToast,
   ConfirmDialog,
+  InlineNotice,
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
@@ -20,7 +18,9 @@ import { buildGameManagementFlow } from './model/game-management-flow.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
+import { GameBoardRoundRedirect } from './ui/GameBoardRoundRedirect.tsx'
 import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
+import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 import { TeamQueuePanel } from './ui/TeamQueuePanel.tsx'
 import { useCardPlayResult } from './use-card-play-result.ts'
 import { useGameBoardCellResults } from './use-game-board-cell-results.ts'
@@ -29,6 +29,7 @@ import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
 
 export function GameBoardPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [previewCell, setPreviewCell] = useState<GameBoardCell | null>(null)
   const {
     data,
@@ -41,6 +42,7 @@ export function GameBoardPage() {
     retryTeamQueue,
     retry,
     isRefreshing,
+    isRefreshError,
     isError,
     isLoading,
   } = useGameBoardPage()
@@ -103,6 +105,22 @@ export function GameBoardPage() {
         justifyContent: 'flex-start',
       }}
     >
+      <GameBoardRoundRedirect
+        gameId={snapshot.gameId}
+        roundId={activeRound?.gameId === snapshot.gameId ? activeRound.roundId : null}
+      />
+      {isRefreshError ? (
+        <InlineNotice
+          severity="warning"
+          action={
+            <AppButton size="small" onClick={retry}>
+              {t('common.actions.retry')}
+            </AppButton>
+          }
+        >
+          {t('gameBoard.errorLoading')}
+        </InlineNotice>
+      ) : null}
       <Typography
         id="game-board-title"
         component="h1"
@@ -171,11 +189,11 @@ export function GameBoardPage() {
                           : 'gameBoard.openResultsAction',
                       ),
                     }
-                  : flow.currentStepId === 'activate_modifiers'
+                  : activeRound
                     ? {
-                        to: gameModifiersRoute.fullPath,
+                        to: gameRoundRoute.fullPath,
                         label: phaseLabel,
-                        accessibleLabel: t('gameBoard.flowOpenModifiersAction'),
+                        accessibleLabel: t('gameBoard.currentRoundScreen.open'),
                       }
                     : undefined
               }
@@ -206,10 +224,15 @@ export function GameBoardPage() {
               canOpenCells={canOpenCells}
               onCellRequestOpen={requestOpenCell}
               onCellPreviewMedia={setPreviewCell}
+              onCellOpenCurrentRound={() => navigate(gameRoundRoute.fullPath)}
             />
           )}
         </GameBoardLayout>
       </Box>
+      <GameQuizDrawer
+        gameId={snapshot.gameId}
+        suspended={activeRound?.status === 'awaiting_modifiers'}
+      />
       <ConfirmDialog
         open={pendingCell !== null}
         onClose={dismissPendingCell}

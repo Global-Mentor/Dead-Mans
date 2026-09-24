@@ -23,7 +23,10 @@ export function useGameBoardPage() {
 
   return {
     data: snapshotQuery.data,
-    activeRound: activeRoundQuery.data ?? null,
+    activeRound:
+      activeRoundQuery.data?.gameId === snapshotQuery.data?.gameId
+        ? (activeRoundQuery.data ?? null)
+        : null,
     teamQueue: teamQueueQuery.data?.teams ?? [],
     teamQueueSummary: teamQueueQuery.data?.summary ?? emptyTeamQueueSummary,
     hasTeamQueueData: teamQueueQuery.data !== undefined,
@@ -34,6 +37,9 @@ export function useGameBoardPage() {
     isTeamQueueLoading: teamQueueQuery.isLoading,
     isTeamQueueError: teamQueueQuery.isError,
     isLoading: snapshotQuery.isLoading || activeRoundQuery.isLoading,
-    isError: snapshotQuery.isError || activeRoundQuery.isError,
+    isError:
+      (snapshotQuery.isError && snapshotQuery.data === undefined) ||
+      (activeRoundQuery.isError && activeRoundQuery.data === undefined),
+    isRefreshError: snapshotQuery.isRefetchError || activeRoundQuery.isRefetchError,
   }
 }
