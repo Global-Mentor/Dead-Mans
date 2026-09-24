@@ -191,6 +191,7 @@ export function GameManagementTool({
             <>
               <RoundAssistantSection
                 roundAction={roundAction}
+                flow={flow}
                 isChangingRoundStage={isChangingRoundStage}
               />
 

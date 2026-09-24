@@ -404,6 +404,11 @@ for (const width of [320, 1440]) {
     const assistant = page.getByTestId('management-round-section')
     await expect(assistant.getByRole('button')).toBeVisible()
     await expect(assistant.getByRole('button')).toBeEnabled()
+    await assistant.locator('summary').click()
+    const steps = assistant.getByRole('list', { name: 'Фаза раунда' })
+    await expect(steps.getByRole('listitem')).toHaveCount(6)
+    await expect(steps.locator('[aria-current="step"]')).toContainText('Активировать модификаторы')
+    await assistant.locator('summary').click()
     await expect(page.getByTestId('management-team-section')).toContainText('Ворон')
     for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
       const action = page
