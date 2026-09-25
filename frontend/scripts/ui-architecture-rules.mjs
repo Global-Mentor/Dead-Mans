@@ -132,7 +132,7 @@ export function inspectUiBoundaries(sourceFile) {
         findings.push({
           node: sx,
           message:
-            'AppDialog consumers must use appearance/contentDensity instead of styling dialog slots',
+            'AppDialog consumers must use the shared appearance and contentDensity instead of styling dialog slots',
         })
       }
     }

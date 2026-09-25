@@ -48,20 +48,7 @@ export function PlayedCardPreviewDialog({
           {t('common.actions.close')}
         </AppButton>
       }
-      appearance="preview"
-      title={
-        previewCard ? (
-          <Typography
-            component="span"
-            variant="h6"
-            sx={{ minWidth: 0, fontWeight: 850, lineHeight: 1.25, overflowWrap: 'anywhere' }}
-          >
-            {previewCard.title || t('gameHistory.cardDialogFallbackTitle')}
-          </Typography>
-        ) : (
-          t('gameHistory.cardDialogFallbackTitle')
-        )
-      }
+      title={previewCard?.title || t('gameHistory.cardDialogFallbackTitle')}
     >
       {previewCard ? (
         <Stack spacing={1.25}>

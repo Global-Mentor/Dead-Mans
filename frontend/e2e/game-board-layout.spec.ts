@@ -1246,7 +1246,9 @@ for (const width of [320, 1440]) {
   })
 }
 
-test('card background and preview load through the shared image component', async ({ page }) => {
+test('card background and preview load through the shared image component', async ({
+  page,
+}, testInfo) => {
   const writes = await mockGame(page)
   await page.route('**/media/cards/ui-check.svg', (route) =>
     route.fulfill({
@@ -1273,6 +1275,7 @@ test('card background and preview load through the shared image component', asyn
   await card.click()
   const dialog = page.getByRole('dialog', { name: 'Следы на болотах', exact: true })
   await expect(dialog.getByRole('img', { name: 'Следы на болотах' })).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath('card-preview.png'), animations: 'disabled' })
   expect(writes).toEqual([])
 })
 

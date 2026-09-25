@@ -98,7 +98,6 @@ export function UiStateGallery() {
 
       <AppDialog
         open={dialogOpen}
-        appearance="accented"
         title={t('navigation.uiStateGallery.title')}
         description={description}
         onClose={() => setDialogOpen(false)}

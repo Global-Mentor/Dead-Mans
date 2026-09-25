@@ -18,7 +18,7 @@ test('rejects consumer slot styling but allows named geometry and ordinary layou
   assert.equal(
     inspect(
       '/src/features/history/Page.tsx',
-      `<AppDialog appearance="preview" contentDensity="compact" sx={{ mt: 1 }} />`,
+      `<AppDialog maxWidth="lg" contentDensity="compact" sx={{ mt: 1 }} />`,
     ).length,
     0,
   )

@@ -1,7 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { AppButton } from '../../primitives/buttons/AppButton.tsx'
 import type { AppButtonTone } from '../../primitives/buttons/app-button-tone.ts'
-import type { AppDialogAppearance } from './AppDialog.tsx'
 import { AppDialog } from './AppDialog.tsx'
 
 interface ConfirmDialogProps {
@@ -12,7 +11,6 @@ interface ConfirmDialogProps {
   cancelLabel: string
   confirmTone?: 'primary' | 'danger'
   cancelTone?: AppButtonTone
-  appearance?: AppDialogAppearance
   isBusy?: boolean
   confirmDisabled?: boolean
   onClose: () => void
@@ -27,7 +25,6 @@ export function ConfirmDialog({
   cancelLabel,
   confirmTone = 'primary',
   cancelTone = 'secondary',
-  appearance = 'standard',
   isBusy = false,
   confirmDisabled = false,
   onClose,
@@ -57,20 +54,14 @@ export function ConfirmDialog({
       onClose={busy ? undefined : onClose}
       title={title}
       description={description}
-      appearance={appearance}
       actions={
         <>
-          <AppButton
-            tone={cancelTone}
-            size={appearance === 'accented' ? 'large' : 'medium'}
-            onClick={onClose}
-            disabled={busy}
-          >
+          <AppButton tone={cancelTone} size="large" onClick={onClose} disabled={busy}>
             {cancelLabel}
           </AppButton>
           <AppButton
             tone={confirmTone === 'danger' ? 'danger' : 'primary'}
-            size={appearance === 'accented' ? 'large' : 'medium'}
+            size="large"
             onClick={() => void handleConfirm()}
             disabled={busy || confirmDisabled}
             loading={isLocallyBusy}

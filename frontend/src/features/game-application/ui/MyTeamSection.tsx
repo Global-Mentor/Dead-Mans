@@ -346,7 +346,6 @@ export function MyTeamSection({
       <AppDialog
         open={nameEditorOpen && canEditName}
         title={t('gameApplication.editTeamName')}
-        appearance="accented"
         onClose={closeNameEditor}
         actions={
           <>
@@ -404,7 +403,6 @@ export function MyTeamSection({
       </AppDialog>
       <ConfirmDialog
         open={confirmationOpen}
-        appearance="accented"
         title={t(
           confirmation === 'cancel'
             ? 'gameApplication.cancelDisbandConfirmTitle'

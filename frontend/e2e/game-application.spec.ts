@@ -241,6 +241,14 @@ for (const viewport of [
       animations: 'disabled',
       maxDiffPixels: 0,
     })
+    if (suffix === '390') {
+      await page.setViewportSize({ width: 540, height })
+      const buttons = await leaveDialog.getByRole('button').all()
+      const first = await buttons[0]!.boundingBox()
+      const second = await buttons[1]!.boundingBox()
+      expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height)
+      await page.setViewportSize({ width, height })
+    }
     await leaveDialog.getByRole('button', { name: 'Отмена' }).click()
     await expect(leaveDialog).toHaveCount(0)
     expect(creates).toBe(1)

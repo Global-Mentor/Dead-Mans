@@ -203,6 +203,19 @@ for (const width of [320, 390, 768, 1440]) {
           animations: 'disabled',
         })
       }
+      if (path === 'catalog-modifiers' && (width === 390 || width === 768)) {
+        await page.getByRole('button', { name: 'Edit', exact: true }).first().click()
+        const dialog = page.getByRole('dialog').first()
+        await expect(dialog).toBeVisible()
+        const bounds = await dialog.boundingBox()
+        expect(bounds).not.toBeNull()
+        expect(bounds!.x).toBeGreaterThanOrEqual(0)
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+        await page.screenshot({
+          path: info.outputPath('modifier-editor.png'),
+          animations: 'disabled',
+        })
+      }
     }
     expect(errors).toEqual([])
   })

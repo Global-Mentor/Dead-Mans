@@ -47,11 +47,7 @@ function inspectJsx(sourceFile, node) {
   if (tag === 'AppDialog') {
     const paperOverride = attributes.find((attribute) => attribute.name.text === 'PaperProps')
     if (paperOverride) {
-      report(
-        sourceFile,
-        paperOverride,
-        'AppDialog consumers must choose an appearance instead of restyling its Paper slot',
-      )
+      report(sourceFile, paperOverride, 'AppDialog consumers must use the shared paper treatment')
     }
   }
 }

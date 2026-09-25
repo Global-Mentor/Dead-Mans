@@ -6,26 +6,33 @@ import { AppDialog } from './AppDialog.tsx'
 afterEach(cleanup)
 
 describe('AppDialog', () => {
-  it.each(['standard', 'accented', 'preview'] as const)(
-    'preserves caller styles with appearance=%s',
-    (appearance) => {
-      renderWithAppProviders(
-        <AppDialog
-          open
-          appearance={appearance}
-          title="Confirmation"
-          description="Review the change."
-          sx={[
-            { '& .MuiDialog-paper': { maxWidth: 610 } },
-            (theme) => ({ '& .MuiDialog-paper': { padding: theme.spacing(1) } }),
-          ]}
-        />,
-      )
-      expect(screen.getByRole('dialog', { name: 'Confirmation' })).toHaveStyle({
-        maxWidth: '610px',
-        padding: '8px',
-      })
-      expect(screen.getByRole('dialog')).toHaveAccessibleDescription('Review the change.')
-    },
-  )
+  it('preserves layout styles and the accessible description', () => {
+    renderWithAppProviders(
+      <AppDialog
+        open
+        title="Confirmation"
+        description="Review the change."
+        sx={[{ top: 12 }, (theme) => ({ marginTop: theme.spacing(1) })]}
+      />,
+    )
+
+    expect(
+      screen.getByRole('dialog', { name: 'Confirmation' }).closest('.MuiDialog-root'),
+    ).toHaveStyle({
+      top: '12px',
+      marginTop: '8px',
+    })
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription('Review the change.')
+  })
+
+  it('honors wide and full-screen layouts within the same appearance', () => {
+    const { rerender } = renderWithAppProviders(<AppDialog open maxWidth="md" title="Editor" />)
+    expect(screen.getByRole('dialog', { name: 'Editor' })).toHaveStyle({ maxWidth: '900px' })
+
+    rerender(<AppDialog open maxWidth="lg" fullScreen title="Card preview" />)
+    expect(screen.getByRole('dialog', { name: 'Card preview' })).toHaveStyle({
+      maxWidth: 'none',
+      margin: '0px',
+    })
+  })
 })
