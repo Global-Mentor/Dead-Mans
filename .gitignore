@@ -20,6 +20,10 @@
 **/*.db-shm
 **/*.db-wal
 
+# Local agent instructions and skills
+/AGENTS.md
+/.agents/
+
 # Logs
 **/logs/
 *.log
