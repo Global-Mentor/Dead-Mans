@@ -255,7 +255,7 @@ for (const width of [390, 1440]) {
 }
 
 for (const role of ['viewer', 'admin']) {
-  test(`opening a card ${role === 'viewer' ? 'moves a player' : 'keeps staff'} on the board`, async ({
+  test(`opening a card keeps ${role === 'viewer' ? 'a player' : 'staff'} on the board`, async ({
     page,
   }) => {
     let sendEvent: ((message: string) => void) | undefined
@@ -296,15 +296,8 @@ for (const role of ['viewer', 'admin']) {
         arguments: [{ gameId: board.gameId, version: 2, cell: board.cells[0] }],
       }) + '\u001e',
     )
-    if (role === 'viewer') {
-      await expect(page).toHaveURL(/\/panel\/game-round$/)
-      await page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }).click()
-      await expect(page).toHaveURL(/\/panel\/game-board$/)
-      await expect(page.getByTestId('game-board-surface')).toBeVisible()
-    } else {
-      await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
-      await expect(page).toHaveURL(/\/panel\/game-board$/)
-    }
+    await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
+    await expect(page).toHaveURL(/\/panel\/game-board$/)
   })
 }
 

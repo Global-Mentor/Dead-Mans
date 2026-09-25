@@ -182,10 +182,6 @@ vi.mock('./ui/GameBoardGrid.tsx', () => ({
   GameBoardGrid: () => <div data-testid="game-board-grid" />,
 }))
 
-vi.mock('./ui/GameBoardRoundRedirect.tsx', () => ({
-  GameBoardRoundRedirect: () => null,
-}))
-
 vi.mock('./ui/GameQuizDrawer.tsx', () => ({
   GameQuizDrawer: () => null,
 }))

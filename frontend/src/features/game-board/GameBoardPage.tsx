@@ -18,7 +18,6 @@ import { buildGameManagementFlow } from './model/game-management-flow.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
-import { GameBoardRoundRedirect } from './ui/GameBoardRoundRedirect.tsx'
 import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
 import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 import { TeamQueuePanel } from './ui/TeamQueuePanel.tsx'
@@ -105,10 +104,6 @@ export function GameBoardPage() {
         justifyContent: 'flex-start',
       }}
     >
-      <GameBoardRoundRedirect
-        gameId={snapshot.gameId}
-        roundId={activeRound?.gameId === snapshot.gameId ? activeRound.roundId : null}
-      />
       {isRefreshError ? (
         <InlineNotice
           severity="warning"
