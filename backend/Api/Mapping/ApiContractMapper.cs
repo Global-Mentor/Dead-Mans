@@ -153,6 +153,7 @@ public static partial class ApiContractMapper
     public static GameTeamQueueResultDto ToDto(this GameTeamQueueResult result)
     {
         return new GameTeamQueueResultDto(
+            result.GameId,
             result.Summary.ToDto(),
             result.Teams.Select(x => x.ToDto()).ToArray()
         );

@@ -61,6 +61,9 @@ const translations = {
       gameRound: {
         label: 'Current round',
       },
+      gameTeamQueue: {
+        label: 'Team queue',
+      },
       gameLeaderboard: {
         label: 'Leaderboard',
       },
@@ -152,6 +155,9 @@ const translations = {
       },
       gameRound: {
         label: 'Текущий раунд',
+      },
+      gameTeamQueue: {
+        label: 'Очередь команд',
       },
       gameLeaderboard: {
         label: 'Лидерборд',
@@ -245,6 +251,9 @@ const translations = {
       gameRound: {
         label: 'Поточний раунд',
       },
+      gameTeamQueue: {
+        label: 'Черга команд',
+      },
       gameLeaderboard: {
         label: 'Лідерборд',
       },
@@ -336,6 +345,9 @@ const translations = {
       },
       gameRound: {
         label: 'Bieżąca runda',
+      },
+      gameTeamQueue: {
+        label: 'Kolejka drużyn',
       },
       gameLeaderboard: {
         label: 'Ranking',

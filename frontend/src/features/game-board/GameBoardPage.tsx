@@ -20,7 +20,6 @@ import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
 import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
 import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
-import { TeamQueuePanel } from './ui/TeamQueuePanel.tsx'
 import { useCardPlayResult } from './use-card-play-result.ts'
 import { useGameBoardCellResults } from './use-game-board-cell-results.ts'
 import { useGameBoardPage } from './use-game-board-page.ts'
@@ -30,21 +29,8 @@ export function GameBoardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [previewCell, setPreviewCell] = useState<GameBoardCell | null>(null)
-  const {
-    data,
-    activeRound,
-    teamQueue,
-    isTeamQueueError,
-    isTeamQueueLoading,
-    hasTeamQueueData,
-    isTeamQueueRefreshing,
-    retryTeamQueue,
-    retry,
-    isRefreshing,
-    isRefreshError,
-    isError,
-    isLoading,
-  } = useGameBoardPage()
+  const { data, activeRound, teamQueue, retry, isRefreshing, isRefreshError, isError, isLoading } =
+    useGameBoardPage()
   const {
     pendingCell,
     toastMessage,
@@ -194,18 +180,6 @@ export function GameBoardPage() {
               }
             />
           }
-          teams={(inline) => (
-            <TeamQueuePanel
-              inline={inline}
-              teams={teamQueue}
-              isLoading={isTeamQueueLoading}
-              isError={isTeamQueueError}
-              hasData={hasTeamQueueData}
-              isRefreshing={isTeamQueueRefreshing}
-              onRetry={retryTeamQueue}
-              activeTeamId={currentActiveTeamId}
-            />
-          )}
           management={
             <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
           }

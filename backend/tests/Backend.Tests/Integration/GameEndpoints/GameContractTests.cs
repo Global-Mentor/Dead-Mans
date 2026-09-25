@@ -420,6 +420,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var snapshotResponse = await moderatorClient.GetAsync("/api/game");
         var snapshot = await snapshotResponse.Content.ReadFromJsonAsync<GameBoardSnapshotDto>();
         Assert.NotNull(snapshot);
+        Assert.Equal(snapshot.GameId, queue.GameId);
         Assert.Null(snapshot.ActiveTeamId);
     }
 

@@ -83,14 +83,6 @@ function createPageQuery(overrides: Record<string, unknown> = {}) {
     data: readySnapshot,
     activeRound: null,
     teamQueue: [],
-    teamQueueSummary: {
-      totalTeams: 0,
-      playedTeams: 0,
-      remainingTeams: 0,
-    },
-    hasTeamQueueData: true,
-    isTeamQueueRefreshing: false,
-    retryTeamQueue: vi.fn(),
     retry: vi.fn(),
     isRefreshing: false,
     isTeamQueueLoading: false,
@@ -345,147 +337,14 @@ describe('GameBoardPage', () => {
     expect(screen.getByRole('heading', { name: 'Тестовая игра' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Тестовая игра' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Меню игры' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Открыть очередь команд' })).toBeVisible()
-    expect(screen.queryByRole('complementary', { name: 'Очередь команд' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Открыть очередь команд' })).not.toBeInTheDocument()
     expect(screen.getByTestId('game-board-grid')).toBeInTheDocument()
     expect(screen.queryByText(/модификатор/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Активна')).not.toBeInTheDocument()
     expect(screen.getByText('Фаза раунда')).toBeVisible()
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
-    expect(screen.getByText('Выбрать активную команду')).toBeVisible()
-  })
-
-  it('renders team queue and highlights the active round team', async () => {
-    pageMocks.useGameBoardPage.mockReturnValue(
-      createPageQuery({
-        activeRound: {
-          roundId: 'round-1',
-          teamId: 'team-2',
-          teamSlotIndex: 2,
-          baseScore: 120,
-          emptyCardPenaltyApplied: false,
-        },
-        teamQueue: [
-          {
-            teamId: 'team-1',
-            teamSlotIndex: 1,
-            participants: [
-              {
-                userId: 'user-1',
-                displayName: 'Player One',
-              },
-            ],
-          },
-          {
-            teamId: 'team-2',
-            teamSlotIndex: 2,
-            participants: [
-              {
-                userId: 'user-2',
-                displayName: 'Player Two',
-              },
-              {
-                userId: 'user-3',
-                displayName: 'Player Three',
-              },
-            ],
-          },
-        ],
-      }),
-    )
-
-    renderBoard()
-
-    const boardCard = screen.getByTestId('game-board-surface')
-    expect(boardCard).not.toBeNull()
-
-    expect(screen.getByText('Команда #2')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Открыть очередь команд' }))
-
-    const queuePanel = screen.getByRole('complementary', { name: 'Очередь команд' })
-    expect(queuePanel).toBeInTheDocument()
-    expect(within(queuePanel).getAllByText('Команда без названия')).toHaveLength(2)
-    expect(within(queuePanel).queryByText('Команда #1')).not.toBeInTheDocument()
-    expect(within(queuePanel).queryByText('Команда #2')).not.toBeInTheDocument()
-    expect(within(queuePanel).getByText('Player One')).toBeInTheDocument()
-    expect(within(queuePanel).getByText('Player Two')).toBeInTheDocument()
-    expect(within(queuePanel).getByText('Player Three')).toBeInTheDocument()
-    expect(within(queuePanel).getByText('Играет')).toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).queryByText('Играет')).not.toBeInTheDocument()
-    expect(screen.queryByText('Идёт раунд команды #2')).not.toBeInTheDocument()
-    expect(screen.queryByText('Идёт раунд: команда #2, база 120')).not.toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Закрыть очередь команд' }))
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('complementary', { name: 'Очередь команд' }),
-      ).not.toBeInTheDocument(),
-    )
-  })
-
-  it('splits team queue into remaining teams and played teams by play order', () => {
-    pageMocks.useGameBoardPage.mockReturnValue(
-      createPageQuery({
-        teamQueueSummary: {
-          totalTeams: 4,
-          playedTeams: 2,
-          remainingTeams: 2,
-        },
-        teamQueue: [
-          {
-            teamId: 'team-1',
-            teamSlotIndex: 1,
-            isPlayed: false,
-            playedAtUtc: null,
-            participants: [{ userId: 'user-1', displayName: 'Player One' }],
-          },
-          {
-            teamId: 'team-2',
-            teamSlotIndex: 2,
-            isPlayed: true,
-            playedAtUtc: '2026-08-09T10:00:00Z',
-            participants: [{ userId: 'user-2', displayName: 'Player Two' }],
-          },
-          {
-            teamId: 'team-3',
-            teamSlotIndex: 3,
-            isPlayed: false,
-            playedAtUtc: null,
-            participants: [{ userId: 'user-3', displayName: 'Player Three' }],
-          },
-          {
-            teamId: 'team-4',
-            teamSlotIndex: 4,
-            isPlayed: true,
-            playedAtUtc: '2026-08-09T10:05:00Z',
-            participants: [{ userId: 'user-4', displayName: 'Player Four' }],
-          },
-        ],
-      }),
-    )
-
-    renderBoard()
-    fireEvent.click(screen.getByRole('button', { name: 'Открыть очередь команд' }))
-
-    const queuePanel = screen.getByRole('complementary', { name: 'Очередь команд' })
-    const remainingTitle = within(queuePanel).getByText('Не отыграли')
-    const playedTitle = within(queuePanel).getByText('Отыгравшие')
-    const teamOne = within(queuePanel).getByText('Player One')
-    const teamTwo = within(queuePanel).getByText('Player Two')
-    const teamThree = within(queuePanel).getByText('Player Three')
-    const teamFour = within(queuePanel).getByText('Player Four')
-
-    expect(remainingTitle.compareDocumentPosition(playedTitle)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    )
-    expect(teamOne.compareDocumentPosition(teamThree)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(teamThree.compareDocumentPosition(playedTitle)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(playedTitle.compareDocumentPosition(teamTwo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(teamTwo.compareDocumentPosition(teamFour)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(within(queuePanel).getByText('Отыгрыш #1')).toBeInTheDocument()
-    expect(within(queuePanel).getByText('Отыгрыш #2')).toBeInTheDocument()
+    expect(screen.getByText('Выбор активной команды')).toBeVisible()
   })
 
   it('shows the active team beside the board', () => {

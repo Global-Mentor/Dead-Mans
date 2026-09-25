@@ -52,6 +52,7 @@ public sealed record GameTeamQueueSummary(
 );
 
 public sealed record GameTeamQueueResult(
+    string? GameId,
     GameTeamQueueSummary Summary,
     IReadOnlyList<GameTeamQueueItem> Teams
 );

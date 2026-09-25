@@ -1921,6 +1921,8 @@ export interface components {
             remainingTeams: number;
         };
         GameTeamQueueResultDto: {
+            /** Format: uuid */
+            gameId: string | null;
             summary: components["schemas"]["GameTeamQueueSummaryDto"];
             teams: components["schemas"]["GameTeamQueueItemDto"][];
         };

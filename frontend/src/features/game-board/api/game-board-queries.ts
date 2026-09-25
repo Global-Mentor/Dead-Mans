@@ -17,14 +17,32 @@ export const currentGameBoardQueryOptions = queryOptions({
   queryFn: fetchCurrentGameBoardSnapshot,
 })
 
-export const currentGameTeamQueueQueryOptions = queryOptions({
-  queryKey: gameBoardQueryKeys.currentTeamQueue(),
-  queryFn: fetchCurrentGameTeamQueue,
+const teamQueueRefreshOptions = {
   staleTime: 0,
   refetchInterval: 5_000,
   refetchOnWindowFocus: true,
   refetchOnReconnect: true,
+} as const
+
+export const currentGameTeamQueueQueryOptions = queryOptions({
+  queryKey: gameBoardQueryKeys.currentTeamQueue(),
+  queryFn: fetchCurrentGameTeamQueue,
+  ...teamQueueRefreshOptions,
 })
+
+export function currentGameTeamQueueForGameQueryOptions(gameId: string) {
+  return queryOptions({
+    queryKey: [...gameBoardQueryKeys.currentTeamQueue(), gameId] as const,
+    queryFn: async () => {
+      const result = await fetchCurrentGameTeamQueue()
+      if (result.gameId !== gameId) {
+        throw new Error('The active game changed while the team queue was loading.')
+      }
+      return result
+    },
+    ...teamQueueRefreshOptions,
+  })
+}
 
 export const manualGameQuizAwardPlayersQueryOptions = queryOptions({
   queryKey: gameBoardQueryKeys.manualQuizAwardPlayers(),

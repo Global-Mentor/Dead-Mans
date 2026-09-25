@@ -57,6 +57,7 @@ public sealed partial class DbGameBoardRepository
 
         var playedTeams = teams.Count(x => x.IsPlayed);
         return new GameTeamQueueResult(
+            currentGameId.Value.ToString(),
             new GameTeamQueueSummary(
                 teams.Length,
                 playedTeams,
@@ -69,6 +70,7 @@ public sealed partial class DbGameBoardRepository
     private static GameTeamQueueResult EmptyTeamQueueResult()
     {
         return new GameTeamQueueResult(
+            null,
             new GameTeamQueueSummary(0, 0, 0),
             Array.Empty<GameTeamQueueItem>()
         );

@@ -78,6 +78,7 @@ async function mockGame(
       if (path === '/api/game/team-queue')
         return route.fulfill({
           json: {
+            gameId: board.gameId,
             teams: [
               {
                 teamId: 'team-one',
@@ -836,14 +837,8 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     const cardsCenter = (firstCardBox!.x + rightCardBox!.x + rightCardBox!.width) / 2
     expect(Math.abs(statusBox!.x + statusBox!.width / 2 - cardsCenter)).toBeLessThan(1)
     if (width === 1440) expect(Math.abs(cardsCenter - width / 2)).toBeLessThan(1)
-    const inlineQueue = page.getByTestId('team-queue-inline')
-    if (width >= 1440) await expect(inlineQueue).toBeVisible()
-    const hasInlineQueue = await inlineQueue.isVisible()
-    if (width <= 1024) expect(hasInlineQueue).toBe(false)
-    if (width >= 1440) expect(hasInlineQueue).toBe(true)
-    const teamsBox = hasInlineQueue
-      ? await inlineQueue.boundingBox()
-      : await page.getByRole('button', { name: 'Открыть очередь команд' }).boundingBox()
+    await expect(page.getByTestId('game-board-teams')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toHaveCount(0)
     const managementBox = await page
       .getByRole('button', { name: 'Управление игрой', exact: true })
       .boundingBox()
@@ -851,36 +846,11 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       expect(managementBox!.x + managementBox!.width).toBe(width)
       expect(managementBox!.width).toBe(44)
       expect(managementBox!.height).toBe(130)
-      if (!hasInlineQueue) {
-        expect(teamsBox!.x).toBe(0)
-        expect(teamsBox!.width).toBe(44)
-        expect(teamsBox!.height).toBe(130)
-        expect(Math.abs(teamsBox!.y + teamsBox!.height / 2 - height / 2)).toBeLessThan(1)
-        expect(Math.abs(managementBox!.y - teamsBox!.y)).toBeLessThan(1)
-      }
       const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
       expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
-    } else if (!hasInlineQueue) {
-      expect(teamsBox!.x + teamsBox!.width).toBeLessThanOrEqual(managementBox!.x - 4)
-      expect(teamsBox!.height).toBe(44)
+    } else {
       expect(managementBox!.height).toBe(44)
-      expect(teamsBox!.y + teamsBox!.height).toBeLessThan(firstCardBox!.y)
       expect(managementBox!.y + managementBox!.height).toBeLessThan(firstCardBox!.y)
-    }
-    if (hasInlineQueue) {
-      const fieldBox = await page.locator('[data-board-field]').boundingBox()
-      expect(Math.abs(teamsBox!.y - fieldBox!.y)).toBeLessThan(1)
-      expect(teamsBox!.x).toBeGreaterThanOrEqual(0)
-      expect(teamsBox!.x + teamsBox!.width).toBeLessThan(firstCardBox!.x - 4)
-      if (width === 1440) expect(teamsBox!.x).toBeLessThan(100)
-      await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toHaveCount(0)
-      if (width === 1440) {
-        const rail = page.getByTestId('game-board-teams')
-        expect(await rail.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(
-          true,
-        )
-        expect(await region.locator('[data-cell-id="card-0"]').boundingBox()).toEqual(firstCardBox)
-      }
     }
     if (width < 600) {
       await expect(page.getByRole('tab', { name: 'Охота', exact: true })).toHaveAttribute(
@@ -934,36 +904,6 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       ).toBe(true)
     }
     await page.screenshot({ path: `../.tmp/game-board-design/board-${width}.png`, fullPage: true })
-    if (!hasInlineQueue) {
-      await page.getByRole('button', { name: 'Открыть очередь команд' }).click()
-      await expect(page.getByRole('complementary', { name: 'Очередь команд' })).toBeVisible()
-      await expect.poll(async () => (await page.getByRole('dialog').boundingBox())!.x).toBe(0)
-    }
-    const queue = hasInlineQueue
-      ? inlineQueue
-      : page.getByRole('complementary', { name: 'Очередь команд' })
-    expect(
-      (await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox())!.y,
-    ).toBeGreaterThanOrEqual(16)
-    await page.screenshot({
-      path: `../.tmp/game-board-design/teams-${width}.png`,
-    })
-    expect(
-      (await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox())!.y,
-    ).toBeGreaterThanOrEqual(16)
-    await queue.getByRole('textbox', { name: 'Найти команду или игрока' }).fill('ворон')
-    await expect(queue.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
-    await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toHaveCount(0)
-    await queue
-      .getByRole('textbox', { name: 'Найти команду или игрока' })
-      .fill('несуществующая команда')
-    await expect(queue.getByRole('status')).toContainText('Команды не найдены')
-    await queue.getByRole('button', { name: 'Очистить поиск команд' }).click()
-    await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toBeVisible()
-    if (!hasInlineQueue) {
-      await page.getByRole('button', { name: 'Закрыть очередь команд' }).click()
-      await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toBeFocused()
-    }
     await page
       .getByRole('button', { name: 'Открыть карточку Следы на болотах', exact: true })
       .click()
@@ -1045,47 +985,83 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
   })
 }
 
-test('long inline team queue scrolls without moving the board', async ({ page }) => {
+test('long team queue uses its own page and leaves the board clear', async ({ page }) => {
   await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 16)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/panel/game-board')
-  const rail = page.getByTestId('game-board-teams')
-  await expect(page.getByTestId('team-queue-inline')).toBeVisible()
-  const fieldBox = await page.locator('[data-board-field]').boundingBox()
-  const railBox = await rail.boundingBox()
-  expect(Math.abs(railBox!.y - fieldBox!.y)).toBeLessThan(1)
-  expect(await rail.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
-  const firstCard = page.locator('[data-cell-id="card-0"]')
-  const before = await firstCard.boundingBox()
-  await rail.focus()
-  await rail.press('End')
-  await expect.poll(() => rail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
-  expect(await firstCard.boundingBox()).toEqual(before)
+  await page.goto('/panel/game-team-queue')
+  const queue = page.getByTestId('team-queue-panel')
+  await expect(queue).toBeVisible()
+  await expect(queue.getByRole('article')).toHaveCount(16)
+  await expect(page.getByTestId('game-board-surface')).toHaveCount(0)
+  await queue.getByRole('article', { name: 'Команда 16' }).scrollIntoViewIfNeeded()
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 })
 
-test('edge tabs adapt to mobile without losing the open panel or focus', async ({ page }) => {
+for (const width of [390, 1440]) {
+  test(`team queue page keeps search and play order readable at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await mockGame(page, 'active', 'viewer')
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/panel/game-team-queue')
+    const queue = page.getByTestId('team-queue-panel')
+    await expect(queue.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+    await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toBeVisible()
+    await expect(queue).toContainText('Отыгрыш #1')
+    await queue.screenshot({ path: testInfo.outputPath(`team-queue-${width}.png`) })
+    const search = queue.getByRole('textbox', { name: 'Найти команду или игрока' })
+    await search.fill('ворон')
+    await expect(queue.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+    await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toHaveCount(0)
+    await search.fill('несуществующая команда')
+    await expect(queue.getByRole('status')).toContainText('Команды не найдены')
+    await queue.getByRole('button', { name: 'Очистить поиск команд' }).click()
+    await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+for (const width of [320, 1440]) {
+  test(`long team names fit the queue at ${width}px`, async ({ page }) => {
+    const teamName = 'Ночные странники с очень длинным названием команды и дальним маршрутом'
+    await mockGame(page, 'active', 'viewer', teamName)
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/panel/game-team-queue')
+    const queue = page.getByTestId('team-queue-panel')
+    const team = queue.getByRole('article', { name: teamName })
+    await expect(team).toBeVisible()
+    expect(await team.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    )
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/queue-long-name-${width}.png`,
+      animations: 'disabled',
+    })
+  })
+}
+
+test('team queue is a separate navigation page before the leaderboard', async ({ page }) => {
   await mockGame(page)
-  await page.setViewportSize({ width: 390, height: 844 })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/panel/game-board')
-  const teams = page.getByRole('button', { name: 'Открыть очередь команд' })
-  await teams.click()
-  await expect(page.getByRole('complementary', { name: 'Очередь команд' })).toBeVisible()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await expect(page.getByTestId('team-queue-inline')).toBeVisible()
-  await expect(page.getByRole('dialog', { name: 'Очередь команд' })).toHaveCount(0)
+  await expect(page.getByTestId('team-queue-panel')).toHaveCount(0)
+  const navigation = page.getByRole('navigation', { name: 'Основная навигация' })
+  const queueLink = navigation.getByRole('link', { name: 'Очередь команд' })
+  const leaderboardLink = navigation.getByRole('link', { name: 'Лидерборд' })
+  expect(
+    await queueLink.evaluate(
+      (element, next) =>
+        Boolean(element.compareDocumentPosition(next as Node) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await leaderboardLink.elementHandle(),
+    ),
+  ).toBe(true)
+  await queueLink.click()
+  await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
+  await expect(page.getByRole('heading', { name: 'Очередь команд' })).toBeVisible()
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(page.getByRole('dialog', { name: 'Очередь команд' })).toHaveCount(0)
-  await teams.click()
-  await expect(page.getByRole('dialog', { name: 'Очередь команд' })).toBeVisible()
-  await page.getByRole('button', { name: 'Закрыть очередь команд' }).click()
-  await expect(teams).toBeFocused()
-  expect((await teams.boundingBox())!.height).toBe(44)
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await expect(page.getByTestId('team-queue-inline')).toBeVisible()
-  await expect(teams).toHaveCount(0)
-  const management = page.getByRole('button', { name: 'Управление игрой', exact: true })
-  const managementBox = await management.boundingBox()
-  expect(managementBox!.y + managementBox!.height / 2).toBe(450)
+  await expect(page.getByTestId('team-queue-panel')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
 for (const status of ['ready', 'finished'] as const) {
@@ -1437,9 +1413,9 @@ test('side panels honour reduced motion and expose modal semantics', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 390, height: 640 })
   await page.goto('/panel/game-board')
-  const opener = page.getByRole('button', { name: 'Открыть очередь команд' })
+  const opener = page.getByRole('button', { name: 'Управление игрой', exact: true })
   await opener.click()
-  const panel = page.getByRole('dialog', { name: 'Очередь команд' })
+  const panel = page.getByRole('dialog', { name: 'Инструменты управления игрой' })
   await expect(panel).toBeVisible()
   await expect(panel).toHaveAttribute('aria-modal', 'true')
   await expect(panel).toHaveCSS('transition-duration', '0s')

@@ -4912,9 +4912,14 @@ components:
     GameTeamQueueResultDto:
       type: object
       required:
+        - gameId
         - summary
         - teams
       properties:
+        gameId:
+          type: string
+          format: uuid
+          nullable: true
         summary:
           $ref: '#/components/schemas/GameTeamQueueSummaryDto'
         teams:

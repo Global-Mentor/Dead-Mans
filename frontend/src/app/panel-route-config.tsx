@@ -48,6 +48,11 @@ const panelPages = {
       translations.gameQuiz,
     ],
   ),
+  'game-team-queue': lazyPanelPage(
+    () => import('../features/game-board/GameTeamQueuePage.tsx'),
+    'GameTeamQueuePage',
+    [translations.gameBoard],
+  ),
   'game-application': lazyPanelPage(
     () => import('../features/game-application/GameApplicationPage.tsx'),
     'GameApplicationPage',
@@ -126,6 +131,7 @@ const panelSyncComponents = {
   'game-leaderboard': gameHistoryRealtimeSync,
   'game-board': gameBoardQuizRealtimeSync,
   'game-round': gameBoardQuizRealtimeSync,
+  'game-team-queue': gameBoardQuizRealtimeSync,
   'game-modifiers': lazyPanelPage(
     () => import('../features/game-modifiers/realtime/GameModifiersRealtimeSync.tsx'),
     'GameModifiersRealtimeSync',

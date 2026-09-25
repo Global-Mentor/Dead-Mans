@@ -1,36 +1,22 @@
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-import { uiTokens } from '../../../shared/theme/tokens.ts'
 import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardLayoutProps {
   columns: number
   context: ReactNode
-  teams: (inline: boolean) => ReactNode
   management: ReactNode
   children: (categoryLayout: boolean) => ReactNode
 }
 
 // Edge tabs stay out of the board's flow; on smaller screens they become normal buttons.
-export function GameBoardLayout({
-  columns,
-  context,
-  teams,
-  management,
-  children,
-}: GameBoardLayoutProps) {
+export function GameBoardLayout({ columns, context, management, children }: GameBoardLayoutProps) {
   const theme = useTheme()
-  const { t } = useTranslation()
   const smallScreen = useMediaQuery(theme.breakpoints.down('sm'))
-  const edgeTabs = useMediaQuery(theme.breakpoints.up('lg'))
   const container = useRef<HTMLDivElement>(null)
   const board = useRef<HTMLDivElement>(null)
   const [availableWidth, setAvailableWidth] = useState<number | null>(null)
   const [centerOffset, setCenterOffset] = useState(0)
-  const [teamRail, setTeamRail] = useState<{ left: number; top: number; height: number } | null>(
-    null,
-  )
   useLayoutEffect(() => {
     const element = container.current
     if (!element) return
@@ -65,30 +51,10 @@ export function GameBoardLayout({
     const measure = () => {
       const fieldRect = field.getBoundingClientRect()
       const boardRect = boardElement.getBoundingClientRect()
-      const layoutRect = element.getBoundingClientRect()
-      const gap = parseFloat(theme.spacing(0.9))
       const nextCenterOffset = categoryLayout
         ? 0
         : Math.min(labelGutter / 2, Math.max(0, (boardRect.width - fieldRect.width) / 2))
       if (centerOffset !== nextCenterOffset) setCenterOffset(nextCenterOffset)
-      const fieldLeft = fieldRect.left + centerOffset - nextCenterOffset
-      const edgeClearance = edgeTabs ? uiTokens.control.height.standard : 0
-      const leftBoundary = edgeClearance + gap
-      const fits = !smallScreen && fieldLeft - leftBoundary >= boardGridMetrics.teamRailWidth + gap
-      const nextRail = fits
-        ? {
-            left: leftBoundary - layoutRect.left,
-            top: fieldRect.top - layoutRect.top,
-            height: fieldRect.height,
-          }
-        : null
-      setTeamRail((current) =>
-        current?.left === nextRail?.left &&
-        current?.top === nextRail?.top &&
-        current?.height === nextRail?.height
-          ? current
-          : nextRail,
-      )
     }
     measure()
     if (typeof ResizeObserver === 'undefined') return
@@ -101,18 +67,17 @@ export function GameBoardLayout({
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [categoryLayout, centerOffset, edgeTabs, labelGutter, smallScreen, theme])
-  const inlineTeams = teamRail !== null
+  }, [categoryLayout, centerOffset, labelGutter])
 
   return (
     <Box
       ref={container}
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gridTemplateColumns: 'minmax(0, 1fr)',
         gridTemplateAreas: {
-          xs: '"teams management" "context context" "board board"',
-          lg: '"context context" "board board"',
+          xs: '"management" "context" "board"',
+          lg: '"context" "board"',
         },
         gap: 0.9,
         alignItems: 'start',
@@ -137,32 +102,12 @@ export function GameBoardLayout({
         {context}
       </Box>
       <Box
-        data-testid="game-board-teams"
-        role={inlineTeams ? 'region' : undefined}
-        aria-label={inlineTeams ? t('gameBoard.teamQueueTitle') : undefined}
-        tabIndex={inlineTeams ? 0 : undefined}
-        sx={{
-          gridArea: inlineTeams ? undefined : 'teams',
-          minWidth: 0,
-          display: inlineTeams ? 'block' : { lg: 'contents' },
-          position: inlineTeams ? 'absolute' : undefined,
-          zIndex: inlineTeams ? 1 : undefined,
-          left: teamRail?.left,
-          top: teamRail?.top,
-          width: inlineTeams ? boardGridMetrics.teamRailWidth : undefined,
-          maxHeight: teamRail?.height,
-          overflowY: inlineTeams ? 'auto' : undefined,
-          overflowX: inlineTeams ? 'hidden' : undefined,
-        }}
-      >
-        {teams(inlineTeams)}
-      </Box>
-      <Box
         data-testid="game-board-management"
         sx={{
           gridArea: 'management',
           minWidth: 0,
-          display: { lg: 'contents' },
+          display: { xs: 'flex', lg: 'contents' },
+          justifyContent: 'flex-end',
         }}
       >
         {management}

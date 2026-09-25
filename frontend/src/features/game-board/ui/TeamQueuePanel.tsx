@@ -9,11 +9,8 @@ import {
   AppButton,
   AsyncSection,
   FormTextField,
-  FormSection,
   ItemCard,
-  PanelTrigger,
   SectionCard,
-  SidePanel,
   StatusBadge,
 } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
@@ -26,7 +23,6 @@ interface TeamQueuePanelProps {
   isRefreshing: boolean
   onRetry: () => void
   activeTeamId?: string | null
-  inline?: boolean
 }
 
 export function TeamQueuePanel({
@@ -37,15 +33,8 @@ export function TeamQueuePanel({
   isRefreshing,
   onRetry,
   activeTeamId,
-  inline = false,
 }: TeamQueuePanelProps) {
   const { t } = useTranslation()
-  const [isOpen, setIsOpen] = useState(false)
-  const [previousInline, setPreviousInline] = useState(inline)
-  if (previousInline !== inline) {
-    setPreviousInline(inline)
-    if (inline) setIsOpen(false)
-  }
   const panelId = useId()
   const [search, setSearch] = useState('')
   const query = search.trim().toLocaleLowerCase()
@@ -65,147 +54,108 @@ export function TeamQueuePanel({
   )
   const playedTeams = groupedTeams.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))
 
-  const searchField =
-    hasData && teams.length > 0 ? (
-      <FormTextField
-        label={t('gameBoard.teamQueueSearch')}
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        slotProps={{
-          input: {
-            endAdornment: search ? (
-              <ActionIcon
-                aria-label={t('gameBoard.teamQueueClearSearch')}
-                onClick={() => setSearch('')}
-                edge="end"
-              >
-                <Box component="span" aria-hidden>
-                  ×
-                </Box>
-              </ActionIcon>
-            ) : undefined,
-          },
-        }}
-      />
-    ) : null
-  const content = (compact: boolean) => (
-    <AsyncSection
-      isLoading={isLoading}
-      isError={isError}
-      isEmpty={teams.length === 0}
-      hasData={hasData}
-      loadingMessage={t('gameBoard.teamQueueLoading')}
-      errorMessage={t('gameBoard.teamQueueError')}
-      emptyMessage={t('gameBoard.teamQueueEmpty')}
-      retryAction={
-        <AppButton tone="secondary" onClick={onRetry} loading={isRefreshing}>
-          {t('common.actions.retry')}
-        </AppButton>
-      }
+  return (
+    <SectionCard
+      component="section"
+      aria-labelledby={`${panelId}-title`}
+      data-testid="team-queue-panel"
+      sx={{ p: { xs: 2, sm: 2.5 }, minWidth: 0 }}
     >
-      {matchingTeams.length === 0 ? (
-        <Typography role="status" variant="body2" color="text.secondary">
-          {t('gameBoard.teamQueueNoResults')}
-        </Typography>
-      ) : (
-        <Stack spacing={compact ? 1.5 : 2.5}>
-          <TeamQueueSection
-            title={t('gameBoard.teamQueueRemainingTitle')}
-            count={remainingTeams.length}
-            emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
-            compact={compact}
-          >
-            {remainingTeams.map(({ team }) => (
-              <TeamQueueCard
-                key={team.teamId}
-                team={team}
-                isActive={team.teamId === activeTeamId}
-                compact={compact}
-              />
-            ))}
-          </TeamQueueSection>
-          <TeamQueueSection
-            title={t('gameBoard.teamQueuePlayedTitle')}
-            count={playedTeams.length}
-            emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
-            compact={compact}
-          >
-            {playedTeams.map(({ team, playedOrder }) => (
-              <TeamQueueCard
-                key={team.teamId}
-                team={team}
-                isActive={team.teamId === activeTeamId}
-                playedOrder={playedOrder}
-                compact={compact}
-              />
-            ))}
-          </TeamQueueSection>
-        </Stack>
-      )}
-    </AsyncSection>
-  )
-
-  if (inline) {
-    return (
-      <SectionCard
-        component="section"
-        aria-labelledby={`${panelId}-inline-title`}
-        data-testid="team-queue-inline"
-        sx={{ p: 1.25, display: 'flex', flexDirection: 'column', gap: 1.25 }}
-      >
+      <Stack spacing={2.5}>
         <Stack
           component="header"
           direction="row"
           alignItems="center"
           justifyContent="space-between"
           gap={1}
-          sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}
+          sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}
         >
-          <Typography id={`${panelId}-inline-title`} component="h2" variant="h6">
+          <Typography id={`${panelId}-title`} component="h1" variant="h5">
             {t('gameBoard.teamQueueTitle')}
           </Typography>
           {hasData ? <StatusBadge size="small" label={teams.length} /> : null}
         </Stack>
-        {searchField}
-        {content(true)}
-      </SectionCard>
-    )
-  }
-
-  return (
-    <>
-      <PanelTrigger
-        placement="responsiveEdge"
-        side="left"
-        aria-label={t('gameBoard.teamQueueOpen')}
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? panelId : undefined}
-        onClick={() => setIsOpen(true)}
-      >
-        <Stack direction="row" spacing={1} useFlexGap alignItems="center">
-          <Typography component="span" variant="body2" fontWeight={700} fontSize="inherit">
-            {t('common.entities.teams')}
-          </Typography>
-          {hasData ? (
-            <Typography component="span" variant="body2" color="primary.light" fontSize="inherit">
-              {teams.length}
+        {hasData && teams.length > 0 ? (
+          <FormTextField
+            label={t('gameBoard.teamQueueSearch')}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            slotProps={{
+              input: {
+                endAdornment: search ? (
+                  <ActionIcon
+                    aria-label={t('gameBoard.teamQueueClearSearch')}
+                    onClick={() => setSearch('')}
+                    edge="end"
+                  >
+                    <Box component="span" aria-hidden>
+                      ×
+                    </Box>
+                  </ActionIcon>
+                ) : undefined,
+              },
+            }}
+          />
+        ) : null}
+        <AsyncSection
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={teams.length === 0}
+          hasData={hasData}
+          loadingMessage={t('gameBoard.teamQueueLoading')}
+          errorMessage={t('gameBoard.teamQueueError')}
+          emptyMessage={t('gameBoard.teamQueueEmpty')}
+          retryAction={
+            <AppButton tone="secondary" onClick={onRetry} loading={isRefreshing}>
+              {t('common.actions.retry')}
+            </AppButton>
+          }
+        >
+          {matchingTeams.length === 0 ? (
+            <Typography role="status" variant="body2" color="text.secondary">
+              {t('gameBoard.teamQueueNoResults')}
             </Typography>
-          ) : null}
-        </Stack>
-      </PanelTrigger>
-      <SidePanel
-        id={panelId}
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        side="left"
-        title={t('gameBoard.teamQueueTitle')}
-        closeLabel={t('gameBoard.teamQueueClose')}
-        bodyTestId="team-queue-scroll-body"
-        header={searchField ? <Box sx={{ mt: 2 }}>{searchField}</Box> : null}
-      >
-        {content(false)}
-      </SidePanel>
-    </>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
+                gap: { xs: 3, md: 2.5 },
+                alignItems: 'start',
+              }}
+            >
+              <TeamQueueSection
+                title={t('gameBoard.teamQueueRemainingTitle')}
+                count={remainingTeams.length}
+                emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
+              >
+                {remainingTeams.map(({ team }) => (
+                  <TeamQueueCard
+                    key={team.teamId}
+                    team={team}
+                    isActive={team.teamId === activeTeamId}
+                  />
+                ))}
+              </TeamQueueSection>
+              <TeamQueueSection
+                title={t('gameBoard.teamQueuePlayedTitle')}
+                count={playedTeams.length}
+                emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
+              >
+                {playedTeams.map(({ team, playedOrder }) => (
+                  <TeamQueueCard
+                    key={team.teamId}
+                    team={team}
+                    isActive={team.teamId === activeTeamId}
+                    playedOrder={playedOrder}
+                  />
+                ))}
+              </TeamQueueSection>
+            </Box>
+          )}
+        </AsyncSection>
+      </Stack>
+    </SectionCard>
   )
 }
 
@@ -262,48 +212,32 @@ function TeamQueueSection({
   count,
   emptyMessage,
   children,
-  compact = false,
 }: {
   title: string
   count: number
   emptyMessage: string
   children: ReactNode
-  compact?: boolean
 }) {
-  if (compact) {
-    return (
-      <Stack component="section" spacing={1} sx={{ minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-          <Typography component="h3" variant="subtitle2">
-            {title}
-          </Typography>
-          <StatusBadge size="small" variant="outlined" label={count} />
-        </Stack>
-        {count === 0 ? (
-          <Typography variant="caption" color="text.secondary">
-            {emptyMessage}
-          </Typography>
-        ) : (
-          <Stack spacing={0.75}>{children}</Stack>
-        )}
-      </Stack>
-    )
-  }
   return (
-    <FormSection
-      title={title}
-      action={<StatusBadge size="small" variant="outlined" label={count} />}
+    <Stack
+      component="section"
+      spacing={1}
+      sx={{ minWidth: 0, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}
     >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+        <Typography component="h2" variant="h6">
+          {title}
+        </Typography>
+        <StatusBadge size="small" label={count} />
+      </Stack>
       {count === 0 ? (
-        <ItemCard>
-          <Typography variant="body2" color="text.secondary">
-            {emptyMessage}
-          </Typography>
-        </ItemCard>
+        <Typography variant="body2" color="text.secondary">
+          {emptyMessage}
+        </Typography>
       ) : (
-        <Stack spacing={1}>{children}</Stack>
+        <Stack spacing={0.75}>{children}</Stack>
       )}
-    </FormSection>
+    </Stack>
   )
 }
 
@@ -311,12 +245,10 @@ function TeamQueueCard({
   team,
   isActive,
   playedOrder,
-  compact = false,
 }: {
   team: GameTeamQueueItem
   isActive: boolean
   playedOrder?: number
-  compact?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -325,35 +257,41 @@ function TeamQueueCard({
       component="article"
       aria-label={formatTeamQueueName(t, team.teamName)}
       emphasis={isActive ? 'selected' : 'none'}
-      sx={compact ? { p: 1 } : undefined}
     >
-      <TeamIdentity
-        name={formatTeamQueueName(t, team.teamName)}
-        participants={team.participants.map((participant) => participant.displayName)}
-        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-        compact={compact}
-        status={
-          <Stack direction="row" gap={1} flexWrap="wrap">
-            {playedOrder ? (
-              <StatusBadge
-                size="small"
-                color="success"
-                variant="outlined"
-                appearance="plain"
-                label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
-              />
-            ) : null}
-            {isActive ? (
-              <StatusBadge
-                size="small"
-                color="primary"
-                variant="outlined"
-                label={t('gameBoard.teamQueueActiveChip')}
-              />
-            ) : null}
-          </Stack>
-        }
-      />
+      <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ minWidth: 0 }}>
+        <StatusBadge
+          size="small"
+          variant="outlined"
+          color={isActive ? 'primary' : 'default'}
+          label={team.teamSlotIndex}
+          aria-label={t('gameBoard.teamQueueSlotLabel', { slot: team.teamSlotIndex })}
+        />
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <TeamIdentity
+            name={formatTeamQueueName(t, team.teamName)}
+            participants={team.participants.map((participant) => participant.displayName)}
+            emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
+            status={
+              isActive ? (
+                <StatusBadge
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  label={t('gameBoard.teamQueueActiveChip')}
+                />
+              ) : playedOrder ? (
+                <StatusBadge
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  appearance="plain"
+                  label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
+                />
+              ) : null
+            }
+          />
+        </Box>
+      </Stack>
     </ItemCard>
   )
 }
