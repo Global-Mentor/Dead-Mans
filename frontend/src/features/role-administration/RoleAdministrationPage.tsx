@@ -15,6 +15,7 @@ import {
   DataTableRow,
   FormCheckbox,
   FormTextField,
+  HelpTooltip,
   InlineNotice,
   PagePagination,
   PageShell,
@@ -224,19 +225,25 @@ function RoleEditorRow({ user }: { user: RoleAdministrationUser }) {
               user.isPermanentSuperAdmin && (role === 'superadmin' || role === 'admin')
             const isInheritedAdmin = role === 'admin' && hasSuperAdmin
             return (
-              <ChoiceLabel
+              <HelpTooltip
                 key={role}
-                control={
-                  <FormCheckbox
-                    size="small"
-                    checked={selectedRoles.includes(role)}
-                    disabled={isSaving || isPermanentRole || isInheritedAdmin}
-                    onChange={(event) => setRole(role, event.target.checked)}
+                title={isInheritedAdmin ? t('roleAdministration.adminInherited') : ''}
+                describeChild
+              >
+                <Box component="span" tabIndex={isInheritedAdmin ? 0 : undefined}>
+                  <ChoiceLabel
+                    control={
+                      <FormCheckbox
+                        size="small"
+                        checked={selectedRoles.includes(role)}
+                        disabled={isSaving || isPermanentRole || isInheritedAdmin}
+                        onChange={(event) => setRole(role, event.target.checked)}
+                      />
+                    }
+                    label={t(`navigation.roles.${role}`)}
                   />
-                }
-                label={t(`navigation.roles.${role}`)}
-                title={isInheritedAdmin ? t('roleAdministration.adminInherited') : undefined}
-              />
+                </Box>
+              </HelpTooltip>
             )
           })}
         </Stack>

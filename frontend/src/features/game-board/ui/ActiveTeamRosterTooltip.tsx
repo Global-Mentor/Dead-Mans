@@ -44,7 +44,7 @@ export function ActiveTeamRosterTooltip({
         }
         slotProps={{
           tooltip: {
-            sx: { p: 1.5, maxWidth: 'min(320px, calc(100vw - 32px))', borderRadius: 0 },
+            sx: { p: 1.5, maxWidth: 'min(320px, calc(100vw - 32px))' },
           },
         }}
       >

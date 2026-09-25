@@ -1,7 +1,8 @@
 import type { OutlinedTextFieldProps, SxProps, Theme } from '@mui/material'
-import { TextField, Tooltip } from '@mui/material'
+import { TextField } from '@mui/material'
 import { useId, useState } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
+import { HelpTooltip } from '../../feedback/help/HelpTooltip.tsx'
 
 type FormFieldDensity = 'standard' | 'compact'
 type FormFieldTextAlign = 'start' | 'center'
@@ -49,7 +50,7 @@ export function FormTextField({
   }
 
   return (
-    <Tooltip
+    <HelpTooltip
       open={Boolean(hint)}
       title={
         hint ? (
@@ -143,6 +144,6 @@ export function FormTextField({
           sx,
         )}
       />
-    </Tooltip>
+    </HelpTooltip>
   )
 }

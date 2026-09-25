@@ -817,6 +817,12 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       await expect(region.locator('[data-cell-id]')).toHaveCount(5)
       await page.getByRole('tab', { name: 'Оружие', exact: true }).click()
       await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Оружие')
+      await page.getByRole('tab', { name: 'Охота', exact: true }).focus()
+      await page.keyboard.press('ArrowRight')
+      await expect(page.getByRole('tab', { name: 'Оружие', exact: true })).toBeFocused()
+      await expect(page.getByRole('tooltip')).toHaveText('Оружие')
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('tooltip')).not.toBeVisible()
       await page.getByRole('tab', { name: 'Охота', exact: true }).click()
     } else {
       await expect(region.locator('[data-cell-id]')).toHaveCount(25)
@@ -1020,7 +1026,7 @@ for (const status of ['ready', 'finished'] as const) {
       const action = page.getByTestId('game-board-context').getByRole('link', { name: actionLabel })
       await expect(action).toBeVisible()
       await expect(action).toHaveClass(/MuiButton-containedPrimary/)
-      const label = action.getByTitle(actionLabel)
+      const label = action.getByText(actionLabel, { exact: true })
       const typography = (element: Element) => {
         const style = getComputedStyle(element)
         return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
@@ -1145,7 +1151,7 @@ for (const width of [320, 390, 1440]) {
       name: 'Открыть текущий раунд',
     })
     await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
-    const modifierLabel = modifierAction.getByTitle('Активировать модификаторы')
+    const modifierLabel = modifierAction.getByText('Активировать модификаторы', { exact: true })
     const teamValue = page.getByTestId('game-board-status-title')
     const typography = (element: Element) => {
       const style = getComputedStyle(element)
@@ -1160,14 +1166,19 @@ for (const width of [320, 390, 1440]) {
     await expect(page.getByTestId('game-board-context')).toContainText('Фаза раунда')
     const actionBox = await modifierAction.boundingBox()
     const statusBox = await page.getByTestId('game-board-context').boundingBox()
-    const phaseCaptionBox = await modifierAction.getByTitle('Фаза раунда').boundingBox()
+    const phaseCaptionBox = await modifierAction
+      .getByText('Фаза раунда', { exact: true })
+      .boundingBox()
     const teamCaptionBox = await page
       .getByTestId('game-board-context')
-      .getByTitle('Активная команда')
+      .getByText('Активная команда', { exact: true })
       .boundingBox()
     const contextHalves = page.getByTestId('game-board-context').locator(':scope > div > *')
     await expectHorizontallyCentered(
-      page.getByTestId('game-board-context').getByTitle('Активная команда').locator('..'),
+      page
+        .getByTestId('game-board-context')
+        .getByText('Активная команда', { exact: true })
+        .locator('..'),
       contextHalves.nth(0),
     )
     await expectHorizontallyCentered(
@@ -1175,7 +1186,7 @@ for (const width of [320, 390, 1440]) {
       contextHalves.nth(0),
     )
     await expectHorizontallyCentered(
-      modifierAction.getByTitle('Фаза раунда').locator('..'),
+      modifierAction.getByText('Фаза раунда', { exact: true }).locator('..'),
       contextHalves.nth(1),
     )
     await expectHorizontallyCentered(modifierLabel, contextHalves.nth(1))
@@ -1209,10 +1220,16 @@ for (const width of [320, 390, 1440]) {
     await expect(page.getByTestId('game-board-context')).toContainText('Провести игру')
     await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
     expect(
-      await page.getByTestId('game-board-context').getByTitle('Провести игру').evaluate(typography),
+      await page
+        .getByTestId('game-board-context')
+        .getByText('Провести игру', { exact: true })
+        .evaluate(typography),
     ).toEqual(await teamValue.evaluate(typography))
     await expectHorizontallyCentered(
-      page.getByTestId('game-board-context').getByTitle('Фаза раунда').locator('..'),
+      page
+        .getByTestId('game-board-context')
+        .getByText('Фаза раунда', { exact: true })
+        .locator('..'),
       page.getByTestId('game-board-context').locator(':scope > div > *').nth(1),
     )
     const teamBoxAfter = await page

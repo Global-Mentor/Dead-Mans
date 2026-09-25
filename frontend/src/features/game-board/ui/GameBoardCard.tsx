@@ -3,7 +3,7 @@ import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { GameBoardCell } from '../../../shared/api/contracts/index.ts'
 import { resolveBackendMediaUrl } from '../../../shared/api/media-url.ts'
-import { ImageFrame, SurfaceButton } from '../../../shared/ui/index.ts'
+import { HelpTooltip, ImageFrame, SurfaceButton } from '../../../shared/ui/index.ts'
 import type { GameBoardCellPlayResult } from '../model/game-board-cell-results.ts'
 import { createBoardCellSx } from '../theme/board-cell-sx.ts'
 
@@ -45,211 +45,212 @@ export function GameBoardCard({
   const isInteractive = isClickable || isPreviewable
 
   return (
-    <SurfaceButton
-      type="button"
-      disabled={!isInteractive}
-      disableRipple
-      data-cell-id={cell?.id}
-      title={cell ? `${category} · ${rowLabel}` : undefined}
-      aria-label={
-        cell
-          ? opensCurrentRound
-            ? t('gameBoard.currentRoundScreen.open')
-            : isPreviewable
-              ? t('gameBoard.cellMediaPreviewAction', {
-                  title: cell.title || t('gameBoard.cellLabel'),
-                })
-              : t('gameBoard.cellOpenAction', {
-                  title: cell.title || t('gameBoard.cellLabel'),
-                  cost: cell.cost,
-                })
-          : undefined
-      }
-      onClick={() => {
-        if (cell && opensCurrentRound) {
-          onCellOpenCurrentRound?.(cell)
-          return
+    <HelpTooltip title={isInteractive ? `${category} · ${rowLabel}` : ''} describeChild>
+      <SurfaceButton
+        type="button"
+        disabled={!isInteractive}
+        disableRipple
+        data-cell-id={cell?.id}
+        aria-label={
+          cell
+            ? opensCurrentRound
+              ? t('gameBoard.currentRoundScreen.open')
+              : isPreviewable
+                ? t('gameBoard.cellMediaPreviewAction', {
+                    title: cell.title || t('gameBoard.cellLabel'),
+                  })
+                : t('gameBoard.cellOpenAction', {
+                    title: cell.title || t('gameBoard.cellLabel'),
+                    cost: cell.cost,
+                  })
+            : undefined
         }
+        onClick={() => {
+          if (cell && opensCurrentRound) {
+            onCellOpenCurrentRound?.(cell)
+            return
+          }
 
-        if (cell?.state === 'closed' && canOpenCells) {
-          onCellRequestOpen(cell)
-          return
-        }
+          if (cell?.state === 'closed' && canOpenCells) {
+            onCellRequestOpen(cell)
+            return
+          }
 
-        if (cell && isPreviewable) {
-          onCellPreviewMedia(cell)
-        }
-      }}
-      sx={createBoardCellSx({
-        isOpen: isRevealed,
-        isInteractive,
-        isPlayed,
-        isActiveRound,
-      })}
-    >
-      {hasPreviewMedia ? (
-        <ImageFrame
-          src={previewMediaUrl}
-          alt=""
-          decorative
-          fit="cover"
-          loading="lazy"
-          loadingLabel={t('common.media.loading')}
-          errorLabel={t('common.media.error')}
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            height: '100%',
-            opacity: 0.24,
-            filter: 'saturate(0.96)',
-            pointerEvents: 'none',
-          }}
-        />
-      ) : null}
-      {isCurrentRoundCell ? (
-        <Box
-          role="status"
-          sx={(theme) => ({
-            position: 'absolute',
-            zIndex: 2,
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: alpha(theme.palette.warning.main, 0.92),
-            color: theme.palette.getContrastText(theme.palette.warning.main),
-            px: 0.6,
-            py: 0.45,
-            fontSize: '0.63rem',
-            fontWeight: 900,
-            lineHeight: 1.2,
-            textAlign: 'center',
-          })}
-        >
-          {t('gameBoard.cellActiveRound')}
-        </Box>
-      ) : null}
-      {isRevealed ? (
-        <Box
-          sx={(theme) => ({
-            position: 'absolute',
-            inset: 0,
-            background: hasPreviewMedia
-              ? `linear-gradient(180deg, rgba(7,10,16,0.08) 0%, rgba(7,10,16,0.26) 52%, ${theme.palette.background.paper} 100%)`
-              : 'transparent',
-            pointerEvents: 'none',
-          })}
-        />
-      ) : null}
-      {!isCurrentRoundCell ? (
-        <Box
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            textAlign: 'center',
-            width: '100%',
-            minWidth: 0,
-            px: 0.35,
-            pointerEvents: 'none',
-            '& [data-card-compact]': { display: 'none' },
-            '& .MuiTypography-body2, & .MuiTypography-subtitle2': { fontSize: '0.9rem' },
-            '& .MuiTypography-caption': { fontSize: '0.7875rem' },
-            '@container (max-width: 130px)': {
-              '& .MuiTypography-root:not([data-card-value])': {
-                fontSize: 'clamp(10px, 10cqw, 12px)',
-                lineHeight: 1.15,
-                overflowWrap: 'anywhere',
+          if (cell && isPreviewable) {
+            onCellPreviewMedia(cell)
+          }
+        }}
+        sx={createBoardCellSx({
+          isOpen: isRevealed,
+          isInteractive,
+          isPlayed,
+          isActiveRound,
+        })}
+      >
+        {hasPreviewMedia ? (
+          <ImageFrame
+            src={previewMediaUrl}
+            alt=""
+            decorative
+            fit="cover"
+            loading="lazy"
+            loadingLabel={t('common.media.loading')}
+            errorLabel={t('common.media.error')}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              height: '100%',
+              opacity: 0.24,
+              filter: 'saturate(0.96)',
+              pointerEvents: 'none',
+            }}
+          />
+        ) : null}
+        {isCurrentRoundCell ? (
+          <Box
+            role="status"
+            sx={(theme) => ({
+              position: 'absolute',
+              zIndex: 2,
+              top: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: alpha(theme.palette.warning.main, 0.92),
+              color: theme.palette.getContrastText(theme.palette.warning.main),
+              px: 0.6,
+              py: 0.45,
+              fontSize: '0.63rem',
+              fontWeight: 900,
+              lineHeight: 1.2,
+              textAlign: 'center',
+            })}
+          >
+            {t('gameBoard.cellActiveRound')}
+          </Box>
+        ) : null}
+        {isRevealed ? (
+          <Box
+            sx={(theme) => ({
+              position: 'absolute',
+              inset: 0,
+              background: hasPreviewMedia
+                ? `linear-gradient(180deg, rgba(7,10,16,0.08) 0%, rgba(7,10,16,0.26) 52%, ${theme.palette.background.paper} 100%)`
+                : 'transparent',
+              pointerEvents: 'none',
+            })}
+          />
+        ) : null}
+        {!isCurrentRoundCell ? (
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              textAlign: 'center',
+              width: '100%',
+              minWidth: 0,
+              px: 0.35,
+              pointerEvents: 'none',
+              '& [data-card-compact]': { display: 'none' },
+              '& .MuiTypography-body2, & .MuiTypography-subtitle2': { fontSize: '0.9rem' },
+              '& .MuiTypography-caption': { fontSize: '0.7875rem' },
+              '@container (max-width: 130px)': {
+                '& .MuiTypography-root:not([data-card-value])': {
+                  fontSize: 'clamp(10px, 10cqw, 12px)',
+                  lineHeight: 1.15,
+                  overflowWrap: 'anywhere',
+                },
               },
-            },
-            '@container (max-width: 100px)': {
-              '& [data-card-secondary]': { display: 'none' },
-              '& [data-card-compact]': { display: 'block' },
-            },
-          }}
-        >
-          {cell ? (
-            <>
-              {isPlayed && playResult ? (
-                <PlayedCellSummary playResult={playResult} />
-              ) : isCancelled ? (
-                <Stack spacing={0.45} alignItems="center" sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" color="text.primary" sx={{ fontWeight: 800 }}>
-                    {cell.title || t('gameBoard.cellLabel')}
-                  </Typography>
+              '@container (max-width: 100px)': {
+                '& [data-card-secondary]': { display: 'none' },
+                '& [data-card-compact]': { display: 'block' },
+              },
+            }}
+          >
+            {cell ? (
+              <>
+                {isPlayed && playResult ? (
+                  <PlayedCellSummary playResult={playResult} />
+                ) : isCancelled ? (
+                  <Stack spacing={0.45} alignItems="center" sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" color="text.primary" sx={{ fontWeight: 800 }}>
+                      {cell.title || t('gameBoard.cellLabel')}
+                    </Typography>
+                    <Typography
+                      data-card-secondary
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 700 }}
+                    >
+                      {t('gameBoard.cellCostLabel', { cost: cell.cost })}
+                    </Typography>
+                    <Typography
+                      data-card-secondary
+                      variant="caption"
+                      color="error.main"
+                      sx={{ fontWeight: 850 }}
+                    >
+                      {t('gameBoard.cellTechnicalCancelled')}
+                    </Typography>
+                    <Typography data-card-compact variant="caption" color="error.main">
+                      {t('gameBoard.cellCancelledShort')}
+                    </Typography>
+                  </Stack>
+                ) : isOpen ? (
+                  <Stack spacing={0.45} alignItems="center" sx={{ minWidth: 0 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.primary"
+                      sx={{
+                        overflowWrap: 'anywhere',
+                        fontWeight: 750,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {cell.title || t('gameBoard.cellLabel')}
+                    </Typography>
+                    <Typography
+                      data-card-secondary
+                      variant="caption"
+                      color="text.primary"
+                      sx={{ fontWeight: 800, lineHeight: 1.15 }}
+                    >
+                      {t('gameBoard.cellCostLabel', { cost: cell.cost })}
+                    </Typography>
+                    <Typography
+                      data-card-secondary
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 700, lineHeight: 1.15 }}
+                    >
+                      {t('gameBoard.cellOpenPendingResult')}
+                    </Typography>
+                  </Stack>
+                ) : null}
+                {!isRevealed ? (
                   <Typography
-                    data-card-secondary
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 700 }}
-                  >
-                    {t('gameBoard.cellCostLabel', { cost: cell.cost })}
-                  </Typography>
-                  <Typography
-                    data-card-secondary
-                    variant="caption"
-                    color="error.main"
-                    sx={{ fontWeight: 850 }}
-                  >
-                    {t('gameBoard.cellTechnicalCancelled')}
-                  </Typography>
-                  <Typography data-card-compact variant="caption" color="error.main">
-                    {t('gameBoard.cellCancelledShort')}
-                  </Typography>
-                </Stack>
-              ) : isOpen ? (
-                <Stack spacing={0.45} alignItems="center" sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
+                    data-card-value
+                    variant="h6"
                     color="text.primary"
                     sx={{
-                      overflowWrap: 'anywhere',
-                      fontWeight: 750,
-                      lineHeight: 1.2,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      fontSize: 'clamp(12.6px, 18cqw, 27px)',
+                      color: 'primary.light',
                     }}
                   >
-                    {cell.title || t('gameBoard.cellLabel')}
+                    {t('gameBoard.costLabel', { cost: cell.cost })}
                   </Typography>
-                  <Typography
-                    data-card-secondary
-                    variant="caption"
-                    color="text.primary"
-                    sx={{ fontWeight: 800, lineHeight: 1.15 }}
-                  >
-                    {t('gameBoard.cellCostLabel', { cost: cell.cost })}
-                  </Typography>
-                  <Typography
-                    data-card-secondary
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 700, lineHeight: 1.15 }}
-                  >
-                    {t('gameBoard.cellOpenPendingResult')}
-                  </Typography>
-                </Stack>
-              ) : null}
-              {!isRevealed ? (
-                <Typography
-                  data-card-value
-                  variant="h6"
-                  color="text.primary"
-                  sx={{
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    fontSize: 'clamp(12.6px, 18cqw, 27px)',
-                    color: 'primary.light',
-                  }}
-                >
-                  {t('gameBoard.costLabel', { cost: cell.cost })}
-                </Typography>
-              ) : null}
-            </>
-          ) : (
-            <Typography variant="caption" color="text.disabled">
-              -
-            </Typography>
-          )}
-        </Box>
-      ) : null}
-    </SurfaceButton>
+                ) : null}
+              </>
+            ) : (
+              <Typography variant="caption" color="text.disabled">
+                -
+              </Typography>
+            )}
+          </Box>
+        ) : null}
+      </SurfaceButton>
+    </HelpTooltip>
   )
 }
 

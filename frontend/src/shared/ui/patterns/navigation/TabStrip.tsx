@@ -3,6 +3,7 @@ import { alpha } from '@mui/material/styles'
 import { huntWornFrame } from '../../../theme/hunt-materials.ts'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
+import { HelpTooltip } from '../../feedback/help/HelpTooltip.tsx'
 
 type TabAppearance = 'underline' | 'framed' | 'category'
 /** Controlled tabs for containers that own panel lifetime and selection. */
@@ -36,9 +37,10 @@ export function TabStrip({
 export function TabOption({
   appearance = 'underline',
   sx,
+  title,
   ...props
 }: TabProps & { appearance?: TabAppearance }) {
-  return (
+  const tab = (
     <Tab
       {...props}
       sx={mergeSx(
@@ -78,5 +80,12 @@ export function TabOption({
         sx,
       )}
     />
+  )
+  return title ? (
+    <HelpTooltip title={title} describeChild>
+      {tab}
+    </HelpTooltip>
+  ) : (
+    tab
   )
 }

@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { AppLinkButton } from '../../../shared/ui/index.ts'
+import { AppLinkButton, HelpTooltip } from '../../../shared/ui/index.ts'
 import { ActiveTeamRosterTooltip } from './ActiveTeamRosterTooltip.tsx'
 
 interface GameBoardStatusBarProps {
@@ -74,7 +74,6 @@ function StatusCaption({
       />
       <Box
         component="span"
-        title={children}
         sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
         {children}
@@ -94,12 +93,7 @@ export function GameBoardStatusBar({
   const teamContent = (
     <>
       <StatusCaption>{caption}</StatusCaption>
-      <Typography
-        component="span"
-        data-testid="game-board-status-title"
-        title={participantNames?.length ? undefined : title}
-        sx={valueSx}
-      >
+      <Typography component="span" data-testid="game-board-status-title" sx={valueSx}>
         {title}
       </Typography>
     </>
@@ -111,7 +105,6 @@ export function GameBoardStatusBar({
       ) : null}
       <Typography
         component="span"
-        title={action?.label ?? phase}
         sx={{
           ...valueSx,
           color: action ? 'text.primary' : 'text.secondary',
@@ -143,44 +136,53 @@ export function GameBoardStatusBar({
           {teamContent}
         </ActiveTeamRosterTooltip>
       ) : (
-        <Box sx={groupSx}>{teamContent}</Box>
+        <HelpTooltip title={`${caption}: ${title}`} describeChild>
+          <Box tabIndex={0} sx={groupSx}>
+            {teamContent}
+          </Box>
+        </HelpTooltip>
       )}
       <Box sx={{ minWidth: 0, height: '100%', borderLeft: '1px solid', borderColor: 'divider' }}>
         {action ? (
-          <AppLinkButton
-            to={action.to}
-            aria-label={action.accessibleLabel ?? action.label}
-            tone="primary"
-            size="small"
-            sx={(theme) => ({
-              ...groupSx,
-              gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr',
-              pt: '6px',
-              pb: '2px',
-              width: '100%',
-              minHeight: 44,
-              justifyContent: 'stretch',
-              textAlign: 'center',
-              textTransform: 'none',
-              whiteSpace: 'normal',
-              borderRadius: 0,
-              borderImageOutset: 0,
-              '&:focus-visible': {
-                outline: `2px solid ${theme.palette.text.primary}`,
-                outlineOffset: -3,
-              },
-            })}
-          >
-            {phaseContent}
-          </AppLinkButton>
+          <HelpTooltip title={action.label} describeChild>
+            <AppLinkButton
+              to={action.to}
+              aria-label={action.accessibleLabel ?? action.label}
+              tone="primary"
+              size="small"
+              sx={(theme) => ({
+                ...groupSx,
+                gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr',
+                pt: '6px',
+                pb: '2px',
+                width: '100%',
+                minHeight: 44,
+                justifyContent: 'stretch',
+                textAlign: 'center',
+                textTransform: 'none',
+                whiteSpace: 'normal',
+                borderRadius: 0,
+                borderImageOutset: 0,
+                '&:focus-visible': {
+                  outline: `2px solid ${theme.palette.text.primary}`,
+                  outlineOffset: -3,
+                },
+              })}
+            >
+              {phaseContent}
+            </AppLinkButton>
+          </HelpTooltip>
         ) : (
-          <Box
-            aria-live="polite"
-            aria-atomic="true"
-            sx={{ ...groupSx, gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr' }}
-          >
-            {phaseContent}
-          </Box>
+          <HelpTooltip title={phase} describeChild>
+            <Box
+              tabIndex={0}
+              aria-live="polite"
+              aria-atomic="true"
+              sx={{ ...groupSx, gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr' }}
+            >
+              {phaseContent}
+            </Box>
+          </HelpTooltip>
         )}
       </Box>
     </Box>

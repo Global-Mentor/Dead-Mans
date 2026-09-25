@@ -44,7 +44,6 @@ export function GameBoardGrid({
         renderColumnLabel={(col) => (
           <Box
             role="columnheader"
-            title={col}
             sx={{
               textAlign: 'center',
               fontWeight: 850,
@@ -78,7 +77,6 @@ export function GameBoardGrid({
           return (
             <Box
               data-board-row-label
-              title={rowLabel}
               sx={{
                 textAlign: 'center',
                 fontWeight: 750,

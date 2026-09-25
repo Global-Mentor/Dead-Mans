@@ -1,7 +1,13 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
-import { InlineNotice, ItemCard, NativeDisclosure, StatusBadge } from '../../shared/ui/index.ts'
+import {
+  HelpTooltip,
+  InlineNotice,
+  ItemCard,
+  NativeDisclosure,
+  StatusBadge,
+} from '../../shared/ui/index.ts'
 
 type QuestionSession = components['schemas']['GameHistoryQuizQuestionSessionItemDto']
 
@@ -36,21 +42,26 @@ export function QuizQuestionSessionHistoryItem({
               ? ` · ${t(`gameQuiz.status.${questionSession.status}`)}`
               : ''}
           </Typography>
-          <Typography
-            component="time"
-            dateTime={questionSession.closedAtUtc ?? questionSession.askedAtUtc}
-            variant="caption"
-            color="text.secondary"
-            sx={{ flexShrink: 0 }}
+          <HelpTooltip
+            describeChild
             title={new Date(
               questionSession.closedAtUtc ?? questionSession.askedAtUtc,
             ).toLocaleString(i18n.resolvedLanguage)}
           >
-            {new Date(questionSession.closedAtUtc ?? questionSession.askedAtUtc).toLocaleString(
-              i18n.resolvedLanguage,
-              { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' },
-            )}
-          </Typography>
+            <Typography
+              component="time"
+              tabIndex={0}
+              dateTime={questionSession.closedAtUtc ?? questionSession.askedAtUtc}
+              variant="caption"
+              color="text.secondary"
+              sx={{ flexShrink: 0 }}
+            >
+              {new Date(questionSession.closedAtUtc ?? questionSession.askedAtUtc).toLocaleString(
+                i18n.resolvedLanguage,
+                { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' },
+              )}
+            </Typography>
+          </HelpTooltip>
         </Stack>
         <Typography variant="body1" fontWeight={700} sx={{ lineHeight: 1.35 }}>
           {questionSession.questionText}

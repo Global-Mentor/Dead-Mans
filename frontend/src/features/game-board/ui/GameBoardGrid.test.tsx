@@ -87,7 +87,7 @@ describe('GameBoardGrid', () => {
       '1',
       '2',
     ])
-    expect(screen.getByTitle('A').firstElementChild).toHaveStyle({
+    expect(screen.getByText('A')).toHaveStyle({
       fontSize: '0.684rem',
     })
   })

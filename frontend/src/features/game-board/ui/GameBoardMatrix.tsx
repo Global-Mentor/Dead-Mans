@@ -125,7 +125,6 @@ export function GameBoardMatrix({
               >
                 <Typography
                   data-board-row-label
-                  title={rowLabel}
                   variant="caption"
                   color="text.secondary"
                   sx={{
