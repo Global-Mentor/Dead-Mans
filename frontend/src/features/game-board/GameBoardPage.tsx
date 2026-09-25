@@ -194,8 +194,9 @@ export function GameBoardPage() {
               }
             />
           }
-          teams={
+          teams={(inline) => (
             <TeamQueuePanel
+              inline={inline}
               teams={teamQueue}
               isLoading={isTeamQueueLoading}
               isError={isTeamQueueError}
@@ -204,7 +205,7 @@ export function GameBoardPage() {
               onRetry={retryTeamQueue}
               activeTeamId={currentActiveTeamId}
             />
-          }
+          )}
           management={
             <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
           }

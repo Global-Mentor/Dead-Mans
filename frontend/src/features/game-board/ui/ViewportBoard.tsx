@@ -80,7 +80,9 @@ export function ViewportBoard({
 
   return (
     <Box ref={ref} data-testid="viewport-board" sx={{ width: '100%', minWidth: 0 }}>
-      <Box sx={{ width: width ?? '100%', maxWidth: '100%', mx: 'auto' }}>{children}</Box>
+      <Box data-board-field sx={{ width: width ?? '100%', maxWidth: '100%', mx: 'auto' }}>
+        {children}
+      </Box>
     </Box>
   )
 }
