@@ -1,14 +1,7 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
-import {
-  AppButton,
-  AppLinkButton,
-  AsyncSection,
-  PanelTrigger,
-  SidePanel,
-} from '../../../shared/ui/index.ts'
-import { gameBoardRoute } from '../../../routes/app-routes.ts'
+import { AppButton, AsyncSection, PanelTrigger, SidePanel } from '../../../shared/ui/index.ts'
 import { RoundModifierPanel } from './RoundModifierPanel.tsx'
 
 /** Mounted for one ordering phase; reopening ordering starts a fresh drawer session. */
@@ -49,11 +42,8 @@ export function RoundModifierDrawer({
         closeLabel={t('gameBoard.currentRoundScreen.closeModifiers')}
         side="left"
         width="wide"
-        header={
-          <AppLinkButton to={gameBoardRoute.fullPath} tone="secondary" size="small" sx={{ mt: 1 }}>
-            {t('gameBoard.currentRoundScreen.viewBoard')}
-          </AppLinkButton>
-        }
+        contentDensity="compact"
+        bodyTestId="round-modifier-scroll-body"
       >
         <AsyncSection
           isLoading={isLoading}

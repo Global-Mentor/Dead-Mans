@@ -129,7 +129,11 @@ export function GameModifierActions({
             ? 'gameModifiers.selfCancelAction'
             : 'gameModifiers.activateAction',
         )}
-        cancelLabel={t('gameModifiers.activationConfirmCancel')}
+        cancelLabel={t(
+          selected?.kind === 'cancel'
+            ? 'common.actions.cancel'
+            : 'gameModifiers.activationConfirmCancel',
+        )}
         confirmTone={selected?.kind === 'cancel' ? 'danger' : 'primary'}
         isBusy={busy}
         confirmDisabled={!canConfirm}

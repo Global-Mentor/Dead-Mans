@@ -17,6 +17,7 @@ interface SidePanelProps {
   closeLabel: string
   side?: 'left' | 'right'
   width?: 'standard' | 'wide'
+  contentDensity?: 'comfortable' | 'compact'
   header?: ReactNode
   children: ReactNode
   bodyTestId?: string
@@ -33,6 +34,7 @@ export function SidePanel({
   closeLabel,
   side = 'right',
   width = 'standard',
+  contentDensity = 'comfortable',
   header,
   children,
   bodyTestId,
@@ -99,9 +101,12 @@ export function SidePanel({
             overflowX: 'hidden',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
-            px: { xs: 2, sm: 2.5 },
-            pt: 2,
-            pb: 'max(20px, env(safe-area-inset-bottom))',
+            px: contentDensity === 'compact' ? { xs: 1, sm: 1.5 } : { xs: 2, sm: 2.5 },
+            pt: contentDensity === 'compact' ? 1 : 2,
+            pb:
+              contentDensity === 'compact'
+                ? 'max(8px, env(safe-area-inset-bottom))'
+                : 'max(20px, env(safe-area-inset-bottom))',
           }}
         >
           {children}

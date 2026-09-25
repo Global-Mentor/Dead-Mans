@@ -157,13 +157,15 @@ for (const width of [390, 1440]) {
     const writes = await mockGame(page, 'active', 'viewer')
     let activated = false
     let activationAttempts = 0
+    let modifierEnabled = true
+    let cancellationAttempts = 0
     const activation = {
       activationId: 'activation-one',
       roundId: 'round-one',
       roundVersion: 1,
       modifierId: 'modifier-one',
       modifierName: 'Защитный знак',
-      activatedByUserId: 'viewer-one',
+      activatedByUserId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
       activatedByDisplayName: 'Охотник',
       activationCost: 1,
       activatedAtUtc: '2026-09-01T12:01:00Z',
@@ -207,16 +209,18 @@ for (const width of [390, 1440]) {
           spentQuizPoints: 0,
           isOrderingOpen: true,
           activeModifiers: activated ? [activation] : [],
-          availableModifiers: [
-            {
-              modifier,
-              isActive: activated,
-              canActivate: !activated,
-              blockedReason: activated ? 'limit_reached' : null,
-              activationsCount: activated ? 1 : 0,
-              limit: activated ? 1 : null,
-            },
-          ],
+          availableModifiers: modifierEnabled
+            ? [
+                {
+                  modifier,
+                  isActive: activated,
+                  canActivate: !activated,
+                  blockedReason: activated ? 'limit_reached' : null,
+                  activationsCount: activated ? 1 : 0,
+                  limit: activated ? 1 : null,
+                },
+              ]
+            : [],
         },
       }),
     )
@@ -225,6 +229,13 @@ for (const width of [390, 1440]) {
       if (activationAttempts === 1) return route.fulfill({ status: 500 })
       activated = true
       return route.fulfill({ json: activation })
+    })
+    await page.route('**/api/game/modifiers/activations/activation-one/self-cancel', (route) => {
+      expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
+      cancellationAttempts += 1
+      if (cancellationAttempts === 1) return route.fulfill({ status: 500 })
+      activated = false
+      return route.fulfill({ status: 204 })
     })
     await page.goto('/panel/game-round')
     const modifiers = page.getByRole('dialog', { name: 'Модификаторы' })
@@ -243,6 +254,21 @@ for (const width of [390, 1440]) {
     await expect(confirmation).not.toBeVisible()
     expect(activationAttempts).toBe(2)
     await expect(modifiers).toContainText('Защитный знак')
+    await modifiers
+      .getByRole('listitem', { name: 'Защитный знак' })
+      .getByRole('button', { name: 'Подробнее' })
+      .click()
+    const details = page.getByRole('dialog', { name: 'Защитный знак' })
+    await expect(details).toContainText('Защищает команду в раунде.')
+    const cancelPurchase = details.getByRole('button', { name: /Отменить мою покупку/ })
+    await cancelPurchase.click()
+    const cancelConfirmation = page.getByRole('dialog', { name: 'Отменить покупку модификатора?' })
+    await expect(cancelConfirmation).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(cancelConfirmation).not.toBeVisible()
+    await expect(details).toBeVisible()
+    await expect(cancelPurchase).toBeFocused()
+    await details.getByRole('button', { name: 'Закрыть' }).click()
     await modifiers.getByRole('button', { name: 'Закрыть модификаторы' }).click()
     const overview = page.getByTestId('current-round-overview')
     await expect(overview).toContainText('Следы на болотах')
@@ -256,9 +282,153 @@ for (const width of [390, 1440]) {
     await page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }).click()
     await expect(page).toHaveURL(/\/panel\/game-board$/)
     await expect(page.getByTestId('game-board-surface')).toBeVisible()
+    modifierEnabled = false
     await page.getByRole('link', { name: 'Открыть текущий раунд' }).click()
     await expect(page).toHaveURL(/\/panel\/game-round$/)
+    await modifiers
+      .getByRole('listitem', { name: 'Защитный знак' })
+      .getByRole('button', { name: 'Подробнее' })
+      .click()
+    await expect(details).toContainText('Этот модификатор больше не включён для текущей игры.')
+    await cancelPurchase.click()
+    await expect(
+      cancelConfirmation.getByRole('button', { name: 'Отмена', exact: true }),
+    ).toBeVisible()
+    const confirmCancellation = cancelConfirmation.getByRole('button', {
+      name: 'Отменить покупку и вернуть очки',
+    })
+    await confirmCancellation.click()
+    await expect(cancelConfirmation.getByRole('alert')).toBeVisible()
+    await confirmCancellation.click()
+    await expect(cancelConfirmation).not.toBeVisible()
+    await expect(details).not.toBeVisible()
+    await expect(modifiers.getByRole('listitem')).toHaveCount(0)
+    expect(cancellationAttempts).toBe(2)
     expect(writes).toEqual([])
+  })
+}
+
+for (const { width, height } of [
+  { width: 320, height: 844 },
+  { width: 390, height: 844 },
+  { width: 1366, height: 768 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+]) {
+  test(`round modifier catalog fits without scrolling at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await mockGame(page, 'active', 'viewer')
+    await page.setViewportSize({ width, height })
+    const names = [
+      'Чирик',
+      'Жажда',
+      'Расходник',
+      'Трупы',
+      'Навыки',
+      'Патрон',
+      'Проказник',
+      'Диарея',
+      'Менторбайт',
+      'Кэп',
+      'Фейерверк',
+      'Крыса',
+      'Шот',
+      'Подъём',
+      'Хард75',
+    ]
+    const costs = [3, 3, 4, 4, 4, 4, 6, 7, 8, 10, 11, 12, 13, 14, 18]
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({ json: activeRoundFixture }),
+    )
+    await page.route('**/api/game/modifiers/state', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          availableQuizPoints: 12,
+          earnedQuizPoints: 12,
+          spentQuizPoints: 0,
+          isOrderingOpen: true,
+          activeModifiers: [],
+          availableModifiers: names.map((name, index) => ({
+            modifier: {
+              id: `modifier-${index}`,
+              category: index < 5 ? 'preparation' : index < 10 ? 'round' : 'result',
+              name,
+              description: `Описание модификатора «${name}».`,
+              activationCost: costs[index],
+              activationLimit: null,
+              conflictingModifierIds: [],
+              iconEmoji: null,
+              activationCommand: null,
+              revision: 1,
+              normalizedTags: [],
+              behaviorV2: {
+                schemaVersion: 2,
+                kind: 'rule',
+                phase: 'round',
+                performer: 'activeTeam',
+                requiresHostMonitoring: false,
+                rule: 'Правило',
+                stackingPolicy: 'aggregateParameters',
+                resolution: { type: 'ruleStatus' },
+                reward: 'none',
+                formulaReference: null,
+              },
+            },
+            isActive: false,
+            canActivate: true,
+            blockedReason: null,
+            activationsCount: 0,
+            limit: null,
+          })),
+        },
+      }),
+    )
+    await page.goto('/panel/game-round')
+    const panel = page.getByRole('dialog', { name: 'Модификаторы' })
+    await expect(panel).toBeVisible()
+    const list = panel.getByTestId('round-modifier-list')
+    await expect(list.getByRole('listitem')).toHaveCount(names.length)
+    const body = panel.getByTestId('round-modifier-scroll-body')
+    expect(await body.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
+      true,
+    )
+    await list
+      .getByRole('listitem', { name: 'Чирик' })
+      .getByRole('button', { name: 'Подробнее' })
+      .click()
+    const details = page.getByRole('dialog', { name: 'Чирик' })
+    await expect(details).toContainText('Описание модификатора «Чирик».')
+    await page.screenshot({
+      path: testInfo.outputPath('round-modifier-details.png'),
+      animations: 'disabled',
+    })
+    await details.getByRole('button', { name: 'Закрыть' }).click()
+    if (width === 390) {
+      await page.setViewportSize({ width, height: 640 })
+      expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+        true,
+      )
+      const lastModifier = list.getByRole('listitem', { name: 'Хард75' })
+      await lastModifier.scrollIntoViewIfNeeded()
+      await expect(lastModifier.getByRole('button', { name: 'Подробнее' })).toBeVisible()
+      await page.setViewportSize({ width, height })
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('round-modifiers.png'),
+      animations: 'disabled',
+    })
+    if (width === 320) {
+      names[1] = 'МодификаторСОченьДлиннымНазваниеБезПробелов'
+      await page.reload()
+      const longRow = page.getByRole('listitem', { name: names[1] })
+      await expect(longRow).toBeVisible()
+      expect(await longRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      )
+      await expect(longRow.getByRole('button', { name: 'Подробнее' })).toBeInViewport()
+    }
   })
 }
 
