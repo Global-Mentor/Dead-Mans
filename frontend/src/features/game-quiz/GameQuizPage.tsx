@@ -13,6 +13,7 @@ import {
   TabStrip,
 } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
+import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import {
   gameHistoryGameDetailsQueryOptions,
   gameHistoryQueryKeys,
@@ -48,7 +49,10 @@ export function GameQuizPage() {
   const [leaderboardMode, setLeaderboardMode] = useState<'available' | 'earned'>('available')
 
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
+  const roundQuery = useQuery(activeGameRoundQueryOptions)
   const gameId = snapshotQuery.data?.gameId ?? ''
+  const modifierOrderingActive =
+    roundQuery.data?.gameId === gameId && roundQuery.data.status === 'awaiting_modifiers'
   const gameDetailsQuery = useQuery({
     ...gameHistoryGameDetailsQueryOptions(gameId),
     enabled: gameId !== '',
@@ -210,8 +214,13 @@ export function GameQuizPage() {
           isStarting={
             askNextMutation.isPending ||
             askSpecificMutation.isPending ||
+            roundQuery.isPending ||
+            roundQuery.isFetching ||
+            roundQuery.isError ||
+            (roundQuery.data != null && roundQuery.data.gameId !== gameId) ||
             twitchStatusQuery.data?.publication?.status === 'publishing'
           }
+          modifierOrderingActive={modifierOrderingActive}
           error={
             actionError?.gameId === gameId
               ? actionError.error

@@ -19,23 +19,29 @@ export function GameQuizDrawer({
   gameId,
   suspended = false,
   showBoardLink = false,
+  side = 'right',
+  showForManagers = false,
 }: {
   gameId: string
   suspended?: boolean
   showBoardLink?: boolean
+  side?: 'left' | 'right'
+  showForManagers?: boolean
 }) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const isPlayer = user?.roles.includes('viewer') && !hasPanelCapability('manageGame', user.roles)
+  const canManage = hasPanelCapability('manageGame', user?.roles ?? [])
+  const isPlayer = user?.roles.includes('viewer') && !canManage
+  const canView = isPlayer || (showForManagers && canManage)
   const quizQuery = useQuery({
     ...currentGameQuizQueryOptions(gameId),
-    enabled: Boolean(isPlayer && gameId),
+    enabled: Boolean(canView && gameId),
   })
   const quiz = quizQuery.data?.gameId === gameId ? quizQuery.data : null
   const retry = () => void quizQuery.refetch()
-  if (!isPlayer) return null
-  if (!quiz)
-    return quizQuery.isError ? (
+  if (!canView) return null
+  if (!quiz || quiz.status !== 'open')
+    return quizQuery.isError && !suspended ? (
       <InlineNotice
         severity="warning"
         action={
@@ -53,36 +59,41 @@ export function GameQuizDrawer({
       quiz={quiz}
       suspended={suspended}
       showBoardLink={showBoardLink}
+      side={side}
       isError={quizQuery.isError}
       onRefresh={retry}
+      readOnly={!isPlayer}
     />
   )
 }
 
-/** Keep the same question mounted through closure so its answer/result remains visible. */
 function QuizSessionDrawer({
   quiz,
   suspended,
   showBoardLink,
+  side,
   isError,
   onRefresh,
+  readOnly,
 }: {
   quiz: CurrentGameQuizState
   suspended: boolean
   showBoardLink: boolean
+  side: 'left' | 'right'
   isError: boolean
   onRefresh: () => void
+  readOnly: boolean
 }) {
   const { t } = useTranslation()
   const id = useId()
-  const [requestedOpen, setRequestedOpen] = useState(quiz.status === 'open')
+  const [requestedOpen, setRequestedOpen] = useState(true)
   const open = !suspended && requestedOpen
   return (
     <>
       {!suspended ? (
         <PanelTrigger
           placement="responsiveEdge"
-          side="right"
+          side={side}
           aria-expanded={open}
           aria-controls={id}
           onClick={() => setRequestedOpen(true)}
@@ -95,8 +106,11 @@ function QuizSessionDrawer({
         open={open}
         onClose={() => setRequestedOpen(false)}
         title={t('gameQuiz.currentTitle')}
+        description={t(
+          readOnly ? 'gameQuiz.roundQuestionDescription' : 'gameQuiz.currentDescription',
+        )}
         closeLabel={t('gameBoard.currentRoundScreen.closeQuiz')}
-        side="right"
+        side={side}
         width="wide"
         header={
           showBoardLink ? (
@@ -123,7 +137,11 @@ function QuizSessionDrawer({
             {t('gameQuiz.errorLoading')}
           </InlineNotice>
         ) : null}
-        <PlayerQuizCard state={quiz} disabled={isError || suspended} onDeadline={onRefresh} />
+        <PlayerQuizCard
+          state={quiz}
+          disabled={isError || suspended || readOnly}
+          onDeadline={onRefresh}
+        />
       </SidePanel>
     </>
   )

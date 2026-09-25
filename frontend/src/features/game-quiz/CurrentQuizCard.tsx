@@ -29,6 +29,8 @@ type CurrentQuizCardProps = {
   isSubmitting: boolean
   answerDisabled?: boolean
   isStarting: boolean
+  modifierOrderingActive?: boolean
+  embedded?: boolean
   error: Error | null
   onSubmit: (questionSessionId: string, optionId: string) => void
   onAskNext?: () => void
@@ -46,6 +48,8 @@ export function CurrentQuizCard({
   isSubmitting,
   answerDisabled = false,
   isStarting,
+  modifierOrderingActive = false,
+  embedded = false,
   error,
   onSubmit,
   onAskNext,
@@ -77,22 +81,27 @@ export function CurrentQuizCard({
       ? Reflect.get(error.details, 'code')
       : null
   const errorMessageKey =
-    errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions
-      ? 'gameQuiz.noAvailableQuestionsError'
-      : 'gameQuiz.actionError'
+    errorCode === API_ERROR_CODES.gameQuizModifierOrderingActive
+      ? 'gameQuiz.modifierOrderingActive'
+      : errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions
+        ? 'gameQuiz.noAvailableQuestionsError'
+        : 'gameQuiz.actionError'
 
   return (
     <SectionCard
-      component="section"
+      component={embedded ? 'div' : 'section'}
       sx={{
         minWidth: 0,
-        p: { xs: 1.5, sm: 2 },
+        p: embedded ? 0 : { xs: 1.5, sm: 2 },
+        ...(embedded ? { border: 0, backgroundColor: 'transparent', backgroundImage: 'none' } : {}),
       }}
     >
-      <SectionHeader
-        title={state ? t('gameQuiz.currentTitle') : t('gameQuiz.waitingTitle')}
-        description={description}
-      />
+      {!embedded ? (
+        <SectionHeader
+          title={state ? t('gameQuiz.currentTitle') : t('gameQuiz.waitingTitle')}
+          description={description}
+        />
+      ) : null}
 
       {canManage && onAskNext && onAskSpecific ? (
         <Stack
@@ -108,7 +117,7 @@ export function CurrentQuizCard({
         >
           <AppButton
             size="small"
-            disabled={isOpen || isStarting}
+            disabled={isOpen || isStarting || modifierOrderingActive}
             onClick={onAskNext}
             sx={{ flexShrink: 0, whiteSpace: 'normal' }}
           >
@@ -117,12 +126,18 @@ export function CurrentQuizCard({
           <AppButton
             size="small"
             tone="secondary"
-            disabled={isOpen || isStarting}
+            disabled={isOpen || isStarting || modifierOrderingActive}
             onClick={() => setQuestionPickerOpen(true)}
           >
             {t('gameQuiz.askSpecificQuestion')}
           </AppButton>
         </Stack>
+      ) : null}
+
+      {canManage && modifierOrderingActive ? (
+        <InlineNotice severity="info" sx={{ mt: 1.5 }}>
+          {t('gameQuiz.modifierOrderingActive')}
+        </InlineNotice>
       ) : null}
 
       {error ? (
@@ -138,7 +153,7 @@ export function CurrentQuizCard({
           {t('gameQuiz.noCurrentQuestion')}
         </Typography>
       ) : (
-        <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+        <Stack spacing={1.25} sx={{ mt: embedded ? 0 : 1.5 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <StatusBadge label={state.categoryName} size="small" />
             {isOpen ? (
@@ -246,7 +261,7 @@ export function CurrentQuizCard({
         <QuizQuestionPickerDialog
           open={questionPickerOpen}
           questions={selectableQuestions}
-          busy={isStarting || isOpen}
+          busy={isStarting || isOpen || modifierOrderingActive}
           loading={questionsLoading}
           error={questionsError}
           {...(onRetryQuestions ? { onRetry: onRetryQuestions } : {})}

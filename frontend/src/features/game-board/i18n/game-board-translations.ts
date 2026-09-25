@@ -76,8 +76,9 @@ const translations = {
       finished: 'The game is finished. To continue, create or launch a new active game.',
       selectActiveTeam: 'Current step: choose the active team before opening the next card.',
       selectCard: 'Current step: open a card on the board for the selected team.',
+      cardOpened: 'The card is open. Start modifier selection when the team is ready.',
       awaitingModifiers:
-        'Modifier window is open now. Let players activate modifiers, then start the round.',
+        'Modifier ordering is open. Let players activate modifiers, then close the order.',
       roundPreparing: 'The modifier order is locked. Prepare the team, then start gameplay.',
       roundInProgress: 'The round is live. When the play is over, move it to result review.',
       reviewingResults: 'Result review is active. Confirm the outcome and complete the round.',
@@ -92,28 +93,32 @@ const translations = {
     },
     flowSteps: {
       select_team: {
-        title: 'Choose active team',
+        title: 'Active team selection',
         description: 'Assign the team whose turn is about to be played.',
       },
       select_card: {
-        title: 'Open card',
+        title: 'Card selection',
         description: 'Pick the next card on the board for the selected team.',
       },
+      start_modifiers: {
+        title: 'Card opened',
+        description: 'The card is open. Modifier selection has not started yet.',
+      },
       activate_modifiers: {
-        title: 'Activate modifiers',
-        description: 'Players can spend quiz points and prepare round effects.',
+        title: 'Modifier selection',
+        description: 'Players can choose and activate modifiers using quiz points.',
       },
       start_round: {
-        title: 'Start round',
-        description: 'When modifier ordering is finished, launch the round itself.',
+        title: 'Game preparation',
+        description: 'After modifier ordering ends, prepare the team for the game.',
       },
       play_round: {
-        title: 'Play round',
+        title: 'Gameplay',
         description: 'Play the card, apply effects, and finish the live play segment.',
       },
       review_round: {
-        title: 'Review and complete',
-        description: 'Review the result, lock the history, and finish the round.',
+        title: 'Results summary',
+        description: 'Enter the result and lock the round history.',
       },
     },
     managementPanelBoardMetric: 'Board',
@@ -176,20 +181,22 @@ const translations = {
     managementRoundIdleDescription: 'No round is running right now.',
     managementRoundAssistantTitle: 'Round assistant',
     managementRoundAssistantTooltip:
-      'A step-by-step operator prompt: choose the team, open the card, wait for modifiers, and close the round.',
+      'Follow each round phase: open the card, start and finish modifier ordering, prepare and play, then record the result.',
     managementRoundStepProgress: 'Step {{current}} of {{total}}',
     managementRoundNextActionBoardHint:
       'The team is ready. Open the next card on the board to create a new round.',
     managementRoundNextActionTeamHint:
       'Select the active team first so the next card can be opened without extra clicks.',
     managementRoundAwaitingActionHint:
-      'Step 3: let the audience apply modifiers for this team. When everything is locked in, start the round.',
+      'Players can activate modifiers now. Close ordering when everyone has finished.',
+    managementRoundCardOpenedHint:
+      'The card is open. Start modifier selection when you are ready to accept orders.',
     managementRoundPreparingHint:
-      'Step 4: the modifier order is locked. Prepare the team in the external game, then confirm that gameplay has started.',
+      'Modifier ordering is closed. Prepare the team, then start the game.',
     managementRoundInProgressHint:
-      'Step 5: the team is playing the card now. When the match ends, move to the result summary.',
+      'The team is playing the card. Finish the game when play is over.',
     managementRoundReviewActionHint:
-      'Step 6: enter the factual result of the round, then decide whether this team continues playing or leaves the queue.',
+      'Gameplay has ended. Open the results form to record the round outcome.',
     managementLaunchTitle: 'Launch',
     managementLaunchTooltip:
       'Final registration checks and the admin-only action that starts the game.',
@@ -238,22 +245,25 @@ const translations = {
     roundPanelIdleDescription: 'Start a round from an open cell and a confirmed team.',
     roundPanelActiveDescription: 'Finalize the active round and lock its history snapshot.',
     roundPanelOpenCell: 'Open cell',
-    roundPanelStart: 'Start round',
-    roundPanelBeginGameplay: 'Gameplay started',
-    roundPanelReview: 'Review results',
-    roundPanelOpenSummary: 'Fill round summary',
+    roundPanelStartModifierOrdering: 'Start modifier selection',
+    roundPanelStart: 'Finish modifier ordering',
+    roundPanelBeginGameplay: 'Start game',
+    roundPanelReview: 'Finish game',
+    roundPanelOpenSummary: 'Summarize results',
     roundPanelStatus: 'Result',
     roundPanelFinalScore: 'Final score override',
     roundPanelNotes: 'Notes',
     roundPanelComplete: 'Finalize round',
     roundPanelNoOpenCells: 'Open a board cell before starting a round.',
     roundPanelNoTeams: 'No confirmed teams are available for this round.',
-    roundPanelStartSuccess: 'Round started.',
-    roundPanelStartFailed: 'Unable to start the round.',
+    roundPanelStartModifierOrderingSuccess: 'Modifier ordering started.',
+    roundPanelStartModifierOrderingFailed: 'Unable to start modifier ordering.',
+    roundPanelStartSuccess: 'Modifier ordering finished.',
+    roundPanelStartFailed: 'Unable to finish modifier ordering.',
     roundPanelBeginGameplaySuccess: 'Gameplay started. Round timers are now running.',
     roundPanelBeginGameplayFailed: 'Unable to start gameplay.',
-    roundPanelReviewSuccess: 'Round moved to result review.',
-    roundPanelReviewFailed: 'Unable to move the round to result review.',
+    roundPanelReviewSuccess: 'Gameplay finished. Summarize the result next.',
+    roundPanelReviewFailed: 'Unable to finish gameplay.',
     roundPanelCompleteSuccess: 'Round completed. You can prepare the next round.',
     roundPanelCompleteFailed: 'Unable to complete the round.',
     roundPanelSafetyTitle: 'Round recovery and cancellation',
@@ -501,8 +511,9 @@ const translations = {
       selectActiveTeam:
         'Текущий шаг: выберите активную команду перед открытием следующей карточки.',
       selectCard: 'Текущий шаг: откройте карточку на поле для выбранной команды.',
+      cardOpened: 'Карточка открыта. Запустите выбор модификаторов, когда команда будет готова.',
       awaitingModifiers:
-        'Сейчас открыто окно модификаторов. Дайте игрокам активировать их, затем начните раунд.',
+        'Заказ модификаторов открыт. Дайте игрокам активировать их, затем завершите заказ.',
       roundPreparing:
         'Заказ модификаторов закрыт. Подготовьте команду, затем подтвердите начало игры.',
       roundInProgress:
@@ -519,28 +530,32 @@ const translations = {
     },
     flowSteps: {
       select_team: {
-        title: 'Выбрать активную команду',
+        title: 'Выбор активной команды',
         description: 'Назначьте команду, чей ход сейчас будет разыгрываться.',
       },
       select_card: {
-        title: 'Открыть карточку',
+        title: 'Выбор карточки',
         description: 'Выберите следующую карточку на игровом поле для активной команды.',
       },
+      start_modifiers: {
+        title: 'Карточка открыта',
+        description: 'Карточка открыта. Выбор модификаторов ещё не начался.',
+      },
       activate_modifiers: {
-        title: 'Активировать модификаторы',
-        description: 'Игроки могут потратить очки викторины и подготовить эффекты раунда.',
+        title: 'Выбор модификаторов',
+        description: 'Игроки могут выбрать и активировать модификаторы за очки викторины.',
       },
       start_round: {
-        title: 'Начать раунд',
-        description: 'Когда окно модификаторов закрыто, запускайте сам раунд.',
+        title: 'Подготовка к игре',
+        description: 'После закрытия заказа модификаторов подготовьте команду к игре.',
       },
       play_round: {
-        title: 'Провести игру',
+        title: 'Проведение игры',
         description: 'Разыграйте карточку, примените эффекты и закончите игровой этап.',
       },
       review_round: {
-        title: 'Подвести итоги и завершить',
-        description: 'Проверьте результат, зафиксируйте историю и завершите раунд.',
+        title: 'Подведение итогов',
+        description: 'Заполните результат и зафиксируйте историю раунда.',
       },
     },
     managementPanelBoardMetric: 'Поле',
@@ -604,20 +619,22 @@ const translations = {
     managementRoundIdleDescription: 'Сейчас нет запущенного раунда.',
     managementRoundAssistantTitle: 'Ассистент раунда',
     managementRoundAssistantTooltip:
-      'Пошаговая подсказка для ведущего: выберите команду, откройте карточку, дайте прожать модификаторы и завершите раунд.',
+      'Последовательность раунда: откройте карточку, проведите заказ модификаторов, подготовьте и проведите игру, затем подведите итоги.',
     managementRoundStepProgress: 'Шаг {{current}} из {{total}}',
     managementRoundNextActionBoardHint:
       'Команда уже готова. Откройте следующую карточку на поле, чтобы создать новый раунд.',
     managementRoundNextActionTeamHint:
       'Сначала назначьте активную команду, чтобы следующий раунд запускался без лишних действий.',
     managementRoundAwaitingActionHint:
-      'Шаг 3: дайте зрителям прожать модификаторы для этой команды. Когда всё готово, запускайте раунд.',
+      'Игроки могут активировать модификаторы. Когда все закончат, завершите заказ.',
+    managementRoundCardOpenedHint:
+      'Карточка открыта. Начните выбор модификаторов, когда будете готовы принимать заказы.',
     managementRoundPreparingHint:
-      'Шаг 4: заказ модификаторов закрыт. Подготовьте команду во внешней игре, затем подтвердите фактическое начало игры.',
+      'Заказ модификаторов закрыт. Подготовьте команду, затем начните игру.',
     managementRoundInProgressHint:
-      'Шаг 5: команда сейчас играет свою карточку. Как только матч закончится, переходите к итогам.',
+      'Команда играет свою карточку. Когда игра закончится, нажмите «Завершить игру».',
     managementRoundReviewActionHint:
-      'Шаг 6: внесите фактический результат раунда, а затем решите, продолжает эта команда игру или заканчивает выступление.',
+      'Игра завершена. Откройте форму итогов, чтобы зафиксировать результат раунда.',
     managementLaunchTitle: 'Запуск',
     managementLaunchTooltip: 'Финальная проверка регистрации и администраторский запуск игры.',
     managementLaunchDescription: 'Перед стартом пройдите финальные проверки регистрации.',
@@ -665,22 +682,25 @@ const translations = {
     roundPanelIdleDescription: 'Запустите раунд по открытой карточке и подтверждённой команде.',
     roundPanelActiveDescription: 'Завершите активный раунд и зафиксируйте его в истории.',
     roundPanelOpenCell: 'Открытая карточка',
-    roundPanelStart: 'Начать раунд',
-    roundPanelBeginGameplay: 'Игра началась',
-    roundPanelReview: 'Подвести итоги',
-    roundPanelOpenSummary: 'Заполнить итоги раунда',
+    roundPanelStartModifierOrdering: 'Начать выбор модификаторов',
+    roundPanelStart: 'Завершить заказ модификаторов',
+    roundPanelBeginGameplay: 'Начать игру',
+    roundPanelReview: 'Завершить игру',
+    roundPanelOpenSummary: 'Подвести итоги',
     roundPanelStatus: 'Итог',
     roundPanelFinalScore: 'Переопределить финальный счёт',
     roundPanelNotes: 'Заметки',
     roundPanelComplete: 'Завершить раунд',
     roundPanelNoOpenCells: 'Сначала откройте карточку на игровом поле.',
     roundPanelNoTeams: 'Нет подтверждённых команд для запуска раунда.',
-    roundPanelStartSuccess: 'Раунд начат.',
-    roundPanelStartFailed: 'Не удалось начать раунд.',
+    roundPanelStartModifierOrderingSuccess: 'Заказ модификаторов открыт.',
+    roundPanelStartModifierOrderingFailed: 'Не удалось открыть заказ модификаторов.',
+    roundPanelStartSuccess: 'Заказ модификаторов завершён.',
+    roundPanelStartFailed: 'Не удалось завершить заказ модификаторов.',
     roundPanelBeginGameplaySuccess: 'Игра началась. Таймеры раунда запущены.',
     roundPanelBeginGameplayFailed: 'Не удалось начать игру.',
-    roundPanelReviewSuccess: 'Раунд переведён к подведению итогов.',
-    roundPanelReviewFailed: 'Не удалось перейти к подведению итогов.',
+    roundPanelReviewSuccess: 'Игра завершена. Теперь подведите итоги.',
+    roundPanelReviewFailed: 'Не удалось завершить игру.',
     roundPanelCompleteSuccess: 'Раунд завершён. Можно готовить следующий раунд.',
     roundPanelCompleteFailed: 'Не удалось завершить раунд.',
     roundPanelSafetyTitle: 'Восстановление и отмена раунда',
@@ -930,8 +950,9 @@ const translations = {
       finished: 'Гру завершено. Щоб рухатися далі, потрібна нова активна гра.',
       selectActiveTeam: 'Поточний крок: оберіть активну команду перед відкриттям наступної картки.',
       selectCard: 'Поточний крок: відкрийте картку на полі для вибраної команди.',
+      cardOpened: 'Картку відкрито. Почніть вибір модифікаторів, коли команда буде готова.',
       awaitingModifiers:
-        'Зараз відкрите вікно модифікаторів. Дайте гравцям активувати їх, потім почніть раунд.',
+        'Замовлення модифікаторів відкрите. Дайте гравцям активувати їх, потім завершіть замовлення.',
       roundPreparing:
         'Замовлення модифікаторів закрито. Підготуйте команду, потім підтвердьте початок гри.',
       roundInProgress:
@@ -948,28 +969,32 @@ const translations = {
     },
     flowSteps: {
       select_team: {
-        title: 'Обрати активну команду',
+        title: 'Вибір активної команди',
         description: 'Призначте команду, чий хід зараз буде розігруватися.',
       },
       select_card: {
-        title: 'Відкрити картку',
+        title: 'Вибір картки',
         description: 'Оберіть наступну картку на полі для активної команди.',
       },
+      start_modifiers: {
+        title: 'Картку відкрито',
+        description: 'Картку відкрито. Вибір модифікаторів ще не розпочався.',
+      },
       activate_modifiers: {
-        title: 'Активувати модифікатори',
-        description: 'Гравці можуть витратити очки вікторини та підготувати ефекти раунду.',
+        title: 'Вибір модифікаторів',
+        description: 'Гравці можуть обрати й активувати модифікатори за очки вікторини.',
       },
       start_round: {
-        title: 'Почати раунд',
-        description: 'Коли вікно модифікаторів закрите, запускайте сам раунд.',
+        title: 'Підготовка до гри',
+        description: 'Після завершення замовлення підготуйте команду до гри.',
       },
       play_round: {
-        title: 'Провести гру',
+        title: 'Проведення гри',
         description: 'Розіграйте картку, застосуйте ефекти та завершіть ігровий етап.',
       },
       review_round: {
-        title: 'Підбити підсумки й завершити',
-        description: 'Перевірте результат, зафіксуйте історію та завершіть раунд.',
+        title: 'Підбиття підсумків',
+        description: 'Заповніть результат і зафіксуйте історію раунду.',
       },
     },
     managementPanelBoardMetric: 'Поле',
@@ -1032,20 +1057,22 @@ const translations = {
     managementRoundIdleDescription: 'Зараз немає запущеного раунду.',
     managementRoundAssistantTitle: 'Асистент раунду',
     managementRoundAssistantTooltip:
-      'Покрокова підказка для ведучого: оберіть команду, відкрийте картку, дайте натиснути модифікатори й завершіть раунд.',
+      'Послідовність раунду: відкрийте картку, проведіть замовлення модифікаторів, підготуйте та проведіть гру, потім підбийте підсумки.',
     managementRoundStepProgress: 'Крок {{current}} з {{total}}',
     managementRoundNextActionBoardHint:
       'Команда вже готова. Відкрийте наступну картку на полі, щоб створити новий раунд.',
     managementRoundNextActionTeamHint:
       'Спочатку призначте активну команду, щоб наступний раунд запускався без зайвих дій.',
     managementRoundAwaitingActionHint:
-      'Крок 3: дайте глядачам натиснути модифікатори для цієї команди. Коли все готово, запускайте раунд.',
+      'Гравці можуть активувати модифікатори. Коли всі закінчать, завершіть замовлення.',
+    managementRoundCardOpenedHint:
+      'Картку відкрито. Почніть вибір модифікаторів, коли будете готові приймати замовлення.',
     managementRoundPreparingHint:
-      'Крок 4: замовлення модифікаторів закрито. Підготуйте команду в зовнішній грі, потім підтвердьте фактичний початок гри.',
+      'Замовлення модифікаторів закрито. Підготуйте команду, потім почніть гру.',
     managementRoundInProgressHint:
-      'Крок 5: команда зараз грає свою картку. Щойно матч закінчиться, переходьте до підсумків.',
+      'Команда грає свою картку. Коли гра завершиться, натисніть «Завершити гру».',
     managementRoundReviewActionHint:
-      'Крок 6: внесіть фактичний результат раунду, а потім вирішіть, чи продовжує ця команда гру, чи завершує виступ.',
+      'Гру завершено. Відкрийте форму підсумків, щоб зафіксувати результат раунду.',
     managementLaunchTitle: 'Запуск',
     managementLaunchTooltip: 'Фінальна перевірка реєстрації та адміністраторський запуск гри.',
     managementLaunchDescription: 'Перед стартом пройдіть фінальні перевірки реєстрації.',
@@ -1093,22 +1120,25 @@ const translations = {
     roundPanelIdleDescription: 'Запустіть раунд за відкритою карткою та підтвердженою командою.',
     roundPanelActiveDescription: 'Завершіть активний раунд і зафіксуйте його в історії.',
     roundPanelOpenCell: 'Відкрита картка',
-    roundPanelStart: 'Почати раунд',
-    roundPanelBeginGameplay: 'Гра почалася',
-    roundPanelReview: 'Підбити підсумки',
-    roundPanelOpenSummary: 'Заповнити підсумки раунду',
+    roundPanelStartModifierOrdering: 'Почати вибір модифікаторів',
+    roundPanelStart: 'Завершити замовлення модифікаторів',
+    roundPanelBeginGameplay: 'Почати гру',
+    roundPanelReview: 'Завершити гру',
+    roundPanelOpenSummary: 'Підбити підсумки',
     roundPanelStatus: 'Підсумок',
     roundPanelFinalScore: 'Перевизначити фінальний рахунок',
     roundPanelNotes: 'Нотатки',
     roundPanelComplete: 'Завершити раунд',
     roundPanelNoOpenCells: 'Спочатку відкрийте картку на полі.',
     roundPanelNoTeams: 'Немає підтверджених команд для запуску раунду.',
-    roundPanelStartSuccess: 'Раунд розпочато.',
-    roundPanelStartFailed: 'Не вдалося почати раунд.',
+    roundPanelStartModifierOrderingSuccess: 'Замовлення модифікаторів відкрито.',
+    roundPanelStartModifierOrderingFailed: 'Не вдалося відкрити замовлення модифікаторів.',
+    roundPanelStartSuccess: 'Замовлення модифікаторів завершено.',
+    roundPanelStartFailed: 'Не вдалося завершити замовлення модифікаторів.',
     roundPanelBeginGameplaySuccess: 'Гра почалася. Таймери раунду запущено.',
     roundPanelBeginGameplayFailed: 'Не вдалося почати гру.',
-    roundPanelReviewSuccess: 'Раунд переведено до підбиття підсумків.',
-    roundPanelReviewFailed: 'Не вдалося перейти до підбиття підсумків.',
+    roundPanelReviewSuccess: 'Гру завершено. Тепер підбийте підсумки.',
+    roundPanelReviewFailed: 'Не вдалося завершити гру.',
     roundPanelCompleteSuccess: 'Раунд завершено. Можна готувати наступний раунд.',
     roundPanelCompleteFailed: 'Не вдалося завершити раунд.',
     roundPanelSafetyTitle: 'Відновлення та скасування раунду',
@@ -1357,8 +1387,9 @@ const translations = {
       finished: 'Gra jest zakończona. Aby ruszyć dalej, potrzebna jest nowa aktywna gra.',
       selectActiveTeam: 'Bieżący krok: wybierz aktywną drużynę przed otwarciem następnej karty.',
       selectCard: 'Bieżący krok: otwórz kartę na planszy dla wybranej drużyny.',
+      cardOpened: 'Karta jest otwarta. Rozpocznij wybór modyfikatorów, gdy drużyna będzie gotowa.',
       awaitingModifiers:
-        'Okno modyfikatorów jest teraz otwarte. Pozwól graczom je aktywować, a potem rozpocznij rundę.',
+        'Zamawianie modyfikatorów jest otwarte. Pozwól graczom je aktywować, a potem zakończ zamawianie.',
       roundPreparing:
         'Zamówienie modyfikatorów jest zamknięte. Przygotuj drużynę, a potem potwierdź start gry.',
       roundInProgress:
@@ -1375,28 +1406,32 @@ const translations = {
     },
     flowSteps: {
       select_team: {
-        title: 'Wybierz aktywną drużynę',
+        title: 'Wybór aktywnej drużyny',
         description: 'Przypisz drużynę, której tura będzie teraz rozgrywana.',
       },
       select_card: {
-        title: 'Otwórz kartę',
+        title: 'Wybór karty',
         description: 'Wybierz następną kartę na planszy dla aktywnej drużyny.',
       },
+      start_modifiers: {
+        title: 'Karta otwarta',
+        description: 'Karta jest otwarta. Wybór modyfikatorów jeszcze się nie rozpoczął.',
+      },
       activate_modifiers: {
-        title: 'Aktywuj modyfikatory',
-        description: 'Gracze mogą wydać punkty quizu i przygotować efekty rundy.',
+        title: 'Wybór modyfikatorów',
+        description: 'Gracze mogą wybierać i aktywować modyfikatory za punkty quizu.',
       },
       start_round: {
-        title: 'Rozpocznij rundę',
-        description: 'Gdy okno modyfikatorów jest zamknięte, uruchom samą rundę.',
+        title: 'Przygotowanie do gry',
+        description: 'Po zamknięciu zamówień przygotuj drużynę do gry.',
       },
       play_round: {
-        title: 'Rozegraj rundę',
+        title: 'Rozgrywka',
         description: 'Rozegraj kartę, zastosuj efekty i zakończ etap gry.',
       },
       review_round: {
-        title: 'Podsumuj i zakończ',
-        description: 'Sprawdź wynik, zapisz historię i zakończ rundę.',
+        title: 'Podsumowanie wyników',
+        description: 'Wpisz wynik i zapisz historię rundy.',
       },
     },
     managementPanelBoardMetric: 'Plansza',
@@ -1461,20 +1496,22 @@ const translations = {
     managementRoundIdleDescription: 'Nie ma teraz uruchomionej rundy.',
     managementRoundAssistantTitle: 'Asystent rundy',
     managementRoundAssistantTooltip:
-      'Krok po kroku dla prowadzącego: wybierz drużynę, otwórz kartę, pozwól użyć modyfikatorów i zamknij rundę.',
+      'Kolejność rundy: otwórz kartę, rozpocznij i zakończ zamawianie modyfikatorów, przygotuj i rozegraj grę, a potem podsumuj wyniki.',
     managementRoundStepProgress: 'Krok {{current}} z {{total}}',
     managementRoundNextActionBoardHint:
       'Drużyna jest gotowa. Otwórz następną kartę na planszy, aby utworzyć nową rundę.',
     managementRoundNextActionTeamHint:
       'Najpierw wybierz aktywną drużynę, aby kolejna runda ruszała bez zbędnych kliknięć.',
     managementRoundAwaitingActionHint:
-      'Krok 3: pozwól widzom włączyć modyfikatory dla tej drużyny. Gdy wszystko będzie gotowe, rozpocznij rundę.',
+      'Gracze mogą aktywować modyfikatory. Gdy wszyscy skończą, zakończ zamawianie.',
+    managementRoundCardOpenedHint:
+      'Karta jest otwarta. Rozpocznij wybór modyfikatorów, gdy będziesz gotowy przyjmować zamówienia.',
     managementRoundPreparingHint:
-      'Krok 4: zamówienie modyfikatorów jest zamknięte. Przygotuj drużynę w grze zewnętrznej, a potem potwierdź faktyczny start gry.',
+      'Zamawianie modyfikatorów jest zamknięte. Przygotuj drużynę, a potem rozpocznij grę.',
     managementRoundInProgressHint:
-      'Krok 5: drużyna rozgrywa teraz swoją kartę. Gdy mecz się skończy, przejdź do podsumowania.',
+      'Drużyna rozgrywa kartę. Po zakończeniu gry wybierz „Zakończ grę”.',
     managementRoundReviewActionHint:
-      'Krok 6: wpisz faktyczny wynik rundy, a potem zdecyduj, czy ta drużyna gra dalej, czy kończy występ.',
+      'Gra jest zakończona. Otwórz formularz podsumowania, aby zapisać wynik rundy.',
     managementLaunchTitle: 'Start',
     managementLaunchTooltip: 'Końcowa kontrola rejestracji i administracyjne uruchomienie gry.',
     managementLaunchDescription: 'Przed startem przejdź końcową listę kontroli rejestracji.',
@@ -1521,22 +1558,25 @@ const translations = {
     roundPanelIdleDescription: 'Uruchom rundę dla otwartej karty i potwierdzonej drużyny.',
     roundPanelActiveDescription: 'Zamknij aktywną rundę i zapisz jej historię.',
     roundPanelOpenCell: 'Otwarta karta',
-    roundPanelStart: 'Rozpocznij rundę',
-    roundPanelBeginGameplay: 'Gra rozpoczęta',
-    roundPanelReview: 'Podsumuj wyniki',
-    roundPanelOpenSummary: 'Wypełnij podsumowanie rundy',
+    roundPanelStartModifierOrdering: 'Rozpocznij wybór modyfikatorów',
+    roundPanelStart: 'Zakończ zamawianie modyfikatorów',
+    roundPanelBeginGameplay: 'Rozpocznij grę',
+    roundPanelReview: 'Zakończ grę',
+    roundPanelOpenSummary: 'Podsumuj wyniki',
     roundPanelStatus: 'Wynik',
     roundPanelFinalScore: 'Nadpisz wynik końcowy',
     roundPanelNotes: 'Notatki',
     roundPanelComplete: 'Zakończ rundę',
     roundPanelNoOpenCells: 'Najpierw otwórz kartę na planszy.',
     roundPanelNoTeams: 'Brak potwierdzonych drużyn do uruchomienia rundy.',
-    roundPanelStartSuccess: 'Runda rozpoczęta.',
-    roundPanelStartFailed: 'Nie udało się rozpocząć rundy.',
+    roundPanelStartModifierOrderingSuccess: 'Zamawianie modyfikatorów rozpoczęte.',
+    roundPanelStartModifierOrderingFailed: 'Nie udało się rozpocząć zamawiania modyfikatorów.',
+    roundPanelStartSuccess: 'Zamawianie modyfikatorów zakończone.',
+    roundPanelStartFailed: 'Nie udało się zakończyć zamawiania modyfikatorów.',
     roundPanelBeginGameplaySuccess: 'Gra rozpoczęta. Liczniki rundy są aktywne.',
     roundPanelBeginGameplayFailed: 'Nie udało się rozpocząć gry.',
-    roundPanelReviewSuccess: 'Runda przeniesiona do podsumowania wyników.',
-    roundPanelReviewFailed: 'Nie udało się przejść do podsumowania wyników.',
+    roundPanelReviewSuccess: 'Gra zakończona. Teraz podsumuj wyniki.',
+    roundPanelReviewFailed: 'Nie udało się zakończyć gry.',
     roundPanelCompleteSuccess: 'Runda zakończona. Możesz przygotować następną rundę.',
     roundPanelCompleteFailed: 'Nie udało się zakończyć rundy.',
     roundPanelSafetyTitle: 'Odzyskiwanie i anulowanie rundy',

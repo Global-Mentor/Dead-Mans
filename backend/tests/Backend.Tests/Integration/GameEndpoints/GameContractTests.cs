@@ -199,7 +199,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             .Where(x => x.Id == cellId)
             .Select(x => x.Board.Game.ActiveTeamId)
             .SingleAsync();
-        Assert.Equal(GameRoundStatusValue.AwaitingModifiers, round.Status);
+        Assert.Equal(GameRoundStatusValue.CardOpened, round.Status);
         Assert.Equal(activeTeamId!.Value, round.TeamId);
         Assert.Single(round.Participants);
     }

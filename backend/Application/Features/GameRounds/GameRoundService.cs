@@ -62,6 +62,18 @@ public sealed class GameRoundService : IGameRoundService
         );
     }
 
+    public Task<TransitionGameRoundResult> StartModifierOrderingAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return PublishRoundStateChangeOnSuccessAsync(
+            () => _repository.StartModifierOrderingAsync(roundId, input, initiatedByUserId, cancellationToken)
+        );
+    }
+
     public Task<TransitionGameRoundResult> PrepareAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,

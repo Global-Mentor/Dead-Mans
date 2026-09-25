@@ -2,6 +2,9 @@ import { Box, Stack } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { gameBoardRoute } from '../../routes/app-routes.ts'
+import { hasPanelCapability } from '../../shared/auth/panel-capabilities.ts'
+import { useAuth } from '../../shared/auth/use-auth.ts'
+import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import {
   AppButton,
   AppLinkButton,
@@ -19,6 +22,7 @@ import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 
 export function GameRoundPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const roundQuery = useQuery(activeGameRoundQueryOptions)
   const snapshot = snapshotQuery.data ?? null
@@ -69,17 +73,24 @@ export function GameRoundPage() {
           actions={boardLink}
         />
         {snapshot?.status === 'active' ? (
-          <GameQuizDrawer gameId={snapshot.gameId} showBoardLink />
+          <GameQuizDrawer gameId={snapshot.gameId} showBoardLink side="left" showForManagers />
         ) : null}
       </>
     )
   }
 
   const ordering = round.status === 'awaiting_modifiers'
+  const canManageRound = hasPanelCapability('startGame', user?.roles)
   return (
     <PageShell
       data-testid="current-round-screen"
-      sx={{ width: '100%', maxWidth: 1200, mx: 'auto', px: 0 }}
+      sx={{
+        width: '100%',
+        maxWidth: 1200,
+        mx: 'auto',
+        px: 0,
+        pb: { xs: canManageRound ? 9 : 0, md: 0 },
+      }}
     >
       <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>{boardLink}</Box>
@@ -123,7 +134,14 @@ export function GameRoundPage() {
           />
         ) : null}
       </Stack>
-      <GameQuizDrawer gameId={snapshot.gameId} suspended={ordering} showBoardLink />
+      {canManageRound ? <GameAdminToolsPanel initialToolId="game" triggerPlacement="edge" /> : null}
+      <GameQuizDrawer
+        gameId={snapshot.gameId}
+        suspended={ordering}
+        showBoardLink
+        side="left"
+        showForManagers
+      />
     </PageShell>
   )
 }

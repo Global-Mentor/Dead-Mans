@@ -1535,7 +1535,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '409':
-          description: Publication or unresolved outcome already exists
+          description: Modifier ordering is active, or a publication or unresolved outcome already exists
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
@@ -1641,6 +1641,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Modifier ordering is active or Twitch publication conflicts with the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/quiz/questions/{questionId}/ask:
     post:
       operationId: askSpecificGameQuizQuestion
@@ -1672,6 +1678,12 @@ paths:
           description: Missing moderator/admin role
         '404':
           description: Question is unavailable
+        '409':
+          description: Modifier ordering is active or Twitch publication conflicts with the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/quiz/current:
     get:
       operationId: getCurrentGameQuizState
@@ -1966,7 +1978,7 @@ paths:
         '409':
           description: >
             Round cannot start because the card is not open, the team is not confirmed,
-            modifier ordering has not been opened yet, or another round is already active
+            preparation has not been completed, or another round is already active
           content:
             application/json:
               schema:
@@ -2099,6 +2111,61 @@ paths:
       responses:
         '200':
           description: Modifier ordering closed and round moved to preparation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoundDetailsDto'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Round not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invalid lifecycle state or stale round version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/rounds/{roundId}/start-modifier-ordering:
+    post:
+      operationId: startGameRoundModifierOrdering
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roundId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRoundVersionCommandRequestDto'
+      responses:
+        '200':
+          description: Modifier ordering started for the opened card
           content:
             application/json:
               schema:
@@ -6816,7 +6883,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
+          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
         roundVersion:
           type: integer
           minimum: 1
@@ -6887,7 +6954,7 @@ components:
           nullable: true
         technicalCancellationStage:
           type: string
-          enum: [awaiting_modifiers, preparing, in_progress, reviewing_results]
+          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results]
           nullable: true
         purchasesRefunded:
           type: boolean
@@ -7366,7 +7433,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
+          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
         roundVersion:
           type: integer
           minimum: 1
@@ -7817,6 +7884,7 @@ components:
             - game_question.import_duplicate_code_existing
             - game_quiz.no_active_game
             - game_quiz.no_available_questions
+            - game_quiz.modifier_ordering_active
             - game_quiz.answer_player_not_found
             - game_quiz.question_session_not_found
             - game_quiz.question_session_closed

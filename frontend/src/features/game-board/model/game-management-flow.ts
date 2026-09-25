@@ -8,6 +8,7 @@ type GameManagementPhase = 'ready' | 'active_idle' | 'round_running' | 'reviewin
 export type GameManagementFlowStepId =
   | 'select_team'
   | 'select_card'
+  | 'start_modifiers'
   | 'activate_modifiers'
   | 'start_round'
   | 'play_round'
@@ -19,6 +20,7 @@ type GameManagementFlowSummaryKey =
   | 'gameBoard.flowSummary.finished'
   | 'gameBoard.flowSummary.selectActiveTeam'
   | 'gameBoard.flowSummary.selectCard'
+  | 'gameBoard.flowSummary.cardOpened'
   | 'gameBoard.flowSummary.awaitingModifiers'
   | 'gameBoard.flowSummary.roundPreparing'
   | 'gameBoard.flowSummary.roundInProgress'
@@ -27,6 +29,7 @@ type GameManagementFlowSummaryKey =
 type GameManagementFlowStepTitleKey =
   | 'gameBoard.flowSteps.select_team.title'
   | 'gameBoard.flowSteps.select_card.title'
+  | 'gameBoard.flowSteps.start_modifiers.title'
   | 'gameBoard.flowSteps.activate_modifiers.title'
   | 'gameBoard.flowSteps.start_round.title'
   | 'gameBoard.flowSteps.play_round.title'
@@ -34,6 +37,7 @@ type GameManagementFlowStepTitleKey =
 type GameManagementFlowStepDescriptionKey =
   | 'gameBoard.flowSteps.select_team.description'
   | 'gameBoard.flowSteps.select_card.description'
+  | 'gameBoard.flowSteps.start_modifiers.description'
   | 'gameBoard.flowSteps.activate_modifiers.description'
   | 'gameBoard.flowSteps.start_round.description'
   | 'gameBoard.flowSteps.play_round.description'
@@ -57,6 +61,7 @@ interface GameManagementFlowModel {
 const flowStepOrder: readonly GameManagementFlowStepId[] = [
   'select_team',
   'select_card',
+  'start_modifiers',
   'activate_modifiers',
   'start_round',
   'play_round',
@@ -82,10 +87,29 @@ export function buildGameManagementFlow(
       {
         select_team: 'blocked',
         select_card: 'blocked',
+        start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
         play_round: 'blocked',
         review_round: 'blocked',
+      },
+    )
+  }
+
+  if (activeRound?.status === 'card_opened') {
+    return createFlowModel(
+      'round_running',
+      'gameBoard.flowSummary.cardOpened',
+      'start_modifiers',
+      'activate_modifiers',
+      {
+        select_team: 'complete',
+        select_card: 'complete',
+        start_modifiers: 'current',
+        activate_modifiers: 'upcoming',
+        start_round: 'upcoming',
+        play_round: 'upcoming',
+        review_round: 'upcoming',
       },
     )
   }
@@ -99,6 +123,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'complete',
         select_card: 'complete',
+        start_modifiers: 'complete',
         activate_modifiers: 'current',
         start_round: 'ready',
         play_round: 'upcoming',
@@ -116,6 +141,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'complete',
         select_card: 'complete',
+        start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'complete',
         play_round: 'current',
@@ -133,6 +159,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'complete',
         select_card: 'complete',
+        start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'current',
         play_round: 'ready',
@@ -150,6 +177,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'complete',
         select_card: 'complete',
+        start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'complete',
         play_round: 'complete',
@@ -167,6 +195,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'current',
         select_card: 'blocked',
+        start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
         play_round: 'blocked',
@@ -184,6 +213,7 @@ export function buildGameManagementFlow(
       {
         select_team: 'complete',
         select_card: 'blocked',
+        start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
         play_round: 'blocked',
@@ -196,10 +226,11 @@ export function buildGameManagementFlow(
     'active_idle',
     'gameBoard.flowSummary.selectCard',
     'select_card',
-    'activate_modifiers',
+    'start_modifiers',
     {
       select_team: 'complete',
       select_card: 'current',
+      start_modifiers: 'upcoming',
       activate_modifiers: 'upcoming',
       start_round: 'upcoming',
       play_round: 'upcoming',
@@ -236,6 +267,10 @@ function createStep(
     select_card: {
       titleKey: 'gameBoard.flowSteps.select_card.title',
       descriptionKey: 'gameBoard.flowSteps.select_card.description',
+    },
+    start_modifiers: {
+      titleKey: 'gameBoard.flowSteps.start_modifiers.title',
+      descriptionKey: 'gameBoard.flowSteps.start_modifiers.description',
     },
     activate_modifiers: {
       titleKey: 'gameBoard.flowSteps.activate_modifiers.title',

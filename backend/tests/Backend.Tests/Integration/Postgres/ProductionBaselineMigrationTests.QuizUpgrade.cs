@@ -88,12 +88,12 @@ public sealed partial class ProductionBaselineMigrationTests
             var clock = new UpgradeClock(now.AddSeconds(1));
             var repository = new DbGameQuizRepository(db, clock);
             var asked = await repository.AskQuizQuestionAsync(game.Id, null, new ManualGameQuizQuestionDelivery(user.Id));
-            Assert.NotNull(asked);
-            var result = await repository.SubmitQuizAnswerAsync(asked.QuestionSessionId,
+            Assert.NotNull(asked.Question);
+            var result = await repository.SubmitQuizAnswerAsync(asked.Question.QuestionSessionId,
                 new(correctId, new WebGameQuizAnswerSource(user.Id)));
             Assert.Equal(backend.Application.Abstractions.Repositories.SubmitQuizAnswerRepositoryOutcome.Accepted, result.Outcome);
             Assert.Empty(await db.GameQuizPointLedgerEntries.ToArrayAsync());
-            clock.Now = asked.ClosesAtUtc;
+            clock.Now = asked.Question.ClosesAtUtc;
             await repository.CloseExpiredQuizQuestionSessionsAsync();
             await repository.CloseExpiredQuizQuestionSessionsAsync();
             Assert.Equal(question.Reward, (await db.GameQuizPointLedgerEntries.SingleAsync()).PointsDelta);

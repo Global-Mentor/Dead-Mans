@@ -19,6 +19,7 @@ export function PlayerQuizCard({
       questions={[]}
       isSubmitting={submit.isPending}
       isStarting={false}
+      embedded
       answerDisabled={disabled}
       error={submit.variables?.questionSessionId === state.questionSessionId ? submit.error : null}
       onSubmit={(questionSessionId, optionId) => submit.mutate({ questionSessionId, optionId })}

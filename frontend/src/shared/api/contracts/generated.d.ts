@@ -948,6 +948,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/rounds/{roundId}/start-modifier-ordering": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startGameRoundModifierOrdering"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/rounds/{roundId}/begin-gameplay": {
         parameters: {
             query?: never;
@@ -2809,7 +2825,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -2840,7 +2856,7 @@ export interface components {
             technicalCancellationReasonCode?: "external_game_failure" | "stream_or_infrastructure_failure" | "application_error" | "operator_error" | "other" | null;
             publicCancellationSummary?: string | null;
             /** @enum {string|null} */
-            technicalCancellationStage?: "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | null;
+            technicalCancellationStage?: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | null;
             purchasesRefunded: boolean;
             cellMedia: components["schemas"]["GameBoardCellMediaDto"][];
             participants: components["schemas"]["GameHistoryRoundParticipantItemDto"][];
@@ -3041,7 +3057,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -3161,7 +3177,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
+            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -5393,7 +5409,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Publication or unresolved outcome already exists */
+            /** @description Modifier ordering is active, or a publication or unresolved outcome already exists */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5588,6 +5604,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Modifier ordering is active or Twitch publication conflicts with the request */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     askSpecificGameQuizQuestion: {
@@ -5639,6 +5664,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Modifier ordering is active or Twitch publication conflicts with the request */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };
@@ -6050,7 +6084,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Round cannot start because the card is not open, the team is not confirmed, modifier ordering has not been opened yet, or another round is already active */
+            /** @description Round cannot start because the card is not open, the team is not confirmed, preparation has not been completed, or another round is already active */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6231,6 +6265,77 @@ export interface operations {
         };
         responses: {
             /** @description Modifier ordering closed and round moved to preparation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDetailsDto"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid lifecycle state or stale round version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    startGameRoundModifierOrdering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GameRoundVersionCommandRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Modifier ordering started for the opened card */
             200: {
                 headers: {
                     [name: string]: unknown;

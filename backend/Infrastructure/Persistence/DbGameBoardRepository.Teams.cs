@@ -105,7 +105,8 @@ public sealed partial class DbGameBoardRepository
             && await _dbContext.GameRounds.AnyAsync(
                 round =>
                     round.GameId == activeGame.Id
-                    && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                    && (round.Status == GameRoundStatusValue.CardOpened
+                        || round.Status == GameRoundStatusValue.AwaitingModifiers
                         || round.Status == GameRoundStatusValue.Preparing
                         || round.Status == GameRoundStatusValue.InProgress
                         || round.Status == GameRoundStatusValue.ReviewingResults),
@@ -201,7 +202,8 @@ public sealed partial class DbGameBoardRepository
         if (isPlayed && await _dbContext.GameRounds.AnyAsync(
                 round =>
                     round.GameId == activeGame.Id
-                    && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                    && (round.Status == GameRoundStatusValue.CardOpened
+                        || round.Status == GameRoundStatusValue.AwaitingModifiers
                         || round.Status == GameRoundStatusValue.Preparing
                         || round.Status == GameRoundStatusValue.InProgress
                         || round.Status == GameRoundStatusValue.ReviewingResults),
@@ -290,7 +292,8 @@ public sealed partial class DbGameBoardRepository
         return await _dbContext.GameRounds.AnyAsync(
             round =>
                 round.GameId == activeGameId.Value
-                && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                && (round.Status == GameRoundStatusValue.CardOpened
+                    || round.Status == GameRoundStatusValue.AwaitingModifiers
                     || round.Status == GameRoundStatusValue.Preparing
                     || round.Status == GameRoundStatusValue.InProgress
                     || round.Status == GameRoundStatusValue.ReviewingResults),

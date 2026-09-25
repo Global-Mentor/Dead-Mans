@@ -10,6 +10,7 @@ public sealed partial class DbGameLifecyclePersistence
 {
     private static readonly string[] NonTerminalRoundStatuses =
     [
+        GameRoundStatusValue.CardOpened,
         GameRoundStatusValue.AwaitingModifiers,
         GameRoundStatusValue.Preparing,
         GameRoundStatusValue.InProgress,

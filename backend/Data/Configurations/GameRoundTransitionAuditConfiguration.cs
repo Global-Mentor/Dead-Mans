@@ -25,9 +25,9 @@ public sealed class GameRoundTransitionAuditConfiguration
                 tableBuilder.HasCheckConstraint(
                     "ck_game_round_transition_audits_statuses_allowed",
                     "(from_status IS NULL OR from_status IN "
-                    + "('awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')) "
+                    + "('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')) "
                     + "AND to_status IN "
-                    + "('awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')"
+                    + "('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')"
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_round_transition_audits_action_allowed",

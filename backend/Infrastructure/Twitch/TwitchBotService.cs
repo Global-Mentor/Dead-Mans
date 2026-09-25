@@ -84,6 +84,11 @@ internal sealed class TwitchBotService : ITwitchBotService
         if (transaction is not null)
             await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM games WHERE id = {game.Id} FOR UPDATE", cancellationToken);
 
+        if (await _db.GameRounds.AsNoTracking().AnyAsync(
+                round => round.GameId == game.Id && round.Status == GameRoundStatusValue.AwaitingModifiers,
+                cancellationToken))
+            return new(PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive);
+
         if (await _db.GameQuizQuestionSessions.AsNoTracking().AnyAsync(
                 x => x.GameId == game.Id && x.Status == GameQuizQuestionSessionStatusValue.Open,
                 cancellationToken))
@@ -361,7 +366,10 @@ internal sealed class TwitchBotService : ITwitchBotService
         var gameIsActive = await _db.Games.AsNoTracking().AnyAsync(
             x => x.Id == row.GameId && x.Status == GameStatusValue.Active && !x.IsDeleted,
             cancellationToken);
-        if (!gameIsActive && !row.QuestionSessionId.HasValue
+        var modifierOrderingActive = await _db.GameRounds.AsNoTracking().AnyAsync(
+            round => round.GameId == row.GameId && round.Status == GameRoundStatusValue.AwaitingModifiers,
+            cancellationToken);
+        if ((!gameIsActive || modifierOrderingActive) && !row.QuestionSessionId.HasValue
             && row.Status is not (TwitchQuizPublicationStatuses.CancelPending or TwitchQuizPublicationStatuses.Cancelled))
         {
             var wasPublished = row.QuestionDeliveryStatus == TwitchQuizDeliveryStatuses.Sent
@@ -441,7 +449,10 @@ internal sealed class TwitchBotService : ITwitchBotService
     {
         await using var transaction = _db.Database.IsRelational() ? await _db.Database.BeginTransactionAsync(cancellationToken) : null;
         if (transaction is not null) await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM games WHERE id = {row.GameId} FOR UPDATE", cancellationToken);
-        if (!await _db.Games.AnyAsync(x => x.Id == row.GameId && x.Status == GameStatusValue.Active && !x.IsDeleted, cancellationToken))
+        if (!await _db.Games.AnyAsync(x => x.Id == row.GameId && x.Status == GameStatusValue.Active && !x.IsDeleted, cancellationToken)
+            || await _db.GameRounds.AsNoTracking().AnyAsync(
+                round => round.GameId == row.GameId && round.Status == GameRoundStatusValue.AwaitingModifiers,
+                cancellationToken))
         {
             row.Status = TwitchQuizPublicationStatuses.CancelPending;
             row.OutcomeDeliveryStatus = TwitchQuizDeliveryStatuses.Pending;

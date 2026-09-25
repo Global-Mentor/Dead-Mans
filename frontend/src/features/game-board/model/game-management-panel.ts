@@ -34,6 +34,7 @@ export function buildRoundActionModel({
   hasCurrentActiveTeam,
   resumableTeam,
   onStartRound,
+  onStartModifierOrdering,
   onBeginGameplay,
   onReviewRound,
   onOpenSummary,
@@ -45,6 +46,7 @@ export function buildRoundActionModel({
   hasCurrentActiveTeam: boolean
   resumableTeam: GameTeamQueueItem | null
   onStartRound: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onStartModifierOrdering: (input: { roundId: string; expectedRoundVersion: number }) => void
   onBeginGameplay: (input: { roundId: string; expectedRoundVersion: number }) => void
   onReviewRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onOpenSummary: () => void
@@ -64,9 +66,27 @@ export function buildRoundActionModel({
     }
   }
 
-  if (activeRound?.status === 'awaiting_modifiers') {
+  if (activeRound?.status === 'card_opened') {
     return {
       stepNumber: 3,
+      stepId: 'start_modifiers',
+      statusTone: 'warning',
+      statusLabel: t('gameBoard.flowSteps.start_modifiers.title'),
+      title: t('gameBoard.flowSteps.start_modifiers.title'),
+      description: t('gameBoard.managementRoundCardOpenedHint'),
+      actionLabel: t('gameBoard.roundPanelStartModifierOrdering'),
+      actionTone: 'primary',
+      onAction: () =>
+        onStartModifierOrdering({
+          roundId: activeRound.roundId,
+          expectedRoundVersion: activeRound.roundVersion,
+        }),
+    }
+  }
+
+  if (activeRound?.status === 'awaiting_modifiers') {
+    return {
+      stepNumber: 4,
       stepId: 'activate_modifiers',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.activate_modifiers.title'),
@@ -84,7 +104,7 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'preparing') {
     return {
-      stepNumber: 4,
+      stepNumber: 5,
       stepId: 'start_round',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.start_round.title'),
@@ -102,7 +122,7 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'in_progress') {
     return {
-      stepNumber: 5,
+      stepNumber: 6,
       stepId: 'play_round',
       statusTone: 'success',
       statusLabel: t('gameBoard.flowSteps.play_round.title'),
@@ -120,7 +140,7 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'reviewing_results') {
     return {
-      stepNumber: 6,
+      stepNumber: 7,
       stepId: 'review_round',
       statusTone: 'success',
       statusLabel: t('gameBoard.flowSteps.review_round.title'),

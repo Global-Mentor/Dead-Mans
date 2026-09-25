@@ -586,7 +586,7 @@ describe('GameBoardPage', () => {
     )
 
     expect(screen.getByText('Фаза раунда')).toBeVisible()
-    expect(screen.getByText('Активировать модификаторы')).toBeVisible()
+    expect(screen.getByText('Выбор модификаторов')).toBeVisible()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(
       screen.queryByText(
@@ -617,7 +617,7 @@ describe('GameBoardPage', () => {
     )
 
     expect(screen.getByText('Фаза раунда')).toBeVisible()
-    expect(screen.getByText('Открыть карточку')).toBeInTheDocument()
+    expect(screen.getByText('Выбор карточки')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(
       screen.queryByText('Текущий шаг: откройте карточку на поле для выбранной команды.'),
@@ -881,7 +881,7 @@ describe('GameBoardPage', () => {
 
     openManagementPanel()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Заполнить итоги раунда' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Подвести итоги' }))
     fireEvent.click(screen.getByRole('button', { name: /Команда закончила игру/i }))
     await waitFor(() => expect(pageMocks.previewGameRoundScore).toHaveBeenCalledTimes(1), {
       timeout: 5_000,
@@ -1253,7 +1253,48 @@ describe('GameBoardPage', () => {
     expect(screen.queryByRole('button', { name: 'Управление игрой' })).not.toBeInTheDocument()
   })
 
-  it('starts the opened round while it is waiting for modifiers', () => {
+  it('starts modifier ordering only after the opened-card action', () => {
+    const startModifierOrdering = vi.fn()
+    pageMocks.useStartGameRound.mockReturnValue({
+      isChangingRoundStage: false,
+      startModifierOrdering,
+      startRound: vi.fn(),
+      beginGameplay: vi.fn(),
+      reviewRound: vi.fn(),
+      completeRound: vi.fn(),
+      toastMessage: null,
+      dismissToast: vi.fn(),
+    })
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({
+        data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
+        activeRound: {
+          roundId: 'round-1',
+          cellId: 'cell-1',
+          teamId: 'team-1',
+          teamSlotIndex: 1,
+          status: 'card_opened',
+          roundVersion: 7,
+          baseScore: 100,
+          emptyCardPenaltyApplied: false,
+        },
+      }),
+    )
+    pageMocks.useGameBoardLaunchPanel.mockReturnValue(
+      createLaunchPanelState({ canManageGame: true }),
+    )
+
+    renderBoard()
+    openManagementPanel()
+    fireEvent.click(screen.getByRole('button', { name: 'Начать выбор модификаторов' }))
+
+    expect(startModifierOrdering).toHaveBeenCalledWith({
+      roundId: 'round-1',
+      expectedRoundVersion: 7,
+    })
+  })
+
+  it('finishes modifier ordering before preparation', () => {
     const startRound = vi.fn()
     pageMocks.useStartGameRound.mockReturnValue({
       isChangingRoundStage: false,
@@ -1304,10 +1345,10 @@ describe('GameBoardPage', () => {
 
     expect(
       screen.getByText(
-        'Шаг 3: дайте зрителям прожать модификаторы для этой команды. Когда всё готово, запускайте раунд.',
+        'Игроки могут активировать модификаторы. Когда все закончат, завершите заказ.',
       ),
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Начать раунд' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Завершить заказ модификаторов' }))
 
     expect(startRound).toHaveBeenCalledWith({
       roundId: 'round-1',
@@ -1355,7 +1396,7 @@ describe('GameBoardPage', () => {
 
     openManagementPanel()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Подвести итоги' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Завершить игру' }))
     expect(reviewRound).toHaveBeenCalledWith({
       roundId: 'round-1',
       expectedRoundVersion: 9,
@@ -1394,7 +1435,7 @@ describe('GameBoardPage', () => {
 
     renderBoard()
     openManagementPanel()
-    fireEvent.click(screen.getByRole('button', { name: 'Игра началась' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Начать игру' }))
 
     expect(beginGameplay).toHaveBeenCalledWith({
       roundId: 'round-1',

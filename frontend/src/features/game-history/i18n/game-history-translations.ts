@@ -126,6 +126,7 @@ const translations = {
       stage: 'Cancelled from: {{stage}}',
       refunded: 'Purchases fully refunded',
       stageValue: {
+        card_opened: 'card opened',
         awaiting_modifiers: 'modifier ordering',
         preparing: 'preparation',
         in_progress: 'gameplay',
@@ -350,6 +351,7 @@ const translations = {
       stage: 'Отмена из стадии: {{stage}}',
       refunded: 'Покупки полностью возвращены',
       stageValue: {
+        card_opened: 'открытая карточка',
         awaiting_modifiers: 'заказ модификаторов',
         preparing: 'подготовка',
         in_progress: 'игровой процесс',
@@ -575,6 +577,7 @@ const translations = {
       stage: 'Скасування зі стадії: {{stage}}',
       refunded: 'Покупки повністю повернено',
       stageValue: {
+        card_opened: 'відкрита картка',
         awaiting_modifiers: 'замовлення модифікаторів',
         preparing: 'підготовка',
         in_progress: 'ігровий процес',
@@ -799,6 +802,7 @@ const translations = {
       stage: 'Anulowano z etapu: {{stage}}',
       refunded: 'Zakupy w pełni zwrócone',
       stageValue: {
+        card_opened: 'otwarta karta',
         awaiting_modifiers: 'zamawianie modyfikatorów',
         preparing: 'przygotowanie',
         in_progress: 'rozgrywka',

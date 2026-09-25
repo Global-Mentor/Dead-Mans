@@ -507,7 +507,7 @@ test('staff also opens the active round from its card', async ({ page }) => {
 
 test('a question opens on the round screen and accepts an answer without leaving it', async ({
   page,
-}) => {
+}, testInfo) => {
   let selectedOptionId: string | null = null
   const writes = await mockGame(page, 'active', 'viewer')
   await page.route('**/api/game/rounds/active', (route) =>
@@ -540,10 +540,10 @@ test('a question opens on the round screen and accepts an answer without leaving
           { optionId: 'option-one', text: 'К болоту', displayOrder: 1 },
           { optionId: 'option-two', text: 'К лесу', displayOrder: 2 },
         ],
-        status: selectedOptionId ? 'closed' : 'open',
-        correctOptionId: selectedOptionId,
-        myIsCorrect: selectedOptionId ? true : null,
-        myAwardedPoints: selectedOptionId ? 10 : null,
+        status: 'open',
+        correctOptionId: null,
+        myIsCorrect: null,
+        myAwardedPoints: null,
         reward: 10,
         askedAtUtc: new Date(Date.now() - 1_000).toISOString(),
         closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
@@ -568,14 +568,85 @@ test('a question opens on the round screen and accepts an answer without leaving
   const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
   await expect(question).toBeVisible()
   await expect(question).toContainText('Куда ведут следы?')
+  await question.screenshot({ path: testInfo.outputPath('quiz-petal.png') })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(question).toBeVisible()
+  await question.screenshot({ path: testInfo.outputPath('quiz-petal-mobile.png') })
+  expect(await question.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+    true,
+  )
   await question.getByRole('button', { name: 'К болоту' }).click()
   await expect(question).toBeVisible()
-  await expect(question.locator('[data-quiz-result="correct"]')).toContainText('К болоту')
+  await expect(question).toContainText('Ответ принят')
   await expect(question.getByRole('button', { name: /К болоту/ })).toBeDisabled()
   await question.getByRole('button', { name: 'Закрыть вопрос' }).click()
   await page.getByRole('button', { name: 'Открыть вопрос' }).click()
-  await expect(question.locator('[data-quiz-result="correct"]')).toBeVisible()
+  await expect(question).toContainText('Ответ принят')
   await expect(page).toHaveURL(/\/panel\/game-round$/)
+  expect(writes).toEqual([])
+})
+
+test('quiz petal disappears after the question closes', async ({ page }) => {
+  let status = 'open'
+  let sendEvent: ((message: string) => void) | undefined
+  await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+    sendEvent = send
+  })
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+  )
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-expiring',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-expiring',
+        questionCode: 'Q-4',
+        categoryName: 'Охота',
+        text: 'Куда идти?',
+        options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
+        status,
+        askedAtUtc: new Date().toISOString(),
+        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }),
+  )
+  await page.goto('/panel/game-round')
+  await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toBeVisible()
+  await expect.poll(() => Boolean(sendEvent)).toBe(true)
+  status = 'closed'
+  sendEvent?.(JSON.stringify({ type: 1, target: 'quizStateChanged', arguments: [{}] }) + '\u001e')
+  await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toHaveCount(0)
+})
+
+test('moderator sees the round question without player answer controls', async ({ page }) => {
+  const writes = await mockGame(page, 'active', 'admin')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+  )
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-moderator',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-moderator',
+        questionCode: 'Q-5',
+        categoryName: 'Охота',
+        text: 'Куда идти?',
+        options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
+        status: 'open',
+        askedAtUtc: new Date().toISOString(),
+        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }),
+  )
+  await page.goto('/panel/game-round')
+  const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  await expect(question).toContainText('Куда идти?')
+  await expect(question.getByRole('button', { name: 'К берегу' })).toBeDisabled()
   expect(writes).toEqual([])
 })
 
@@ -636,6 +707,7 @@ test('round refresh errors preserve content and ordering takes priority over the
   update()
   await expect(modifiers).toBeVisible()
   await expect(question).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
   await modifiers.getByRole('button', { name: 'Закрыть модификаторы' }).click()
   refreshFails = true
   update()
@@ -650,6 +722,7 @@ test('round refresh errors preserve content and ordering takes priority over the
   await page.getByRole('main').getByRole('button', { name: 'Повторить', exact: true }).click()
   await expect(question).toBeVisible()
   await expect(modifiers).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть модификаторы' })).toHaveCount(0)
   await expect(page).toHaveURL(/\/panel\/game-round$/)
 })
 
@@ -1073,8 +1146,8 @@ for (const width of [320, 1440]) {
     await expect(assistant.getByRole('button')).toBeEnabled()
     await assistant.locator('summary').click()
     const steps = assistant.getByRole('list', { name: 'Фаза раунда' })
-    await expect(steps.getByRole('listitem')).toHaveCount(6)
-    await expect(steps.locator('[aria-current="step"]')).toContainText('Активировать модификаторы')
+    await expect(steps.getByRole('listitem')).toHaveCount(7)
+    await expect(steps.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
     await assistant.locator('summary').click()
     await expect(page.getByTestId('management-team-section')).toContainText('Ворон')
     for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
@@ -1096,6 +1169,122 @@ for (const width of [320, 1440]) {
     expect(writes).toEqual([])
   })
 }
+
+test('admin starts modifier ordering from the current-round management petal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockGame(page)
+  let status = 'card_opened'
+  let roundVersion = 1
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } }),
+  )
+  await page.route('**/api/game/rounds/round-one/start-modifier-ordering', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
+    status = 'awaiting_modifiers'
+    roundVersion = 2
+    await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('game-board-context')).toContainText('Карточка открыта')
+  await page.goto('/panel/game-round')
+  await expect(page.getByTestId('current-round-overview')).toContainText('Карточка открыта')
+  await expect(page.getByRole('button', { name: 'Начать выбор модификаторов' })).toHaveCount(0)
+  const managementPetal = page.getByRole('button', { name: 'Управление игрой', exact: true })
+  await expect(managementPetal).toBeVisible()
+  await page.screenshot({
+    path: '../.tmp/game-board-design/card-opened-round-390.png',
+    animations: 'disabled',
+  })
+  await managementPetal.click()
+  await page
+    .getByTestId('management-round-section')
+    .getByRole('button', { name: 'Начать выбор модификаторов' })
+    .click()
+  await expect(page.getByTestId('current-round-overview')).toContainText('Выбор модификаторов')
+  await expect(page.getByRole('dialog', { name: 'Модификаторы' })).toBeVisible()
+})
+
+test('admin starts gameplay after preparation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockGame(page)
+  let status = 'preparing'
+  let roundVersion = 1
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({
+      json: {
+        ...activeRoundFixture,
+        status,
+        roundVersion,
+        preparedAtUtc: '2026-09-01T12:00:00Z',
+        gameplayStartedAtUtc: status === 'in_progress' ? '2026-09-01T12:01:00Z' : null,
+      },
+    }),
+  )
+  await page.route('**/api/game/rounds/round-one/begin-gameplay', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
+    status = 'in_progress'
+    roundVersion = 2
+    await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('game-board-context')).toContainText('Подготовка к игре')
+  await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+  const roundSection = page.getByTestId('management-round-section')
+  await expect(roundSection.getByRole('button', { name: 'Начать игру', exact: true })).toBeVisible()
+  await expect(roundSection.getByRole('button', { name: 'Завершить подготовку' })).toHaveCount(0)
+  await page.screenshot({
+    path: '../.tmp/game-board-design/management-preparing-390.png',
+    animations: 'disabled',
+  })
+  await roundSection.getByRole('button', { name: 'Начать игру', exact: true }).click()
+  await expect(roundSection).toContainText('Проведение игры')
+  await expect(roundSection.getByRole('button', { name: 'Завершить игру' })).toBeVisible()
+})
+
+test('current-round management is an edge petal on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await mockGame(page)
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'card_opened' } }),
+  )
+
+  await page.goto('/panel/game-round')
+  const petal = page.getByRole('button', { name: 'Управление игрой', exact: true })
+  await expect(petal).toBeVisible()
+  const bounds = await petal.boundingBox()
+  expect(bounds).not.toBeNull()
+  expect(bounds!.x + bounds!.width).toBeCloseTo(1440, 0)
+  expect(bounds!.height).toBeGreaterThan(bounds!.width)
+  await page.screenshot({
+    path: '../.tmp/game-board-design/card-opened-round-1440.png',
+    animations: 'disabled',
+  })
+})
+
+test('players see the opened-card phase without staff controls', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'card_opened' } }),
+  )
+
+  await page.goto('/panel/game-round')
+  await expect(page.getByTestId('current-round-overview')).toContainText('Карточка открыта')
+  await expect(page.getByRole('button', { name: 'Начать выбор модификаторов' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
+})
+
+test('moderator does not see current-round management', async ({ page }) => {
+  await mockGame(page, 'active', 'moderator')
+  await page.route('**/api/game/rounds/active', (route) =>
+    route.fulfill({ json: { ...activeRoundFixture, status: 'card_opened' } }),
+  )
+
+  await page.goto('/panel/game-round')
+  await expect(page.getByTestId('current-round-overview')).toContainText('Карточка открыта')
+  await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
+})
 
 for (const width of [320, 390, 1440]) {
   test(`live round actions stay visible at ${width}px`, async ({ page }) => {
@@ -1151,7 +1340,7 @@ for (const width of [320, 390, 1440]) {
       name: 'Открыть текущий раунд',
     })
     await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
-    const modifierLabel = modifierAction.getByText('Активировать модификаторы', { exact: true })
+    const modifierLabel = modifierAction.getByText('Выбор модификаторов', { exact: true })
     const teamValue = page.getByTestId('game-board-status-title')
     const typography = (element: Element) => {
       const style = getComputedStyle(element)
@@ -1217,12 +1406,12 @@ for (const width of [320, 390, 1440]) {
     const cardBoxBefore = await page.locator('[data-cell-id="card-0"]').boundingBox()
     roundStatus = 'in_progress'
     await page.reload()
-    await expect(page.getByTestId('game-board-context')).toContainText('Провести игру')
+    await expect(page.getByTestId('game-board-context')).toContainText('Проведение игры')
     await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
     expect(
       await page
         .getByTestId('game-board-context')
-        .getByText('Провести игру', { exact: true })
+        .getByText('Проведение игры', { exact: true })
         .evaluate(typography),
     ).toEqual(await teamValue.evaluate(typography))
     await expectHorizontallyCentered(
@@ -1400,8 +1589,9 @@ for (const width of [320, 1440]) {
       }),
     )
     await page.goto('/panel/game-board')
+    await expect(page.getByTestId('game-board-context')).toContainText('Подведение итогов')
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
-    await page.getByRole('button', { name: 'Заполнить итоги раунда', exact: true }).click()
+    await page.getByRole('button', { name: 'Подвести итоги', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Итоги раунда', exact: true })
     const kills = dialog.getByRole('spinbutton', { name: 'Убитые враги', exact: true })
     const plus = dialog.getByRole('button', { name: 'Увеличить: Убитые враги', exact: true })

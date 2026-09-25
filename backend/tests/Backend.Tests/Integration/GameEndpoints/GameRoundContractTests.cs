@@ -75,7 +75,76 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
     }
 
     [Fact]
-    public async Task Start_WhenRoundAwaitingModifiers_TransitionsExistingRoundAndPersistsModifierSnapshots()
+    public async Task OpeningCard_RequiresExplicitModifierOrderingStart()
+    {
+        var seeded = await SeedActiveGameAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var cell = await dbContext.BoardCells.SingleAsync(x => x.Id == seeded.CellId);
+            cell.State = BoardCellState.Closed;
+            await dbContext.SaveChangesAsync();
+        }
+
+        using var admin = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Admin],
+            userId: seeded.ModeratorId
+        );
+        var openResponse = await admin.PostAsync($"/api/game/cells/{seeded.CellId}/open", null);
+        Assert.Equal(HttpStatusCode.NoContent, openResponse.StatusCode);
+
+        var cardOpened = await admin.GetFromJsonAsync<GameRoundDetailsDto>("/api/game/rounds/active");
+        Assert.NotNull(cardOpened);
+        Assert.Equal(GameRoundStatusValue.CardOpened, cardOpened.Status);
+        Assert.Equal(1, cardOpened.RoundVersion);
+
+        var prematurePrepare = await admin.PostAsJsonAsync(
+            $"/api/game/rounds/{cardOpened.RoundId}/prepare",
+            new GameRoundVersionCommandRequestDto(cardOpened.RoundVersion)
+        );
+        Assert.Equal(HttpStatusCode.Conflict, prematurePrepare.StatusCode);
+
+        using var viewer = TestAuthClientFactory.CreateClient(
+            _factory,
+            [AuthRoleCodes.Viewer],
+            userId: Guid.NewGuid()
+        );
+        var forbiddenStart = await viewer.PostAsJsonAsync(
+            $"/api/game/rounds/{cardOpened.RoundId}/start-modifier-ordering",
+            new GameRoundVersionCommandRequestDto(cardOpened.RoundVersion)
+        );
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenStart.StatusCode);
+
+        var startResponse = await admin.PostAsJsonAsync(
+            $"/api/game/rounds/{cardOpened.RoundId}/start-modifier-ordering",
+            new GameRoundVersionCommandRequestDto(cardOpened.RoundVersion)
+        );
+        Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
+        var ordering = await startResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
+        Assert.NotNull(ordering);
+        Assert.Equal(GameRoundStatusValue.AwaitingModifiers, ordering.Status);
+        Assert.Equal(2, ordering.RoundVersion);
+
+        var retryResponse = await admin.PostAsJsonAsync(
+            $"/api/game/rounds/{cardOpened.RoundId}/start-modifier-ordering",
+            new GameRoundVersionCommandRequestDto(cardOpened.RoundVersion)
+        );
+        Assert.Equal(HttpStatusCode.OK, retryResponse.StatusCode);
+        var retryRound = await retryResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
+        Assert.NotNull(retryRound);
+        Assert.Equal(ordering.RoundVersion, retryRound.RoundVersion);
+
+        using var auditScope = _factory.Services.CreateScope();
+        var auditDb = auditScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var audit = await auditDb.GameRoundTransitionAudits.SingleAsync(
+            x => x.RoundId == Guid.Parse(cardOpened.RoundId)
+        );
+        Assert.Equal(GameRoundTransitionActionValue.StartModifierOrdering, audit.ActionCode);
+    }
+
+    [Fact]
+    public async Task Start_RequiresFinishedModifierOrderingAndPersistsModifierSnapshots()
     {
         var seeded = await SeedActiveGameAsync();
         var awaitingRoundId = await SeedAwaitingModifiersRoundAsync(seeded);
@@ -101,6 +170,18 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             [AuthRoleCodes.Moderator],
             userId: seeded.ModeratorId
         );
+
+        var prematureResponse = await client.PostAsJsonAsync(
+            "/api/game/rounds",
+            new StartGameRoundRequestDto(seeded.CellId.ToString(), seeded.TeamId.ToString())
+        );
+        Assert.Equal(HttpStatusCode.Conflict, prematureResponse.StatusCode);
+
+        var prepareResponse = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{awaitingRoundId}/prepare",
+            new GameRoundVersionCommandRequestDto(1)
+        );
+        Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
 
         var response = await client.PostAsJsonAsync(
             "/api/game/rounds",
@@ -1328,13 +1409,19 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
 
     private async Task<HttpResponseMessage> StartRoundAsync(SeededActiveGame seeded)
     {
-        await SeedAwaitingModifiersRoundAsync(seeded);
+        var roundId = await SeedAwaitingModifiersRoundAsync(seeded);
 
         using var client = TestAuthClientFactory.CreateClient(
             _factory,
             [AuthRoleCodes.Moderator],
             userId: seeded.ModeratorId
         );
+
+        var prepareResponse = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{roundId}/prepare",
+            new GameRoundVersionCommandRequestDto(1)
+        );
+        Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
 
         return await client.PostAsJsonAsync(
             "/api/game/rounds",

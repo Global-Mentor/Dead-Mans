@@ -8,6 +8,7 @@ import {
   prepareGameRound,
   rebuildGameRound,
   reviewGameRound,
+  startGameRoundModifierOrdering,
   technicalCancelGameRound,
 } from '../game-rounds/api/game-rounds-api.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
@@ -37,6 +38,20 @@ export function useStartGameRound() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  const startModifierOrderingMutation = useMutation({
+    mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
+      startGameRoundModifierOrdering(input.roundId, {
+        expectedRoundVersion: input.expectedRoundVersion,
+      }),
+    onSuccess: async () => {
+      setToastMessage(t('gameBoard.roundPanelStartModifierOrderingSuccess'))
+      await invalidateRoundState(queryClient)
+    },
+    onError: () => {
+      setToastMessage(t('gameBoard.roundPanelStartModifierOrderingFailed'))
+    },
+  })
 
   const startMutation = useMutation({
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
@@ -126,6 +141,7 @@ export function useStartGameRound() {
   })
 
   const isMutating =
+    startModifierOrderingMutation.isPending ||
     startMutation.isPending ||
     beginGameplayMutation.isPending ||
     reviewMutation.isPending ||
@@ -135,6 +151,7 @@ export function useStartGameRound() {
 
   return {
     isChangingRoundStage: isMutating,
+    startModifierOrdering: startModifierOrderingMutation.mutate,
     startRound: startMutation.mutate,
     beginGameplay: beginGameplayMutation.mutate,
     reviewRound: reviewMutation.mutate,

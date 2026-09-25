@@ -81,7 +81,7 @@ public sealed class GameQuizServiceSourceValidationTests
             throw new NotSupportedException();
         }
 
-        public Task<AskedQuizQuestion?> AskQuizQuestionAsync(
+        public Task<AskQuizQuestionRepositoryResult> AskQuizQuestionAsync(
             Guid gameId,
             Guid? questionId,
             GameQuizQuestionDelivery delivery,

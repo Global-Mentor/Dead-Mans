@@ -7,6 +7,7 @@ public enum AskGameQuizQuestionOutcome
     Asked,
     NoActiveGame,
     NoAvailableQuestions,
+    ModifierOrderingActive,
     InvalidDelivery
 }
 

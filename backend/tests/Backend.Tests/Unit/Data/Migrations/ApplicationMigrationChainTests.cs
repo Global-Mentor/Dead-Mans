@@ -46,7 +46,9 @@ public sealed class ApplicationMigrationChainTests
                 "20260919162829_RenameQuizRoundToQuestionSession",
                 "20260920001406_HardenQuizSubmissionHistory",
                 "20260920180839_AddTwitchQuizIntegration",
-                "20260923123000_SeedBaseModifierCatalog"
+                "20260923123000_SeedBaseModifierCatalog",
+                "20260925145728_StartModifierOrderingPhase",
+                "20260925153554_AllowCardOpenedRoundTransition"
             ],
             migrations
         );

@@ -72,6 +72,7 @@ export function GameAdminToolsPanel({
           onAwardManualQuizPoints={manualQuizAward.awardManualQuizPoints}
           isChangingRoundStage={startRound.isChangingRoundStage}
           onStartRound={startRound.startRound}
+          onStartModifierOrdering={startRound.startModifierOrdering}
           onBeginGameplay={startRound.beginGameplay}
           onReviewRound={startRound.reviewRound}
           onRebuildRound={startRound.rebuildRound}

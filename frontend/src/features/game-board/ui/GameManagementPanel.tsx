@@ -67,6 +67,7 @@ interface GameManagementToolProps {
   }) => void
   isChangingRoundStage: boolean
   onStartRound: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onStartModifierOrdering: (input: { roundId: string; expectedRoundVersion: number }) => void
   onBeginGameplay: (input: { roundId: string; expectedRoundVersion: number }) => void
   onReviewRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onRebuildRound: (input: { roundId: string; expectedRoundVersion: number }) => void
@@ -93,6 +94,7 @@ export function GameManagementTool({
   onAwardManualQuizPoints,
   isChangingRoundStage,
   onStartRound,
+  onStartModifierOrdering,
   onBeginGameplay,
   onReviewRound,
   onRebuildRound,
@@ -141,6 +143,7 @@ export function GameManagementTool({
     hasCurrentActiveTeam: currentActiveTeamId !== null,
     resumableTeam,
     onStartRound,
+    onStartModifierOrdering,
     onBeginGameplay,
     onReviewRound,
     onOpenSummary: () => setIsRoundSummaryDialogOpen(true),

@@ -76,6 +76,7 @@ export const API_ERROR_CODES = {
   gameQuestionNotFound: 'game_question.not_found',
   gameQuizNoActiveGame: 'game_quiz.no_active_game',
   gameQuizNoAvailableQuestions: 'game_quiz.no_available_questions',
+  gameQuizModifierOrderingActive: 'game_quiz.modifier_ordering_active',
   gameQuizQuestionSessionNotFound: 'game_quiz.question_session_not_found',
   gameQuizQuestionSessionClosed: 'game_quiz.question_session_closed',
   gameQuizAlreadyAnswered: 'game_quiz.already_answered',
