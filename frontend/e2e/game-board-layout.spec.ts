@@ -434,7 +434,7 @@ for (const { width, height } of [
 }
 
 for (const role of ['viewer', 'admin']) {
-  test(`opening a card keeps ${role === 'viewer' ? 'a player' : 'staff'} on the board`, async ({
+  test(`remote card opening keeps ${role === 'viewer' ? 'a player' : 'staff'} on the board`, async ({
     page,
   }) => {
     let sendEvent: ((message: string) => void) | undefined
@@ -442,9 +442,22 @@ for (const role of ['viewer', 'admin']) {
     await mockGame(page, 'active', role, 'Ночные странники', (send) => {
       sendEvent = send
     })
+    await page.route('**/api/game', (route) =>
+      route.fulfill({
+        json: {
+          ...board,
+          version: roundOpened ? 2 : board.version,
+          cells: board.cells.map((cell) =>
+            cell.id === 'card-2' && roundOpened ? { ...cell, state: 'open' } : cell,
+          ),
+        },
+      }),
+    )
     await page.route('**/api/game/rounds/active', (route) =>
       roundOpened
-        ? route.fulfill({ json: { ...activeRoundFixture, status: 'preparing' } })
+        ? route.fulfill({
+            json: { ...activeRoundFixture, cellId: 'card-2', status: 'preparing' },
+          })
         : route.fulfill({ status: 204 }),
     )
     await page.route('**/api/game/modifiers/state', (route) =>
@@ -472,13 +485,68 @@ for (const role of ['viewer', 'admin']) {
       JSON.stringify({
         type: 1,
         target: 'cellOpened',
-        arguments: [{ gameId: board.gameId, version: 2, cell: board.cells[0] }],
+        arguments: [
+          { gameId: board.gameId, version: 2, cell: { ...board.cells[2], state: 'open' } },
+        ],
       }) + '\u001e',
     )
     await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
     await expect(page).toHaveURL(/\/panel\/game-board$/)
+    await expect(page.locator('[data-cell-id="card-2"]')).toHaveAttribute(
+      'aria-label',
+      'Открыть текущий раунд',
+    )
+    await expect(page).toHaveURL(/\/panel\/game-board$/)
   })
 }
+
+test('the administrator who opens a new card goes straight to the current round', async ({
+  page,
+}, testInfo) => {
+  await mockGame(page, 'active', 'admin')
+  let roundOpened = false
+  await page.route('**/api/game', (route) =>
+    route.fulfill({
+      json: {
+        ...board,
+        version: roundOpened ? 2 : board.version,
+        cells: board.cells.map((cell) =>
+          cell.id === 'card-2' && roundOpened ? { ...cell, state: 'open' } : cell,
+        ),
+      },
+    }),
+  )
+  await page.route('**/api/game/rounds/active', (route) =>
+    roundOpened
+      ? route.fulfill({
+          json: {
+            ...activeRoundFixture,
+            cellId: 'card-2',
+            cellTitle: 'Испытание 3',
+            status: 'preparing',
+          },
+        })
+      : route.fulfill({ status: 204 }),
+  )
+  await page.route('**/api/game/cells/card-2/open', (route) => {
+    roundOpened = true
+    return route.fulfill({ status: 204 })
+  })
+
+  await page.goto('/panel/game-board')
+  await page.locator('[data-cell-id="card-2"]').click()
+  const confirmation = page.getByRole('dialog')
+  await expect(confirmation).toContainText('Испытание 3')
+  await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
+
+  await expect(page).toHaveURL(/\/panel\/game-round$/)
+  await expect(page.getByTestId('current-round-screen')).toContainText('Испытание 3')
+  await expect(page.getByRole('dialog', { name: 'Испытание 3' })).toHaveCount(0)
+  await page.screenshot({
+    path: testInfo.outputPath('opened-card-round.png'),
+    animations: 'disabled',
+  })
+})
 
 test('a player can reopen the active round by clicking its card on the board', async ({ page }) => {
   await mockGame(page, 'active', 'viewer')

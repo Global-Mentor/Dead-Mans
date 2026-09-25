@@ -71,10 +71,10 @@ export function GameBoardRealtimeSync() {
             if (patchResult.requiresResync) {
               void syncFromServerIfNewer()
             }
-
             return patchResult.nextSnapshot ?? null
           },
         )
+        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
       }
 
       const handleRoundStateChanged = () => {

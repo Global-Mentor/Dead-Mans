@@ -49,14 +49,14 @@ interface UseOpenGameBoardCellOptions {
   activeTeamId?: string | null
   gameStatus?: string | null
   hasActiveRound?: boolean
-  onCellOpened?: (cell: GameBoardCell) => void
+  onOpenSuccess?: () => void
 }
 
 export function useOpenGameBoardCell({
   activeTeamId,
   gameStatus,
   hasActiveRound = false,
-  onCellOpened,
+  onOpenSuccess,
 }: UseOpenGameBoardCellOptions = {}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -72,9 +72,7 @@ export function useOpenGameBoardCell({
 
   const openCellMutation = useMutation({
     mutationFn: (cellId: string) => openGameBoardCell(cellId),
-    onSuccess: async (_data, cellId) => {
-      const optimisticOpenedCell =
-        pendingCell?.id === cellId ? { ...pendingCell, state: 'open' as const } : null
+    onSuccess: async () => {
       setToastMessage(t('gameBoard.openSuccess'))
       await queryClient.invalidateQueries({
         queryKey: currentGameBoardQueryOptions.queryKey,
@@ -82,14 +80,7 @@ export function useOpenGameBoardCell({
       await queryClient.invalidateQueries({
         queryKey: activeGameRoundQueryOptions.queryKey,
       })
-      const refreshedSnapshot = queryClient.getQueryData(currentGameBoardQueryOptions.queryKey)
-      const refreshedOpenedCell = refreshedSnapshot?.cells.find(
-        (cell) => cell.id === cellId && cell.state === 'open',
-      )
-      const openedCell = refreshedOpenedCell ?? optimisticOpenedCell
-      if (openedCell) {
-        onCellOpened?.(openedCell)
-      }
+      onOpenSuccess?.()
     },
     onError: (error) => {
       setToastMessage(getOpenCellErrorMessage(error, t))

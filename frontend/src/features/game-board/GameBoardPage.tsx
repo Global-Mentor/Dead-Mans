@@ -44,7 +44,7 @@ export function GameBoardPage() {
     activeTeamId: data?.activeTeamId ?? null,
     gameStatus: data?.status ?? null,
     hasActiveRound: activeRound !== null,
-    onCellOpened: setPreviewCell,
+    onOpenSuccess: () => navigate(gameRoundRoute.fullPath),
   })
   const previewPlayResult = useCardPlayResult(data?.gameId ?? null, previewCell)
   const boardCellResults = useGameBoardCellResults(data?.gameId ?? null, data?.cells ?? [])

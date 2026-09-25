@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
@@ -483,26 +483,24 @@ describe('GameBoardPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('opens the newly revealed card in the shared expanded preview', () => {
-    renderBoard()
+  it('takes the staff member who opened a card to the current round', () => {
+    renderWithAppProviders(
+      <MemoryRouter initialEntries={['/panel/game-board']}>
+        <Routes>
+          <Route path="/panel/game-board" element={<GameBoardPage />} />
+          <Route path="/panel/game-round" element={<div data-testid="current-round-page" />} />
+        </Routes>
+      </MemoryRouter>,
+    )
     const hookOptions = pageMocks.useOpenGameBoardCell.mock.calls.at(-1)?.[0] as
-      { onCellOpened?: (cell: Record<string, unknown>) => void } | undefined
+      { onOpenSuccess?: () => void } | undefined
 
     act(() => {
-      hookOptions?.onCellOpened?.({
-        id: 'cell-preview',
-        row: 0,
-        col: 0,
-        title: 'Открытая после подтверждения',
-        description: 'Описание открытой карточки',
-        cost: 300,
-        state: 'open',
-        media: [],
-      })
+      hookOptions?.onOpenSuccess?.()
     })
 
-    expect(screen.getByRole('dialog', { name: 'Открытая после подтверждения' })).toBeInTheDocument()
-    expect(screen.getByText('Описание открытой карточки')).toBeInTheDocument()
+    expect(screen.getByTestId('current-round-page')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('confirms card opening with the card name, cost, and next phase', () => {

@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import { AuthContext } from '../../shared/auth/auth-context.ts'
-import { currentGameBoardQueryOptions } from './api/game-board-queries.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
 
 const apiMocks = vi.hoisted(() => ({
@@ -75,14 +74,14 @@ beforeEach(() => {
 })
 
 describe('useOpenGameBoardCell', () => {
-  it('returns the opened card for the expanded preview after the server succeeds', async () => {
-    const onCellOpened = vi.fn()
+  it('runs the local success action after the server opens a card', async () => {
+    const onOpenSuccess = vi.fn()
     const { result } = renderHook(
       () =>
         useOpenGameBoardCell({
           activeTeamId: 'team-1',
           gameStatus: 'active',
-          onCellOpened,
+          onOpenSuccess,
         }),
       { wrapper: createWrapper() },
     )
@@ -92,50 +91,26 @@ describe('useOpenGameBoardCell', () => {
     act(() => result.current.confirmOpenCell())
 
     await waitFor(() => expect(apiMocks.openGameBoardCell).toHaveBeenCalledWith('cell-1'))
-    await waitFor(() =>
-      expect(onCellOpened).toHaveBeenCalledWith({
-        ...cell,
-        state: 'open',
-      }),
-    )
+    await waitFor(() => expect(onOpenSuccess).toHaveBeenCalledOnce())
   })
 
-  it('returns the refreshed card media instead of the hidden snapshot after opening', async () => {
-    const queryClient = createQueryClient()
-    const refreshedCell: GameBoardCell = {
-      ...cell,
-      state: 'open',
-      media: [{ url: '/media/revealed-card.png' }],
-    }
-    queryClient.setQueryData(currentGameBoardQueryOptions.queryKey, {
-      gameId: 'game-1',
-      title: 'Game',
-      description: null,
-      status: 'active',
-      version: 2,
-      rows: 1,
-      cols: 1,
-      rowLabels: ['A'],
-      colLabels: ['1'],
-      cells: [refreshedCell],
-      enabledModifierIds: [],
-      activeModifiers: [],
-      activeTeamId: 'team-1',
-    })
-    const onCellOpened = vi.fn()
+  it('keeps the opener on the board when opening fails', async () => {
+    apiMocks.openGameBoardCell.mockRejectedValue(new Error('Open failed'))
+    const onOpenSuccess = vi.fn()
     const { result } = renderHook(
       () =>
         useOpenGameBoardCell({
           activeTeamId: 'team-1',
           gameStatus: 'active',
-          onCellOpened,
+          onOpenSuccess,
         }),
-      { wrapper: createWrapper(queryClient) },
+      { wrapper: createWrapper() },
     )
 
     act(() => result.current.requestOpenCell(cell))
     act(() => result.current.confirmOpenCell())
 
-    await waitFor(() => expect(onCellOpened).toHaveBeenCalledWith(refreshedCell))
+    await waitFor(() => expect(result.current.toastMessage).toBeTruthy())
+    expect(onOpenSuccess).not.toHaveBeenCalled()
   })
 })
