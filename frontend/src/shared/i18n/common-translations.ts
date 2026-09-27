@@ -1,7 +1,7 @@
 const translations = {
   en: {
     media: { loading: 'Loading card media...', error: 'Failed to load the card media.' },
-    pagination: { summary: '{{from}}–{{to}} of {{total}}' },
+    pagination: { summary: '{{from}}-{{to}} of {{total}}' },
     discardChanges: {
       title: 'Discard unsaved changes?',
       description: 'Your changes will be lost.',
@@ -81,7 +81,7 @@ const translations = {
       loading: 'Загружаем медиа карточки...',
       error: 'Не удалось загрузить медиа карточки.',
     },
-    pagination: { summary: '{{from}}–{{to}} из {{total}}' },
+    pagination: { summary: '{{from}}-{{to}} из {{total}}' },
     discardChanges: {
       title: 'Отменить несохранённые изменения?',
       description: 'Введённые изменения будут потеряны.',
@@ -161,7 +161,7 @@ const translations = {
       loading: 'Завантажуємо медіа картки...',
       error: 'Не вдалося завантажити медіа картки.',
     },
-    pagination: { summary: '{{from}}–{{to}} з {{total}}' },
+    pagination: { summary: '{{from}}-{{to}} з {{total}}' },
     discardChanges: {
       title: 'Відкинути незбережені зміни?',
       description: 'Введені зміни буде втрачено.',
@@ -238,7 +238,7 @@ const translations = {
   },
   pl: {
     media: { loading: 'Ładowanie mediów karty...', error: 'Nie udało się załadować mediów karty.' },
-    pagination: { summary: '{{from}}–{{to}} z {{total}}' },
+    pagination: { summary: '{{from}}-{{to}} z {{total}}' },
     discardChanges: {
       title: 'Odrzucić niezapisane zmiany?',
       description: 'Wprowadzone zmiany zostaną utracone.',

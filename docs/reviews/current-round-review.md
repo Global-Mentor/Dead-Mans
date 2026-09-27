@@ -27,7 +27,7 @@ No new generic control or visual variant was needed. New compositions select exi
 
 ## Protected application reference
 
-Compared all 65 application/invitation reference images against their copies from before the review. The 11 changed images differ only in the authorized desktop navigation labels, within rows 7–50. Image dimensions and all pixels below the header are identical; the other 54 images are unchanged. Updated only those 11 references. Exact screenshot comparison remains enabled with `maxDiffPixels: 0`.
+Compared all 65 application/invitation reference images against their copies from before the review. The 11 changed images differ only in the authorized desktop navigation labels, within rows 7-50. Image dimensions and all pixels below the header are identical; the other 54 images are unchanged. Updated only those 11 references. Exact screenshot comparison remains enabled with `maxDiffPixels: 0`.
 
 ## Verification
 
