@@ -268,10 +268,10 @@ describe('GameBoardGrid', () => {
       />,
     )
 
-    expect(screen.queryByText('Dead Mans')).not.toBeInTheDocument()
+    expect(screen.getByTestId('played-cell-team')).toHaveTextContent('Dead Mans')
     expect(screen.queryByText('Player One')).not.toBeInTheDocument()
     expect(screen.queryByText('Player Two')).not.toBeInTheDocument()
-    expect(screen.getByTestId('played-cell-result-label')).toHaveTextContent('Итог')
+    expect(screen.getByTestId('played-cell-result-label')).toHaveTextContent('Сыграно')
     expect(screen.getByTestId('played-cell-result-points')).toHaveTextContent('145 очк.')
     expect(screen.queryByText('100 очк.')).not.toBeInTheDocument()
     expect(screen.queryByText('Медиа: 1')).not.toBeInTheDocument()

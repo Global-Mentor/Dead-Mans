@@ -5,6 +5,10 @@ import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { GameBoardPage } from './GameBoardPage.tsx'
 
+vi.mock('../../shared/auth/use-auth.ts', () => ({
+  useAuth: () => ({ user: null }),
+}))
+
 const pageMocks = vi.hoisted(() => ({
   useGameBoardPage: vi.fn(),
   useGameBoardLaunchPanel: vi.fn(),
@@ -87,6 +91,9 @@ function createPageQuery(overrides: Record<string, unknown> = {}) {
     isRefreshing: false,
     isTeamQueueLoading: false,
     isTeamQueueError: false,
+    hasTeamQueueData: true,
+    isTeamQueueRefreshing: false,
+    retryTeamQueue: vi.fn(),
     ...overrides,
   }
 }
@@ -341,7 +348,7 @@ describe('GameBoardPage', () => {
     expect(screen.getByTestId('game-board-grid')).toBeInTheDocument()
     expect(screen.queryByText(/модификатор/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Активна')).not.toBeInTheDocument()
-    expect(screen.getByText('Фаза раунда')).toBeVisible()
+    expect(screen.getByTestId('game-board-phase')).toBeVisible()
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(screen.getByText('Выбор активной команды')).toBeVisible()
@@ -388,11 +395,18 @@ describe('GameBoardPage', () => {
 
     const boardCard = screen.getByTestId('game-board-surface')
     expect(boardCard).not.toBeNull()
-    expect(within(boardCard as HTMLElement).getByText('Активная команда')).toBeVisible()
-    expect(within(boardCard as HTMLElement).getByText('Команда #2')).toBeInTheDocument()
-    expect(within(screen.getByTestId('game-board-context')).getByText('Команда #2')).toBeVisible()
-    expect(within(boardCard as HTMLElement).queryByText('Player Two')).not.toBeInTheDocument()
-    expect(within(boardCard as HTMLElement).queryByText('Player Three')).not.toBeInTheDocument()
+    expect(
+      within(boardCard as HTMLElement).getByRole('heading', { name: 'Ход игры' }),
+    ).toBeVisible()
+    expect(
+      within(screen.getByTestId('game-board-phase-toggle')).getByText('Команда #2'),
+    ).toBeVisible()
+    expect(within(boardCard as HTMLElement).getByText('Player Two')).not.toBeVisible()
+    expect(within(boardCard as HTMLElement).getByText('Player Three')).not.toBeVisible()
+    fireEvent.click(screen.getByTestId('game-board-phase-toggle'))
+    expect(
+      within(screen.getByRole('region', { name: 'Активная команда' })).getAllByRole('listitem'),
+    ).toHaveLength(2)
   })
 
   it('keeps the registration call-to-action available beside the board', () => {
@@ -427,6 +441,7 @@ describe('GameBoardPage', () => {
           activeTeamId: 'team-1',
         },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           cellId: 'cell-1',
           teamId: 'team-1',
@@ -444,9 +459,9 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeVisible()
+    expect(screen.getByTestId('game-board-phase')).toBeVisible()
     expect(screen.getByText('Выбор модификаторов')).toBeVisible()
-    expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Ход игры' })).toBeVisible()
     expect(
       screen.queryByText(
         'Сейчас открыто окно модификаторов. Дайте игрокам активировать их, затем начните раунд.',
@@ -475,7 +490,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Фаза раунда')).toBeVisible()
+    expect(screen.getByTestId('game-board-phase')).toBeVisible()
     expect(screen.getByText('Выбор карточки')).toBeInTheDocument()
     expect(screen.queryByText('Сейчас')).not.toBeInTheDocument()
     expect(
@@ -927,6 +942,7 @@ describe('GameBoardPage', () => {
           activeTeamId: 'team-1',
         },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           teamId: 'team-1',
           teamSlotIndex: 1,
@@ -1126,6 +1142,7 @@ describe('GameBoardPage', () => {
       createPageQuery({
         data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           cellId: 'cell-1',
           teamId: 'team-1',
@@ -1170,6 +1187,7 @@ describe('GameBoardPage', () => {
           activeTeamId: 'team-1',
         },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           cellId: 'cell-1',
           teamId: 'team-1',
@@ -1237,6 +1255,7 @@ describe('GameBoardPage', () => {
           activeTeamId: 'team-1',
         },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           cellId: 'cell-1',
           teamId: 'team-1',
@@ -1278,6 +1297,7 @@ describe('GameBoardPage', () => {
       createPageQuery({
         data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
         activeRound: {
+          participants: [],
           roundId: 'round-1',
           cellId: 'cell-1',
           teamId: 'team-1',

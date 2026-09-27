@@ -165,8 +165,6 @@ export function GameBoardGrid({
           return (
             <GameBoardCard
               cell={cell}
-              category={snapshot.colLabels[colIndex] ?? ''}
-              rowLabel={snapshot.rowLabels[rowIndex] ?? ''}
               activeCellId={activeCellId}
               playResult={cell ? playResultsByCellId?.get(cell.id) : undefined}
               canOpenCells={canOpenCells}

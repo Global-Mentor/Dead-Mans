@@ -1,5 +1,6 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import type { GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
+import { realtimeHubs } from '../src/shared/realtime/generated.ts'
 
 const categories = ['Охота', 'Оружие', 'Легенды', 'Болота', 'Контракты']
 const board: GameBoardSnapshot = {
@@ -125,6 +126,15 @@ async function mockGame(
   return writes
 }
 
+async function expandProgress(page: Page) {
+  const toggle = page.getByTestId('game-board-phase-toggle')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const detailsId = await toggle.getAttribute('aria-controls')
+  await expect(page.locator(`[id="${detailsId}"]`)).toHaveClass(/MuiCollapse-entered/)
+  await page.evaluate(() => document.fonts.ready)
+}
+
 const activeRoundFixture = {
   roundId: 'round-one',
   gameId: board.gameId,
@@ -145,16 +155,6 @@ const activeRoundFixture = {
   killsCount: 0,
   bountyCount: 0,
   scoreDetails: { finalScore: 0, calculationLines: [] },
-}
-
-async function expectHorizontallyCentered(content: Locator, half: Locator) {
-  const contentBox = await content.boundingBox()
-  const halfBox = await half.boundingBox()
-  expect(contentBox).not.toBeNull()
-  expect(halfBox).not.toBeNull()
-  expect(
-    Math.abs(contentBox!.x + contentBox!.width / 2 - halfBox!.x - halfBox!.width / 2),
-  ).toBeLessThanOrEqual(2)
 }
 
 for (const width of [390, 1440]) {
@@ -833,7 +833,7 @@ test('a question also reaches a player on the board between rounds', async ({ pa
 })
 
 for (const touch of [false, true]) {
-  test(`active team roster tooltip works with ${touch ? 'touch' : 'mouse and keyboard'}`, async ({
+  test(`progress disclosure exposes the roster with ${touch ? 'touch' : 'keyboard'}`, async ({
     browser,
   }) => {
     const context = await browser.newContext({
@@ -843,180 +843,237 @@ for (const touch of [false, true]) {
     const page = await context.newPage()
     const writes = await mockGame(page)
     await page.goto('/panel/game-board')
-    const team = page.getByRole('button', { name: 'Ночные странники', exact: true })
-    await expect(team).toBeVisible()
-    const status = page.getByTestId('game-board-context')
-    const statusBefore = await status.boundingBox()
-    const card = page.locator('[data-cell-id="card-0"]')
-    const cardBefore = await card.boundingBox()
-    if (touch) await team.tap()
-    else await team.hover()
-    const tooltip = page.getByRole('tooltip')
-    await expect(tooltip).toContainText('Искатель приключений')
-    await expect(tooltip).toContainText('Ворон')
-    await expect(tooltip).not.toContainText('Ночные странники')
-    await expect(tooltip).not.toContainText('Стрелок')
-    const tooltipBox = await tooltip.boundingBox()
-    const teamBox = await team.boundingBox()
-    expect(tooltipBox!.x).toBeGreaterThanOrEqual(0)
-    expect(tooltipBox!.x + tooltipBox!.width).toBeLessThanOrEqual(touch ? 390 : 1440)
-    if (touch) expect(tooltipBox!.y).toBeGreaterThanOrEqual(teamBox!.y + teamBox!.height - 1)
-    else expect(tooltipBox!.x).toBeGreaterThanOrEqual(teamBox!.x + teamBox!.width)
-    expect(await status.boundingBox()).toEqual(statusBefore)
-    expect(await card.boundingBox()).toEqual(cardBefore)
+    const toggle = page.getByTestId('game-board-phase-toggle')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(toggle).toContainText('Ночные странники')
+    const roster = page.getByRole('region', { name: 'Активная команда', exact: true })
+    await expect(roster).not.toBeVisible()
     if (touch) {
-      await page.locator('body').tap({ position: { x: 5, y: 400 } })
+      await toggle.tap()
     } else {
-      await page.mouse.move(5, 400)
+      await toggle.focus()
+      await page.keyboard.press('Enter')
     }
-    await expect(tooltip).not.toBeVisible()
-    if (!touch) {
-      await team.focus()
-      await expect(tooltip).toBeVisible()
-      await page.keyboard.press('Escape')
-      await expect(tooltip).not.toBeVisible()
-    }
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(roster).toContainText('Ночные странники')
+    await expect(roster.getByRole('listitem')).toHaveText(['Искатель приключений', 'Ворон'])
+    await expect(roster).not.toContainText('Стрелок')
+    const rows = await roster.getByRole('listitem').all()
+    const first = (await rows[0]!.boundingBox())!
+    const second = (await rows[1]!.boundingBox())!
+    expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
+    expect(await roster.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await page.getByTestId('game-board-context').screenshot({
+      path: `../.tmp/game-board-design/progress-expanded-${touch ? 390 : 1440}.png`,
+      animations: 'disabled',
+    })
+    if (touch) await toggle.tap()
+    else await page.keyboard.press('Space')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(roster).not.toBeVisible()
+    await expect(toggle).toBeFocused()
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
     expect(writes).toEqual([])
     await context.close()
   })
 }
 
-test('board context shows phase and a compact team queue without redundant tooltips', async ({
+test('board progress separates the active team from waiting teams and shows final scores', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await mockGame(page)
+  await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 4)
   await page.goto('/panel/game-board')
-
   const context = page.getByTestId('game-board-context')
+  await expandProgress(page)
   const queue = page.getByTestId('game-board-team-queue')
-  await expect(queue.getByRole('heading', { name: 'Очередь команд' })).toBeVisible()
-  await expect(queue.getByRole('heading', { name: 'Не отыграли · 1' })).toBeVisible()
-  await expect(queue.getByRole('heading', { name: 'Отыгравшие · 1' })).toBeVisible()
-  await expect(queue.getByRole('listitem').first()).toContainText('Ночные странники')
-  await expect(queue.getByRole('listitem').first()).toContainText('Играет')
-  await expect(queue.getByRole('listitem').last()).toContainText('Последний рубеж')
-  const positiveScore = queue.getByText('+75', { exact: true })
-  await expect(positiveScore).toHaveAttribute('aria-label', 'Итоговый результат: +75 очков')
-  await expect(positiveScore).toHaveCSS('color', 'rgb(144, 151, 128)')
-
-  const headerTop = (await page.getByRole('columnheader').first().boundingBox())!.y
-  expect((await context.boundingBox())!.y).toBe(headerTop)
-  const statusBox = await context.locator(':scope > div > :first-child').boundingBox()
-  const queueBox = await queue.boundingBox()
-  expect(queueBox!.x).toBe(statusBox!.x)
-  expect(queueBox!.width).toBe(statusBox!.width)
-  const titleBox = await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox()
-  expect(
-    Math.abs(titleBox!.x + titleBox!.width / 2 - (queueBox!.x + queueBox!.width / 2)),
-  ).toBeLessThan(1)
-  expect((await queue.boundingBox())!.y).toBeGreaterThan(
-    (await context.getByRole('button', { name: 'Ночные странники' }).boundingBox())!.y,
+  await expect(queue.getByRole('region', { name: 'В очереди · 2' })).toBeVisible()
+  await expect(queue.getByRole('heading', { name: 'Сыграли' })).toBeVisible()
+  await expect(queue).not.toContainText('Ночные странники')
+  await expect(context.getByRole('region', { name: 'Активная команда' })).toContainText(
+    'Ночные странники',
   )
-
+  await expect(queue.getByLabel('Команда номер 3')).toHaveText('3')
+  await expect(queue.getByRole('listitem').last()).toContainText('Последний рубеж')
+  await expect(queue.getByLabel('Итоговый результат: 75 очков')).toHaveText('75 очк.')
+  await expect(
+    queue.getByLabel('Итоговый результат: 75 очков').getByText('75 очк.', { exact: true }),
+  ).toHaveCSS('color', 'rgb(144, 151, 128)')
+  const contextBox = (await context.boundingBox())!
+  const fieldBox = (await page.locator('[data-board-field]').boundingBox())!
+  expect(contextBox.x).toBeGreaterThanOrEqual(16)
+  expect(Math.abs(contextBox.x + contextBox.width / 2 - (fieldBox.x + 16) / 2)).toBeLessThanOrEqual(
+    2,
+  )
+  expect(contextBox.y).toBe((await page.getByRole('columnheader').first().boundingBox())!.y)
+  expect((await queue.boundingBox())!.y).toBeGreaterThan(
+    (await context.getByTestId('game-board-status-title').boundingBox())!.y,
+  )
   await context.getByText('Выбор карточки', { exact: true }).hover()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
-for (const [score, expectedText, expectedColor] of [
-  [-30, '-30', 'rgb(164, 99, 92)'],
-  [null, '-', 'rgb(160, 158, 152)'],
-] as const) {
+for (const score of [-30, 0, null]) {
   test(`played team queue shows ${score ?? 'no'} final score on mobile`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 2, score)
     await page.goto('/panel/game-board')
-
-    const queue = page.getByTestId('game-board-team-queue')
-    await queue.locator('summary').click()
-    const scoreLabel = queue.getByText(expectedText, { exact: true })
-    await expect(scoreLabel).toBeVisible()
-    await expect(scoreLabel).toHaveCSS('color', expectedColor)
-    await expect(scoreLabel).toHaveAttribute(
-      'aria-label',
-      score === null ? 'Нет завершённого раунда' : 'Итоговый результат: -30 очков',
+    await expandProgress(page)
+    await page.getByRole('button', { name: 'Посмотреть очередь команд' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Очередь команд' })
+    const scoreLabel = dialog.getByLabel(
+      score === null ? 'Нет завершённого раунда' : `Итоговый результат: ${score} очков`,
     )
+    await expect(scoreLabel).toHaveText(score === null ? '-' : `${score} очк.`)
+    if (score !== null && score < 0)
+      await expect(scoreLabel.getByText(`${score} очк.`, { exact: true })).toHaveCSS(
+        'color',
+        'rgb(164, 99, 92)',
+      )
   })
 }
 
 for (const width of [320, 390, 768, 1024]) {
-  test(`stacked board keeps its team queue collapsed above the cards at ${width}px`, async ({
-    page,
-  }) => {
+  test(`stacked board opens its queue without moving cards at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
-    await mockGame(page)
+    await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 20)
     await page.goto('/panel/game-board')
-
-    const context = page.getByTestId('game-board-context')
-    const queue = page.getByTestId('game-board-team-queue')
-    const disclosure = queue.locator('details')
-    const firstCard = page.locator('[data-cell-id="card-0"]')
-    await expect(disclosure).not.toHaveAttribute('open')
-    await expect(queue.getByText('Ночные странники')).not.toBeVisible()
-    expect((await queue.boundingBox())!.y).toBeGreaterThan(
-      (await context.getByTestId('game-board-status-title').boundingBox())!.y,
-    )
-    const queueBox = await queue.boundingBox()
-    const statusBox = await context.locator(':scope > div > :first-child').boundingBox()
-    const titleBox = await queue.getByText('Очередь команд', { exact: true }).boundingBox()
-    expect(queueBox!.x).toBe(statusBox!.x)
-    expect(queueBox!.width).toBe(statusBox!.width)
-    expect(queueBox!.y).toBe(statusBox!.y + statusBox!.height)
-    expect(
-      Math.abs(titleBox!.x + titleBox!.width / 2 - (queueBox!.x + queueBox!.width / 2)),
-    ).toBeLessThan(1)
-    expect(queueBox!.y + queueBox!.height).toBeLessThan((await firstCard.boundingBox())!.y)
-    expect(statusBox!.height).toBe(96)
-
-    await queue.locator('summary').click()
-    await expect(disclosure).toHaveAttribute('open')
-    await expect(queue.getByText('Ночные странники')).toBeVisible()
-    expect((await queue.boundingBox())!.width).toBe(queueBox!.width)
-    await queue.locator('summary').click()
-    await expect(disclosure).not.toHaveAttribute('open')
-    await expect(queue.getByText('Ночные странники')).not.toBeVisible()
+    await expandProgress(page)
+    const opener = page.getByRole('button', { name: 'Посмотреть очередь команд' })
+    await expect(opener).toHaveText('В очереди 18 · Сыграли 1')
+    await expect(page.getByTestId('game-board-team-queue')).toHaveCount(0)
+    const card = page.locator('[data-cell-id="card-0"]')
+    const before = await card.boundingBox()
+    await opener.focus()
+    await page.keyboard.press('Enter')
+    const dialog = page.getByRole('dialog', { name: 'Очередь команд' })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toHaveAttribute('aria-modal', 'true')
+    await expect(dialog.getByText('Ночные странники', { exact: true })).toHaveCount(1)
+    await expect(dialog.getByText('Команда 20', { exact: true })).toBeAttached()
+    expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    const bounds = (await dialog.boundingBox())!
+    expect(bounds.x).toBeGreaterThanOrEqual(0)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(900)
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).last().focus()
+    await page.keyboard.press('Tab')
+    expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/queue-${width}.png`,
+      animations: 'disabled',
+    })
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toBeVisible()
+    await expect(opener).toBeFocused()
+    expect(await card.boundingBox()).toEqual(before)
   })
 }
 
-test('team queue keeps its expansion across desktop and mobile layouts', async ({ page }) => {
+test('queue dialog survives resizing and restores focus when its mobile trigger disappears', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockGame(page)
   await page.goto('/panel/game-board')
-  const queue = page.getByTestId('game-board-team-queue')
-  await queue.locator('summary').focus()
-  await page.keyboard.press('Enter')
-  await expect(queue.locator('details')).toHaveAttribute('open')
-  await expect(queue.getByText('Ночные странники')).toBeVisible()
+  await expandProgress(page)
+  await page.getByRole('button', { name: 'Посмотреть очередь команд' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Очередь команд' })
+  await expect(dialog).toBeVisible()
   await page.setViewportSize({ width: 1440, height: 900 })
-  await expect(queue.locator('details')).toHaveCount(0)
-  await expect(queue.getByText('Ночные странники')).toBeVisible()
-  await page.setViewportSize({ width: 390, height: 844 })
-  await expect(queue.locator('details')).toHaveAttribute('open')
-  await expect(queue.getByText('Ночные странники')).toBeVisible()
-  await queue.locator('summary').focus()
-  await page.keyboard.press('Space')
-  await expect(queue.locator('details')).not.toHaveAttribute('open')
+  await expect(dialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(
+    page.getByTestId('game-board-context').getByRole('heading', { name: 'Ход игры', exact: true }),
+  ).toBeFocused()
+  await expect(page.getByTestId('game-board-team-queue').getByText('Последний рубеж')).toBeVisible()
 })
 
-test('opened cards have no hover tooltip while closed cards retain their hint', async ({
+for (const width of [320, 1440]) {
+  test(`long team names and large scores remain readable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 320 ? 500 : 900 })
+    await mockGame(page)
+    const longName = 'ОченьДлинноеНазваниеКомандыБезПробеловДляПроверки'
+    const category = 'Только куст и корточки в самой дальней части карты'
+    await page.route('**/api/game', (route) =>
+      route.fulfill({ json: { ...board, colLabels: [category, ...categories.slice(1)] } }),
+    )
+    await page.route('**/api/game/team-queue', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          teams: Array.from({ length: 6 }, (_, index) => ({
+            teamId: index === 0 ? 'team-one' : `team-${index}`,
+            teamName: index === 1 ? longName : `Охотники ${index}`,
+            teamSlotIndex: index + 1,
+            isPlayed: index > 0,
+            playedAtUtc: index > 0 ? '2026-09-01T10:00:00Z' : null,
+            finalScore: index === 1 ? 1234567 : index * 100,
+            participants:
+              index === 1
+                ? [{ userId: 'c592262f-8e49-466d-a4fc-2de69ba46771', displayName: 'Охотник' }]
+                : [],
+          })),
+          summary: { totalTeams: 6, remainingTeams: 1, playedTeams: 5 },
+        },
+      }),
+    )
+    await page.goto('/panel/game-board')
+    await expandProgress(page)
+    if (width === 320) {
+      await expect(page.getByTestId('board-selected-category')).toHaveText(category)
+      await page.getByRole('button', { name: 'Посмотреть очередь команд' }).click()
+    }
+    const queue = page.getByTestId('game-board-team-queue')
+    await expect(queue.getByText(longName)).not.toBeVisible()
+    await queue.locator('summary').focus()
+    await page.keyboard.press('Space')
+    await expect(queue.getByText(longName)).toBeVisible()
+    await expect(queue.getByText('Ваша команда')).toBeVisible()
+    const row = queue.getByRole('listitem').filter({ hasText: longName })
+    if (width === 320) {
+      await queue.getByText('Охотники 5', { exact: true }).scrollIntoViewIfNeeded()
+      await expect(queue.getByText('Охотники 5', { exact: true })).toBeInViewport()
+      await row.scrollIntoViewIfNeeded()
+      await expect(row.getByText('Ваша команда')).toBeInViewport()
+    }
+    expect(await row.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    const score = row.getByLabel(/Итоговый результат/)
+    expect((await score.textContent())!.replace(/\s/g, '')).toBe('1234567очк.')
+    await expect(score).toBeVisible()
+    const nameBox = (await row.getByText(longName).boundingBox())!
+    const scoreBox = (await score.boundingBox())!
+    const markerBox = (await row.getByText('Ваша команда').boundingBox())!
+    expect(nameBox.width).toBeGreaterThanOrEqual(100)
+    expect(nameBox.x + nameBox.width).toBeLessThan(markerBox.x)
+    expect(scoreBox.y).toBeGreaterThanOrEqual(nameBox.y + nameBox.height)
+    await page.screenshot({
+      path: `../.tmp/game-board-design/queue-long-${width}.png`,
+      animations: 'disabled',
+    })
+    if (width === 320) {
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('button', { name: 'Посмотреть очередь команд' })).toBeFocused()
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+test('closed and revealed cards omit hover tooltips and retain accessible actions', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await mockGame(page)
   await page.goto('/panel/game-board')
-
-  const region = page.getByRole('region', { name: 'Последняя охота' })
-  await region.locator('[data-cell-id="card-0"]').hover()
-  await page.waitForTimeout(500)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await page.evaluate(() => document.fonts.ready)
-  await page.screenshot({
-    path: '../.tmp/game-board-design/open-card-hover-1440.png',
-    animations: 'disabled',
-  })
-
-  await region.locator('[data-cell-id="card-2"]').hover()
-  await expect(page.getByRole('tooltip')).toHaveText('Легенды · 100')
+  for (const id of ['card-0', 'card-2']) {
+    const card = page.locator(`[data-cell-id="${id}"]`)
+    await card.hover()
+    await page.waitForTimeout(500)
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(card).not.toHaveAttribute('title')
+    await expect(card).toHaveAccessibleName(/Открыть карточку/)
+  }
 })
 
 for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
@@ -1044,9 +1101,9 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     expect(firstCardBox!.y).toBeLessThan(width < 1200 ? 600 : 270)
     const statusBox = await page
       .getByTestId('game-board-context')
-      .locator(':scope > div > :first-child')
+      .locator(':scope > section')
       .boundingBox()
-    expect(statusBox!.height).toBe(width >= 1200 ? 116 : 96)
+    expect(statusBox!.height).toBeGreaterThan(120)
     if (width >= 1200) {
       expect((await page.getByRole('banner').boundingBox())!.height).toBe(58)
       expect(statusBox!.width).toBeLessThanOrEqual(541)
@@ -1085,9 +1142,8 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       await page.getByRole('tab', { name: 'Охота', exact: true }).focus()
       await page.keyboard.press('ArrowRight')
       await expect(page.getByRole('tab', { name: 'Оружие', exact: true })).toBeFocused()
-      await expect(page.getByRole('tooltip')).toHaveText('Оружие')
-      await page.keyboard.press('Escape')
-      await expect(page.getByRole('tooltip')).not.toBeVisible()
+      await expect(page.getByTestId('board-selected-category')).toHaveText('Оружие')
+      await expect(page.getByRole('tooltip')).toHaveCount(0)
       await page.getByRole('tab', { name: 'Охота', exact: true }).click()
     } else {
       await expect(region.locator('[data-cell-id]')).toHaveCount(25)
@@ -1110,13 +1166,6 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       if (width >= 1200) expect(cell.bottom).toBeLessThanOrEqual(height)
     }
     if (width === 1920 || width === 2560) {
-      for (const label of ['Фаза раунда', 'Активная команда']) {
-        const labelSize = await page
-          .getByTestId('game-board-context')
-          .getByText(label, { exact: true })
-          .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
-        expect(labelSize).toBe(12.5)
-      }
       const valueSize = await region
         .locator('[data-cell-id="card-2"] [data-card-value]')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
@@ -1125,7 +1174,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       const statusSize = await page
         .getByTestId('game-board-status-title')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
-      expect(statusSize).toBe(14.4)
+      expect(statusSize).toBe(24)
     }
     if (width >= 1200) {
       expect(
@@ -1304,16 +1353,13 @@ for (const status of ['ready', 'finished'] as const) {
       const action = page.getByTestId('game-board-context').getByRole('link', { name: actionLabel })
       await expect(action).toBeVisible()
       await expect(action).toHaveClass(/MuiButton-containedPrimary/)
-      const label = action.getByText(actionLabel, { exact: true })
-      const typography = (element: Element) => {
-        const style = getComputedStyle(element)
-        return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
-      }
-      expect(await label.evaluate(typography)).toEqual(
-        await page.getByTestId('game-board-status-title').evaluate(typography),
+      await expect(action).toHaveAttribute(
+        'href',
+        status === 'ready' ? '/panel/game-application' : '/panel/game-history?gameId=board-layout',
       )
+      expect((await action.boundingBox())!.height).toBeGreaterThanOrEqual(44)
       expect(
-        await label.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+        await action.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
       ).toBe(true)
       await action.focus()
       await expect(action).toBeFocused()
@@ -1501,6 +1547,10 @@ for (const width of [320, 390, 1440]) {
       route.fulfill({
         json: {
           ...board,
+          colLabels:
+            width < 600
+              ? ['Охота', 'Оружие', 'Легенды', 'Только куст и корточки', 'Контракты']
+              : board.colLabels,
           cells: board.cells.map((cell, index) =>
             index === 0 ? { ...cell, media: [{ url: '/media/cards/current-round.svg' }] } : cell,
           ),
@@ -1536,8 +1586,23 @@ for (const width of [320, 390, 1440]) {
       await currentCard.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth),
     ).toBe(80)
     if (width < 600) {
+      const verticalPosition = () =>
+        page.evaluate(() => {
+          const panel = document.querySelector('[data-testid="game-board-context"]')
+          const boardField = document.querySelector('[data-board-field]')
+          if (!panel || !boardField) throw new Error('Board layout is missing')
+          return {
+            panel: Math.round(panel.getBoundingClientRect().top + window.scrollY),
+            field: Math.round(boardField.getBoundingClientRect().top + window.scrollY),
+          }
+        })
+      const beforeSwitch = await verticalPosition()
       await page.getByRole('tab', { name: 'Оружие', exact: true }).click()
+      expect(await verticalPosition()).toEqual(beforeSwitch)
+      await page.getByRole('tab', { name: 'Только куст и корточки', exact: true }).click()
+      expect(await verticalPosition()).toEqual(beforeSwitch)
       await page.getByRole('button', { name: 'Текущий раунд', exact: true }).click()
+      expect(await verticalPosition()).toEqual(beforeSwitch)
     }
     await expect(page.locator('[data-cell-id="card-0"]')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
@@ -1545,65 +1610,15 @@ for (const width of [320, 390, 1440]) {
       name: 'Открыть текущий раунд',
     })
     await expect(modifierAction).toHaveClass(/MuiButton-containedPrimary/)
-    const modifierLabel = modifierAction.getByText('Выбор модификаторов', { exact: true })
-    const teamValue = page.getByTestId('game-board-status-title')
-    const typography = (element: Element) => {
-      const style = getComputedStyle(element)
-      return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
-    }
-    expect(await modifierLabel.evaluate(typography)).toEqual(await teamValue.evaluate(typography))
-    expect(
-      await modifierLabel.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
-    ).toBe(true)
-    await expect(page.getByTestId('game-board-context')).toContainText(teamName)
-    await expect(page.getByTestId('game-board-context')).toContainText('Активная команда')
-    await expect(page.getByTestId('game-board-context')).toContainText('Фаза раунда')
-    const actionBox = await modifierAction.boundingBox()
-    const statusBox = await page
-      .getByTestId('game-board-context')
-      .locator(':scope > div > :first-child')
-      .boundingBox()
-    const phaseCaptionBox = await modifierAction
-      .getByText('Фаза раунда', { exact: true })
-      .boundingBox()
-    const teamCaptionBox = await page
-      .getByTestId('game-board-context')
-      .getByText('Активная команда', { exact: true })
-      .boundingBox()
-    const contextRows = page
-      .getByTestId('game-board-context')
-      .locator(':scope > div > :first-child > *')
-    await expectHorizontallyCentered(
-      page
-        .getByTestId('game-board-context')
-        .getByText('Активная команда', { exact: true })
-        .locator('..'),
-      contextRows.nth(1),
-    )
-    await expectHorizontallyCentered(
-      page.getByTestId('game-board-status-title'),
-      contextRows.nth(1),
-    )
-    await expectHorizontallyCentered(
-      modifierAction.getByText('Фаза раунда', { exact: true }).locator('..'),
-      contextRows.nth(0),
-    )
-    await expectHorizontallyCentered(modifierLabel, contextRows.nth(0))
-    expect(phaseCaptionBox!.y - actionBox!.y).toBeGreaterThanOrEqual(width >= 1200 ? 7 : 4)
-    expect(teamCaptionBox!.y).toBeGreaterThan(phaseCaptionBox!.y)
-    const phaseRowBox = await contextRows.nth(0).boundingBox()
-    const teamRowBox = await contextRows.nth(1).boundingBox()
-    const stackedStatusBox = await page
-      .getByTestId('game-board-context')
-      .locator(':scope > div > :first-child')
-      .boundingBox()
-    expect(teamRowBox!.y).toBe(phaseRowBox!.y + phaseRowBox!.height)
-    expect(teamRowBox!.x).toBe(phaseRowBox!.x)
-    expect(phaseRowBox!.width).toBe(stackedStatusBox!.width - 2)
-    expect(stackedStatusBox!.width).toBeCloseTo(statusBox!.width, 0)
-    expect(actionBox!.height).toBeGreaterThanOrEqual(44)
-    expect(statusBox!.height).toBe(width >= 1200 ? 116 : 96)
-    expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(statusBox!.x + statusBox!.width)
+    const context = page.getByTestId('game-board-context')
+    await expect(context).toContainText(teamName)
+    await expect(context.getByTestId('game-board-phase')).toHaveText('Выбор модификаторов')
+    const statusBox = await context.locator(':scope > section').boundingBox()
+    const actionBox = (await modifierAction.boundingBox())!
+    expect(actionBox.height).toBeGreaterThanOrEqual(44)
+    expect(actionBox.x).toBeGreaterThan(statusBox!.x)
+    expect(actionBox.x + actionBox.width).toBeLessThan(statusBox!.x + statusBox!.width)
+    expect(await context.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
     await expect(page.getByRole('button', { name: 'Меню игры' })).toHaveCount(0)
     if (width >= 1024) {
       expect(
@@ -1634,29 +1649,14 @@ for (const width of [320, 390, 1440]) {
     await page.reload()
     await expect(page.getByTestId('game-board-context')).toContainText('Проведение игры')
     await expect(page.getByRole('link', { name: 'Открыть текущий раунд' })).toBeVisible()
-    expect(
-      await page
-        .getByTestId('game-board-context')
-        .getByText('Проведение игры', { exact: true })
-        .evaluate(typography),
-    ).toEqual(await teamValue.evaluate(typography))
-    await expectHorizontallyCentered(
-      page
-        .getByTestId('game-board-context')
-        .getByText('Фаза раунда', { exact: true })
-        .locator('..'),
-      page.getByTestId('game-board-context').locator(':scope > div > :first-child > *').nth(0),
-    )
+    await expect(page.getByTestId('game-board-phase')).toHaveText('Проведение игры')
     const teamBoxAfter = await page
       .getByTestId('game-board-context')
       .getByTestId('game-board-status-title')
       .boundingBox()
     const cardBoxAfter = await page.locator('[data-cell-id="card-0"]').boundingBox()
     expect(
-      await page
-        .getByTestId('game-board-context')
-        .locator(':scope > div > :first-child')
-        .boundingBox(),
+      await page.getByTestId('game-board-context').locator(':scope > section').boundingBox(),
     ).toEqual(statusBox)
     expect(teamBoxAfter).toEqual(teamBoxBefore)
     expect(cardBoxAfter).toEqual(cardBoxBefore)
@@ -1722,7 +1722,10 @@ test('a twelve-column board uses categories when its container cannot keep cards
   page,
 }) => {
   await page.setViewportSize({ width: 768, height: 900 })
-  await mockGame(page)
+  let sendEvent: ((message: string) => void) | undefined
+  await mockGame(page, 'active', 'admin', 'Ночные странники', (send) => {
+    sendEvent = send
+  })
   const largeBoard = {
     ...board,
     cols: 12,
@@ -1734,7 +1737,8 @@ test('a twelve-column board uses categories when its container cannot keep cards
       col: index % 12,
     })),
   }
-  await page.route('**/api/game', (route) => route.fulfill({ json: largeBoard }))
+  let currentBoard: GameBoardSnapshot = largeBoard
+  await page.route('**/api/game', (route) => route.fulfill({ json: currentBoard }))
   await page.goto('/panel/game-board')
   const categories = page.getByRole('tablist', { name: 'Категории поля' })
   await expect(categories).toBeVisible()
@@ -1759,6 +1763,40 @@ test('a twelve-column board uses categories when its container cannot keep cards
   await page.setViewportSize({ width: 768, height: 900 })
   await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Категория 2')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await expect.poll(() => Boolean(sendEvent)).toBe(true)
+  for (const nextBoard of [board, largeBoard]) {
+    currentBoard = { ...nextBoard, gameId: `resized-${nextBoard.cols}` }
+    sendEvent?.(
+      JSON.stringify({
+        type: 1,
+        target: realtimeHubs.gameBoard.events.gameLifecycleChanged,
+        arguments: [
+          {
+            gameId: currentBoard.gameId,
+            status: currentBoard.status,
+            boardVersion: currentBoard.version,
+            occurredAtUtc: '2026-09-01T12:00:00Z',
+          },
+        ],
+      }) + '\u001e',
+    )
+    await expect(page.locator('[data-cell-id]')).toHaveCount(nextBoard.cols === 5 ? 25 : 5)
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const context = document
+            .querySelector('[data-testid="game-board-context"]')!
+            .getBoundingClientRect()
+          const first = document.querySelector('[data-cell-id]')!.getBoundingClientRect()
+          const row = [...document.querySelectorAll('[data-cell-id]')]
+            .map((el) => el.getBoundingClientRect())
+            .filter((rect) => Math.abs(rect.top - first.top) < 1)
+          const right = Math.max(...row.map((rect) => rect.right))
+          return Math.abs(context.left - first.left) + Math.abs(context.right - right)
+        }),
+      )
+      .toBeLessThanOrEqual(2)
+  }
 })
 
 for (const width of [320, 1440]) {
@@ -1888,12 +1926,12 @@ test('card background and preview load through the shared image component', asyn
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`played card keeps its two-line result readable at ${width}px`, async ({
+  test(`played card keeps its result and team readable at ${width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: width === 768 ? 800 : 900 })
     const writes = await mockGame(page)
-    const finalScore = width === 1440 ? 1234 : 145
+    const finalScore = width === 390 ? -30 : width === 768 ? 0 : 1234
     await page.route('**/api/game/history/games/board-layout', (route) =>
       route.fulfill({
         json: {
@@ -1946,9 +1984,18 @@ for (const width of [390, 768, 1440]) {
     const card = page.locator('[data-cell-id="card-0"]')
     const label = card.getByTestId('played-cell-result-label')
     const points = card.getByTestId('played-cell-result-points')
-    await expect(label).toHaveText('Итог')
+    await expect(label).toHaveText('Сыграно')
     await expect(points).toHaveText(`${finalScore} очк.`)
-    await expect(card).not.toContainText('Ночные призраки')
+    await expect(points).toHaveCSS(
+      'color',
+      width === 390
+        ? 'rgb(164, 99, 92)'
+        : width === 768
+          ? 'rgb(209, 207, 199)'
+          : 'rgb(144, 151, 128)',
+    )
+    await expect(card.getByTestId('played-cell-team')).toHaveText('Ночные призраки')
+    await expect(card).toHaveAccessibleDescription(`Сыграно ${finalScore} очк. Ночные призраки`)
     await expect(card).not.toContainText('Александр Неверовский')
     const labelBox = await label.boundingBox()
     const pointsBox = await points.boundingBox()

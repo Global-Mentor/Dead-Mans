@@ -1,16 +1,13 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { useId, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import { AppButton, AsyncSection, NativeDisclosure, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { groupTeamQueueTeams } from '../model/team-queue-order.ts'
-import { boardContextSurfaceSx } from '../theme/board-context-sx.ts'
+import { GameBoardOrnamentDivider } from './GameBoardOrnamentDivider.tsx'
 
-interface GameBoardTeamQueueProps {
-  collapsible: boolean
+export interface BoardQueueState {
   teams: readonly GameTeamQueueItem[]
-  activeTeamId: string | null
   isLoading: boolean
   isError: boolean
   hasData: boolean
@@ -18,221 +15,231 @@ interface GameBoardTeamQueueProps {
   onRetry: () => void
 }
 
+interface GameBoardTeamQueueProps extends BoardQueueState {
+  currentUserId: string | null
+  playedExpanded: boolean
+  onPlayedExpandedChange: (expanded: boolean) => void
+}
+
 export function GameBoardTeamQueue({
-  collapsible,
   teams,
-  activeTeamId,
   isLoading,
   isError,
   hasData,
   isRefreshing,
   onRetry,
+  currentUserId,
+  playedExpanded,
+  onPlayedExpandedChange,
 }: GameBoardTeamQueueProps) {
   const { t } = useTranslation()
-  const id = useId()
-  const [expanded, setExpanded] = useState(false)
   const { remainingTeams, playedTeams } = groupTeamQueueTeams(teams)
-  const title = t('gameBoard.teamQueueTitle')
-  const content = (
-    <AsyncSection
-      isLoading={isLoading}
-      isError={isError}
-      isEmpty={teams.length === 0}
-      hasData={hasData}
-      loadingMessage={t('gameBoard.teamQueueLoading')}
-      errorMessage={t('gameBoard.teamQueueError')}
-      emptyMessage={t('gameBoard.teamQueueEmpty')}
-      retryAction={
-        <AppButton tone="secondary" size="small" onClick={onRetry} loading={isRefreshing}>
-          {t('common.actions.retry')}
-        </AppButton>
-      }
-    >
-      <Stack spacing={1.25} sx={{ maxHeight: { lg: 'min(58vh, 520px)' }, overflowY: 'auto' }}>
-        <QueueGroup title={t('gameBoard.teamQueueRemainingTitle')} count={remainingTeams.length}>
-          {remainingTeams.map(({ team }) => (
-            <QueueTeam key={team.teamId} team={team} active={team.teamId === activeTeamId} />
-          ))}
-        </QueueGroup>
-        <QueueGroup title={t('gameBoard.teamQueuePlayedTitle')} count={playedTeams.length}>
-          {playedTeams.map(({ team }) => (
-            <QueueTeam key={team.teamId} team={team} active={team.teamId === activeTeamId} />
-          ))}
-        </QueueGroup>
-      </Stack>
-    </AsyncSection>
+  const playedTitle = t('gameBoard.progress.played')
+  const playedList = (
+    <QueueList teams={playedTeams.map(({ team }) => team)} currentUserId={currentUserId} />
   )
-
-  if (collapsible) {
-    return (
-      <QueueDisclosure id={id} title={title} expanded={expanded} onExpandedChange={setExpanded}>
-        {content}
-      </QueueDisclosure>
-    )
-  }
-
   return (
-    <Box
-      component="section"
-      aria-labelledby={id}
-      data-testid="game-board-team-queue"
-      sx={(theme) => ({
-        ...boardContextSurfaceSx(theme),
-        minWidth: 0,
-        p: 1.25,
-      })}
-    >
-      <Typography id={id} component="h2" variant="subtitle2" sx={{ mb: 1, textAlign: 'center' }}>
-        {title}
-      </Typography>
-      {content}
-    </Box>
-  )
-}
-
-function QueueDisclosure({
-  id,
-  title,
-  expanded,
-  onExpandedChange,
-  children,
-}: {
-  id: string
-  title: string
-  expanded: boolean
-  onExpandedChange: (expanded: boolean) => void
-  children: ReactNode
-}) {
-  return (
-    <Box
-      component="section"
-      aria-labelledby={id}
-      data-testid="game-board-team-queue"
-      sx={(theme) => ({
-        ...boardContextSurfaceSx(theme),
-        minWidth: 0,
-        width: '100%',
-        borderTop: 0,
-      })}
-    >
-      <NativeDisclosure
-        open={expanded}
-        onExpandedChange={onExpandedChange}
-        centeredSummary
-        summary={
-          <Typography
-            id={id}
-            component="span"
-            variant="subtitle2"
-            color="text.primary"
-            sx={{ fontSize: { xs: 13, sm: 14 }, fontWeight: 750, lineHeight: '18px' }}
-          >
-            {title}
-          </Typography>
+    <Box data-testid="game-board-team-queue" sx={{ minWidth: 0 }}>
+      <AsyncSection
+        isLoading={isLoading}
+        isError={isError}
+        hasData={hasData}
+        isEmpty={false}
+        loadingMessage={t('gameBoard.teamQueueLoading')}
+        errorMessage={t('gameBoard.teamQueueError')}
+        emptyMessage={t('gameBoard.teamQueueEmpty')}
+        retryAction={
+          <AppButton tone="secondary" size="small" onClick={onRetry} loading={isRefreshing}>
+            {t('common.actions.retry')}
+          </AppButton>
         }
-        sx={{ px: 1.25, pb: expanded ? 1.25 : 0 }}
       >
-        {children}
-      </NativeDisclosure>
-    </Box>
-  )
-}
-
-function QueueGroup({
-  title,
-  count,
-  children,
-}: {
-  title: string
-  count: number
-  children: ReactNode
-}) {
-  return (
-    <Box component="section" sx={{ minWidth: 0 }}>
-      <Typography
-        component="h3"
-        variant="caption"
-        color="text.secondary"
-        sx={{
-          display: 'block',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          pb: 0.375,
-          mb: 0.5,
-        }}
-      >
-        {title} · {count}
-      </Typography>
-      {count ? (
-        <Stack component="ol" spacing={0.25} sx={{ listStyle: 'none', p: 0, m: 0 }}>
-          {children}
+        <Stack spacing={1.5}>
+          <Box
+            component="section"
+            aria-label={t('gameBoard.progress.waiting', { count: remainingTeams.length })}
+          >
+            {remainingTeams.length ? (
+              <QueueList
+                teams={remainingTeams.map(({ team }) => team)}
+                currentUserId={currentUserId}
+              />
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {t('gameBoard.progress.noWaiting')}
+              </Typography>
+            )}
+          </Box>
+          <Box component="section" aria-label={playedTitle}>
+            <GameBoardOrnamentDivider />
+            <Box sx={{ pt: 0.75 }}>
+              {playedTeams.length > 3 ? (
+                <NativeDisclosure
+                  open={playedExpanded}
+                  onExpandedChange={onPlayedExpandedChange}
+                  summary={
+                    <Typography
+                      component="h3"
+                      variant="subtitle2"
+                      color="primary.light"
+                      sx={{
+                        display: 'block',
+                        fontWeight: 750,
+                        letterSpacing: '0.07em',
+                        textTransform: 'uppercase',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {playedTitle}
+                    </Typography>
+                  }
+                >
+                  {playedList}
+                </NativeDisclosure>
+              ) : (
+                <>
+                  <Typography
+                    component="h3"
+                    variant="subtitle2"
+                    color="primary.light"
+                    sx={{
+                      py: 0.75,
+                      fontWeight: 750,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {playedTitle}
+                  </Typography>
+                  {playedTeams.length ? (
+                    playedList
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('gameBoard.teamQueuePlayedEmpty')}
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Box>
+          </Box>
         </Stack>
-      ) : null}
+      </AsyncSection>
     </Box>
   )
 }
 
-function QueueTeam({ team, active }: { team: GameTeamQueueItem; active: boolean }) {
+function QueueList({
+  teams,
+  currentUserId,
+}: {
+  teams: readonly GameTeamQueueItem[]
+  currentUserId: string | null
+}) {
   const { t, i18n } = useTranslation()
-  const name = formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))
-  const score = team.finalScore ?? null
-  const scoreText =
-    score === null
-      ? '-'
-      : new Intl.NumberFormat(i18n.language, { signDisplay: 'exceptZero' }).format(score)
   return (
-    <Stack
-      component="li"
-      direction="row"
-      alignItems="center"
-      spacing={0.75}
-      sx={{ minWidth: 0, py: 0.375, px: 0.5, bgcolor: active ? 'action.selected' : 'transparent' }}
-    >
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ minWidth: 20, fontVariantNumeric: 'tabular-nums' }}
-      >
-        {team.teamSlotIndex}.
-      </Typography>
-      <Typography variant="body2" sx={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere' }}>
-        {name}
-      </Typography>
-      {active ? (
-        <StatusBadge
-          size="small"
-          color="primary"
-          variant="outlined"
-          label={t('gameBoard.teamQueueActiveChip')}
-        />
-      ) : null}
-      {team.isPlayed ? (
-        <Typography
-          component="span"
-          aria-label={
-            score === null
-              ? t('gameBoard.teamQueueNoFinalScore')
-              : t('gameBoard.teamQueueFinalScoreLabel', { score: scoreText })
-          }
-          sx={{
-            minWidth: 26,
-            flexShrink: 0,
-            color:
-              score === null || score === 0
-                ? 'text.secondary'
-                : score > 0
-                  ? 'success.main'
-                  : 'error.main',
-            fontSize: 12.5,
-            fontWeight: 800,
-            fontVariantNumeric: 'tabular-nums',
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {scoreText}
-        </Typography>
-      ) : null}
+    <Stack component="ul" spacing={0} sx={{ listStyle: 'none', p: 0, m: 0, mt: 0.5 }}>
+      {teams.map((team) => {
+        const own = team.participants.some((participant) => participant.userId === currentUserId)
+        const score = team.finalScore ?? null
+        const formatted = score === null ? null : new Intl.NumberFormat(i18n.language).format(score)
+        return (
+          <Stack
+            component="li"
+            key={team.teamId}
+            direction="row"
+            alignItems="flex-start"
+            spacing={1}
+            sx={{
+              minWidth: 0,
+              py: 0.9,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              '&:last-child': { borderBottom: 0 },
+            }}
+          >
+            <StatusBadge
+              size="small"
+              density="compact"
+              variant="outlined"
+              label={String(team.teamSlotIndex)}
+              aria-label={t('gameBoard.progress.teamNumber', { number: team.teamSlotIndex })}
+              sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
+            />
+            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              <Box
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 0.5,
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontWeight: own ? 700 : 500,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))}
+                </Typography>
+                {own ? (
+                  <StatusBadge
+                    density="compact"
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    label={t('gameBoard.progress.yourTeam')}
+                    sx={{ flexShrink: 0 }}
+                  />
+                ) : null}
+              </Box>
+              {team.isPlayed ? (
+                <StatusBadge
+                  size="small"
+                  density="compact"
+                  variant="outlined"
+                  color={
+                    score === null || score === 0 ? 'default' : score > 0 ? 'success' : 'error'
+                  }
+                  aria-label={
+                    formatted === null
+                      ? t('gameBoard.teamQueueNoFinalScore')
+                      : t('gameBoard.teamQueueFinalScoreLabel', { score: formatted })
+                  }
+                  label={
+                    <Typography
+                      component="span"
+                      variant="inherit"
+                      color={
+                        score === null || score === 0
+                          ? 'text.primary'
+                          : score > 0
+                            ? 'success.main'
+                            : 'error.main'
+                      }
+                    >
+                      {formatted === null
+                        ? '-'
+                        : t('gameBoard.cellPlayedPoints', { score: formatted })}
+                    </Typography>
+                  }
+                  sx={{
+                    flexShrink: 0,
+                    maxWidth: '100%',
+                    ml: 'auto',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                />
+              ) : null}
+            </Box>
+          </Stack>
+        )
+      })}
     </Stack>
   )
 }

@@ -19,13 +19,17 @@ export function GameBoardLayout({
   children,
 }: GameBoardLayoutProps) {
   const theme = useTheme()
+  const railClearance = parseFloat(theme.spacing(2))
   const smallScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const wideScreen = useMediaQuery(theme.breakpoints.up('lg'))
   const container = useRef<HTMLDivElement>(null)
   const [availableWidth, setAvailableWidth] = useState<number | null>(null)
+  const [boardFieldStart, setBoardFieldStart] = useState<number | null>(null)
+  const [boardFieldWidth, setBoardFieldWidth] = useState<number | null>(null)
   useLayoutEffect(() => {
     const element = container.current
     if (!element) return
+    const boardField = element.querySelector<HTMLElement>('[data-board-field]')
     const measure = () => {
       const styles = getComputedStyle(element)
       const width =
@@ -33,13 +37,19 @@ export function GameBoardLayout({
         parseFloat(styles.paddingLeft || '0') -
         parseFloat(styles.paddingRight || '0')
       if (width > 0) setAvailableWidth(width)
+      if (boardField) {
+        const fieldRect = boardField.getBoundingClientRect()
+        setBoardFieldWidth(Math.round(fieldRect.width))
+        setBoardFieldStart(Math.round(fieldRect.left - element.getBoundingClientRect().left))
+      }
     }
     measure()
     if (typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(measure)
     observer.observe(element)
+    if (boardField) observer.observe(boardField)
     return () => observer.disconnect()
-  }, [])
+  }, [availableWidth, smallScreen, columns, rowLabelColumnWidth])
   const minimumMatrixWidth =
     2 * rowLabelColumnWidth +
     columns * boardGridMetrics.minimumCardWidth.desktop +
@@ -47,10 +57,26 @@ export function GameBoardLayout({
   const sideBySide =
     wideScreen &&
     availableWidth !== null &&
-    availableWidth >=
-      minimumMatrixWidth + 2 * (boardGridMetrics.statusRailWidth + parseFloat(theme.spacing(0.9)))
+    availableWidth >= minimumMatrixWidth + 2 * (boardGridMetrics.statusRailWidth + railClearance)
   const categoryLayout =
     smallScreen || (availableWidth !== null && availableWidth < minimumMatrixWidth)
+  const cardColumnsWidth =
+    boardFieldWidth === null
+      ? '100%'
+      : categoryLayout
+        ? boardFieldWidth
+        : Math.max(
+            0,
+            boardFieldWidth -
+              2 * (rowLabelColumnWidth + parseFloat(theme.spacing(boardGridMetrics.gap))),
+          )
+  const railLeft =
+    boardFieldStart === null
+      ? railClearance
+      : Math.max(
+          railClearance,
+          (boardFieldStart + railClearance - boardGridMetrics.statusRailWidth) / 2,
+        )
   return (
     <Box
       ref={container}
@@ -75,12 +101,12 @@ export function GameBoardLayout({
         sx={{
           gridArea: sideBySide ? undefined : 'context',
           minWidth: 0,
-          width: categoryLayout ? '100%' : boardGridMetrics.statusRailWidth,
-          maxWidth: sideBySide || categoryLayout ? undefined : boardGridMetrics.statusRailWidth,
+          width: sideBySide ? boardGridMetrics.statusRailWidth : cardColumnsWidth,
+          maxWidth: '100%',
           justifySelf: sideBySide ? 'start' : 'center',
           position: sideBySide ? 'absolute' : undefined,
           top: sideBySide ? 0 : undefined,
-          left: sideBySide ? 0 : undefined,
+          left: sideBySide ? railLeft : undefined,
         }}
       >
         {context(!sideBySide)}
@@ -90,6 +116,9 @@ export function GameBoardLayout({
         sx={{
           gridArea: 'management',
           minWidth: 0,
+          width: cardColumnsWidth,
+          maxWidth: '100%',
+          justifySelf: 'center',
           display: { xs: 'flex', lg: 'contents' },
           justifyContent: 'flex-end',
         }}
@@ -102,7 +131,7 @@ export function GameBoardLayout({
           minWidth: 0,
           width: '100%',
           maxWidth: sideBySide
-            ? `calc(100% - ${2 * (boardGridMetrics.statusRailWidth + parseFloat(theme.spacing(0.9)))}px)`
+            ? `calc(100% - ${2 * (boardGridMetrics.statusRailWidth + railClearance)}px)`
             : undefined,
           justifySelf: 'center',
         }}

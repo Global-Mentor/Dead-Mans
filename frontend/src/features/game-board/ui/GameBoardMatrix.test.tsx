@@ -50,3 +50,11 @@ it('falls back to the first category if the selected category is removed', () =>
   rerender(<GameBoardMatrix {...props} colLabels={['Hunt']} />)
   expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Hunt')
 })
+
+it('shows the full selected category without relying on a hover hint', () => {
+  const label = 'Очень длинная категория для маленького экрана'
+  renderWithAppProviders(<GameBoardMatrix {...props} colLabels={['Hunt', label]} />)
+  fireEvent.click(screen.getByRole('tab', { name: label }))
+  expect(screen.getByRole('heading', { name: label })).toBeVisible()
+  expect(screen.getByRole('tab', { name: label })).not.toHaveAttribute('title')
+})

@@ -1,5 +1,5 @@
 export const boardGridMetrics = {
-  statusRailWidth: 270,
+  statusRailWidth: 300,
   columnHeaderHeight: '3.5rem',
   columnDividerHeight: 12,
   leadColumnWidth: 44,

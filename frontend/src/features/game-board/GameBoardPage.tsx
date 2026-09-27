@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { gameApplicationRoute, gameHistoryRoute, gameRoundRoute } from '../../routes/app-routes.ts'
+import { gameRoundRoute } from '../../routes/app-routes.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import {
   AppButton,
@@ -13,14 +13,11 @@ import {
   PageStatePanel,
 } from '../../shared/ui/index.ts'
 import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
-import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
-import { buildGameManagementFlow } from './model/game-management-flow.ts'
 import { getBoardRowLabelColumnWidth } from './theme/board-grid-metrics.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
-import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
-import { GameBoardTeamQueue } from './ui/GameBoardTeamQueue.tsx'
+import { GameBoardProgressPanel } from './ui/GameBoardProgressPanel.tsx'
 import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 import { useCardPlayResult } from './use-card-play-result.ts'
 import { useGameBoardCellResults } from './use-game-board-cell-results.ts'
@@ -87,13 +84,6 @@ export function GameBoardPage() {
   const snapshot = data
   const rowLabelColumnWidth = getBoardRowLabelColumnWidth(snapshot.rowLabels)
   const title = snapshot.title || t('gameBoard.title')
-  const flow = buildGameManagementFlow(snapshot, activeRound)
-  const currentActiveTeamId = activeRound?.teamId ?? snapshot.activeTeamId ?? null
-  const activeTeam = teamQueue.find((team) => team.teamId === currentActiveTeamId) ?? activeRound
-  const highlightedStep =
-    flow.steps.find((step) => step.state === 'current') ??
-    flow.steps.find((step) => step.state === 'ready')
-  const phaseLabel = highlightedStep ? t(highlightedStep.titleKey) : t(flow.summaryKey)
 
   return (
     <PageShell
@@ -149,67 +139,20 @@ export function GameBoardPage() {
           columns={snapshot.colLabels.length}
           rowLabelColumnWidth={rowLabelColumnWidth}
           context={(stacked) => (
-            <Box sx={{ display: 'grid', gap: stacked ? 0 : 1.25, minWidth: 0 }}>
-              <GameBoardStatusBar
-                compact={stacked}
-                title={
-                  snapshot.status === 'active' && activeTeam
-                    ? formatTeamNameWithFallback(
-                        activeTeam.teamName,
-                        t('common.teamWithSlot', { slot: activeTeam.teamSlotIndex }),
-                      )
-                    : title
-                }
-                caption={
-                  snapshot.status === 'active'
-                    ? t(activeTeam ? 'gameBoard.statusTeamCaption' : 'gameBoard.statusGameCaption')
-                    : t(
-                        snapshot.status === 'ready'
-                          ? 'gameBoard.registrationNoticeTitle'
-                          : 'gameBoard.finishedTitle',
-                      )
-                }
-                phase={phaseLabel}
-                participantNames={
-                  snapshot.status === 'active'
-                    ? activeTeam?.participants?.map((participant) => participant.displayName)
-                    : undefined
-                }
-                phaseCaption={snapshot.status === 'active' ? t('gameBoard.flowTitle') : undefined}
-                action={
-                  snapshot.status !== 'active'
-                    ? {
-                        to:
-                          snapshot.status === 'ready'
-                            ? gameApplicationRoute.fullPath
-                            : `${gameHistoryRoute.fullPath}?gameId=${encodeURIComponent(snapshot.gameId)}`,
-                        label: t(
-                          snapshot.status === 'ready'
-                            ? 'gameBoard.registrationNoticeAction'
-                            : 'gameBoard.openResultsAction',
-                        ),
-                      }
-                    : activeRound
-                      ? {
-                          to: gameRoundRoute.fullPath,
-                          label: phaseLabel,
-                          accessibleLabel: t('gameBoard.currentRoundScreen.open'),
-                        }
-                      : undefined
-                }
-              />
-              <GameBoardTeamQueue
-                key={snapshot.gameId}
-                collapsible={stacked}
-                teams={teamQueue}
-                activeTeamId={currentActiveTeamId}
-                isLoading={isTeamQueueLoading}
-                isError={isTeamQueueError}
-                hasData={hasTeamQueueData}
-                isRefreshing={isTeamQueueRefreshing}
-                onRetry={retryTeamQueue}
-              />
-            </Box>
+            <GameBoardProgressPanel
+              key={snapshot.gameId}
+              snapshot={snapshot}
+              activeRound={activeRound}
+              compact={stacked}
+              queue={{
+                teams: teamQueue,
+                isLoading: isTeamQueueLoading,
+                isError: isTeamQueueError,
+                hasData: hasTeamQueueData,
+                isRefreshing: isTeamQueueRefreshing,
+                onRetry: retryTeamQueue,
+              }}
+            />
           )}
           management={
             <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />

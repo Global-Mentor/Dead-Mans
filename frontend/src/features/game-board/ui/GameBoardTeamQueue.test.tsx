@@ -20,9 +20,10 @@ const team: GameTeamQueueItem = {
   participants: [],
 }
 const props = {
-  collapsible: true,
   teams: [team],
-  activeTeamId: null,
+  currentUserId: null,
+  playedExpanded: false,
+  onPlayedExpandedChange: vi.fn(),
   isLoading: false,
   isError: false,
   hasData: true,
@@ -30,34 +31,59 @@ const props = {
   onRetry: vi.fn(),
 }
 
-it('keeps the disclosure choice across responsive layouts and failed refreshes', () => {
+it('preserves populated content on refresh failure and prevents duplicate retries', () => {
   const onRetry = vi.fn()
   const { rerender } = renderWithAppProviders(<GameBoardTeamQueue {...props} onRetry={onRetry} />)
-  const queue = screen.getByTestId('game-board-team-queue')
-  expect(queue.querySelector('details')).not.toHaveAttribute('open')
-  fireEvent.click(within(queue).getByText('Очередь команд'))
-  expect(queue.querySelector('details')).toHaveAttribute('open')
-
-  rerender(<GameBoardTeamQueue {...props} onRetry={onRetry} collapsible={false} />)
-  expect(screen.getByText('Ночные странники')).toBeVisible()
   rerender(<GameBoardTeamQueue {...props} onRetry={onRetry} isError />)
-  const restoredQueue = screen.getByTestId('game-board-team-queue')
-  expect(restoredQueue.querySelector('details')).toHaveAttribute('open')
   expect(screen.getByText('Ночные странники')).toBeVisible()
-  expect(within(restoredQueue).getByRole('status')).toHaveTextContent(
-    'Не удалось загрузить очередь команд.',
-  )
-  fireEvent.click(within(restoredQueue).getByRole('button', { name: 'Повторить' }))
+  expect(screen.getByRole('status')).toHaveTextContent('Не удалось загрузить очередь команд.')
+  fireEvent.click(screen.getByRole('button', { name: 'Повторить' }))
   expect(onRetry).toHaveBeenCalledOnce()
   rerender(<GameBoardTeamQueue {...props} onRetry={onRetry} isError isRefreshing />)
   expect(screen.getByRole('button', { name: 'Повторить' })).toBeDisabled()
+})
+
+it('collapses longer played lists without hiding waiting teams', () => {
+  const onPlayedExpandedChange = vi.fn()
+  const teams = [
+    { ...team, teamId: 'waiting', teamName: 'Ещё играем', isPlayed: false, playedAtUtc: null },
+    ...Array.from({ length: 4 }, (_, index) => ({
+      ...team,
+      teamId: `played-${index}`,
+      teamSlotIndex: index + 2,
+    })),
+  ]
+  const { rerender } = renderWithAppProviders(
+    <GameBoardTeamQueue {...props} teams={teams} onPlayedExpandedChange={onPlayedExpandedChange} />,
+  )
+  expect(screen.getByText('Ещё играем')).toBeVisible()
+  const played = screen.getByRole('region', { name: 'Сыграли' })
+  expect(played.querySelector('details')).not.toHaveAttribute('open')
+  fireEvent.click(within(played).getByText('Сыграли'))
+  expect(onPlayedExpandedChange).toHaveBeenCalledWith(true)
+  rerender(<GameBoardTeamQueue {...props} teams={teams} playedExpanded />)
+  expect(screen.getAllByText('Ночные странники')[0]).toBeVisible()
+})
+
+it('marks membership and labels team numbers without treating them as rankings', () => {
+  renderWithAppProviders(
+    <GameBoardTeamQueue
+      {...props}
+      currentUserId="me"
+      teams={[
+        { ...team, participants: [{ userId: 'me', displayName: 'Игрок', createdAtUtc: '' }] },
+      ]}
+    />,
+  )
+  expect(screen.getByText('Ваша команда')).toBeVisible()
+  expect(screen.getByLabelText('Команда номер 1')).toHaveTextContent('1')
+  expect(screen.getByRole('region', { name: 'В очереди · 0' })).toBeVisible()
 })
 
 it('distinguishes a zero score from a missing completed round', () => {
   renderWithAppProviders(
     <GameBoardTeamQueue
       {...props}
-      collapsible={false}
       teams={[team, { ...team, teamId: 'unscored', teamSlotIndex: 2, finalScore: null }]}
     />,
   )
@@ -68,14 +94,7 @@ it('distinguishes a zero score from a missing completed round', () => {
 it('offers recovery for a failed initial request instead of an empty queue', () => {
   const onRetry = vi.fn()
   renderWithAppProviders(
-    <GameBoardTeamQueue
-      {...props}
-      collapsible={false}
-      teams={[]}
-      hasData={false}
-      isError
-      onRetry={onRetry}
-    />,
+    <GameBoardTeamQueue {...props} teams={[]} hasData={false} isError onRetry={onRetry} />,
   )
   expect(screen.getByRole('alert')).toHaveTextContent('Не удалось загрузить очередь команд.')
   expect(screen.queryByText('В очереди пока нет подтверждённых команд.')).not.toBeInTheDocument()
