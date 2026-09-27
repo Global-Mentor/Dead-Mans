@@ -886,6 +886,23 @@ test('board progress separates the active team from waiting teams and shows fina
   await page.goto('/panel/game-board')
   const context = page.getByTestId('game-board-context')
   await expandProgress(page)
+  const summaries = await context
+    .locator('[data-testid="game-board-phase"], [data-testid="game-board-status-title"]')
+    .evaluateAll((values) =>
+      values.map((value) => {
+        const group = value.parentElement!
+        const label = group.firstElementChild!
+        const styles = getComputedStyle(group)
+        return {
+          height: value.getBoundingClientRect().height,
+          labelGap: value.getBoundingClientRect().top - label.getBoundingClientRect().bottom,
+          paddingTop: styles.paddingTop,
+          paddingBottom: styles.paddingBottom,
+        }
+      }),
+    )
+  expect(summaries).toHaveLength(2)
+  expect(summaries[0]).toEqual(summaries[1])
   const queue = page.getByTestId('game-board-team-queue')
   await expect(queue.getByRole('region', { name: 'В очереди · 2' })).toBeVisible()
   await expect(queue.getByRole('heading', { name: 'Сыграли' })).toBeVisible()
@@ -1047,7 +1064,9 @@ for (const width of [320, 1440]) {
     const markerBox = (await row.getByText('Ваша команда').boundingBox())!
     expect(nameBox.width).toBeGreaterThanOrEqual(100)
     expect(nameBox.x + nameBox.width).toBeLessThan(markerBox.x)
-    expect(scoreBox.y).toBeGreaterThanOrEqual(nameBox.y + nameBox.height)
+    expect(nameBox.x + nameBox.width).toBeLessThan(scoreBox.x)
+    expect(scoreBox.y).toBeLessThan(nameBox.y + nameBox.height)
+    expect(scoreBox.y + scoreBox.height).toBeGreaterThan(nameBox.y)
     await page.screenshot({
       path: `../.tmp/game-board-design/queue-long-${width}.png`,
       animations: 'disabled',
@@ -1174,7 +1193,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       const statusSize = await page
         .getByTestId('game-board-status-title')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
-      expect(statusSize).toBe(24)
+      expect(statusSize).toBe(20)
     }
     if (width >= 1200) {
       expect(

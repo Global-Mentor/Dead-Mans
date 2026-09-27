@@ -101,18 +101,23 @@ export function GameBoardProgressPanel({
         : activeRound
           ? { to: gameRoundRoute.fullPath, label: t('gameBoard.currentRoundScreen.open') }
           : null
+  const summaryValueSx = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: compact ? '2.4em' : '1.6em',
+    width: '100%',
+    fontWeight: 700,
+    overflowWrap: 'anywhere',
+    lineHeight: 1.2,
+    textAlign: 'center',
+  } as const
   const teamTitle = (
     <Typography
       component="span"
-      variant="subtitle1"
+      variant="h6"
       data-testid="game-board-status-title"
-      sx={{
-        display: 'block',
-        fontWeight: 700,
-        overflowWrap: 'anywhere',
-        lineHeight: 1.2,
-        textAlign: 'center',
-      }}
+      sx={summaryValueSx}
     >
       {title}
     </Typography>
@@ -137,7 +142,7 @@ export function GameBoardProgressPanel({
       <Box
         component="header"
         sx={{
-          minHeight: compact ? 40 : 56,
+          minHeight: 40,
           px: 2,
           display: 'flex',
           alignItems: 'center',
@@ -152,7 +157,7 @@ export function GameBoardProgressPanel({
           variant="h6"
           color="text.primary"
           sx={{
-            fontSize: compact ? '1.125rem' : '1.25rem',
+            fontSize: '1.125rem',
             fontWeight: 700,
             textAlign: 'center',
             overflowWrap: 'anywhere',
@@ -164,7 +169,7 @@ export function GameBoardProgressPanel({
       </Box>
       <GameBoardOrnamentDivider />
       <Stack spacing={0}>
-        <Box sx={{ px: 2, pt: 1, pb: action ? 1 : 2, minWidth: 0 }}>
+        <Box sx={{ px: 1.5, pt: 0.75, pb: 1, minWidth: 0 }}>
           <SectionCard
             surface="inset"
             sx={{
@@ -190,54 +195,55 @@ export function GameBoardProgressPanel({
                 component="span"
                 alignItems="center"
                 justifyContent="center"
-                spacing={0.5}
-                sx={{ minWidth: 0, minHeight: compact ? 86 : 102, px: 1.5, py: 1.5 }}
+                spacing={0}
+                sx={{ minWidth: 0, px: 1.25 }}
               >
-                <Typography
+                <Stack
                   component="span"
-                  variant="overline"
-                  color="text.secondary"
-                  sx={{ textAlign: 'center' }}
+                  alignItems="center"
+                  spacing={0.5}
+                  sx={{ width: '100%', py: 0.5 }}
                 >
-                  {t(
-                    snapshot.status === 'active'
-                      ? 'gameBoard.progress.roundPhase'
-                      : 'gameBoard.progress.gameStatus',
-                  )}
-                </Typography>
-                <Typography
-                  component="span"
-                  data-testid="game-board-phase"
-                  variant="h6"
-                  color="primary.light"
-                  sx={{
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                    minHeight: '2.4em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '100%',
-                    overflowWrap: 'anywhere',
-                    textAlign: 'center',
-                  }}
-                >
-                  {phase}
-                </Typography>
+                  <Typography
+                    component="span"
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', lineHeight: 1.5 }}
+                  >
+                    {t(
+                      snapshot.status === 'active'
+                        ? 'gameBoard.progress.roundPhase'
+                        : 'gameBoard.progress.gameStatus',
+                    )}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    data-testid="game-board-phase"
+                    variant="h6"
+                    color="primary.light"
+                    sx={summaryValueSx}
+                  >
+                    {phase}
+                  </Typography>
+                </Stack>
                 {activeTeam ? (
                   <Stack
                     component="span"
                     alignItems="center"
-                    spacing={0.25}
+                    spacing={0.5}
                     sx={{
                       width: '100%',
-                      mt: 2,
-                      pt: 1,
+                      py: 0.5,
                       borderTop: '1px solid',
                       borderColor: 'divider',
                     }}
                   >
-                    <Typography component="span" variant="overline" color="text.secondary">
+                    <Typography
+                      component="span"
+                      variant="overline"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1.5 }}
+                    >
                       {t('gameBoard.progress.currentTeam')}
                     </Typography>
                     {teamTitle}
@@ -247,7 +253,7 @@ export function GameBoardProgressPanel({
               <Box
                 component="span"
                 sx={{
-                  minHeight: 36,
+                  minHeight: 28,
                   px: 1,
                   display: 'flex',
                   alignItems: 'center',
@@ -278,7 +284,7 @@ export function GameBoardProgressPanel({
           </SectionCard>
         </Box>
         {action ? (
-          <Box sx={{ px: 2, pb: 2 }}>
+          <Box sx={{ px: 1.5, pb: 1 }}>
             <AppLinkButton to={action.to} tone="primary" fullWidth>
               {action.label}
             </AppLinkButton>
@@ -286,25 +292,27 @@ export function GameBoardProgressPanel({
         ) : null}
         <Collapse id={detailsId} in={detailsExpanded} timeout={reducedMotion ? 0 : 'auto'}>
           <GameBoardOrnamentDivider />
-          <Box sx={{ px: 2, py: 1, minWidth: 0 }}>
+          <Box sx={{ px: 1.5, py: 0.75, minWidth: 0 }}>
             {activeTeam ? (
               <SectionCard
                 component="section"
                 aria-label={t('gameBoard.progress.currentTeam')}
                 surface="inset"
-                sx={{ p: 1.5, textAlign: 'center' }}
+                sx={{ px: 1.25, py: 1.5, textAlign: 'center' }}
               >
                 <Stack
-                  spacing={0.25}
+                  spacing={1}
                   alignItems="center"
                   sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
                 >
-                  <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.1 }}>
-                    {t('gameBoard.progress.currentTeam')}
-                  </Typography>
-                  <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                    {title}
-                  </Typography>
+                  <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                      {t('gameBoard.progress.currentTeam')}
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                      {title}
+                    </Typography>
+                  </Stack>
                   {activeTeam.participants.length > 0 ? (
                     <Stack
                       component="ul"
@@ -324,7 +332,7 @@ export function GameBoardProgressPanel({
                           <Box component="span" aria-hidden sx={participantOrnamentSx} />
                           <Typography
                             variant="body2"
-                            sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
+                            sx={{ minWidth: 0, overflowWrap: 'anywhere', lineHeight: 1.4 }}
                           >
                             {participant.displayName}
                           </Typography>
@@ -360,7 +368,7 @@ export function GameBoardProgressPanel({
               color="primary.light"
               sx={{
                 px: 2,
-                pt: compact ? 1 : 1.5,
+                pt: 0.75,
                 fontWeight: 750,
                 letterSpacing: '0.07em',
                 textTransform: 'uppercase',
@@ -388,8 +396,8 @@ export function GameBoardProgressPanel({
             ) : (
               <Box
                 sx={{
-                  px: 2,
-                  pb: 1.5,
+                  px: 1.5,
+                  pb: 1,
                   maxHeight: 'min(56vh, 520px)',
                   overflowY: 'auto',
                 }}

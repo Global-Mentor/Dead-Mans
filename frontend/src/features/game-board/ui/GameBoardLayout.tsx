@@ -70,13 +70,17 @@ export function GameBoardLayout({
             boardFieldWidth -
               2 * (rowLabelColumnWidth + parseFloat(theme.spacing(boardGridMetrics.gap))),
           )
+  const railWidth =
+    boardFieldStart === null
+      ? boardGridMetrics.statusRailWidth
+      : Math.min(
+          boardGridMetrics.statusRailMaxWidth,
+          Math.max(boardGridMetrics.statusRailWidth, boardFieldStart - 2 * railClearance),
+        )
   const railLeft =
     boardFieldStart === null
       ? railClearance
-      : Math.max(
-          railClearance,
-          (boardFieldStart + railClearance - boardGridMetrics.statusRailWidth) / 2,
-        )
+      : Math.max(railClearance, (boardFieldStart + railClearance - railWidth) / 2)
   return (
     <Box
       ref={container}
@@ -101,7 +105,7 @@ export function GameBoardLayout({
         sx={{
           gridArea: sideBySide ? undefined : 'context',
           minWidth: 0,
-          width: sideBySide ? boardGridMetrics.statusRailWidth : cardColumnsWidth,
+          width: sideBySide ? railWidth : cardColumnsWidth,
           maxWidth: '100%',
           justifySelf: sideBySide ? 'start' : 'center',
           position: sideBySide ? 'absolute' : undefined,

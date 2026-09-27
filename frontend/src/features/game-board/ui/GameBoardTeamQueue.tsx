@@ -54,7 +54,7 @@ export function GameBoardTeamQueue({
           </AppButton>
         }
       >
-        <Stack spacing={1.5}>
+        <Stack spacing={0.75}>
           <Box
             component="section"
             aria-label={t('gameBoard.progress.waiting', { count: remainingTeams.length })}
@@ -72,7 +72,7 @@ export function GameBoardTeamQueue({
           </Box>
           <Box component="section" aria-label={playedTitle}>
             <GameBoardOrnamentDivider />
-            <Box sx={{ pt: 0.75 }}>
+            <Box sx={{ pt: 0.5 }}>
               {playedTeams.length > 3 ? (
                 <NativeDisclosure
                   open={playedExpanded}
@@ -103,7 +103,7 @@ export function GameBoardTeamQueue({
                     variant="subtitle2"
                     color="primary.light"
                     sx={{
-                      py: 0.75,
+                      py: 0.5,
                       fontWeight: 750,
                       letterSpacing: '0.07em',
                       textTransform: 'uppercase',
@@ -148,11 +148,11 @@ function QueueList({
             component="li"
             key={team.teamId}
             direction="row"
-            alignItems="flex-start"
+            alignItems="center"
             spacing={1}
             sx={{
               minWidth: 0,
-              py: 0.9,
+              py: 0.5,
               borderBottom: '1px solid',
               borderColor: 'divider',
               '&:last-child': { borderBottom: 0 },
@@ -166,27 +166,56 @@ function QueueList({
               aria-label={t('gameBoard.progress.teamNumber', { number: team.teamSlotIndex })}
               sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
             />
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              <Box
-                sx={{
-                  width: '100%',
-                  minWidth: 0,
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 0.5,
-                }}
-              >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontWeight: own ? 700 : 500,
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  {formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))}
-                </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                fontWeight: own ? 700 : 500,
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))}
+            </Typography>
+            {team.isPlayed || own ? (
+              <Stack spacing={0.5} alignItems="flex-end" sx={{ flexShrink: 0, maxWidth: '50%' }}>
+                {team.isPlayed ? (
+                  <StatusBadge
+                    size="small"
+                    density="compact"
+                    variant="outlined"
+                    color={
+                      score === null || score === 0 ? 'default' : score > 0 ? 'success' : 'error'
+                    }
+                    aria-label={
+                      formatted === null
+                        ? t('gameBoard.teamQueueNoFinalScore')
+                        : t('gameBoard.teamQueueFinalScoreLabel', { score: formatted })
+                    }
+                    label={
+                      <Typography
+                        component="span"
+                        variant="inherit"
+                        color={
+                          score === null || score === 0
+                            ? 'text.primary'
+                            : score > 0
+                              ? 'success.main'
+                              : 'error.main'
+                        }
+                      >
+                        {formatted === null
+                          ? '-'
+                          : t('gameBoard.cellPlayedPoints', { score: formatted })}
+                      </Typography>
+                    }
+                    sx={{
+                      flexShrink: 0,
+                      maxWidth: '100%',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  />
+                ) : null}
                 {own ? (
                   <StatusBadge
                     density="compact"
@@ -194,49 +223,10 @@ function QueueList({
                     color="primary"
                     variant="outlined"
                     label={t('gameBoard.progress.yourTeam')}
-                    sx={{ flexShrink: 0 }}
                   />
                 ) : null}
-              </Box>
-              {team.isPlayed ? (
-                <StatusBadge
-                  size="small"
-                  density="compact"
-                  variant="outlined"
-                  color={
-                    score === null || score === 0 ? 'default' : score > 0 ? 'success' : 'error'
-                  }
-                  aria-label={
-                    formatted === null
-                      ? t('gameBoard.teamQueueNoFinalScore')
-                      : t('gameBoard.teamQueueFinalScoreLabel', { score: formatted })
-                  }
-                  label={
-                    <Typography
-                      component="span"
-                      variant="inherit"
-                      color={
-                        score === null || score === 0
-                          ? 'text.primary'
-                          : score > 0
-                            ? 'success.main'
-                            : 'error.main'
-                      }
-                    >
-                      {formatted === null
-                        ? '-'
-                        : t('gameBoard.cellPlayedPoints', { score: formatted })}
-                    </Typography>
-                  }
-                  sx={{
-                    flexShrink: 0,
-                    maxWidth: '100%',
-                    ml: 'auto',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                />
-              ) : null}
-            </Box>
+              </Stack>
+            ) : null}
           </Stack>
         )
       })}
