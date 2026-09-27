@@ -43,6 +43,10 @@ pwsh backend/scripts/setup-local.ps1
 
 ## Daily Development
 
+Во время разработки можно быстро пробовать варианты UI и поведения без запуска тестовых наборов после каждой правки. Точечную проверку проводите, когда она помогает ответить на конкретный вопрос или найти причину регрессии; при передаче результата отмечайте, что ещё не проверено. Передача промежуточной реализации сама по себе не требует полного прогона.
+
+Перед подготовкой коммитов или объявлением изменений готовыми к ним проведите глубокое ревью всего планируемого diff, уберите заменённый код и временные следы, выполните все применимые отложенные проверки на итоговом коде. Для frontend сюда входят полный quality gate, а для UI также заполненные браузерные сценарии и визуальная проверка; для backend, контрактов и БД - соответствующие проверки. Ошибки исправьте до создания коммитов и не выдавайте отложенные проверки за пройденные.
+
 ### Единая типографика frontend
 
 Гарнитура Alegreya Variable загружается локально в `frontend/src/main.tsx`.
@@ -108,7 +112,9 @@ Optional partial regeneration:
 
 Do not hand-edit generated files.
 
-## Verification Before PR
+## Verification Before Commit and PR
+
+Keep local review reports, execution notes, prompt copies and generated screenshots in ignored directories. Maintained documentation belongs in `docs/`; temporary work records do not. After staging, run `npm run check:repository-hygiene`. CI rejects tracked files covered by the repository's `.gitignore` files, including files added with `git add --force`.
 
 - Backend tests:
   - `dotnet build backend/backend.slnx --configuration Release`

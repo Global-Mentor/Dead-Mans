@@ -23,12 +23,20 @@
 # Local agent instructions and skills
 /AGENTS.md
 /.agents/
+/.codex/
+/.claude/
+/CLAUDE.md
+/docs/reviews/
+/docs/development/*-prompt.md
+*.prompt.md
 
 # Logs
 **/logs/
 *.log
 .tmp/
 .build-check/
+/test-results/
+/playwright-report/
 /tmp_*_stdout.log
 /tmp_*_stderr.log
 

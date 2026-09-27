@@ -15,7 +15,9 @@
     "fake:twitch": "node tools/fake-twitch/server.mjs",
     "dev:twitch-proxy": "node tools/twitch-webhook-proxy/server.mjs",
     "test:twitch-proxy": "node --test tools/twitch-webhook-proxy/server.test.mjs",
-    "check:text-style": "node tools/check-text-style.mjs"
+    "check:text-style": "node tools/check-text-style.mjs",
+    "check:repository-hygiene": "node tools/check-repository-hygiene.mjs",
+    "test:repository-hygiene": "node --test tools/check-repository-hygiene.test.mjs"
   },
   "devDependencies": {
     "@redocly/cli": "2.51.2",

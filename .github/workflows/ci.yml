@@ -67,6 +67,11 @@ jobs:
       - name: Install root tooling
         run: npm ci
 
+      - name: Reject tracked local work artifacts
+        run: |
+          npm run test:repository-hygiene
+          npm run check:repository-hygiene
+
       - name: Test production deployment orchestration
         run: node --test deploy/coolify-deploy.test.mjs
 

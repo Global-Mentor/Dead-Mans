@@ -2,7 +2,7 @@
 
 ## Design contract
 
-The application page is the visual reference for the shared component system. The [requirements](frontend-ux-ui-unification-prompt.md#согласованные-уточнения--23-сентября-2026) define its scope; the [migration review](../reviews/frontend-ui-composition-migration.md) records component replacements and verification.
+The application page is the visual and behavioral reference for the shared component system, including its dialogs, states and responsive layouts. Changes to shared components and the theme must preserve it. This document describes the maintained UI contracts.
 
 - Extract reusable visual primitives and complete compositions from the protected application page. Preserve its appearance and functionality, including indirect theme effects. Refactoring and responsive improvements must preserve that contract.
 - Reuse the existing suitable component exactly. Add a component only when no suitable one exists; add variants only for demonstrated semantic or behavioral needs. Page-specific legacy styling is not such a need.
@@ -134,7 +134,7 @@ Translation keys in examples are illustrative; production keys live in the four 
 
 `/panel/game-application` uses the common components with explicit density and text-flow options. Its agreed layout, wording and interaction remain unchanged. There are 45 baseline images for nine application states at five viewports and 20 invitation/search images at four widths. Baselines use fixed fixtures, time, locale and loaded fonts; comparisons use `maxDiffPixels: 0`. The owner-approved compact global header was incorporated on 24 September 2026. Before that update, all 65 original image comparisons passed with only the four header/navigation modules restored to their previous versions in an isolated test server, verifying that application content was preserved. Do not update these baselines to accept a refactor regression.
 
-Run `npm --prefix frontend run check`, `npm --prefix frontend run test:e2e`, and `npm --prefix frontend run measure:ui` for substantial heavy-surface changes. The state gallery is development-only. Production tests verify it cannot enter the user build. See [verification matrix](../reviews/frontend-ui-composition-migration.md) for the actual run results, artifacts and device limitations.
+Run `npm --prefix frontend run check`, `npm --prefix frontend run test:e2e`, and `npm --prefix frontend run measure:ui` for substantial heavy-surface changes. The state gallery is development-only. Production tests verify it cannot enter the user build. Keep screenshots and run reports in ignored local output directories.
 
 ## Interaction and state contracts
 
