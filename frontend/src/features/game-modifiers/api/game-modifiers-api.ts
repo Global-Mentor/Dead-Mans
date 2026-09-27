@@ -39,7 +39,7 @@ export function fetchGameModifierState() {
 }
 
 export function activateGameModifier(modifierId: string) {
-  return unwrapOpenApiData(
+  return ensureOpenApiSuccess(
     gameModifiersApiClient.POST('/game/modifiers/{modifierId}/activate', {
       params: { path: { modifierId } },
     }),

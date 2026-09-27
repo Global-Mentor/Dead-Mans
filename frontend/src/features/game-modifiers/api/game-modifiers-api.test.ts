@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { logger } from '../../../shared/lib/logger.ts'
 import {
+  activateGameModifier,
   cancelGameModifierActivation,
   emergencyDisableGameModifier,
   selfCancelGameModifierActivation,
@@ -15,6 +16,7 @@ afterEach(() => {
 })
 
 const commands = [
+  { name: 'activation', run: () => activateGameModifier('modifier') },
   { name: 'self cancellation', run: () => selfCancelGameModifierActivation('activation', 3) },
   {
     name: 'admin cancellation',

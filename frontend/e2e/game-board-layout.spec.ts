@@ -229,7 +229,7 @@ for (const width of [390, 1440]) {
       activationAttempts += 1
       if (activationAttempts === 1) return route.fulfill({ status: 500 })
       activated = true
-      return route.fulfill({ json: activation })
+      return route.fulfill({ status: 204 })
     })
     await page.route('**/api/game/modifiers/activations/activation-one/self-cancel', (route) => {
       expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
@@ -254,6 +254,7 @@ for (const width of [390, 1440]) {
       .click()
     await expect(confirmation).not.toBeVisible()
     expect(activationAttempts).toBe(2)
+    await expect(page.getByText('Не удалось активировать модификатор.')).toHaveCount(0)
     await expect(modifiers).toContainText('Защитный знак')
     await modifiers
       .getByRole('listitem', { name: 'Защитный знак' })
