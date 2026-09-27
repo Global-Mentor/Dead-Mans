@@ -1913,6 +1913,8 @@ export interface components {
             isPlayed: boolean;
             /** Format: date-time */
             playedAtUtc: string | null;
+            /** @description Current authoritative team score from completed rounds; null when none exist. */
+            finalScore: number | null;
             participants: components["schemas"]["GameTeamQueueParticipantDto"][];
         };
         GameTeamQueueSummaryDto: {

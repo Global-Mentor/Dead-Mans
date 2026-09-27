@@ -4,19 +4,25 @@ import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardLayoutProps {
   columns: number
-  context: ReactNode
+  rowLabelColumnWidth: number
+  context: (stacked: boolean) => ReactNode
   management: ReactNode
   children: (categoryLayout: boolean) => ReactNode
 }
 
 // Edge tabs stay out of the board's flow; on smaller screens they become normal buttons.
-export function GameBoardLayout({ columns, context, management, children }: GameBoardLayoutProps) {
+export function GameBoardLayout({
+  columns,
+  rowLabelColumnWidth,
+  context,
+  management,
+  children,
+}: GameBoardLayoutProps) {
   const theme = useTheme()
   const smallScreen = useMediaQuery(theme.breakpoints.down('sm'))
+  const wideScreen = useMediaQuery(theme.breakpoints.up('lg'))
   const container = useRef<HTMLDivElement>(null)
-  const board = useRef<HTMLDivElement>(null)
   const [availableWidth, setAvailableWidth] = useState<number | null>(null)
-  const [centerOffset, setCenterOffset] = useState(0)
   useLayoutEffect(() => {
     const element = container.current
     if (!element) return
@@ -35,71 +41,49 @@ export function GameBoardLayout({ columns, context, management, children }: Game
     return () => observer.disconnect()
   }, [])
   const minimumMatrixWidth =
-    boardGridMetrics.leadColumnWidth +
-    columns *
-      (boardGridMetrics.minimumCardWidth.desktop + parseFloat(theme.spacing(boardGridMetrics.gap)))
+    2 * rowLabelColumnWidth +
+    columns * boardGridMetrics.minimumCardWidth.desktop +
+    (columns + 1) * parseFloat(theme.spacing(boardGridMetrics.gap))
+  const sideBySide =
+    wideScreen &&
+    availableWidth !== null &&
+    availableWidth >=
+      minimumMatrixWidth + 2 * (boardGridMetrics.statusRailWidth + parseFloat(theme.spacing(0.9)))
   const categoryLayout =
     smallScreen || (availableWidth !== null && availableWidth < minimumMatrixWidth)
-  const labelGutter =
-    boardGridMetrics.leadColumnWidth + parseFloat(theme.spacing(boardGridMetrics.gap))
-
-  useLayoutEffect(() => {
-    const element = container.current
-    const boardElement = board.current
-    const field = boardElement?.querySelector('[data-board-field]')
-    if (!element || !boardElement || !field) return
-    const measure = () => {
-      const fieldRect = field.getBoundingClientRect()
-      const boardRect = boardElement.getBoundingClientRect()
-      const nextCenterOffset = categoryLayout
-        ? 0
-        : Math.min(labelGutter / 2, Math.max(0, (boardRect.width - fieldRect.width) / 2))
-      if (centerOffset !== nextCenterOffset) setCenterOffset(nextCenterOffset)
-    }
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(field)
-    observer.observe(boardElement)
-    observer.observe(element)
-    window.addEventListener('resize', measure)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('resize', measure)
-    }
-  }, [categoryLayout, centerOffset, labelGutter])
-
   return (
     <Box
       ref={container}
       sx={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr)',
-        gridTemplateAreas: {
-          xs: '"management" "context" "board"',
-          lg: '"context" "board"',
-        },
+        gridTemplateAreas: sideBySide
+          ? '"board"'
+          : { xs: '"management" "context" "board"', lg: '"context" "board"' },
         gap: 0.9,
         alignItems: 'start',
         minWidth: 0,
         position: 'relative',
-        // Keep full-width boards clear of the 44px edge tabs too.
+        width: { lg: '100vw' },
+        ml: { lg: 'calc(50% - 50vw)' },
+        // Reserve equal space at both edges so the cards stay centered on the viewport.
         px: { lg: 2 },
       }}
     >
       <Box
         data-testid="game-board-context"
         sx={{
-          gridArea: 'context',
+          gridArea: sideBySide ? undefined : 'context',
           minWidth: 0,
-          width: categoryLayout ? '100%' : `calc(100% - ${labelGutter}px)`,
-          maxWidth: boardGridMetrics.statusMaxWidth,
-          justifySelf: 'center',
-          // The row-price gutter belongs to the matrix, not to the visual card field.
-          transform: categoryLayout ? undefined : `translateX(${labelGutter / 2 - centerOffset}px)`,
+          width: categoryLayout ? '100%' : boardGridMetrics.statusRailWidth,
+          maxWidth: sideBySide || categoryLayout ? undefined : boardGridMetrics.statusRailWidth,
+          justifySelf: sideBySide ? 'start' : 'center',
+          position: sideBySide ? 'absolute' : undefined,
+          top: sideBySide ? 0 : undefined,
+          left: sideBySide ? 0 : undefined,
         }}
       >
-        {context}
+        {context(!sideBySide)}
       </Box>
       <Box
         data-testid="game-board-management"
@@ -113,8 +97,15 @@ export function GameBoardLayout({ columns, context, management, children }: Game
         {management}
       </Box>
       <Box
-        ref={board}
-        sx={{ gridArea: 'board', minWidth: 0, transform: `translateX(-${centerOffset}px)` }}
+        sx={{
+          gridArea: 'board',
+          minWidth: 0,
+          width: '100%',
+          maxWidth: sideBySide
+            ? `calc(100% - ${2 * (boardGridMetrics.statusRailWidth + parseFloat(theme.spacing(0.9)))}px)`
+            : undefined,
+          justifySelf: 'center',
+        }}
       >
         {children(categoryLayout)}
       </Box>

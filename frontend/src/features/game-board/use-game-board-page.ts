@@ -26,6 +26,11 @@ export function useGameBoardPage() {
         : [],
     isTeamQueueLoading: teamQueueQuery.isLoading,
     isTeamQueueError: teamQueueQuery.isError,
+    hasTeamQueueData: Boolean(
+      snapshotQuery.data && teamQueueQuery.data?.gameId === snapshotQuery.data.gameId,
+    ),
+    isTeamQueueRefreshing: teamQueueQuery.isFetching,
+    retryTeamQueue: () => void teamQueueQuery.refetch(),
     retry: () => void Promise.all([snapshotQuery.refetch(), activeRoundQuery.refetch()]),
     isRefreshing: snapshotQuery.isFetching || activeRoundQuery.isFetching,
     isLoading: snapshotQuery.isLoading || activeRoundQuery.isLoading,

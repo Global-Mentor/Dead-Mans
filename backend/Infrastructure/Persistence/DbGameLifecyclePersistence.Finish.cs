@@ -291,9 +291,7 @@ public sealed partial class DbGameLifecyclePersistence
                     .Select(round =>
                     {
                         var finalScore = round.FinalScore ?? 0;
-                        var penalty = finalScore < 0
-                            ? SaturatingInt32.From(Math.Abs((long)finalScore))
-                            : 0;
+                        var penalty = GameTeamRoundScoreValue.FromPersistedFinalScore(finalScore).PenaltyTotal;
                         var bonus = round.EmptyCardPenaltyApplied
                             ? finalScore
                             : SaturatingInt32.From((long)finalScore - round.BaseScore);

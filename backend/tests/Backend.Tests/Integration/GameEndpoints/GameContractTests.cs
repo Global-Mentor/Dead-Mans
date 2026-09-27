@@ -416,6 +416,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var queueItem = Assert.Single(queue.Teams);
         Assert.True(queueItem.IsPlayed);
         Assert.NotNull(queueItem.PlayedAtUtc);
+        Assert.Null(queueItem.FinalScore);
 
         var snapshotResponse = await moderatorClient.GetAsync("/api/game");
         var snapshot = await snapshotResponse.Content.ReadFromJsonAsync<GameBoardSnapshotDto>();
@@ -424,8 +425,11 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Null(snapshot.ActiveTeamId);
     }
 
-    [Fact]
-    public async Task SetTeamPlayedState_WhenModerator_ReturnsTeamToQueue_KeepsCompletedRound()
+    [Theory]
+    [InlineData(100)]
+    [InlineData(0)]
+    [InlineData(-40)]
+    public async Task SetTeamPlayedState_WhenModerator_ReturnsTeamToQueue_KeepsCompletedRound(int finalScore)
     {
         var cellId = await SeedSingleCellAsync(selectActiveTeam: false);
         var roundId = Guid.NewGuid();
@@ -462,7 +466,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                     Status = GameRoundStatusValue.Completed,
                     FinishedAtUtc = now.AddMinutes(-1),
                     BaseScore = 100,
-                    FinalScore = 100,
+                    FinalScore = finalScore,
                     TeamSlotIndexSnapshot = 1,
                     CellRowIndex = cell.RowIndex,
                     CellColIndex = cell.ColIndex,
@@ -493,11 +497,77 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var queueItem = Assert.Single(queue.Teams);
         Assert.False(queueItem.IsPlayed);
         Assert.Null(queueItem.PlayedAtUtc);
+        Assert.Equal(finalScore, queueItem.FinalScore);
 
         using var verificationScope = _factory.Services.CreateScope();
         var verificationDbContext =
             verificationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.True(await verificationDbContext.GameRounds.AnyAsync(round => round.Id == roundId));
+    }
+
+    [Fact]
+    public async Task GetTeamQueue_AggregatesCompletedRoundsWithoutCountingCancelledRounds()
+    {
+        var firstCellId = await SeedSingleCellAsync(selectActiveTeam: false);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var firstCell = await db.BoardCells.Include(cell => cell.Board).SingleAsync(cell => cell.Id == firstCellId);
+            var board = firstCell.Board;
+            var team = await db.GameTeams.SingleAsync(team => team.GameId == board.GameId);
+            var userId = await db.GameTeamMembers.Where(member => member.TeamId == team.Id)
+                .Select(member => member.UserId).SingleAsync();
+            var now = DateTime.UtcNow;
+            board.Cols = 4;
+            board.ColLabels = ["First", "Second", "Penalty", "Cancelled"];
+            team.IsPlayed = true;
+            team.PlayedAtUtc = now;
+            int?[] scores = [100, 50, -25, null];
+            for (var index = 0; index < scores.Length; index++)
+            {
+                var cell = index == 0 ? firstCell : new BoardCell
+                {
+                    Id = Guid.NewGuid(),
+                    BoardId = board.Id,
+                    RowIndex = 0,
+                    ColIndex = index,
+                    Title = board.ColLabels[index],
+                    Cost = 100
+                };
+                if (index > 0) db.BoardCells.Add(cell);
+                cell.State = scores[index].HasValue ? BoardCellState.Open : BoardCellState.Cancelled;
+                db.GameRounds.Add(new GameRound
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = board.GameId,
+                    BoardId = board.Id,
+                    BoardCellId = cell.Id,
+                    TeamId = team.Id,
+                    Status = scores[index].HasValue ? GameRoundStatusValue.Completed : GameRoundStatusValue.Cancelled,
+                    BaseScore = 100,
+                    FinalScore = scores[index],
+                    TeamSlotIndexSnapshot = 1,
+                    CellRowIndex = 0,
+                    CellColIndex = index,
+                    CellTitleSnapshot = cell.Title,
+                    CellCostSnapshot = cell.Cost,
+                    ResolvedByUserId = userId,
+                    CreatedAtUtc = now.AddMinutes(-10 + index),
+                    UpdatedAtUtc = now,
+                    FinishedAtUtc = now
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        using var viewer = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+        var response = await viewer.GetAsync("/api/game/team-queue");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var queue = await response.Content.ReadFromJsonAsync<GameTeamQueueResultDto>();
+        Assert.NotNull(queue);
+        var item = Assert.Single(queue.Teams);
+        Assert.True(item.IsPlayed);
+        Assert.Equal(75, item.FinalScore);
     }
 
     [Fact]
@@ -618,6 +688,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal("Named Crew", queueItem.TeamName);
         Assert.False(queueItem.IsPlayed);
         Assert.Null(queueItem.PlayedAtUtc);
+        Assert.Null(queueItem.FinalScore);
     }
 
     [Fact]

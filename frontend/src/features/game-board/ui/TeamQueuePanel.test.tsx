@@ -16,6 +16,7 @@ const teams: GameTeamQueueItem[] = [
     teamSlotIndex: 1,
     isPlayed: false,
     playedAtUtc: null,
+    finalScore: null,
     participants: [{ userId: 'player-1', displayName: 'Ворон' }],
   },
 ]

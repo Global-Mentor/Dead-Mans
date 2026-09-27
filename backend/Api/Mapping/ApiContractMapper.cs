@@ -129,6 +129,7 @@ public static partial class ApiContractMapper
             item.TeamSlotIndex,
             item.IsPlayed,
             item.PlayedAtUtc,
+            item.FinalScore,
             item.Participants
                 .Select(
                     participant =>

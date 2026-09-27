@@ -1,9 +1,10 @@
 import { Box, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
-import { AppLinkButton, HelpTooltip } from '../../../shared/ui/index.ts'
+import { AppLinkButton } from '../../../shared/ui/index.ts'
+import { boardContextSurfaceSx } from '../theme/board-context-sx.ts'
 import { ActiveTeamRosterTooltip } from './ActiveTeamRosterTooltip.tsx'
 
 interface GameBoardStatusBarProps {
+  compact?: boolean
   title: string
   caption: string
   participantNames?: readonly string[] | undefined
@@ -14,7 +15,7 @@ interface GameBoardStatusBarProps {
 
 const groupSx = {
   display: 'grid',
-  gridTemplateRows: '13px 32px',
+  gridTemplateRows: { xs: '13px 32px', xl: '16px 32px' },
   rowGap: 0,
   alignContent: 'center',
   justifyItems: 'center',
@@ -57,8 +58,9 @@ function StatusCaption({
         gap: 0.675,
         minWidth: 0,
         color: highlighted ? 'text.primary' : 'text.secondary',
-        fontSize: 10,
-        lineHeight: '13px',
+        fontSize: { xs: 10, xl: 12.5 },
+        lineHeight: { xs: '13px', xl: '16px' },
+        fontWeight: { xl: 700 },
       }}
     >
       <Box
@@ -83,6 +85,7 @@ function StatusCaption({
 }
 
 export function GameBoardStatusBar({
+  compact = false,
   title,
   caption,
   participantNames,
@@ -90,10 +93,16 @@ export function GameBoardStatusBar({
   phaseCaption,
   action,
 }: GameBoardStatusBarProps) {
+  const groupStyle = compact
+    ? { ...groupSx, gridTemplateRows: { xs: '13px 26px', xl: '16px 26px' }, pt: '4px', pb: '2px' }
+    : groupSx
+  const valueStyle = compact
+    ? { ...valueSx, fontSize: { xs: 12, sm: 13 }, lineHeight: '16px' }
+    : valueSx
   const teamContent = (
     <>
       <StatusCaption>{caption}</StatusCaption>
-      <Typography component="span" data-testid="game-board-status-title" sx={valueSx}>
+      <Typography component="span" data-testid="game-board-status-title" sx={valueStyle}>
         {title}
       </Typography>
     </>
@@ -106,7 +115,7 @@ export function GameBoardStatusBar({
       <Typography
         component="span"
         sx={{
-          ...valueSx,
+          ...valueStyle,
           color: action ? 'text.primary' : 'text.secondary',
         }}
       >
@@ -117,74 +126,63 @@ export function GameBoardStatusBar({
   return (
     <Box
       sx={(theme) => ({
+        ...boardContextSurfaceSx(theme),
         display: 'grid',
-        gridTemplateColumns: {
-          xs: 'minmax(0, 1fr) minmax(0, 1.25fr)',
-          sm: 'repeat(2, minmax(0, 1fr))',
-        },
+        gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
         minWidth: 0,
+        width: '100%',
         // Reserve the same two-line value slot in every phase, including actionable ones.
-        height: 58,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-        borderRadius: 0,
-        background: `linear-gradient(110deg, ${alpha(theme.palette.primary.main, 0.09)}, ${alpha(theme.palette.background.paper, 0.88)} 60%)`,
-        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.06)}`,
+        height: compact ? 96 : 116,
       })}
     >
+      <Box sx={{ minWidth: 0, height: '100%', borderBottom: '1px solid', borderColor: 'divider' }}>
+        {action ? (
+          <AppLinkButton
+            to={action.to}
+            aria-label={action.accessibleLabel ?? action.label}
+            tone="primary"
+            size="small"
+            sx={(theme) => ({
+              ...groupStyle,
+              gridTemplateRows: phaseCaption ? groupStyle.gridTemplateRows : '1fr',
+              pt: compact ? '4px' : '6px',
+              pb: '2px',
+              width: '100%',
+              minHeight: 44,
+              justifyContent: 'stretch',
+              textAlign: 'center',
+              textTransform: 'none',
+              whiteSpace: 'normal',
+              borderRadius: 0,
+              borderImageOutset: 0,
+              '&:focus-visible': {
+                outline: `2px solid ${theme.palette.text.primary}`,
+                outlineOffset: -3,
+              },
+            })}
+          >
+            {phaseContent}
+          </AppLinkButton>
+        ) : (
+          <Box
+            aria-live="polite"
+            aria-atomic="true"
+            sx={{
+              ...groupStyle,
+              gridTemplateRows: phaseCaption ? groupStyle.gridTemplateRows : '1fr',
+            }}
+          >
+            {phaseContent}
+          </Box>
+        )}
+      </Box>
       {participantNames?.length ? (
-        <ActiveTeamRosterTooltip key={title} title={title} names={participantNames} sx={groupSx}>
+        <ActiveTeamRosterTooltip key={title} title={title} names={participantNames} sx={groupStyle}>
           {teamContent}
         </ActiveTeamRosterTooltip>
       ) : (
-        <HelpTooltip title={`${caption}: ${title}`} describeChild>
-          <Box tabIndex={0} sx={groupSx}>
-            {teamContent}
-          </Box>
-        </HelpTooltip>
+        <Box sx={groupStyle}>{teamContent}</Box>
       )}
-      <Box sx={{ minWidth: 0, height: '100%', borderLeft: '1px solid', borderColor: 'divider' }}>
-        {action ? (
-          <HelpTooltip title={action.label} describeChild>
-            <AppLinkButton
-              to={action.to}
-              aria-label={action.accessibleLabel ?? action.label}
-              tone="primary"
-              size="small"
-              sx={(theme) => ({
-                ...groupSx,
-                gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr',
-                pt: '6px',
-                pb: '2px',
-                width: '100%',
-                minHeight: 44,
-                justifyContent: 'stretch',
-                textAlign: 'center',
-                textTransform: 'none',
-                whiteSpace: 'normal',
-                borderRadius: 0,
-                borderImageOutset: 0,
-                '&:focus-visible': {
-                  outline: `2px solid ${theme.palette.text.primary}`,
-                  outlineOffset: -3,
-                },
-              })}
-            >
-              {phaseContent}
-            </AppLinkButton>
-          </HelpTooltip>
-        ) : (
-          <HelpTooltip title={phase} describeChild>
-            <Box
-              tabIndex={0}
-              aria-live="polite"
-              aria-atomic="true"
-              sx={{ ...groupSx, gridTemplateRows: phaseCaption ? groupSx.gridTemplateRows : '1fr' }}
-            >
-              {phaseContent}
-            </Box>
-          </HelpTooltip>
-        )}
-      </Box>
     </Box>
   )
 }

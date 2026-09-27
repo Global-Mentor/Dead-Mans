@@ -35,6 +35,7 @@ async function mockGame(
   teamName = 'Ночные странники',
   onGameBoardSocket?: (send: (message: string) => void) => void,
   queueSize = 2,
+  playedScore: number | null = 75,
 ) {
   const writes: string[] = []
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
@@ -85,6 +86,8 @@ async function mockGame(
                 teamName,
                 teamSlotIndex: 1,
                 isPlayed: false,
+                playedAtUtc: null,
+                finalScore: null,
                 participants: [
                   { userId: 'player-one', displayName: 'Искатель приключений' },
                   { userId: 'player-two', displayName: 'Ворон' },
@@ -95,6 +98,8 @@ async function mockGame(
                 teamName: 'Последний рубеж',
                 teamSlotIndex: 2,
                 isPlayed: true,
+                playedAtUtc: '2026-09-01T10:00:00Z',
+                finalScore: playedScore,
                 participants: [{ userId: 'player-three', displayName: 'Стрелок' }],
               },
               ...Array.from({ length: Math.max(0, queueSize - 2) }, (_, index) => ({
@@ -102,6 +107,8 @@ async function mockGame(
                 teamName: `Команда ${index + 3}`,
                 teamSlotIndex: index + 3,
                 isPlayed: false,
+                playedAtUtc: null,
+                finalScore: null,
                 participants: [{ userId: `extra-player-${index}`, displayName: `Игрок ${index}` }],
               })),
             ],
@@ -850,8 +857,11 @@ for (const touch of [false, true]) {
     await expect(tooltip).not.toContainText('Ночные странники')
     await expect(tooltip).not.toContainText('Стрелок')
     const tooltipBox = await tooltip.boundingBox()
+    const teamBox = await team.boundingBox()
     expect(tooltipBox!.x).toBeGreaterThanOrEqual(0)
     expect(tooltipBox!.x + tooltipBox!.width).toBeLessThanOrEqual(touch ? 390 : 1440)
+    if (touch) expect(tooltipBox!.y).toBeGreaterThanOrEqual(teamBox!.y + teamBox!.height - 1)
+    else expect(tooltipBox!.x).toBeGreaterThanOrEqual(teamBox!.x + teamBox!.width)
     expect(await status.boundingBox()).toEqual(statusBefore)
     expect(await card.boundingBox()).toEqual(cardBefore)
     if (touch) {
@@ -870,6 +880,144 @@ for (const touch of [false, true]) {
     await context.close()
   })
 }
+
+test('board context shows phase and a compact team queue without redundant tooltips', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await mockGame(page)
+  await page.goto('/panel/game-board')
+
+  const context = page.getByTestId('game-board-context')
+  const queue = page.getByTestId('game-board-team-queue')
+  await expect(queue.getByRole('heading', { name: 'Очередь команд' })).toBeVisible()
+  await expect(queue.getByRole('heading', { name: 'Не отыграли · 1' })).toBeVisible()
+  await expect(queue.getByRole('heading', { name: 'Отыгравшие · 1' })).toBeVisible()
+  await expect(queue.getByRole('listitem').first()).toContainText('Ночные странники')
+  await expect(queue.getByRole('listitem').first()).toContainText('Играет')
+  await expect(queue.getByRole('listitem').last()).toContainText('Последний рубеж')
+  const positiveScore = queue.getByText('+75', { exact: true })
+  await expect(positiveScore).toHaveAttribute('aria-label', 'Итоговый результат: +75 очков')
+  await expect(positiveScore).toHaveCSS('color', 'rgb(144, 151, 128)')
+
+  const headerTop = (await page.getByRole('columnheader').first().boundingBox())!.y
+  expect((await context.boundingBox())!.y).toBe(headerTop)
+  const statusBox = await context.locator(':scope > div > :first-child').boundingBox()
+  const queueBox = await queue.boundingBox()
+  expect(queueBox!.x).toBe(statusBox!.x)
+  expect(queueBox!.width).toBe(statusBox!.width)
+  const titleBox = await queue.getByRole('heading', { name: 'Очередь команд' }).boundingBox()
+  expect(
+    Math.abs(titleBox!.x + titleBox!.width / 2 - (queueBox!.x + queueBox!.width / 2)),
+  ).toBeLessThan(1)
+  expect((await queue.boundingBox())!.y).toBeGreaterThan(
+    (await context.getByRole('button', { name: 'Ночные странники' }).boundingBox())!.y,
+  )
+
+  await context.getByText('Выбор карточки', { exact: true }).hover()
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+})
+
+for (const [score, expectedText, expectedColor] of [
+  [-30, '-30', 'rgb(164, 99, 92)'],
+  [null, '-', 'rgb(160, 158, 152)'],
+] as const) {
+  test(`played team queue shows ${score ?? 'no'} final score on mobile`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 2, score)
+    await page.goto('/panel/game-board')
+
+    const queue = page.getByTestId('game-board-team-queue')
+    await queue.locator('summary').click()
+    const scoreLabel = queue.getByText(expectedText, { exact: true })
+    await expect(scoreLabel).toBeVisible()
+    await expect(scoreLabel).toHaveCSS('color', expectedColor)
+    await expect(scoreLabel).toHaveAttribute(
+      'aria-label',
+      score === null ? 'Нет завершённого раунда' : 'Итоговый результат: -30 очков',
+    )
+  })
+}
+
+for (const width of [320, 390, 768, 1024]) {
+  test(`stacked board keeps its team queue collapsed above the cards at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockGame(page)
+    await page.goto('/panel/game-board')
+
+    const context = page.getByTestId('game-board-context')
+    const queue = page.getByTestId('game-board-team-queue')
+    const disclosure = queue.locator('details')
+    const firstCard = page.locator('[data-cell-id="card-0"]')
+    await expect(disclosure).not.toHaveAttribute('open')
+    await expect(queue.getByText('Ночные странники')).not.toBeVisible()
+    expect((await queue.boundingBox())!.y).toBeGreaterThan(
+      (await context.getByTestId('game-board-status-title').boundingBox())!.y,
+    )
+    const queueBox = await queue.boundingBox()
+    const statusBox = await context.locator(':scope > div > :first-child').boundingBox()
+    const titleBox = await queue.getByText('Очередь команд', { exact: true }).boundingBox()
+    expect(queueBox!.x).toBe(statusBox!.x)
+    expect(queueBox!.width).toBe(statusBox!.width)
+    expect(queueBox!.y).toBe(statusBox!.y + statusBox!.height)
+    expect(
+      Math.abs(titleBox!.x + titleBox!.width / 2 - (queueBox!.x + queueBox!.width / 2)),
+    ).toBeLessThan(1)
+    expect(queueBox!.y + queueBox!.height).toBeLessThan((await firstCard.boundingBox())!.y)
+    expect(statusBox!.height).toBe(96)
+
+    await queue.locator('summary').click()
+    await expect(disclosure).toHaveAttribute('open')
+    await expect(queue.getByText('Ночные странники')).toBeVisible()
+    expect((await queue.boundingBox())!.width).toBe(queueBox!.width)
+    await queue.locator('summary').click()
+    await expect(disclosure).not.toHaveAttribute('open')
+    await expect(queue.getByText('Ночные странники')).not.toBeVisible()
+  })
+}
+
+test('team queue keeps its expansion across desktop and mobile layouts', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockGame(page)
+  await page.goto('/panel/game-board')
+  const queue = page.getByTestId('game-board-team-queue')
+  await queue.locator('summary').focus()
+  await page.keyboard.press('Enter')
+  await expect(queue.locator('details')).toHaveAttribute('open')
+  await expect(queue.getByText('Ночные странники')).toBeVisible()
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(queue.locator('details')).toHaveCount(0)
+  await expect(queue.getByText('Ночные странники')).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(queue.locator('details')).toHaveAttribute('open')
+  await expect(queue.getByText('Ночные странники')).toBeVisible()
+  await queue.locator('summary').focus()
+  await page.keyboard.press('Space')
+  await expect(queue.locator('details')).not.toHaveAttribute('open')
+})
+
+test('opened cards have no hover tooltip while closed cards retain their hint', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await mockGame(page)
+  await page.goto('/panel/game-board')
+
+  const region = page.getByRole('region', { name: 'Последняя охота' })
+  await region.locator('[data-cell-id="card-0"]').hover()
+  await page.waitForTimeout(500)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await page.evaluate(() => document.fonts.ready)
+  await page.screenshot({
+    path: '../.tmp/game-board-design/open-card-hover-1440.png',
+    animations: 'disabled',
+  })
+
+  await region.locator('[data-cell-id="card-2"]').hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Легенды · 100')
+})
 
 for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
   test(`game board is readable and operable at ${width}px`, async ({ page }) => {
@@ -891,11 +1039,14 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     await expect(page.getByRole('heading', { name: 'Последняя охота' })).toBeVisible()
     await expect(page.getByRole('progressbar')).toHaveCount(0)
     const region = page.getByRole('region', { name: 'Последняя охота' })
-    // Keep the board close to the top, especially on phones.
+    // The queue precedes the board on narrow screens; the card field stays near the top on desktop.
     const firstCardBox = await region.locator('[data-cell-id="card-0"]').boundingBox()
-    expect(firstCardBox!.y).toBeLessThan(width < 1200 ? 280 : 210)
-    const statusBox = await page.getByTestId('game-board-context').boundingBox()
-    expect(statusBox!.height).toBeLessThanOrEqual(76)
+    expect(firstCardBox!.y).toBeLessThan(width < 1200 ? 600 : 270)
+    const statusBox = await page
+      .getByTestId('game-board-context')
+      .locator(':scope > div > :first-child')
+      .boundingBox()
+    expect(statusBox!.height).toBe(width >= 1200 ? 116 : 96)
     if (width >= 1200) {
       expect((await page.getByRole('banner').boundingBox())!.height).toBe(58)
       expect(statusBox!.width).toBeLessThanOrEqual(541)
@@ -904,7 +1055,9 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       .locator(`[data-cell-id="${width < 600 ? 'card-5' : 'card-4'}"]`)
       .boundingBox()
     const cardsCenter = (firstCardBox!.x + rightCardBox!.x + rightCardBox!.width) / 2
-    expect(Math.abs(statusBox!.x + statusBox!.width / 2 - cardsCenter)).toBeLessThan(1)
+    if (width < 1200)
+      expect(Math.abs(statusBox!.x + statusBox!.width / 2 - cardsCenter)).toBeLessThan(1)
+    else expect(statusBox!.x + statusBox!.width).toBeLessThan(firstCardBox!.x)
     if (width === 1440) expect(Math.abs(cardsCenter - width / 2)).toBeLessThan(1)
     await expect(page.getByTestId('game-board-teams')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Открыть очередь команд' })).toHaveCount(0)
@@ -954,9 +1107,16 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       expect(cell.width).toBeGreaterThanOrEqual(width < 600 ? 111 : 79)
       expect(Math.abs(cell.height - cell.width * 1.5)).toBeLessThan(1)
       expect(cell.scroll).toBeLessThanOrEqual(cell.client + 1)
-      if (width >= 1024) expect(cell.bottom).toBeLessThanOrEqual(height)
+      if (width >= 1200) expect(cell.bottom).toBeLessThanOrEqual(height)
     }
     if (width === 1920 || width === 2560) {
+      for (const label of ['Фаза раунда', 'Активная команда']) {
+        const labelSize = await page
+          .getByTestId('game-board-context')
+          .getByText(label, { exact: true })
+          .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
+        expect(labelSize).toBe(12.5)
+      }
       const valueSize = await region
         .locator('[data-cell-id="card-2"] [data-card-value]')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
@@ -967,7 +1127,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
       expect(statusSize).toBe(14.4)
     }
-    if (width >= 1024) {
+    if (width >= 1200) {
       expect(
         await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
       ).toBe(true)
@@ -1399,7 +1559,10 @@ for (const width of [320, 390, 1440]) {
     await expect(page.getByTestId('game-board-context')).toContainText('Активная команда')
     await expect(page.getByTestId('game-board-context')).toContainText('Фаза раунда')
     const actionBox = await modifierAction.boundingBox()
-    const statusBox = await page.getByTestId('game-board-context').boundingBox()
+    const statusBox = await page
+      .getByTestId('game-board-context')
+      .locator(':scope > div > :first-child')
+      .boundingBox()
     const phaseCaptionBox = await modifierAction
       .getByText('Фаза раунда', { exact: true })
       .boundingBox()
@@ -1407,43 +1570,61 @@ for (const width of [320, 390, 1440]) {
       .getByTestId('game-board-context')
       .getByText('Активная команда', { exact: true })
       .boundingBox()
-    const contextHalves = page.getByTestId('game-board-context').locator(':scope > div > *')
+    const contextRows = page
+      .getByTestId('game-board-context')
+      .locator(':scope > div > :first-child > *')
     await expectHorizontallyCentered(
       page
         .getByTestId('game-board-context')
         .getByText('Активная команда', { exact: true })
         .locator('..'),
-      contextHalves.nth(0),
+      contextRows.nth(1),
     )
     await expectHorizontallyCentered(
       page.getByTestId('game-board-status-title'),
-      contextHalves.nth(0),
+      contextRows.nth(1),
     )
     await expectHorizontallyCentered(
       modifierAction.getByText('Фаза раунда', { exact: true }).locator('..'),
-      contextHalves.nth(1),
+      contextRows.nth(0),
     )
-    await expectHorizontallyCentered(modifierLabel, contextHalves.nth(1))
-    expect(phaseCaptionBox!.y - actionBox!.y).toBeGreaterThanOrEqual(7)
-    expect(Math.abs(phaseCaptionBox!.y - teamCaptionBox!.y)).toBeLessThanOrEqual(2)
+    await expectHorizontallyCentered(modifierLabel, contextRows.nth(0))
+    expect(phaseCaptionBox!.y - actionBox!.y).toBeGreaterThanOrEqual(width >= 1200 ? 7 : 4)
+    expect(teamCaptionBox!.y).toBeGreaterThan(phaseCaptionBox!.y)
+    const phaseRowBox = await contextRows.nth(0).boundingBox()
+    const teamRowBox = await contextRows.nth(1).boundingBox()
+    const stackedStatusBox = await page
+      .getByTestId('game-board-context')
+      .locator(':scope > div > :first-child')
+      .boundingBox()
+    expect(teamRowBox!.y).toBe(phaseRowBox!.y + phaseRowBox!.height)
+    expect(teamRowBox!.x).toBe(phaseRowBox!.x)
+    expect(phaseRowBox!.width).toBe(stackedStatusBox!.width - 2)
+    expect(stackedStatusBox!.width).toBeCloseTo(statusBox!.width, 0)
     expect(actionBox!.height).toBeGreaterThanOrEqual(44)
-    expect(statusBox!.height).toBeLessThanOrEqual(76)
-    expect(statusBox!.height).toBe(58)
+    expect(statusBox!.height).toBe(width >= 1200 ? 116 : 96)
     expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(statusBox!.x + statusBox!.width)
     await expect(page.getByRole('button', { name: 'Меню игры' })).toHaveCount(0)
-    expect(
-      await page
-        .locator('[data-cell-id]')
-        .evaluateAll((elements) =>
-          elements.every((element) => element.getBoundingClientRect().bottom <= innerHeight),
-        ),
-    ).toBe(true)
+    if (width >= 1024) {
+      expect(
+        await page
+          .locator('[data-cell-id]')
+          .evaluateAll((elements) =>
+            elements.every((element) => element.getBoundingClientRect().bottom <= innerHeight),
+          ),
+      ).toBe(true)
+    } else {
+      const lastCard = page.locator('[data-cell-id="card-20"]')
+      await lastCard.scrollIntoViewIfNeeded()
+      await expect(lastCard).toBeInViewport()
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({
       path: `../.tmp/game-board-design/live-round-${width}.png`,
       fullPage: true,
     })
     // A phase change keeps the round action and board geometry stable.
+    await page.evaluate(() => window.scrollTo(0, 0))
     const teamBoxBefore = await page
       .getByTestId('game-board-context')
       .getByTestId('game-board-status-title')
@@ -1464,14 +1645,19 @@ for (const width of [320, 390, 1440]) {
         .getByTestId('game-board-context')
         .getByText('Фаза раунда', { exact: true })
         .locator('..'),
-      page.getByTestId('game-board-context').locator(':scope > div > *').nth(1),
+      page.getByTestId('game-board-context').locator(':scope > div > :first-child > *').nth(0),
     )
     const teamBoxAfter = await page
       .getByTestId('game-board-context')
       .getByTestId('game-board-status-title')
       .boundingBox()
     const cardBoxAfter = await page.locator('[data-cell-id="card-0"]').boundingBox()
-    expect(await page.getByTestId('game-board-context').boundingBox()).toEqual(statusBox)
+    expect(
+      await page
+        .getByTestId('game-board-context')
+        .locator(':scope > div > :first-child')
+        .boundingBox(),
+    ).toEqual(statusBox)
     expect(teamBoxAfter).toEqual(teamBoxBefore)
     expect(cardBoxAfter).toEqual(cardBoxBefore)
   })
@@ -1783,7 +1969,7 @@ for (const width of [390, 768, 1440]) {
       const last = await page.locator('[data-cell-id="card-24"]').boundingBox()
       if (width === 1440) expect(last!.y + last!.height).toBeLessThanOrEqual(900)
       const bounds = await card.boundingBox()
-      expect(bounds!.width).toBeGreaterThanOrEqual(width === 768 ? 79 : 80)
+      expect(Math.round(bounds!.width)).toBeGreaterThanOrEqual(width === 768 ? 79 : 80)
     }
     await page.screenshot({ path: testInfo.outputPath('played-board.png'), fullPage: true })
     expect(writes).toEqual([])

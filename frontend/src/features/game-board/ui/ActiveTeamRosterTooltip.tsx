@@ -1,4 +1,4 @@
-import { Box, ClickAwayListener, Typography } from '@mui/material'
+import { Box, ClickAwayListener, Typography, useMediaQuery, useTheme } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +19,8 @@ export function ActiveTeamRosterTooltip({
   sx,
 }: ActiveTeamRosterTooltipProps) {
   const { t } = useTranslation()
+  const theme = useTheme()
+  const desktop = useMediaQuery(theme.breakpoints.up('lg'))
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,7 +28,7 @@ export function ActiveTeamRosterTooltip({
       <HelpTooltip
         arrow
         describeChild
-        placement="bottom-start"
+        placement={desktop ? 'right-start' : 'bottom-start'}
         open={open}
         onOpen={() => setOpen(true)}
         onClose={() => setOpen(false)}

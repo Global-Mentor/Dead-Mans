@@ -23,6 +23,32 @@ public sealed class GameTeamResultCalculatorTests
         Assert.Equal(5, result.TotalKills);
     }
 
+    [Theory]
+    [InlineData(100, 50, -25, 100, 25, 75)]
+    [InlineData(-40, -20, 0, 0, 60, -60)]
+    [InlineData(0, 0, 0, 0, 0, 0)]
+    public void CalculateScore_UsesBestCompletedScoreMinusAllPenalties(
+        int first, int second, int third, int expectedBest, int expectedPenalty, int expectedFinal
+    )
+    {
+        var score = GameTeamResultCalculator.CalculateScore([
+            GameTeamRoundScoreValue.FromPersistedFinalScore(first),
+            GameTeamRoundScoreValue.FromPersistedFinalScore(second),
+            GameTeamRoundScoreValue.FromPersistedFinalScore(third)
+        ]);
+
+        Assert.NotNull(score);
+        Assert.Equal(expectedBest, score.BestScore);
+        Assert.Equal(expectedPenalty, score.PenaltyTotal);
+        Assert.Equal(expectedFinal, score.FinalScore);
+    }
+
+    [Fact]
+    public void CalculateScore_WithoutCompletedRounds_IsUnscored()
+    {
+        Assert.Null(GameTeamResultCalculator.CalculateScore([]));
+    }
+
     [Fact]
     public void Calculate_AssignsCompetitionPlacementsAndKeepsUnplayedNullable()
     {

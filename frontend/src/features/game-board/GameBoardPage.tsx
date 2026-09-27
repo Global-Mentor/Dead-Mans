@@ -15,10 +15,12 @@ import {
 import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from './model/game-management-flow.ts'
+import { getBoardRowLabelColumnWidth } from './theme/board-grid-metrics.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
 import { GameBoardStatusBar } from './ui/GameBoardStatusBar.tsx'
+import { GameBoardTeamQueue } from './ui/GameBoardTeamQueue.tsx'
 import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 import { useCardPlayResult } from './use-card-play-result.ts'
 import { useGameBoardCellResults } from './use-game-board-cell-results.ts'
@@ -29,8 +31,21 @@ export function GameBoardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [previewCell, setPreviewCell] = useState<GameBoardCell | null>(null)
-  const { data, activeRound, teamQueue, retry, isRefreshing, isRefreshError, isError, isLoading } =
-    useGameBoardPage()
+  const {
+    data,
+    activeRound,
+    teamQueue,
+    isTeamQueueLoading,
+    isTeamQueueError,
+    hasTeamQueueData,
+    isTeamQueueRefreshing,
+    retryTeamQueue,
+    retry,
+    isRefreshing,
+    isRefreshError,
+    isError,
+    isLoading,
+  } = useGameBoardPage()
   const {
     pendingCell,
     toastMessage,
@@ -70,6 +85,7 @@ export function GameBoardPage() {
     return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.empty')} />
 
   const snapshot = data
+  const rowLabelColumnWidth = getBoardRowLabelColumnWidth(snapshot.rowLabels)
   const title = snapshot.title || t('gameBoard.title')
   const flow = buildGameManagementFlow(snapshot, activeRound)
   const currentActiveTeamId = activeRound?.teamId ?? snapshot.activeTeamId ?? null
@@ -131,55 +147,70 @@ export function GameBoardPage() {
       >
         <GameBoardLayout
           columns={snapshot.colLabels.length}
-          context={
-            <GameBoardStatusBar
-              title={
-                snapshot.status === 'active' && activeTeam
-                  ? formatTeamNameWithFallback(
-                      activeTeam.teamName,
-                      t('common.teamWithSlot', { slot: activeTeam.teamSlotIndex }),
-                    )
-                  : title
-              }
-              caption={
-                snapshot.status === 'active'
-                  ? t(activeTeam ? 'gameBoard.statusTeamCaption' : 'gameBoard.statusGameCaption')
-                  : t(
-                      snapshot.status === 'ready'
-                        ? 'gameBoard.registrationNoticeTitle'
-                        : 'gameBoard.finishedTitle',
-                    )
-              }
-              phase={phaseLabel}
-              participantNames={
-                snapshot.status === 'active'
-                  ? activeTeam?.participants?.map((participant) => participant.displayName)
-                  : undefined
-              }
-              phaseCaption={snapshot.status === 'active' ? t('gameBoard.flowTitle') : undefined}
-              action={
-                snapshot.status !== 'active'
-                  ? {
-                      to:
+          rowLabelColumnWidth={rowLabelColumnWidth}
+          context={(stacked) => (
+            <Box sx={{ display: 'grid', gap: stacked ? 0 : 1.25, minWidth: 0 }}>
+              <GameBoardStatusBar
+                compact={stacked}
+                title={
+                  snapshot.status === 'active' && activeTeam
+                    ? formatTeamNameWithFallback(
+                        activeTeam.teamName,
+                        t('common.teamWithSlot', { slot: activeTeam.teamSlotIndex }),
+                      )
+                    : title
+                }
+                caption={
+                  snapshot.status === 'active'
+                    ? t(activeTeam ? 'gameBoard.statusTeamCaption' : 'gameBoard.statusGameCaption')
+                    : t(
                         snapshot.status === 'ready'
-                          ? gameApplicationRoute.fullPath
-                          : `${gameHistoryRoute.fullPath}?gameId=${encodeURIComponent(snapshot.gameId)}`,
-                      label: t(
-                        snapshot.status === 'ready'
-                          ? 'gameBoard.registrationNoticeAction'
-                          : 'gameBoard.openResultsAction',
-                      ),
-                    }
-                  : activeRound
-                    ? {
-                        to: gameRoundRoute.fullPath,
-                        label: phaseLabel,
-                        accessibleLabel: t('gameBoard.currentRoundScreen.open'),
-                      }
+                          ? 'gameBoard.registrationNoticeTitle'
+                          : 'gameBoard.finishedTitle',
+                      )
+                }
+                phase={phaseLabel}
+                participantNames={
+                  snapshot.status === 'active'
+                    ? activeTeam?.participants?.map((participant) => participant.displayName)
                     : undefined
-              }
-            />
-          }
+                }
+                phaseCaption={snapshot.status === 'active' ? t('gameBoard.flowTitle') : undefined}
+                action={
+                  snapshot.status !== 'active'
+                    ? {
+                        to:
+                          snapshot.status === 'ready'
+                            ? gameApplicationRoute.fullPath
+                            : `${gameHistoryRoute.fullPath}?gameId=${encodeURIComponent(snapshot.gameId)}`,
+                        label: t(
+                          snapshot.status === 'ready'
+                            ? 'gameBoard.registrationNoticeAction'
+                            : 'gameBoard.openResultsAction',
+                        ),
+                      }
+                    : activeRound
+                      ? {
+                          to: gameRoundRoute.fullPath,
+                          label: phaseLabel,
+                          accessibleLabel: t('gameBoard.currentRoundScreen.open'),
+                        }
+                      : undefined
+                }
+              />
+              <GameBoardTeamQueue
+                key={snapshot.gameId}
+                collapsible={stacked}
+                teams={teamQueue}
+                activeTeamId={currentActiveTeamId}
+                isLoading={isTeamQueueLoading}
+                isError={isTeamQueueError}
+                hasData={hasTeamQueueData}
+                isRefreshing={isTeamQueueRefreshing}
+                onRetry={retryTeamQueue}
+              />
+            </Box>
+          )}
           management={
             <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
           }
@@ -187,6 +218,7 @@ export function GameBoardPage() {
           {(categoryLayout) => (
             <GameBoardGrid
               categoryLayout={categoryLayout}
+              rowLabelColumnWidth={rowLabelColumnWidth}
               key={snapshot.gameId}
               snapshot={snapshot}
               playResultsByCellId={boardCellResults.playResultsByCellId}

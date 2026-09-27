@@ -8,6 +8,7 @@ interface NativeDisclosureProps {
   open?: boolean
   onExpandedChange?: (expanded: boolean) => void
   pinned?: boolean
+  centeredSummary?: boolean
   surface?: 'plain' | 'panel'
   'data-testid'?: string
   sx?: SxProps<Theme>
@@ -19,6 +20,7 @@ export function NativeDisclosure({
   open,
   onExpandedChange,
   pinned = false,
+  centeredSummary = false,
   surface = 'plain',
   sx,
   ...props
@@ -46,12 +48,16 @@ export function NativeDisclosure({
             : undefined
         }
         sx={{
-          display: pinned ? 'none' : 'list-item',
+          display: pinned ? 'none' : centeredSummary ? 'grid' : 'list-item',
+          gridTemplateColumns: centeredSummary ? '16px minmax(0, 1fr) 16px' : undefined,
+          alignItems: centeredSummary ? 'center' : undefined,
+          listStyle: centeredSummary ? 'none' : undefined,
           minHeight: 44,
-          py: 1,
+          py: centeredSummary ? 0.5 : 1,
           cursor: 'pointer',
           overflowWrap: 'anywhere',
           color: 'text.secondary',
+          ...(centeredSummary ? { '&::-webkit-details-marker': { display: 'none' } } : {}),
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',
@@ -59,7 +65,32 @@ export function NativeDisclosure({
           },
         }}
       >
-        {summary}
+        {centeredSummary ? (
+          <>
+            <Box component="span" aria-hidden />
+            <Box component="span" sx={{ minWidth: 0, textAlign: 'center' }}>
+              {summary}
+            </Box>
+            <Box
+              component="span"
+              aria-hidden
+              sx={{
+                width: 8,
+                height: 8,
+                justifySelf: 'center',
+                borderRight: '1px solid',
+                borderBottom: '1px solid',
+                borderColor: 'primary.main',
+                transform: 'translateY(-2px) rotate(45deg)',
+                'details[open] > summary &': {
+                  transform: 'translateY(2px) rotate(225deg)',
+                },
+              }}
+            />
+          </>
+        ) : (
+          summary
+        )}
       </Box>
       {children}
     </Box>

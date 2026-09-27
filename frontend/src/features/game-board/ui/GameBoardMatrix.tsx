@@ -31,8 +31,9 @@ export function GameBoardMatrix({
         gap={(props.gap ?? 0.75) * 8}
         cardAspectRatio={boardGridMetrics.cardAspectRatio}
         leadWidth={typeof props.leadColumnWidth === 'number' ? props.leadColumnWidth : 40}
+        trailingWidth={typeof props.leadColumnWidth === 'number' ? props.leadColumnWidth : 40}
       >
-        <BoardMatrix {...props} minWidth={0} />
+        <BoardMatrix {...props} minWidth={0} trailingSpacer />
       </ViewportBoard>
     )
 
@@ -130,7 +131,7 @@ export function GameBoardMatrix({
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    height: isShortLabel ? '1.25rem' : '2em',
+                    height: isShortLabel ? '1.5rem' : '2.25rem',
                     mb: 0.5,
                     overflowWrap: 'anywhere',
                     containerType: 'inline-size',
@@ -139,7 +140,7 @@ export function GameBoardMatrix({
                   <Box
                     component="span"
                     sx={{
-                      fontSize: isShortLabel ? '0.75rem' : 'clamp(0.65rem, 8cqw, 0.75rem)',
+                      fontSize: isShortLabel ? '0.875rem' : 'clamp(0.75rem, 10cqw, 0.875rem)',
                       lineHeight: 1.05,
                       overflowWrap: 'anywhere',
                     }}

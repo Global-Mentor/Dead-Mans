@@ -8,6 +8,7 @@ interface ViewportBoardProps {
   gap: number
   cardAspectRatio: number
   leadWidth?: number
+  trailingWidth?: number
   mobile?: boolean
   children: ReactNode
 }
@@ -19,6 +20,7 @@ export function ViewportBoard({
   gap,
   cardAspectRatio,
   leadWidth = 0,
+  trailingWidth = 0,
   mobile = false,
   children,
 }: ViewportBoardProps) {
@@ -57,7 +59,10 @@ export function ViewportBoard({
       const width = Math.floor(
         Math.min(
           rect.width,
-          columns * cardWidth + leadWidth + gap * (columns - (leadWidth ? 0 : 1)),
+          columns * cardWidth +
+            leadWidth +
+            trailingWidth +
+            gap * (columns - (leadWidth ? 0 : 1) + (trailingWidth ? 1 : 0)),
         ),
       )
       setWidth(width)
@@ -76,11 +81,18 @@ export function ViewportBoard({
       window.removeEventListener('resize', measure)
       window.visualViewport?.removeEventListener('resize', measure)
     }
-  }, [columns, rows, gap, cardAspectRatio, leadWidth, mobile])
+  }, [columns, rows, gap, cardAspectRatio, leadWidth, trailingWidth, mobile])
 
   return (
     <Box ref={ref} data-testid="viewport-board" sx={{ width: '100%', minWidth: 0 }}>
-      <Box data-board-field sx={{ width: width ?? '100%', maxWidth: '100%', mx: 'auto' }}>
+      <Box
+        data-board-field
+        sx={{
+          width: width ?? '100%',
+          maxWidth: '100%',
+          mx: 'auto',
+        }}
+      >
         {children}
       </Box>
     </Box>

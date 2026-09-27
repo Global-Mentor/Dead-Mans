@@ -88,7 +88,7 @@ describe('GameBoardGrid', () => {
       '2',
     ])
     expect(screen.getByText('A')).toHaveStyle({
-      fontSize: '0.684rem',
+      fontSize: '0.9rem',
     })
   })
 
@@ -107,13 +107,13 @@ describe('GameBoardGrid', () => {
     )
 
     const columnHeader = screen.getByRole('columnheader', { name: 'Допустим дробовики' })
-    expect(columnHeader).toHaveStyle({
+    expect(columnHeader.firstElementChild).toHaveStyle({
       whiteSpace: 'normal',
       overflowWrap: 'anywhere',
-      height: '2.25rem',
+      minHeight: '3.5rem',
     })
-    expect(columnHeader.firstElementChild).toHaveStyle({
-      fontSize: 'clamp(0.6rem, 10.8cqw, 0.855rem)',
+    expect(columnHeader.firstElementChild?.firstElementChild).toHaveStyle({
+      fontSize: 'clamp(0.875rem, 15cqw, 0.95rem)',
     })
 
     const rowLabel = screen
@@ -121,7 +121,7 @@ describe('GameBoardGrid', () => {
       .map((element) => element.closest('[data-board-row-label]'))
       .find((element): element is HTMLElement => element instanceof HTMLElement)
     expect(rowLabel?.firstElementChild).toHaveStyle({
-      fontSize: 'clamp(0.54rem, 19.8cqw, 0.684rem)',
+      fontSize: 'clamp(0.7rem, 25cqw, 0.9rem)',
     })
     expect(screen.getAllByText('Допустим дробовики')).toHaveLength(2)
   })

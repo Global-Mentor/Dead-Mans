@@ -45,7 +45,7 @@ export function GameBoardCard({
   const isInteractive = isClickable || isPreviewable
 
   return (
-    <HelpTooltip title={isInteractive ? `${category} · ${rowLabel}` : ''} describeChild>
+    <HelpTooltip title={isClickable ? `${category} · ${rowLabel}` : ''} describeChild>
       <SurfaceButton
         type="button"
         disabled={!isInteractive}

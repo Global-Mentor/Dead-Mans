@@ -4873,7 +4873,7 @@ components:
           type: string
     GameTeamQueueItemDto:
       type: object
-      required: [teamId, teamSlotIndex, isPlayed, playedAtUtc, participants]
+      required: [teamId, teamSlotIndex, isPlayed, playedAtUtc, finalScore, participants]
       properties:
         teamId:
           type: string
@@ -4889,6 +4889,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        finalScore:
+          type: integer
+          nullable: true
+          description: Current authoritative team score from completed rounds; null when none exist.
         participants:
           type: array
           items:

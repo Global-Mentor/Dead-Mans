@@ -1,4 +1,5 @@
 using backend.Application.Contracts;
+using backend.Application.Features.Scoring;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,31 @@ public sealed partial class DbGameBoardRepository
             return EmptyTeamQueueResult();
         }
 
+        var completedRounds = await _dbContext.GameRounds
+            .AsNoTracking()
+            .Where(round =>
+                round.GameId == currentGameId.Value
+                && round.Status == GameRoundStatusValue.Completed
+            )
+            .Select(round => new { round.TeamId, round.FinalScore })
+            .ToArrayAsync(cancellationToken);
+        var scoresByTeam = completedRounds
+            .GroupBy(round => round.TeamId)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    var scoreValues = group.Select(round =>
+                    {
+                        var finalScore = round.FinalScore
+                            ?? throw new InvalidOperationException("A completed round must have a final score.");
+                        return GameTeamRoundScoreValue.FromPersistedFinalScore(finalScore);
+                    }).ToArray();
+                    return GameTeamResultCalculator.CalculateScore(scoreValues)?.FinalScore
+                        ?? throw new InvalidOperationException("Completed rounds must produce a team score.");
+                }
+            );
+
         var teams = rosters
             .Select(roster =>
                 new GameTeamQueueItem(
@@ -45,6 +71,7 @@ public sealed partial class DbGameBoardRepository
                     roster.TeamSlotIndex,
                     roster.IsPlayed,
                     roster.PlayedAtUtc,
+                    scoresByTeam.TryGetValue(roster.TeamId, out var score) ? score : null,
                     roster.Participants
                         .Select(participant => new GameTeamQueueParticipant(
                             participant.UserId,

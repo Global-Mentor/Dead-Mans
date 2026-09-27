@@ -8,6 +8,7 @@ interface BoardMatrixProps {
   gap?: number
   leadColumnWidth?: number | string
   leadCell?: ReactNode
+  trailingSpacer?: boolean
   renderColumnLabel: (columnLabel: string, columnIndex: number) => ReactNode
   renderRowLabel: (rowLabel: string, rowIndex: number) => ReactNode
   renderCell: (rowIndex: number, colIndex: number, rowLabel: string) => ReactNode
@@ -20,10 +21,14 @@ export function BoardMatrix({
   gap = 0.75,
   leadColumnWidth = 132,
   leadCell,
+  trailingSpacer = false,
   renderColumnLabel,
   renderRowLabel,
   renderCell,
 }: BoardMatrixProps) {
+  const labelColumnWidth =
+    typeof leadColumnWidth === 'number' ? `${leadColumnWidth}px` : leadColumnWidth
+
   return (
     <Box sx={{ overflow: 'auto' }}>
       <Box sx={{ minWidth: { xs: minWidth, sm: 'auto' } }}>
@@ -31,7 +36,7 @@ export function BoardMatrix({
           data-testid="board-matrix-grid"
           sx={{
             display: 'grid',
-            gridTemplateColumns: `${typeof leadColumnWidth === 'number' ? `${leadColumnWidth}px` : leadColumnWidth} repeat(${colLabels.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: `${labelColumnWidth} repeat(${colLabels.length}, minmax(0, 1fr))${trailingSpacer ? ` ${labelColumnWidth}` : ''}`,
             columnGap: gap,
             rowGap: gap,
             alignItems: 'stretch',
@@ -43,6 +48,7 @@ export function BoardMatrix({
               {renderColumnLabel(columnLabel, columnIndex)}
             </Fragment>
           ))}
+          {trailingSpacer ? <Box aria-hidden /> : null}
           {rowLabels.map((rowLabel, rowIndex) => (
             <Fragment key={`row-${rowIndex}`}>
               {renderRowLabel(rowLabel, rowIndex)}
@@ -51,6 +57,7 @@ export function BoardMatrix({
                   {renderCell(rowIndex, colIndex, rowLabel)}
                 </Fragment>
               ))}
+              {trailingSpacer ? <Box aria-hidden /> : null}
             </Fragment>
           ))}
         </Box>
