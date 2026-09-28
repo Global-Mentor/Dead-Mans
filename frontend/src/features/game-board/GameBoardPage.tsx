@@ -45,14 +45,18 @@ export function GameBoardPage() {
   } = useGameBoardPage()
   const {
     pendingCell,
+    confirmationOpen,
+    confirmationError,
     toastMessage,
     canOpenCells,
     isSubmitting,
     requestOpenCell,
     confirmOpenCell,
     dismissPendingCell,
+    clearDismissedCell,
     dismissToast,
   } = useOpenGameBoardCell({
+    gameId: data?.gameId ?? null,
     activeTeamId: data?.activeTeamId ?? null,
     gameStatus: data?.status ?? null,
     hasActiveRound: activeRound !== null,
@@ -60,7 +64,6 @@ export function GameBoardPage() {
   })
   const previewPlayResult = useCardPlayResult(data?.gameId ?? null, previewCell)
   const boardCellResults = useGameBoardCellResults(data?.gameId ?? null, data?.cells ?? [])
-
   if (isLoading)
     return (
       <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} showSpinner />
@@ -179,8 +182,9 @@ export function GameBoardPage() {
         suspended={activeRound?.status === 'awaiting_modifiers'}
       />
       <ConfirmDialog
-        open={pendingCell !== null}
+        open={confirmationOpen}
         onClose={dismissPendingCell}
+        onExited={clearDismissedCell}
         onConfirm={confirmOpenCell}
         isBusy={isSubmitting}
         title={t('gameBoard.openConfirmTitle')}
@@ -188,8 +192,9 @@ export function GameBoardPage() {
           cost: pendingCell?.cost ?? 0,
           title: pendingCell?.title || t('gameBoard.cellLabel'),
         })}
+        errorMessage={confirmationError}
         cancelLabel={t('common.actions.cancel')}
-        confirmLabel={t('common.actions.open')}
+        confirmLabel={t(isSubmitting ? 'gameBoard.openPending' : 'common.actions.open')}
       />
       <GameBoardCardPreviewDialog
         cell={previewCell}

@@ -51,3 +51,25 @@ it('keeps the dialog mounted and restores its actions after a rejected confirmat
   expect(screen.getByRole('dialog', { name: 'Confirm' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Cancel' })).not.toBeDisabled()
 })
+
+it('shows a loading indicator while the caller is busy', () => {
+  renderWithAppProviders(
+    <ConfirmDialog
+      open
+      isBusy
+      title="Open card"
+      description="Card value: 250 points"
+      confirmLabel="Opening card..."
+      cancelLabel="Cancel"
+      onClose={() => undefined}
+      onConfirm={() => undefined}
+    />,
+  )
+
+  expect(screen.getByRole('button', { name: 'Opening card...' })).toHaveAttribute(
+    'aria-busy',
+    'true',
+  )
+  expect(screen.getByRole('progressbar')).toBeVisible()
+  expect(screen.getByText('Card value: 250 points')).toBeVisible()
+})

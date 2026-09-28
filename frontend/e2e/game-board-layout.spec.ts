@@ -508,6 +508,46 @@ for (const role of ['viewer', 'admin']) {
   })
 }
 
+test('card confirmation stays busy during submission and preserves the card after failure', async ({
+  page,
+}) => {
+  await mockGame(page)
+  let releaseOpen = () => {}
+  const openGate = new Promise<void>((resolve) => {
+    releaseOpen = resolve
+  })
+  let attempts = 0
+  await page.route('**/api/game/cells/card-2/open', async (route) => {
+    attempts += 1
+    await openGate
+    await route.fulfill({ status: 503, json: { message: 'internal diagnostic' } })
+  })
+  await page.goto('/panel/game-board')
+  await page.locator('[data-cell-id="card-2"]').click()
+  const confirmation = page.getByRole('dialog', { name: 'Открыть карточку?' })
+  await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
+  await expect(confirmation.getByRole('button', { name: 'Открываем карточку...' })).toBeDisabled()
+  await expect(confirmation.getByRole('progressbar')).toBeVisible()
+  await expect(confirmation).toContainText('100 очк.')
+  await page.keyboard.press('Escape')
+  await expect(confirmation).toBeVisible()
+  releaseOpen()
+  await expect(confirmation.getByRole('alert')).toBeVisible()
+  await expect(confirmation).not.toContainText('internal diagnostic')
+  await expect(confirmation).toContainText('Испытание 3')
+  await expect(confirmation).toContainText('100 очк.')
+  await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
+  await expect.poll(() => attempts).toBe(2)
+  await expect(confirmation.getByRole('button', { name: 'Отмена', exact: true })).toBeEnabled()
+  await page.screenshot({
+    path: '../.tmp/agent-work/reviews/card-open-failure.png',
+    animations: 'disabled',
+  })
+  await confirmation.getByRole('button', { name: 'Отмена', exact: true }).click()
+  await expect(confirmation).toHaveCount(0)
+  await expect(page).toHaveURL(/\/panel\/game-board$/)
+})
+
 test('the administrator who opens a new card goes straight to the current round', async ({
   page,
 }, testInfo) => {

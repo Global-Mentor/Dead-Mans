@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { hasPanelCapability } from '../../shared/auth/panel-capabilities.ts'
@@ -46,6 +46,7 @@ function getOpenCellErrorMessage(error: unknown, t: TFunction<'translation'>) {
 }
 
 interface UseOpenGameBoardCellOptions {
+  gameId?: string | null
   activeTeamId?: string | null
   gameStatus?: string | null
   hasActiveRound?: boolean
@@ -53,6 +54,7 @@ interface UseOpenGameBoardCellOptions {
 }
 
 export function useOpenGameBoardCell({
+  gameId,
   activeTeamId,
   gameStatus,
   hasActiveRound = false,
@@ -62,6 +64,11 @@ export function useOpenGameBoardCell({
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const [pendingCell, setPendingCell] = useState<GameBoardCell | null>(null)
+  const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [confirmationError, setConfirmationError] = useState<string | null>(null)
+  const submissionInFlight = useRef(false)
+  const pendingContext = useRef({ gameId, activeTeamId })
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const canOpenCells = useMemo(
@@ -80,18 +87,24 @@ export function useOpenGameBoardCell({
       await queryClient.invalidateQueries({
         queryKey: activeGameRoundQueryOptions.queryKey,
       })
+      setConfirmationOpen(false)
       onOpenSuccess?.()
     },
     onError: (error) => {
-      setToastMessage(getOpenCellErrorMessage(error, t))
-    },
-    onSettled: () => {
-      setPendingCell(null)
+      submissionInFlight.current = false
+      setSubmitted(false)
+      setConfirmationError(getOpenCellErrorMessage(error, t))
     },
   })
 
   const requestOpenCell = (cell: GameBoardCell) => {
-    if (cell.state !== 'closed' || !canOpenCells || hasActiveRound || openCellMutation.isPending) {
+    if (
+      cell.state !== 'closed' ||
+      !canOpenCells ||
+      hasActiveRound ||
+      openCellMutation.isPending ||
+      pendingCell
+    ) {
       return
     }
 
@@ -101,24 +114,59 @@ export function useOpenGameBoardCell({
     }
 
     setPendingCell(cell)
+    pendingContext.current = { gameId, activeTeamId }
+    setConfirmationError(null)
+    setSubmitted(false)
+    setConfirmationOpen(true)
   }
 
   const confirmOpenCell = () => {
-    if (!pendingCell) {
+    if (!pendingCell || !confirmationOpen || submissionInFlight.current) {
       return
     }
 
+    if (
+      !canOpenCells ||
+      !hasActiveTeam ||
+      hasActiveRound ||
+      pendingContext.current.gameId !== gameId ||
+      pendingContext.current.activeTeamId !== activeTeamId
+    ) {
+      setConfirmationError(t('gameBoard.openFailed'))
+      return
+    }
+
+    submissionInFlight.current = true
+    setConfirmationError(null)
+    setSubmitted(true)
     openCellMutation.mutate(pendingCell.id)
   }
 
   return {
     pendingCell,
+    confirmationOpen,
+    confirmationError,
     toastMessage,
-    canOpenCells: canOpenCells && hasActiveTeam && !hasActiveRound && !openCellMutation.isPending,
-    isSubmitting: openCellMutation.isPending,
+    canOpenCells:
+      canOpenCells &&
+      hasActiveTeam &&
+      !hasActiveRound &&
+      !openCellMutation.isPending &&
+      !pendingCell,
+    isSubmitting: openCellMutation.isPending || (submitted && pendingCell !== null),
     requestOpenCell,
     confirmOpenCell,
-    dismissPendingCell: () => setPendingCell(null),
+    dismissPendingCell: () => {
+      if (!submissionInFlight.current) setConfirmationOpen(false)
+    },
+    clearDismissedCell: () => {
+      if (!confirmationOpen) {
+        setPendingCell(null)
+        setSubmitted(false)
+        setConfirmationError(null)
+        submissionInFlight.current = false
+      }
+    },
     dismissToast: () => setToastMessage(null),
   }
 }

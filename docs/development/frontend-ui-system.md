@@ -81,7 +81,7 @@ Mark required fields visibly. For schema-driven forms use `noValidate` and displ
 
 `AppDialog` uses the protected application dialog appearance everywhere. It owns title, content, actions and paper styling; `maxWidth` and `fullScreen` preserve space for editors and media previews, while `contentDensity` is comfortable or compact. Supplied buttons retain their own tones. Consumers may configure transition callbacks, but may not replace the dialog's visual slots. MUI supplies focus trapping/restoration and Escape handling. Use `SidePanel` for a full-height drawer with a fixed header, one scroll region, safe-area sizing and a labelled close action.
 
-`ConfirmDialog` protects against repeated confirmation and closing while busy. The caller owns mutation errors and closes only after success. `DiscardChangesDialog` uses shared localized copy with `useDirtyClose`.
+`ConfirmDialog` protects against repeated confirmation and closing while busy, and shows a loading indicator in its confirm button. The caller owns mutation errors and closes only after success. Callers can use `onExited` to retain confirmation content until the closing transition finishes. `DiscardChangesDialog` uses shared localized copy with `useDirtyClose`.
 
 `InlineNotice` has standard/inline appearances and uses an alert for errors and a status for other messages. `HelpTooltip` supports keyboard and touch, including controlled validation hints in `FormTextField`. Use it for explanatory hover text instead of a native `title`; omit redundant hints when the complete text is already visible. `AsyncSection` distinguishes first loading/error from refresh failure: `hasData` retains the mounted content when a refresh fails; supply `retryAction` when a retry is available.
 

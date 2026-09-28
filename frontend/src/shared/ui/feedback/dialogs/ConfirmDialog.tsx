@@ -2,11 +2,13 @@ import { useRef, useState, type ReactNode } from 'react'
 import { AppButton } from '../../primitives/buttons/AppButton.tsx'
 import type { AppButtonTone } from '../../primitives/buttons/app-button-tone.ts'
 import { AppDialog } from './AppDialog.tsx'
+import { InlineNotice } from '../messages/InlineNotice.tsx'
 
 interface ConfirmDialogProps {
   open: boolean
   title: string
   description: ReactNode
+  errorMessage?: string | null
   confirmLabel: string
   cancelLabel: string
   confirmTone?: 'primary' | 'danger'
@@ -15,12 +17,14 @@ interface ConfirmDialogProps {
   confirmDisabled?: boolean
   onClose: () => void
   onConfirm: () => void | Promise<void>
+  onExited?: () => void
 }
 
 export function ConfirmDialog({
   open,
   title,
   description,
+  errorMessage,
   confirmLabel,
   cancelLabel,
   confirmTone = 'primary',
@@ -29,6 +33,7 @@ export function ConfirmDialog({
   confirmDisabled = false,
   onClose,
   onConfirm,
+  onExited,
 }: ConfirmDialogProps) {
   const inFlightRef = useRef(false)
   const [isLocallyBusy, setIsLocallyBusy] = useState(false)
@@ -54,6 +59,7 @@ export function ConfirmDialog({
       onClose={busy ? undefined : onClose}
       title={title}
       description={description}
+      {...(onExited ? { slotProps: { transition: { onExited } } } : {})}
       actions={
         <>
           <AppButton tone={cancelTone} size="large" onClick={onClose} disabled={busy}>
@@ -64,12 +70,14 @@ export function ConfirmDialog({
             size="large"
             onClick={() => void handleConfirm()}
             disabled={busy || confirmDisabled}
-            loading={isLocallyBusy}
+            loading={busy}
           >
             {confirmLabel}
           </AppButton>
         </>
       }
-    />
+    >
+      {errorMessage ? <InlineNotice severity="error">{errorMessage}</InlineNotice> : null}
+    </AppDialog>
   )
 }

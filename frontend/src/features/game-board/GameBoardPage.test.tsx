@@ -220,12 +220,14 @@ beforeEach(() => {
   })
   pageMocks.useOpenGameBoardCell.mockReturnValue({
     pendingCell: null,
+    confirmationOpen: false,
     toastMessage: null,
     canOpenCells: false,
     isSubmitting: false,
     requestOpenCell: vi.fn(),
     confirmOpenCell: vi.fn(),
     dismissPendingCell: vi.fn(),
+    clearDismissedCell: vi.fn(),
     dismissToast: vi.fn(),
   })
   pageMocks.useGameBoardPage.mockReturnValue(createPageQuery())
@@ -530,12 +532,14 @@ describe('GameBoardPage', () => {
         state: 'closed',
         media: [],
       },
+      confirmationOpen: true,
       toastMessage: null,
       canOpenCells: true,
       isSubmitting: false,
       requestOpenCell: vi.fn(),
       confirmOpenCell: vi.fn(),
       dismissPendingCell: vi.fn(),
+      clearDismissedCell: vi.fn(),
       dismissToast: vi.fn(),
     })
 

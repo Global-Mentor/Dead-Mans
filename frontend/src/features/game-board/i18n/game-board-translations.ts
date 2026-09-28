@@ -435,6 +435,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Finish the active round before changing team play status.',
     runFinalizeFailed: 'Failed to finalize round.',
     openConfirmTitle: 'Open card?',
+    openPending: 'Opening card...',
     openConfirmDescription:
       'Open “{{title}}” for {{cost}} points? The card will become visible and the modifier-ordering phase will begin.',
     openSuccess: 'Card opened.',
@@ -889,6 +890,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Сначала завершите текущий раунд, а потом меняйте статус команды.',
     runFinalizeFailed: 'Не удалось завершить раунд.',
     openConfirmTitle: 'Открыть карточку?',
+    openPending: 'Открываем карточку...',
     openConfirmDescription:
       'Открыть «{{title}}» стоимостью {{cost}} очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
     openSuccess: 'Карточка открыта.',
@@ -1340,6 +1342,7 @@ const translations = {
       'Спочатку завершіть поточний раунд, а потім змінюйте статус команди.',
     runFinalizeFailed: 'Не вдалося завершити раунд.',
     openConfirmTitle: 'Відкрити картку?',
+    openPending: 'Відкриваємо картку...',
     openConfirmDescription:
       'Відкрити «{{title}}» вартістю {{cost}} очк.? Картка стане видимою, і почнеться фаза замовлення модифікаторів.',
     openSuccess: 'Картку відкрито.',
@@ -1793,6 +1796,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Najpierw zakończ aktywną rundę, a potem zmień status drużyny.',
     runFinalizeFailed: 'Nie udało się zakończyć rundy.',
     openConfirmTitle: 'Otworzyć kartę?',
+    openPending: 'Otwieranie karty...',
     openConfirmDescription:
       'Otworzyć „{{title}}” za {{cost}} pkt? Karta stanie się widoczna i rozpocznie się faza zamawiania modyfikatorów.',
     openSuccess: 'Karta została otwarta.',
