@@ -38,6 +38,48 @@ public sealed class TwitchQuizRecoveryTests : IClassFixture<TestWebApplicationFa
     }
 
     [Fact]
+    public async Task PendingQuestion_IsCancelledWhenModifierOrderingBegins()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var (db, service) = Resolve(scope);
+        var gameId = Guid.NewGuid();
+        db.Games.Add(new Game
+        {
+            Id = gameId,
+            Title = "Quiz",
+            Status = GameStatusValue.Active,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+        db.GameRounds.Add(new GameRound
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            BoardId = Guid.NewGuid(),
+            BoardCellId = Guid.NewGuid(),
+            TeamId = Guid.NewGuid(),
+            Status = GameRoundStatusValue.AwaitingModifiers
+        });
+        var publication = new TwitchQuizPublication
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            QuestionId = Guid.NewGuid(),
+            Status = TwitchQuizPublicationStatuses.Publishing,
+            QuestionDeliveryStatus = TwitchQuizDeliveryStatuses.Pending,
+            OptionsDeliveryStatus = TwitchQuizDeliveryStatuses.Pending,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        db.TwitchQuizPublications.Add(publication);
+        await db.SaveChangesAsync();
+
+        await service.ProcessNextAsync(default);
+
+        Assert.Equal(TwitchQuizPublicationStatuses.Cancelled, publication.Status);
+        Assert.Null(publication.QuestionSessionId);
+        Assert.Empty(db.GameQuizQuestionSessions);
+    }
+
+    [Fact]
     public async Task Cancel_AlreadySettledSession_DoesNotChangeResultOrRewards()
     {
         using var scope = _factory.Services.CreateScope();

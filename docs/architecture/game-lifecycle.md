@@ -3,6 +3,18 @@
 The persisted lifecycle is `draft → ready → active → finished`. `finished` is terminal:
 this version deliberately has no reopen command.
 
+## Round phases
+
+After an active team opens a card, the server creates a `card_opened` round. Modifier
+ordering stays closed until a moderator or administrator explicitly starts it. The
+round then moves through `awaiting_modifiers` (orders open), `preparing` (orders
+closed), `in_progress` (gameplay), and `reviewing_results` (gameplay finished).
+The operator opens the result form during review and finalizes the round as
+`completed`. Technical cancellation remains available during each unfinished phase.
+Each transition checks the expected round version and records an audit entry. The
+older round-start API also requires `preparing`, so it cannot skip ordering or
+preparation. An active quiz question prevents opening or reopening modifier ordering.
+
 ## Publication freeze at ready
 
 `draft → ready` is the publication boundary because a ready game is already visible to users.

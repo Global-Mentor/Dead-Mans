@@ -13,6 +13,7 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
 {
     private static readonly string[] ActiveRoundStatuses =
     [
+        GameRoundStatusValue.CardOpened,
         GameRoundStatusValue.AwaitingModifiers,
         GameRoundStatusValue.Preparing,
         GameRoundStatusValue.InProgress,
@@ -75,7 +76,7 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .Select(x => new { x.Id, x.BoardCellId, x.TeamId, x.Status })
                 .FirstOrDefaultAsync(cancellationToken);
-            if (activeRound is not null && activeRound.Status != GameRoundStatusValue.AwaitingModifiers)
+            if (activeRound is not null && activeRound.Status != GameRoundStatusValue.Preparing)
             {
                 return new StartGameRoundResult(StartGameRoundOutcome.RoundAlreadyInProgress, null);
             }
@@ -162,20 +163,19 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
                 );
             }
 
-            var awaitingRound = await _dbContext.GameRounds.FirstAsync(
+            var preparingRound = await _dbContext.GameRounds.FirstAsync(
                 x => x.Id == activeRound.Id,
                 cancellationToken
             );
-            awaitingRound.Status = GameRoundStatusValue.InProgress;
-            awaitingRound.PreparedAtUtc = now;
-            awaitingRound.GameplayStartedAtUtc = now;
-            awaitingRound.Version += 1;
-            awaitingRound.UpdatedAtUtc = now;
+            preparingRound.Status = GameRoundStatusValue.InProgress;
+            preparingRound.GameplayStartedAtUtc = now;
+            preparingRound.Version += 1;
+            preparingRound.UpdatedAtUtc = now;
 
-            await AddModifierSnapshotsAsync(activeGameId.Value, awaitingRound.Id, now, cancellationToken);
+            await AddModifierSnapshotsAsync(activeGameId.Value, preparingRound.Id, now, cancellationToken);
             await AddTransitionAuditAsync(
-                awaitingRound,
-                GameRoundStatusValue.AwaitingModifiers,
+                preparingRound,
+                GameRoundStatusValue.Preparing,
                 GameRoundStatusValue.InProgress,
                 GameRoundTransitionActionValue.BeginGameplay,
                 startedByUserId,
@@ -192,7 +192,7 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
 
             return new StartGameRoundResult(
                 StartGameRoundOutcome.Started,
-                await LoadRoundDetailsAsync(awaitingRound.Id, cancellationToken)
+                await LoadRoundDetailsAsync(preparingRound.Id, cancellationToken)
             );
         }
     }
@@ -261,6 +261,16 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (await _dbContext.GameQuizQuestionSessions.AsNoTracking().AnyAsync(
+                session => session.GameId == gameId.Value
+                    && session.Status == GameQuizQuestionSessionStatusValue.Open
+                    && session.ClosesAtUtc > now,
+                cancellationToken
+            ))
+        {
+            return new TransitionGameRoundResult(TransitionGameRoundOutcome.InvalidState, null);
+        }
+
         await RefundRoundActivationsAsync(
             roundId,
             initiatedByUserId,

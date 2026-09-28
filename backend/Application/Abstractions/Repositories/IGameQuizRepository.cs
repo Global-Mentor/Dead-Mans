@@ -25,6 +25,18 @@ public sealed record CloseExpiredQuizQuestionSessionsResult(
     int ClosedQuizQuestionCount
 );
 
+public enum AskQuizQuestionRepositoryOutcome
+{
+    Asked,
+    Unavailable,
+    ModifierOrderingActive
+}
+
+public sealed record AskQuizQuestionRepositoryResult(
+    AskQuizQuestionRepositoryOutcome Outcome,
+    AskedQuizQuestion? Question = null
+);
+
 public interface IGameQuizRepository
 {
     Task<Guid?> GetActiveGameIdAsync(CancellationToken cancellationToken = default);
@@ -33,7 +45,7 @@ public interface IGameQuizRepository
         CancellationToken cancellationToken = default
     );
 
-    Task<AskedQuizQuestion?> AskQuizQuestionAsync(
+    Task<AskQuizQuestionRepositoryResult> AskQuizQuestionAsync(
         Guid gameId,
         Guid? questionId,
         GameQuizQuestionDelivery delivery,

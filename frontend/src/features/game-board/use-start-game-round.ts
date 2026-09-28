@@ -8,6 +8,7 @@ import {
   prepareGameRound,
   rebuildGameRound,
   reviewGameRound,
+  startGameRoundModifierOrdering,
   technicalCancelGameRound,
 } from '../game-rounds/api/game-rounds-api.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
@@ -36,59 +37,74 @@ export interface TechnicalCancelRoundInput {
 export function useStartGameRound() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const startMutation = useMutation({
+  const startModifierOrderingMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
-      prepareGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
+      startGameRoundModifierOrdering(input.roundId, {
+        expectedRoundVersion: input.expectedRoundVersion,
+      }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelStartSuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelStartFailed'))
+      setErrorMessage(t('gameBoard.roundPanelStartModifierOrderingFailed'))
+    },
+  })
+
+  const startMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
+    mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
+      prepareGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
+    onSuccess: async () => {
+      await invalidateRoundState(queryClient)
+    },
+    onError: () => {
+      setErrorMessage(t('gameBoard.roundPanelStartFailed'))
     },
   })
 
   const beginGameplayMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       beginGameRoundGameplay(input.roundId, {
         expectedRoundVersion: input.expectedRoundVersion,
       }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelBeginGameplaySuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelBeginGameplayFailed'))
+      setErrorMessage(t('gameBoard.roundPanelBeginGameplayFailed'))
     },
   })
 
   const reviewMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       reviewGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelReviewSuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelReviewFailed'))
+      setErrorMessage(t('gameBoard.roundPanelReviewFailed'))
     },
   })
 
   const rebuildMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       rebuildGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelRebuildSuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelRebuildFailed'))
+      setErrorMessage(t('gameBoard.roundPanelRebuildFailed'))
     },
   })
 
   const technicalCancelMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: TechnicalCancelRoundInput) =>
       technicalCancelGameRound(input.roundId, {
         expectedRoundVersion: input.expectedRoundVersion,
@@ -97,15 +113,15 @@ export function useStartGameRound() {
         internalDetail: input.internalDetail,
       }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelTechnicalCancelSuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelTechnicalCancelFailed'))
+      setErrorMessage(t('gameBoard.roundPanelTechnicalCancelFailed'))
     },
   })
 
   const completeMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
     mutationFn: (input: CompleteRoundInput) =>
       finalizeGameRound(input.roundId, {
         status: 'completed',
@@ -117,15 +133,15 @@ export function useStartGameRound() {
         expectedRoundVersion: input.expectedRoundVersion,
       }),
     onSuccess: async () => {
-      setToastMessage(t('gameBoard.roundPanelCompleteSuccess'))
       await invalidateRoundState(queryClient)
     },
     onError: () => {
-      setToastMessage(t('gameBoard.roundPanelCompleteFailed'))
+      setErrorMessage(t('gameBoard.roundPanelCompleteFailed'))
     },
   })
 
   const isMutating =
+    startModifierOrderingMutation.isPending ||
     startMutation.isPending ||
     beginGameplayMutation.isPending ||
     reviewMutation.isPending ||
@@ -135,13 +151,13 @@ export function useStartGameRound() {
 
   return {
     isChangingRoundStage: isMutating,
+    startModifierOrdering: startModifierOrderingMutation.mutate,
     startRound: startMutation.mutate,
     beginGameplay: beginGameplayMutation.mutate,
     reviewRound: reviewMutation.mutate,
     rebuildRound: rebuildMutation.mutate,
     technicalCancelRound: technicalCancelMutation.mutate,
     completeRound: completeMutation.mutateAsync,
-    toastMessage,
-    dismissToast: () => setToastMessage(null),
+    errorMessage,
   }
 }

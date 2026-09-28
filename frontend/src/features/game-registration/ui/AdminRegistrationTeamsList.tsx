@@ -1,9 +1,8 @@
-import { Chip, Collapse, Stack, Tooltip, Typography } from '@mui/material'
+import { Collapse, Stack, Typography } from '@mui/material'
 import { useState, type Dispatch, type DragEvent, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
-import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
+import { AppButton, HelpTooltip, ItemCard, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   AdminRegistrationTeamHeaderChips,
   AdminRegistrationTeamNameSummary,
@@ -11,6 +10,7 @@ import {
   type OrderedAdminTeamEntry,
 } from './admin-registration-components.tsx'
 import { teamActionButtonSx, type RegistrationDragPayload } from './admin-registration-support.ts'
+import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
 import { AdminRegistrationTeamRoster } from './AdminRegistrationTeamRoster.tsx'
 import { RegistrationTeamNameEditor } from './RegistrationTeamNameEditor.tsx'
 
@@ -130,20 +130,11 @@ export function AdminRegistrationTeamsList({
                           })
 
         return (
-          <SectionCard
+          <ItemCard
             key={slot.teamSlotId}
             data-testid={`admin-slot-${slot.teamSlotIndex}`}
-            surface="inset"
-            sx={{
-              minWidth: 0,
-              p: { xs: 1.25, sm: 1.5 },
-              borderStyle: isTeamSlotDropActive || isTeamDropActive ? 'solid' : undefined,
-              borderColor: isTeamSlotDropActive || isTeamDropActive ? 'primary.main' : undefined,
-              background:
-                isTeamSlotDropActive || isTeamDropActive
-                  ? 'linear-gradient(180deg, rgba(198, 160, 95, 0.14) 0%, rgba(0, 0, 0, 0.08) 100%)'
-                  : undefined,
-            }}
+            emphasis={isTeamSlotDropActive || isTeamDropActive ? 'selected' : 'none'}
+            sx={{ minWidth: 0 }}
             onDragOver={(event) => {
               const payload = resolveDragPayload(event)
               if (!payload) {
@@ -222,8 +213,9 @@ export function AdminRegistrationTeamsList({
                     flexWrap="wrap"
                     useFlexGap
                   >
-                    <Tooltip title={teamStatusHint} describeChild arrow>
-                      <Chip
+                    <HelpTooltip title={teamStatusHint} describeChild arrow>
+                      <StatusBadge
+                        textFlow="singleLine"
                         size="small"
                         color={hasPendingInvitations ? 'warning' : 'default'}
                         variant="outlined"
@@ -232,9 +224,10 @@ export function AdminRegistrationTeamsList({
                         })}
                         tabIndex={0}
                       />
-                    </Tooltip>
+                    </HelpTooltip>
                     {team.status === 'forming' ? (
-                      <Chip
+                      <StatusBadge
+                        textFlow="singleLine"
                         size="small"
                         color={isTeamReady ? 'success' : 'default'}
                         variant={isTeamReady ? 'filled' : 'outlined'}
@@ -424,7 +417,7 @@ export function AdminRegistrationTeamsList({
                 onPlayerDragEnd={clearDragState}
               />
             </Stack>
-          </SectionCard>
+          </ItemCard>
         )
       })}
     </>

@@ -32,15 +32,6 @@ export function createSetupCellDropzoneSx({
   })
 }
 
-export const setupCellImagePreviewSx: SystemStyleObject<Theme> = {
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  transition: 'opacity 160ms ease',
-}
-
 export const setupCellImageLabelSx: SystemStyleObject<Theme> = {
   position: 'absolute',
   inset: 0,

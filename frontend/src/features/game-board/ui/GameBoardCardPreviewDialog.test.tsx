@@ -21,14 +21,15 @@ describe('GameBoardCardPreviewDialog', () => {
         cell={createCell()}
         playResult={{
           round: createRound({
-            finalScore: -150,
+            finalScore: -200,
             emptyCardPenaltyApplied: true,
             scoreDetails: createScoreDetails({
-              finalScore: -150,
+              finalScore: -200,
+              modifierScoreDelta: -100,
               emptyCardPenaltyApplied: true,
               emptyCardPenaltyScore: -100,
-              penaltyTotal: 150,
-              bonusDelta: -150,
+              penaltyTotal: 200,
+              bonusDelta: -200,
             }),
             modifiers: [
               createModifier({
@@ -53,11 +54,13 @@ describe('GameBoardCardPreviewDialog', () => {
 
     expect(screen.getByText('Стоимость карточки')).toBeInTheDocument()
     expect(screen.getByText('100 очк.')).toBeInTheDocument()
-    expect(screen.getByText('Итоговый штраф')).toBeInTheDocument()
-    expect(screen.getByText('150 очк.')).toBeInTheDocument()
-    expect(screen.getByText('Токсик x2')).toBeInTheDocument()
+    expect(screen.getByText('Списания').closest('dl')).toHaveTextContent('-100 очк.')
+    expect(screen.getByText('Итог').closest('dl')).toHaveTextContent('-200 очк.')
+    fireEvent.click(screen.getByRole('button', { name: 'Модификаторы' }))
+    expect(screen.getByText('Токсик ×2')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Токсик ×2/ }))
     expect(screen.getByText('Провальная карточка снимает очки.')).toBeInTheDocument()
-    expect(screen.getByText('Провален x2')).toBeInTheDocument()
+    expect(screen.getByText('Провален ×2')).toBeInTheDocument()
     expect(screen.getByText('Player One')).toBeInTheDocument()
     expect(screen.getByText('Player Two')).toBeInTheDocument()
     expect(screen.queryByText('Player One, Player Two')).not.toBeInTheDocument()
@@ -84,6 +87,7 @@ describe('GameBoardCardPreviewDialog', () => {
       />,
     )
 
+    fireEvent.click(screen.getByRole('button', { name: 'Модификаторы' }))
     expect(screen.getByText('Модификатор 1')).toBeInTheDocument()
     expect(screen.getByText('Модификатор 18')).toBeInTheDocument()
     const resultPanel = screen.getByTestId('played-card-result-panel')
@@ -125,9 +129,11 @@ describe('GameBoardCardPreviewDialog', () => {
       />,
     )
 
+    fireEvent.click(screen.getByRole('button', { name: 'Модификаторы' }))
     expect(screen.getAllByText('Чирик')).toHaveLength(2)
     expect(screen.getByText('Редакция 1')).toBeInTheDocument()
     expect(screen.getByText('Редакция 2')).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: /Чирик/ })[0])
     expect(screen.getByText('Нарушение: Использована запрещённая фраза.')).toBeInTheDocument()
   })
 

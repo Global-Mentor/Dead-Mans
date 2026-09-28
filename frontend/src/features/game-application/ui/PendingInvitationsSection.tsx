@@ -1,11 +1,10 @@
-import { Chip, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type {
   RegistrationInvitation,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
-
+import { AppButton, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 interface PendingInvitationsSectionProps {
   invitations: RegistrationInvitation[]
   teams: RegistrationTeam[]
@@ -41,7 +40,8 @@ export function PendingInvitationsSection({
             <Typography component="h2" variant="h5">
               {t('gameApplication.invitationsTitle')}
             </Typography>
-            <Chip
+            <StatusBadge
+              textFlow="singleLine"
               size="small"
               color="warning"
               label={t('gameApplication.invitationsChip', { count: invitations.length })}

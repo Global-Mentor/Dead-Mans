@@ -1,8 +1,6 @@
-import { AccordionDetails, Alert, Box, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
-import { AppAccordion, AppAccordionSummary, SectionCard } from '../../../../shared/ui/index.ts'
-
+import { DisclosureSection, InlineNotice, SectionCard } from '../../../../shared/ui/index.ts'
 export function ManagementControlSurface({
   kind,
   children,
@@ -11,26 +9,7 @@ export function ManagementControlSurface({
   children: ReactNode
 }) {
   return (
-    <SectionCard
-      surface="panel"
-      data-testid={`management-${kind}-section`}
-      sx={(theme) => ({
-        p: { xs: 1.5, sm: 2 },
-        minWidth: 0,
-        borderRadius: 0,
-        boxShadow: `inset 0 1px 0 ${alpha(theme.palette.text.primary, 0.05)}`,
-        ...(kind === 'round'
-          ? {
-              borderColor: alpha(theme.palette.primary.main, 0.5),
-              borderLeft: `3px solid ${theme.palette.primary.main}`,
-              backgroundColor: alpha(theme.palette.primary.main, 0.12),
-            }
-          : {
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.36)}`,
-              backgroundColor: alpha(theme.palette.common.black, 0.28),
-            }),
-      })}
-    >
+    <SectionCard surface="panel" data-testid={`management-${kind}-section`} sx={{ minWidth: 0 }}>
       {children}
     </SectionCard>
   )
@@ -49,44 +28,16 @@ export function SecondaryManagementSection({
   children: ReactNode
   defaultExpanded?: boolean
 }) {
-  const headerId = `management-${sectionId}-header`
-  const contentId = `management-${sectionId}-content`
-
   return (
-    <AppAccordion
-      surface="panel"
+    <DisclosureSection
+      title={title}
+      description={tooltip}
+      panelId={`management-${sectionId}-content`}
       data-testid={`management-${sectionId}-section`}
       defaultExpanded={defaultExpanded}
-      aria-labelledby={headerId}
-      sx={(theme) => ({
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-        borderRadius: 0,
-        backgroundColor: alpha(theme.palette.background.paper, 0.78),
-        '&.Mui-expanded': {
-          borderColor: alpha(theme.palette.primary.main, 0.45),
-          backgroundColor: alpha(theme.palette.background.paper, 0.92),
-        },
-        '& .MuiAccordionSummary-root.Mui-expanded': {
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.22)}`,
-        },
-      })}
     >
-      <AppAccordionSummary
-        density="compact"
-        id={headerId}
-        aria-controls={contentId}
-        aria-description={tooltip}
-        sx={{ minHeight: 52, px: 1.5 }}
-      >
-        <ManagementSectionTitle title={title} tooltip={tooltip} />
-      </AppAccordionSummary>
-      <AccordionDetails id={contentId} sx={{ px: 1.5, pt: 1.5, pb: 1.5 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          {tooltip}
-        </Typography>
-        {children}
-      </AccordionDetails>
-    </AppAccordion>
+      {children}
+    </DisclosureSection>
   )
 }
 
@@ -153,8 +104,8 @@ export function ManagementStateNotice({
   tone?: 'warning' | 'error' | 'info' | 'success'
 }) {
   return (
-    <Alert severity={tone} variant="outlined" sx={{ borderRadius: 1.5, m: 0 }}>
+    <InlineNotice severity={tone} variant="outlined" sx={{ m: 0 }}>
       {children}
-    </Alert>
+    </InlineNotice>
   )
 }

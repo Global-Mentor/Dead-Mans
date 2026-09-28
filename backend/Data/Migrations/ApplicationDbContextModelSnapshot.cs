@@ -1240,7 +1240,7 @@ namespace backend.Data.Migrations
                     b.HasIndex(new[] { "GameId" }, "ux_game_rounds_single_nonterminal_game")
                         .IsUnique()
                         .HasDatabaseName("ux_game_rounds_single_nonterminal_game")
-                        .HasFilter("status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results')");
+                        .HasFilter("status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')");
 
                     b.ToTable("game_rounds", null, t =>
                         {
@@ -1252,17 +1252,17 @@ namespace backend.Data.Migrations
 
                             t.HasCheckConstraint("ck_game_rounds_empty_card_penalty_semantics", "(empty_card_penalty_applied = false) OR (status = 'completed' AND final_score IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_game_rounds_finished_at_semantics", "((status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results')) AND finished_at_utc IS NULL) OR ((status IN ('completed','cancelled')) AND finished_at_utc IS NOT NULL)");
+                            t.HasCheckConstraint("ck_game_rounds_finished_at_semantics", "((status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')) AND finished_at_utc IS NULL) OR ((status IN ('completed','cancelled')) AND finished_at_utc IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_game_rounds_kills_count_non_negative", "kills_count >= 0");
 
-                            t.HasCheckConstraint("ck_game_rounds_lifecycle_timestamps", "(status = 'awaiting_modifiers' AND prepared_at_utc IS NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) OR (status = 'preparing' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) OR (status = 'in_progress' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NULL) OR (status = 'reviewing_results' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) OR (status = 'completed' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) OR (status = 'cancelled')");
+                            t.HasCheckConstraint("ck_game_rounds_lifecycle_timestamps", "(status IN ('card_opened','awaiting_modifiers') AND prepared_at_utc IS NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) OR (status = 'preparing' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) OR (status = 'in_progress' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NULL) OR (status = 'reviewing_results' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) OR (status = 'completed' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) OR (status = 'cancelled')");
 
-                            t.HasCheckConstraint("ck_game_rounds_resolution_semantics", "((status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) OR ((status = 'completed') AND final_score IS NOT NULL AND resolved_by_user_id IS NOT NULL) OR ((status = 'cancelled') AND final_score = 0 AND resolved_by_user_id IS NOT NULL)");
+                            t.HasCheckConstraint("ck_game_rounds_resolution_semantics", "((status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) OR ((status = 'completed') AND final_score IS NOT NULL AND resolved_by_user_id IS NOT NULL) OR ((status = 'cancelled') AND final_score = 0 AND resolved_by_user_id IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_game_rounds_row_col_non_negative", "cell_row_index >= 0 AND cell_col_index >= 0");
 
-                            t.HasCheckConstraint("ck_game_rounds_status_allowed", "status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')");
+                            t.HasCheckConstraint("ck_game_rounds_status_allowed", "status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')");
 
                             t.HasCheckConstraint("ck_game_rounds_team_slot_positive", "team_slot_index_snapshot > 0");
 
@@ -1588,15 +1588,15 @@ namespace backend.Data.Migrations
 
                     b.ToTable("game_round_transition_audits", null, t =>
                         {
-                            t.HasCheckConstraint("ck_game_round_transition_audits_action_allowed", "action_code IN ('prepare','rebuild','begin_gameplay','review','resume_gameplay','finalize','technical_cancel')");
+                            t.HasCheckConstraint("ck_game_round_transition_audits_action_allowed", "action_code IN ('start_modifier_ordering','prepare','rebuild','begin_gameplay','review','resume_gameplay','finalize','technical_cancel')");
 
-                            t.HasCheckConstraint("ck_game_round_transition_audits_action_semantics", "(action_code = 'prepare' AND from_status = 'awaiting_modifiers' AND to_status = 'preparing') OR (action_code = 'rebuild' AND from_status = 'preparing' AND to_status = 'awaiting_modifiers') OR (action_code = 'begin_gameplay' AND from_status IN ('awaiting_modifiers','preparing') AND to_status = 'in_progress') OR (action_code = 'review' AND from_status = 'in_progress' AND to_status = 'reviewing_results') OR (action_code = 'resume_gameplay' AND from_status = 'reviewing_results' AND to_status = 'in_progress') OR (action_code = 'finalize' AND from_status = 'reviewing_results' AND to_status = 'completed') OR (action_code = 'technical_cancel' AND from_status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results') AND to_status = 'cancelled')");
+                            t.HasCheckConstraint("ck_game_round_transition_audits_action_semantics", "(action_code = 'start_modifier_ordering' AND from_status = 'card_opened' AND to_status = 'awaiting_modifiers') OR (action_code = 'prepare' AND from_status = 'awaiting_modifiers' AND to_status = 'preparing') OR (action_code = 'rebuild' AND from_status = 'preparing' AND to_status = 'awaiting_modifiers') OR (action_code = 'begin_gameplay' AND from_status = 'preparing' AND to_status = 'in_progress') OR (action_code = 'review' AND from_status = 'in_progress' AND to_status = 'reviewing_results') OR (action_code = 'resume_gameplay' AND from_status = 'reviewing_results' AND to_status = 'in_progress') OR (action_code = 'finalize' AND from_status = 'reviewing_results' AND to_status = 'completed') OR (action_code = 'technical_cancel' AND from_status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results') AND to_status = 'cancelled')");
 
                             t.HasCheckConstraint("ck_game_round_transition_audits_resulting_version_positive", "resulting_round_version > 0");
 
                             t.HasCheckConstraint("ck_game_round_transition_audits_sequence_positive", "sequence > 0");
 
-                            t.HasCheckConstraint("ck_game_round_transition_audits_statuses_allowed", "(from_status IS NULL OR from_status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')) AND to_status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')");
+                            t.HasCheckConstraint("ck_game_round_transition_audits_statuses_allowed", "(from_status IS NULL OR from_status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')) AND to_status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results','completed','cancelled')");
                         });
                 });
 
@@ -2650,50 +2650,6 @@ namespace backend.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("backend.Data.Entities.TwitchEventSubReceipt", b =>
-                {
-                    b.Property<string>("NotificationId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("notification_id");
-
-                    b.Property<string>("ChatMessageId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("chat_message_id");
-
-                    b.Property<DateTime>("EventTimestampUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("event_timestamp_utc");
-
-                    b.Property<string>("Outcome")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("outcome");
-
-                    b.Property<DateTime>("ProcessedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("processed_at_utc");
-
-                    b.Property<Guid?>("QuestionSessionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_session_id");
-
-                    b.HasKey("NotificationId")
-                        .HasName("pk_twitch_eventsub_receipts");
-
-                    b.HasIndex("ChatMessageId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_twitch_eventsub_receipts_chat_message_id")
-                        .HasFilter("chat_message_id IS NOT NULL");
-
-                    b.HasIndex("ProcessedAtUtc")
-                        .HasDatabaseName("ix_twitch_eventsub_receipts_processed_at_utc");
-
-                    b.ToTable("twitch_eventsub_receipts", (string)null);
-                });
-
             modelBuilder.Entity("backend.Data.Entities.TwitchBotConnection", b =>
                 {
                     b.Property<string>("Role")
@@ -2760,6 +2716,50 @@ namespace backend.Data.Migrations
                         .HasDatabaseName("ix_twitch_quiz_connections_twitch_user_id");
 
                     b.ToTable("twitch_quiz_connections", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Data.Entities.TwitchEventSubReceipt", b =>
+                {
+                    b.Property<string>("NotificationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("notification_id");
+
+                    b.Property<string>("ChatMessageId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTime>("EventTimestampUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("event_timestamp_utc");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("outcome");
+
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at_utc");
+
+                    b.Property<Guid?>("QuestionSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_session_id");
+
+                    b.HasKey("NotificationId")
+                        .HasName("pk_twitch_eventsub_receipts");
+
+                    b.HasIndex("ChatMessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_twitch_eventsub_receipts_chat_message_id")
+                        .HasFilter("chat_message_id IS NOT NULL");
+
+                    b.HasIndex("ProcessedAtUtc")
+                        .HasDatabaseName("ix_twitch_eventsub_receipts_processed_at_utc");
+
+                    b.ToTable("twitch_eventsub_receipts", (string)null);
                 });
 
             modelBuilder.Entity("backend.Data.Entities.TwitchQuizPublication", b =>

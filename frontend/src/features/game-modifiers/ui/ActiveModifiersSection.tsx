@@ -1,19 +1,20 @@
-import { Box, List, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type {
   GameModifierActivation,
   GameModifierDefinition,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  ContentList,
+  FormSection,
+  ItemCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import { groupActiveGameModifiers } from '../model/game-modifier-groups.ts'
 import { deriveModifierRoundSummaryMeta } from '../model/modifier-round-summary.ts'
 import { getCategoryLabel } from './modifier-category.ts'
-import {
-  InlineMetaPill,
-  ModifierIcon,
-  ModifierSectionHeading,
-} from './modifier-list-primitives.tsx'
+import { ModifierCountBadge, ModifierIcon } from './modifier-list-primitives.tsx'
 
 type ActiveModifierGroup = ReturnType<typeof groupActiveGameModifiers>[number]
 
@@ -40,10 +41,11 @@ export function ActiveModifiersSection({
 }: ActiveModifiersSectionProps) {
   const { t } = useTranslation()
   return (
-    <SectionCard
+    <FormSection
       data-testid="active-modifiers-section"
+      title={t('gameModifiers.activeTitle')}
+      action={<ModifierCountBadge count={activationsCount} />}
       sx={{
-        p: 0,
         overflow: 'hidden',
         '@media (min-width: 1000px) and (min-height: 680px)': {
           maxHeight: 'var(--modifier-panel-height)',
@@ -53,27 +55,12 @@ export function ActiveModifiersSection({
         },
       }}
     >
-      <Box
-        sx={(theme) => ({
-          position: 'sticky',
-          top: 0,
-          zIndex: 1,
-          px: { xs: 1.1, sm: 1.35 },
-          py: 0.85,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          backgroundColor: alpha(theme.palette.background.paper, 0.96),
-          backdropFilter: 'blur(8px)',
-        })}
-      >
-        <ModifierSectionHeading title={t('gameModifiers.activeTitle')} count={activationsCount} />
-      </Box>
-
       {groups.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ px: 1.35, py: 1.5 }}>
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.activeEmpty')}
         </Typography>
       ) : (
-        <List disablePadding component="ul" sx={{ p: 0.75 }}>
+        <ContentList disablePadding component="ul" sx={{ p: 0.75 }}>
           {groups.map((group) => {
             const definition = definitionsById.get(group.modifierId)
 
@@ -89,9 +76,9 @@ export function ActiveModifiersSection({
               />
             )
           })}
-        </List>
+        </ContentList>
       )}
-    </SectionCard>
+    </FormSection>
   )
 }
 
@@ -116,21 +103,7 @@ function ActiveModifierRow({
     : []
 
   return (
-    <Box
-      component="li"
-      sx={(theme) => ({
-        listStyle: 'none',
-        px: 0.85,
-        py: 0.8,
-        borderRadius: '8px',
-        backgroundColor: alpha(theme.palette.common.black, 0.26),
-        '&:nth-of-type(even)': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.09),
-        },
-        '& + &': { mt: 0.6 },
-        overflowWrap: 'anywhere',
-      })}
-    >
+    <ItemCard component="li" sx={{ listStyle: 'none', overflowWrap: 'anywhere' }}>
       <Stack direction="row" spacing={1} alignItems="flex-start">
         <ModifierIcon emoji={definition?.iconEmoji} />
         <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -142,7 +115,7 @@ function ActiveModifierRow({
             useFlexGap
           >
             <Typography variant="subtitle2">{group.modifierName}</Typography>
-            <InlineMetaPill label={t('gameModifiers.activeTag')} tone="success" />
+            <StatusBadge label={t('gameModifiers.activeTag')} color="success" />
           </Stack>
 
           {definition?.description ? (
@@ -152,18 +125,16 @@ function ActiveModifierRow({
           ) : null}
 
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.65 }}>
-            <InlineMetaPill
+            <StatusBadge
               label={t('gameModifiers.activeGroupCount', { count: group.activationsCount })}
             />
-            <InlineMetaPill
+            <StatusBadge
               label={t('gameModifiers.costShortLabel', { cost: group.activationCost })}
-              tone="warning"
+              color="warning"
             />
+            {definition ? <StatusBadge label={getCategoryLabel(t, definition.category)} /> : null}
             {definition ? (
-              <InlineMetaPill label={getCategoryLabel(t, definition.category)} />
-            ) : null}
-            {definition ? (
-              <InlineMetaPill
+              <StatusBadge
                 label={t(
                   `gameCatalog.modifiers.roundSummaryType.${
                     deriveModifierRoundSummaryMeta(definition).type
@@ -173,22 +144,13 @@ function ActiveModifierRow({
             ) : null}
           </Stack>
 
-          <Box
-            sx={(theme) => ({
-              mt: 0.7,
-              borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.48)}`,
-              backgroundColor: alpha(theme.palette.primary.main, 0.055),
-              borderRadius: '0 8px 8px 0',
-              px: 0.8,
-              py: 0.65,
-            })}
-          >
+          <ItemCard sx={{ mt: 0.7 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 750 }}>
               {t('gameModifiers.activatorsLabel')}
             </Typography>
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.4 }}>
               {group.activators.map((activator) => (
-                <InlineMetaPill
+                <StatusBadge
                   key={activator.userId}
                   label={
                     activator.activationsCount > 1
@@ -201,7 +163,7 @@ function ActiveModifierRow({
                 />
               ))}
             </Stack>
-          </Box>
+          </ItemCard>
 
           {canSelfCancel && ownActivations.length > 0 ? (
             <Stack spacing={0.5} sx={{ mt: 0.75 }}>
@@ -220,6 +182,6 @@ function ActiveModifierRow({
           ) : null}
         </Box>
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }

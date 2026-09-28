@@ -1,12 +1,4 @@
-import {
-  AccordionDetails,
-  Alert,
-  Checkbox,
-  CircularProgress,
-  FormControlLabel,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,10 +6,17 @@ import type { components } from '../../../shared/api/contracts/generated'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import {
   AppAccordion,
+  AppAccordionDetails,
   AppAccordionSummary,
   AppButton,
   AppDialog,
+  BusyIndicator,
+  ChoiceLabel,
+  DiscardChangesDialog,
+  FormCheckbox,
   FormTextField,
+  InlineNotice,
+  useDirtyClose,
 } from '../../../shared/ui/index.ts'
 import { gameFinishPreviewQueryOptions } from '../api/game-finish-queries.ts'
 
@@ -68,82 +67,88 @@ export function GameFinishDialog({
     note.length <= 2000 &&
     !isFinishing
 
-  const close = () => {
-    if (!isFinishing) onClose()
-  }
+  const close = useDirtyClose({ dirty: note.length > 0, busy: isFinishing, onClose })
 
   return (
-    <AppDialog
-      open={open}
-      onClose={close}
-      maxWidth="md"
-      title={t('gameBoard.finishDialogTitle')}
-      description={t('gameBoard.finishDialogDescription')}
-      actions={
-        <>
-          <AppButton tone="ghost" onClick={close} disabled={isFinishing}>
-            {t('common.actions.cancel')}
-          </AppButton>
-          <AppButton
-            disabled={!canSubmit}
-            onClick={async () => {
-              if (!preview) return
-              try {
-                await onFinish({
-                  gameId,
-                  expectedBoardVersion: preview.summary.boardVersion,
-                  requestId,
-                  acknowledgedWarningCodes: requiredWarningCodes,
-                  note: note.trim() || null,
-                })
-                onClose()
-              } catch {
-                // The mutation exposes the localized error state inside this dialog.
-              }
-            }}
-          >
-            {isFinishing ? t('gameBoard.finishSubmitting') : t('gameBoard.finishConfirmAction')}
-          </AppButton>
-        </>
-      }
-    >
-      {previewQuery.isLoading ? (
-        <Stack alignItems="center" py={4} spacing={1.5} role="status">
-          <CircularProgress size={28} />
-          <Typography color="text.secondary">{t('gameBoard.finishPreviewLoading')}</Typography>
-        </Stack>
-      ) : previewQuery.isError ? (
-        <Alert
-          severity="error"
-          action={
-            <AppButton tone="ghost" size="small" onClick={() => void previewQuery.refetch()}>
-              {t('common.actions.retry')}
+    <>
+      <AppDialog
+        open={open}
+        onClose={close.requestClose}
+        maxWidth="md"
+        title={t('gameBoard.finishDialogTitle')}
+        description={t('gameBoard.finishDialogDescription')}
+        actions={
+          <>
+            <AppButton tone="ghost" onClick={close.requestClose} disabled={isFinishing}>
+              {t('common.actions.cancel')}
             </AppButton>
-          }
-        >
-          {t('gameBoard.finishPreviewError')}
-        </Alert>
-      ) : preview ? (
-        <FinishPreviewContent
-          preview={preview}
-          note={note}
-          acknowledgedWarnings={acknowledgedWarnings}
-          irreversibleConfirmed={irreversibleConfirmed}
-          finishError={finishError}
-          onNoteChange={setNote}
-          onWarningChange={(code, checked) =>
-            setAcknowledgedWarnings((current) => {
-              const next = new Set(current)
-              if (checked) next.add(code)
-              else next.delete(code)
-              return next
-            })
-          }
-          onIrreversibleChange={setIrreversibleConfirmed}
-          onRefresh={() => void previewQuery.refetch()}
-        />
-      ) : null}
-    </AppDialog>
+            <AppButton
+              disabled={!canSubmit}
+              onClick={async () => {
+                if (!preview) return
+                try {
+                  await onFinish({
+                    gameId,
+                    expectedBoardVersion: preview.summary.boardVersion,
+                    requestId,
+                    acknowledgedWarningCodes: requiredWarningCodes,
+                    note: note.trim() || null,
+                  })
+                  onClose()
+                } catch {
+                  // The mutation exposes the localized error state inside this dialog.
+                }
+              }}
+            >
+              {isFinishing ? t('gameBoard.finishSubmitting') : t('gameBoard.finishConfirmAction')}
+            </AppButton>
+          </>
+        }
+      >
+        {previewQuery.isLoading ? (
+          <Stack alignItems="center" py={4} spacing={1.5} role="status">
+            <BusyIndicator size={28} />
+            <Typography color="text.secondary">{t('gameBoard.finishPreviewLoading')}</Typography>
+          </Stack>
+        ) : previewQuery.isError ? (
+          <InlineNotice
+            severity="error"
+            action={
+              <AppButton tone="ghost" size="small" onClick={() => void previewQuery.refetch()}>
+                {t('common.actions.retry')}
+              </AppButton>
+            }
+          >
+            {t('gameBoard.finishPreviewError')}
+          </InlineNotice>
+        ) : preview ? (
+          <FinishPreviewContent
+            preview={preview}
+            note={note}
+            acknowledgedWarnings={acknowledgedWarnings}
+            irreversibleConfirmed={irreversibleConfirmed}
+            finishError={finishError}
+            onNoteChange={setNote}
+            onWarningChange={(code, checked) =>
+              setAcknowledgedWarnings((current) => {
+                const next = new Set(current)
+                if (checked) next.add(code)
+                else next.delete(code)
+                return next
+              })
+            }
+            onIrreversibleChange={setIrreversibleConfirmed}
+            onRefresh={() => void previewQuery.refetch()}
+          />
+        ) : null}
+      </AppDialog>
+      <DiscardChangesDialog
+        open={close.confirmOpen}
+        busy={isFinishing}
+        onClose={close.keepEditing}
+        onDiscard={close.discard}
+      />
+    </>
   )
 }
 
@@ -174,31 +179,31 @@ function FinishPreviewContent({
   return (
     <Stack spacing={2}>
       {preview.blockers.map((blocker) => (
-        <Alert key={blocker.code} severity="error">
+        <InlineNotice key={blocker.code} severity="error">
           {t(getFinishIssueTranslationKey(blocker.code), { count: blocker.count })}
-        </Alert>
+        </InlineNotice>
       ))}
 
       {preview.warnings.map((warning) => (
-        <Alert key={warning.code} severity="warning">
-          <FormControlLabel
+        <InlineNotice key={warning.code} severity="warning">
+          <ChoiceLabel
             control={
-              <Checkbox
+              <FormCheckbox
                 checked={acknowledgedWarnings.has(warning.code)}
                 onChange={(event) => onWarningChange(warning.code, event.target.checked)}
               />
             }
             label={t(getFinishIssueTranslationKey(warning.code), { count: warning.count })}
           />
-        </Alert>
+        </InlineNotice>
       ))}
 
       {preview.summary.pendingQuizQuestionCount > 0 ? (
-        <Alert severity="info">
+        <InlineNotice severity="info">
           {t('gameBoard.finishQuizSkipped', {
             count: preview.summary.pendingQuizQuestionCount,
           })}
-        </Alert>
+        </InlineNotice>
       ) : null}
 
       <Stack spacing={0.75} aria-label={t('gameBoard.finishRankingTitle')}>
@@ -230,7 +235,7 @@ function FinishPreviewContent({
         <AppAccordionSummary>
           <Typography fontWeight={700}>{t('gameBoard.finishCalculationDetails')}</Typography>
         </AppAccordionSummary>
-        <AccordionDetails>
+        <AppAccordionDetails>
           <Stack spacing={1}>
             {preview.summary.teams.map((team) => (
               <Typography key={team.teamId} variant="body2">
@@ -245,7 +250,7 @@ function FinishPreviewContent({
               </Typography>
             ))}
           </Stack>
-        </AccordionDetails>
+        </AppAccordionDetails>
       </AppAccordion>
 
       <FormTextField
@@ -260,9 +265,9 @@ function FinishPreviewContent({
         inputProps={{ maxLength: 2001 }}
       />
 
-      <FormControlLabel
+      <ChoiceLabel
         control={
-          <Checkbox
+          <FormCheckbox
             checked={irreversibleConfirmed}
             onChange={(event) => onIrreversibleChange(event.target.checked)}
           />
@@ -271,7 +276,7 @@ function FinishPreviewContent({
       />
 
       {finishError ? (
-        <Alert
+        <InlineNotice
           severity="error"
           action={
             stale ? (
@@ -282,7 +287,7 @@ function FinishPreviewContent({
           }
         >
           {stale ? t('gameBoard.finishStaleError') : t('gameBoard.finishSubmitError')}
-        </Alert>
+        </InlineNotice>
       ) : null}
     </Stack>
   )

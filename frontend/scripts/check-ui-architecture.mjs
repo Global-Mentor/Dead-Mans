@@ -1,3 +1,4 @@
+import { inspectUiBoundaries } from './ui-architecture-rules.mjs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import ts from 'typescript'
@@ -46,11 +47,7 @@ function inspectJsx(sourceFile, node) {
   if (tag === 'AppDialog') {
     const paperOverride = attributes.find((attribute) => attribute.name.text === 'PaperProps')
     if (paperOverride) {
-      report(
-        sourceFile,
-        paperOverride,
-        'AppDialog consumers must choose an appearance instead of restyling its Paper slot',
-      )
+      report(sourceFile, paperOverride, 'AppDialog consumers must use the shared paper treatment')
     }
   }
 }
@@ -97,7 +94,10 @@ function inspectThemeBoundaries(sourceFile) {
 }
 
 function inspectDialogBoundary(sourceFile) {
-  if (!sourceFile.fileName.endsWith(path.join('shared', 'ui', 'feedback', 'AppDialog.tsx'))) return
+  if (
+    !sourceFile.fileName.endsWith(path.join('shared', 'ui', 'feedback', 'dialogs', 'AppDialog.tsx'))
+  )
+    return
 
   function visit(node) {
     if (ts.isStringLiteral(node) && node.text.includes('.MuiButton')) {
@@ -140,6 +140,8 @@ for (const file of await sourceFiles(sourceRoot)) {
   }
 
   visit(sourceFile)
+  for (const finding of inspectUiBoundaries(sourceFile))
+    report(sourceFile, finding.node, finding.message)
   inspectThemeBoundaries(sourceFile)
   inspectDialogBoundary(sourceFile)
 }

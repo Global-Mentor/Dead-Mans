@@ -17,6 +17,7 @@ const gameRoundsApiClient =
       | '/game/rounds/active'
       | '/game/rounds/{roundId}/review'
       | '/game/rounds/{roundId}/prepare'
+      | '/game/rounds/{roundId}/start-modifier-ordering'
       | '/game/rounds/{roundId}/begin-gameplay'
       | '/game/rounds/{roundId}/rebuild'
       | '/game/rounds/{roundId}/technical-cancel'
@@ -32,6 +33,18 @@ export function fetchActiveGameRound() {
 export function prepareGameRound(roundId: string, request: GameRoundVersionCommandRequest) {
   return unwrapOpenApiData(
     gameRoundsApiClient.POST('/game/rounds/{roundId}/prepare', {
+      params: { path: { roundId } },
+      body: request,
+    }),
+  )
+}
+
+export function startGameRoundModifierOrdering(
+  roundId: string,
+  request: GameRoundVersionCommandRequest,
+) {
+  return unwrapOpenApiData(
+    gameRoundsApiClient.POST('/game/rounds/{roundId}/start-modifier-ordering', {
       params: { path: { roundId } },
       body: request,
     }),

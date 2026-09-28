@@ -1,5 +1,6 @@
 import {
   createApiClient,
+  ensureOpenApiSuccess,
   unwrapOpenApiData,
   unwrapOpenApiDataOrNullOnNoContent,
 } from '../../../shared/api/client/openApiClient.ts'
@@ -38,7 +39,7 @@ export function fetchGameModifierState() {
 }
 
 export function activateGameModifier(modifierId: string) {
-  return unwrapOpenApiData(
+  return ensureOpenApiSuccess(
     gameModifiersApiClient.POST('/game/modifiers/{modifierId}/activate', {
       params: { path: { modifierId } },
     }),
@@ -48,7 +49,7 @@ export function activateGameModifier(modifierId: string) {
 export function emergencyDisableGameModifier(modifierId: string, reason: string) {
   const body: EmergencyDisableGameModifierRequest = { reason }
 
-  return unwrapOpenApiData(
+  return ensureOpenApiSuccess(
     gameModifiersApiClient.POST('/game/modifiers/{modifierId}/emergency-disable', {
       params: { path: { modifierId } },
       body,
@@ -62,7 +63,7 @@ export function selfCancelGameModifierActivation(
 ) {
   const body: CancelGameModifierActivationRequest = { expectedRoundVersion }
 
-  return unwrapOpenApiData(
+  return ensureOpenApiSuccess(
     gameModifiersApiClient.POST('/game/modifiers/activations/{activationId}/self-cancel', {
       params: { path: { activationId } },
       body,
@@ -103,7 +104,7 @@ export function cancelGameModifierActivation(
 ) {
   const body: CancelGameModifierActivationRequest = { expectedRoundVersion, reason }
 
-  return unwrapOpenApiData(
+  return ensureOpenApiSuccess(
     gameModifiersApiClient.POST('/game/modifiers/admin/activations/{activationId}/cancel', {
       params: { path: { activationId } },
       body,

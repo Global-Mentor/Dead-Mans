@@ -1,10 +1,16 @@
+import { Box, Stack, Typography } from '@mui/material'
 import type { TFunction } from 'i18next'
-import { Box, Chip, Divider, Drawer, IconButton, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameRegistrationAdminSnapshot } from '../../../shared/api/contracts/index.ts'
-import { AppButton, ConfirmDialog, SectionCard } from '../../../shared/ui/index.ts'
-
+import {
+  AppButton,
+  ConfirmDialog,
+  SectionCard,
+  SectionDivider,
+  SidePanel,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 interface AdminGameLaunchDrawerProps {
   snapshot: GameRegistrationAdminSnapshot
   isStartingGame: boolean
@@ -34,7 +40,8 @@ export function AdminGameLaunchDrawer({
       >
         <Stack direction="row" spacing={1} alignItems="center">
           <Box component="span">{t('gameApplication.adminPanel.launchPanelOpen')}</Box>
-          <Chip
+          <StatusBadge
+            textFlow="singleLine"
             aria-hidden
             size="small"
             color={canStartGame ? 'success' : 'warning'}
@@ -50,103 +57,74 @@ export function AdminGameLaunchDrawer({
         </Stack>
       </AppButton>
 
-      <Drawer anchor="right" open={isOpen} onClose={() => setIsOpen(false)}>
-        <Box
-          sx={{
-            width: { xs: '100vw', sm: 380 },
-            maxWidth: '100vw',
-            p: 2,
-          }}
-          role="presentation"
-        >
-          <Stack spacing={2}>
-            <Stack
-              direction="row"
-              spacing={1.5}
-              alignItems="flex-start"
-              justifyContent="space-between"
-            >
-              <Stack spacing={0.5}>
-                <Typography variant="h6">
-                  {t('gameApplication.adminPanel.launchPanelTitle')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameApplication.adminPanel.launchPanelDescription')}
-                </Typography>
-              </Stack>
-              <IconButton
-                size="small"
-                aria-label={t('gameApplication.adminPanel.launchPanelClose')}
-                onClick={() => setIsOpen(false)}
-              >
-                <Box component="span" aria-hidden sx={{ fontSize: 20, lineHeight: 1 }}>
-                  ×
-                </Box>
-              </IconButton>
+      <SidePanel
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={t('gameApplication.adminPanel.launchPanelTitle')}
+        description={t('gameApplication.adminPanel.launchPanelDescription')}
+        closeLabel={t('gameApplication.adminPanel.launchPanelClose')}
+      >
+        <Stack spacing={2}>
+          {' '}
+          <StatusBadge
+            textFlow="singleLine"
+            color={canStartGame ? 'success' : 'warning'}
+            label={
+              canStartGame
+                ? t('gameApplication.adminPanel.launchPanelReadyChip')
+                : t('gameApplication.adminPanel.launchPanelBlockedChip', {
+                    count: blockers.length,
+                  })
+            }
+            sx={{ alignSelf: 'flex-start' }}
+          />
+          <SectionCard surface="inset">
+            <Stack spacing={1}>
+              <Typography variant="subtitle2">
+                {t('gameApplication.adminPanel.launchPanelValidationTitle')}
+              </Typography>
+              <SectionDivider />
+              <Typography variant="body2">
+                {t('gameApplication.adminPanel.launchPanelConfirmedTeams', {
+                  count: launchSummary.confirmedTeamsCount,
+                })}
+              </Typography>
+              <Typography variant="body2">
+                {t('gameApplication.adminPanel.launchPanelPendingInvitations', {
+                  count: launchSummary.pendingInvitationsCount,
+                })}
+              </Typography>
+              <Typography variant="body2">
+                {t('gameApplication.adminPanel.launchPanelDisbandRequests', {
+                  count: launchSummary.disbandRequestsCount,
+                })}
+              </Typography>
             </Stack>
-
-            <Chip
-              color={canStartGame ? 'success' : 'warning'}
-              label={
-                canStartGame
-                  ? t('gameApplication.adminPanel.launchPanelReadyChip')
-                  : t('gameApplication.adminPanel.launchPanelBlockedChip', {
-                      count: blockers.length,
-                    })
-              }
-              sx={{ alignSelf: 'flex-start' }}
-            />
-
-            <SectionCard surface="inset">
-              <Stack spacing={1}>
-                <Typography variant="subtitle2">
-                  {t('gameApplication.adminPanel.launchPanelValidationTitle')}
-                </Typography>
-                <Divider />
-                <Typography variant="body2">
-                  {t('gameApplication.adminPanel.launchPanelConfirmedTeams', {
-                    count: launchSummary.confirmedTeamsCount,
-                  })}
-                </Typography>
-                <Typography variant="body2">
-                  {t('gameApplication.adminPanel.launchPanelPendingInvitations', {
-                    count: launchSummary.pendingInvitationsCount,
-                  })}
-                </Typography>
-                <Typography variant="body2">
-                  {t('gameApplication.adminPanel.launchPanelDisbandRequests', {
-                    count: launchSummary.disbandRequestsCount,
-                  })}
-                </Typography>
+          </SectionCard>
+          <SectionCard surface="inset" borderStyle={canStartGame ? 'solid' : 'dashed'}>
+            {canStartGame ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('gameApplication.adminPanel.launchPanelReadyDescription')}
+              </Typography>
+            ) : (
+              <Stack component="ul" spacing={1} sx={{ m: 0, pl: 2.5 }}>
+                {blockers.map((blocker) => (
+                  <Typography key={blocker} component="li" variant="body2" color="text.secondary">
+                    {blocker}
+                  </Typography>
+                ))}
               </Stack>
-            </SectionCard>
-
-            <SectionCard surface="inset" borderStyle={canStartGame ? 'solid' : 'dashed'}>
-              {canStartGame ? (
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameApplication.adminPanel.launchPanelReadyDescription')}
-                </Typography>
-              ) : (
-                <Stack component="ul" spacing={1} sx={{ m: 0, pl: 2.5 }}>
-                  {blockers.map((blocker) => (
-                    <Typography key={blocker} component="li" variant="body2" color="text.secondary">
-                      {blocker}
-                    </Typography>
-                  ))}
-                </Stack>
-              )}
-            </SectionCard>
-
-            <AppButton
-              fullWidth
-              disabled={!canStartGame || isStartingGame}
-              onClick={() => setIsConfirmOpen(true)}
-            >
-              {t('gameApplication.adminPanel.launchGame')}
-            </AppButton>
-          </Stack>
-        </Box>
-      </Drawer>
+            )}
+          </SectionCard>
+          <AppButton
+            fullWidth
+            disabled={!canStartGame || isStartingGame}
+            onClick={() => setIsConfirmOpen(true)}
+          >
+            {t('gameApplication.adminPanel.launchGame')}
+          </AppButton>
+        </Stack>
+      </SidePanel>
 
       <ConfirmDialog
         open={isConfirmOpen}

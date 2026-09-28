@@ -1,11 +1,9 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { SectionCard } from '../../../shared/ui/index.ts'
+import { ItemCard, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName } from '../model/game-history-formatters.ts'
 import { formatDateTime } from '../model/game-history-view.ts'
-import { MiniMetricChip } from './game-history-display.tsx'
 
 export function FinalResultSnapshot({
   summary,
@@ -32,37 +30,19 @@ export function FinalResultSnapshot({
         </Stack>
 
         {summary.publicNote ? (
-          <Box
-            sx={(theme) => ({
-              borderRadius: 2,
-              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-              backgroundColor: alpha(theme.palette.info.main, 0.08),
-              px: 1.5,
-              py: 1.25,
-            })}
-          >
+          <ItemCard>
             <Typography variant="caption" color="text.secondary">
               {t('gameHistory.finalResultNote')}
             </Typography>
             <Typography variant="body2" sx={{ mt: 0.4, whiteSpace: 'pre-wrap' }}>
               {summary.publicNote}
             </Typography>
-          </Box>
+          </ItemCard>
         ) : null}
 
         <Stack spacing={0.8}>
           {summary.teams.map((team) => (
-            <Box
-              key={team.teamId}
-              sx={(theme) => ({
-                borderRadius: 2,
-                backgroundColor: alpha(theme.palette.common.black, 0.2),
-                '&:nth-of-type(even)': { backgroundColor: alpha(theme.palette.primary.main, 0.07) },
-                overflowWrap: 'anywhere',
-                px: 1.25,
-                py: 1.05,
-              })}
-            >
+            <ItemCard key={team.teamId} sx={{ overflowWrap: 'anywhere' }}>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={0.8}
@@ -80,7 +60,9 @@ export function FinalResultSnapshot({
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap>
-                  <MiniMetricChip
+                  <StatusBadge
+                    density="compact"
+                    variant="outlined"
                     label={
                       team.finalScore == null
                         ? t('gameHistory.finalResultDidNotPlay')
@@ -88,18 +70,22 @@ export function FinalResultSnapshot({
                     }
                   />
                   {team.bestScore != null ? (
-                    <MiniMetricChip
+                    <StatusBadge
+                      density="compact"
+                      variant="outlined"
                       label={t('gameHistory.summary.bestScoreShort', { points: team.bestScore })}
                     />
                   ) : null}
-                  <MiniMetricChip
+                  <StatusBadge
+                    density="compact"
+                    variant="outlined"
                     label={t('gameHistory.summary.penaltyTotalShort', {
                       points: team.penaltyTotal,
                     })}
                   />
                 </Stack>
               </Stack>
-            </Box>
+            </ItemCard>
           ))}
         </Stack>
       </Stack>

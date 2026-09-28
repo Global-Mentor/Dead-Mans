@@ -32,8 +32,10 @@ describe('QuestionFormDialog', () => {
   it('always submits the first field as correct without a correctness selector', async () => {
     const onSubmit = renderForm()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Capital?' } })
-    fireEvent.change(screen.getByLabelText('Correct answer'), { target: { value: ' Warsaw ' } })
+    fireEvent.change(screen.getByLabelText(/^Question\s*\*?$/), { target: { value: 'Capital?' } })
+    fireEvent.change(screen.getByLabelText(/^Correct answer\s*\*?$/), {
+      target: { value: ' Warsaw ' },
+    })
     for (let number = 1; number <= 3; number++) {
       fireEvent.change(screen.getByLabelText(`Incorrect option ${number}`), {
         target: { value: `Wrong ${number}` },
@@ -68,7 +70,7 @@ describe('QuestionFormDialog', () => {
       ],
     }
     const onSubmit = renderForm(initial)
-    expect(screen.getByLabelText('Correct answer')).toHaveValue('Warsaw')
+    expect(screen.getByLabelText(/^Correct answer\s*\*?$/)).toHaveValue('Warsaw')
     expect(screen.getByLabelText('Incorrect option 1')).toHaveValue('Krakow')
     expect(screen.getByLabelText('Incorrect option 2')).toHaveValue('Gdansk')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
@@ -81,12 +83,17 @@ describe('QuestionFormDialog', () => {
 
   it('keeps the correct field while enforcing two to ten options', async () => {
     renderForm()
-    fireEvent.change(screen.getByLabelText('Correct answer'), { target: { value: 'Warsaw' } })
+    // jsdom's CSS :invalid matcher calls checkValidity while measuring the textarea.
+    // Keep this focus/array test valid; the browser test covers focus with empty required fields.
+    fireEvent.change(screen.getByLabelText(/^Question\s*\*?$/), { target: { value: 'Capital?' } })
+    fireEvent.change(screen.getByLabelText(/^Correct answer\s*\*?$/), {
+      target: { value: 'Warsaw' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Remove incorrect option 3' }))
     fireEvent.click(screen.getByRole('button', { name: 'Remove incorrect option 2' }))
     await waitFor(() => expect(screen.getByLabelText('Incorrect option 1')).toHaveFocus())
     expect(screen.getByRole('button', { name: 'Remove incorrect option 1' })).toBeDisabled()
-    expect(screen.getByLabelText('Correct answer')).toHaveValue('Warsaw')
+    expect(screen.getByLabelText(/^Correct answer\s*\*?$/)).toHaveValue('Warsaw')
     for (let count = 2; count < 10; count++)
       fireEvent.click(screen.getByRole('button', { name: 'Add option' }))
     expect(screen.getByRole('button', { name: 'Add option' })).toBeDisabled()
@@ -96,8 +103,10 @@ describe('QuestionFormDialog', () => {
 
   it('blocks duplicates and prevents all edits while saving', async () => {
     const onSubmit = renderForm()
-    fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Capital?' } })
-    fireEvent.change(screen.getByLabelText('Correct answer'), { target: { value: 'Warsaw' } })
+    fireEvent.change(screen.getByLabelText(/^Question\s*\*?$/), { target: { value: 'Capital?' } })
+    fireEvent.change(screen.getByLabelText(/^Correct answer\s*\*?$/), {
+      target: { value: 'Warsaw' },
+    })
     for (let number = 1; number <= 3; number++)
       fireEvent.change(screen.getByLabelText(`Incorrect option ${number}`), {
         target: { value: ' warsaw ' },
@@ -107,7 +116,7 @@ describe('QuestionFormDialog', () => {
     expect(onSubmit).not.toHaveBeenCalled()
     cleanup()
     renderForm(undefined, true)
-    expect(screen.getByLabelText('Correct answer')).toBeDisabled()
+    expect(screen.getByLabelText(/^Correct answer\s*\*?$/)).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Add option' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
     for (const button of screen.getAllByRole('button', { name: /Remove incorrect option/ }))

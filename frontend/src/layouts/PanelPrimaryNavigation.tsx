@@ -1,20 +1,22 @@
-import { useId, useState } from 'react'
 import {
-  Box,
-  ButtonBase,
-  Divider,
-  ListSubheader,
-  Menu,
-  MenuItem,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+  SectionDivider,
+  MenuGroupLabel,
+  ActionMenu,
+  ActionMenuItem,
+  NavigationButton,
+} from '../shared/ui/index.ts'
+import { useId, useState } from 'react'
+import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
-import { gameApplicationRoute, getPanelRouteByPath, panelRoutes } from '../routes/app-routes.ts'
-import { navigationButtonSx } from './navigation-styles.ts'
+import {
+  gameApplicationRoute,
+  gameModifiersRoute,
+  gameQuizRoute,
+  getPanelRouteByPath,
+  panelRoutes,
+} from '../routes/app-routes.ts'
+import type { GameBoardSnapshot } from '../shared/api/contracts/index.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
 
 const primaryRoutes = panelRoutes.filter((route) => route.group === 'player')
@@ -22,13 +24,10 @@ const historyRoutes = primaryRoutes.filter((route) => route.id.endsWith('history
 
 interface PanelPrimaryNavigationProps {
   activeRouteId: string | undefined
-  showGameApplication: boolean
+  gameStatus: GameBoardSnapshot['status'] | undefined
 }
 
-export function PanelPrimaryNavigation({
-  activeRouteId,
-  showGameApplication,
-}: PanelPrimaryNavigationProps) {
+export function PanelPrimaryNavigation({ activeRouteId, gameStatus }: PanelPrimaryNavigationProps) {
   const { t } = useTranslation()
   const theme = useTheme()
   const compact = useMediaQuery(theme.breakpoints.down('lg'))
@@ -38,11 +37,21 @@ export function PanelPrimaryNavigation({
   const [menu, setMenu] = useState<{ anchor: HTMLElement; compact: boolean } | null>(null)
   const anchor = menu?.anchor ?? null
   const open = menu != null && menu.compact === compact && menu.anchor.isConnected
-  const visibleRoutes = primaryRoutes.filter(
-    (route) =>
-      !route.id.endsWith('history') &&
-      (showGameApplication || route.id !== gameApplicationRoute.id),
-  )
+  const visibleRoutes = primaryRoutes.filter((route) => {
+    if (route.id.endsWith('history')) {
+      return false
+    }
+
+    if (route.id === gameApplicationRoute.id) {
+      return gameStatus === 'ready'
+    }
+
+    if (route.id === gameModifiersRoute.id || route.id === gameQuizRoute.id) {
+      return gameStatus === 'active'
+    }
+
+    return true
+  })
   const historyActive = historyRoutes.some((route) => route.id === activeRouteId)
   const closeMenu = () => setMenu(null)
 
@@ -58,18 +67,18 @@ export function PanelPrimaryNavigation({
           const isActive = route.id === activeRouteId
 
           return (
-            <ButtonBase
+            <NavigationButton
               key={route.id}
               component={RouterLink}
               to={route.fullPath}
               aria-current={isActive ? 'page' : undefined}
-              sx={navigationButtonSx(isActive)}
+              active={isActive}
             >
               {t(route.labelKey)}
-            </ButtonBase>
+            </NavigationButton>
           )
         })}
-      <ButtonBase
+      <NavigationButton
         key={compact ? 'compact' : 'desktop'}
         id={`${menuId}-trigger`}
         aria-label={compact ? t('navigation.openNavigation') : undefined}
@@ -77,10 +86,8 @@ export function PanelPrimaryNavigation({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={(event) => setMenu({ anchor: event.currentTarget, compact })}
-        sx={(theme) => ({
-          ...navigationButtonSx(!compact && historyActive)(theme),
-          ...(compact ? { width: '100%', justifyContent: 'flex-start', px: 1, minWidth: 0 } : {}),
-        })}
+        active={!compact && historyActive}
+        layout={compact ? 'compact' : 'route'}
       >
         {compact && (
           <Box
@@ -100,8 +107,8 @@ export function PanelPrimaryNavigation({
             : t('navigation.history')}
         </Typography>
         <NavigationChevron open={open} />
-      </ButtonBase>
-      <Menu
+      </NavigationButton>
+      <ActionMenu
         id={menuId}
         anchorEl={anchor}
         open={open}
@@ -113,10 +120,10 @@ export function PanelPrimaryNavigation({
           list: { 'aria-labelledby': `${menuId}-trigger` },
         }}
       >
-        {compact && <ListSubheader disableSticky>{t('navigation.primary')}</ListSubheader>}
+        {compact && <MenuGroupLabel disableSticky>{t('navigation.primary')}</MenuGroupLabel>}
         {compact &&
           visibleRoutes.map((route) => (
-            <MenuItem
+            <ActionMenuItem
               key={route.id}
               component={RouterLink}
               to={route.fullPath}
@@ -126,12 +133,12 @@ export function PanelPrimaryNavigation({
               sx={{ minHeight: 44 }}
             >
               {t(route.labelKey)}
-            </MenuItem>
+            </ActionMenuItem>
           ))}
-        {compact && <Divider />}
-        {compact && <ListSubheader disableSticky>{t('navigation.history')}</ListSubheader>}
+        {compact && <SectionDivider />}
+        {compact && <MenuGroupLabel disableSticky>{t('navigation.history')}</MenuGroupLabel>}
         {historyRoutes.map((route) => (
-          <MenuItem
+          <ActionMenuItem
             key={route.id}
             component={RouterLink}
             to={route.fullPath}
@@ -141,9 +148,9 @@ export function PanelPrimaryNavigation({
             sx={{ minHeight: 44 }}
           >
             {t(route.labelKey)}
-          </MenuItem>
+          </ActionMenuItem>
         ))}
-      </Menu>
+      </ActionMenu>
     </Stack>
   )
 }

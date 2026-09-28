@@ -66,7 +66,9 @@ interface GameManagementToolProps {
     requestId: string
   }) => void
   isChangingRoundStage: boolean
+  roundStageError: string | null
   onStartRound: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onStartModifierOrdering: (input: { roundId: string; expectedRoundVersion: number }) => void
   onBeginGameplay: (input: { roundId: string; expectedRoundVersion: number }) => void
   onReviewRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onRebuildRound: (input: { roundId: string; expectedRoundVersion: number }) => void
@@ -92,7 +94,9 @@ export function GameManagementTool({
   isAwardingManualQuizPoints,
   onAwardManualQuizPoints,
   isChangingRoundStage,
+  roundStageError,
   onStartRound,
+  onStartModifierOrdering,
   onBeginGameplay,
   onReviewRound,
   onRebuildRound,
@@ -141,6 +145,7 @@ export function GameManagementTool({
     hasCurrentActiveTeam: currentActiveTeamId !== null,
     resumableTeam,
     onStartRound,
+    onStartModifierOrdering,
     onBeginGameplay,
     onReviewRound,
     onOpenSummary: () => setIsRoundSummaryDialogOpen(true),
@@ -191,7 +196,9 @@ export function GameManagementTool({
             <>
               <RoundAssistantSection
                 roundAction={roundAction}
+                flow={flow}
                 isChangingRoundStage={isChangingRoundStage}
+                errorMessage={roundStageError}
               />
 
               <TeamControlSection
@@ -275,6 +282,7 @@ export function GameManagementTool({
           open={isRoundSummaryDialogOpen}
           activeRound={activeRound}
           isSubmitting={isRoundSummarySubmitting}
+          submitErrorMessage={roundStageError}
           onClose={() => setIsRoundSummaryDialogOpen(false)}
           onSubmit={async ({ roundSummary, postRoundAction }) => {
             await onCompleteRound(roundSummary)

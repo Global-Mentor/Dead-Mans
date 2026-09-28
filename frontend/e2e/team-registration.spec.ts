@@ -5,7 +5,11 @@ test.afterEach(async ({ page }) => {
   await expectUnifiedTypography(page)
 })
 
-async function openTeamManagement(page: Page, state: 'eligible' | 'active' | 'stale' | 'editable') {
+async function openTeamManagement(
+  page: Page,
+  state: 'eligible' | 'active' | 'stale' | 'editable',
+  role: 'admin' | 'moderator' = 'admin',
+) {
   const teamId = '76528fbb-cd51-492f-b8e6-a4330c2528ba'
   const gameId = '3f93a420-ef68-4cb0-9c39-5fa46c921001'
   let disbanded = false
@@ -21,7 +25,7 @@ async function openTeamManagement(page: Page, state: 'eligible' | 'active' | 'st
           json: {
             userId: 'abf3680b-ac92-43ce-8c4f-c542f806e520',
             displayName: 'Admin',
-            roles: ['admin', 'viewer'],
+            roles: [role, 'viewer'],
           },
         })
       } else if (path === '/api/game') {
@@ -186,3 +190,27 @@ test('shows a server refusal when the team opened a card after the snapshot load
   await expect(page.getByText('Review player', { exact: true })).toBeVisible()
   expect(requests()).toBe(1)
 })
+
+for (const width of [1440, 768, 390, 320]) {
+  for (const role of ['admin', 'moderator'] as const) {
+    test(`${role} reviews a populated team and confirms disband at ${width}px`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 1000 })
+      const requests = await openTeamManagement(page, 'eligible', role)
+      const dialog = page.getByRole('dialog')
+      await expect(dialog.getByRole('button', { name: 'Disband team', exact: true })).toBeVisible()
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      await page.screenshot({
+        path: info.outputPath('team-management-confirm.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+      await dialog.getByRole('button', { name: 'Disband team', exact: true }).click()
+      await expect(page.getByText('Review player', { exact: true })).toHaveCount(0)
+      expect(requests()).toBe(1)
+    })
+  }
+}

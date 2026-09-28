@@ -1,9 +1,7 @@
-import { Box, Stack, Tooltip, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../shared/ui/index.ts'
-
+import { ActionIcon, AppButton, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
 interface ModifierActivationControlProps {
   availability: GameModifierAvailability
   isBusy: boolean
@@ -11,6 +9,7 @@ interface ModifierActivationControlProps {
   blockedReasonLabel: string
   blockedReasonTooltip: string
   onActivate: (modifierId: string) => void
+  compact?: boolean
 }
 
 export function ModifierActivationControl({
@@ -20,38 +19,66 @@ export function ModifierActivationControl({
   blockedReasonLabel,
   blockedReasonTooltip,
   onActivate,
+  compact = false,
 }: ModifierActivationControlProps) {
   const { t } = useTranslation()
-
+  const reason = availability.blockedReason
+  const blockedContent =
+    reason === 'ordering_closed' ? (
+      <AppButton tone="primary" size={compact ? 'small' : 'medium'} fullWidth={!compact} disabled>
+        {compact ? t('gameModifiers.unavailableAction') : blockedReasonLabel}
+      </AppButton>
+    ) : (
+      <StatusBadge
+        role="status"
+        aria-label={blockedReasonTooltip}
+        label={compact ? t('gameModifiers.unavailableAction') : blockedReasonLabel}
+        density={compact ? 'compact' : 'standard'}
+        color={
+          reason === 'limit_reached' || reason === 'active_team_member'
+            ? 'error'
+            : reason === 'insufficient_points'
+              ? 'warning'
+              : 'info'
+        }
+      />
+    )
   return (
-    <Box
-      sx={{
-        width: { xs: '100%', sm: 168 },
-        flexShrink: 0,
-        display: 'flex',
-        justifyContent: { xs: 'stretch', sm: 'flex-end' },
-      }}
-    >
+    <Box sx={{ width: compact ? 'auto' : { xs: '100%', sm: 168 }, flexShrink: 0 }}>
       {availability.canActivate ? (
-        <AppButton
-          tone="primary"
-          size="small"
-          fullWidth
-          disabled={isBusy}
-          onClick={() => onActivate(availability.modifier.id)}
-          sx={{
-            height: 32,
-            minHeight: 32,
-            '@media (max-width: 599px)': { height: 'auto', minHeight: 44 },
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            lineHeight: 1.15,
-          }}
-        >
-          {isPending ? t('gameModifiers.activatePending') : t('gameModifiers.activateAction')}
-        </AppButton>
-      ) : availability.blockedReason === 'ordering_closed' ? (
-        <Tooltip
+        <>
+          {compact ? (
+            <ActionIcon
+              appearance="framed"
+              size="small"
+              aria-label={t('gameModifiers.activateAction')}
+              disabled={isBusy}
+              aria-busy={isPending}
+              onClick={() => onActivate(availability.modifier.id)}
+              sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+            >
+              <Box component="span" aria-hidden>
+                +
+              </Box>
+            </ActionIcon>
+          ) : null}
+          <AppButton
+            tone="primary"
+            fullWidth={!compact}
+            size={compact ? 'small' : 'medium'}
+            aria-label={compact ? t('gameModifiers.activateAction') : undefined}
+            disabled={isBusy}
+            aria-busy={isPending}
+            onClick={() => onActivate(availability.modifier.id)}
+            sx={compact ? { display: { xs: 'none', sm: 'inline-flex' } } : undefined}
+          >
+            {isPending
+              ? t('gameModifiers.activatePending')
+              : t(compact ? 'gameModifiers.activateCompactAction' : 'gameModifiers.activateAction')}
+          </AppButton>
+        </>
+      ) : (
+        <HelpTooltip
           title={blockedReasonTooltip}
           arrow
           describeChild
@@ -61,151 +88,30 @@ export function ModifierActivationControl({
           <Box
             component="span"
             tabIndex={0}
-            sx={{ display: 'block', width: '100%', cursor: 'help' }}
+            aria-label={blockedReasonTooltip}
+            sx={{ display: 'block', width: compact ? 'auto' : '100%' }}
           >
-            <AppButton
-              tone="primary"
-              size="small"
-              fullWidth
-              disabled
-              sx={{
-                height: 32,
-                minHeight: 32,
-                '@media (max-width: 599px)': { height: 'auto', minHeight: 44 },
-                borderRadius: '8px',
-                pointerEvents: 'none',
-                fontSize: '0.75rem',
-                lineHeight: 1.15,
-              }}
-            >
-              <Stack
-                component="span"
-                alignItems="center"
-                justifyContent="center"
-                sx={{ position: 'relative', width: '100%', minHeight: 14 }}
+            {compact ? (
+              <ActionIcon
+                appearance="framed"
+                size="small"
+                aria-label={blockedReasonTooltip}
+                disabled
+                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
               >
-                <Box component="span" sx={{ width: '100%', textAlign: 'center' }}>
-                  {blockedReasonLabel}
+                <Box component="span" aria-hidden>
+                  −
                 </Box>
-                <Box
-                  component="span"
-                  aria-hidden="true"
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: 0,
-                    transform: 'translateY(-50%)',
-                    display: 'inline-flex',
-                    width: 14,
-                    height: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid currentColor',
-                    borderRadius: '50%',
-                    fontSize: '0.62rem',
-                    fontWeight: 900,
-                    lineHeight: 1,
-                  }}
-                >
-                  ?
-                </Box>
-              </Stack>
-            </AppButton>
+              </ActionIcon>
+            ) : null}
+            {compact ? (
+              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{blockedContent}</Box>
+            ) : (
+              blockedContent
+            )}
           </Box>
-        </Tooltip>
-      ) : (
-        <BlockedReasonPlaque
-          blockedReason={availability.blockedReason}
-          label={blockedReasonLabel}
-          tooltip={blockedReasonTooltip}
-        />
+        </HelpTooltip>
       )}
     </Box>
-  )
-}
-
-function BlockedReasonPlaque({
-  blockedReason,
-  label,
-  tooltip,
-}: {
-  blockedReason: GameModifierAvailability['blockedReason']
-  label: string
-  tooltip: string
-}) {
-  return (
-    <Tooltip title={tooltip} arrow describeChild enterDelay={150} enterTouchDelay={0}>
-      <Box
-        role="status"
-        aria-label={tooltip}
-        tabIndex={0}
-        sx={(theme) => {
-          const accent =
-            blockedReason === 'limit_reached' || blockedReason === 'active_team_member'
-              ? theme.palette.error.main
-              : blockedReason === 'insufficient_points'
-                ? theme.palette.warning.main
-                : theme.palette.info.main
-
-          return {
-            '--blocked-reason-accent': accent,
-            width: '100%',
-            height: 32,
-            minHeight: 32,
-            px: 0.7,
-            borderRadius: '8px',
-            border: `1px solid ${alpha(accent, 0.46)}`,
-            backgroundColor: alpha(accent, 0.08),
-            cursor: 'help',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            '& .blocked-reason-help': {
-              color: 'var(--blocked-reason-accent)',
-              borderColor: alpha(accent, 0.72),
-            },
-          }
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{
-            display: 'block',
-            width: '100%',
-            px: 2,
-            textAlign: 'center',
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            lineHeight: 1.15,
-          }}
-        >
-          {label}
-        </Typography>
-        <Box
-          component="span"
-          className="blocked-reason-help"
-          aria-hidden="true"
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: 6,
-            transform: 'translateY(-50%)',
-            display: 'inline-flex',
-            width: 14,
-            height: 14,
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid',
-            borderRadius: '50%',
-            fontSize: '0.62rem',
-            fontWeight: 900,
-            lineHeight: 1,
-          }}
-        >
-          ?
-        </Box>
-      </Box>
-    </Tooltip>
   )
 }

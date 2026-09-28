@@ -1,5 +1,13 @@
-import { Box, Chip, Stack, TextField, Typography } from '@mui/material'
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
+import { Box, Stack, Typography } from '@mui/material'
+import {
+  AppButton,
+  Combobox,
+  createFilterOptions,
+  FormTextField,
+  InlineNotice,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
+
 import type { ComponentProps } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,10 +16,9 @@ import type {
   GameModifierAvailability,
   GameModifierState,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
-import { buildModifierSearchText } from '../model/modifier-search.ts'
 import { deriveModifierRoundSummaryMeta } from '../model/modifier-round-summary.ts'
-import { AdminModifierBlock, AdminModifierStateNotice } from './admin-modifier-panel-primitives.tsx'
+import { buildModifierSearchText } from '../model/modifier-search.ts'
+import { AdminModifierBlock } from './admin-modifier-panel-primitives.tsx'
 
 const filterAdminPlayers = createFilterOptions<GameModifierAdminPlayer>({
   limit: 30,
@@ -97,7 +104,7 @@ export function AdminModifierActivationBlock({
         </Typography>
       ) : (
         <Stack spacing={1}>
-          <Autocomplete
+          <Combobox
             size="small"
             autoHighlight
             selectOnFocus
@@ -121,8 +128,8 @@ export function AdminModifierActivationBlock({
               </Box>
             )}
             renderInput={(params) => (
-              <TextField
-                {...(params as unknown as ComponentProps<typeof TextField>)}
+              <FormTextField
+                {...(params as unknown as ComponentProps<typeof FormTextField>)}
                 size="small"
                 label={t('common.entities.player')}
               />
@@ -140,14 +147,14 @@ export function AdminModifierActivationBlock({
           ) : state == null ? null : (
             <>
               <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                <Chip
+                <StatusBadge
                   color="primary"
                   variant="outlined"
                   label={t('gameModifiers.adminPanel.pointsAvailable', {
                     points: state.availableQuizPoints,
                   })}
                 />
-                <Chip
+                <StatusBadge
                   color="warning"
                   variant="outlined"
                   label={t('gameModifiers.adminPanel.pointsSpent', {
@@ -162,7 +169,7 @@ export function AdminModifierActivationBlock({
                 </Typography>
               ) : (
                 <>
-                  <Autocomplete
+                  <Combobox
                     size="small"
                     autoHighlight
                     selectOnFocus
@@ -202,8 +209,8 @@ export function AdminModifierActivationBlock({
                       </Box>
                     )}
                     renderInput={(params) => (
-                      <TextField
-                        {...(params as unknown as ComponentProps<typeof TextField>)}
+                      <FormTextField
+                        {...(params as unknown as ComponentProps<typeof FormTextField>)}
                         size="small"
                         label={t('gameModifiers.adminPanel.activateModifierLabel')}
                       />
@@ -211,9 +218,9 @@ export function AdminModifierActivationBlock({
                   />
 
                   {selectedModifier?.blockedReason ? (
-                    <AdminModifierStateNotice>
+                    <InlineNotice severity="warning">
                       {t(`gameModifiers.blockedReasons.${selectedModifier.blockedReason}`)}
-                    </AdminModifierStateNotice>
+                    </InlineNotice>
                   ) : null}
 
                   <AppButton
@@ -241,9 +248,9 @@ export function AdminModifierActivationBlock({
                   />
 
                   {selectedModifier?.isEmergencyDisabled ? (
-                    <AdminModifierStateNotice>
+                    <InlineNotice severity="warning">
                       {t('gameModifiers.adminPanel.emergencyDisabledNotice')}
-                    </AdminModifierStateNotice>
+                    </InlineNotice>
                   ) : null}
 
                   <AppButton

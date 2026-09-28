@@ -61,6 +61,16 @@ describe('CurrentQuizCard', () => {
     expect(props.onAskNext).toHaveBeenCalledOnce()
   })
 
+  it('blocks both launch actions during modifier ordering', () => {
+    const props = renderCard(null, { canManage: true, modifierOrderingActive: true })
+    expect(screen.getByRole('button', { name: i18n.t('gameQuiz.nextQuestion') })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }),
+    ).toBeDisabled()
+    expect(screen.getByText(i18n.t('gameQuiz.modifierOrderingActive'))).toBeInTheDocument()
+    expect(props.onAskNext).not.toHaveBeenCalled()
+  })
+
   it('explains when every available question has already been asked', () => {
     renderCard(null, {
       canManage: true,

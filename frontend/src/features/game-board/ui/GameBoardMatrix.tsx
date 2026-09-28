@@ -1,64 +1,60 @@
-import { Box, Stack, Tab, Tabs, Typography, useMediaQuery } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useId, useState, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, BoardMatrix } from '../../../shared/ui/index.ts'
+import { BoardMatrix } from '../../../shared/game-ui/index.ts'
+import { ActionIcon, TabOption, TabStrip } from '../../../shared/ui/index.ts'
 import { ViewportBoard } from './ViewportBoard.tsx'
+import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardMatrixProps extends ComponentProps<typeof BoardMatrix> {
+  categoryLayout?: boolean
   activeColumnIndex?: number | undefined
 }
 
-export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrixProps) {
+export function GameBoardMatrix({
+  categoryLayout = false,
+  activeColumnIndex,
+  ...props
+}: GameBoardMatrixProps) {
   const { t } = useTranslation()
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'))
   const [selectedColumn, setSelectedColumn] = useState<number | null>(null)
   const id = useId()
   const candidateColumn = selectedColumn ?? activeColumnIndex ?? 0
   const column =
     candidateColumn >= 0 && candidateColumn < props.colLabels.length ? candidateColumn : 0
 
-  if (!isMobile || props.colLabels.length === 0)
+  if (!categoryLayout || props.colLabels.length === 0)
     return (
       <ViewportBoard
         columns={props.colLabels.length}
         rows={props.rowLabels.length}
         gap={(props.gap ?? 0.75) * 8}
+        cardAspectRatio={boardGridMetrics.cardAspectRatio}
         leadWidth={typeof props.leadColumnWidth === 'number' ? props.leadColumnWidth : 40}
+        trailingWidth={typeof props.leadColumnWidth === 'number' ? props.leadColumnWidth : 40}
       >
-        <BoardMatrix {...props} minWidth={0} />
+        <BoardMatrix {...props} minWidth={0} trailingSpacer />
       </ViewportBoard>
     )
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="flex-end">
-        {activeColumnIndex !== undefined && activeColumnIndex !== column ? (
-          <AppButton
-            tone="ghost"
-            size="small"
-            sx={{ minHeight: 44 }}
-            onClick={() => setSelectedColumn(activeColumnIndex)}
-          >
-            {t('gameBoard.cellActiveRound')}
-          </AppButton>
-        ) : null}
-      </Stack>
       <Stack direction="row" alignItems="center" sx={{ mb: 1, minWidth: 0 }}>
-        <Tabs
+        <TabStrip
           value={column}
           onChange={(_, value: number) => setSelectedColumn(value)}
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
           aria-label={t('gameBoard.mobileCategories')}
-          sx={{ minWidth: 0, flex: 1, minHeight: 48, '& .MuiTabs-scrollButtons': { width: 24 } }}
+          appearance="category"
+          sx={{ flex: 1 }}
         >
           {props.colLabels.map((label, index) => (
-            <Tab
+            <TabOption
               key={index}
               id={`${id}-tab-${index}`}
               aria-controls={`${id}-panel`}
-              title={label}
               label={
                 <Box
                   component="span"
@@ -90,18 +86,69 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
                   ) : null}
                 </Box>
               }
-              sx={{
-                minWidth: 64,
-                minHeight: 48,
-                maxWidth: 'min(76vw, 240px)',
-                textTransform: 'none',
-                fontSize: 'clamp(0.78rem, 3.8vw, 0.9rem)',
-              }}
+              appearance="category"
             />
           ))}
-        </Tabs>
+        </TabStrip>
       </Stack>
-      <ViewportBoard columns={2} rows={Math.ceil(props.rowLabels.length / 2)} gap={8} mobile>
+      <Stack direction="row" alignItems="center" sx={{ mb: 1, minHeight: 56 }}>
+        {activeColumnIndex !== undefined ? <Box sx={{ width: 44, flexShrink: 0 }} /> : null}
+        <Box sx={{ display: 'grid', flex: 1, minWidth: 0 }}>
+          {props.colLabels.map((label, index) =>
+            index === column ? null : (
+              <Typography
+                key={index}
+                component="span"
+                variant="subtitle1"
+                aria-hidden
+                sx={{
+                  gridArea: '1 / 1',
+                  visibility: 'hidden',
+                  textAlign: 'center',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.2,
+                }}
+              >
+                {label}
+              </Typography>
+            ),
+          )}
+          <Typography
+            component="h2"
+            variant="subtitle1"
+            data-testid="board-selected-category"
+            sx={{
+              gridArea: '1 / 1',
+              textAlign: 'center',
+              overflowWrap: 'anywhere',
+              lineHeight: 1.2,
+            }}
+          >
+            {props.colLabels[column]}
+          </Typography>
+        </Box>
+        {activeColumnIndex !== undefined ? (
+          <ActionIcon
+            aria-label={t('gameBoard.cellActiveRound')}
+            appearance="outlined"
+            disabled={activeColumnIndex === column}
+            sx={{ visibility: activeColumnIndex === column ? 'hidden' : 'visible' }}
+            onClick={() => setSelectedColumn(activeColumnIndex)}
+          >
+            <Box component="svg" viewBox="0 0 24 24" aria-hidden sx={{ width: 20, height: 20 }}>
+              <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+            </Box>
+          </ActionIcon>
+        ) : null}
+      </Stack>
+      <ViewportBoard
+        columns={2}
+        rows={Math.ceil(props.rowLabels.length / 2)}
+        gap={8}
+        cardAspectRatio={boardGridMetrics.cardAspectRatio}
+        mobile
+      >
         <Box
           role="tabpanel"
           id={`${id}-panel`}
@@ -117,13 +164,12 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
               >
                 <Typography
                   data-board-row-label
-                  title={rowLabel}
                   variant="caption"
                   color="text.secondary"
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    height: isShortLabel ? '1.25rem' : '2em',
+                    height: isShortLabel ? '1.5rem' : '2.25rem',
                     mb: 0.5,
                     overflowWrap: 'anywhere',
                     containerType: 'inline-size',
@@ -132,7 +178,7 @@ export function GameBoardMatrix({ activeColumnIndex, ...props }: GameBoardMatrix
                   <Box
                     component="span"
                     sx={{
-                      fontSize: isShortLabel ? '0.75rem' : 'clamp(0.65rem, 8cqw, 0.75rem)',
+                      fontSize: isShortLabel ? '0.875rem' : 'clamp(0.75rem, 10cqw, 0.875rem)',
                       lineHeight: 1.05,
                       overflowWrap: 'anywhere',
                     }}

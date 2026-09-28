@@ -1,18 +1,22 @@
-import { Box, Collapse, List, Stack, Typography } from '@mui/material'
+import { Box, Collapse, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  ContentList,
+  FormSection,
+  ItemCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import { groupAvailableGameModifiers } from '../model/game-modifier-groups.ts'
 import { deriveModifierRoundSummaryMeta } from '../model/modifier-round-summary.ts'
 import { getCategoryLabel } from './modifier-category.ts'
 import {
-  InlineMetaPill,
   ModifierCategorySection,
   ModifierCountBadge,
   ModifierIcon,
-  ModifierSectionHeading,
 } from './modifier-list-primitives.tsx'
 import { ModifierActivationControl } from './ModifierActivationControl.tsx'
 
@@ -40,10 +44,15 @@ export function AvailableModifiersSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard
+    <FormSection
       data-testid="available-modifiers-section"
+      title={t('gameModifiers.availableTitle')}
+      action={
+        <ModifierCountBadge
+          count={groups.reduce((total, group) => total + group.items.length, 0)}
+        />
+      }
       sx={{
-        p: 0,
         overflow: 'hidden',
         '@media (min-width: 1000px) and (min-height: 680px)': {
           maxHeight: 'var(--modifier-panel-height)',
@@ -53,24 +62,6 @@ export function AvailableModifiersSection({
         },
       }}
     >
-      <Box
-        sx={(theme) => ({
-          position: 'sticky',
-          top: 0,
-          zIndex: 1,
-          px: { xs: 1.1, sm: 1.35 },
-          py: 0.85,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          backgroundColor: alpha(theme.palette.background.paper, 0.96),
-          backdropFilter: 'blur(8px)',
-        })}
-      >
-        <ModifierSectionHeading
-          title={t('gameModifiers.availableTitle')}
-          count={groups.reduce((total, group) => total + group.items.length, 0)}
-        />
-      </Box>
-
       {groups.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ px: 1.35, py: 1.5 }}>
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.availableEmpty')}
@@ -94,7 +85,7 @@ export function AvailableModifiersSection({
                   <ModifierCountBadge count={group.items.length} />
                 </Stack>
 
-                <List disablePadding component="ul">
+                <ContentList disablePadding component="ul">
                   {group.items.map((availability) => (
                     <AvailableModifierRow
                       key={availability.modifier.id}
@@ -110,13 +101,13 @@ export function AvailableModifiersSection({
                         .map((modifierId) => modifierNamesById.get(modifierId) ?? modifierId)}
                     />
                   ))}
-                </List>
+                </ContentList>
               </Stack>
             </ModifierCategorySection>
           ))}
         </Stack>
       )}
-    </SectionCard>
+    </FormSection>
   )
 }
 
@@ -159,21 +150,7 @@ function AvailableModifierRow({
         : t('gameModifiers.unavailableAction')
 
   return (
-    <Box
-      component="li"
-      sx={(theme) => ({
-        listStyle: 'none',
-        px: { xs: 0.75, sm: 0.85 },
-        py: 0.8,
-        borderRadius: '8px',
-        backgroundColor: alpha(theme.palette.common.black, 0.26),
-        '&:nth-of-type(even)': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.09),
-        },
-        '& + &': { mt: 0.6 },
-        overflowWrap: 'anywhere',
-      })}
-    >
+    <ItemCard component="li" sx={{ listStyle: 'none', overflowWrap: 'anywhere' }}>
       <Stack spacing={0.65}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -186,8 +163,8 @@ function AvailableModifierRow({
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" spacing={0.6} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Typography variant="subtitle2">{definition.name}</Typography>
-                <InlineMetaPill
-                  tone="warning"
+                <StatusBadge
+                  color="warning"
                   label={t('gameModifiers.costLabel', { cost: definition.activationCost })}
                 />
               </Stack>
@@ -222,8 +199,8 @@ function AvailableModifierRow({
         </Stack>
 
         <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
-          <InlineMetaPill
-            tone={limitReached ? 'error' : 'default'}
+          <StatusBadge
+            color={limitReached ? 'error' : 'default'}
             label={
               hasLimit
                 ? t('gameModifiers.limitProgressLabel', {
@@ -234,7 +211,7 @@ function AvailableModifierRow({
             }
           />
           {availability.isActive ? (
-            <InlineMetaPill label={t('gameModifiers.activeTag')} tone="success" />
+            <StatusBadge label={t('gameModifiers.activeTag')} color="success" />
           ) : null}
           <AppButton
             tone="ghost"
@@ -242,7 +219,6 @@ function AvailableModifierRow({
             aria-expanded={isDetailsOpen}
             aria-controls={detailsId}
             onClick={() => setIsDetailsOpen((current) => !current)}
-            sx={{ minHeight: { xs: 40, sm: 28 }, px: 0.75, py: 0.2 }}
           >
             {isDetailsOpen
               ? t('gameModifiers.hideDetailsAction')
@@ -261,15 +237,15 @@ function AvailableModifierRow({
             })}
           >
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              <InlineMetaPill
+              <StatusBadge
                 label={t(`gameCatalog.modifiers.roundSummaryType.${roundSummaryMeta.type}`)}
               />
               {definition.behaviorV2.requiresHostMonitoring ? (
-                <InlineMetaPill label={t('gameModifiers.hostControlTag')} />
+                <StatusBadge label={t('gameModifiers.hostControlTag')} />
               ) : null}
               {hasConflicts ? (
-                <InlineMetaPill
-                  tone={availability.blockedReason === 'conflict_active' ? 'error' : 'warning'}
+                <StatusBadge
+                  color={availability.blockedReason === 'conflict_active' ? 'error' : 'warning'}
                   label={t('gameModifiers.conflictsTag', {
                     count: definition.conflictingModifierIds.length,
                   })}
@@ -286,6 +262,6 @@ function AvailableModifierRow({
           </Stack>
         </Collapse>
       </Stack>
-    </Box>
+    </ItemCard>
   )
 }

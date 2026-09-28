@@ -1,20 +1,25 @@
-import { Alert, Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { modifierHistoryRoute } from '../../routes/app-routes.ts'
 import {
   AppButton,
   AppLinkButton,
   AsyncSection,
+  CatalogWorkspace,
   ConfirmDialog,
   FormTextField,
+  InlineNotice,
   PageShell,
+  RecordRow,
   SectionCard,
   SectionHeader,
+  SelectionTile,
+  StatusBadge,
 } from '../../shared/ui/index.ts'
 import { modifierCategoryCodes, modifierRoundSummaryTypes } from '../game-modifiers/index.ts'
 import { deriveModifierRoundSummaryMeta } from '../game-modifiers/model/modifier-round-summary.ts'
-import { useCatalogFeedback } from './use-catalog-feedback.ts'
 import { ModifierFormDialog } from './ui/ModifierFormDialog.tsx'
+import { useCatalogFeedback } from './use-catalog-feedback.ts'
 import { useCatalogModifiers } from './use-catalog-modifiers.ts'
 
 export function CatalogModifiersPage() {
@@ -88,21 +93,92 @@ export function CatalogModifiersPage() {
       }}
     >
       {listError ? (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={clearListError}>
+        <InlineNotice severity="error" sx={{ mb: 2 }} onClose={clearListError}>
           {listError}
-        </Alert>
+        </InlineNotice>
       ) : null}
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2,
-          alignItems: 'stretch',
-          gridTemplateColumns: {
-            xs: '1fr',
-            lg: 'minmax(0, 1fr) minmax(320px, 360px)',
-          },
-        }}
+      <CatalogWorkspace
+        toolsLabel={t('gameCatalog.modifiers.menuTitle')}
+        tools={
+          <Box sx={{ minWidth: 0 }}>
+            <SectionCard sx={{ height: '100%' }}>
+              <SectionHeader
+                title={t('gameCatalog.modifiers.menuTitle')}
+                description={t('gameCatalog.modifiers.menuDescription')}
+              />
+
+              <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                <AppButton fullWidth onClick={openCreate}>
+                  {t('gameCatalog.modifiers.add')}
+                </AppButton>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                  {t('gameCatalog.modifiers.menuHint')}
+                </Typography>
+
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('common.entities.categories')}
+                  </Typography>
+                  <Stack spacing={1}>
+                    <SelectionTile
+                      selected={selectedCategory === null}
+                      onClick={() => setSelectedCategory(null)}
+                      title={<> {t('common.filters.allCategories')} </>}
+                    />
+
+                    {modifierCategoryCodes.map((category) => (
+                      <SelectionTile
+                        key={category}
+                        selected={selectedCategory === category}
+                        onClick={() => setSelectedCategory(category)}
+                        title={<> {categoryLabels[category]} </>}
+                        description={
+                          <>
+                            {' '}
+                            {t('gameCatalog.modifiers.categoryCount', {
+                              count: categoryCounts[category],
+                            })}{' '}
+                          </>
+                        }
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('gameCatalog.modifiers.roundSummaryTitle')}
+                  </Typography>
+                  <Stack spacing={1}>
+                    <SelectionTile
+                      selected={selectedRoundSummaryType === null}
+                      onClick={() => setSelectedRoundSummaryType(null)}
+                      title={<> {t('gameCatalog.modifiers.allRoundSummaries')} </>}
+                    />
+
+                    {modifierRoundSummaryTypes.map((roundSummaryType) => (
+                      <SelectionTile
+                        key={roundSummaryType}
+                        selected={selectedRoundSummaryType === roundSummaryType}
+                        onClick={() => setSelectedRoundSummaryType(roundSummaryType)}
+                        title={<> {roundSummaryLabels[roundSummaryType]} </>}
+                        description={
+                          <>
+                            {' '}
+                            {t('gameCatalog.modifiers.roundSummaryCount', {
+                              count: roundSummaryCounts[roundSummaryType],
+                            })}{' '}
+                          </>
+                        }
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              </Stack>
+            </SectionCard>
+          </Box>
+        }
       >
         <Box sx={{ minWidth: 0 }}>
           <SectionCard sx={{ height: '100%' }}>
@@ -127,6 +203,7 @@ export function CatalogModifiersPage() {
             <AsyncSection
               isLoading={catalogQuery.isLoading}
               isError={catalogQuery.isError}
+              hasData={catalogQuery.data != null}
               isEmpty={isListEmpty}
               loadingMessage={t('gameCatalog.modifiers.loading')}
               errorMessage={t('gameCatalog.modifiers.error')}
@@ -137,223 +214,99 @@ export function CatalogModifiersPage() {
                   const roundSummaryMeta = deriveModifierRoundSummaryMeta(modifier)
 
                   return (
-                    <Box
+                    <RecordRow
                       key={modifier.id}
-                      sx={(theme) => ({
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 1,
-                        p: 1.25,
-                        display: 'flex',
-                        gap: 1,
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                      })}
+                      actions={
+                        <>
+                          <AppLinkButton
+                            to={`${modifierHistoryRoute.fullPath}?modifierId=${modifier.id}`}
+                            size="small"
+                            tone="ghost"
+                          >
+                            {t('gameCatalog.actions.history')}
+                          </AppLinkButton>
+                          <AppButton
+                            size="small"
+                            tone="secondary"
+                            onClick={() => openEdit(modifier)}
+                          >
+                            {modifier.isLockedByActiveGame
+                              ? t('gameCatalog.actions.view')
+                              : t('gameCatalog.actions.edit')}
+                          </AppButton>
+                          <AppButton
+                            size="small"
+                            tone="danger"
+                            disabled={modifier.isLockedByActiveGame}
+                            onClick={() => requestDelete(modifier)}
+                          >
+                            {t('gameCatalog.actions.delete')}
+                          </AppButton>
+                        </>
+                      }
                     >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {modifier.iconEmoji ? `${modifier.iconEmoji} ` : ''}
-                          {modifier.name}
-                        </Typography>
-                        <Stack
-                          direction="row"
-                          spacing={0.75}
-                          sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}
-                        >
-                          <Chip
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {modifier.iconEmoji ? `${modifier.iconEmoji} ` : ''}
+                        {modifier.name}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}
+                      >
+                        <StatusBadge
+                          color="warning"
+                          label={`${t('gameCatalog.modifiers.fields.activationCost')}: ${modifier.activationCost}`}
+                        />
+                        <StatusBadge
+                          color="info"
+                          label={`${t('gameCatalog.modifiers.fields.category')}: ${categoryLabels[modifier.category]}`}
+                        />
+                        <StatusBadge
+                          color="success"
+                          label={`${t('gameCatalog.modifiers.fields.activationLimitCount')}: ${
+                            modifier.activationLimit.count
+                          }`}
+                        />
+                        <StatusBadge
+                          label={t(
+                            `gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`,
+                          )}
+                        />
+                        <StatusBadge
+                          color={roundSummaryMeta.includeInRoundSummary ? 'secondary' : 'default'}
+                          label={t(
+                            `gameCatalog.modifiers.roundSummaryType.${roundSummaryMeta.type}`,
+                          )}
+                        />
+                        {modifier.behaviorV2.requiresHostMonitoring ? (
+                          <StatusBadge
+                            color="error"
+                            label={t('gameCatalog.modifiers.hostControlBadge')}
+                          />
+                        ) : null}
+                        {modifier.isLockedByActiveGame ? (
+                          <StatusBadge
                             color="warning"
-                            label={`${t('gameCatalog.modifiers.fields.activationCost')}: ${modifier.activationCost}`}
+                            label={t('gameCatalog.modifiers.contentLockedBadge')}
                           />
-                          <Chip
-                            color="info"
-                            label={`${t('gameCatalog.modifiers.fields.category')}: ${categoryLabels[modifier.category]}`}
-                          />
-                          <Chip
-                            color="success"
-                            label={`${t('gameCatalog.modifiers.fields.activationLimitCount')}: ${
-                              modifier.activationLimit.count
-                            }`}
-                          />
-                          <Chip
-                            label={t(
-                              `gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`,
-                            )}
-                          />
-                          <Chip
-                            color={roundSummaryMeta.includeInRoundSummary ? 'secondary' : 'default'}
-                            label={t(
-                              `gameCatalog.modifiers.roundSummaryType.${roundSummaryMeta.type}`,
-                            )}
-                          />
-                          {modifier.behaviorV2.requiresHostMonitoring ? (
-                            <Chip
-                              color="error"
-                              label={t('gameCatalog.modifiers.hostControlBadge')}
-                            />
-                          ) : null}
-                          {modifier.isLockedByActiveGame ? (
-                            <Chip
-                              color="warning"
-                              label={t('gameCatalog.modifiers.contentLockedBadge')}
-                            />
-                          ) : null}
-                        </Stack>
-                        <Typography
-                          variant="body2"
-                          color="text.primary"
-                          sx={{ mt: 1, display: 'block', whiteSpace: 'pre-line' }}
-                        >
-                          {modifier.description}
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-                        <AppLinkButton
-                          to={`${modifierHistoryRoute.fullPath}?modifierId=${modifier.id}`}
-                          size="small"
-                          tone="ghost"
-                        >
-                          {t('gameCatalog.actions.history')}
-                        </AppLinkButton>
-                        <AppButton size="small" tone="secondary" onClick={() => openEdit(modifier)}>
-                          {modifier.isLockedByActiveGame
-                            ? t('gameCatalog.actions.view')
-                            : t('gameCatalog.actions.edit')}
-                        </AppButton>
-                        <AppButton
-                          size="small"
-                          tone="danger"
-                          disabled={modifier.isLockedByActiveGame}
-                          onClick={() => requestDelete(modifier)}
-                        >
-                          {t('gameCatalog.actions.delete')}
-                        </AppButton>
+                        ) : null}
                       </Stack>
-                    </Box>
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        sx={{ mt: 1, display: 'block', whiteSpace: 'pre-line' }}
+                      >
+                        {modifier.description}
+                      </Typography>
+                    </RecordRow>
                   )
                 })}
               </Stack>
             </AsyncSection>
           </SectionCard>
         </Box>
-
-        <Box sx={{ minWidth: 0 }}>
-          <SectionCard sx={{ height: '100%' }}>
-            <SectionHeader
-              title={t('gameCatalog.modifiers.menuTitle')}
-              description={t('gameCatalog.modifiers.menuDescription')}
-            />
-
-            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-              <AppButton fullWidth onClick={openCreate}>
-                {t('gameCatalog.modifiers.add')}
-              </AppButton>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                {t('gameCatalog.modifiers.menuHint')}
-              </Typography>
-
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  {t('common.entities.categories')}
-                </Typography>
-                <Stack spacing={1}>
-                  <Box
-                    onClick={() => setSelectedCategory(null)}
-                    sx={{
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      borderColor: selectedCategory === null ? 'primary.main' : 'divider',
-                      bgcolor: selectedCategory === null ? 'action.selected' : 'transparent',
-                      borderRadius: 1,
-                      p: 1.25,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {t('common.filters.allCategories')}
-                    </Typography>
-                  </Box>
-
-                  {modifierCategoryCodes.map((category) => (
-                    <Box
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      sx={{
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
-                        borderColor: selectedCategory === category ? 'primary.main' : 'divider',
-                        bgcolor: selectedCategory === category ? 'action.selected' : 'transparent',
-                        borderRadius: 1,
-                        p: 1.25,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {categoryLabels[category]}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {t('gameCatalog.modifiers.categoryCount', {
-                          count: categoryCounts[category],
-                        })}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  {t('gameCatalog.modifiers.roundSummaryTitle')}
-                </Typography>
-                <Stack spacing={1}>
-                  <Box
-                    onClick={() => setSelectedRoundSummaryType(null)}
-                    sx={{
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      borderColor: selectedRoundSummaryType === null ? 'primary.main' : 'divider',
-                      bgcolor:
-                        selectedRoundSummaryType === null ? 'action.selected' : 'transparent',
-                      borderRadius: 1,
-                      p: 1.25,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {t('gameCatalog.modifiers.allRoundSummaries')}
-                    </Typography>
-                  </Box>
-
-                  {modifierRoundSummaryTypes.map((roundSummaryType) => (
-                    <Box
-                      key={roundSummaryType}
-                      onClick={() => setSelectedRoundSummaryType(roundSummaryType)}
-                      sx={{
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
-                        borderColor:
-                          selectedRoundSummaryType === roundSummaryType
-                            ? 'primary.main'
-                            : 'divider',
-                        bgcolor:
-                          selectedRoundSummaryType === roundSummaryType
-                            ? 'action.selected'
-                            : 'transparent',
-                        borderRadius: 1,
-                        p: 1.25,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {roundSummaryLabels[roundSummaryType]}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {t('gameCatalog.modifiers.roundSummaryCount', {
-                          count: roundSummaryCounts[roundSummaryType],
-                        })}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            </Stack>
-          </SectionCard>
-        </Box>
-      </Box>
+      </CatalogWorkspace>
 
       <ModifierFormDialog
         open={dialog !== null}

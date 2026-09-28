@@ -207,6 +207,7 @@ public enum PrepareTwitchQuizQuestionOutcome
     NotConnected,
     NoActiveGame,
     NoAvailableQuestions,
+    ModifierOrderingActive,
     PublicationInProgress,
     PendingOutcome,
     IncompatibleQuestion

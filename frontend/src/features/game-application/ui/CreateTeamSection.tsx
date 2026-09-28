@@ -1,13 +1,19 @@
-import { FormControl, FormLabel, RadioGroup, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, ChoiceCard, FormTextField } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  ChoiceCard,
+  ChoiceGroup,
+  FieldGroup,
+  FormSection,
+  FormTextField,
+} from '../../../shared/ui/index.ts'
 import {
   normalizeTeamNameInput,
   TEAM_NAME_MAX_LENGTH,
   TEAM_NAME_MIN_LENGTH,
 } from '../../game-registration/index.ts'
-import { ApplicationSection } from './ApplicationSection.tsx'
 import { isTeamNameTaken } from '../../game-registration/model/team-name.ts'
 
 interface CreateTeamSectionProps {
@@ -46,7 +52,7 @@ export function CreateTeamSection({
   const isDisabled = disabled || isCreating || !hasAvailableSlot
 
   return (
-    <ApplicationSection title={t('gameApplication.createTeamTitle')}>
+    <FormSection title={t('gameApplication.createTeamTitle')}>
       <Stack
         component="form"
         noValidate
@@ -91,11 +97,13 @@ export function CreateTeamSection({
             setShowNameHint(false)
           }}
         />
-        <FormControl disabled={isDisabled}>
-          <FormLabel id={formatLabelId} sx={{ typography: 'overline', mb: 1.25 }}>
-            {t('gameApplication.createTeamChip')}
-          </FormLabel>
-          <RadioGroup
+        <FieldGroup
+          disabled={isDisabled}
+          label={<>{t('gameApplication.createTeamChip')}</>}
+          labelId={formatLabelId}
+          labelAppearance="overline"
+        >
+          <ChoiceGroup
             aria-labelledby={formatLabelId}
             value={format}
             onChange={(_, value) => setFormat(value)}
@@ -115,8 +123,8 @@ export function CreateTeamSection({
               title={t('gameApplication.createClosedTeam')}
               description={t('gameApplication.createClosedTeamDescription')}
             />
-          </RadioGroup>
-        </FormControl>
+          </ChoiceGroup>
+        </FieldGroup>
         <Stack spacing={1.5}>
           <AppButton
             type="submit"
@@ -134,6 +142,6 @@ export function CreateTeamSection({
           ) : null}
         </Stack>
       </Stack>
-    </ApplicationSection>
+    </FormSection>
   )
 }

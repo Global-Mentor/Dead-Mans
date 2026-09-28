@@ -143,9 +143,7 @@ test('catalog answer editing preserves variants and validates duplicates under p
   await page.goto(`${origin}/panel/catalog-questions`)
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByRole('textbox', { name: 'Correct answer', exact: true })).toHaveValue(
-    'Paris',
-  )
+  await expect(dialog.getByRole('textbox', { name: /^Correct answer\s*\*?$/ })).toHaveValue('Paris')
   await expect(dialog.getByRole('radio')).toHaveCount(0)
   await expect(
     dialog.getByRole('textbox', { name: 'Incorrect option 1', exact: true }),
@@ -168,9 +166,7 @@ test('catalog answer editing preserves variants and validates duplicates under p
     }),
   ])
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
-  await expect(dialog.getByRole('textbox', { name: 'Correct answer', exact: true })).toHaveValue(
-    'Paris',
-  )
+  await expect(dialog.getByRole('textbox', { name: /^Correct answer\s*\*?$/ })).toHaveValue('Paris')
   await expect(
     dialog.getByRole('textbox', { name: 'Incorrect option 1', exact: true }),
   ).toHaveValue('Berlin')

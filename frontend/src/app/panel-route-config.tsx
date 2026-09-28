@@ -32,10 +32,26 @@ const panelPages = {
     [
       translations.gameBoard,
       translations.gameModifiers,
+      translations.gameQuiz,
       translations.gameCatalog,
       translations.gameHistory,
       translations.gameRegistration,
     ],
+  ),
+  'game-round': lazyPanelPage(
+    () => import('../features/game-board/GameRoundPage.tsx'),
+    'GameRoundPage',
+    [
+      translations.gameBoard,
+      translations.gameModifiers,
+      translations.gameCatalog,
+      translations.gameQuiz,
+    ],
+  ),
+  'game-team-queue': lazyPanelPage(
+    () => import('../features/game-board/GameTeamQueuePage.tsx'),
+    'GameTeamQueuePage',
+    [translations.gameBoard],
   ),
   'game-application': lazyPanelPage(
     () => import('../features/game-application/GameApplicationPage.tsx'),
@@ -100,11 +116,22 @@ const gameSetupRealtimeSync = lazyPanelPage(
   'GameSetupRealtimeSync',
 )
 
+const gameHistoryRealtimeSync = lazyPanelPage(
+  () => import('../features/game-history/GameHistoryRealtimeSync.tsx'),
+  'GameHistoryRealtimeSync',
+)
+
+const gameBoardQuizRealtimeSync = lazyPanelPage(
+  () => import('../features/game-board/realtime/GameBoardQuizRealtimeSync.tsx'),
+  'GameBoardQuizRealtimeSync',
+)
+
 const panelSyncComponents = {
-  'game-board': lazyPanelPage(
-    () => import('../features/game-board/realtime/GameBoardRealtimeSync.tsx'),
-    'GameBoardRealtimeSync',
-  ),
+  'game-history': gameHistoryRealtimeSync,
+  'game-leaderboard': gameHistoryRealtimeSync,
+  'game-board': gameBoardQuizRealtimeSync,
+  'game-round': gameBoardQuizRealtimeSync,
+  'game-team-queue': gameBoardQuizRealtimeSync,
   'game-modifiers': lazyPanelPage(
     () => import('../features/game-modifiers/realtime/GameModifiersRealtimeSync.tsx'),
     'GameModifiersRealtimeSync',

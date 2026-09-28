@@ -4,12 +4,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
-import { AppButton, ControlledFormTextField } from '../../../shared/ui/index.ts'
-import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
+import { AppButton, ControlledFormTextField, ItemCard } from '../../../shared/ui/index.ts'
 import {
   createGameSetupFormSchema,
   type CreateGameSetupFormValues,
 } from '../model/create-game-setup-form-schema.ts'
+import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
 
 interface CreateGameSetupPanelProps {
   isSubmitting: boolean
@@ -50,7 +50,8 @@ export function CreateGameSetupPanel({ isSubmitting, onCreate }: CreateGameSetup
 
   if (!isOpen) {
     return (
-      <Box
+      <ItemCard
+        borderStyle="dashed"
         sx={{
           mt: 3,
           flex: 1,
@@ -58,10 +59,6 @@ export function CreateGameSetupPanel({ isSubmitting, onCreate }: CreateGameSetup
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '2px dashed',
-          borderColor: 'divider',
-          borderRadius: 2,
-          p: 4,
           gap: 1,
           textAlign: 'center',
         }}
@@ -75,7 +72,7 @@ export function CreateGameSetupPanel({ isSubmitting, onCreate }: CreateGameSetup
         <AppButton onClick={() => setIsOpen(true)}>
           {t('gameSetup.createDialog.startCreate')}
         </AppButton>
-      </Box>
+      </ItemCard>
     )
   }
 

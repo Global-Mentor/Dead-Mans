@@ -56,14 +56,19 @@ export function GameLifecycleRealtimeSync() {
       const twitchQuizHandler = () => {
         void queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.twitchIntegration() })
       }
+      const roundStateHandler = () => {
+        void queryClient.invalidateQueries({ queryKey: currentGameTeamQueueQueryOptions.queryKey })
+      }
       connection.on(eventName, handler)
       connection.on(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
       connection.on(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
+      connection.on(realtimeHubs.gameBoard.events.roundStateChanged, roundStateHandler)
       connection.on(realtimeHubs.gameBoard.events.twitchQuizStateChanged, twitchQuizHandler)
       return () => {
         connection.off(eventName, handler)
         connection.off(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
         connection.off(realtimeHubs.gameBoard.events.teamStateChanged, teamStateHandler)
+        connection.off(realtimeHubs.gameBoard.events.roundStateChanged, roundStateHandler)
         connection.off(realtimeHubs.gameBoard.events.twitchQuizStateChanged, twitchQuizHandler)
       }
     },

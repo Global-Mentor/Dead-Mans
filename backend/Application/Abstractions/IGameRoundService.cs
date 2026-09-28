@@ -16,6 +16,13 @@ public interface IGameRoundService
         CancellationToken cancellationToken = default
     );
 
+    Task<TransitionGameRoundResult> StartModifierOrderingAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<TransitionGameRoundResult> ReviewAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,

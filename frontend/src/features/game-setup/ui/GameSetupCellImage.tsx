@@ -1,21 +1,20 @@
-import { Box, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton } from '../../../shared/ui/index.ts'
-import {
-  createSetupCellDropzoneSx,
-  setupCellBusyOverlaySx,
-  setupCellDragOverlaySx,
-  setupCellImageLabelSx,
-  setupCellImagePreviewSx,
-  setupCellMediaActionsSx,
-} from '../theme/cell-image-sx.ts'
+import { AppButton, BusyIndicator, FilePickerInput, ImageFrame } from '../../../shared/ui/index.ts'
+import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
 import {
   dataTransferHasImageFiles,
   extractGameSetupCellMediaFileFromDataTransfer,
   GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES,
 } from '../model/game-setup-cell-media-limits.ts'
-import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
+import {
+  createSetupCellDropzoneSx,
+  setupCellBusyOverlaySx,
+  setupCellDragOverlaySx,
+  setupCellImageLabelSx,
+  setupCellMediaActionsSx,
+} from '../theme/cell-image-sx.ts'
 
 interface GameSetupCellImageProps {
   imageUrl: string | undefined
@@ -27,41 +26,6 @@ interface GameSetupCellImageProps {
   isBusy: boolean
   onUpload: (cellId: string | undefined, file: File) => void
   onDelete: (cellId: string | undefined) => void
-}
-
-interface GameSetupCellImagePreviewProps {
-  imageUrl: string
-  imageKey: string | undefined
-  alt: string
-  isBusy: boolean
-  isDragOver: boolean
-}
-
-function GameSetupCellImagePreview({
-  imageUrl,
-  imageKey,
-  alt,
-  isBusy,
-  isDragOver,
-}: GameSetupCellImagePreviewProps) {
-  const [imageLoaded, setImageLoaded] = useState(false)
-
-  return (
-    <Box
-      component="img"
-      key={imageKey ?? imageUrl}
-      src={imageUrl}
-      alt={alt}
-      onLoad={() => setImageLoaded(true)}
-      onError={() => setImageLoaded(false)}
-      sx={[
-        setupCellImagePreviewSx,
-        {
-          opacity: imageLoaded && !isBusy && !isDragOver ? 1 : 0,
-        },
-      ]}
-    />
-  )
 }
 
 export function GameSetupCellImage({
@@ -184,12 +148,19 @@ export function GameSetupCellImage({
         }}
       >
         {showImage && imageUrl ? (
-          <GameSetupCellImagePreview
-            imageUrl={imageUrl}
-            imageKey={imageKey}
+          <ImageFrame
+            key={imageKey ?? imageUrl}
+            src={imageUrl}
             alt={alt}
-            isBusy={isBusy}
-            isDragOver={showDragOver}
+            fit="cover"
+            loadingLabel={t('common.media.loading')}
+            errorLabel={t('common.media.error')}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              height: '100%',
+              opacity: isBusy || showDragOver ? 0 : 1,
+            }}
           />
         ) : (
           <>
@@ -230,7 +201,7 @@ export function GameSetupCellImage({
 
         {isBusy ? (
           <Box sx={setupCellBusyOverlaySx}>
-            <CircularProgress size={28} color="inherit" />
+            <BusyIndicator size={28} color="inherit" />
             {statusLabel ? (
               <Typography variant="caption" sx={{ color: 'common.white', px: 1 }}>
                 {statusLabel}
@@ -267,11 +238,9 @@ export function GameSetupCellImage({
         </Stack>
       ) : null}
 
-      <input
+      <FilePickerInput
         ref={inputRef}
         id={inputId}
-        type="file"
-        hidden
         accept={GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES.join(',')}
         onChange={(event) => {
           const file = event.target.files?.[0]

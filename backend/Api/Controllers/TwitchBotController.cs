@@ -70,7 +70,7 @@ public sealed class TwitchBotController : ControllerBase
         var result = await _service.PrepareQuestionAsync(request.QuestionId, cancellationToken);
         return result.Outcome == PrepareTwitchQuizQuestionOutcome.Prepared
             ? Accepted(result)
-            : result.Outcome is PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome
+            : result.Outcome is PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome or PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive
                 ? this.ConflictError(GetPreparationMessage(result.Outcome), GetPreparationCode(result.Outcome))
                 : result.Outcome is PrepareTwitchQuizQuestionOutcome.NoActiveGame or PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions
                     ? this.NotFoundError(GetPreparationMessage(result.Outcome), GetPreparationCode(result.Outcome))
@@ -101,6 +101,7 @@ public sealed class TwitchBotController : ControllerBase
         PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.ErrorCodes.TwitchBotNotConnected,
         PrepareTwitchQuizQuestionOutcome.NoActiveGame => AppMessages.ErrorCodes.GameQuizNoActiveGame,
         PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions => AppMessages.ErrorCodes.GameQuizNoAvailableQuestions,
+        PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive => AppMessages.ErrorCodes.GameQuizModifierOrderingActive,
         PrepareTwitchQuizQuestionOutcome.PublicationInProgress => AppMessages.ErrorCodes.TwitchQuizPublicationInProgress,
         PrepareTwitchQuizQuestionOutcome.PendingOutcome => AppMessages.ErrorCodes.TwitchQuizPendingOutcome,
         PrepareTwitchQuizQuestionOutcome.IncompatibleQuestion => AppMessages.ErrorCodes.TwitchQuizIncompatibleQuestion,
@@ -113,6 +114,7 @@ public sealed class TwitchBotController : ControllerBase
         PrepareTwitchQuizQuestionOutcome.NotConnected => AppMessages.Client.TwitchBotNotConnected,
         PrepareTwitchQuizQuestionOutcome.NoActiveGame => AppMessages.Client.GameQuizNoActiveGame,
         PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions => AppMessages.Client.GameQuizNoAvailableQuestions,
+        PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive => AppMessages.Client.GameQuizModifierOrderingActive,
         PrepareTwitchQuizQuestionOutcome.PublicationInProgress => AppMessages.Client.TwitchQuizPublicationInProgress,
         PrepareTwitchQuizQuestionOutcome.PendingOutcome => AppMessages.Client.TwitchQuizPendingOutcome,
         PrepareTwitchQuizQuestionOutcome.IncompatibleQuestion => AppMessages.Client.TwitchQuizIncompatibleQuestion,

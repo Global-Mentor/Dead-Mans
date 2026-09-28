@@ -303,6 +303,58 @@ public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<Pos
     }
 
     [Fact]
+    public async Task StartModifierOrdering_AfterCardOpened_AdvancesRoundAndWritesAudit()
+    {
+        await _database.ResetAsync();
+        Guid roundId;
+        Guid userId;
+        await using (var seedDb = _database.CreateDbContext())
+        {
+            var seeded = await SeedPlayableRoundGraphAsync(seedDb);
+            roundId = Guid.NewGuid();
+            userId = seeded.UserId;
+            seedDb.GameRounds.Add(new GameRound
+            {
+                Id = roundId,
+                GameId = seeded.GameId,
+                BoardId = seeded.BoardId,
+                BoardCellId = seeded.CellId,
+                TeamId = seeded.TeamId,
+                Status = GameRoundStatusValue.CardOpened,
+                Version = 1,
+                BaseScore = 100,
+                TeamSlotIndexSnapshot = 1,
+                CellRowIndex = 0,
+                CellColIndex = 0,
+                CellTitleSnapshot = "Test cell",
+                CellCostSnapshot = 100,
+                CreatedAtUtc = seeded.Now,
+                UpdatedAtUtc = seeded.Now
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using (var transitionDb = _database.CreateDbContext())
+        {
+            var result = await new DbGameRoundRepository(transitionDb, TimeProvider.System)
+                .StartModifierOrderingAsync(roundId, new GameRoundVersionCommandInput(1), userId);
+            Assert.Equal(TransitionGameRoundOutcome.Transitioned, result.Outcome);
+        }
+
+        await using var verifyDb = _database.CreateDbContext();
+        var round = await verifyDb.GameRounds.SingleAsync(x => x.Id == roundId);
+        Assert.Equal(GameRoundStatusValue.AwaitingModifiers, round.Status);
+        Assert.Equal(2, round.Version);
+        var audit = Assert.Single(await verifyDb.GameRoundTransitionAudits
+            .Where(x => x.RoundId == roundId)
+            .ToArrayAsync());
+        Assert.Equal(GameRoundTransitionActionValue.StartModifierOrdering, audit.ActionCode);
+        Assert.Equal(GameRoundStatusValue.CardOpened, audit.FromStatus);
+        Assert.Equal(GameRoundStatusValue.AwaitingModifiers, audit.ToStatus);
+        Assert.Equal(2, audit.ResultingRoundVersion);
+    }
+
+    [Fact]
     public async Task SaveChanges_WhenGameHasTwoNonterminalRounds_FailsAtDatabaseBoundary()
     {
         await _database.ResetAsync();

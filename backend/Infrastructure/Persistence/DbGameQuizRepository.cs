@@ -55,7 +55,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<AskedQuizQuestion?> AskQuizQuestionAsync(
+    public async Task<AskQuizQuestionRepositoryResult> AskQuizQuestionAsync(
         Guid gameId,
         Guid? questionId,
         GameQuizQuestionDelivery delivery,
@@ -81,7 +81,14 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             .FirstOrDefaultAsync(cancellationToken);
         if (!answerDurationSeconds.HasValue)
         {
-            return null;
+            return new(AskQuizQuestionRepositoryOutcome.Unavailable);
+        }
+
+        if (await _dbContext.GameRounds.AsNoTracking().AnyAsync(
+            round => round.GameId == gameId && round.Status == GameRoundStatusValue.AwaitingModifiers,
+            cancellationToken))
+        {
+            return new(AskQuizQuestionRepositoryOutcome.ModifierOrderingActive);
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -94,7 +101,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         {
             if (openSession.ClosesAtUtc > now)
             {
-                return null;
+                return new(AskQuizQuestionRepositoryOutcome.Unavailable);
             }
 
             await CloseQuestionSessionAsync(openSession, cancellationToken);
@@ -119,7 +126,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             .ToArrayAsync(cancellationToken);
         if (candidates.Length == 0)
         {
-            return null;
+            return new(AskQuizQuestionRepositoryOutcome.Unavailable);
         }
 
         var selectedQuestion = questionId.HasValue
@@ -172,7 +179,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             await transaction.CommitAsync(cancellationToken);
         }
 
-        return MapAskedQuestion(session);
+        return new(AskQuizQuestionRepositoryOutcome.Asked, MapAskedQuestion(session));
     }
 
     private static AskedQuizQuestion MapAskedQuestion(GameQuizQuestionSession session) => new(

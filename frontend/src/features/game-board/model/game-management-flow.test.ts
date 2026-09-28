@@ -66,6 +66,7 @@ describe('buildGameManagementFlow', () => {
       'blocked',
       'blocked',
       'blocked',
+      'blocked',
     ])
   })
 
@@ -78,6 +79,7 @@ describe('buildGameManagementFlow', () => {
     expect(flow.summaryKey).toBe('gameBoard.flowSummary.selectActiveTeam')
     expect(flow.steps.map((step) => step.state)).toEqual([
       'current',
+      'blocked',
       'blocked',
       'blocked',
       'blocked',
@@ -97,9 +99,26 @@ describe('buildGameManagementFlow', () => {
 
     expect(flow.phase).toBe('active_idle')
     expect(flow.currentStepId).toBe('select_card')
-    expect(flow.nextStepId).toBe('activate_modifiers')
+    expect(flow.nextStepId).toBe('start_modifiers')
     expect(flow.summaryKey).toBe('gameBoard.flowSummary.selectCard')
     expect(flow.steps.map((step) => step.state)).toEqual([
+      'complete',
+      'current',
+      'upcoming',
+      'upcoming',
+      'upcoming',
+      'upcoming',
+      'upcoming',
+    ])
+  })
+
+  it('waits for an explicit modifier-ordering start after the card opens', () => {
+    const flow = buildGameManagementFlow(baseSnapshot, createRound({ status: 'card_opened' }))
+
+    expect(flow.currentStepId).toBe('start_modifiers')
+    expect(flow.nextStepId).toBe('activate_modifiers')
+    expect(flow.steps.map((step) => step.state)).toEqual([
+      'complete',
       'complete',
       'current',
       'upcoming',
@@ -120,6 +139,7 @@ describe('buildGameManagementFlow', () => {
     expect(flow.nextStepId).toBe('start_round')
     expect(flow.summaryKey).toBe('gameBoard.flowSummary.awaitingModifiers')
     expect(flow.steps.map((step) => step.state)).toEqual([
+      'complete',
       'complete',
       'complete',
       'current',
@@ -145,6 +165,7 @@ describe('buildGameManagementFlow', () => {
       'complete',
       'complete',
       'complete',
+      'complete',
       'current',
       'ready',
     ])
@@ -158,6 +179,7 @@ describe('buildGameManagementFlow', () => {
     expect(reviewing.nextStepId).toBeNull()
     expect(reviewing.summaryKey).toBe('gameBoard.flowSummary.reviewingResults')
     expect(reviewing.steps.map((step) => step.state)).toEqual([
+      'complete',
       'complete',
       'complete',
       'complete',

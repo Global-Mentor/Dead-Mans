@@ -1,6 +1,7 @@
-import { Chip, Stack, type ChipProps } from '@mui/material'
+import { Stack, type ChipProps } from '@mui/material'
 import type { ParseKeys } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { StatusBadge } from '../../../shared/ui/index.ts'
 import type { GameSetupSyncStatus } from '../use-game-setup-save.ts'
 
 interface SyncChipProps {
@@ -43,8 +44,8 @@ export function GameSetupSyncActions({ syncStatus, isDirty }: GameSetupSyncActio
       justifyContent="flex-end"
       sx={{ flexWrap: 'nowrap' }}
     >
-      <Chip size="small" color="warning" label={t('gameSetup.draftBadge')} />
-      <Chip size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
+      <StatusBadge size="small" color="warning" label={t('gameSetup.draftBadge')} />
+      <StatusBadge size="small" color={syncChip.color} label={t(syncChip.labelKey)} />
     </Stack>
   )
 }

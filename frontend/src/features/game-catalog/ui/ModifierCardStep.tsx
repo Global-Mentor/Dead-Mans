@@ -1,10 +1,10 @@
-import type { DefaultTranslation } from '../../../locales/index.ts'
-import { MenuItem, Stack } from '@mui/material'
+import { Stack } from '@mui/material'
 import type { Control } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { ControlledFormTextField } from '../../../shared/ui/index.ts'
+import type { DefaultTranslation } from '../../../locales/index.ts'
+import { ActionMenuItem, ControlledFormTextField, FieldWithHelp } from '../../../shared/ui/index.ts'
 import { modifierKinds, type ModifierFormValues } from '../model/modifier-form-schema.ts'
-import { FieldWithHelp, ModifierTagField } from './modifier-form-fields.tsx'
+import { ModifierTagField } from './modifier-form-fields.tsx'
 
 export function ModifierCardStep({
   control,
@@ -27,9 +27,9 @@ export function ModifierCardStep({
           disabled={disabled}
         >
           {modifierKinds.map((kind) => (
-            <MenuItem key={kind} value={kind}>
+            <ActionMenuItem key={kind} value={kind}>
               {t(`gameCatalog.modifiers.wizard.kinds.${kind}`)}
-            </MenuItem>
+            </ActionMenuItem>
           ))}
         </ControlledFormTextField>
       </FieldWithHelp>

@@ -1,4 +1,4 @@
-import { Chip, Stack, Tooltip, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useMemo, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,9 +6,16 @@ import type {
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AppToast, ConfirmDialog, SectionCard } from '../../../shared/ui/index.ts'
-import { AdminInvitePlayerDialog, type AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
+import {
+  AppButton,
+  AppToast,
+  ConfirmDialog,
+  HelpTooltip,
+  SectionCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import { AdminAvailablePlayersPanel } from './AdminAvailablePlayersPanel.tsx'
+import { AdminInvitePlayerDialog, type AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
 import { AdminRegistrationTeamsList } from './AdminRegistrationTeamsList.tsx'
 import {
   AdminRegistrationOperationalStatus,
@@ -136,13 +143,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
         />
 
         {disbandRequestEntries.length > 0 ? (
-          <SectionCard
-            sx={{
-              borderColor: 'warning.main',
-              background:
-                'linear-gradient(180deg, rgba(255, 193, 7, 0.18) 0%, rgba(0, 0, 0, 0.18) 100%)',
-            }}
-          >
+          <SectionCard surface="inset">
             <Stack
               direction={{ xs: 'column', lg: 'row' }}
               spacing={1.5}
@@ -151,7 +152,8 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
             >
               <Stack spacing={0.5}>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <Chip
+                  <StatusBadge
+                    textFlow="singleLine"
                     size="small"
                     color="warning"
                     label={t('gameApplication.adminPanel.disbandRequestsAlertChip', {
@@ -169,7 +171,8 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
 
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {disbandRequestEntries.slice(0, 3).map(({ team }) => (
-                  <Chip
+                  <StatusBadge
+                    textFlow="singleLine"
                     key={team.teamId}
                     color="warning"
                     variant="outlined"
@@ -236,7 +239,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                 justifyContent="space-between"
                 alignItems={{ xs: 'stretch', sm: 'center' }}
               >
-                <Tooltip
+                <HelpTooltip
                   title={t('gameApplication.adminPanel.createTeamActionsDescription')}
                   describeChild
                   arrow
@@ -244,7 +247,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                   <Typography variant="subtitle2" tabIndex={0} sx={{ width: 'fit-content' }}>
                     {t('gameApplication.adminPanel.createTeamActionsTitle')}
                   </Typography>
-                </Tooltip>
+                </HelpTooltip>
 
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}
@@ -275,6 +278,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
       </Stack>
 
       <ConfirmDialog
+        confirmTone="danger"
         open={pendingDisbandTeam !== null}
         onClose={() => setPendingDisbandTeam(null)}
         onConfirm={() => {
@@ -293,6 +297,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
         confirmLabel={t('gameApplication.adminPanel.disbandConfirmAction')}
       />
       <ConfirmDialog
+        confirmTone="danger"
         open={pendingRemovePlayer !== null}
         onClose={() => setPendingRemovePlayer(null)}
         onConfirm={() => {

@@ -383,8 +383,8 @@ public sealed partial class GameQuizConcurrencyTests(PostgresTestDatabase databa
         game.Status = GameStatusValue.Active; game.StartedAtUtc = now;
         await db.SaveChangesAsync();
         var asked = await Repository(db, now.AddSeconds(1)).AskQuizQuestionAsync(game.Id, null, new ManualGameQuizQuestionDelivery(first.Id));
-        Assert.NotNull(asked);
-        return new(asked.QuestionSessionId, correctId, wrongId, first, second, now.AddSeconds(2), asked.ClosesAtUtc);
+        Assert.NotNull(asked.Question);
+        return new(asked.Question.QuestionSessionId, correctId, wrongId, first, second, now.AddSeconds(2), asked.Question.ClosesAtUtc);
     }
     private sealed record Seed(Guid SessionId, Guid CorrectId, Guid WrongId, User First, User Second, DateTime Now, DateTime Deadline);
 }

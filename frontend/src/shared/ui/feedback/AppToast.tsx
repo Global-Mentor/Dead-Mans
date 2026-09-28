@@ -1,6 +1,7 @@
-import { Alert, Snackbar } from '@mui/material'
 import type { AlertColor, SnackbarCloseReason } from '@mui/material'
+import { Snackbar } from '@mui/material'
 import type { SyntheticEvent } from 'react'
+import { InlineNotice } from './messages/InlineNotice.tsx'
 
 interface AppToastProps {
   message: string | null
@@ -33,9 +34,9 @@ export function AppToast({
       onClose={handleClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >
-      <Alert onClose={onClose} severity={severity} variant="standard" sx={{ width: '100%' }}>
+      <InlineNotice onClose={onClose} severity={severity} variant="standard" sx={{ width: '100%' }}>
         {message}
-      </Alert>
+      </InlineNotice>
     </Snackbar>
   )
 }

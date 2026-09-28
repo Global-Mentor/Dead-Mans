@@ -1,15 +1,10 @@
 import { ThemeProvider } from '@mui/material'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactElement } from 'react'
-import { afterEach, beforeAll, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, expect, it } from 'vitest'
 import { appTheme } from '../../../app/theme/appTheme.ts'
 import i18n from '../../../i18n.ts'
 import { GameBoardMatrix } from './GameBoardMatrix.tsx'
-
-vi.mock('@mui/material', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@mui/material')>()),
-  useMediaQuery: () => true,
-}))
 
 afterEach(cleanup)
 beforeAll(async () => {
@@ -23,6 +18,7 @@ function renderWithAppProviders(ui: ReactElement) {
 }
 
 const props = {
+  categoryLayout: true,
   colLabels: ['Hunt', 'Weapons', 'Legends'],
   rowLabels: ['100', '200'],
   renderColumnLabel: (label: string) => label,
@@ -53,4 +49,12 @@ it('falls back to the first category if the selected category is removed', () =>
   fireEvent.click(screen.getByRole('tab', { name: 'Legends' }))
   rerender(<GameBoardMatrix {...props} colLabels={['Hunt']} />)
   expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Hunt')
+})
+
+it('shows the full selected category without relying on a hover hint', () => {
+  const label = 'Очень длинная категория для маленького экрана'
+  renderWithAppProviders(<GameBoardMatrix {...props} colLabels={['Hunt', label]} />)
+  fireEvent.click(screen.getByRole('tab', { name: label }))
+  expect(screen.getByRole('heading', { name: label })).toBeVisible()
+  expect(screen.getByRole('tab', { name: label })).not.toHaveAttribute('title')
 })

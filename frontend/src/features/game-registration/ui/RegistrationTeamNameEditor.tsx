@@ -6,9 +6,8 @@ import {
   normalizeTeamNameInput,
   TEAM_NAME_MAX_LENGTH,
   TEAM_NAME_MIN_LENGTH,
+  isTeamNameTaken,
 } from '../model/team-name.ts'
-import { isTeamNameTaken } from '../model/team-name.ts'
-
 interface RegistrationTeamNameEditorProps {
   value: string | null | undefined
   canEdit: boolean

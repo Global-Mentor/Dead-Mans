@@ -1,5 +1,4 @@
 import type { TFunction } from 'i18next'
-import type { Theme } from '@mui/material/styles'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 
 type GameHistoryCardLabelInput = {
@@ -22,20 +21,4 @@ export function formatHistoryTeamName(
   teamSlotIndex: number,
 ) {
   return formatTeamNameWithFallback(teamName, t('common.teamWithSlot', { slot: teamSlotIndex }))
-}
-
-export function getRankColor(theme: Theme, rank: number) {
-  if (rank === 1) {
-    return theme.palette.warning.main
-  }
-
-  if (rank === 2) {
-    return theme.palette.grey[500]
-  }
-
-  if (rank === 3) {
-    return theme.palette.secondary.main
-  }
-
-  return theme.palette.primary.main
 }

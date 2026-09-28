@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import {
   featureTranslationBundles,
   registerFeatureTranslations,
 } from '../../locales/feature-locale-loader.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
+import { roleAdministrationUsersQueryOptions } from './api/role-administration-api.ts'
 import { RoleAdministrationPage } from './RoleAdministrationPage.tsx'
 
 const apiMocks = vi.hoisted(() => ({
@@ -61,6 +62,11 @@ beforeAll(async () => {
   await registerFeatureTranslations(i18n, [featureTranslationBundles.roleAdministration])
 })
 
+afterEach(() => {
+  cleanup()
+  vi.clearAllMocks()
+})
+
 describe('RoleAdministrationPage', () => {
   it('protects the permanent owner and grants inherited admin with superadmin', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -87,5 +93,26 @@ describe('RoleAdministrationPage', () => {
         'superadmin',
       ]),
     )
+    await waitFor(() => expect(queryClient.isMutating()).toBe(0))
   })
+})
+
+it('keeps the saved server roles when refreshing the list fails', async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  renderWithAppProviders(
+    <QueryClientProvider client={queryClient}>
+      <RoleAdministrationPage />
+    </QueryClientProvider>,
+  )
+  const memberRow = (await screen.findByText('Участник')).closest('tr')!
+  fireEvent.click(within(memberRow).getByRole('checkbox', { name: 'Модератор' }))
+  apiMocks.getUsers.mockRejectedValueOnce(new Error('offline'))
+  fireEvent.click(within(memberRow).getByRole('button', { name: 'Сохранить роли' }))
+  await waitFor(() => expect(apiMocks.updateRoles).toHaveBeenCalledOnce())
+  await waitFor(() => expect(queryClient.isMutating()).toBe(0))
+  expect(
+    queryClient.getQueryState(roleAdministrationUsersQueryOptions('', 1, 25).queryKey)?.status,
+  ).toBe('error')
+  expect(within(memberRow).getByRole('checkbox', { name: 'Модератор' })).toBeChecked()
+  expect(within(memberRow).getByRole('button', { name: 'Сохранить роли' })).toBeDisabled()
 })

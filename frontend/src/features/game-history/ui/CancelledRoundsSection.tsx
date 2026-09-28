@@ -1,8 +1,7 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, ItemCard, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName } from '../model/game-history-formatters.ts'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -32,7 +31,7 @@ export function CancelledRoundsSection({
               {t('gameHistory.cancelledRounds.description')}
             </Typography>
           </Box>
-          <Chip
+          <StatusBadge
             size="small"
             color="error"
             variant="outlined"
@@ -41,15 +40,7 @@ export function CancelledRoundsSection({
         </Stack>
 
         {rounds.map((round) => (
-          <Box
-            key={round.roundId}
-            sx={(theme) => ({
-              borderRadius: 1.75,
-              border: `1px solid ${alpha(theme.palette.error.main, 0.42)}`,
-              backgroundColor: alpha(theme.palette.error.main, 0.055),
-              p: 1,
-            })}
-          >
+          <ItemCard key={round.roundId}>
             <Stack spacing={0.75}>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
@@ -69,7 +60,7 @@ export function CancelledRoundsSection({
                 </AppButton>
               </Stack>
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                <Chip
+                <StatusBadge
                   size="small"
                   variant="outlined"
                   label={t('gameHistory.cancelledRounds.stage', {
@@ -78,7 +69,7 @@ export function CancelledRoundsSection({
                     ),
                   })}
                 />
-                <Chip
+                <StatusBadge
                   size="small"
                   variant="outlined"
                   label={t(
@@ -86,7 +77,7 @@ export function CancelledRoundsSection({
                   )}
                 />
                 {round.purchasesRefunded ? (
-                  <Chip
+                  <StatusBadge
                     size="small"
                     color="success"
                     variant="outlined"
@@ -100,7 +91,7 @@ export function CancelledRoundsSection({
                 </Typography>
               ) : null}
             </Stack>
-          </Box>
+          </ItemCard>
         ))}
       </Stack>
     </SectionCard>

@@ -1,5 +1,4 @@
-import { Box, Chip, Stack, Typography, useMediaQuery } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,9 +10,13 @@ import {
   AsyncSection,
   FormSelect,
   FormTextField,
+  ItemCard,
+  NativeDisclosure,
   PageShell,
   SectionCard,
   SectionHeader,
+  SelectionRow,
+  StatusBadge,
 } from '../../shared/ui/index.ts'
 import {
   modifierHistoryQueryOptions,
@@ -79,24 +82,17 @@ export function ModifierHistoryPage() {
         <SectionCard
           sx={{ minWidth: 0, p: 1, '@media (min-width: 1000px)': { position: 'sticky', top: 80 } }}
         >
-          <Box component="details" open={isWide || pickerOpen || !modifierId}>
-            <Box
-              component="summary"
-              onClick={(event) => {
-                event.preventDefault()
-                setPickerOpen(!pickerOpen)
-              }}
-              sx={{
-                display: isWide ? 'none' : 'list-item',
-                cursor: 'pointer',
-                p: 0.5,
-                overflowWrap: 'anywhere',
-                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-              }}
-            >
-              {t('modifierHistory.search')}
-              {detail.data ? ` · ${detail.data.name}` : ''}
-            </Box>
+          <NativeDisclosure
+            open={isWide || pickerOpen || !modifierId}
+            pinned={isWide}
+            onExpandedChange={setPickerOpen}
+            summary={
+              <>
+                {t('modifierHistory.search')}
+                {detail.data ? ` · ${detail.data.name}` : ''}
+              </>
+            }
+          >
             <Stack spacing={1} sx={{ mb: 1, mt: isWide ? 0 : 1 }}>
               <FormTextField
                 label={t('modifierHistory.search')}
@@ -120,6 +116,7 @@ export function ModifierHistoryPage() {
             <AsyncSection
               isLoading={history.isLoading}
               isError={history.isError}
+              hasData={history.data != null}
               isEmpty={historyItems.length === 0}
               loadingMessage={t('modifierHistory.loading')}
               errorMessage={t('modifierHistory.error')}
@@ -134,34 +131,10 @@ export function ModifierHistoryPage() {
                 }}
               >
                 {historyItems.map((item) => (
-                  <AppButton
+                  <SelectionRow
                     key={item.modifierId}
-                    tone="ghost"
-                    aria-pressed={modifierId === item.modifierId}
+                    selected={modifierId === item.modifierId}
                     onClick={() => selectModifier(item.modifierId)}
-                    sx={(theme) => ({
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      textTransform: 'none',
-                      letterSpacing: 'normal',
-                      px: 1,
-                      py: 1,
-                      overflowWrap: 'anywhere',
-                      backgroundColor: alpha(
-                        theme.palette.primary.main,
-                        modifierId === item.modifierId ? 0.18 : 0.04,
-                      ),
-                      boxShadow:
-                        modifierId === item.modifierId
-                          ? `inset 3px 0 ${theme.palette.primary.main}`
-                          : 'none',
-                      '&:nth-of-type(even)': {
-                        backgroundColor: alpha(
-                          theme.palette.primary.main,
-                          modifierId === item.modifierId ? 0.18 : 0.085,
-                        ),
-                      },
-                    })}
                   >
                     <Stack alignItems="flex-start">
                       <span>
@@ -172,7 +145,7 @@ export function ModifierHistoryPage() {
                         {t('modifierHistory.revision', { revision: String(item.currentRevision) })}
                       </Typography>
                     </Stack>
-                  </AppButton>
+                  </SelectionRow>
                 ))}
                 {history.hasNextPage ? (
                   <AppButton
@@ -185,7 +158,7 @@ export function ModifierHistoryPage() {
                 ) : null}
               </Stack>
             </AsyncSection>
-          </Box>
+          </NativeDisclosure>
         </SectionCard>
 
         {!modifierId ? (
@@ -216,7 +189,7 @@ export function ModifierHistoryPage() {
                       })}
                     </Typography>
                   </Box>
-                  <Chip
+                  <StatusBadge
                     color={selectedSummary.isArchived ? 'warning' : 'success'}
                     label={t(
                       selectedSummary.isArchived
@@ -227,24 +200,22 @@ export function ModifierHistoryPage() {
                 </Stack>
               </SectionCard>
             ) : null}
-            <SectionCard component="details" key={modifierId} sx={{ p: 1.25 }}>
-              <Box
-                component="summary"
-                sx={{
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                  py: 0.5,
-                  '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-                }}
-              >
-                {t('modifierHistory.revisions')}
-                {revision > 0
-                  ? ` · ${t('modifierHistory.revision', { revision: String(revision) })}`
-                  : ''}
-              </Box>
+            <NativeDisclosure
+              key={modifierId}
+              surface="panel"
+              summary={
+                <>
+                  {t('modifierHistory.revisions')}
+                  {revision > 0
+                    ? ` · ${t('modifierHistory.revision', { revision: String(revision) })}`
+                    : ''}
+                </>
+              }
+            >
               <AsyncSection
                 isLoading={versions.isLoading}
                 isError={versions.isError}
+                hasData={versions.data != null}
                 isEmpty={versionItems.length === 0}
                 loadingMessage={t('modifierHistory.loading')}
                 errorMessage={t('modifierHistory.error')}
@@ -256,14 +227,12 @@ export function ModifierHistoryPage() {
                   sx={{ mt: 1, maxHeight: 260, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
                 >
                   {versionItems.map((item, index) => (
-                    <AppButton
+                    <SelectionRow
                       key={item.versionId}
                       ref={(node) => {
                         revisionButtons.current[index] = node
                       }}
-                      size="small"
-                      aria-pressed={revision === item.revision}
-                      tone={revision === item.revision ? 'primary' : 'secondary'}
+                      selected={revision === item.revision}
                       onClick={() => selectRevision(item.revision)}
                       onKeyDown={(event) => {
                         const last = versionItems.length - 1
@@ -281,15 +250,6 @@ export function ModifierHistoryPage() {
                           event.preventDefault()
                           revisionButtons.current[nextIndex]?.focus()
                         }
-                      }}
-                      sx={{
-                        justifyContent: 'flex-start',
-                        textAlign: 'left',
-                        textTransform: 'none',
-                        letterSpacing: 'normal',
-                        py: 0.75,
-                        flexShrink: 0,
-                        overflowWrap: 'anywhere',
                       }}
                     >
                       <Stack alignItems="flex-start" spacing={0.25}>
@@ -311,7 +271,7 @@ export function ModifierHistoryPage() {
                           </Typography>
                         ) : null}
                       </Stack>
-                    </AppButton>
+                    </SelectionRow>
                   ))}
                   {versions.hasNextPage ? (
                     <AppButton
@@ -325,11 +285,12 @@ export function ModifierHistoryPage() {
                   ) : null}
                 </Stack>
               </AsyncSection>
-            </SectionCard>
+            </NativeDisclosure>
 
             <AsyncSection
               isLoading={revision === 0 || detail.isLoading}
               isError={detail.isError}
+              hasData={detail.data != null}
               isEmpty={!detail.data}
               loadingMessage={t('modifierHistory.loading')}
               errorMessage={t('modifierHistory.error')}
@@ -356,6 +317,7 @@ export function ModifierHistoryPage() {
               <AsyncSection
                 isLoading={revision === 0 || games.isLoading}
                 isError={games.isError}
+                hasData={games.data != null}
                 isEmpty={gameItems.length === 0}
                 loadingMessage={t('modifierHistory.loading')}
                 errorMessage={t('modifierHistory.error')}
@@ -363,17 +325,7 @@ export function ModifierHistoryPage() {
               >
                 <Stack spacing={1}>
                   {gameItems.map((game) => (
-                    <Box
-                      key={game.gameId}
-                      sx={(theme) => ({
-                        borderRadius: 1,
-                        p: 1,
-                        backgroundColor: alpha(theme.palette.common.black, 0.2),
-                        '&:nth-of-type(even)': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.07),
-                        },
-                      })}
-                    >
+                    <ItemCard key={game.gameId}>
                       <AppLinkButton
                         to={
                           game.gameStatus.toLowerCase() === 'finished'
@@ -385,27 +337,31 @@ export function ModifierHistoryPage() {
                         {game.gameTitle}
                       </AppLinkButton>
                       <Stack direction="row" gap={0.75} flexWrap="wrap">
-                        <Chip
+                        <StatusBadge
                           size="small"
                           label={t('modifierHistory.activations', {
                             count: game.successfulActivationsCount,
                           })}
                         />
-                        <Chip
+                        <StatusBadge
                           size="small"
                           label={t('modifierHistory.cancelled', {
                             count: game.cancelledActivationsCount,
                           })}
                         />
-                        <Chip
+                        <StatusBadge
                           size="small"
                           label={t('modifierHistory.results', { count: game.resultsCount })}
                         />
                         {game.isEmergencyDisabled ? (
-                          <Chip size="small" color="error" label={t('modifierHistory.emergency')} />
+                          <StatusBadge
+                            size="small"
+                            color="error"
+                            label={t('modifierHistory.emergency')}
+                          />
                         ) : null}
                       </Stack>
-                    </Box>
+                    </ItemCard>
                   ))}
                   {games.hasNextPage ? (
                     <AppButton

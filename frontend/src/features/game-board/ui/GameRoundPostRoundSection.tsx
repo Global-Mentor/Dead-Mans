@@ -1,11 +1,11 @@
 import { Stack, Typography } from '@mui/material'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, FormSection } from '../../../shared/ui/index.ts'
 import {
   gameRoundPostRoundActions,
-  type GameRoundSummaryFormValues,
   type GameRoundSummaryFormInput,
+  type GameRoundSummaryFormValues,
 } from '../model/game-round-summary-form.ts'
 
 export function GameRoundPostRoundSection({
@@ -18,12 +18,11 @@ export function GameRoundPostRoundSection({
   const { t } = useTranslation()
 
   return (
-    <SectionCard surface="inset">
+    <FormSection
+      title={t('gameBoard.roundSummaryPostRoundTitle')}
+      description={t('gameBoard.roundSummaryPostRoundDescription')}
+    >
       <Stack spacing={1.25}>
-        <Typography variant="subtitle2">{t('gameBoard.roundSummaryPostRoundTitle')}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('gameBoard.roundSummaryPostRoundDescription')}
-        </Typography>
         <Controller
           control={control}
           name="postRoundAction"
@@ -36,7 +35,7 @@ export function GameRoundPostRoundSection({
                   tone={field.value === action ? 'primary' : 'secondary'}
                   fullWidth
                   onClick={() => field.onChange(action)}
-                  sx={{ minHeight: 58, justifyContent: 'flex-start', px: 1.5 }}
+                  sx={{ justifyContent: 'flex-start' }}
                 >
                   <Stack alignItems="flex-start" spacing={0.35}>
                     <Typography variant="subtitle2" fontWeight={800}>
@@ -52,6 +51,6 @@ export function GameRoundPostRoundSection({
           )}
         />
       </Stack>
-    </SectionCard>
+    </FormSection>
   )
 }

@@ -1,5 +1,5 @@
 import type { GameBoardCell } from '../../../shared/api/contracts/index.ts'
-import { PlayedCardPreviewDialog } from '../../../shared/ui/index.ts'
+import { PlayedCardPreviewDialog } from '../../../shared/game-ui/index.ts'
 import type { GameBoardCardPlayResultRound } from '../use-card-play-result.ts'
 
 interface GameBoardCardPreviewDialogProps {

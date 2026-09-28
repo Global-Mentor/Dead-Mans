@@ -1,32 +1,22 @@
-import { Chip, Stack, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
+import { Stack, Typography } from '@mui/material'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { ControlledFormTextField, FormSelect, SectionCard } from '../../../shared/ui/index.ts'
+import {
+  ControlledFormTextField,
+  ControlledFormNumberField,
+  FormSelect,
+  SectionCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import {
   gameRoundRuleOutcomeStatuses,
-  type GameRoundSummaryFormValues,
   type GameRoundSummaryFormInput,
+  type GameRoundSummaryFormValues,
 } from '../model/game-round-summary-form.ts'
 
 type SummaryControl = ReturnType<
   typeof useForm<GameRoundSummaryFormInput, unknown, GameRoundSummaryFormValues>
 >['control']
-
-export function GameRoundSummarySection({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
-  return (
-    <Stack spacing={1.5}>
-      <Typography variant="subtitle2">{title}</Typography>
-      {children}
-    </Stack>
-  )
-}
 
 export function GameRoundRuleGroupCard({
   index,
@@ -44,7 +34,7 @@ export function GameRoundRuleGroupCard({
       <Stack spacing={1.25}>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
           <Typography variant="subtitle2">{group.modifierName}</Typography>
-          <Chip
+          <StatusBadge
             size="small"
             color="secondary"
             variant="outlined"
@@ -113,7 +103,7 @@ export function GameRoundScoringInstanceCard({
         {instance.memberResultIds.length > 1 ? (
           <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
             <Typography variant="subtitle2">{instance.modifierName}</Typography>
-            <Chip
+            <StatusBadge
               size="small"
               variant="outlined"
               label={t('gameBoard.roundSummaryModifierStackCount', {
@@ -152,10 +142,9 @@ export function GameRoundScoringInstanceCard({
             )}
           />
         ) : (
-          <ControlledFormTextField
+          <ControlledFormNumberField
             control={control}
             name={`scoringInstances.${index}.countValue`}
-            type="number"
             label={instance.inputLabel ?? t('gameBoard.roundSummaryCountValue')}
             helperText={
               instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
@@ -164,12 +153,12 @@ export function GameRoundScoringInstanceCard({
                   })
                 : undefined
             }
-            inputProps={{
-              min: 0,
-              ...(instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
-                ? { max: instance.memberResultIds.length * instance.maximumPerActivation }
-                : {}),
-            }}
+            min={0}
+            max={
+              instance.maximumKind === 'activations' && instance.maximumPerActivation !== null
+                ? instance.memberResultIds.length * instance.maximumPerActivation
+                : undefined
+            }
           />
         )}
       </Stack>
@@ -190,7 +179,7 @@ export function GameRoundModifierHeading({
   return (
     <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
       <Typography variant="subtitle2">{name}</Typography>
-      <Chip
+      <StatusBadge
         size="small"
         variant="outlined"
         label={t('gameBoard.roundSummaryActivationLabel', { index, count })}

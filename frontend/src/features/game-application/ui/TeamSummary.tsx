@@ -1,7 +1,8 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
+import { BulletList, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatRegistrationTeamStatus } from '../../game-registration/index.ts'
 import { getTeamFreePlaces, isTeamJoinable } from '../model/team-availability.ts'
 
@@ -106,40 +107,15 @@ export function TeamSummary({
           flexWrap="wrap"
           useFlexGap
         >
-          <Box
-            component="ul"
-            sx={{
-              m: 0,
-              p: 0,
-              listStyle: 'none',
-              display: 'grid',
-              gap: 0.75,
-              '& > li': {
-                display: 'flex',
-                gap: 1.25,
-                alignItems: 'flex-start',
-                minWidth: 0,
-                maxWidth: '100%',
-                overflowWrap: 'anywhere',
-              },
-              '& > li::before': {
-                content: '""',
-                width: 5,
-                height: 5,
-                mt: '0.6em',
-                flexShrink: 0,
-                transform: 'rotate(45deg)',
-                bgcolor: 'primary.main',
-              },
-            }}
-          >
+          <BulletList>
             {team.members.map(({ player, readyAtUtc }) => (
               <Box component="li" key={player.userId}>
                 <Typography component="span" variant="body2">
                   {player.displayName}
                 </Typography>
                 {showReadiness && team.status === 'forming' ? (
-                  <Chip
+                  <StatusBadge
+                    textFlow="singleLine"
                     size="small"
                     color={readyAtUtc ? 'success' : 'default'}
                     variant={readyAtUtc ? 'filled' : 'outlined'}
@@ -166,7 +142,7 @@ export function TeamSummary({
                 </Typography>
               </li>
             ) : null}
-          </Box>
+          </BulletList>
           <Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap" useFlexGap>
             {showStatus ? (
               <Typography variant="caption" color={isOpen ? 'primary.light' : 'text.secondary'}>

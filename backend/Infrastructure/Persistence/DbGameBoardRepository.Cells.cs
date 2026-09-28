@@ -95,7 +95,7 @@ public sealed partial class DbGameBoardRepository
 
             if (stateChanged)
             {
-                await CreateAwaitingModifiersRunAsync(
+                await CreateCardOpenedRoundAsync(
                     board.GameId,
                     board.ActiveTeamId,
                     cell,
@@ -172,7 +172,7 @@ public sealed partial class DbGameBoardRepository
             cell.State = BoardCellState.Open;
             board.Version += 1;
             await _dbContext.SaveChangesAsync(cancellationToken);
-            await CreateAwaitingModifiersRunAsync(
+            await CreateCardOpenedRoundAsync(
                 board.GameId,
                 board.Game?.ActiveTeamId,
                 activeCell,
@@ -204,7 +204,7 @@ public sealed partial class DbGameBoardRepository
         );
     }
 
-    private async Task CreateAwaitingModifiersRunAsync(
+    private async Task CreateCardOpenedRoundAsync(
         Guid gameId,
         Guid? activeTeamId,
         GameBoardCellOpenGuard.OpenCellTarget cell,
@@ -219,7 +219,8 @@ public sealed partial class DbGameBoardRepository
         var hasActiveRound = await _dbContext.GameRounds.AnyAsync(
             round =>
                 round.GameId == gameId
-                && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                && (round.Status == GameRoundStatusValue.CardOpened
+                    || round.Status == GameRoundStatusValue.AwaitingModifiers
                     || round.Status == GameRoundStatusValue.Preparing
                     || round.Status == GameRoundStatusValue.InProgress
                     || round.Status == GameRoundStatusValue.ReviewingResults),
@@ -293,7 +294,7 @@ public sealed partial class DbGameBoardRepository
             BoardId = cell.BoardId,
             BoardCellId = cell.Id,
             TeamId = activeTeamId.Value,
-            Status = GameRoundStatusValue.AwaitingModifiers,
+            Status = GameRoundStatusValue.CardOpened,
             BaseScore = cell.Cost,
             TeamSlotIndexSnapshot = team.SlotIndex.Value,
             CellRowIndex = cell.Row,

@@ -127,6 +127,7 @@ public sealed record GameHistoryRoundModifierItemDto(
     string ModifierResultId,
     string ModifierId,
     string ModifierName,
+    string? IconEmoji,
     string ModifierDescription,
     string ModifierCategory,
     string OutcomeStatus,

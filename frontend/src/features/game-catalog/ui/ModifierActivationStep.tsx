@@ -1,27 +1,23 @@
-import type { DefaultTranslation } from '../../../locales/index.ts'
-import {
-  AccordionDetails,
-  Box,
-  FormControl,
-  FormHelperText,
-  FormLabel,
-  InputAdornment,
-  RadioGroup,
-  Stack,
-  Typography,
-} from '@mui/material'
-import { Controller, useWatch } from 'react-hook-form'
+import { Box, Stack, Typography } from '@mui/material'
 import type { Control, UseFormSetValue } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import type { DefaultTranslation } from '../../../locales/index.ts'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
 import {
   AppAccordion,
+  AppAccordionDetails,
   AppAccordionSummary,
   ChoiceCard,
+  ChoiceGroup,
   ControlledFormTextField,
+  FieldAdornment,
+  FieldGroup,
+  FieldWithHelp,
+  FormSection,
 } from '../../../shared/ui/index.ts'
 import { modifierPhases, type ModifierFormValues } from '../model/modifier-form-schema.ts'
-import { FieldWithHelp, ModifierConflictField, WizardSection } from './modifier-form-fields.tsx'
+import { ModifierConflictField } from './modifier-form-fields.tsx'
 
 export function ModifierActivationStep({
   control,
@@ -44,7 +40,7 @@ export function ModifierActivationStep({
   const durationEnabled = useWatch({ control, name: 'durationEnabled' })
   return (
     <Stack spacing={1.5}>
-      <WizardSection
+      <FormSection
         title={t('gameCatalog.modifiers.wizard.sections.behavior')}
         description={t('gameCatalog.modifiers.wizard.sections.behaviorDescription')}
       >
@@ -53,9 +49,14 @@ export function ModifierActivationStep({
             control={control}
             name="phase"
             render={({ field, fieldState }) => (
-              <FormControl component="fieldset" error={fieldState.invalid} fullWidth>
-                <FormLabel component="legend">{t('gameCatalog.modifiers.wizard.phase')}</FormLabel>
-                <RadioGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
+              <FieldGroup
+                component="fieldset"
+                error={fieldState.invalid}
+                fullWidth
+                label={<>{t('gameCatalog.modifiers.wizard.phase')}</>}
+                helperText={fieldState.error?.message}
+              >
+                <ChoiceGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
                   {modifierPhases.map((phase) => (
                     <ChoiceCard
                       key={phase}
@@ -66,11 +67,8 @@ export function ModifierActivationStep({
                       description={t(`gameCatalog.modifiers.wizard.phaseDescriptions.${phase}`)}
                     />
                   ))}
-                </RadioGroup>
-                {fieldState.error ? (
-                  <FormHelperText>{fieldState.error.message}</FormHelperText>
-                ) : null}
-              </FormControl>
+                </ChoiceGroup>
+              </FieldGroup>
             )}
           />
         </FieldWithHelp>
@@ -79,11 +77,14 @@ export function ModifierActivationStep({
             control={control}
             name="performer"
             render={({ field, fieldState }) => (
-              <FormControl component="fieldset" error={fieldState.invalid} fullWidth>
-                <FormLabel component="legend">
-                  {t('gameCatalog.modifiers.wizard.performer')}
-                </FormLabel>
-                <RadioGroup
+              <FieldGroup
+                component="fieldset"
+                error={fieldState.invalid}
+                fullWidth
+                label={<>{t('gameCatalog.modifiers.wizard.performer')}</>}
+                helperText={fieldState.error?.message}
+              >
+                <ChoiceGroup
                   {...field}
                   sx={{
                     mt: 0.75,
@@ -104,11 +105,8 @@ export function ModifierActivationStep({
                       )}
                     />
                   ))}
-                </RadioGroup>
-                {fieldState.error ? (
-                  <FormHelperText>{fieldState.error.message}</FormHelperText>
-                ) : null}
-              </FormControl>
+                </ChoiceGroup>
+              </FieldGroup>
             )}
           />
         </FieldWithHelp>
@@ -130,11 +128,12 @@ export function ModifierActivationStep({
             control={control}
             name="requiresHostMonitoring"
             render={({ field }) => (
-              <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">
-                  {t('gameCatalog.modifiers.wizard.requiresHostMonitoring')}
-                </FormLabel>
-                <RadioGroup
+              <FieldGroup
+                component="fieldset"
+                fullWidth
+                label={<>{t('gameCatalog.modifiers.wizard.requiresHostMonitoring')}</>}
+              >
+                <ChoiceGroup
                   value={field.value ? 'yes' : 'no'}
                   onChange={(_, value) => field.onChange(value === 'yes')}
                   sx={{
@@ -156,8 +155,8 @@ export function ModifierActivationStep({
                       )}
                     />
                   ))}
-                </RadioGroup>
-              </FormControl>
+                </ChoiceGroup>
+              </FieldGroup>
             )}
           />
         </FieldWithHelp>
@@ -171,11 +170,12 @@ export function ModifierActivationStep({
                 control={control}
                 name="durationEnabled"
                 render={({ field }) => (
-                  <FormControl component="fieldset" fullWidth>
-                    <FormLabel component="legend">
-                      {t('gameCatalog.modifiers.wizard.durationQuestion')}
-                    </FormLabel>
-                    <RadioGroup
+                  <FieldGroup
+                    component="fieldset"
+                    fullWidth
+                    label={<>{t('gameCatalog.modifiers.wizard.durationQuestion')}</>}
+                  >
+                    <ChoiceGroup
                       value={field.value ? 'yes' : 'no'}
                       onChange={(_, value) => {
                         const enabled = value === 'yes'
@@ -203,8 +203,8 @@ export function ModifierActivationStep({
                           )}
                         />
                       ))}
-                    </RadioGroup>
-                  </FormControl>
+                    </ChoiceGroup>
+                  </FieldGroup>
                 )}
               />
             </FieldWithHelp>
@@ -222,9 +222,9 @@ export function ModifierActivationStep({
                   slotProps={{
                     input: {
                       endAdornment: (
-                        <InputAdornment position="end">
+                        <FieldAdornment position="end">
                           {t('gameCatalog.modifiers.wizard.units.seconds')}
-                        </InputAdornment>
+                        </FieldAdornment>
                       ),
                     },
                   }}
@@ -233,9 +233,9 @@ export function ModifierActivationStep({
             ) : null}
           </>
         ) : null}
-      </WizardSection>
+      </FormSection>
 
-      <WizardSection
+      <FormSection
         title={t('gameCatalog.modifiers.wizard.sections.activation')}
         description={t('gameCatalog.modifiers.wizard.sections.activationDescription')}
       >
@@ -285,7 +285,7 @@ export function ModifierActivationStep({
               </Typography>
             </Box>
           </AppAccordionSummary>
-          <AccordionDetails>
+          <AppAccordionDetails>
             <FieldWithHelp
               label={t('gameCatalog.modifiers.fields.activationCommand')}
               help={help('activationCommand')}
@@ -298,9 +298,9 @@ export function ModifierActivationStep({
                 disabled={disabled}
               />
             </FieldWithHelp>
-          </AccordionDetails>
+          </AppAccordionDetails>
         </AppAccordion>
-      </WizardSection>
+      </FormSection>
     </Stack>
   )
 }

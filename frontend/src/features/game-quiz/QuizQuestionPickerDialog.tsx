@@ -1,10 +1,17 @@
-import { Alert, Box, Chip, CircularProgress, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
-import { AppButton, AppDialog, FormSelect, FormTextField } from '../../shared/ui/index.ts'
-
+import {
+  AppButton,
+  AppDialog,
+  BusyIndicator,
+  FormSelect,
+  FormTextField,
+  InlineNotice,
+  ItemCard,
+  StatusBadge,
+} from '../../shared/ui/index.ts'
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
 type Props = {
@@ -104,10 +111,10 @@ export function QuizQuestionPickerDialog({
 
         {loading ? (
           <Box sx={{ py: 3, textAlign: 'center' }}>
-            <CircularProgress size={24} aria-label={t('gameQuiz.loading')} />
+            <BusyIndicator size={24} aria-label={t('gameQuiz.loading')} />
           </Box>
         ) : error ? (
-          <Alert
+          <InlineNotice
             severity="error"
             action={
               onRetry ? (
@@ -118,7 +125,7 @@ export function QuizQuestionPickerDialog({
             }
           >
             {t('gameQuiz.questionsLoadError')}
-          </Alert>
+          </InlineNotice>
         ) : (
           <Stack
             component="ul"
@@ -145,23 +152,15 @@ export function QuizQuestionPickerDialog({
                 )}
               </Typography>
             ) : (
-              visibleQuestions.map((question, index) => (
-                <Box
+              visibleQuestions.map((question) => (
+                <ItemCard
                   component="li"
                   key={question.questionId}
-                  sx={(theme) => ({
-                    listStyle: 'none',
-                    p: 1.25,
-                    backgroundColor: alpha(
-                      index % 2 === 0 ? theme.palette.common.white : theme.palette.common.black,
-                      index % 2 === 0 ? 0.055 : 0.22,
-                    ),
-                    overflowWrap: 'anywhere',
-                  })}
+                  sx={{ listStyle: 'none', overflowWrap: 'anywhere' }}
                 >
                   <Stack direction="row" spacing={1.25} alignItems="center">
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Chip size="small" label={question.categoryName} sx={{ mb: 0.5 }} />
+                      <StatusBadge size="small" label={question.categoryName} sx={{ mb: 0.5 }} />
                       <Typography variant="body2" fontWeight={700}>
                         {question.text}
                       </Typography>
@@ -178,7 +177,7 @@ export function QuizQuestionPickerDialog({
                       {t('gameQuiz.selectQuestion')}
                     </AppButton>
                   </Stack>
-                </Box>
+                </ItemCard>
               ))
             )}
           </Stack>

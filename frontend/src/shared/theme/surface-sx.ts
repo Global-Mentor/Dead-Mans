@@ -3,7 +3,7 @@ import type { SystemStyleObject } from '@mui/system'
 import { alpha } from '@mui/material/styles'
 import { huntTypography, uiTokens } from './tokens.ts'
 
-export type AppSurface = 'panel' | 'inset' | 'accented' | 'plain'
+export type AppSurface = 'panel' | 'inset' | 'accented' | 'plain' | 'muted'
 
 export const huntBrassTitleSx: SxProps<Theme> = {
   fontFamily: huntTypography.display,
@@ -52,6 +52,14 @@ export function huntAuthCardSx(theme: Theme) {
 
 export function getAppSurfaceSx(theme: Theme, surface: AppSurface): SystemStyleObject<Theme> {
   switch (surface) {
+    case 'muted':
+      return {
+        backgroundColor: theme.palette.action.hover,
+        border: `1px solid ${theme.palette.divider}`,
+        backgroundImage: 'none',
+        boxShadow: 'none',
+      }
+
     case 'inset':
       return {
         backgroundColor: alpha(theme.palette.common.black, 0.22),

@@ -53,6 +53,26 @@ afterEach(() => {
 })
 
 describe('GameBoardGrid', () => {
+  it('uses native disabled cards without allowing requests to open them', () => {
+    const onCellRequestOpen = vi.fn()
+    renderWithAppProviders(
+      <GameBoardGrid
+        snapshot={snapshot}
+        canOpenCells={false}
+        onCellRequestOpen={onCellRequestOpen}
+        onCellPreviewMedia={vi.fn()}
+      />,
+    )
+    const card = screen.getByRole('button', {
+      name: 'Открыть карточку «Закрытая карта» стоимостью 200 очк.',
+    })
+    expect(card.tagName).toBe('BUTTON')
+    expect(card).toBeDisabled()
+    fireEvent.click(card)
+    expect(onCellRequestOpen).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Открыть карточку Открытая карта' })).toBeEnabled()
+  })
+
   it('renders prominent semantic column headers', () => {
     renderWithAppProviders(
       <GameBoardGrid
@@ -67,7 +87,9 @@ describe('GameBoardGrid', () => {
       '1',
       '2',
     ])
-    expect(screen.getByTitle('A').firstElementChild).toHaveStyle({ fontSize: '0.76rem' })
+    expect(screen.getByText('A')).toHaveStyle({
+      fontSize: '0.9rem',
+    })
   })
 
   it('keeps long board labels readable within the adaptive header', () => {
@@ -85,13 +107,13 @@ describe('GameBoardGrid', () => {
     )
 
     const columnHeader = screen.getByRole('columnheader', { name: 'Допустим дробовики' })
-    expect(columnHeader).toHaveStyle({
+    expect(columnHeader.firstElementChild).toHaveStyle({
       whiteSpace: 'normal',
       overflowWrap: 'anywhere',
-      height: '2.5rem',
+      minHeight: '3.5rem',
     })
-    expect(columnHeader.firstElementChild).toHaveStyle({
-      fontSize: 'clamp(0.65rem, 12cqw, 0.95rem)',
+    expect(columnHeader.firstElementChild?.firstElementChild).toHaveStyle({
+      fontSize: 'clamp(0.875rem, 15cqw, 0.95rem)',
     })
 
     const rowLabel = screen
@@ -99,7 +121,7 @@ describe('GameBoardGrid', () => {
       .map((element) => element.closest('[data-board-row-label]'))
       .find((element): element is HTMLElement => element instanceof HTMLElement)
     expect(rowLabel?.firstElementChild).toHaveStyle({
-      fontSize: 'clamp(0.6rem, 22cqw, 0.76rem)',
+      fontSize: 'clamp(0.7rem, 25cqw, 0.9rem)',
     })
     expect(screen.getAllByText('Допустим дробовики')).toHaveLength(2)
   })
@@ -114,7 +136,7 @@ describe('GameBoardGrid', () => {
       />,
     )
 
-    expect(screen.getByAltText('Открытая карта')).toHaveAttribute(
+    expect(screen.getByAltText('')).toHaveAttribute(
       'src',
       'http://localhost:5285/media/cards/open-card.png',
     )
@@ -143,17 +165,48 @@ describe('GameBoardGrid', () => {
   })
 
   it('marks the card used by the current round with a visible status', () => {
+    const onCellPreviewMedia = vi.fn()
     renderWithAppProviders(
       <GameBoardGrid
         snapshot={snapshot}
         activeCellId="cell-1"
         canOpenCells={false}
         onCellRequestOpen={vi.fn()}
-        onCellPreviewMedia={vi.fn()}
+        onCellPreviewMedia={onCellPreviewMedia}
       />,
     )
 
-    expect(screen.getByRole('status')).toHaveTextContent('Текущий раунд')
+    const card = screen.getByRole('button', { name: 'Открыть карточку Открытая карта' })
+    expect(card).toHaveTextContent('Текущий раунд')
+    expect(card).not.toHaveTextContent('Открытая карта')
+    expect(card).not.toHaveTextContent('Стоимость: 100 очк.')
+    expect(card).not.toHaveTextContent('Ожидает итоги')
+    expect(card.querySelector('img')).toHaveAttribute(
+      'src',
+      'http://localhost:5285/media/cards/open-card.png',
+    )
+    fireEvent.click(card)
+    expect(onCellPreviewMedia).toHaveBeenCalledWith(snapshot.cells[0])
+  })
+
+  it('opens the current round from its card when that action is available', () => {
+    const onCellOpenCurrentRound = vi.fn()
+    const onCellPreviewMedia = vi.fn()
+    renderWithAppProviders(
+      <GameBoardGrid
+        snapshot={snapshot}
+        activeCellId="cell-1"
+        canOpenCells={false}
+        onCellRequestOpen={vi.fn()}
+        onCellPreviewMedia={onCellPreviewMedia}
+        onCellOpenCurrentRound={onCellOpenCurrentRound}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть текущий раунд' }))
+
+    expect(onCellOpenCurrentRound).toHaveBeenCalledWith(snapshot.cells[0])
+    expect(onCellPreviewMedia).not.toHaveBeenCalled()
   })
 
   it('opens the preview dialog when an opened cell is clicked', () => {
@@ -215,10 +268,11 @@ describe('GameBoardGrid', () => {
       />,
     )
 
-    expect(screen.getByText('Dead Mans')).toBeInTheDocument()
-    expect(screen.getByText('Player One')).toBeInTheDocument()
-    expect(screen.getByText('Player Two')).toBeInTheDocument()
-    expect(screen.getByText('Итог 145 очк.')).toBeInTheDocument()
+    expect(screen.getByTestId('played-cell-team')).toHaveTextContent('Dead Mans')
+    expect(screen.queryByText('Player One')).not.toBeInTheDocument()
+    expect(screen.queryByText('Player Two')).not.toBeInTheDocument()
+    expect(screen.getByTestId('played-cell-result-label')).toHaveTextContent('Сыграно')
+    expect(screen.getByTestId('played-cell-result-points')).toHaveTextContent('145 очк.')
     expect(screen.queryByText('100 очк.')).not.toBeInTheDocument()
     expect(screen.queryByText('Медиа: 1')).not.toBeInTheDocument()
   })
@@ -278,7 +332,8 @@ describe('GameBoardGrid', () => {
       />,
     )
 
-    expect(screen.getByText('Штраф 150 очк.')).toBeInTheDocument()
+    expect(screen.getByTestId('played-cell-result-label')).toHaveTextContent('Штраф')
+    expect(screen.getByTestId('played-cell-result-points')).toHaveTextContent('150 очк.')
   })
 
   it('requests opening a closed cell when opening is allowed', () => {

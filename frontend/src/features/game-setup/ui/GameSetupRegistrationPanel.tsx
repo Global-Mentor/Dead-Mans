@@ -1,11 +1,11 @@
-import { Alert, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
 import { hasPanelCapability } from '../../../shared/auth/panel-capabilities.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
-import { AppButton, ConfirmDialog } from '../../../shared/ui/index.ts'
+import { AppButton, ConfirmDialog, InlineNotice } from '../../../shared/ui/index.ts'
 import { useOpenGameRegistration } from '../use-open-game-registration.ts'
 
 interface Props {
@@ -75,7 +75,9 @@ function RegistrationPanelContent({
         {t('gameSetup.registration.questionsOptional')}
       </Typography>
       {blocker ? (
-        <Alert severity="info">{t(`gameSetup.registration.blockers.${blocker}`)}</Alert>
+        <InlineNotice severity="info">
+          {t(`gameSetup.registration.blockers.${blocker}`)}
+        </InlineNotice>
       ) : null}
       {currentGame.isError ? (
         <AppButton tone="secondary" onClick={() => void currentGame.refetch()}>
@@ -83,9 +85,13 @@ function RegistrationPanelContent({
         </AppButton>
       ) : null}
       {errorKey ? (
-        <Alert severity="error">{t(`gameSetup.registration.errors.${errorKey}`)}</Alert>
+        <InlineNotice severity="error">
+          {t(`gameSetup.registration.errors.${errorKey}`)}
+        </InlineNotice>
       ) : null}
-      {reload.isError ? <Alert severity="error">{t('gameSetup.errorLoading')}</Alert> : null}
+      {reload.isError ? (
+        <InlineNotice severity="error">{t('gameSetup.errorLoading')}</InlineNotice>
+      ) : null}
       {remoteChangeNotice || errorKey === 'stale' || errorKey === 'missingDraft' ? (
         <AppButton
           tone="secondary"
@@ -109,7 +115,9 @@ function RegistrationPanelContent({
           <Stack spacing={2}>
             <span>{t('gameSetup.registration.confirmDescription', { title: snapshot.title })}</span>
             {blocker ? (
-              <Alert severity="info">{t(`gameSetup.registration.blockers.${blocker}`)}</Alert>
+              <InlineNotice severity="info">
+                {t(`gameSetup.registration.blockers.${blocker}`)}
+              </InlineNotice>
             ) : null}
           </Stack>
         }

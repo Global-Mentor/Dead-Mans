@@ -1,5 +1,8 @@
 import type { SxProps, Theme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { boardGridMetrics } from './board-grid-metrics.ts'
+
+export const boardClosedCellFillAlpha = 0.065
 
 interface BoardCellSxOptions {
   isOpen: boolean
@@ -33,7 +36,7 @@ export function createBoardCellSx({
     width: '100%',
     minWidth: 0,
     minHeight: 0,
-    aspectRatio: '2 / 3',
+    aspectRatio: boardGridMetrics.cardAspectRatio,
     containerType: 'inline-size',
     gap: 0.35,
     p: 1,
@@ -44,7 +47,7 @@ export function createBoardCellSx({
         ? `linear-gradient(160deg, ${alpha(theme.palette.warning.main, 0.2)}, ${alpha(theme.palette.background.paper, 0.62)})`
         : isOpen
           ? `linear-gradient(160deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.background.paper, 0.52)})`
-          : alpha(theme.palette.primary.main, 0.065),
+          : alpha(theme.palette.primary.main, boardClosedCellFillAlpha),
     cursor: isInteractive ? 'pointer' : 'default',
     transition: 'border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
     boxShadow: isActiveRound

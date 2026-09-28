@@ -11,6 +11,35 @@ namespace backend.Controllers;
 
 public sealed partial class GameRoundController
 {
+    [HttpPost("{roundId:guid}/start-modifier-ordering")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    [ProducesResponseType(typeof(GameRoundDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> StartModifierOrdering(
+        Guid roundId,
+        [FromBody] GameRoundVersionCommandRequestDto request,
+        CancellationToken cancellationToken
+    )
+    {
+        var currentUserId = HttpContext.TryGetUserId();
+        if (!currentUserId.HasValue)
+        {
+            return this.BadRequestError(AppMessages.Client.AuthCookieMissingClaims);
+        }
+
+        var result = await _service.StartModifierOrderingAsync(
+            roundId,
+            new Application.Contracts.GameRoundVersionCommandInput(request.ExpectedRoundVersion),
+            currentUserId.Value,
+            cancellationToken
+        );
+        return MapTransitionResult(result);
+    }
+
     [HttpPost("{roundId:guid}/review")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     [ProducesResponseType(typeof(GameRoundDetailsDto), StatusCodes.Status200OK)]

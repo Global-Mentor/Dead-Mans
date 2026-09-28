@@ -1,6 +1,6 @@
-import { Alert, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { PageShell, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
+import { InlineNotice, PageShell, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
 import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
 import { CreateGameSetupPanel } from './CreateGameSetupPanel.tsx'
 
@@ -48,9 +48,9 @@ export function GameSetupEmptyState({
         />
 
         {draftRemovedNotice ? (
-          <Alert severity="warning" sx={{ mt: 2 }} onClose={onDismissDraftRemovedNotice}>
+          <InlineNotice severity="warning" sx={{ mt: 2 }} onClose={onDismissDraftRemovedNotice}>
             {t('gameSetup.draftRemovedNotice')}
-          </Alert>
+          </InlineNotice>
         ) : null}
 
         {onCreate != null ? (

@@ -42,6 +42,7 @@ public sealed record GameTeamQueueItemDto(
     int TeamSlotIndex,
     bool IsPlayed,
     DateTime? PlayedAtUtc,
+    int? FinalScore,
     IReadOnlyList<GameTeamQueueParticipantDto> Participants
 );
 
@@ -52,6 +53,7 @@ public sealed record GameTeamQueueSummaryDto(
 );
 
 public sealed record GameTeamQueueResultDto(
+    string? GameId,
     GameTeamQueueSummaryDto Summary,
     IReadOnlyList<GameTeamQueueItemDto> Teams
 );

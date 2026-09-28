@@ -1,6 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
+import { AppButton, ItemCard, RankBadge, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName } from '../model/game-history-formatters.ts'
 import {
   getTeamBestScore,
@@ -8,36 +9,35 @@ import {
   getTeamPenaltyTotal,
   type GameHistoryTeamLeaderboardEntry,
 } from '../model/game-history-team-leaderboard.ts'
-import { ColumnLabel, MiniMetricChip, RankBadge, TableValue } from './game-history-display.tsx'
+import { ColumnLabel, TableValue } from './game-history-display.tsx'
 
 export function CurrentLeaderboardTable({
   entries,
   selectedTeamId,
   onSelectTeam,
+  inlineDetails = true,
 }: {
   entries: readonly GameHistoryTeamLeaderboardEntry[]
   selectedTeamId: string | null
   onSelectTeam: (teamId: string) => void
+  inlineDetails?: boolean
 }) {
   const { t } = useTranslation()
 
   return (
-    <Box
+    <ItemCard
       data-testid="current-leaderboard-table"
-      sx={(theme) => ({
+      sx={{
         containerType: 'inline-size',
         containerName: 'standings',
         overflow: 'hidden',
         minWidth: 0,
-        borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.5),
         display: 'flex',
         flexDirection: 'column',
         '@media (min-width: 1000px) and (min-height: 680px)': {
           maxHeight: 'var(--leaderboard-panel-height)',
         },
-      })}
+      }}
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -59,13 +59,20 @@ export function CurrentLeaderboardTable({
             {t('gameHistory.summary.bestTeamsDescription')}
           </Typography>
         </Box>
-        <MiniMetricChip
+        <StatusBadge
+          density="compact"
+          variant="outlined"
           label={t('gameHistory.summary.teamCountShort', { count: entries.length })}
         />
       </Stack>
 
-      <Box sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}>
+      <Box
+        role="table"
+        aria-label={t('gameHistory.currentTableTitle')}
+        sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
+      >
         <Box
+          role="row"
           sx={(theme) => ({
             display: 'grid',
             gridTemplateColumns: '52px minmax(0, 1fr) 68px',
@@ -94,19 +101,20 @@ export function CurrentLeaderboardTable({
           <ColumnLabel align="right">{t('gameHistory.table.rounds')}</ColumnLabel>
         </Box>
 
-        <Stack>
+        <Stack role="rowgroup">
           {entries.map((entry, index) => (
             <CurrentLeaderboardTableRow
               key={entry.teamId}
               entry={entry}
               rank={index + 1}
               isSelected={entry.teamId === selectedTeamId}
+              inlineDetails={inlineDetails}
               onSelect={() => onSelectTeam(entry.teamId)}
             />
           ))}
         </Stack>
       </Box>
-    </Box>
+    </ItemCard>
   )
 }
 
@@ -115,11 +123,13 @@ function CurrentLeaderboardTableRow({
   rank,
   isSelected,
   onSelect,
+  inlineDetails,
 }: {
   entry: GameHistoryTeamLeaderboardEntry
   rank: number
   isSelected: boolean
   onSelect: () => void
+  inlineDetails: boolean
 }) {
   const { t } = useTranslation()
   const bestScore = getTeamBestScore(entry)
@@ -127,36 +137,10 @@ function CurrentLeaderboardTableRow({
   const penaltyTotal = getTeamPenaltyTotal(entry)
 
   return (
-    <Box
-      component="button"
-      type="button"
-      aria-pressed={isSelected}
-      aria-controls="leaderboard-team-details"
-      onClick={onSelect}
-      sx={(theme) => ({
-        width: '100%',
-        minWidth: 0,
-        border: 0,
-        backgroundColor: isSelected
-          ? alpha(theme.palette.primary.main, 0.19)
-          : rank % 2 === 0
-            ? alpha(theme.palette.primary.main, 0.065)
-            : alpha(theme.palette.common.black, 0.16),
-        boxShadow: isSelected ? `inset 3px 0 ${theme.palette.primary.main}` : 'none',
-        color: 'inherit',
-        cursor: 'pointer',
-        textAlign: 'left',
-        px: 1.25,
-        py: 0.85,
-        transition: 'background-color 0.15s ease',
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.15),
-        },
-        '&:focus-visible': {
-          outline: `2px solid ${theme.palette.primary.main}`,
-          outlineOffset: -2,
-        },
-      })}
+    <ItemCard
+      role="row"
+      emphasis={isSelected ? 'selected' : 'none'}
+      sx={{ width: '100%', minWidth: 0, color: 'inherit', textAlign: 'left' }}
     >
       <Box
         sx={{
@@ -169,13 +153,25 @@ function CurrentLeaderboardTableRow({
           alignItems: 'center',
         }}
       >
-        <RankBadge rank={rank} compact />
+        <Box role="cell">
+          <RankBadge rank={rank} compact />
+        </Box>
 
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
-            {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+        <Box role="cell" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+          <AppButton
+            type="button"
+            aria-pressed={isSelected}
+            aria-controls={inlineDetails ? 'leaderboard-team-details' : undefined}
+            aria-haspopup={inlineDetails ? undefined : 'dialog'}
+            onClick={onSelect}
+            tone="ghost"
+            sx={{ width: '100%', justifyContent: 'flex-start' }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>
+              {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
+            </Typography>
+          </AppButton>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             {entry.participantNames.length > 0
               ? entry.participantNames.join(', ')
               : t('gameHistory.noParticipants')}
@@ -183,7 +179,6 @@ function CurrentLeaderboardTableRow({
           <Typography
             variant="caption"
             color="text.secondary"
-            noWrap
             sx={{
               display: 'block',
               '@container standings (min-width: 620px)': { display: 'none' },
@@ -201,6 +196,6 @@ function CurrentLeaderboardTableRow({
         <TableValue hideOnMobile>{bestScore}</TableValue>
         <TableValue hideOnMobile>{entry.roundsPlayed}</TableValue>
       </Box>
-    </Box>
+    </ItemCard>
   )
 }

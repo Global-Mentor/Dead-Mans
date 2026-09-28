@@ -1,10 +1,11 @@
-import { Box, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import type { DragEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
+import { ActionIcon, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatRegistrationTeamStatus } from '../model/registration-team-status.ts'
 import type { AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
-import { teamReorderButtonSx, writeRegistrationDragPayload } from './admin-registration-support.ts'
+import { writeRegistrationDragPayload } from './admin-registration-support.ts'
 
 export type OrderedAdminTeamEntry = AdminInviteTeamTarget
 
@@ -69,7 +70,8 @@ export function AdminRegistrationTeamHeaderChips({ team }: { team: RegistrationT
 
   return (
     <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
-      <Chip
+      <StatusBadge
+        textFlow="singleLine"
         size="small"
         label={t('gameApplication.adminPanel.slotLabel', { slot: team.teamSlotIndex })}
         draggable
@@ -78,22 +80,37 @@ export function AdminRegistrationTeamHeaderChips({ team }: { team: RegistrationT
         }
         sx={{ cursor: 'grab' }}
       />
-      <Chip size="small" label={formatRegistrationTeamStatus(team.status, t)} />
+      <StatusBadge
+        textFlow="singleLine"
+        size="small"
+        label={formatRegistrationTeamStatus(team.status, t)}
+      />
       {team.isActiveInGame ? (
-        <Chip size="small" color="primary" label={t('gameApplication.adminPanel.activeTeamChip')} />
+        <StatusBadge
+          textFlow="singleLine"
+          size="small"
+          color="primary"
+          label={t('gameApplication.adminPanel.activeTeamChip')}
+        />
       ) : null}
       {team.isPlayed ? (
-        <Chip size="small" color="success" label={t('gameApplication.adminPanel.playedTeamChip')} />
+        <StatusBadge
+          textFlow="singleLine"
+          size="small"
+          color="success"
+          label={t('gameApplication.adminPanel.playedTeamChip')}
+        />
       ) : null}
       {team.disbandRequestedAtUtc ? (
-        <Tooltip title={disbandRequestDescription} describeChild arrow>
-          <Chip
+        <HelpTooltip title={disbandRequestDescription} describeChild arrow>
+          <StatusBadge
+            textFlow="singleLine"
             size="small"
             color="warning"
             label={t('gameApplication.adminPanel.disbandRequestedChip')}
             tabIndex={0}
           />
-        </Tooltip>
+        </HelpTooltip>
       ) : null}
     </Stack>
   )
@@ -123,42 +140,46 @@ export function AdminRegistrationOperationalStatus({
       flexWrap="wrap"
       useFlexGap
     >
-      <Tooltip title={t('gameApplication.adminPanel.teamReadyHint')} describeChild arrow>
-        <Chip
+      <HelpTooltip title={t('gameApplication.adminPanel.teamReadyHint')} describeChild arrow>
+        <StatusBadge
+          textFlow="singleLine"
           size="small"
           color={readyTeamsCount > 0 ? 'success' : 'default'}
           variant={readyTeamsCount > 0 ? 'filled' : 'outlined'}
           label={`${t('gameApplication.adminPanel.readyTeams')}: ${readyTeamsCount}`}
           tabIndex={0}
         />
-      </Tooltip>
-      <Tooltip
+      </HelpTooltip>
+      <HelpTooltip
         title={t('gameApplication.adminPanel.availablePlayersDescription')}
         describeChild
         arrow
       >
-        <Chip
+        <StatusBadge
+          textFlow="singleLine"
           size="small"
           variant="outlined"
           label={`${t('gameApplication.adminPanel.freePlayersStatus')}: ${availablePlayersCount}`}
           tabIndex={0}
         />
-      </Tooltip>
-      <Tooltip
+      </HelpTooltip>
+      <HelpTooltip
         title={t('gameApplication.adminPanel.disbandRequestsAlertDescription')}
         describeChild
         arrow
       >
-        <Chip
+        <StatusBadge
+          textFlow="singleLine"
           size="small"
           color={disbandRequestsCount > 0 ? 'warning' : 'default'}
           variant={disbandRequestsCount > 0 ? 'filled' : 'outlined'}
           label={`${t('gameApplication.adminPanel.disbandRequestsStatus')}: ${disbandRequestsCount}`}
           tabIndex={0}
         />
-      </Tooltip>
-      <Tooltip title={t('gameApplication.adminPanel.assignHint')} describeChild arrow>
-        <Chip
+      </HelpTooltip>
+      <HelpTooltip title={t('gameApplication.adminPanel.assignHint')} describeChild arrow>
+        <StatusBadge
+          textFlow="singleLine"
           size="small"
           variant="outlined"
           label={t('gameApplication.adminPanel.teamRulesStatus', {
@@ -167,7 +188,7 @@ export function AdminRegistrationOperationalStatus({
           })}
           tabIndex={0}
         />
-      </Tooltip>
+      </HelpTooltip>
     </Stack>
   )
 }
@@ -196,20 +217,20 @@ export function AdminRegistrationTeamReorderButton({
   onClick: () => void
 }) {
   return (
-    <Tooltip title={label} placement="right">
+    <HelpTooltip title={label} placement="right">
       <span>
-        <IconButton
+        <ActionIcon
           size="small"
           aria-label={label}
           disabled={disabled}
           onClick={onClick}
-          sx={teamReorderButtonSx}
+          appearance="outlined"
         >
           <Box component="span" aria-hidden sx={{ fontSize: 18, fontWeight: 700, lineHeight: 1 }}>
             {direction === 'up' ? '↑' : '↓'}
           </Box>
-        </IconButton>
+        </ActionIcon>
       </span>
-    </Tooltip>
+    </HelpTooltip>
   )
 }

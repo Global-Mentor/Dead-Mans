@@ -56,7 +56,13 @@ const translations = {
         label: 'Modifier history',
       },
       gameBoard: {
-        label: 'Game',
+        label: 'Board',
+      },
+      gameRound: {
+        label: 'Current round',
+      },
+      gameTeamQueue: {
+        label: 'Team queue',
       },
       gameLeaderboard: {
         label: 'Leaderboard',
@@ -145,7 +151,13 @@ const translations = {
         label: 'История модификаторов',
       },
       gameBoard: {
-        label: 'Игра',
+        label: 'Доска',
+      },
+      gameRound: {
+        label: 'Текущий раунд',
+      },
+      gameTeamQueue: {
+        label: 'Очередь команд',
       },
       gameLeaderboard: {
         label: 'Лидерборд',
@@ -234,7 +246,13 @@ const translations = {
         label: 'Історія модифікаторів',
       },
       gameBoard: {
-        label: 'Гра',
+        label: 'Дошка',
+      },
+      gameRound: {
+        label: 'Поточний раунд',
+      },
+      gameTeamQueue: {
+        label: 'Черга команд',
       },
       gameLeaderboard: {
         label: 'Лідерборд',
@@ -323,7 +341,13 @@ const translations = {
         label: 'Historia modyfikatorów',
       },
       gameBoard: {
-        label: 'Gra',
+        label: 'Plansza',
+      },
+      gameRound: {
+        label: 'Bieżąca runda',
+      },
+      gameTeamQueue: {
+        label: 'Kolejka drużyn',
       },
       gameLeaderboard: {
         label: 'Ranking',

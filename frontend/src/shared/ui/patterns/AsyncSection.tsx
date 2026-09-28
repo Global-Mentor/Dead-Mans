@@ -1,5 +1,6 @@
-import { Alert, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { InlineNotice } from '../feedback/messages/InlineNotice.tsx'
 
 interface AsyncSectionProps {
   isLoading: boolean
@@ -9,6 +10,8 @@ interface AsyncSectionProps {
   errorMessage: string
   emptyMessage: string
   children: ReactNode
+  hasData?: boolean
+  retryAction?: ReactNode
 }
 
 export function AsyncSection({
@@ -19,30 +22,35 @@ export function AsyncSection({
   errorMessage,
   emptyMessage,
   children,
+  hasData = false,
+  retryAction,
 }: AsyncSectionProps) {
-  if (isLoading) {
+  if (isLoading && !hasData)
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+      <Typography role="status" variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
         {loadingMessage}
       </Typography>
     )
-  }
-
-  if (isError) {
+  if (isError && !hasData)
     return (
-      <Alert severity="error" sx={{ mt: 1.5 }}>
+      <InlineNotice severity="error" action={retryAction} sx={{ mt: 1.5 }}>
         {errorMessage}
-      </Alert>
+      </InlineNotice>
     )
-  }
-
-  if (isEmpty) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-        {emptyMessage}
-      </Typography>
-    )
-  }
-
-  return <>{children}</>
+  return (
+    <>
+      {isError ? (
+        <InlineNotice severity="warning" action={retryAction} sx={{ mb: 1.5 }}>
+          {errorMessage}
+        </InlineNotice>
+      ) : null}
+      {isEmpty ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : (
+        children
+      )}
+    </>
+  )
 }

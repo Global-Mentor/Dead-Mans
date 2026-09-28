@@ -17,6 +17,7 @@ vi.mock('../../../shared/realtime/index.ts', () => ({
         modifierActivated: 'modifierActivated',
         modifierActivationCancelled: 'modifierActivationCancelled',
         gameLifecycleChanged: 'gameLifecycleChanged',
+        modifierAvailabilityChanged: 'modifierAvailabilityChanged',
       },
     },
   },
@@ -30,6 +31,48 @@ vi.mock('../api/game-board-data-access.ts', () => ({
 
 describe('GameBoardRealtimeSync', () => {
   afterEach(() => vi.clearAllMocks())
+
+  it('refreshes the round and modifiers when the connection is restored', async () => {
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
+    mocks.fetchSnapshot.mockResolvedValue(null)
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GameBoardRealtimeSync />
+      </QueryClientProvider>,
+    )
+
+    await act(async () => {
+      await mocks.useSignalrHubSubscription.mock.calls[0]?.[0].onConnected()
+    })
+
+    expect(mocks.fetchSnapshot).toHaveBeenCalledOnce()
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRounds', 'active'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameModifiers'] })
+  })
+
+  it('resynchronizes the board after another client opens a card', async () => {
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GameBoardRealtimeSync />
+      </QueryClientProvider>,
+    )
+    const options = mocks.useSignalrHubSubscription.mock.calls[0]?.[0]
+    const handlers = new Map<string, (event: unknown) => void>()
+    options.registerEventHandlers({
+      on: vi.fn((name: string, handler: (event: unknown) => void) => handlers.set(name, handler)),
+      off: vi.fn(),
+    })
+
+    act(() => {
+      handlers.get('cellOpened')?.({ gameId: 'game-1', version: 2, cell: { id: 'cell-1' } })
+    })
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRounds', 'active'] })
+  })
 
   it('refreshes board-specific completion views without repeating the shared lifecycle invalidation', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

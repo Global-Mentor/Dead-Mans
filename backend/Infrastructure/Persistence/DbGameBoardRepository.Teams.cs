@@ -1,4 +1,5 @@
 using backend.Application.Contracts;
+using backend.Application.Features.Scoring;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,31 @@ public sealed partial class DbGameBoardRepository
             return EmptyTeamQueueResult();
         }
 
+        var completedRounds = await _dbContext.GameRounds
+            .AsNoTracking()
+            .Where(round =>
+                round.GameId == currentGameId.Value
+                && round.Status == GameRoundStatusValue.Completed
+            )
+            .Select(round => new { round.TeamId, round.FinalScore })
+            .ToArrayAsync(cancellationToken);
+        var scoresByTeam = completedRounds
+            .GroupBy(round => round.TeamId)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    var scoreValues = group.Select(round =>
+                    {
+                        var finalScore = round.FinalScore
+                            ?? throw new InvalidOperationException("A completed round must have a final score.");
+                        return GameTeamRoundScoreValue.FromPersistedFinalScore(finalScore);
+                    }).ToArray();
+                    return GameTeamResultCalculator.CalculateScore(scoreValues)?.FinalScore
+                        ?? throw new InvalidOperationException("Completed rounds must produce a team score.");
+                }
+            );
+
         var teams = rosters
             .Select(roster =>
                 new GameTeamQueueItem(
@@ -45,6 +71,7 @@ public sealed partial class DbGameBoardRepository
                     roster.TeamSlotIndex,
                     roster.IsPlayed,
                     roster.PlayedAtUtc,
+                    scoresByTeam.TryGetValue(roster.TeamId, out var score) ? score : null,
                     roster.Participants
                         .Select(participant => new GameTeamQueueParticipant(
                             participant.UserId,
@@ -57,6 +84,7 @@ public sealed partial class DbGameBoardRepository
 
         var playedTeams = teams.Count(x => x.IsPlayed);
         return new GameTeamQueueResult(
+            currentGameId.Value.ToString(),
             new GameTeamQueueSummary(
                 teams.Length,
                 playedTeams,
@@ -69,6 +97,7 @@ public sealed partial class DbGameBoardRepository
     private static GameTeamQueueResult EmptyTeamQueueResult()
     {
         return new GameTeamQueueResult(
+            null,
             new GameTeamQueueSummary(0, 0, 0),
             Array.Empty<GameTeamQueueItem>()
         );
@@ -105,7 +134,8 @@ public sealed partial class DbGameBoardRepository
             && await _dbContext.GameRounds.AnyAsync(
                 round =>
                     round.GameId == activeGame.Id
-                    && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                    && (round.Status == GameRoundStatusValue.CardOpened
+                        || round.Status == GameRoundStatusValue.AwaitingModifiers
                         || round.Status == GameRoundStatusValue.Preparing
                         || round.Status == GameRoundStatusValue.InProgress
                         || round.Status == GameRoundStatusValue.ReviewingResults),
@@ -201,7 +231,8 @@ public sealed partial class DbGameBoardRepository
         if (isPlayed && await _dbContext.GameRounds.AnyAsync(
                 round =>
                     round.GameId == activeGame.Id
-                    && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                    && (round.Status == GameRoundStatusValue.CardOpened
+                        || round.Status == GameRoundStatusValue.AwaitingModifiers
                         || round.Status == GameRoundStatusValue.Preparing
                         || round.Status == GameRoundStatusValue.InProgress
                         || round.Status == GameRoundStatusValue.ReviewingResults),
@@ -290,7 +321,8 @@ public sealed partial class DbGameBoardRepository
         return await _dbContext.GameRounds.AnyAsync(
             round =>
                 round.GameId == activeGameId.Value
-                && (round.Status == GameRoundStatusValue.AwaitingModifiers
+                && (round.Status == GameRoundStatusValue.CardOpened
+                    || round.Status == GameRoundStatusValue.AwaitingModifiers
                     || round.Status == GameRoundStatusValue.Preparing
                     || round.Status == GameRoundStatusValue.InProgress
                     || round.Status == GameRoundStatusValue.ReviewingResults),

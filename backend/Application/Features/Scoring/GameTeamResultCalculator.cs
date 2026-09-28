@@ -10,6 +10,17 @@ public sealed record GameTeamRoundScoreFact(
     DateTime FinishedAtUtc
 );
 
+public sealed record GameTeamRoundScoreValue(int FinalScore, int PenaltyTotal)
+{
+    public static GameTeamRoundScoreValue FromPersistedFinalScore(int finalScore) =>
+        new(
+            finalScore,
+            finalScore < 0 ? SaturatingInt32.From(Math.Abs((long)finalScore)) : 0
+        );
+}
+
+public sealed record CalculatedGameTeamScore(int BestScore, int PenaltyTotal, int FinalScore);
+
 public sealed record GameTeamResultCalculationInput(
     Guid TeamId,
     string? TeamName,
@@ -43,6 +54,24 @@ public static class GameTeamResultCalculator
 {
     // Version 2 finalizations include only teams that opened a card, including cancelled rounds.
     public const int CalculationVersion = 2;
+
+    public static CalculatedGameTeamScore? CalculateScore(
+        IReadOnlyList<GameTeamRoundScoreValue> rounds
+    )
+    {
+        if (rounds.Count == 0)
+        {
+            return null;
+        }
+
+        var bestScore = rounds.Max(round => Math.Max(0L, (long)round.FinalScore + round.PenaltyTotal));
+        var penaltyTotal = rounds.Sum(round => (long)round.PenaltyTotal);
+        return new CalculatedGameTeamScore(
+            SaturatingInt32.From(bestScore),
+            SaturatingInt32.From(penaltyTotal),
+            SaturatingInt32.From(bestScore - penaltyTotal)
+        );
+    }
 
     public static IReadOnlyList<CalculatedGameTeamResult> Calculate(
         IEnumerable<GameTeamResultCalculationInput> teams
@@ -114,8 +143,9 @@ public static class GameTeamResultCalculator
         var orderedByTime = team.Rounds.OrderByDescending(x => x.FinishedAtUtc).ToArray();
         var bestRound = orderedByScore[0];
         var latestRound = orderedByTime[0];
-        var bestScore = Math.Max(0L, (long)bestRound.FinalScore + bestRound.PenaltyTotal);
-        var penaltyTotal = team.Rounds.Sum(x => (long)x.PenaltyTotal);
+        var score = CalculateScore(
+            team.Rounds.Select(round => new GameTeamRoundScoreValue(round.FinalScore, round.PenaltyTotal)).ToArray()
+        ) ?? throw new InvalidOperationException("A team with completed rounds must have a score.");
         var totalScore = team.Rounds.Sum(x => (long)x.FinalScore);
 
         return new CalculatedGameTeamResult(
@@ -124,9 +154,9 @@ public static class GameTeamResultCalculator
             team.TeamSlotIndex,
             team.ParticipantNames,
             team.Rounds.Count,
-            SaturatingInt32.From(bestScore),
-            SaturatingInt32.From(penaltyTotal),
-            SaturatingInt32.From(bestScore - penaltyTotal),
+            score.BestScore,
+            score.PenaltyTotal,
+            score.FinalScore,
             SaturatingInt32.From(totalScore),
             SaturatingInt32.From(Math.Round((decimal)totalScore / team.Rounds.Count)),
             SaturatingInt32.From(team.Rounds.Sum(x => (long)x.BonusDelta)),

@@ -1,10 +1,14 @@
-import { Box, Chip, Divider, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { ModifierVersionDetail } from '../../../shared/api/contracts/index.ts'
-import { SectionCard } from '../../../shared/ui/index.ts'
-
+import {
+  ItemCard,
+  NativeDisclosure,
+  SectionCard,
+  SectionDivider,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 export function ModifierVersionDetails({
   item,
   previous,
@@ -26,12 +30,14 @@ export function ModifierVersionDetails({
             {item.iconEmoji ? `${item.iconEmoji} ` : ''}
             {item.name}
           </Typography>
-          {item.isCurrent ? <Chip color="success" label={t('modifierHistory.current')} /> : null}
-          {item.isArchived ? (
-            <Chip color="warning" label={t('modifierHistory.archivedBadge')} />
+          {item.isCurrent ? (
+            <StatusBadge color="success" label={t('modifierHistory.current')} />
           ) : null}
-          <Chip label={t(`modifierHistory.changeTypes.${item.changeType}`)} />
-          <Chip label={t('modifierHistory.revision', { revision: String(item.revision) })} />
+          {item.isArchived ? (
+            <StatusBadge color="warning" label={t('modifierHistory.archivedBadge')} />
+          ) : null}
+          <StatusBadge label={t(`modifierHistory.changeTypes.${item.changeType}`)} />
+          <StatusBadge label={t('modifierHistory.revision', { revision: String(item.revision) })} />
         </Stack>
         <Typography color="text.secondary">
           {t('modifierHistory.by', {
@@ -46,21 +52,16 @@ export function ModifierVersionDetails({
           <Typography variant="subtitle2">{t('modifierHistory.changedFields')}</Typography>
           <Stack spacing={0.75} sx={{ mt: 0.75 }}>
             {item.changedFields.map((field) => (
-              <Box
+              <ItemCard
                 key={field}
-                sx={(theme) => ({
+                sx={{
                   display: 'grid',
                   gridTemplateColumns: 'minmax(0, 1fr)',
                   '@container (min-width: 650px)': {
                     gridTemplateColumns: '150px minmax(0, 1fr) minmax(0, 1fr)',
                   },
                   gap: 0.75,
-                  p: 1,
-                  backgroundColor: alpha(theme.palette.common.black, 0.18),
-                  '&:nth-of-type(even)': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.065),
-                  },
-                })}
+                }}
               >
                 <Typography variant="body2" fontWeight={700}>
                   {t(`modifierHistory.fields.${field}`, { defaultValue: field })}
@@ -78,11 +79,11 @@ export function ModifierVersionDetails({
                 <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
                   {t('modifierHistory.after')}: {formatDiffValue(item, field, t)}
                 </Typography>
-              </Box>
+              </ItemCard>
             ))}
           </Stack>
         </Box>
-        <Divider />
+        <SectionDivider />
         <Typography variant="h6">{t('modifierHistory.fullConfiguration')}</Typography>
         <ModifierConfigurationReadOnly item={item} />
       </Stack>
@@ -136,18 +137,7 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
           </Typography>
         </Box>
       </Box>
-      <Box component="details">
-        <Typography
-          component="summary"
-          variant="subtitle2"
-          sx={{
-            cursor: 'pointer',
-            py: 0.75,
-            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-          }}
-        >
-          {t('modifierHistory.behavior')}
-        </Typography>
+      <NativeDisclosure summary={<>{t('modifierHistory.behavior')}</>}>
         <Box
           sx={{
             display: 'grid',
@@ -168,7 +158,7 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
             </Box>
           ))}
         </Box>
-      </Box>
+      </NativeDisclosure>
     </Stack>
   )
 }

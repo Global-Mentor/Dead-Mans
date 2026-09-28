@@ -1,7 +1,7 @@
 import { CircularProgress, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { huntBrassTitleSx } from '../../theme/surface-sx.ts'
-import { SectionCard } from '../primitives/SectionCard.tsx'
+import { SectionCard } from '../primitives/surfaces/SectionCard.tsx'
 
 interface PageStatePanelProps {
   title?: string

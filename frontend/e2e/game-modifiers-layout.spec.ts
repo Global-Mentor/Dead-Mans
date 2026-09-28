@@ -171,6 +171,12 @@ for (const size of [
     const available = page.getByTestId('available-modifiers-section')
     await expect(summary).toBeVisible()
     await expect(available).toBeVisible()
+    // Composed surfaces must use the same square corners as the shared theme.
+    const corners = await page
+      .locator('main .MuiPaper-root')
+      .evaluateAll((surfaces) => surfaces.map((surface) => getComputedStyle(surface).borderRadius))
+    expect(corners.length).toBeGreaterThan(0)
+    expect(corners.every((radius) => radius === '0px')).toBe(true)
     await page.screenshot({ path: testInfo.outputPath('modifiers.png') })
     const search = page.getByRole('textbox', { name: 'Поиск модификаторов' })
     await search.fill('Нет такого модификатора')
@@ -201,7 +207,7 @@ for (const size of [
 for (const width of [390, 800]) {
   test(`available modifiers come first without horizontal scroll at ${width}px`, async ({
     page,
-  }) => {
+  }, info) => {
     await page.setViewportSize({ width, height: 844 })
     await mockModifiers(page)
     await page.goto('/panel/game-modifiers')
@@ -211,6 +217,11 @@ for (const width of [390, 800]) {
     expect(available).not.toBeNull()
     expect(active).not.toBeNull()
     expect(available!.y).toBeLessThan(active!.y)
+    await page.screenshot({
+      path: info.outputPath('mobile-modifiers.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       width,
     )

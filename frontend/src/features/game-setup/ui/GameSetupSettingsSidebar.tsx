@@ -1,10 +1,10 @@
-import { Box, Divider, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
-import { AppButton, FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import { AppButton, FormTextField, SectionCard, SectionDivider } from '../../../shared/ui/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { GAME_SETUP_MAX_TITLE_LENGTH } from '../model/game-setup-limits.ts'
+import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
 import { GameSetupBoardLayoutDialog } from './GameSetupBoardLayoutDialog.tsx'
 import { ResetGameSetupDialog } from './ResetGameSetupDialog.tsx'
 
@@ -59,7 +59,7 @@ export function GameSetupSettingsSidebar({
             inputProps={{ maxLength: GAME_SETUP_MAX_TITLE_LENGTH }}
           />
 
-          <Divider />
+          <SectionDivider />
 
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -79,11 +79,11 @@ export function GameSetupSettingsSidebar({
 
           {children ? (
             <>
-              <Divider />
+              <SectionDivider />
               {children}
             </>
           ) : null}
-          <Divider />
+          <SectionDivider />
 
           <AppButton
             tone="dangerSecondary"

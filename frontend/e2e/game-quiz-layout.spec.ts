@@ -19,7 +19,7 @@ const questions = [
   },
 ]
 
-async function mockQuiz(page: Page) {
+async function mockQuiz(page: Page, roundPhase?: string) {
   let starts = 0
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
   await page.routeWebSocket(/\/hubs\/game-board/, (socket) => {
@@ -79,6 +79,8 @@ async function mockQuiz(page: Page) {
         })
       if (path.endsWith('/integrations/twitch/status'))
         return route.fulfill({ json: { enabled: false } })
+      if (path.endsWith('/rounds/active') && roundPhase)
+        return route.fulfill({ json: { gameId: 'quiz', status: roundPhase } })
       if (path.endsWith('/quiz/current')) return route.fulfill({ status: 204 })
       if (path.endsWith('/questions/available')) return route.fulfill({ json: questions })
       if (path.endsWith('/history/games/quiz'))
@@ -139,6 +141,19 @@ async function mockQuiz(page: Page) {
   return { starts: () => starts }
 }
 
+test('quiz launch is unavailable while modifiers are being ordered', async ({ page }) => {
+  const mock = await mockQuiz(page, 'awaiting_modifiers')
+  await page.goto('/panel/game-quiz')
+  await expect(page.getByRole('button', { name: 'Следующий вопрос' })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Задать конкретный вопрос', exact: true }),
+  ).toBeDisabled()
+  await expect(
+    page.getByText('Завершите заказ модификаторов, прежде чем запускать вопрос.'),
+  ).toBeVisible()
+  expect(mock.starts()).toBe(0)
+})
+
 for (const size of [
   { width: 1366, height: 768 },
   { width: 1920, height: 1080 },
@@ -175,8 +190,8 @@ for (const size of [
   })
 }
 
-for (const width of [390, 800]) {
-  test(`quiz uses a readable single column at ${width}px`, async ({ page }) => {
+for (const width of [320, 390, 768, 1440]) {
+  test(`quiz uses a readable single column at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 })
     await mockQuiz(page)
     await page.goto('/panel/game-quiz')
@@ -189,7 +204,12 @@ for (const width of [390, 800]) {
     const history = await page
       .getByRole('tablist', { name: 'Викторина', exact: true })
       .boundingBox()
-    expect(history!.y).toBeGreaterThan(current!.y + current!.height)
+    if (width < 1000) expect(history!.y).toBeGreaterThan(current!.y + current!.height)
+    await page.screenshot({
+      path: info.outputPath('quiz-history.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
   })
 }
 

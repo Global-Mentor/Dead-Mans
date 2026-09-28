@@ -1,16 +1,9 @@
 import { useQueries } from '@tanstack/react-query'
-import type { GameTeamQueueSummary } from '../../shared/api/contracts/index.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import {
   currentGameBoardQueryOptions,
   currentGameTeamQueueQueryOptions,
 } from './api/game-board-queries.ts'
-
-const emptyTeamQueueSummary: GameTeamQueueSummary = {
-  totalTeams: 0,
-  playedTeams: 0,
-  remainingTeams: 0,
-}
 
 export function useGameBoardPage() {
   const [snapshotQuery, activeRoundQuery, teamQueueQuery] = useQueries({
@@ -20,15 +13,31 @@ export function useGameBoardPage() {
       currentGameTeamQueueQueryOptions,
     ],
   })
+  const hasCurrentTeamQueue = Boolean(
+    snapshotQuery.data && teamQueueQuery.data?.gameId === snapshotQuery.data.gameId,
+  )
+  const hasActiveRoundData =
+    activeRoundQuery.data === null ||
+    (activeRoundQuery.data !== undefined &&
+      activeRoundQuery.data.gameId === snapshotQuery.data?.gameId)
 
   return {
     data: snapshotQuery.data,
-    activeRound: activeRoundQuery.data ?? null,
-    teamQueue: teamQueueQuery.data?.teams ?? [],
-    teamQueueSummary: teamQueueQuery.data?.summary ?? emptyTeamQueueSummary,
+    hasActiveRoundData,
+    activeRound:
+      activeRoundQuery.data?.gameId === snapshotQuery.data?.gameId
+        ? (activeRoundQuery.data ?? null)
+        : null,
+    teamQueue: hasCurrentTeamQueue ? (teamQueueQuery.data?.teams ?? []) : [],
     isTeamQueueLoading: teamQueueQuery.isLoading,
     isTeamQueueError: teamQueueQuery.isError,
-    isLoading: snapshotQuery.isLoading || activeRoundQuery.isLoading,
-    isError: snapshotQuery.isError || activeRoundQuery.isError,
+    hasTeamQueueData: hasCurrentTeamQueue,
+    isTeamQueueRefreshing: teamQueueQuery.isFetching,
+    retryTeamQueue: () => void teamQueueQuery.refetch(),
+    retry: () => void Promise.all([snapshotQuery.refetch(), activeRoundQuery.refetch()]),
+    isRefreshing: snapshotQuery.isFetching || activeRoundQuery.isFetching,
+    isLoading: snapshotQuery.isLoading,
+    isError: snapshotQuery.isError && snapshotQuery.data === undefined,
+    isRefreshError: snapshotQuery.isRefetchError || activeRoundQuery.isError,
   }
 }

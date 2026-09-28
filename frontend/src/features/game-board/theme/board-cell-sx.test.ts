@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { alpha } from '@mui/material/styles'
 import { appTheme } from '../../../app/theme/appTheme.ts'
 import { createBoardCellSx } from './board-cell-sx.ts'
+import { boardGridMetrics } from './board-grid-metrics.ts'
 
 describe('createBoardCellSx', () => {
   it('gives closed cards a calm, distinct surface and hover lift', () => {
@@ -11,7 +12,7 @@ describe('createBoardCellSx', () => {
     }
 
     const styles = resolver(appTheme) as Record<string, unknown>
-    expect(styles.aspectRatio).toBe('2 / 3')
+    expect(styles.aspectRatio).toBe(boardGridMetrics.cardAspectRatio)
     expect(styles.width).toBe('100%')
     expect(styles.minHeight).toBe(0)
     expect(styles.background).toBe(alpha(appTheme.palette.primary.main, 0.065))

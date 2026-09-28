@@ -1,15 +1,15 @@
 import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
-import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton, AppDialog } from '../../../shared/ui/index.ts'
+import { useViewportPanelHeight } from '../../../shared/lib/use-viewport-panel-height.ts'
+import { AppButton, AppDialog, ContentTabs, ItemCard } from '../../../shared/ui/index.ts'
 import { type GameHistoryTeamLeaderboardEntry } from '../model/game-history-team-leaderboard.ts'
 import { CancelledRoundsSection } from './CancelledRoundsSection.tsx'
 import { CurrentLeaderboardTable } from './CurrentLeaderboardTable.tsx'
 import { CurrentLeaderboardTeamDetails } from './CurrentLeaderboardTeamDetails.tsx'
 import { GameModifierHistorySummary } from './GameModifierHistorySummary.tsx'
-import { useLeaderboardViewport } from './use-leaderboard-viewport.ts'
+import { QuizLeaderboard } from './QuizLeaderboard.tsx'
 
 type GameHistoryGameDetails = components['schemas']['GameHistoryGameDetailsDto']
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -28,7 +28,7 @@ export function CurrentGameLeaderboard({
   const [teamDialogOpen, setTeamDialogOpen] = useState(false)
   const isWide = useMediaQuery('(min-width: 1000px)')
   const isPhone = useMediaQuery('(max-width: 599px)')
-  const leaderboardGridRef = useLeaderboardViewport()
+  const leaderboardGridRef = useViewportPanelHeight('--leaderboard-panel-height', 340)
 
   if (!gameDetails) {
     return null
@@ -50,83 +50,94 @@ export function CurrentGameLeaderboard({
 
   return (
     <Stack spacing={1}>
-      {leaderboard.length === 0 ? (
-        <Box
-          sx={(theme) => ({
-            borderRadius: 2,
-            backgroundColor: alpha(theme.palette.warning.main, 0.07),
-            boxShadow: `inset 2px 0 0 ${alpha(theme.palette.warning.main, 0.55)}`,
-            px: 1.5,
-            py: 1.35,
-          })}
-        >
-          <Typography variant="body2" color="text.secondary">
-            {t('gameHistory.currentRoundsMissing')}
-          </Typography>
-        </Box>
-      ) : (
-        <Box
-          ref={leaderboardGridRef}
-          data-testid="current-leaderboard-grid"
-          sx={{
-            display: 'grid',
-            gap: 1,
-            gridTemplateColumns: 'minmax(0, 1fr)',
-            '@media (min-width: 1000px)': {
-              gridTemplateColumns: 'minmax(0, 1.22fr) minmax(340px, 0.78fr)',
-            },
-            alignItems: 'start',
-          }}
-        >
-          <CurrentLeaderboardTable
-            entries={leaderboard}
-            selectedTeamId={selectedEntry?.teamId ?? null}
-            onSelectTeam={(teamId) => {
-              setSelectedTeamId(teamId)
-              if (!isWide) setTeamDialogOpen(true)
-            }}
-          />
+      <ContentTabs
+        label={t('gameHistory.title')}
+        items={[
+          {
+            id: 'teams',
+            label: t('common.entities.teams'),
+            content: (
+              <>
+                {leaderboard.length === 0 ? (
+                  <ItemCard>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('gameHistory.currentRoundsMissing')}
+                    </Typography>
+                  </ItemCard>
+                ) : (
+                  <Box
+                    ref={leaderboardGridRef}
+                    data-testid="current-leaderboard-grid"
+                    sx={{
+                      display: 'grid',
+                      gap: 1,
+                      gridTemplateColumns: 'minmax(0, 1fr)',
+                      '@media (min-width: 1000px)': {
+                        gridTemplateColumns: 'minmax(0, 1.22fr) minmax(340px, 0.78fr)',
+                      },
+                      alignItems: 'start',
+                    }}
+                  >
+                    <CurrentLeaderboardTable
+                      entries={leaderboard}
+                      inlineDetails={isWide}
+                      selectedTeamId={selectedEntry?.teamId ?? null}
+                      onSelectTeam={(teamId) => {
+                        setSelectedTeamId(teamId)
+                        if (!isWide) setTeamDialogOpen(true)
+                      }}
+                    />
 
-          {isWide ? (
-            <CurrentLeaderboardTeamDetails
-              key={selectedEntry?.teamId}
-              entry={selectedEntry}
-              rank={
-                selectedEntry
-                  ? leaderboard.findIndex((entry) => entry.teamId === selectedEntry.teamId) + 1
-                  : 0
-              }
-              onPreviewCard={onPreviewCard}
-            />
-          ) : null}
-        </Box>
-      )}
-      <AppDialog
-        fullScreen={isPhone}
-        open={!isWide && teamDialogOpen}
-        onClose={() => setTeamDialogOpen(false)}
-        title={t('common.entities.team')}
-        actions={
-          <AppButton tone="secondary" onClick={() => setTeamDialogOpen(false)}>
-            {t('common.actions.close')}
-          </AppButton>
-        }
-        sx={{
-          '& .MuiDialogContent-root': { p: { xs: 1, sm: 2 } },
-          '& .MuiDialog-paper': { borderColor: 'primary.dark' },
-        }}
-      >
-        <CurrentLeaderboardTeamDetails
-          key={selectedEntry?.teamId}
-          entry={selectedEntry}
-          rank={
-            selectedEntry
-              ? leaderboard.findIndex((entry) => entry.teamId === selectedEntry.teamId) + 1
-              : 0
-          }
-          onPreviewCard={onPreviewCard}
-        />
-      </AppDialog>
+                    {isWide ? (
+                      <CurrentLeaderboardTeamDetails
+                        key={selectedEntry?.teamId}
+                        entry={selectedEntry}
+                        rank={
+                          selectedEntry
+                            ? leaderboard.findIndex(
+                                (entry) => entry.teamId === selectedEntry.teamId,
+                              ) + 1
+                            : 0
+                        }
+                        onPreviewCard={onPreviewCard}
+                      />
+                    ) : null}
+                  </Box>
+                )}
+                <AppDialog
+                  fullScreen={isPhone}
+                  open={!isWide && teamDialogOpen}
+                  onClose={() => setTeamDialogOpen(false)}
+                  title={t('common.entities.team')}
+                  actions={
+                    <AppButton tone="secondary" onClick={() => setTeamDialogOpen(false)}>
+                      {t('common.actions.close')}
+                    </AppButton>
+                  }
+                  contentDensity="compact"
+                >
+                  <CurrentLeaderboardTeamDetails
+                    key={selectedEntry?.teamId}
+                    entry={selectedEntry}
+                    rank={
+                      selectedEntry
+                        ? leaderboard.findIndex((entry) => entry.teamId === selectedEntry.teamId) +
+                          1
+                        : 0
+                    }
+                    onPreviewCard={onPreviewCard}
+                  />
+                </AppDialog>
+              </>
+            ),
+          },
+          {
+            id: 'quiz',
+            label: t('gameHistory.quizLeaderboardTitle'),
+            content: <QuizLeaderboard entries={gameDetails.quiz.playerStats} defaultExpanded />,
+          },
+        ]}
+      />
       <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />
       <GameModifierHistorySummary
         rounds={gameDetails.mainGame.rounds}

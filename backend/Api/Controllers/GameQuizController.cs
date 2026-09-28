@@ -44,6 +44,7 @@ public sealed class GameQuizController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AskNextQuestion(CancellationToken cancellationToken)
     {
@@ -72,6 +73,10 @@ public sealed class GameQuizController : ControllerBase
                 AppMessages.Client.GameQuizNoAvailableQuestions,
                 AppMessages.ErrorCodes.GameQuizNoAvailableQuestions
             ),
+            AskGameQuizQuestionOutcome.ModifierOrderingActive => this.ConflictError(
+                AppMessages.Client.GameQuizModifierOrderingActive,
+                AppMessages.ErrorCodes.GameQuizModifierOrderingActive
+            ),
             _ => this.StatusError(
                 StatusCodes.Status500InternalServerError,
                 AppMessages.Client.UnexpectedServerError
@@ -82,6 +87,7 @@ public sealed class GameQuizController : ControllerBase
     [HttpPost("questions/{questionId:guid}/ask")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     [ProducesResponseType(typeof(AskedQuizQuestionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AskQuestion(Guid questionId, CancellationToken cancellationToken)
     {
         if (_twitchBot?.IsEnabled == true)
@@ -109,6 +115,10 @@ public sealed class GameQuizController : ControllerBase
                 AppMessages.Client.GameQuizNoAvailableQuestions,
                 AppMessages.ErrorCodes.GameQuizNoAvailableQuestions
             ),
+            AskGameQuizQuestionOutcome.ModifierOrderingActive => this.ConflictError(
+                AppMessages.Client.GameQuizModifierOrderingActive,
+                AppMessages.ErrorCodes.GameQuizModifierOrderingActive
+            ),
             _ => this.StatusError(StatusCodes.Status500InternalServerError, AppMessages.Client.UnexpectedServerError)
         };
     }
@@ -116,7 +126,7 @@ public sealed class GameQuizController : ControllerBase
     private IActionResult MapTwitchPreparation(PrepareTwitchQuizQuestionResult result) => result.Outcome switch
     {
         PrepareTwitchQuizQuestionOutcome.Prepared => Accepted(result),
-        PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome =>
+        PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome or PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive =>
             this.ConflictError(TwitchBotController.GetPreparationMessage(result.Outcome), TwitchBotController.GetPreparationCode(result.Outcome)),
         PrepareTwitchQuizQuestionOutcome.NoActiveGame or PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions =>
             this.NotFoundError(TwitchBotController.GetPreparationMessage(result.Outcome), TwitchBotController.GetPreparationCode(result.Outcome)),

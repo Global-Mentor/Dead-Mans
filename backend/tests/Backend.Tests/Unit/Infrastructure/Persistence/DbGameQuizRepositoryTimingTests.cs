@@ -21,14 +21,41 @@ public sealed class DbGameQuizRepositoryTimingTests
         var result = await repository.AskQuizQuestionAsync(
             seeded.GameId, null, new TwitchGameQuizQuestionDelivery("channel-1", "message-1"));
 
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Options.Count);
-        Assert.Equal(result.Options.Select(x => x.OptionId),
+        Assert.Equal(AskQuizQuestionRepositoryOutcome.Asked, result.Outcome);
+        Assert.NotNull(result.Question);
+        Assert.Equal(2, result.Question.Options.Count);
+        Assert.Equal(result.Question.Options.Select(x => x.OptionId),
             (await repository.GetCurrentQuizStateAsync(seeded.UserId))!.Options.Select(x => x.OptionId));
         var session = await db.GameQuizQuestionSessions.SingleAsync();
         Assert.Equal(GameQuizDeliveryKindValue.Twitch, session.DeliveryKind);
         Assert.Equal("channel-1", session.SourceChannelId);
         Assert.Equal(now.AddSeconds(45).UtcDateTime, session.ClosesAtUtc);
+    }
+
+    [Fact]
+    public async Task AskQuizQuestion_WhenModifierOrderingActive_DoesNotCreateSession()
+    {
+        var now = new DateTimeOffset(2026, 9, 8, 12, 0, 0, TimeSpan.Zero);
+        await using var db = CreateDbContext();
+        var seeded = await SeedEnabledQuestionAsync(db, now.UtcDateTime);
+        db.GameRounds.Add(new GameRound
+        {
+            Id = Guid.NewGuid(),
+            GameId = seeded.GameId,
+            BoardId = Guid.NewGuid(),
+            BoardCellId = Guid.NewGuid(),
+            TeamId = Guid.NewGuid(),
+            Status = GameRoundStatusValue.AwaitingModifiers,
+            CreatedAtUtc = now.UtcDateTime,
+            UpdatedAtUtc = now.UtcDateTime
+        });
+        await db.SaveChangesAsync();
+
+        var result = await new DbGameQuizRepository(db, new FixedTimeProvider(now))
+            .AskQuizQuestionAsync(seeded.GameId, null, new ManualGameQuizQuestionDelivery(seeded.UserId));
+
+        Assert.Equal(AskQuizQuestionRepositoryOutcome.ModifierOrderingActive, result.Outcome);
+        Assert.Empty(db.GameQuizQuestionSessions);
     }
 
     [Fact]

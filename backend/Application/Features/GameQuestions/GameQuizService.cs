@@ -52,12 +52,17 @@ public sealed class GameQuizService : IGameQuizService
             return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.NoActiveGame);
         }
 
-        var askedQuestion = await _repository.AskQuizQuestionAsync(
+        var askResult = await _repository.AskQuizQuestionAsync(
             activeGameId.Value,
             questionId,
             delivery,
             cancellationToken
         );
+        if (askResult.Outcome == AskQuizQuestionRepositoryOutcome.ModifierOrderingActive)
+        {
+            return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.ModifierOrderingActive);
+        }
+        var askedQuestion = askResult.Question;
         if (askedQuestion is null)
         {
             return new AskGameQuizQuestionResult(AskGameQuizQuestionOutcome.NoAvailableQuestions);

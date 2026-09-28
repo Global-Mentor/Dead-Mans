@@ -1,8 +1,14 @@
-import { Box, Chip, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { SectionCard } from '../../../shared/ui/index.ts'
+import {
+  ContentTabs,
+  DisclosureSection,
+  ItemCard,
+  Metric,
+  SectionCard,
+  StatusBadge,
+} from '../../../shared/ui/index.ts'
 import { sortTeamLeaderboardEntries } from '../model/game-history-team-leaderboard.ts'
 import {
   formatDateTime,
@@ -15,8 +21,8 @@ import { CancelledRoundsSection } from './CancelledRoundsSection.tsx'
 import { FinalResultSnapshot } from './GameHistoryFinalResult.tsx'
 import { TeamLeaderboardRow } from './GameHistoryLeaderboard.tsx'
 import { RoundHistoryRow } from './GameHistoryRoundRow.tsx'
-import { CollapsibleSection, MetricChip } from './game-history-surfaces.tsx'
 import { GameModifierHistorySummary } from './GameModifierHistorySummary.tsx'
+import { QuizLeaderboard } from './QuizLeaderboard.tsx'
 
 type GameHistoryGameDetails = components['schemas']['GameHistoryGameDetailsDto']
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -40,25 +46,18 @@ export function GameDetailsPanel({
 
   return (
     <Stack spacing={1} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-      <Box
-        sx={(theme) => ({
-          borderRadius: 2.5,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-          background: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 100%)`,
-          p: 1.25,
-        })}
-      >
+      <ItemCard>
         <Stack spacing={1.25}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} alignItems="flex-start">
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Chip
+                <StatusBadge
                   label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`, {
                     defaultValue: t('gameHistory.notAvailable'),
                   })}
                   color={getGameStatusColor(game.gameStatus)}
                 />
-                <Chip
+                <StatusBadge
                   label={t('gameHistory.statusChipArchived')}
                   color="default"
                   variant="outlined"
@@ -72,74 +71,92 @@ export function GameDetailsPanel({
           </Stack>
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.createdAt')}
               value={formatDateTime(game.createdAtUtc, i18n.resolvedLanguage)}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.startedAt')}
               value={formatOptionalDateTime(game.startedAtUtc, t, i18n.resolvedLanguage)}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.finishedAt')}
               value={formatOptionalDateTime(game.finishedAtUtc, t, i18n.resolvedLanguage)}
             />
           </Stack>
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.roundCount')}
               value={t('gameHistory.countValue', { count: completedRounds.length })}
             />
-            <MetricChip
+            <Metric
               label={t('common.entities.modifiers')}
               value={t('gameHistory.countValue', {
                 count: game.mainGame.modifierActivations.length,
               })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.quizCount')}
               value={t('gameHistory.countValue', { count: game.quiz.questionSessions.length })}
             />
-            <MetricChip
+            <Metric
               label={t('gameHistory.summary.quizPoints')}
               value={t('gameHistory.pointsValue', { points: game.quiz.totalPoints })}
             />
           </Stack>
         </Stack>
-      </Box>
+      </ItemCard>
 
-      {finalResult ? <FinalResultSnapshot summary={finalResult} /> : null}
+      <ContentTabs
+        label={t('gameHistory.title')}
+        items={[
+          {
+            id: 'teams',
+            label: t('common.entities.teams'),
+            content: (
+              <>
+                {finalResult ? <FinalResultSnapshot summary={finalResult} /> : null}
 
-      {!finalResult ? (
-        <SectionCard surface="inset" sx={{ p: 0 }}>
-          <CollapsibleSection
-            title={t('gameHistory.summary.bestTeams')}
-            description={t('gameHistory.summary.bestTeamsDescription')}
-            countLabel={t('gameHistory.summary.teamCountShort', {
-              count: teamStats.length,
-            })}
-            defaultExpanded
-          >
-            {teamStats.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('gameHistory.summary.noRounds')}
-              </Typography>
-            ) : (
-              <Stack spacing={1}>
-                {teamStats.map((entry, index) => (
-                  <TeamLeaderboardRow
-                    key={entry.teamId}
-                    entry={entry}
-                    rank={index + 1}
-                    onPreviewCard={onPreviewCard}
-                  />
-                ))}
-              </Stack>
-            )}
-          </CollapsibleSection>
-        </SectionCard>
-      ) : null}
+                {!finalResult ? (
+                  <SectionCard surface="inset" sx={{ p: 0 }}>
+                    <DisclosureSection
+                      title={t('gameHistory.summary.bestTeams')}
+                      description={t('gameHistory.summary.bestTeamsDescription')}
+                      countLabel={t('gameHistory.summary.teamCountShort', {
+                        count: teamStats.length,
+                      })}
+                      defaultExpanded
+                    >
+                      {teamStats.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                          {t('gameHistory.summary.noRounds')}
+                        </Typography>
+                      ) : (
+                        <Stack spacing={1}>
+                          {teamStats.map((entry, index) => (
+                            <TeamLeaderboardRow
+                              key={entry.teamId}
+                              entry={entry}
+                              rank={index + 1}
+                              onPreviewCard={onPreviewCard}
+                            />
+                          ))}
+                        </Stack>
+                      )}
+                    </DisclosureSection>
+                  </SectionCard>
+                ) : null}
+              </>
+            ),
+          },
+          {
+            id: 'quiz',
+            label: t('gameHistory.quizLeaderboardTitle'),
+            content: <QuizLeaderboard entries={game.quiz.playerStats} defaultExpanded />,
+          },
+        ]}
+      />
 
       <GameModifierHistorySummary
         rounds={completedRounds}
@@ -149,7 +166,7 @@ export function GameDetailsPanel({
       />
 
       <SectionCard surface="inset" sx={{ p: 0 }}>
-        <CollapsibleSection
+        <DisclosureSection
           title={t('gameHistory.summary.modifierTimeline')}
           description={t('gameHistory.summary.modifierTimelineDescription')}
           countLabel={t('gameHistory.summary.modifierCountShort', {
@@ -163,18 +180,7 @@ export function GameDetailsPanel({
           ) : (
             <Stack spacing={1}>
               {game.mainGame.modifierActivations.map((activation) => (
-                <Box
-                  key={activation.activationId}
-                  sx={(theme) => ({
-                    borderRadius: 2,
-                    backgroundColor: alpha(theme.palette.common.black, 0.2),
-                    '&:nth-of-type(even)': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.07),
-                    },
-                    px: 1.5,
-                    py: 1.25,
-                  })}
-                >
+                <ItemCard key={activation.activationId}>
                   <Stack
                     direction={{ xs: 'column', md: 'row' }}
                     spacing={1}
@@ -194,15 +200,15 @@ export function GameDetailsPanel({
                       {formatDateTime(activation.activatedAtUtc, i18n.resolvedLanguage)}
                     </Typography>
                   </Stack>
-                </Box>
+                </ItemCard>
               ))}
             </Stack>
           )}
-        </CollapsibleSection>
+        </DisclosureSection>
       </SectionCard>
 
       <SectionCard surface="inset" sx={{ p: 0 }}>
-        <CollapsibleSection
+        <DisclosureSection
           title={t('gameHistory.summary.roundHistory')}
           description={t('gameHistory.summary.roundHistoryDescription')}
           countLabel={t('gameHistory.summary.roundCountShort', {
@@ -220,7 +226,7 @@ export function GameDetailsPanel({
               ))}
             </Stack>
           )}
-        </CollapsibleSection>
+        </DisclosureSection>
       </SectionCard>
 
       <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />

@@ -190,7 +190,7 @@ describe('ModifierFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
 
     const confirmation = await screen.findByRole('dialog', {
-      name: 'Отменить черновик модификатора?',
+      name: 'Отменить несохранённые изменения?',
     })
     expect(onClose).not.toHaveBeenCalled()
     fireEvent.click(within(confirmation).getByRole('button', { name: 'Отменить изменения' }))

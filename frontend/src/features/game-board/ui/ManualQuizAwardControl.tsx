@@ -1,11 +1,20 @@
-import { Alert, Stack, TextField, Typography } from '@mui/material'
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
+import { Stack, Typography } from '@mui/material'
+import {
+  AppButton,
+  AsyncSection,
+  Combobox,
+  ConfirmDialog,
+  createFilterOptions,
+  FormSelect,
+  FormTextField,
+  FormNumberField,
+  InlineNotice,
+} from '../../../shared/ui/index.ts'
+
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { AppButton, ConfirmDialog, FormSelect, FormTextField } from '../../../shared/ui/index.ts'
-
 type ManualQuizAwardPlayer = components['schemas']['ManualQuizAwardPlayerDto']
 
 interface ManualQuizAwardControlProps {
@@ -88,101 +97,101 @@ export function ManualQuizAwardControl({
           <Typography variant="body2" color="text.secondary">
             {t('gameBoard.manualQuizAwardInactive')}
           </Typography>
-        ) : isLoading ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameBoard.manualQuizAwardLoading')}
-          </Typography>
-        ) : isError ? (
-          <Typography variant="body2" color="error">
-            {t('gameBoard.manualQuizAwardError')}
-          </Typography>
-        ) : players.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameBoard.manualQuizAwardNoPlayers')}
-          </Typography>
         ) : (
-          <>
-            <Autocomplete
-              size="small"
-              fullWidth
-              autoHighlight
-              selectOnFocus
-              options={players}
-              value={selectedPlayer}
-              filterOptions={filterManualAwardPlayers}
-              disabled={isAwarding}
-              noOptionsText={t('gameBoard.manualQuizAwardNoPlayerMatches')}
-              getOptionLabel={(player) =>
-                player.login ? `${player.displayName} · ${player.login}` : player.displayName
-              }
-              isOptionEqualToValue={(option, value) => option.userId === value.userId}
-              onChange={(_, player) => setSelectedUserId(player?.userId ?? '')}
-              slotProps={{
-                popper: {
-                  sx: (theme) => ({
-                    zIndex: theme.zIndex.modal + 1,
-                  }),
-                },
-              }}
-              renderInput={(params) => (
-                <TextField {...params} label={t('common.entities.player')} />
-              )}
-            />
+          <AsyncSection
+            isLoading={isLoading}
+            isError={isError}
+            isEmpty={players.length === 0}
+            hasData={players.length > 0}
+            loadingMessage={t('gameBoard.manualQuizAwardLoading')}
+            errorMessage={t('gameBoard.manualQuizAwardError')}
+            emptyMessage={t('gameBoard.manualQuizAwardNoPlayers')}
+          >
+            <>
+              <Combobox
+                size="small"
+                fullWidth
+                autoHighlight
+                selectOnFocus
+                options={players}
+                value={selectedPlayer}
+                filterOptions={filterManualAwardPlayers}
+                disabled={isAwarding}
+                noOptionsText={t('gameBoard.manualQuizAwardNoPlayerMatches')}
+                getOptionLabel={(player) =>
+                  player.login ? `${player.displayName} · ${player.login}` : player.displayName
+                }
+                isOptionEqualToValue={(option, value) => option.userId === value.userId}
+                onChange={(_, player) => setSelectedUserId(player?.userId ?? '')}
+                slotProps={{
+                  popper: {
+                    sx: (theme) => ({
+                      zIndex: theme.zIndex.modal + 1,
+                    }),
+                  },
+                }}
+                renderInput={(params) => (
+                  <FormTextField {...params} label={t('common.entities.player')} />
+                )}
+              />
 
-            <FormSelect
-              label={t('gameBoard.manualQuizAwardOperationLabel')}
-              value={operationType}
-              disabled={isAwarding}
-              onChange={setOperationType}
-              options={[
-                { value: 'award', label: t('gameBoard.manualQuizAwardOperationAward') },
-                { value: 'deduct', label: t('gameBoard.manualQuizAwardOperationDeduct') },
-              ]}
-            />
+              <FormSelect
+                label={t('gameBoard.manualQuizAwardOperationLabel')}
+                value={operationType}
+                disabled={isAwarding}
+                onChange={setOperationType}
+                options={[
+                  { value: 'award', label: t('gameBoard.manualQuizAwardOperationAward') },
+                  { value: 'deduct', label: t('gameBoard.manualQuizAwardOperationDeduct') },
+                ]}
+              />
 
-            <FormTextField
-              type="number"
-              label={t('gameBoard.manualQuizAwardPointsLabel')}
-              value={points}
-              disabled={isAwarding}
-              inputProps={{ min: 1, step: 1 }}
-              onChange={(event) => setPoints(event.target.value)}
-            />
+              <FormNumberField
+                label={t('gameBoard.manualQuizAwardPointsLabel')}
+                value={points}
+                disabled={isAwarding}
+                min={1}
+                onValueChange={setPoints}
+              />
 
-            <FormTextField
-              label={t('gameBoard.manualQuizAwardReasonLabel')}
-              value={reason}
-              disabled={isAwarding}
-              multiline
-              minRows={2}
-              inputProps={{ maxLength: 500 }}
-              helperText={t('gameBoard.manualQuizAwardReasonHint')}
-              onChange={(event) => setReason(event.target.value)}
-            />
+              <FormTextField
+                label={t('gameBoard.manualQuizAwardReasonLabel')}
+                value={reason}
+                disabled={isAwarding}
+                multiline
+                minRows={2}
+                inputProps={{ maxLength: 500 }}
+                helperText={t('gameBoard.manualQuizAwardReasonHint')}
+                onChange={(event) => setReason(event.target.value)}
+              />
 
-            {selectedPlayer ? (
-              <Alert severity={exceedsAvailableBalance ? 'error' : 'info'} variant="outlined">
-                {t('gameBoard.manualQuizAwardBalancePreview', {
-                  before: selectedPlayer.availableQuizPoints,
-                  sign: pointsDelta >= 0 ? '+' : '−',
-                  points: Number.isFinite(pointsNumber) ? Math.abs(pointsNumber) : 0,
-                  after: availableAfter ?? selectedPlayer.availableQuizPoints,
-                })}
-              </Alert>
-            ) : null}
+              {selectedPlayer ? (
+                <InlineNotice
+                  severity={exceedsAvailableBalance ? 'error' : 'info'}
+                  variant="outlined"
+                >
+                  {t('gameBoard.manualQuizAwardBalancePreview', {
+                    before: selectedPlayer.availableQuizPoints,
+                    sign: pointsDelta >= 0 ? '+' : '−',
+                    points: Number.isFinite(pointsNumber) ? Math.abs(pointsNumber) : 0,
+                    after: availableAfter ?? selectedPlayer.availableQuizPoints,
+                  })}
+                </InlineNotice>
+              ) : null}
 
-            <AppButton
-              type="submit"
-              disabled={!canAward}
-              loading={isAwarding}
-              size="small"
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {isAwarding
-                ? t('gameBoard.manualQuizAwardSaving')
-                : t('gameBoard.manualQuizAwardAction')}
-            </AppButton>
-          </>
+              <AppButton
+                type="submit"
+                disabled={!canAward}
+                loading={isAwarding}
+                size="small"
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                {isAwarding
+                  ? t('gameBoard.manualQuizAwardSaving')
+                  : t('gameBoard.manualQuizAwardAction')}
+              </AppButton>
+            </>
+          </AsyncSection>
         )}
       </Stack>
 

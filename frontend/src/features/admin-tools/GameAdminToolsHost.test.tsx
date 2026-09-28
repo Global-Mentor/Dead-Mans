@@ -56,6 +56,7 @@ beforeEach(() => {
   mocks.useGameBoardPage.mockReturnValue({
     data: { gameId: 'game-1', status: 'active' },
     activeRound: null,
+    hasActiveRoundData: true,
     teamQueue: [],
     isTeamQueueError: false,
     isTeamQueueLoading: false,
@@ -105,8 +106,7 @@ beforeEach(() => {
     rebuildRound: vi.fn(),
     technicalCancelRound: vi.fn(),
     completeRound: vi.fn(),
-    toastMessage: null,
-    dismissToast: vi.fn(),
+    errorMessage: null,
   })
   mocks.useGameFinish.mockReturnValue({
     finishGame: vi.fn(),

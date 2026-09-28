@@ -52,7 +52,7 @@ describe('quiz submission history', () => {
     expect(
       screen.getByText(i18n.t('gameQuiz.correctAnswerLabel', { answer: 'Paris' })),
     ).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    expect(screen.getByRole('status')).toHaveTextContent(
       i18n.t('gameQuiz.resultCorrect', { points: 5 }),
     )
     expect(

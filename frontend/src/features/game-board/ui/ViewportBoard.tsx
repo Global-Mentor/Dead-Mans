@@ -1,27 +1,33 @@
 import { Box } from '@mui/material'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface ViewportBoardProps {
   columns: number
   rows: number
   gap: number
+  cardAspectRatio: number
   leadWidth?: number
+  trailingWidth?: number
   mobile?: boolean
   children: ReactNode
 }
 
-// Fit the card widths to both axes, keeping the cards themselves at 2:3.
+// Fit both axes where possible; short screens scroll the page instead of shrinking card content.
 export function ViewportBoard({
   columns,
   rows,
   gap,
+  cardAspectRatio,
   leadWidth = 0,
+  trailingWidth = 0,
   mobile = false,
   children,
 }: ViewportBoardProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+  const [width, setWidth] = useState<number | null>(null)
 
+  // Parent reflow can change the available height without changing the board's props.
   useLayoutEffect(() => {
     const element = ref.current
     if (!element) return
@@ -45,18 +51,22 @@ export function ViewportBoard({
       const overhead = mobile
         ? rows * (labelHeight + 4) + Math.max(0, rows - 1) * gap
         : labelHeight + rows * gap
-      const cardWidth = Math.max(44, (((availableHeight - overhead) / Math.max(1, rows)) * 2) / 3)
+      const cardWidth = Math.max(
+        mobile
+          ? boardGridMetrics.minimumCardWidth.mobile
+          : boardGridMetrics.minimumCardWidth.desktop,
+        ((availableHeight - overhead) / Math.max(1, rows)) * cardAspectRatio,
+      )
       const width = Math.floor(
         Math.min(
           rect.width,
-          columns * cardWidth + leadWidth + gap * (columns - (leadWidth ? 0 : 1)),
+          columns * cardWidth +
+            leadWidth +
+            trailingWidth +
+            gap * (columns - (leadWidth ? 0 : 1) + (trailingWidth ? 1 : 0)),
         ),
       )
-      setSize((previous) =>
-        previous?.width === width && previous.height === availableHeight
-          ? previous
-          : { width, height: availableHeight },
-      )
+      setWidth(width)
     }
     measure()
     if (typeof ResizeObserver === 'undefined') return
@@ -72,15 +82,20 @@ export function ViewportBoard({
       window.removeEventListener('resize', measure)
       window.visualViewport?.removeEventListener('resize', measure)
     }
-  }, [columns, rows, gap, leadWidth, mobile])
+  })
 
   return (
-    <Box
-      ref={ref}
-      data-testid="viewport-board"
-      sx={{ width: '100%', minWidth: 0, maxHeight: size?.height, overflow: 'auto' }}
-    >
-      <Box sx={{ width: size?.width ?? '100%', maxWidth: '100%', mx: 'auto' }}>{children}</Box>
+    <Box ref={ref} data-testid="viewport-board" sx={{ width: '100%', minWidth: 0 }}>
+      <Box
+        data-board-field
+        sx={{
+          width: width ?? '100%',
+          maxWidth: '100%',
+          mx: 'auto',
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   )
 }

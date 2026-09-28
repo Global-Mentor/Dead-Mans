@@ -1,9 +1,14 @@
+import { Stack, Typography } from '@mui/material'
 import type { TFunction } from 'i18next'
-import { Alert, Box, Chip, LinearProgress, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDraftPreview } from '../../../shared/api/contracts/index.ts'
-import { AppButton } from '../../../shared/ui/index.ts'
-
+import {
+  AppButton,
+  InlineNotice,
+  ItemCard,
+  StatusBadge,
+  TaskProgress,
+} from '../../../shared/ui/index.ts'
 export function ModifierReviewStep({
   preview,
   isLoading,
@@ -17,11 +22,11 @@ export function ModifierReviewStep({
 }) {
   const { t } = useTranslation()
   if (isLoading) {
-    return <LinearProgress aria-label={t('gameCatalog.modifiers.wizard.previewLoading')} />
+    return <TaskProgress aria-label={t('gameCatalog.modifiers.wizard.previewLoading')} />
   }
   if (error || !preview) {
     return (
-      <Alert
+      <InlineNotice
         severity="error"
         action={
           <AppButton size="small" tone="secondary" onClick={onRetry}>
@@ -30,7 +35,7 @@ export function ModifierReviewStep({
         }
       >
         {error ?? t('gameCatalog.modifiers.wizard.previewError')}
-      </Alert>
+      </InlineNotice>
     )
   }
   const localizedExample = {
@@ -40,7 +45,7 @@ export function ModifierReviewStep({
 
   return (
     <Stack spacing={1.5}>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+      <ItemCard>
         <Typography variant="overline">{t('gameCatalog.modifiers.wizard.playerView')}</Typography>
         <Typography variant="h6">
           {preview.iconEmoji ? `${preview.iconEmoji} ` : ''}
@@ -51,11 +56,11 @@ export function ModifierReviewStep({
         </Typography>
         <Stack direction="row" gap={0.75} flexWrap="wrap" sx={{ mt: 1 }}>
           {preview.normalizedTags.map((tag) => (
-            <Chip key={tag} label={tag} size="small" />
+            <StatusBadge key={tag} label={tag} size="small" />
           ))}
         </Stack>
-      </Box>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+      </ItemCard>
+      <ItemCard>
         <Typography variant="overline">{t('gameCatalog.modifiers.wizard.hostView')}</Typography>
         <Typography variant="body2">{preview.behaviorV2.rule}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
@@ -63,8 +68,8 @@ export function ModifierReviewStep({
             command: preview.activationCommand,
           })}
         </Typography>
-      </Box>
-      <Alert severity="success">
+      </ItemCard>
+      <InlineNotice severity="success">
         <Typography variant="subtitle2">
           {t('gameCatalog.modifiers.wizard.exampleTitle')}
         </Typography>
@@ -74,7 +79,7 @@ export function ModifierReviewStep({
         <Typography variant="body2" sx={{ mt: 0.5 }}>
           {t('gameCatalog.modifiers.wizard.exampleResult', preview.example)}
         </Typography>
-      </Alert>
+      </InlineNotice>
     </Stack>
   )
 }

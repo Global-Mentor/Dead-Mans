@@ -1,128 +1,178 @@
 # Frontend UI system
 
-The frontend keeps the Hunt-inspired visual language in one MUI + Emotion system. A page chooses
-semantic variants and owns layout; it does not restyle a child control because that child happens to
-be inside a particular container.
+## Design contract
 
-## Ownership boundaries
+The application page is the visual and behavioral reference for the shared component system, including its dialogs, states and responsive layouts. Changes to shared components and the theme must preserve it. This document describes the maintained UI contracts.
 
-| Layer                   | Owns                                                                                         | Does not own                                         |
-| ----------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Tokens                  | palette, typography, the small spacing/control-height scale, material textures               | page-specific geometry or one-off offsets            |
-| MUI component style     | the visual identity and states of buttons, inputs, chips, alerts, menus and overlays         | feature layout                                       |
-| Shared primitive        | a named surface/control contract and its slots                                               | hidden styling of arbitrary descendants              |
-| Shared pattern/feedback | composition, spacing between parts, focus/async behaviour                                    | recolouring buttons or fields supplied by the caller |
-| Feature/page            | grid/flex layout, responsive placement, external spacing and genuinely unique domain visuals | a second implementation of a shared visual variant   |
+- Extract reusable visual primitives and complete compositions from the protected application page. Preserve its appearance and functionality, including indirect theme effects. Refactoring and responsive improvements must preserve that contract.
+- Reuse the existing suitable component exactly. Add a component only when no suitable one exists; add variants only for demonstrated semantic or behavioral needs. Page-specific legacy styling is not such a need.
+- Pages own placement and available space. Standalone compositions own their internal layout, may reorder/stretch children, and select supported sizes and tones. They do not independently redefine a ready child control's visual design. Wrapping old markup does not complete migration.
+- Width changes do not imply font scaling. A genuine size/density change coordinates text, icons, padding and gaps inside the component with readable text and usable interaction targets. Prefer reflow and intended wrapping to shrinking labels to fit. Implement responsive behavior once in the owning component.
+- Delete superseded implementations and unused styles, exports, imports, dependencies and migration-only adapters after checking usage. Audit all composed presentation, not only interactive-control imports. Domain geometry is not an exemption for legacy surface styling.
+- Completion requires a component replacement map plus source checks, behavioral tests and visual inspection across routes, states, roles and viewports.
 
-The source locations are:
+All application controls are composed through `src/shared/ui/index.ts`. MUI/Emotion is the implementation engine, not a second public control library. The language remains Alegreya typography, dark textured surfaces, brass accents and clear semantic actions. Application registration is a protected visual reference.
 
-- `src/shared/theme/tokens.ts`, `hunt-palette.ts` and `hunt-materials.ts` for tokens and materials;
-- `src/app/theme/*-overrides.ts` for shared MUI component states;
-- `src/shared/ui/primitives` for controls and surfaces;
-- `src/shared/ui/patterns` and `src/shared/ui/feedback` for compositions;
-- `features/<feature>/theme` only for feature-specific board/media geometry.
+## Board scope and existing responsive work
 
-## Buttons and actions
+“Game board” means only the board cards and their arrangement, not the entire `/panel/game-board` page. The site header and the component above the board are separate components. All three already contain responsive work by the owner: inspect and reuse it where appropriate, or improve/rework it when justified. They may remain standalone components; unlike application registration, their current presentation is not a protected visual reference. This does not exempt their controls or surfaces from the shared component system, legacy cleanup, or preservation of existing functionality and game semantics.
 
-Use `AppButton` for an action and `AppLinkButton` for navigation. `AppLinkButton` renders an actual
-link and has the same visual contract as a button.
+## Ownership and boundaries
 
-| `tone`            | Meaning                                               |
-| ----------------- | ----------------------------------------------------- |
-| `primary`         | save, continue or the main positive action            |
-| `secondary`       | neutral alternative/cancel action with the worn frame |
-| `danger`          | destructive or negative action                        |
-| `dangerSecondary` | lower-emphasis destructive action                     |
-| `ghost`           | low-emphasis neutral action                           |
-| `warningGhost`    | low-emphasis warning action                           |
-| `success`         | explicit successful/ready action                      |
+| Owner | Responsibility |
+| --- | --- |
+| `shared/theme` | Palette, typography, control scale, materials, surface and side-panel tokens |
+| `shared/ui/primitives/<family>` | Control appearance, internal slots, interaction and focus states; family theme overrides live beside implementations |
+| `shared/ui/feedback` | Dialog composition, confirmations, notices, progress and help |
+| `shared/ui/patterns` | Layout, navigation, lists, tables and reusable compositions |
+| `shared/game-ui` | Reusable domain presentation: board matrix, participants, played cards, round score breakdown |
+| Features | API/data, permissions, business state, translated labels, ordering and domain geometry |
+| `app/theme/component-overrides.ts` | Assembles family overrides and the base document/material theme |
 
-Meaning is always supplied explicitly; never infer a tone from the label or DOM position. Use
-`size="small"` for compact toolbars, the default for normal forms, and `size="large"` for paired
-accented-dialog actions. Default, hover, active, keyboard focus, disabled and loading are defined in
-the shared theme. `loading` also exposes `aria-busy`.
+A page may use Box, Stack, Typography, icons, Collapse, ClickAwayListener and theme hooks as layout/implementation utilities. Interactive controls come from the common library. Do not add a feature-specific button, input, menu, dialog or badge implementation. First reuse a suitable existing component; introduce a common variant only for a demonstrated need that composition cannot satisfy, migrate consumers, and remove the superseded implementation. Generic shared UI must not import features, API, auth or game UI.
 
-An `IconButton` may stay a direct MUI control when it is genuinely icon-only. It still inherits the
-global focus indicator and must have an accessible name.
+Page `sx` owns placement and external spacing. A component owns its internals. Do not reach into `.MuiDialog-*`, repaint supplied child buttons, copy surface recipes or append selector overrides to fix a variant. Shared theme files are the single source of corresponding MUI states. Board/card visuals may own domain geometry; this does not authorize a separate form theme.
 
-## Surfaces and disclosure
+`npm run check:ui-architecture` checks these boundaries, an explicit MUI foundation allowlist (including aliases/subpaths/re-exports and namespace/dynamic import restrictions), native controls outside the library, and control-slot/descendant-button repainting. These checks supplement source review; they do not prove visual or behavioral correctness. Its rule fixtures run before the repository scan.
 
-`SectionCard` is the ordinary content surface:
+## Component map and variants
 
-| `surface`  | Use                                                |
-| ---------- | -------------------------------------------------- |
-| `panel`    | normal textured section                            |
-| `inset`    | nested/recessed content, without the paper texture |
-| `accented` | deliberately highlighted card                      |
-| `plain`    | neutral base for a feature-supplied status colour  |
+| Family | Public components and contract |
+| --- | --- |
+| Buttons | `AppButton`, `AppLinkButton`, `ActionIcon`, `SurfaceButton` |
+| Fields | `FormTextField`, `ControlledFormTextField`, `FormNumberField`, `ControlledFormNumberField`, `FieldGroup`, `FieldAdornment`, `FieldWithHelp`, `FilePickerInput` |
+| Selection | `FormSelect`, `Combobox`, `FormCheckbox`, `FormSwitch`, `ChoiceLabel`, `ChoiceGroup`, `CheckboxGroup`, `ChoiceCard`, `SelectionTile`, `SelectionAction` |
+| Surfaces/disclosure | `SectionCard`, `ItemCard`, `SectionDivider`, `AppAccordion`, `AppAccordionSummary`, `AppAccordionDetails` |
+| Status/metrics | `StatusBadge`, `NotificationCount`, `Metric`, `SummaryMetrics`, `RankBadge` |
+| Media | `ImageFrame` with loading/error states, contain/cover sizing and decorative backgrounds |
+| Feedback | `InlineNotice`, `BusyIndicator`, `TaskProgress`, `HelpTooltip`, `FieldHelp`, `AppToast`, `PageStatePanel`, `CenteredProgress` |
+| Dialogs | `AppDialog`, `ConfirmDialog`, `DiscardChangesDialog`, `useDirtyClose` |
+| Layout | `PageShell`, `SectionHeader`, `AuthScreenShell`, `FormSection`, `SidePanel`, `DisclosureSection`, `NativeDisclosure`, `CatalogWorkspace` |
+| Navigation | `SectionNavigation`, `PanelTrigger`, `NavigationButton`, `ActionMenu`, `ActionMenuItem`, `MenuGroupLabel`, `TabStrip`, `TabOption`, `ContentTabs`, `PagePagination` |
+| Data/composition | `AsyncSection`, `ContentList`, `BulletList`, `RecordRow`, `RankingList`, `DataTable`, `DataTableRow`, `DataTableCell`, `SelectionRow` |
 
-Use `borderStyle="dashed"` only for a semantic placeholder/drop-zone boundary. Do not recreate the
-surface background, texture, border and shadow together in a page `sx` block.
+### Actions
 
-Use `AppAccordion` plus `AppAccordionSummary` for disclosure sections. `surface` chooses panel,
-inset or plain disclosure; `tone="warning"` is the explicit warning variant. The shared summary owns
-the MUI summary slot spacing and expand affordance.
+`AppButton` uses explicit `tone`: primary, secondary, danger, dangerSecondary, ghost, warningGhost or success. `brand="twitch"` owns the provider sign-in appearance. Meaning must not depend on translated text or DOM position. `AppLinkButton` is an actual link with the same visual contract. `loading` exposes busy state; disable other actions that would invalidate a pending operation.
 
-## Fields
+`ActionIcon` requires `aria-label`, defaults to a 44px target, and supports plain/framed/outlined appearance. `SurfaceButton` provides button semantics, keyboard focus and polymorphic link support for domain tiles. `NavigationButton` owns route/compact/profile/management/icon layout and active styling. It replaces the old layout-local navigation style recipes.
 
-`FormTextField` is the standard text/multiline control. `density="compact"` changes density;
-`textAlign="center"` is an independent alignment choice. Its validation tooltip remains connected to
-the real input and native validity handling. `FormSelect` preserves caller `SelectProps` while adding
-the supplied accessible name. `ControlledFormTextField` remains the React Hook Form adapter.
+### Forms and selection
 
-Autocomplete `renderInput` callbacks may use MUI `TextField` directly because MUI supplies required
-params and ARIA wiring through that slot. Board setup cells may address `.MuiInputBase-*` locally:
-their fixed matrix geometry is not an ordinary form density and must not broaden the global field
-contract.
+`FormTextField` supports standard/compact `density`, start/center `textAlign`, standard/matrixColumn/matrixRow `layout`, native validity and explicit `validationHint`. Helper and caller-provided descriptions remain attached to the actual input. Use `ControlledFormTextField` with React Hook Form. `FormSelect` supports normal and native select values and accessible naming. `Combobox` preserves autocomplete generics and uses `FormTextField` for its input slot.
 
-## Dialogs
+`FieldGroup` owns the label, helper and fieldset composition; `labelAppearance` is standard/overline. `FieldWithHelp` combines any ready field and focus/touch help. `FormSection` is the protected application section: a framed surface, shared heading/separator, optional action, description, controls and content. It is reused by application, modifier lists, queue sections and catalogue forms. `FilePickerInput` owns the visually hidden file input used by a visible upload action.
 
-`AppDialog` owns title/content/action composition and offers one `appearance`:
+`FormCheckbox` defaults to a comfortable target. `density="compact"` is a shared density option used by the application. `SelectionTile` is a real pressed-state button, not a clickable Box. `SelectionAction` adds success/error outcomes that remain readable when disabled. `ChoiceCard` and radio groups preserve their native selection semantics.
 
-- `standard` for forms and ordinary messages;
-- `accented` for the agreed high-emphasis confirmations, with divided sections and equal grid slots;
-- `preview` for large card/media previews.
+Mark required fields visibly. For schema-driven forms use `noValidate` and display schema errors through fields; for native validation preserve the field validity contract. Keep values mounted through errors, background refresh and viewport changes. Dirty forms use `useDirtyClose`; busy forms cannot close. A record identity change must reset its draft, while refresh of the same record must preserve edited values.
 
-Callers provide ready `AppButton` actions. The dialog may arrange or stretch action slots, but it must
-not select and repaint descendant buttons. `ConfirmDialog` adds duplicate-confirm protection, busy
-close protection, loading state and explicit confirm/cancel tones. Failed async operations stay in the
-same mounted dialog so the parent retains entered data and error state.
+### Surfaces, navigation and data
 
-Do not pass `PaperProps` to `AppDialog`; add an intentional `appearance` only when composition and
-overlay behaviour genuinely differ. Page-level `sx` on a dialog is for placement/size adjustments,
-not a second button or surface theme.
+`SectionCard` surfaces are panel, inset, accented, plain and muted. Muted is the readiness surface extracted from the application. `ItemCard` is the application team-card surface, with none/available/selected emphasis. Selectable records share that same visual recipe; they do not maintain another striped-card theme. Dashed borders are for a semantic placeholder. `AppAccordion` has panel/inset/plain surfaces and a warning tone. `DisclosureSection` is the application team-group composition: labelled trigger, decorative marker, stateful chevron and collapsible content. It supports controlled or local expansion, optional description/count with centered or leading placement, and explicit expand/collapse labels; its appearance is shared by registration, catalogue tools, history and modifier administration. `NativeDisclosure` provides lightweight native details/summary, optional controlled expansion, pinned content, a compact density with a 44px minimum trigger height and a right-aligned chevron indicator.
 
-## Headings, HTML and accessibility
+`ContentTabs` keeps panels mounted and connects tabs/panels with IDs. It is used to distinguish team and quiz rankings. `TabStrip` provides underline/framed/category appearances. `CatalogWorkspace` places tools first in DOM, to the right on desktop, and in a disclosure before the mobile results list. `RecordRow` moves actions below content on narrow screens.
 
-`PageShell` composes page layout presets through `mergeSx`. `SectionHeader` renders a semantic
-`header`; select `headingLevel="h1"` for the page title and the appropriate lower level for nested
-sections while keeping the visual Typography variant independent.
+`DataTable` retains the same row DOM while switching table/card presentation at the breakpoint; resizing cannot discard a role draft. `RankingList` renders accessible table rows and wrapping names. Callers own sorting and format values; the common component never calculates a score. `Metric` uses description-list semantics with a named group/status, optional keyboard/touch help, description and action. `SummaryMetrics` preserves the protected application count strip. `BulletList` preserves its participant-list geometry. `SectionNavigation` owns the existing sticky mobile shortcuts. Zero, missing data and a failed request remain distinct.
 
-Prefer native `main`, `section`, `article`, lists, tables, links and buttons. Do not put tooltips or
-other focusable controls inside an accordion-summary button. Decorative diamonds/textures must be
-`aria-hidden` or pseudo-elements and must not receive pointer events. MUI portals are expected: font,
-focus and surface rules must therefore come from the theme/CssBaseline rather than a selector below
-`#root`.
+`StatusBadge` wraps by default; standard/compact density is explicit. `textFlow="singleLine"` preserves protected registration geometry where required. Do not infer a status from colour alone.
 
-## Local `sx`
+### Dialogs and asynchronous states
 
-Good local uses are `gap`, grid definitions, responsive direction/placement, outer margins, truncation
-that depends on a particular data column, and a value computed from feature data. Local slot access is
-acceptable only in the component that owns that slot or for documented special geometry such as the
-game setup matrix.
+`AppDialog` uses the protected application dialog appearance everywhere. It owns title, content, actions and paper styling; `maxWidth` and `fullScreen` preserve space for editors and media previews, while `contentDensity` is comfortable or compact. Supplied buttons retain their own tones. Consumers may configure transition callbacks, but may not replace the dialog's visual slots. MUI supplies focus trapping/restoration and Escape handling. Use `SidePanel` for a full-height drawer with a fixed header, one scroll region, safe-area sizing and a labelled close action.
 
-Do not use local `sx` to copy a complete shared surface/control, target another component's arbitrary
-descendants, add `!important`, or raise specificity with `&&`. Compose object, callback and array
-forms through `mergeSx`; later arguments win and arrays are flattened once.
+`ConfirmDialog` protects against repeated confirmation and closing while busy, and shows a loading indicator in its confirm button. The caller owns mutation errors and closes only after success. Callers can use `onExited` to retain confirmation content until the closing transition finishes. `DiscardChangesDialog` uses shared localized copy with `useDirtyClose`.
 
-## Adding a variant
+`InlineNotice` has standard/inline appearances and uses an alert for errors and a status for other messages. `HelpTooltip` supports keyboard and touch, including controlled validation hints in `FormTextField`. Use it for explanatory hover text instead of a native `title`; omit redundant hints when the complete text is already visible. `AsyncSection` distinguishes first loading/error from refresh failure: `hasData` retains the mounted content when a refresh fails; supply `retryAction` when a retry is available.
 
-Before adding a flag, identify at least one semantic role and its consumers. Extend the narrowest
-existing contract, add state/DOM tests, migrate real consumers, and remove the superseded local
-implementation. Avoid a universal component whose flags describe unrelated features.
+## Examples
 
-For visual development, run the app and open the unlinked development-only route
-`/panel/__ui-states`. It covers surfaces, button states/sizes, fields, selection, disclosure and an
-accented dialog. `npm run check:ui-architecture` protects the concrete boundaries found in the 2026
-audit. `npm run measure:ui` builds and profiles the explicit production-bundle modal/scroll scenario;
-set `PERF_LABEL` to keep named reports under `.tmp/ui-audit`.
+An ordinary form (the caller owns validation, values and save state):
+
+```tsx
+import { AppButton, FormSection, FormTextField, InlineNotice } from '../../shared/ui'
+
+<form noValidate onSubmit={handleSubmit(save)}>
+  <FormSection title={t('editor.title')}>
+    <FormTextField
+      label={t('editor.name')}
+      required
+      value={name}
+      onChange={(event) => setName(event.target.value)}
+      error={Boolean(nameError)}
+      helperText={nameError ?? t('editor.nameHint')}
+      disabled={saving}
+    />
+    {saveError && <InlineNotice severity="error">{saveError}</InlineNotice>}
+    <AppButton type="submit" loading={saving}>{t('common.actions.save')}</AppButton>
+  </FormSection>
+</form>
+```
+
+An explicit destructive confirmation:
+
+```tsx
+<ConfirmDialog
+  open={confirmOpen}
+  title={t('teams.removeTitle')}
+  description={t('teams.removeDescription', { name: team.name })}
+  confirmLabel={t('teams.remove')}
+  cancelLabel={t('common.actions.cancel')}
+  confirmTone="danger"
+  isBusy={removeMutation.isPending}
+  onClose={() => setConfirmOpen(false)}
+  onConfirm={async () => {
+    await removeMutation.mutateAsync(team.id)
+    setConfirmOpen(false)
+  }}
+/>
+```
+
+Translation keys in examples are illustrative; production keys live in the four locale dictionaries. Render the mutation error in the owning view/dialog and retain its target identity. Do not report success optimistically for a failed operation.
+
+## Protected reference and verification
+
+`/panel/game-application` uses the common components with explicit density and text-flow options. Its agreed layout, wording and interaction remain unchanged. Playwright covers application and invitation flows at desktop, tablet and mobile widths with behavioral, accessibility and responsive assertions. CI does not compare screenshot pixels or keep PNG baselines. Inspect the rendered page during UI work and keep any review screenshots in ignored local output directories.
+
+Run `npm --prefix frontend run check`, `npm --prefix frontend run test:e2e`, and `npm --prefix frontend run measure:ui` for substantial heavy-surface changes. The state gallery is development-only. Production tests verify it cannot enter the user build. Keep screenshots and run reports in ignored local output directories.
+
+## Interaction and state contracts
+
+- `PanelTrigger` owns inline, floating edge and responsive edge appearances. `responsiveEdge` uses left/right tabs at `lg` and normal 44px actions below it. `GameBoardLayout` arranges regions; it no longer repaints nested buttons. Do not pass a local `sx` recipe to the trigger.
+- `SelectionRow` is a full-width wrapping button with `selected` / `aria-pressed`, a visible selection marker and keyboard focus. Use it for archive records, modifier revisions and team choices; keep list data and ordering in the feature.
+- `StatusBadge appearance="plain"` is unframed metadata. `ActionIcon appearance="outlined"` owns bounded reorder/navigation actions. Modifier activation actions use the standard 44px button instead of a separate 32px recipe.
+- `FormSelect appearance="toolbar"` owns compact toolbar geometry and border treatment, including the locale selector. `FormSelect` resolves native mode at its owned select slot, so callback slots and mixed legacy/modern props produce the same native options and label association. The select slot itself belongs to the component. `FormTextField` combines native constraints with HTML-input slots and describes the actual custom helper-text ID.
+- `SidePanel` exposes a named modal dialog and associated description. Side panels and dialogs suppress transition duration under reduced motion; common action buttons suppress their colour transitions.
+- A draft belongs to a record/editing session. Round modifier inputs rebase by stable group/member identity, never array index; refreshed metadata stays authoritative. Changed membership/resolution kind resets that input contract. Closing the round editor also ends its discard-confirmation session. Category editors are keyed by category ID.
+- Successful role mutations update every cached page with the returned user before refreshing. A refresh error must not visually undo the confirmed save or discard another user's draft.
+
+```tsx
+<PanelTrigger placement="responsiveEdge" side="left" aria-label={openLabel}
+  aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={openPanel}>
+  {label}
+</PanelTrigger>
+<SelectionRow selected={selectedId === item.id} onClick={() => select(item.id)}>
+  {item.label}
+</SelectionRow>
+```
+
+## Surface checks
+
+The architecture check also rejects local corner-radius recipes in features, layouts and shared game compositions; circles for intrinsic marks and the common theme radius remain valid. This is a guard against one concrete regression, not proof of complete visual migration. The preserved site header, board cards and board context remain independently owned responsive compositions. No page-specific compact-button variant was added.
+
+## Game board compositions
+
+- `ImageFrame` owns image loading/failure and resets on source changes. Card backgrounds are decorative and fail silently; preview and setup images show localized feedback. Consumers own the frame geometry, while the shared component owns the image fit and visibility. Media messages belong to the common locale bundle.
+- `FormNumberField` composes the existing text field and action buttons for integer quantities. Manual input remains editable, including an empty value; native/schema validation remains authoritative. Step actions respect the current minimum/maximum and do not submit the form. `ControlledFormNumberField` integrates those edits with React Hook Form dirty tracking and reset. Use these fields for board result counts and manual quiz point adjustments.
+- `TeamIdentity` shares team name, roster and a status slot between queue cards, the active team and compact selection rows. Features provide translated names/statuses and keep ordering and actions; the shared content does not depend on API types.
+- The round assistant renders the flow model as a read-only sequence inside `NativeDisclosure`. Player-facing phase labels describe the current state: active team selection, card selection, card opened, modifier selection, game preparation, gameplay and result summary. The management panel keeps imperative actions separate: start modifier selection, close ordering, start the game, finish gameplay and open the result form in that order. Modifier selection appears to players only after the start action succeeds.
+- Round result sections use `FormSection` and existing `Metric`/`RoundScoreBreakdown` presentations. Team selection and manual point adjustment use `AsyncSection` so background errors retain available content.
+- The played-card preview uses `AppDialog` with a danger-tone close action. Card cost sits above the proportionate media; on small screens, the media appears before the result. Beside the card, a full-width score breakdown disclosure sits above a unified result card, pushing it down when expanded. The result card groups the centered team name and vertical roster above the statistics and total. The result shows four permanent metric sections: total kills, bounties, modifier bonuses and modifier penalties, arranged in two columns when space permits. Modifier bonuses and penalties separately sum positive and negative historical activation effects, converting bonus kills with the authoritative score unit; the empty-card penalty remains only in the score breakdown and final score. The roster remains part of the same card. On narrow screens, statistics use label/value rows and the team name sits above its vertical roster. Both score totals use `RoundScoreTotal`, with an ornamental divider and an inline label/value pair instead of a separate accented surface. A single full-width disclosure below the card and result shows the number of modifier activations in place of its leading diamond, opens all grouped modifiers, and orders nonzero score or kill effects first. Each compact row shows its historical emoji, name, outcome and effect before opening descriptions or violation notes on demand. Revision labels preserve the historical result. `RoundScoreBreakdown.showHeading` omits its own title when the surrounding disclosure supplies it. The dialog retains one content scroll area and fixed actions.
+- `GameBoardCard` owns current-round media and the played result with its team name. Positive results use the success color, negative results and penalties use the error color, and zero stays neutral. Card proportions stay at 2:3; `ViewportBoard` fits available space while preserving minimum readable widths. Wide matrices switch to category navigation when the container becomes too narrow. Short viewports scroll the page, while a standard desktop 5×5 board fits without scrolling.
+- `GameBoardLayout` centers the cards themselves with an adaptive price gutter and a matching empty gutter on the right. On wide screens, `GameBoardProgressPanel` is centered in the free space to the left of the measured board field and grows from 300 to 400px within that space without moving the cards. When stacked above the board, the progress panel and management trigger align with the card columns, excluding the price gutter and trailing spacer. Its unframed "Game progress" title and ornamental line with a diamond follow the board-column motif. The centered phase and its prominent current value form a keyboard-operable disclosure; when a team is active, its name is visible below the phase even while the disclosure is collapsed. The expanded details show the active team and its participants, followed by the queue; when an active game has no selected team, the redundant game title is omitted. The current-round action remains visible below the control. The board renders progressively as soon as its snapshot is available. Initial navigation uses no page spinner, full-page overlay, artificial delay or asset-readiness gate; before the first snapshot, a static localized loading message leaves navigation available. Queue data, active-round state, played-cell results and images load independently. Commands that require active-round state remain unavailable until it is known. Returning to a cached board shows its existing content while background requests refresh it; layout measurements run before paint and continue on resize. The queue and played headings are visually distinct, separated by the same ornamental line, and the played heading omits a count. The queue lists teams directly without a redundant waiting heading; the active team is excluded from its count. Waiting teams use a small diamond instead of a redundant slot number. Played teams are ordered by final score from highest to lowest and show their position in that list; equal scores retain play order, and teams without a completed score come last. The expanded active-team card uses the same neutral inset surface and text for every team; a player's team keeps the amber left marker in the queue, while membership remains available to assistive technology without a visible text badge. Played scores stay to the right of the team name in the same row, never below it. Played scores have outlined badges: positive scores use the success color, negative scores the error color, and zero or missing scores stay neutral. Scores omit a positive sign and use a dash when no completed round exists. Played teams appear in the same static list regardless of count; long desktop queues scroll within the panel.
+- On stacked layouts, a count button opens the queue in the shared `AppDialog` without expanding the page or moving cards. The dialog and played list survive same-game refresh failures and viewport changes. Closing restores focus to the trigger, or to the panel heading if resizing removed the trigger. A new game resets the dialog. The separate queue page remains in primary navigation. The expanded active-team card shows participant names directly without hover; board cards have no hover tooltip. Narrow category layouts show the full selected category above the cards as well as the category tabs. The return-to-current-round action sits in a stable category-heading row so switching tabs does not change the board's vertical position.
+- `/panel/game-round` is a distinct view of the active game, linked directly after Board in the primary navigation. `RoundOverview` reads the authoritative active round, board cell and modifier state; the modifier drawer reuses the existing feature controls. Successfully opening a new card navigates only the staff client that submitted the command to the current round; other clients stay on the board and refresh the opened card from server state. The round screen has no direct modifier-ordering action. Admins use the edge management petal to start modifier ordering; moderators and players do not see that petal on this screen. Any user can open the round manually from its open card, the progress panel action or the primary navigation; other revealed cards retain their preview. `GameQuizDrawer` follows players on either game view, including between rounds, and reuses the existing answer card. Modifier ordering and an open quiz cannot display their drawers simultaneously.
+- `GameModifierActions` owns purchase/cancellation confirmation for both the modifier page and the round drawer. Failed requests preserve the dialog and explain the error; the current game, round, availability and purchase ownership remain authoritative. A different round or closed ordering ends the confirmation session. `RoundModifierDrawer` starts a fresh disclosure session when ordering reopens.
+- The round ordering drawer shows the available catalog as compact rows with name, cost, activation and a details dialog. The dialog holds descriptions, limits, conflicts, activators and cancellation of the user's own purchases. Standard mobile and desktop viewports fit the current catalog without scrolling; shorter screens retain the panel's accessible scroll fallback.
+- `PlayerQuizCard` composes `CurrentQuizCard`; `useSubmitQuizAnswer` shares pending submissions and cache refresh between the quiz page and game drawers. The question petal appears while a question is open and disappears when that session closes. Expired questions disable answers while the common query waits for the server result.
+- Board and round views retain cached content through refresh errors. Their shared realtime composition refreshes the active round and modifier state on reconnect. Navigation labels live in the eager navigation dictionary, independent of route translation bundles.

@@ -8,7 +8,6 @@ export type GameBoardSnapshot = Omit<components['schemas']['GameBoardSnapshotDto
 }
 export type GameTeamQueueItem = components['schemas']['GameTeamQueueItemDto']
 export type GameCellOpenedEvent = components['schemas']['GameCellOpenedEventDto']
-export type GameTeamQueueSummary = components['schemas']['GameTeamQueueSummaryDto']
 export type GameTeamQueueResult = components['schemas']['GameTeamQueueResultDto']
 export type GameModifierActivatedEvent = components['schemas']['GameModifierActivatedEventDto']
 export type GameModifierActivationCancelledEvent =

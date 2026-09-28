@@ -7,6 +7,25 @@ namespace backend.Infrastructure.Persistence;
 
 public sealed partial class DbGameRoundRepository
 {
+    public Task<TransitionGameRoundResult> StartModifierOrderingAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return TransitionRoundAsync(
+            roundId,
+            input.ExpectedRoundVersion,
+            GameRoundStatusValue.CardOpened,
+            GameRoundStatusValue.AwaitingModifiers,
+            GameRoundTransitionActionValue.StartModifierOrdering,
+            initiatedByUserId,
+            (_, _, _) => Task.CompletedTask,
+            cancellationToken
+        );
+    }
+
     public Task<TransitionGameRoundResult> PrepareAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,
@@ -175,6 +194,17 @@ public sealed partial class DbGameRoundRepository
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (targetStatus == GameRoundStatusValue.AwaitingModifiers
+            && await _dbContext.GameQuizQuestionSessions.AsNoTracking().AnyAsync(
+                session => session.GameId == gameId.Value
+                    && session.Status == GameQuizQuestionSessionStatusValue.Open
+                    && session.ClosesAtUtc > now,
+                cancellationToken
+            ))
+        {
+            return new TransitionGameRoundResult(TransitionGameRoundOutcome.InvalidState, null);
+        }
+
         await applyTransition(round, now, cancellationToken);
         round.Status = targetStatus;
         round.Version += 1;

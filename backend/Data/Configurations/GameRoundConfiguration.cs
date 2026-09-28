@@ -23,7 +23,7 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_resolution_semantics",
-                    "((status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) "
+                    "((status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) "
                     + "OR ((status = 'completed') AND final_score IS NOT NULL AND resolved_by_user_id IS NOT NULL) "
                     + "OR ((status = 'cancelled') AND final_score = 0 AND resolved_by_user_id IS NOT NULL)"
                 );
@@ -37,7 +37,7 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_lifecycle_timestamps",
-                    "(status = 'awaiting_modifiers' AND prepared_at_utc IS NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
+                    "(status IN ('card_opened','awaiting_modifiers') AND prepared_at_utc IS NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
                     + "OR (status = 'preparing' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
                     + "OR (status = 'in_progress' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NULL) "
                     + "OR (status = 'reviewing_results' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) "
@@ -120,7 +120,7 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
             .HasIndex(x => x.GameId, "ux_game_rounds_single_nonterminal_game")
             .IsUnique()
             .HasFilter(
-                "status IN ('awaiting_modifiers','preparing','in_progress','reviewing_results')"
+                "status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')"
             );
         builder.HasIndex(x => new { x.TeamId, x.CreatedAtUtc });
         builder.HasIndex(x => new { x.BoardCellId, x.CreatedAtUtc });

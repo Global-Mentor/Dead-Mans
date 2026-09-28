@@ -1,6 +1,15 @@
 const translations = {
   en: {
+    media: { loading: 'Loading card media...', error: 'Failed to load the card media.' },
+    pagination: { summary: '{{from}}-{{to}} of {{total}}' },
+    discardChanges: {
+      title: 'Discard unsaved changes?',
+      description: 'Your changes will be lost.',
+      confirm: 'Discard',
+    },
     actions: {
+      increaseValue: 'Increase {{field}}',
+      decreaseValue: 'Decrease {{field}}',
       back: 'Back',
       cancel: 'Cancel',
       close: 'Close',
@@ -68,7 +77,19 @@ const translations = {
     },
   },
   ru: {
+    media: {
+      loading: 'Загружаем медиа карточки...',
+      error: 'Не удалось загрузить медиа карточки.',
+    },
+    pagination: { summary: '{{from}}-{{to}} из {{total}}' },
+    discardChanges: {
+      title: 'Отменить несохранённые изменения?',
+      description: 'Введённые изменения будут потеряны.',
+      confirm: 'Отменить изменения',
+    },
     actions: {
+      increaseValue: 'Увеличить: {{field}}',
+      decreaseValue: 'Уменьшить: {{field}}',
       back: 'Назад',
       cancel: 'Отмена',
       close: 'Закрыть',
@@ -136,7 +157,19 @@ const translations = {
     },
   },
   uk: {
+    media: {
+      loading: 'Завантажуємо медіа картки...',
+      error: 'Не вдалося завантажити медіа картки.',
+    },
+    pagination: { summary: '{{from}}-{{to}} з {{total}}' },
+    discardChanges: {
+      title: 'Відкинути незбережені зміни?',
+      description: 'Введені зміни буде втрачено.',
+      confirm: 'Відкинути',
+    },
     actions: {
+      increaseValue: 'Збільшити: {{field}}',
+      decreaseValue: 'Зменшити: {{field}}',
       back: 'Назад',
       cancel: 'Скасувати',
       close: 'Закрити',
@@ -204,7 +237,16 @@ const translations = {
     },
   },
   pl: {
+    media: { loading: 'Ładowanie mediów karty...', error: 'Nie udało się załadować mediów karty.' },
+    pagination: { summary: '{{from}}-{{to}} z {{total}}' },
+    discardChanges: {
+      title: 'Odrzucić niezapisane zmiany?',
+      description: 'Wprowadzone zmiany zostaną utracone.',
+      confirm: 'Odrzuć',
+    },
     actions: {
+      increaseValue: 'Zwiększ: {{field}}',
+      decreaseValue: 'Zmniejsz: {{field}}',
       back: 'Wstecz',
       cancel: 'Anuluj',
       close: 'Zamknij',
