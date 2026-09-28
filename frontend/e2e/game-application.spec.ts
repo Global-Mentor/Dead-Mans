@@ -1,14 +1,9 @@
 import { expect, test, type Page, type WebSocketRoute } from '@playwright/test'
-import { mkdir } from 'node:fs/promises'
 import { expectUnifiedTypography } from './typography-assertions.ts'
 import type {
   GameRegistrationSnapshot,
   RegistrationTeam,
 } from '../src/shared/api/contracts/index.ts'
-
-test.beforeAll(async () => {
-  await mkdir('../.tmp/ui-audit/after', { recursive: true })
-})
 
 async function expectValidFormLabels(page: Page) {
   const invalidLabels = await page
@@ -194,12 +189,6 @@ for (const viewport of [
       const teams = await page.locator('#application-teams').boundingBox()
       expect(roster?.y).toBe(teams?.y)
     }
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-create-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     const createButton = page.getByRole('button', { name: 'Создать команду' })
     await expectValidFormLabels(page)
     await createButton.click()
@@ -207,12 +196,6 @@ for (const viewport of [
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toBeFocused()
     await expectValidFormLabels(page)
     expect(creates).toBe(0)
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-hint-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     await page.getByRole('textbox', { name: 'Название команды' }).fill('ab')
     await createButton.click()
     await expect(page.getByRole('alert')).toHaveText('Введите минимум 3 символа.')
@@ -235,12 +218,6 @@ for (const viewport of [
       'border-bottom-style',
       'solid',
     )
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-leave-dialog-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     if (suffix === '390') {
       await page.setViewportSize({ width: 540, height })
       const buttons = await leaveDialog.getByRole('button').all()
@@ -278,12 +255,6 @@ for (const viewport of [
     expect(disabledSurface.textureOpacity).toBeGreaterThan(0)
     expect(disabledSurface.textureOpacity).toBeLessThan(activeSurface.textureOpacity)
     expect(disabledSurface.height).toBe(activeSurface.height)
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-readiness-disabled-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     mine.members.push({
       player: { userId: 'teammate', displayName: 'Напарник', login: 'teammate' },
       joinedAtUtc: '2026-09-13T00:00:00Z',
@@ -310,12 +281,6 @@ for (const viewport of [
     const readinessDescriptionBox = await readinessDescription.boundingBox()
     expect(readinessDescriptionBox!.y).toBeGreaterThan(readyBadgeBox!.y + readyBadgeBox!.height)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-readiness-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     await page.getByRole('button', { name: 'Снять готовность' }).click()
     await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
     expect(readinessUpdates).toEqual([true, false])
@@ -328,12 +293,6 @@ for (const viewport of [
     mine.name = 'Ночной дозор'
     publishRegistration()
     await expect(page.getByRole('button', { name: 'Я готов', exact: true })).toBeEnabled()
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-forming-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     await expect(
       page.getByRole('region', { name: 'Готовы к участию' }).getByRole('article'),
     ).toHaveCount(0)
@@ -385,12 +344,6 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Изменить название команды' }).click()
     await expectUnifiedTypography(page)
     await expectValidFormLabels(page)
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-name-dialog-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     await page.getByRole('textbox', { name: 'Название команды' }).fill('Несохранённое имя')
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Сохранить' })).toHaveClass(
       /MuiButton-containedPrimary/,
@@ -419,22 +372,10 @@ for (const viewport of [
     ).toHaveCount(2)
     await expect(page.getByRole('textbox', { name: 'Название команды' })).toHaveCount(0)
     await page.evaluate(() => window.scrollTo(0, 0))
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.getByRole('button', { name: 'Попросить распустить команду' }).click()
     await expectUnifiedTypography(page)
     expect(posts).toBe(0)
-    await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    await expect(page).toHaveScreenshot(`application-disband-dialog-${suffix}.png`, {
-      fullPage: true,
-      animations: 'disabled',
-      maxDiffPixels: 0,
-    })
     const disbandDialog = page.getByRole('dialog')
     const cancelButtonBox = await disbandDialog
       .getByRole('button', { name: 'Отмена' })

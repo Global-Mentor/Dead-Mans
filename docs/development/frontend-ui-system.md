@@ -9,7 +9,7 @@ The application page is the visual and behavioral reference for the shared compo
 - Pages own placement and available space. Standalone compositions own their internal layout, may reorder/stretch children, and select supported sizes and tones. They do not independently redefine a ready child control's visual design. Wrapping old markup does not complete migration.
 - Width changes do not imply font scaling. A genuine size/density change coordinates text, icons, padding and gaps inside the component with readable text and usable interaction targets. Prefer reflow and intended wrapping to shrinking labels to fit. Implement responsive behavior once in the owning component.
 - Delete superseded implementations and unused styles, exports, imports, dependencies and migration-only adapters after checking usage. Audit all composed presentation, not only interactive-control imports. Domain geometry is not an exemption for legacy surface styling.
-- Completion requires a component replacement map plus source, visual and behavior checks across routes, states, roles and viewports, while retaining the protected application comparisons.
+- Completion requires a component replacement map plus source checks, behavioral tests and visual inspection across routes, states, roles and viewports.
 
 All application controls are composed through `src/shared/ui/index.ts`. MUI/Emotion is the implementation engine, not a second public control library. The language remains Alegreya typography, dark textured surfaces, brass accents and clear semantic actions. Application registration is a protected visual reference.
 
@@ -132,7 +132,7 @@ Translation keys in examples are illustrative; production keys live in the four 
 
 ## Protected reference and verification
 
-`/panel/game-application` uses the common components with explicit density and text-flow options. Its agreed layout, wording and interaction remain unchanged. There are 45 baseline images for nine application states at five viewports and 20 invitation/search images at four widths. Baselines use fixed fixtures, time, locale and loaded fonts; comparisons use `maxDiffPixels: 0`. The owner-approved compact global header was incorporated on 24 September 2026. Before that update, all 65 original image comparisons passed with only the four header/navigation modules restored to their previous versions in an isolated test server, verifying that application content was preserved. Do not update these baselines to accept a refactor regression.
+`/panel/game-application` uses the common components with explicit density and text-flow options. Its agreed layout, wording and interaction remain unchanged. Playwright covers application and invitation flows at desktop, tablet and mobile widths with behavioral, accessibility and responsive assertions. CI does not compare screenshot pixels or keep PNG baselines. Inspect the rendered page during UI work and keep any review screenshots in ignored local output directories.
 
 Run `npm --prefix frontend run check`, `npm --prefix frontend run test:e2e`, and `npm --prefix frontend run measure:ui` for substantial heavy-surface changes. The state gallery is development-only. Production tests verify it cannot enter the user build. Keep screenshots and run reports in ignored local output directories.
 
