@@ -1,38 +1,47 @@
-import { ItemCard } from '../ui/index.ts'
-import { SectionDivider } from '../ui/index.ts'
-import { Stack, Typography } from '@mui/material'
+import { ItemCard, SectionDivider } from '../ui/index.ts'
+import { Box, Stack, Typography } from '@mui/material'
+import { Fragment } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../api/contracts/generated'
 
+import { RoundScoreTotal } from './RoundScoreTotal.tsx'
+
 type ScoreDetails = components['schemas']['GameRoundScoreDetailsDto']
 type CalculationLine = components['schemas']['GameRoundScoreCalculationLineDto']
 
-export function RoundScoreBreakdown({ score }: { score: ScoreDetails }) {
+export function RoundScoreBreakdown({
+  score,
+  showHeading = true,
+}: {
+  score: ScoreDetails
+  showHeading?: boolean
+}) {
   const { t } = useTranslation()
 
   return (
     <ItemCard data-testid="round-score-breakdown">
       <Stack spacing={1}>
-        <Typography variant="subtitle2" fontWeight={850}>
-          {t('common.scoreBreakdown.title')}
-        </Typography>
+        {showHeading ? (
+          <Typography variant="subtitle2" fontWeight={850}>
+            {t('common.scoreBreakdown.title')}
+          </Typography>
+        ) : null}
         <Typography variant="caption" color="text.secondary">
           {t('common.scoreBreakdown.authoritative')}
         </Typography>
         <SectionDivider />
         {(score.calculationLines ?? []).map((line, index) => (
-          <CalculationRow key={`${line.kind}-${line.modifierId ?? 'base'}-${index}`} line={line} />
+          <Fragment key={`${line.kind}-${line.modifierId ?? 'base'}-${index}`}>
+            {index > 0 ? <SectionDivider /> : null}
+            <CalculationRow line={line} />
+          </Fragment>
         ))}
-        <SectionDivider />
-        <Stack direction="row" spacing={1} justifyContent="space-between">
-          <Typography variant="subtitle2" fontWeight={850}>
-            {t('common.scoreBreakdown.final')}
-          </Typography>
-          <Typography variant="subtitle2" fontWeight={900}>
-            {formatSigned(score.finalScore, false)}
-          </Typography>
-        </Stack>
+        <RoundScoreTotal
+          label={t('common.scoreBreakdown.final')}
+          value={formatSigned(score.finalScore, false)}
+          score={score.finalScore}
+        />
       </Stack>
     </ItemCard>
   )
@@ -50,26 +59,49 @@ function CalculationRow({ line }: { line: CalculationLine }) {
   const explanation = describeLine(line, values, t)
 
   return (
-    <Stack spacing={0.25}>
-      <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="baseline">
-        <Typography variant="body2" fontWeight={750}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) auto',
+        gap: 1.5,
+        py: 0.5,
+        alignItems: 'start',
+      }}
+    >
+      <Stack spacing={0.5} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+        <Typography variant="body1" fontWeight={750}>
           {title}
         </Typography>
-        <Typography
-          variant="body2"
-          fontWeight={850}
-          color={line.pointsDelta < 0 ? 'error.main' : 'text.primary'}
-        >
-          {formatSigned(line.pointsDelta)}
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+          {explanation}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t('common.scoreBreakdown.runningTotal', { value: String(line.runningTotal) })}
         </Typography>
       </Stack>
-      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-        {explanation}
+      <Typography
+        component="span"
+        variant="h6"
+        fontWeight={850}
+        color={
+          line.pointsDelta > 0
+            ? 'success.main'
+            : line.pointsDelta < 0
+              ? 'error.main'
+              : 'text.primary'
+        }
+        sx={{
+          borderLeft: '1px solid',
+          borderColor: 'divider',
+          pl: 1.25,
+          minWidth: '3ch',
+          textAlign: 'right',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {formatSigned(line.pointsDelta)}
       </Typography>
-      <Typography variant="caption" color="text.secondary" textAlign="right">
-        {t('common.scoreBreakdown.runningTotal', { value: String(line.runningTotal) })}
-      </Typography>
-    </Stack>
+    </Box>
   )
 }
 

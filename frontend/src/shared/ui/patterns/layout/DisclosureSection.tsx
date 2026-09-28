@@ -24,21 +24,33 @@ const groupHeaderSx = {
   transition: 'background-color 150ms ease',
 } as const
 
-function GroupTitle({ title, accent }: { title: string; accent: string }) {
+function GroupTitle({
+  title,
+  accent,
+  leadingCountLabel,
+}: {
+  title: string
+  accent: string
+  leadingCountLabel?: string
+}) {
   return (
     <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-      <Box
-        aria-hidden
-        component="span"
-        sx={{
-          width: 8,
-          height: 8,
-          flexShrink: 0,
-          transform: 'rotate(45deg)',
-          bgcolor: alpha(accent, 0.58),
-          boxShadow: `0 0 10px ${alpha(accent, 0.14)}`,
-        }}
-      />
+      {leadingCountLabel ? (
+        <StatusBadge density="compact" variant="outlined" label={leadingCountLabel} />
+      ) : (
+        <Box
+          aria-hidden
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            flexShrink: 0,
+            transform: 'rotate(45deg)',
+            bgcolor: alpha(accent, 0.58),
+            boxShadow: `0 0 10px ${alpha(accent, 0.14)}`,
+          }}
+        />
+      )}
       <Typography
         component="span"
         variant="subtitle1"
@@ -61,6 +73,7 @@ interface DisclosureSectionProps {
   'data-testid'?: string
   description?: string
   countLabel?: string
+  countPlacement?: 'center' | 'leading'
   children: ReactNode
   defaultExpanded?: boolean
   expanded?: boolean
@@ -74,6 +87,7 @@ export function DisclosureSection({
   title,
   description,
   countLabel,
+  countPlacement = 'center',
   children,
   defaultExpanded = false,
   expanded: controlledExpanded,
@@ -120,8 +134,12 @@ export function DisclosureSection({
             '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           })}
         >
-          <GroupTitle title={title} accent={accent} />
-          {countLabel ? (
+          <GroupTitle
+            title={title}
+            accent={accent}
+            leadingCountLabel={countPlacement === 'leading' ? (countLabel ?? '') : ''}
+          />
+          {countLabel && countPlacement === 'center' ? (
             <StatusBadge density="compact" variant="outlined" label={countLabel} />
           ) : null}
           <Box

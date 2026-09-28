@@ -1,10 +1,12 @@
 import { Box, type SxProps, type Theme } from '@mui/material'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { getAppSurfaceSx } from '../../../theme/surface-sx.ts'
 
 interface NativeDisclosureProps {
   summary: ReactNode
   children: ReactNode
+  density?: 'standard' | 'compact'
+  indicator?: 'native' | 'chevron'
   open?: boolean
   onExpandedChange?: (expanded: boolean) => void
   pinned?: boolean
@@ -16,6 +18,8 @@ interface NativeDisclosureProps {
 export function NativeDisclosure({
   summary,
   children,
+  density = 'standard',
+  indicator = 'native',
   open,
   onExpandedChange,
   pinned = false,
@@ -23,11 +27,14 @@ export function NativeDisclosure({
   sx,
   ...props
 }: NativeDisclosureProps) {
+  const [nativeExpanded, setNativeExpanded] = useState(false)
+
   return (
     <Box
       {...props}
       component="details"
       open={pinned || open}
+      onToggle={(event) => setNativeExpanded(event.currentTarget.open)}
       sx={[
         ...(surface === 'panel'
           ? [(theme: Theme) => ({ ...getAppSurfaceSx(theme, 'panel'), p: 1.25 })]
@@ -37,6 +44,8 @@ export function NativeDisclosure({
     >
       <Box
         component="summary"
+        role={indicator === 'chevron' ? 'button' : undefined}
+        aria-expanded={indicator === 'chevron' ? pinned || (open ?? nativeExpanded) : undefined}
         onClick={
           onExpandedChange
             ? (event) => {
@@ -48,10 +57,17 @@ export function NativeDisclosure({
         sx={{
           display: pinned ? 'none' : 'list-item',
           minHeight: 44,
-          py: 1,
+          py: density === 'compact' ? 0 : 1,
+          alignContent: density === 'compact' ? 'center' : undefined,
           cursor: 'pointer',
           overflowWrap: 'anywhere',
           color: 'text.secondary',
+          ...(indicator === 'chevron'
+            ? {
+                '&::marker': { content: '""' },
+                '&::-webkit-details-marker': { display: 'none' },
+              }
+            : {}),
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',
@@ -59,7 +75,34 @@ export function NativeDisclosure({
           },
         }}
       >
-        {summary}
+        {indicator === 'chevron' ? (
+          <Box
+            component="span"
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, width: '100%' }}
+          >
+            <Box component="span" sx={{ minWidth: 0, flex: 1 }}>
+              {summary}
+            </Box>
+            <Box
+              aria-hidden
+              component="span"
+              sx={{
+                width: 10,
+                height: 10,
+                mr: 1,
+                flexShrink: 0,
+                borderRight: '2px solid',
+                borderBottom: '2px solid',
+                transform: 'translateY(-3px) rotate(45deg)',
+                transition: 'transform 150ms ease',
+                'details[open] &': { transform: 'translateY(3px) rotate(225deg)' },
+                '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+              }}
+            />
+          </Box>
+        ) : (
+          summary
+        )}
       </Box>
       {children}
     </Box>

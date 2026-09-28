@@ -1,345 +1,222 @@
-import { ItemCard } from '../ui/index.ts'
-import { Metric } from '../ui/index.ts'
-import { StatusBadge } from '../ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
 import type { components } from '../api/contracts/generated'
 import {
-  formatPlayedCardModifierOutcomeStatus,
-  getPlayedCardModifierOutcomeColor,
-  normalizePlayedCardModifierOutcomeStatus,
-} from '../lib/played-card-formatters.ts'
-import { ParticipantNamesList } from './ParticipantNamesList.tsx'
+  DisclosureSection,
+  InlineNotice,
+  ItemCard,
+  SectionCard,
+  SectionDivider,
+} from '../ui/index.ts'
 import { RoundScoreBreakdown } from './RoundScoreBreakdown.tsx'
+import { RoundScoreTotal } from './RoundScoreTotal.tsx'
+import { getPlayedCardModifierPoints } from './played-card-modifiers.ts'
 
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
-type PlayedCardPreviewModifier = PlayedCardPreviewRound['modifiers'][number]
-
-interface PlayedCardModifierGroup {
-  groupKey: string
-  modifierId: string
-  modifierName: string
-  modifierDescription: string
-  count: number
-  scoreDelta: number
-  killDelta: number
-  outcomeStatuses: readonly PlayedCardModifierOutcomeSummary[]
-  multiplierAppliedValues: readonly number[]
-  definitionRevision: number | null
-  violationComments: readonly string[]
-}
-
-interface PlayedCardModifierOutcomeSummary {
-  status: string
-  count: number
-}
 
 export function PlayedCardResultPanel({
-  cardCost,
   round,
   isLoading,
   isError,
 }: {
-  cardCost: number
   round: PlayedCardPreviewRound | null
   isLoading: boolean
   isError: boolean
 }) {
   const { t } = useTranslation()
-  const participants = round?.participants ?? []
-  const modifiers = round ? groupPlayedCardModifiers(round.modifiers ?? []) : []
   const finalScore = round?.scoreDetails.finalScore ?? 0
-  const penaltyTotal = round?.scoreDetails.penaltyTotal ?? 0
+  const modifierPoints = getPlayedCardModifierPoints(round)
 
   return (
-    <ItemCard data-testid="played-card-result-panel" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>
-          {t('gameHistory.cardPlayResultTitle')}
-        </Typography>
-
-        {isLoading ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameHistory.cardPlayResultLoading')}
-          </Typography>
-        ) : isError ? (
-          <Typography variant="body2" color="error.main">
-            {t('gameHistory.cardPlayResultError')}
-          </Typography>
-        ) : !round ? (
-          <Typography variant="body2" color="text.secondary">
-            {t('gameHistory.cardPlayResultEmpty')}
-          </Typography>
-        ) : (
-          <>
-            <Stack spacing={0.45}>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                {formatPlayedCardTeamName(t, round.teamName, round.teamSlotIndex)}
+    <Stack
+      data-testid="played-card-result-panel"
+      spacing={1.5}
+      sx={{ minWidth: 0, width: '100%', overflowWrap: 'anywhere' }}
+    >
+      {isLoading || isError || !round ? (
+        <InlineNotice severity={isError ? 'error' : 'info'}>
+          {t(
+            isLoading
+              ? 'gameHistory.cardPlayResultLoading'
+              : isError
+                ? 'gameHistory.cardPlayResultError'
+                : 'gameHistory.cardPlayResultEmpty',
+          )}
+        </InlineNotice>
+      ) : (
+        <>
+          <DisclosureSection title={t('common.scoreBreakdown.title')}>
+            <RoundScoreBreakdown score={round.scoreDetails} showHeading={false} />
+          </DisclosureSection>
+          <ItemCard sx={{ flex: 1, display: 'flex', minWidth: 0 }}>
+            <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+              <Typography component="h3" variant="subtitle1" fontWeight={700}>
+                {t('gameHistory.cardPlayResultTitle')}
               </Typography>
-              <ParticipantNamesList
-                names={participants.map((participant) => participant.displayName)}
-                emptyLabel={t('gameHistory.noParticipants')}
-                variant="caption"
-              />
-            </Stack>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 0.65,
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              }}
-            >
-              <Metric
-                label={t('gameHistory.cardCostMetricLabel')}
-                value={t('gameHistory.pointsValue', { points: cardCost })}
-              />
-              <Metric
+              <SectionDivider />
+              <PlayedCardTeam round={round} />
+              <SectionDivider />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 1,
+                }}
+              >
+                <PlayedCardStat
+                  label={t('gameHistory.cardKillsLabel')}
+                  value={t('gameHistory.countValue', { count: round.scoreDetails.totalKillCount })}
+                />
+                <PlayedCardStat
+                  label={t('gameHistory.cardBountiesLabel')}
+                  value={t('gameHistory.countValue', { count: round.bountyCount })}
+                />
+                <PlayedCardStat
+                  label={t('gameHistory.cardModifierBonusLabel')}
+                  value={t('gameHistory.pointsValue', {
+                    points: formatSignedNumber(modifierPoints.bonus),
+                  })}
+                  tone={modifierPoints.bonus > 0 ? 'success' : 'default'}
+                />
+                <PlayedCardStat
+                  label={t('gameHistory.cardModifierPenaltyLabel')}
+                  value={t('gameHistory.pointsValue', { points: modifierPoints.penalty })}
+                  tone={modifierPoints.penalty < 0 ? 'error' : 'default'}
+                />
+              </Box>
+              <RoundScoreTotal
                 label={t('gameHistory.summary.finalScore')}
                 value={t('gameHistory.pointsValue', { points: finalScore })}
-                emphasis="result"
+                score={finalScore}
               />
-              {penaltyTotal > 0 ? (
-                <Metric
-                  label={t('gameHistory.cardPenaltyTotalLabel')}
-                  value={t('gameHistory.pointsValue', { points: penaltyTotal })}
-                />
-              ) : null}
-              <Metric
-                label={t('gameHistory.summary.totalKills')}
-                value={t('gameHistory.countValue', { count: round.scoreDetails.totalKillCount })}
-              />
-              <Metric
-                label={t('gameHistory.summary.totalBounties')}
-                value={t('gameHistory.countValue', { count: round.bountyCount })}
-              />
-            </Box>
-
-            <Box
-              sx={(theme) => ({
-                '& [data-testid="round-score-breakdown"]': {
-                  borderColor: alpha(theme.palette.primary.main, 0.2),
-                },
-              })}
-            >
-              <RoundScoreBreakdown score={round.scoreDetails} />
-            </Box>
-
-            <Stack spacing={0.55}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                {t('common.entities.modifiers')}
-              </Typography>
-              {modifiers.length === 0 ? (
-                <Typography variant="caption" color="text.secondary">
-                  {t('gameHistory.cardPlayResultNoModifiers')}
-                </Typography>
-              ) : (
-                <Stack spacing={0.65}>
-                  {modifiers.map((modifier) => (
-                    <PlayedCardModifierItem key={modifier.groupKey} modifier={modifier} />
-                  ))}
-                </Stack>
-              )}
             </Stack>
-          </>
-        )}
-      </Stack>
-    </ItemCard>
+          </ItemCard>
+        </>
+      )}
+    </Stack>
   )
 }
 
-function PlayedCardModifierItem({ modifier }: { modifier: PlayedCardModifierGroup }) {
+function PlayedCardTeam({ round }: { round: PlayedCardPreviewRound }) {
   const { t } = useTranslation()
-  const modifierTitle =
-    modifier.count > 1 ? `${modifier.modifierName} x${modifier.count}` : modifier.modifierName
-
   return (
-    <ItemCard
-      sx={(theme) => ({
-        minWidth: 0,
-        '&:nth-of-type(even)': { backgroundColor: alpha(theme.palette.primary.main, 0.07) },
-      })}
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        flex: 1,
+        alignContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: 2,
+      }}
     >
-      <Stack spacing={0.55}>
-        <Stack
-          direction="row"
-          spacing={0.7}
-          alignItems="center"
-          justifyContent="space-between"
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <Typography
-            variant="body2"
-            sx={{ minWidth: 0, fontWeight: 820, overflowWrap: 'anywhere' }}
-          >
-            {modifierTitle}
-          </Typography>
-          <Stack direction="row" spacing={0.35} flexWrap="wrap" useFlexGap>
-            {modifier.definitionRevision ? (
-              <StatusBadge
-                size="small"
-                variant="outlined"
-                label={t('gameHistory.modifierRevision', {
-                  revision: modifier.definitionRevision,
-                })}
+      <Stack spacing={0.5}>
+        <Typography component="h4" variant="body2" color="text.secondary">
+          {t('gameHistory.participantsLabel')}
+        </Typography>
+        <Typography component="h4" variant="h5" fontWeight={700}>
+          {round.teamName?.trim() || t('common.teamWithSlot', { slot: round.teamSlotIndex })}
+        </Typography>
+      </Stack>
+      {round.participants.length > 0 ? (
+        <Stack component="ul" spacing={0.5} sx={{ m: 0, p: 0, listStyle: 'none' }}>
+          {round.participants.map((participant, index) => (
+            <Stack
+              component="li"
+              key={`${participant.displayName}-${index}`}
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ minWidth: 0 }}
+            >
+              <Box
+                aria-hidden
+                sx={{
+                  width: 5,
+                  height: 5,
+                  flex: '0 0 5px',
+                  transform: 'rotate(45deg)',
+                  bgcolor: 'text.secondary',
+                }}
               />
-            ) : null}
-            {modifier.outcomeStatuses.map((status) => (
-              <StatusBadge
-                key={status.status}
-                size="small"
-                color={getPlayedCardModifierOutcomeColor(status.status)}
-                variant="outlined"
-                label={`${formatPlayedCardModifierOutcomeStatus(t, status.status)}${
-                  status.count > 1 ? ` x${status.count}` : ''
-                }`}
+              <Typography variant="body1" fontWeight={700} sx={{ minWidth: 0 }}>
+                {participant.displayName}
+              </Typography>
+              <Box
+                aria-hidden
+                sx={{
+                  width: 5,
+                  height: 5,
+                  flex: '0 0 5px',
+                  transform: 'rotate(45deg)',
+                  bgcolor: 'text.secondary',
+                }}
               />
-            ))}
-          </Stack>
-        </Stack>
-
-        <Stack direction="row" spacing={0.4} flexWrap="wrap" useFlexGap>
-          {modifier.scoreDelta !== 0 ? (
-            <StatusBadge
-              size="small"
-              variant="filled"
-              label={t('gameHistory.pointsValue', {
-                points: formatSignedNumber(modifier.scoreDelta),
-              })}
-            />
-          ) : null}
-          {modifier.killDelta !== 0 ? (
-            <StatusBadge
-              size="small"
-              variant="outlined"
-              label={t('gameHistory.summary.killDeltaShort', {
-                value: formatSignedNumber(modifier.killDelta),
-              })}
-            />
-          ) : null}
-          {modifier.multiplierAppliedValues.map((value) => (
-            <StatusBadge
-              key={value}
-              size="small"
-              variant="outlined"
-              label={t('gameHistory.summary.multiplierShort', { value })}
-            />
+            </Stack>
           ))}
         </Stack>
-
-        {modifier.modifierDescription ? (
-          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-            {modifier.modifierDescription}
-          </Typography>
-        ) : null}
-        {modifier.violationComments.map((comment, index) => (
-          <Typography
-            key={`${modifier.groupKey}-violation-${index}`}
-            variant="caption"
-            color="warning.main"
-          >
-            {t('gameHistory.modifierViolationComment', { comment })}
-          </Typography>
-        ))}
-      </Stack>
-    </ItemCard>
+      ) : (
+        <Typography variant="body2" color="text.secondary">
+          {t('gameHistory.noParticipants')}
+        </Typography>
+      )}
+    </Box>
   )
 }
 
-function groupPlayedCardModifiers(
-  modifiers: readonly PlayedCardPreviewModifier[],
-): PlayedCardModifierGroup[] {
-  const grouped = new Map<string, PlayedCardModifierGroup>()
-
-  for (const modifier of modifiers) {
-    const groupKey = `${modifier.modifierId}:revision-${modifier.definitionRevision}`
-    const current = grouped.get(groupKey)
-    if (!current) {
-      grouped.set(groupKey, {
-        groupKey,
-        modifierId: modifier.modifierId,
-        modifierName: modifier.modifierName,
-        modifierDescription: modifier.modifierDescription,
-        count: 1,
-        scoreDelta: modifier.scoreDelta,
-        killDelta: modifier.killDelta,
-        outcomeStatuses: [
-          { status: normalizePlayedCardModifierOutcomeStatus(modifier.outcomeStatus), count: 1 },
-        ],
-        multiplierAppliedValues:
-          modifier.multiplierApplied === null || modifier.multiplierApplied === undefined
-            ? []
-            : [modifier.multiplierApplied],
-        definitionRevision: modifier.definitionRevision ?? null,
-        violationComments: modifier.violationComment?.trim()
-          ? [modifier.violationComment.trim()]
-          : [],
-      })
-      continue
-    }
-
-    grouped.set(groupKey, {
-      ...current,
-      count: current.count + 1,
-      scoreDelta: current.scoreDelta + modifier.scoreDelta,
-      killDelta: current.killDelta + modifier.killDelta,
-      outcomeStatuses: mergeModifierOutcomeStatuses(
-        current.outcomeStatuses,
-        normalizePlayedCardModifierOutcomeStatus(modifier.outcomeStatus),
-      ),
-      multiplierAppliedValues: mergeModifierMultiplierValues(
-        current.multiplierAppliedValues,
-        modifier.multiplierApplied,
-      ),
-      violationComments: modifier.violationComment?.trim()
-        ? [...current.violationComments, modifier.violationComment.trim()]
-        : current.violationComments,
-    })
-  }
-
-  return Array.from(grouped.values())
-}
-
-function mergeModifierOutcomeStatuses(
-  statuses: readonly PlayedCardModifierOutcomeSummary[],
-  nextStatus: string,
-) {
-  const nextStatuses = [...statuses]
-  const existingIndex = nextStatuses.findIndex((item) => item.status === nextStatus)
-
-  const existing = nextStatuses[existingIndex]
-  if (!existing) {
-    nextStatuses.push({ status: nextStatus, count: 1 })
-    return nextStatuses
-  }
-
-  nextStatuses[existingIndex] = {
-    ...existing,
-    count: existing.count + 1,
-  }
-  return nextStatuses
-}
-
-function mergeModifierMultiplierValues(
-  values: readonly number[],
-  nextValue: number | null | undefined,
-) {
-  if (nextValue === null || nextValue === undefined || values.includes(nextValue)) {
-    return values
-  }
-
-  return [...values, nextValue]
-}
-
-function formatPlayedCardTeamName(
-  t: TFunction,
-  teamName: string | null | undefined,
-  teamSlotIndex: number,
-) {
-  return teamName?.trim() || t('common.teamWithSlot', { slot: teamSlotIndex })
+function PlayedCardStat({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'success' | 'error'
+}) {
+  return (
+    <SectionCard
+      surface="inset"
+      component="dl"
+      sx={{
+        m: 0,
+        p: 1.25,
+        minWidth: 0,
+        overflowWrap: 'anywhere',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 0.75,
+      }}
+    >
+      <Typography
+        component="dt"
+        variant="body2"
+        color="text.secondary"
+        fontWeight={700}
+        sx={{ flex: 1, lineHeight: 1.3 }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        component="dd"
+        variant="h5"
+        sx={{
+          m: 0,
+          textAlign: 'right',
+          flexShrink: 0,
+          minWidth: 0,
+          fontWeight: 800,
+          fontVariantNumeric: 'tabular-nums',
+          color: tone === 'default' ? 'text.primary' : `${tone}.main`,
+        }}
+      >
+        {value}
+      </Typography>
+    </SectionCard>
+  )
 }
 
 function formatSignedNumber(value: number) {

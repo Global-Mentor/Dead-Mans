@@ -2229,6 +2229,137 @@ test('card background and preview load through the shared image component', asyn
 })
 
 for (const width of [390, 768, 1440]) {
+  test(`played card preview keeps media, three players and mixed modifier scores readable at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 })
+    const writes = await mockGame(page, 'active', 'viewer')
+    const mediaUrl = '/media/cards/played-check.svg'
+    await page.route('**/media/cards/played-check.svg', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="360"><rect width="240" height="360" fill="#392d24"/></svg>',
+      }),
+    )
+    await page.route('**/api/game', (route) =>
+      route.fulfill({
+        json: {
+          ...board,
+          cells: board.cells.map((cell, index) =>
+            index === 0 ? { ...cell, media: [{ url: mediaUrl }] } : cell,
+          ),
+        },
+      }),
+    )
+    await page.route('**/api/game/history/games/board-layout', (route) =>
+      route.fulfill({
+        json: {
+          mainGame: {
+            rounds: [
+              {
+                roundId: 'played-round',
+                cellId: 'card-0',
+                cellTitle: 'Следы на болотах',
+                cellCost: 100,
+                cellMedia: [{ url: mediaUrl }],
+                teamName: 'Ночные призраки',
+                teamSlotIndex: 1,
+                status: 'completed',
+                finishedAtUtc: '2026-09-01T12:00:00Z',
+                finalScore: 390,
+                scoreDetails: {
+                  scoreUnit: 100,
+                  killsScore: 200,
+                  bountyScore: 100,
+                  modifierKillDelta: 1,
+                  modifierKillScore: 100,
+                  modifierScoreDelta: -10,
+                  emptyCardPenaltyApplied: false,
+                  emptyCardPenaltyScore: 0,
+                  penaltyTotal: 0,
+                  bonusDelta: 290,
+                  totalKillCount: 3,
+                  finalScore: 390,
+                  calculationLines: [],
+                },
+                bountyCount: 1,
+                modifiers: [
+                  {
+                    modifierId: 'bonus-1',
+                    modifierName: 'Бонус',
+                    iconEmoji: '⚔️',
+                    modifierDescription: 'Бонус за серию убийств.',
+                    scoreDelta: 10,
+                    killDelta: 1,
+                    outcomeStatus: 'calculated',
+                    definitionRevision: 1,
+                  },
+                  {
+                    modifierId: 'bonus-1',
+                    modifierName: 'Бонус',
+                    scoreDelta: 20,
+                    killDelta: 0,
+                    outcomeStatus: 'calculated',
+                    definitionRevision: 1,
+                  },
+                  {
+                    modifierId: 'deduction',
+                    modifierName: 'Списание',
+                    scoreDelta: -40,
+                    killDelta: 0,
+                    outcomeStatus: 'calculated',
+                    definitionRevision: 1,
+                  },
+                ],
+                participants: [
+                  { userId: 'p1', displayName: 'Александр Неверовский' },
+                  { userId: 'p2', displayName: 'Екатерина Савельева' },
+                  { userId: 'p3', displayName: 'ИгрокСОченьДлиннымНепрерывнымНикнеймом' },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    await page.goto('/panel/game-board')
+    await page.locator('[data-cell-id="card-0"]').click()
+    const dialog = page.getByRole('dialog', { name: 'Следы на болотах' })
+    const result = dialog.getByTestId('played-card-result-panel')
+    await expect(dialog.getByRole('img', { name: 'Следы на болотах' })).toBeVisible()
+    await expect(result.getByText('ИгрокСОченьДлиннымНепрерывнымНикнеймом')).toBeVisible()
+    await expect(result.getByText('Бонус').locator('..')).toContainText('+130 очк.')
+    await expect(result.getByText('Списания').locator('..')).toContainText('-40 очк.')
+    await expect(result.getByText('Итог', { exact: true }).locator('..')).toContainText('390 очк.')
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    )
+    if (width < 900) {
+      const imageBounds = await dialog.getByRole('img', { name: 'Следы на болотах' }).boundingBox()
+      const resultBounds = await result.boundingBox()
+      expect(imageBounds!.y + imageBounds!.height).toBeLessThan(resultBounds!.y)
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('played-card-preview.png'),
+      animations: 'disabled',
+    })
+    await dialog.getByRole('button', { name: 'Как рассчитан итог' }).click()
+    await dialog.getByRole('button', { name: 'Модификаторы' }).click()
+    await dialog.getByRole('button', { name: /Бонус ×2/ }).click()
+    await expect(dialog.getByText('Бонус за серию убийств.')).toBeVisible()
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    )
+    await page.screenshot({
+      path: testInfo.outputPath('played-card-preview-expanded.png'),
+      animations: 'disabled',
+    })
+    expect(writes).toEqual([])
+  })
+}
+
+for (const width of [390, 768, 1440]) {
   test(`played card keeps its result and team readable at ${width}px`, async ({
     page,
   }, testInfo) => {

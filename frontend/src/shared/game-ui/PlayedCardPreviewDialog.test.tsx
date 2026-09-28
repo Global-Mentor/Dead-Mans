@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import type { components } from '../api/contracts/generated'
@@ -30,12 +30,52 @@ describe('PlayedCardPreviewDialog', () => {
       <PlayedCardPreviewDialog card={null} round={createRound()} onClose={vi.fn()} />,
     )
 
-    expect(screen.getByText('Универсальный бонус x2')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Модификаторы' }))
+    expect(screen.getByText('Универсальный бонус ×2')).toBeInTheDocument()
     expect(screen.getByText('+30 очк.')).toBeInTheDocument()
     expect(screen.getByText('Убийства +1')).toBeInTheDocument()
-    expect(screen.getByText('Рассчитан x2')).toBeInTheDocument()
+    expect(screen.getByText('Рассчитан ×2')).toBeInTheDocument()
     expect(screen.queryByText('+10 очк.')).not.toBeInTheDocument()
     expect(screen.queryByText('+20 очк.')).not.toBeInTheDocument()
+  })
+
+  it('shows positive and negative modifier effects separately without counting the empty-card penalty', () => {
+    const round = createRound()
+    round.modifiers.push({
+      ...createModifier('result-3', 'activation-3', -40, 0),
+      modifierId: 'modifier-2',
+      modifierName: 'Вычет',
+    })
+    round.scoreDetails = { ...round.scoreDetails, modifierScoreDelta: -10, finalScore: 290 }
+    round.finalScore = 290
+
+    const { rerender } = renderWithAppProviders(
+      <PlayedCardPreviewDialog card={null} round={round} onClose={vi.fn()} />,
+    )
+    const result = within(screen.getByTestId('played-card-result-panel'))
+    expect(result.getByText('Бонус').closest('dl')).toHaveTextContent('+130 очк.')
+    expect(result.getByText('Списания').closest('dl')).toHaveTextContent('-40 очк.')
+
+    const emptyRound = createRound()
+    emptyRound.modifiers = []
+    emptyRound.killsCount = 0
+    emptyRound.scoreDetails = {
+      ...emptyRound.scoreDetails,
+      killsScore: 0,
+      modifierKillDelta: 0,
+      modifierKillScore: 0,
+      modifierScoreDelta: 0,
+      emptyCardPenaltyApplied: true,
+      emptyCardPenaltyScore: -100,
+      penaltyTotal: 100,
+      bonusDelta: -100,
+      totalKillCount: 0,
+      finalScore: -100,
+    }
+    emptyRound.finalScore = -100
+    rerender(<PlayedCardPreviewDialog card={null} round={emptyRound} onClose={vi.fn()} />)
+    expect(result.getByText('Списания').closest('dl')).toHaveTextContent('0 очк.')
+    expect(result.getByText('Итог').closest('dl')).toHaveTextContent('-100 очк.')
   })
 })
 
