@@ -1642,7 +1642,9 @@ test('team queue is a separate navigation page before the leaderboard', async ({
   await expect(page.getByRole('heading', { name: 'Очередь команд' })).toBeVisible()
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(page.getByTestId('team-queue-panel')).toBeVisible()
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true)
 })
 
 for (const status of ['ready', 'finished'] as const) {
