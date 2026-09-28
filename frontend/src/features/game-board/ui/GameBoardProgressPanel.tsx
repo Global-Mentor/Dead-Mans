@@ -14,11 +14,11 @@ import {
   AppDialog,
   AppLinkButton,
   SectionCard,
-  StatusBadge,
   SurfaceButton,
 } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from '../model/game-management-flow.ts'
+import { GameBoardActiveTeamCard } from './GameBoardActiveTeamCard.tsx'
 import { GameBoardOrnamentDivider } from './GameBoardOrnamentDivider.tsx'
 import { GameBoardTeamQueue, type BoardQueueState } from './GameBoardTeamQueue.tsx'
 
@@ -28,26 +28,6 @@ interface GameBoardProgressPanelProps {
   compact: boolean
   queue: BoardQueueState
 }
-
-const participantOrnamentSx = {
-  width: 12,
-  height: 1,
-  flexShrink: 0,
-  bgcolor: 'primary.light',
-  opacity: 0.55,
-  position: 'relative',
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 5,
-    height: 5,
-    border: '1px solid',
-    borderColor: 'primary.light',
-    transform: 'translate(-50%, -50%) rotate(45deg)',
-  },
-} as const
 
 export function GameBoardProgressPanel({
   snapshot,
@@ -63,7 +43,6 @@ export function GameBoardProgressPanel({
   const headingRef = useRef<HTMLHeadingElement>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
-  const [playedExpanded, setPlayedExpanded] = useState(false)
   const activeId =
     snapshot.status === 'active' ? (activeRound?.teamId ?? snapshot.activeTeamId) : null
   const activeTeam =
@@ -73,6 +52,7 @@ export function GameBoardProgressPanel({
   const played = otherTeams.length - waiting
   const ownTeam =
     activeTeam?.participants.some((participant) => participant.userId === user?.id) ?? false
+  const showTeamDetails = activeTeam !== null || snapshot.status !== 'active'
   const flow = buildGameManagementFlow(snapshot, activeRound)
   const step =
     flow.steps.find((item) => item.state === 'current') ??
@@ -116,6 +96,7 @@ export function GameBoardProgressPanel({
     <Typography
       component="span"
       variant="h6"
+      color="text.primary"
       data-testid="game-board-status-title"
       sx={summaryValueSx}
     >
@@ -123,13 +104,7 @@ export function GameBoardProgressPanel({
     </Typography>
   )
   const queueContent = (
-    <GameBoardTeamQueue
-      {...queue}
-      teams={otherTeams}
-      currentUserId={user?.id ?? null}
-      playedExpanded={playedExpanded}
-      onPlayedExpandedChange={setPlayedExpanded}
-    />
+    <GameBoardTeamQueue {...queue} teams={otherTeams} currentUserId={user?.id ?? null} />
   )
 
   return (
@@ -291,75 +266,20 @@ export function GameBoardProgressPanel({
           </Box>
         ) : null}
         <Collapse id={detailsId} in={detailsExpanded} timeout={reducedMotion ? 0 : 'auto'}>
-          <GameBoardOrnamentDivider />
-          <Box sx={{ px: 1.5, py: 0.75, minWidth: 0 }}>
-            {activeTeam ? (
-              <SectionCard
-                component="section"
-                aria-label={t('gameBoard.progress.currentTeam')}
-                surface="inset"
-                sx={{ px: 1.25, py: 1.5, textAlign: 'center' }}
-              >
-                <Stack
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
-                >
-                  <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
-                    <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                      {t('gameBoard.progress.currentTeam')}
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                      {title}
-                    </Typography>
-                  </Stack>
-                  {activeTeam.participants.length > 0 ? (
-                    <Stack
-                      component="ul"
-                      spacing={0.5}
-                      sx={{ width: '100%', m: 0, p: 0, listStyle: 'none' }}
-                    >
-                      {activeTeam.participants.map((participant) => (
-                        <Stack
-                          component="li"
-                          key={participant.userId}
-                          direction="row"
-                          spacing={0.5}
-                          alignItems="center"
-                          justifyContent="center"
-                          sx={{ minWidth: 0 }}
-                        >
-                          <Box component="span" aria-hidden sx={participantOrnamentSx} />
-                          <Typography
-                            variant="body2"
-                            sx={{ minWidth: 0, overflowWrap: 'anywhere', lineHeight: 1.4 }}
-                          >
-                            {participant.displayName}
-                          </Typography>
-                          <Box component="span" aria-hidden sx={participantOrnamentSx} />
-                        </Stack>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      {t('gameBoard.roundSummaryNoParticipants')}
-                    </Typography>
-                  )}
-                  {ownTeam ? (
-                    <StatusBadge
-                      size="small"
-                      density="compact"
-                      color="primary"
-                      variant="outlined"
-                      label={t('gameBoard.progress.yourTeam')}
-                    />
-                  ) : null}
-                </Stack>
-              </SectionCard>
-            ) : (
-              teamTitle
-            )}
-          </Box>
+          {showTeamDetails ? <GameBoardOrnamentDivider /> : null}
+          {showTeamDetails ? (
+            <Box sx={{ px: 1.5, py: 0.75, minWidth: 0 }}>
+              {activeTeam ? (
+                <GameBoardActiveTeamCard
+                  title={title}
+                  participants={activeTeam.participants}
+                  ownTeam={ownTeam}
+                />
+              ) : (
+                teamTitle
+              )}
+            </Box>
+          ) : null}
           <GameBoardOrnamentDivider />
           <Box component="section" aria-label={t('gameBoard.teamQueueTitle')} sx={{ minWidth: 0 }}>
             <Typography
@@ -427,21 +347,12 @@ export function GameBoardProgressPanel({
         }
       >
         {activeTeam ? (
-          <SectionCard surface="inset" sx={{ mb: 2, p: 1, textAlign: 'center' }}>
-            <Typography variant="overline" color="text.secondary">
-              {t('gameBoard.progress.currentTeam')}
-            </Typography>
-            <Typography variant="subtitle1" sx={{ overflowWrap: 'anywhere' }}>
-              {title}
-            </Typography>
-            {ownTeam ? (
-              <StatusBadge
-                size="small"
-                density="compact"
-                label={t('gameBoard.progress.yourTeam')}
-              />
-            ) : null}
-          </SectionCard>
+          <GameBoardActiveTeamCard
+            title={title}
+            participants={activeTeam.participants}
+            ownTeam={ownTeam}
+            compact
+          />
         ) : null}
         {queueContent}
       </AppDialog>

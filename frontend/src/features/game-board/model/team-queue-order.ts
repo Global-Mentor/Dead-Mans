@@ -17,6 +17,19 @@ export function groupTeamQueueTeams(teams: readonly GameTeamQueueItem[]) {
   return { remainingTeams, playedTeams }
 }
 
+export function sortPlayedTeamsByScore(
+  teams: ReturnType<typeof groupTeamQueueTeams>['playedTeams'],
+) {
+  return [...teams].sort((left, right) => {
+    const leftScore = left.team.finalScore
+    const rightScore = right.team.finalScore
+
+    if (leftScore === null) return rightScore === null ? left.playedOrder - right.playedOrder : 1
+    if (rightScore === null) return -1
+    return rightScore - leftScore || left.playedOrder - right.playedOrder
+  })
+}
+
 function comparePlayedTeams(left: OrderedTeamQueueItem, right: OrderedTeamQueueItem) {
   const leftPlayedAt = parseOptionalTime(left.team.playedAtUtc)
   const rightPlayedAt = parseOptionalTime(right.team.playedAtUtc)

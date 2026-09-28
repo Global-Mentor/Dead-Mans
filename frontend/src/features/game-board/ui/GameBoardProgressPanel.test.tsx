@@ -103,7 +103,11 @@ it('keeps phase and team visible while details are collapsed, then shows the ros
   expect(within(activeTeam).getByRole('listitem')).toHaveTextContent('Игрок')
   expect(screen.getByText('Этап раунда')).toBeVisible()
   expect(screen.getByRole('region', { name: 'Очередь команд' })).toBeVisible()
-  expect(screen.getByText('Ваша команда')).toBeVisible()
+  expect(within(activeTeam).getByText('Ваша команда')).toHaveStyle({
+    clipPath: 'inset(50%)',
+    width: '1px',
+    height: '1px',
+  })
   expect(screen.getByRole('region', { name: 'В очереди · 1' })).toBeVisible()
   expect(screen.getByTestId('game-board-phase')).toHaveTextContent('Выбор карточки')
   expect(
@@ -111,12 +115,11 @@ it('keeps phase and team visible while details are collapsed, then shows the ros
   ).not.toBeInTheDocument()
 })
 
-it('keeps the mobile dialog and played disclosure through refresh failure and resizing', () => {
+it('keeps the mobile dialog and played list through refresh failure and resizing', () => {
   const { rerender } = renderWithAppProviders(panel(true))
   fireEvent.click(screen.getByTestId('game-board-phase-toggle'))
   fireEvent.click(screen.getByRole('button', { name: 'Посмотреть очередь команд' }))
   const dialog = screen.getByRole('dialog', { name: 'Очередь команд' })
-  fireEvent.click(within(dialog).getByText('Сыграли'))
   expect(within(dialog).getByText('Сыгравшие 0')).toBeVisible()
   rerender(panel(true, true))
   expect(within(dialog).getByRole('status')).toHaveTextContent(
@@ -126,6 +129,15 @@ it('keeps the mobile dialog and played disclosure through refresh failure and re
   rerender(panel(false, true))
   expect(dialog).toBeVisible()
   expect(within(dialog).getByText('Сыгравшие 0')).toBeVisible()
+})
+
+it('does not repeat the game title when an active team has not been selected', () => {
+  renderWithAppProviders(panel(false, false, { ...snapshot, activeTeamId: null }))
+  fireEvent.click(screen.getByTestId('game-board-phase-toggle'))
+  expect(screen.getByTestId('game-board-phase')).toHaveTextContent('Выбор активной команды')
+  expect(screen.queryByTestId('game-board-status-title')).not.toBeInTheDocument()
+  expect(screen.queryByText('Игра')).not.toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Очередь команд' })).toBeVisible()
 })
 
 it('closes the old dialog for a new game identity', () => {

@@ -22,8 +22,6 @@ const team: GameTeamQueueItem = {
 const props = {
   teams: [team],
   currentUserId: null,
-  playedExpanded: false,
-  onPlayedExpandedChange: vi.fn(),
   isLoading: false,
   isError: false,
   hasData: true,
@@ -43,8 +41,7 @@ it('preserves populated content on refresh failure and prevents duplicate retrie
   expect(screen.getByRole('button', { name: 'Повторить' })).toBeDisabled()
 })
 
-it('collapses longer played lists without hiding waiting teams', () => {
-  const onPlayedExpandedChange = vi.fn()
+it('shows longer played lists without another disclosure', () => {
   const teams = [
     { ...team, teamId: 'waiting', teamName: 'Ещё играем', isPlayed: false, playedAtUtc: null },
     ...Array.from({ length: 4 }, (_, index) => ({
@@ -53,19 +50,14 @@ it('collapses longer played lists without hiding waiting teams', () => {
       teamSlotIndex: index + 2,
     })),
   ]
-  const { rerender } = renderWithAppProviders(
-    <GameBoardTeamQueue {...props} teams={teams} onPlayedExpandedChange={onPlayedExpandedChange} />,
-  )
+  renderWithAppProviders(<GameBoardTeamQueue {...props} teams={teams} />)
   expect(screen.getByText('Ещё играем')).toBeVisible()
   const played = screen.getByRole('region', { name: 'Сыграли' })
-  expect(played.querySelector('details')).not.toHaveAttribute('open')
-  fireEvent.click(within(played).getByText('Сыграли'))
-  expect(onPlayedExpandedChange).toHaveBeenCalledWith(true)
-  rerender(<GameBoardTeamQueue {...props} teams={teams} playedExpanded />)
+  expect(played.querySelector('details')).not.toBeInTheDocument()
   expect(screen.getAllByText('Ночные странники')[0]).toBeVisible()
 })
 
-it('marks membership and labels team numbers without treating them as rankings', () => {
+it('marks membership and labels played positions', () => {
   renderWithAppProviders(
     <GameBoardTeamQueue
       {...props}
@@ -75,9 +67,47 @@ it('marks membership and labels team numbers without treating them as rankings',
       ]}
     />,
   )
-  expect(screen.getByText('Ваша команда')).toBeVisible()
-  expect(screen.getByLabelText('Команда номер 1')).toHaveTextContent('1')
+  expect(screen.getByText('Ваша команда')).toHaveStyle({
+    clipPath: 'inset(50%)',
+    width: '1px',
+    height: '1px',
+  })
+  expect(screen.getByLabelText('Место 1')).toHaveTextContent('1')
   expect(screen.getByRole('region', { name: 'В очереди · 0' })).toBeVisible()
+})
+
+it('ranks played teams by result and shows a diamond instead of a waiting slot number', () => {
+  renderWithAppProviders(
+    <GameBoardTeamQueue
+      {...props}
+      teams={[
+        { ...team, teamId: 'waiting', teamName: 'Ждут', teamSlotIndex: 9, isPlayed: false },
+        { ...team, teamId: 'low', teamName: 'Низкий', finalScore: -20 },
+        { ...team, teamId: 'tie-first', teamName: 'Равный первый', finalScore: 50 },
+        {
+          ...team,
+          teamId: 'tie-second',
+          teamName: 'Равный второй',
+          finalScore: 50,
+          playedAtUtc: '2026-09-01T11:00:00Z',
+        },
+        { ...team, teamId: 'best', teamName: 'Лучший', finalScore: 300 },
+        { ...team, teamId: 'unscored', teamName: 'Без результата', finalScore: null },
+      ]}
+    />,
+  )
+
+  const waiting = screen.getByRole('region', { name: 'В очереди · 1' })
+  expect(within(waiting).getByText('Ждут')).toBeVisible()
+  expect(within(waiting).queryByText('9')).not.toBeInTheDocument()
+
+  const rows = within(screen.getByRole('region', { name: 'Сыграли' })).getAllByRole('listitem')
+  const expectedNames = ['Лучший', 'Равный первый', 'Равный второй', 'Низкий', 'Без результата']
+  expect(rows).toHaveLength(expectedNames.length)
+  for (const [index, row] of rows.entries()) {
+    expect(within(row).getByText(expectedNames[index] ?? '')).toBeVisible()
+    expect(within(row).getByLabelText(`Место ${index + 1}`)).toBeVisible()
+  }
 })
 
 it('distinguishes a zero score from a missing completed round', () => {
