@@ -86,6 +86,7 @@ function createPageQuery(overrides: Record<string, unknown> = {}) {
     isError: false,
     data: readySnapshot,
     activeRound: null,
+    hasActiveRoundData: true,
     teamQueue: [],
     retry: vi.fn(),
     isRefreshing: false,
@@ -328,6 +329,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText('Загрузка игрового поля...')).toBeInTheDocument()
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
 
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isError: true }))

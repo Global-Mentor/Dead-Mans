@@ -27,6 +27,7 @@ export function ViewportBoard({
   const ref = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState<number | null>(null)
 
+  // Parent reflow can change the available height without changing the board's props.
   useLayoutEffect(() => {
     const element = ref.current
     if (!element) return
@@ -81,7 +82,7 @@ export function ViewportBoard({
       window.removeEventListener('resize', measure)
       window.visualViewport?.removeEventListener('resize', measure)
     }
-  }, [columns, rows, gap, cardAspectRatio, leadWidth, trailingWidth, mobile])
+  })
 
   return (
     <Box ref={ref} data-testid="viewport-board" sx={{ width: '100%', minWidth: 0 }}>

@@ -53,7 +53,9 @@ function createPanelChildRoute(route: (typeof panelRouteConfig)[number]): RouteO
     path,
     element: (
       <RequirePanelRouteAccess route={route}>
-        <Suspense fallback={<CenteredProgress minHeight={240} />}>
+        <Suspense
+          fallback={route.id === 'game-board' ? null : <CenteredProgress minHeight={240} />}
+        >
           {Sync ? createElement(Sync) : null}
           <Page />
         </Suspense>

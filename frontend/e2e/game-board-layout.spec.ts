@@ -29,6 +29,198 @@ const board: GameBoardSnapshot = {
   })),
 }
 
+test('board progress position is stable when entering from another tab', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  await mockGame(page, 'active', 'viewer')
+  await page.goto('/panel/game-team-queue')
+  await expect(page.getByRole('link', { name: 'Доска', exact: true })).toBeVisible()
+
+  const samplesPromise = page.evaluate(
+    () =>
+      new Promise<{ x: number; width: number; visible: boolean }[]>((resolve) => {
+        const samples: { x: number; width: number; visible: boolean }[] = []
+        const startedAt = performance.now()
+        let firstVisibleFrame: number | null = null
+        const sample = () => {
+          const panel = document.querySelector('[data-testid="game-board-context"]')
+          if (panel) {
+            const bounds = panel.getBoundingClientRect()
+            const visible = getComputedStyle(panel).visibility === 'visible'
+            if (visible) firstVisibleFrame ??= performance.now()
+            samples.push({
+              x: Math.round(bounds.x),
+              width: Math.round(bounds.width),
+              visible,
+            })
+          }
+          if (
+            (firstVisibleFrame === null || performance.now() - firstVisibleFrame < 500) &&
+            performance.now() - startedAt < 5000
+          ) {
+            requestAnimationFrame(sample)
+          } else {
+            resolve(samples)
+          }
+        }
+        requestAnimationFrame(sample)
+      }),
+  )
+  await page.getByRole('link', { name: 'Доска', exact: true }).click()
+  await expect(page.getByTestId('game-board-context')).toBeVisible()
+  const visibleSamples = (await samplesPromise).filter((sample) => sample.visible)
+  expect(visibleSamples.length).toBeGreaterThan(0)
+  expect([...new Set(visibleSamples.map((sample) => sample.x))]).toHaveLength(1)
+  expect([...new Set(visibleSamples.map((sample) => sample.width))]).toHaveLength(1)
+})
+
+test('first board request leaves navigation available without a spinner', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  let releaseSnapshot = () => {}
+  const snapshotGate = new Promise<void>((resolve) => {
+    releaseSnapshot = resolve
+  })
+  await page.route('**/api/game', async (route) => {
+    await snapshotGate
+    await route.fallback()
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('page-state-panel')).toContainText('Загрузка игрового поля')
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Очередь команд' }).click()
+  await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
+  releaseSnapshot()
+})
+
+test('board renders while the active round loads and keeps commands unavailable', async ({
+  page,
+}) => {
+  const writes = await mockGame(page)
+  let releaseRound = () => {}
+  const roundGate = new Promise<void>((resolve) => {
+    releaseRound = resolve
+  })
+  await page.route('**/api/game/rounds/active', async (route) => {
+    await roundGate
+    await route.fallback()
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await expect(page.locator('[data-cell-id="card-2"]')).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
+  releaseRound()
+  await expect(page.locator('[data-cell-id="card-2"]')).toBeEnabled()
+  expect(writes).toEqual([])
+})
+
+test('board remains visible while its first team queue loads', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  let releaseQueue = () => {}
+  const queueGate = new Promise<void>((resolve) => {
+    releaseQueue = resolve
+  })
+  await page.route('**/api/game/team-queue', async (route) => {
+    await queueGate
+    await route.fallback()
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  releaseQueue()
+  await expect(page.getByTestId('game-board-context')).toBeVisible()
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+})
+
+test('board shows cards before played cell results arrive', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  let releaseHistory = () => {}
+  const historyGate = new Promise<void>((resolve) => {
+    releaseHistory = resolve
+  })
+  await page.route('**/api/game/history/games/board-layout', async (route) => {
+    await historyGate
+    await route.fallback()
+  })
+
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  releaseHistory()
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+})
+
+test('board remains interactive while nested data and card media load', async ({ page }) => {
+  await mockGame(page)
+  let releasePlayers = () => {}
+  const playersGate = new Promise<void>((resolve) => {
+    releasePlayers = resolve
+  })
+  let releaseMedia = () => {}
+  const mediaGate = new Promise<void>((resolve) => {
+    releaseMedia = resolve
+  })
+  await page.route('**/api/game/quiz/manual-awards/players', async (route) => {
+    await playersGate
+    await route.fallback()
+  })
+  await page.route('**/api/game', (route) =>
+    route.fulfill({
+      json: {
+        ...board,
+        cells: board.cells.map((cell, index) =>
+          index === 0 ? { ...cell, media: [{ url: '/media/cards/slow.svg' }] } : cell,
+        ),
+      },
+    }),
+  )
+  await page.route('**/media/cards/slow.svg', async (route) => {
+    await mediaGate
+    await route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>',
+    })
+  })
+
+  const playersRequested = page.waitForRequest('**/api/game/quiz/manual-awards/players')
+  const mediaRequested = page.waitForRequest('**/media/cards/slow.svg')
+  await page.goto('/panel/game-board', { waitUntil: 'domcontentloaded' })
+  await Promise.all([playersRequested, mediaRequested])
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await page.getByTestId('game-board-phase-toggle').click()
+  await expect(page.getByRole('region', { name: 'Активная команда', exact: true })).toBeVisible()
+  await page.screenshot({ path: '../.tmp/agent-work/board-progressive-loading.png' })
+  releasePlayers()
+  releaseMedia()
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+})
+
+test('returning to a cached board stays usable during its refresh', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.goto('/panel/game-board')
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await page.getByRole('link', { name: 'Очередь команд' }).click()
+  await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
+  await page.clock.setFixedTime(Date.now() + 11_000)
+
+  let releaseSnapshot = () => {}
+  const snapshotGate = new Promise<void>((resolve) => {
+    releaseSnapshot = resolve
+  })
+  await page.route('**/api/game', async (route) => {
+    await snapshotGate
+    await route.fallback()
+  })
+  const refreshStarted = page.waitForRequest('**/api/game')
+  await page.getByRole('link', { name: 'Доска', exact: true }).click()
+  await refreshStarted
+  await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  releaseSnapshot()
+})
+
 async function mockGame(
   page: Page,
   status: 'active' | 'ready' | 'finished' = 'active',

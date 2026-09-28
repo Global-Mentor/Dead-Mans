@@ -56,6 +56,7 @@ beforeEach(() => {
   mocks.useGameBoardPage.mockReturnValue({
     data: { gameId: 'game-1', status: 'active' },
     activeRound: null,
+    hasActiveRoundData: true,
     teamQueue: [],
     isTeamQueueError: false,
     isTeamQueueLoading: false,

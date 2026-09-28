@@ -36,8 +36,16 @@ export function GameAdminToolsPanel({
   triggerPlacement?: PanelTriggerPlacement
 }) {
   const { t } = useTranslation()
-  const { data, activeRound, teamQueue, isTeamQueueError, isTeamQueueLoading, isError, isLoading } =
-    useGameBoardPage()
+  const {
+    data,
+    activeRound,
+    hasActiveRoundData,
+    teamQueue,
+    isTeamQueueError,
+    isTeamQueueLoading,
+    isError,
+    isLoading,
+  } = useGameBoardPage()
   const activeTeam = useActiveGameTeam()
   const teamPlayedState = useGameTeamPlayedState()
   const manualQuizAward = useManualQuizAward()
@@ -47,7 +55,7 @@ export function GameAdminToolsPanel({
   const manualQuizAwardPlayers = useManualQuizAwardPlayers(launchPanel.canManageGame)
   const isAdmin = launchPanel.canStartGame
 
-  if (isLoading || isError || !data || !launchPanel.canManageGame) {
+  if (isLoading || isError || !hasActiveRoundData || !data || !launchPanel.canManageGame) {
     return null
   }
 

@@ -26,11 +26,19 @@ export function GameBoardLayout({
   const [availableWidth, setAvailableWidth] = useState<number | null>(null)
   const [boardFieldStart, setBoardFieldStart] = useState<number | null>(null)
   const [boardFieldWidth, setBoardFieldWidth] = useState<number | null>(null)
+  // Child fitting can change the field without changing props; align the rail before each paint.
   useLayoutEffect(() => {
     const element = container.current
     if (!element) return
-    const boardField = element.querySelector<HTMLElement>('[data-board-field]')
+    let boardField: HTMLElement | null = null
+    let resizeObserver: ResizeObserver | null = null
     const measure = () => {
+      const nextBoardField = element.querySelector<HTMLElement>('[data-board-field]')
+      if (nextBoardField !== boardField) {
+        if (boardField) resizeObserver?.unobserve(boardField)
+        boardField = nextBoardField
+        if (boardField) resizeObserver?.observe(boardField)
+      }
       const styles = getComputedStyle(element)
       const width =
         element.clientWidth -
@@ -43,13 +51,20 @@ export function GameBoardLayout({
         setBoardFieldStart(Math.round(fieldRect.left - element.getBoundingClientRect().left))
       }
     }
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(measure)
+      resizeObserver.observe(element)
+    }
     measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    if (boardField) observer.observe(boardField)
-    return () => observer.disconnect()
-  }, [availableWidth, smallScreen, columns, rowLabelColumnWidth])
+    const mutationObserver = new MutationObserver(() => {
+      if (!boardField || !element.contains(boardField)) measure()
+    })
+    mutationObserver.observe(element, { childList: true, subtree: true })
+    return () => {
+      resizeObserver?.disconnect()
+      mutationObserver.disconnect()
+    }
+  })
   const minimumMatrixWidth =
     2 * rowLabelColumnWidth +
     columns * boardGridMetrics.minimumCardWidth.desktop +

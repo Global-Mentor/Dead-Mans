@@ -31,6 +31,7 @@ export function GameBoardPage() {
   const {
     data,
     activeRound,
+    hasActiveRoundData,
     teamQueue,
     isTeamQueueLoading,
     isTeamQueueError,
@@ -65,9 +66,7 @@ export function GameBoardPage() {
   const previewPlayResult = useCardPlayResult(data?.gameId ?? null, previewCell)
   const boardCellResults = useGameBoardCellResults(data?.gameId ?? null, data?.cells ?? [])
   if (isLoading)
-    return (
-      <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} showSpinner />
-    )
+    return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} />
   if (isError || data === undefined)
     return (
       <PageStatePanel
@@ -169,7 +168,7 @@ export function GameBoardPage() {
               snapshot={snapshot}
               playResultsByCellId={boardCellResults.playResultsByCellId}
               activeCellId={activeRound?.cellId ?? null}
-              canOpenCells={canOpenCells}
+              canOpenCells={canOpenCells && hasActiveRoundData}
               onCellRequestOpen={requestOpenCell}
               onCellPreviewMedia={setPreviewCell}
               onCellOpenCurrentRound={() => navigate(gameRoundRoute.fullPath)}
