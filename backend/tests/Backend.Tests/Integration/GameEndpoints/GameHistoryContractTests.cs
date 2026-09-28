@@ -150,6 +150,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
             payload.MainGame.Rounds[0].CellMedia[0].Url
         );
         var roundModifier = Assert.Single(payload.MainGame.Rounds[0].Modifiers);
+        Assert.Equal("⚔️", roundModifier.IconEmoji);
         Assert.Equal(
             "{\"source\":\"round_kills\",\"effect\":\"success\",\"activationCount\":1}",
             roundModifier.ResolutionDataJson
@@ -910,6 +911,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 ModifierId = modifierId,
                 ActivatedByUserId = alphaId,
                 InitiatedByUserId = alphaId,
+                ModifierIconEmojiSnapshot = "⚔️",
                 ActivatedAtUtc = now.AddHours(-1.75),
                 Status = GameModifierActivationStatusValue.Consumed,
                 ArchivedAtUtc = now.AddHours(-1.7)

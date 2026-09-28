@@ -238,6 +238,7 @@ public static partial class ApiContractMapper
             item.ModifierResultId.ToString(),
             item.ModifierId.ToString(),
             item.ModifierName,
+            item.IconEmoji,
             item.ModifierDescription,
             item.ModifierCategory,
             item.OutcomeStatus,

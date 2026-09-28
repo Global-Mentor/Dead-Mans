@@ -6717,6 +6717,9 @@ components:
           format: uuid
         modifierName:
           type: string
+        iconEmoji:
+          type: string
+          nullable: true
         modifierDescription:
           type: string
         modifierCategory:

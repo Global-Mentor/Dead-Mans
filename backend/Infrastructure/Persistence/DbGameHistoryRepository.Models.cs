@@ -98,6 +98,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         Guid ModifierResultId,
         Guid ModifierId,
         string ModifierName,
+        string? IconEmoji,
         string ModifierDescription,
         string ModifierCategory,
         string OutcomeStatus,

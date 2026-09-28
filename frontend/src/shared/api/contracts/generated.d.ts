@@ -2769,6 +2769,7 @@ export interface components {
             /** Format: uuid */
             modifierId: string;
             modifierName: string;
+            iconEmoji?: string | null;
             modifierDescription: string;
             modifierCategory: string;
             /** @enum {string} */
