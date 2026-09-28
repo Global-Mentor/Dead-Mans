@@ -79,6 +79,7 @@ export function GameAdminToolsPanel({
           isAwardingManualQuizPoints={manualQuizAward.isAwardingManualQuizPoints}
           onAwardManualQuizPoints={manualQuizAward.awardManualQuizPoints}
           isChangingRoundStage={startRound.isChangingRoundStage}
+          roundStageError={startRound.errorMessage}
           onStartRound={startRound.startRound}
           onStartModifierOrdering={startRound.startModifierOrdering}
           onBeginGameplay={startRound.beginGameplay}
@@ -139,12 +140,6 @@ export function GameAdminToolsPanel({
         onClose={manualQuizAward.dismissToast}
         severity={manualQuizAward.toastSeverity}
         autoHideDuration={4000}
-      />
-      <AppToast
-        message={startRound.toastMessage}
-        onClose={startRound.dismissToast}
-        severity="info"
-        autoHideDuration={3000}
       />
       <AppToast
         message={teamPlayedState.toastMessage}

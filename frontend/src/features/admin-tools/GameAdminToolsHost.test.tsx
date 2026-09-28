@@ -106,8 +106,7 @@ beforeEach(() => {
     rebuildRound: vi.fn(),
     technicalCancelRound: vi.fn(),
     completeRound: vi.fn(),
-    toastMessage: null,
-    dismissToast: vi.fn(),
+    errorMessage: null,
   })
   mocks.useGameFinish.mockReturnValue({
     finishGame: vi.fn(),

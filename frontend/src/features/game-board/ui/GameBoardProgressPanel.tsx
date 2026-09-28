@@ -1,4 +1,5 @@
 import { Box, Collapse, Stack, Typography, useMediaQuery } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -150,7 +151,7 @@ export function GameBoardProgressPanel({
             sx={{
               p: 0,
               borderLeft: '3px solid',
-              borderColor: 'primary.main',
+              borderColor: (theme) => alpha(theme.palette.primary.main, 0.33),
               overflow: 'hidden',
             }}
           >

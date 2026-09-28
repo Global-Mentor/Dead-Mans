@@ -48,6 +48,7 @@ interface GameRoundSummaryDialogProps {
   open: boolean
   activeRound: GameRoundDetails
   isSubmitting: boolean
+  submitErrorMessage: string | null
   onClose: () => void
   onSubmit: (input: {
     roundSummary: CompleteRoundInput
@@ -62,6 +63,7 @@ export function GameRoundSummaryDialog({ open, ...props }: GameRoundSummaryDialo
 function GameRoundSummaryDialogBody({
   activeRound,
   isSubmitting,
+  submitErrorMessage,
   onClose,
   onSubmit,
 }: Omit<GameRoundSummaryDialogProps, 'open'>) {
@@ -230,6 +232,11 @@ function GameRoundSummaryDialogBody({
           })}
         >
           <Stack spacing={2}>
+            {submitErrorMessage ? (
+              <InlineNotice severity="error" variant="outlined">
+                {submitErrorMessage}
+              </InlineNotice>
+            ) : null}
             <InlineNotice severity="info" variant="outlined">
               {t('gameBoard.roundSummaryFormulaHint', { scoreUnit: activeRound.baseScore })}
             </InlineNotice>

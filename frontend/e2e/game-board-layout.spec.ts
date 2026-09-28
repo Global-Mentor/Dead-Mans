@@ -201,9 +201,12 @@ test('returning to a cached board stays usable during its refresh', async ({ pag
   await mockGame(page, 'active', 'viewer')
   await page.goto('/panel/game-board')
   await expect(page.getByTestId('viewport-board')).toBeVisible()
+  await page.clock.setFixedTime(Date.now() + 11_000)
+  const queueRefresh = page.waitForResponse('**/api/game')
   await page.getByRole('link', { name: 'Очередь команд' }).click()
   await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
-  await page.clock.setFixedTime(Date.now() + 11_000)
+  await queueRefresh
+  await page.clock.setFixedTime(Date.now() + 22_000)
 
   let releaseSnapshot = () => {}
   const snapshotGate = new Promise<void>((resolve) => {
@@ -724,7 +727,7 @@ test('card confirmation stays busy during submission and preserves the card afte
   await page.locator('[data-cell-id="card-2"]').click()
   const confirmation = page.getByRole('dialog', { name: 'Открыть карточку?' })
   await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
-  await expect(confirmation.getByRole('button', { name: 'Открываем карточку...' })).toBeDisabled()
+  await expect(confirmation.getByRole('button', { name: 'Открываем' })).toBeDisabled()
   await expect(confirmation.getByRole('progressbar')).toBeVisible()
   await expect(confirmation).toContainText('100 очк.')
   await page.keyboard.press('Escape')

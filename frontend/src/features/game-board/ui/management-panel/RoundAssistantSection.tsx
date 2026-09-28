@@ -3,16 +3,22 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { AppButton, NativeDisclosure, StatusBadge } from '../../../../shared/ui/index.ts'
 import type { RoundActionModel } from '../../model/game-management-panel.ts'
-import { ManagementControlSurface, ManagementSectionTitle } from './ManagementPanelSurfaces.tsx'
+import {
+  ManagementControlSurface,
+  ManagementSectionTitle,
+  ManagementStateNotice,
+} from './ManagementPanelSurfaces.tsx'
 
 export function RoundAssistantSection({
   roundAction,
   flow,
   isChangingRoundStage,
+  errorMessage,
 }: {
   flow: ReturnType<typeof buildGameManagementFlow>
   roundAction: RoundActionModel
   isChangingRoundStage: boolean
+  errorMessage: string | null
 }) {
   const { t } = useTranslation()
 
@@ -109,6 +115,10 @@ export function RoundAssistantSection({
               ))}
             </Stack>
           </NativeDisclosure>
+        ) : null}
+
+        {errorMessage ? (
+          <ManagementStateNotice tone="error">{errorMessage}</ManagementStateNotice>
         ) : null}
 
         {roundAction.actionLabel && roundAction.onAction ? (

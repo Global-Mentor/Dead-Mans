@@ -52,7 +52,13 @@ describe('GameRoundSummaryDialog', () => {
 
   it('keeps an edited draft during a refresh and resets it for another round', () => {
     const round = createRound()
-    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const props = {
+      open: true,
+      isSubmitting: false,
+      submitErrorMessage: null,
+      onClose: vi.fn(),
+      onSubmit: vi.fn(),
+    }
     const { rerender } = renderWithAppProviders(
       <GameRoundSummaryDialog {...props} activeRound={round} />,
     )
@@ -94,7 +100,13 @@ describe('GameRoundSummaryDialog', () => {
       resolutionKind: 'nonNegativeCount',
       runtimeBehavior: { ...createRuntimeBehavior(), resolutionInputLabel: 'Second count' },
     })
-    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const props = {
+      open: true,
+      isSubmitting: false,
+      submitErrorMessage: null,
+      onClose: vi.fn(),
+      onSubmit: vi.fn(),
+    }
     const round = createRound({ modifierResults: [first, second] })
     const { rerender } = renderWithAppProviders(
       <GameRoundSummaryDialog {...props} activeRound={round} />,
@@ -123,7 +135,13 @@ describe('GameRoundSummaryDialog', () => {
   })
 
   it('closes a refreshed unedited round without asking to discard changes', () => {
-    const props = { open: true, isSubmitting: false, onClose: vi.fn(), onSubmit: vi.fn() }
+    const props = {
+      open: true,
+      isSubmitting: false,
+      submitErrorMessage: null,
+      onClose: vi.fn(),
+      onSubmit: vi.fn(),
+    }
     const round = createRound({ modifierResults: [createModifier()] })
     const { rerender } = renderWithAppProviders(
       <GameRoundSummaryDialog {...props} activeRound={round} />,
@@ -137,6 +155,7 @@ describe('GameRoundSummaryDialog', () => {
     const props = {
       open: true,
       isSubmitting: false,
+      submitErrorMessage: null,
       onClose: vi.fn(),
       onSubmit: vi.fn(),
       activeRound: createRound(),
@@ -371,6 +390,7 @@ function renderDialog(
       open
       activeRound={activeRound}
       isSubmitting={false}
+      submitErrorMessage={null}
       onClose={overrides.onClose ?? vi.fn()}
       onSubmit={overrides.onSubmit ?? vi.fn()}
     />,

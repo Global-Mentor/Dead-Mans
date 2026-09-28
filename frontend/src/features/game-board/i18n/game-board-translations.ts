@@ -270,15 +270,10 @@ const translations = {
     roundPanelComplete: 'Finalize round',
     roundPanelNoOpenCells: 'Open a board cell before starting a round.',
     roundPanelNoTeams: 'No confirmed teams are available for this round.',
-    roundPanelStartModifierOrderingSuccess: 'Modifier ordering started.',
     roundPanelStartModifierOrderingFailed: 'Unable to start modifier ordering.',
-    roundPanelStartSuccess: 'Modifier ordering finished.',
     roundPanelStartFailed: 'Unable to finish modifier ordering.',
-    roundPanelBeginGameplaySuccess: 'Gameplay started. Round timers are now running.',
     roundPanelBeginGameplayFailed: 'Unable to start gameplay.',
-    roundPanelReviewSuccess: 'Gameplay finished. Summarize the result next.',
     roundPanelReviewFailed: 'Unable to finish gameplay.',
-    roundPanelCompleteSuccess: 'Round completed. You can prepare the next round.',
     roundPanelCompleteFailed: 'Unable to complete the round.',
     roundPanelSafetyTitle: 'Round recovery and cancellation',
     roundPanelSafetyTooltip: 'Destructive recovery actions with full purchase refunds.',
@@ -287,7 +282,6 @@ const translations = {
     roundPanelRebuildConfirmTitle: 'Rebuild this modifier order?',
     roundPanelRebuildConfirmDescription:
       'Every purchase in this round will be cancelled and refunded. The card and team stay selected.',
-    roundPanelRebuildSuccess: 'Modifier order rebuilt and all purchases refunded.',
     roundPanelRebuildFailed: 'Unable to rebuild the modifier order.',
     roundPanelTechnicalReason: 'Technical reason',
     roundPanelTechnicalDetail: 'Internal audit detail',
@@ -296,7 +290,6 @@ const translations = {
     roundPanelTechnicalCancelConfirmTitle: 'Technically cancel this round?',
     roundPanelTechnicalCancelConfirmDescription:
       'The score becomes zero, every purchase is refunded, the card is retired, and the active team is released.',
-    roundPanelTechnicalCancelSuccess: 'Round technically cancelled and purchases refunded.',
     roundPanelTechnicalCancelFailed: 'Unable to technically cancel the round.',
     technicalCancelReasons: {
       external_game_failure: 'External game failure',
@@ -435,7 +428,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Finish the active round before changing team play status.',
     runFinalizeFailed: 'Failed to finalize round.',
     openConfirmTitle: 'Open card?',
-    openPending: 'Opening card...',
+    openPending: 'Opening',
     openConfirmDescription:
       'Open “{{title}}” for {{cost}} points? The card will become visible and the modifier-ordering phase will begin.',
     openSuccess: 'Card opened.',
@@ -722,15 +715,10 @@ const translations = {
     roundPanelComplete: 'Завершить раунд',
     roundPanelNoOpenCells: 'Сначала откройте карточку на игровом поле.',
     roundPanelNoTeams: 'Нет подтверждённых команд для запуска раунда.',
-    roundPanelStartModifierOrderingSuccess: 'Заказ модификаторов открыт.',
     roundPanelStartModifierOrderingFailed: 'Не удалось открыть заказ модификаторов.',
-    roundPanelStartSuccess: 'Заказ модификаторов завершён.',
     roundPanelStartFailed: 'Не удалось завершить заказ модификаторов.',
-    roundPanelBeginGameplaySuccess: 'Игра началась. Таймеры раунда запущены.',
     roundPanelBeginGameplayFailed: 'Не удалось начать игру.',
-    roundPanelReviewSuccess: 'Игра завершена. Теперь подведите итоги.',
     roundPanelReviewFailed: 'Не удалось завершить игру.',
-    roundPanelCompleteSuccess: 'Раунд завершён. Можно готовить следующий раунд.',
     roundPanelCompleteFailed: 'Не удалось завершить раунд.',
     roundPanelSafetyTitle: 'Восстановление и отмена раунда',
     roundPanelSafetyTooltip: 'Критические действия с полным возвратом покупок.',
@@ -740,7 +728,6 @@ const translations = {
     roundPanelRebuildConfirmTitle: 'Пересобрать заказ модификаторов?',
     roundPanelRebuildConfirmDescription:
       'Все покупки раунда будут отменены и возвращены. Карточка и команда останутся выбранными.',
-    roundPanelRebuildSuccess: 'Заказ пересобран, все покупки возвращены.',
     roundPanelRebuildFailed: 'Не удалось пересобрать заказ модификаторов.',
     roundPanelTechnicalReason: 'Техническая причина',
     roundPanelTechnicalDetail: 'Внутреннее пояснение для аудита',
@@ -749,7 +736,6 @@ const translations = {
     roundPanelTechnicalCancelConfirmTitle: 'Технически отменить этот раунд?',
     roundPanelTechnicalCancelConfirmDescription:
       'Счёт станет нулевым, все покупки вернутся, карточка станет недоступной, а активная команда освободится.',
-    roundPanelTechnicalCancelSuccess: 'Раунд технически отменён, покупки возвращены.',
     roundPanelTechnicalCancelFailed: 'Не удалось технически отменить раунд.',
     technicalCancelReasons: {
       external_game_failure: 'Сбой внешней игры',
@@ -890,7 +876,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Сначала завершите текущий раунд, а потом меняйте статус команды.',
     runFinalizeFailed: 'Не удалось завершить раунд.',
     openConfirmTitle: 'Открыть карточку?',
-    openPending: 'Открываем карточку...',
+    openPending: 'Открываем',
     openConfirmDescription:
       'Открыть «{{title}}» стоимостью {{cost}} очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
     openSuccess: 'Карточка открыта.',
@@ -1175,15 +1161,10 @@ const translations = {
     roundPanelComplete: 'Завершити раунд',
     roundPanelNoOpenCells: 'Спочатку відкрийте картку на полі.',
     roundPanelNoTeams: 'Немає підтверджених команд для запуску раунду.',
-    roundPanelStartModifierOrderingSuccess: 'Замовлення модифікаторів відкрито.',
     roundPanelStartModifierOrderingFailed: 'Не вдалося відкрити замовлення модифікаторів.',
-    roundPanelStartSuccess: 'Замовлення модифікаторів завершено.',
     roundPanelStartFailed: 'Не вдалося завершити замовлення модифікаторів.',
-    roundPanelBeginGameplaySuccess: 'Гра почалася. Таймери раунду запущено.',
     roundPanelBeginGameplayFailed: 'Не вдалося почати гру.',
-    roundPanelReviewSuccess: 'Гру завершено. Тепер підбийте підсумки.',
     roundPanelReviewFailed: 'Не вдалося завершити гру.',
-    roundPanelCompleteSuccess: 'Раунд завершено. Можна готувати наступний раунд.',
     roundPanelCompleteFailed: 'Не вдалося завершити раунд.',
     roundPanelSafetyTitle: 'Відновлення та скасування раунду',
     roundPanelSafetyTooltip: 'Критичні дії з повним поверненням покупок.',
@@ -1192,7 +1173,6 @@ const translations = {
     roundPanelRebuildConfirmTitle: 'Перезібрати замовлення модифікаторів?',
     roundPanelRebuildConfirmDescription:
       'Усі покупки раунду буде скасовано й повернено. Картка та команда лишаться вибраними.',
-    roundPanelRebuildSuccess: 'Замовлення перезібрано, усі покупки повернено.',
     roundPanelRebuildFailed: 'Не вдалося перезібрати замовлення модифікаторів.',
     roundPanelTechnicalReason: 'Технічна причина',
     roundPanelTechnicalDetail: 'Внутрішнє пояснення для аудиту',
@@ -1201,7 +1181,6 @@ const translations = {
     roundPanelTechnicalCancelConfirmTitle: 'Технічно скасувати цей раунд?',
     roundPanelTechnicalCancelConfirmDescription:
       'Рахунок стане нульовим, усі покупки повернуться, картка стане недоступною, а активна команда звільниться.',
-    roundPanelTechnicalCancelSuccess: 'Раунд технічно скасовано, покупки повернено.',
     roundPanelTechnicalCancelFailed: 'Не вдалося технічно скасувати раунд.',
     technicalCancelReasons: {
       external_game_failure: 'Збій зовнішньої гри',
@@ -1342,7 +1321,7 @@ const translations = {
       'Спочатку завершіть поточний раунд, а потім змінюйте статус команди.',
     runFinalizeFailed: 'Не вдалося завершити раунд.',
     openConfirmTitle: 'Відкрити картку?',
-    openPending: 'Відкриваємо картку...',
+    openPending: 'Відкриваємо',
     openConfirmDescription:
       'Відкрити «{{title}}» вартістю {{cost}} очк.? Картка стане видимою, і почнеться фаза замовлення модифікаторів.',
     openSuccess: 'Картку відкрито.',
@@ -1628,15 +1607,10 @@ const translations = {
     roundPanelComplete: 'Zakończ rundę',
     roundPanelNoOpenCells: 'Najpierw otwórz kartę na planszy.',
     roundPanelNoTeams: 'Brak potwierdzonych drużyn do uruchomienia rundy.',
-    roundPanelStartModifierOrderingSuccess: 'Zamawianie modyfikatorów rozpoczęte.',
     roundPanelStartModifierOrderingFailed: 'Nie udało się rozpocząć zamawiania modyfikatorów.',
-    roundPanelStartSuccess: 'Zamawianie modyfikatorów zakończone.',
     roundPanelStartFailed: 'Nie udało się zakończyć zamawiania modyfikatorów.',
-    roundPanelBeginGameplaySuccess: 'Gra rozpoczęta. Liczniki rundy są aktywne.',
     roundPanelBeginGameplayFailed: 'Nie udało się rozpocząć gry.',
-    roundPanelReviewSuccess: 'Gra zakończona. Teraz podsumuj wyniki.',
     roundPanelReviewFailed: 'Nie udało się zakończyć gry.',
-    roundPanelCompleteSuccess: 'Runda zakończona. Możesz przygotować następną rundę.',
     roundPanelCompleteFailed: 'Nie udało się zakończyć rundy.',
     roundPanelSafetyTitle: 'Odzyskiwanie i anulowanie rundy',
     roundPanelSafetyTooltip: 'Krytyczne działania z pełnym zwrotem zakupów.',
@@ -1645,7 +1619,6 @@ const translations = {
     roundPanelRebuildConfirmTitle: 'Przebudować zamówienie modyfikatorów?',
     roundPanelRebuildConfirmDescription:
       'Wszystkie zakupy rundy zostaną anulowane i zwrócone. Karta i drużyna pozostaną wybrane.',
-    roundPanelRebuildSuccess: 'Zamówienie przebudowano, wszystkie zakupy zwrócono.',
     roundPanelRebuildFailed: 'Nie udało się przebudować zamówienia modyfikatorów.',
     roundPanelTechnicalReason: 'Przyczyna techniczna',
     roundPanelTechnicalDetail: 'Wewnętrzne wyjaśnienie audytowe',
@@ -1654,7 +1627,6 @@ const translations = {
     roundPanelTechnicalCancelConfirmTitle: 'Technicznie anulować tę rundę?',
     roundPanelTechnicalCancelConfirmDescription:
       'Wynik będzie zerowy, zakupy zostaną zwrócone, karta wycofana, a aktywna drużyna zwolniona.',
-    roundPanelTechnicalCancelSuccess: 'Rundę anulowano technicznie, zakupy zwrócono.',
     roundPanelTechnicalCancelFailed: 'Nie udało się technicznie anulować rundy.',
     technicalCancelReasons: {
       external_game_failure: 'Awaria zewnętrznej gry',
@@ -1796,7 +1768,7 @@ const translations = {
     teamPlayedRoundInProgress: 'Najpierw zakończ aktywną rundę, a potem zmień status drużyny.',
     runFinalizeFailed: 'Nie udało się zakończyć rundy.',
     openConfirmTitle: 'Otworzyć kartę?',
-    openPending: 'Otwieranie karty...',
+    openPending: 'Otwieranie',
     openConfirmDescription:
       'Otworzyć „{{title}}” za {{cost}} pkt? Karta stanie się widoczna i rozpocznie się faza zamawiania modyfikatorów.',
     openSuccess: 'Karta została otwarta.',

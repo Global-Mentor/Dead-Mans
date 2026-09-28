@@ -79,7 +79,12 @@ export function RoundOverview({
                 loadingLabel={t('common.media.loading')}
                 errorLabel={t('common.media.error')}
                 fit="contain"
-                sx={{ aspectRatio: '2 / 3', maxHeight: 'min(44vh, 420px)' }}
+                sx={{
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  maxHeight: 'min(44dvh, 420px)',
+                  alignSelf: 'center',
+                }}
               />
             ) : null}
             <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
