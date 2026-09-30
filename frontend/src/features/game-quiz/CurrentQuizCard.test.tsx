@@ -53,6 +53,50 @@ function renderCard(
 }
 
 describe('CurrentQuizCard', () => {
+  it('emphasizes the embedded question and timer without showing the category', () => {
+    vi.useFakeTimers()
+    const props = renderCard(
+      { ...baseState, closesAtUtc: new Date(Date.now() + 65_000).toISOString() },
+      { embedded: true },
+    )
+    expect(screen.getByRole('heading', { name: baseState.text })).toBeInTheDocument()
+    expect(screen.getByRole('timer')).toHaveTextContent('01:05')
+    expect(screen.queryByText(baseState.categoryName)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Second' }))
+    expect(props.onSubmit).toHaveBeenCalledWith(
+      baseState.questionSessionId,
+      baseState.options[1].optionId,
+    )
+    act(() => vi.advanceTimersByTime(65_000))
+    expect(screen.getByRole('timer')).toHaveTextContent('00:00')
+    expect(screen.getByRole('button', { name: 'Second' })).toBeDisabled()
+    expect(props.onDeadline).toHaveBeenCalledOnce()
+    expect(screen.queryByText(i18n.t('gameQuiz.resultWrong'))).not.toBeInTheDocument()
+  })
+
+  it('keeps every answer available in a long embedded list', () => {
+    const options = Array.from({ length: 24 }, (_, index) => ({
+      optionId: `option-${index}`,
+      text: `Answer ${index + 1}`,
+      displayOrder: index,
+    }))
+    const props = renderCard({ ...baseState, options }, { embedded: true })
+    expect(screen.getAllByRole('button')).toHaveLength(24)
+    for (const button of screen.getAllByRole('button')) expect(button).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Answer 24' }))
+    expect(props.onSubmit).toHaveBeenCalledWith(baseState.questionSessionId, 'option-23')
+  })
+
+  it.each([{ isSubmitting: true }, { answerDisabled: true }])(
+    'blocks embedded answers while sending or unable to refresh (%j)',
+    (overrides) => {
+      const props = renderCard(baseState, { embedded: true, ...overrides })
+      fireEvent.click(screen.getByRole('button', { name: 'First' }))
+      expect(screen.getByRole('button', { name: 'First' })).toBeDisabled()
+      expect(props.onSubmit).not.toHaveBeenCalled()
+    },
+  )
+
   it('allows a moderator to start the first question from an empty state', () => {
     const props = renderCard(null, { canManage: true })
     const next = screen.getByRole('button', { name: i18n.t('gameQuiz.nextQuestion') })

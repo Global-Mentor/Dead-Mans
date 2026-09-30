@@ -68,7 +68,8 @@ const translations = {
     noAvailableQuestionsError:
       'There are no questions left: every question available for this game has already been asked.',
     modifierOrderingActive: 'Finish ordering modifiers before starting a question.',
-    roundQuestionDescription: 'Question and answer options for the current round.',
+    countdownLabel: 'Time left',
+    questionHeading: 'Question',
     timeLeft: '{{seconds}} sec left',
     yourChoice: 'your choice',
     answerAccepted: 'Your answer was accepted. The result will be revealed when time expires.',
@@ -182,7 +183,8 @@ const translations = {
     noAvailableQuestionsError:
       'Доступных вопросов больше нет: все вопросы этой игры уже были заданы.',
     modifierOrderingActive: 'Завершите заказ модификаторов, прежде чем запускать вопрос.',
-    roundQuestionDescription: 'Вопрос и варианты ответов текущего раунда.',
+    countdownLabel: 'Осталось времени',
+    questionHeading: 'Вопрос',
     timeLeft: 'Осталось {{seconds}} сек.',
     yourChoice: 'ваш выбор',
     answerAccepted: 'Ответ принят. Результат будет показан после окончания времени.',
@@ -298,7 +300,8 @@ const translations = {
     noAvailableQuestionsError:
       'Доступних запитань більше немає: усі запитання цієї гри вже були поставлені.',
     modifierOrderingActive: 'Завершіть замовлення модифікаторів, перш ніж запускати запитання.',
-    roundQuestionDescription: 'Запитання та варіанти відповідей поточного раунду.',
+    countdownLabel: 'Залишилося часу',
+    questionHeading: 'Запитання',
     timeLeft: 'Залишилось {{seconds}} с',
     yourChoice: 'ваш вибір',
     answerAccepted: 'Відповідь прийнято. Результат буде показано після завершення часу.',
@@ -412,7 +415,8 @@ const translations = {
     noAvailableQuestionsError:
       'Nie ma już dostępnych pytań: wszystkie pytania w tej grze zostały już zadane.',
     modifierOrderingActive: 'Zakończ zamawianie modyfikatorów przed rozpoczęciem pytania.',
-    roundQuestionDescription: 'Pytanie i odpowiedzi bieżącej rundy.',
+    countdownLabel: 'Pozostały czas',
+    questionHeading: 'Pytanie',
     timeLeft: 'Pozostało {{seconds}} s',
     yourChoice: 'twój wybór',
     answerAccepted: 'Odpowiedź została przyjęta. Wynik pojawi się po upływie czasu.',

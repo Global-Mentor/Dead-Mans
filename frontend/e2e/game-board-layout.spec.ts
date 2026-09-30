@@ -1888,6 +1888,182 @@ test('a question opens on the round screen and accepts an answer without leaving
   expect(writes).toEqual([])
 })
 
+for (const width of [320, 390, 768, 1440]) {
+  test.describe(`quiz input at ${width}px`, () => {
+    test.use({ hasTouch: width < 768 })
+    test(`quiz drawer keeps 24 answers readable and clickable at ${width}px`, async ({
+      page,
+    }, testInfo) => {
+      await page.setViewportSize({ width, height: width === 1440 ? 900 : 740 })
+      await mockGame(page, 'active', 'viewer')
+      await page.route('**/api/game/rounds/active', (route) =>
+        route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+      )
+      const options = Array.from({ length: 24 }, (_, index) => ({
+        optionId: `answer-${index}`,
+        text: `Вариант ответа ${index + 1}`,
+        displayOrder: index,
+      }))
+      const deadline = Date.now() + 120_000
+      let selected: string | null = null
+      let attempts = 0
+      let complete: (() => void) | undefined
+      await page.route('**/api/game/quiz/current', (route) =>
+        route.fulfill({
+          json: {
+            questionSessionId: 'quiz-many',
+            gameId: board.gameId,
+            askOrder: 1,
+            questionId: 'question-many',
+            questionCode: 'Q-24',
+            categoryName: 'Скрытая категория',
+            text: 'Какой из этих путей приведёт охотника к заброшенной лесопилке?',
+            options,
+            reward: 10,
+            status: 'open',
+            askedAtUtc: new Date(deadline - 120_000).toISOString(),
+            closesAtUtc: new Date(deadline).toISOString(),
+            mySelectedOptionId: selected,
+          },
+        }),
+      )
+      await page.route(
+        '**/api/game/quiz/question-sessions/quiz-many/submissions',
+        async (route) => {
+          attempts++
+          if (attempts === 1) return route.fulfill({ status: 500 })
+          await new Promise<void>((resolve) => {
+            complete = resolve
+          })
+          selected = route.request().postDataJSON().optionId
+          return route.fulfill({
+            json: {
+              submissionId: 'submission-many',
+              questionSessionId: 'quiz-many',
+              userId: 'player-one',
+              selectedOptionId: selected,
+              submittedAtUtc: new Date().toISOString(),
+              isExisting: false,
+            },
+          })
+        },
+      )
+      await page.goto('/panel/game-round')
+      const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+      await expect(question.getByRole('heading', { name: /Какой из этих путей/ })).toBeVisible()
+      await expect(question.getByRole('timer')).toBeVisible()
+      const logo = question.locator('img')
+      await expect(logo).toHaveAttribute('src', '/brand/deadmans-monogram.svg')
+      await expect
+        .poll(() => logo.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+        .toBe(192)
+      await expect(logo).toBeVisible()
+      await expect(question).not.toContainText('Скрытая категория')
+      const answers = question.getByRole('button', { name: /^Вариант ответа/ })
+      await expect(answers).toHaveCount(24)
+      const first = (await answers.nth(0).boundingBox())!
+      const second = (await answers.nth(1).boundingBox())!
+      if (width >= 768) expect(Math.abs(first.y - second.y)).toBeLessThan(1)
+      else expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
+      for (const answer of await answers.all()) {
+        expect(
+          await answer.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+        ).toBe(true)
+        await expect(answer).toBeEnabled()
+      }
+      expect(
+        await question.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      ).toBe(true)
+      await question.screenshot({
+        path: testInfo.outputPath(`quiz-drawer-${width}.png`),
+        animations: 'disabled',
+      })
+      const last = question.getByRole('button', { name: 'Вариант ответа 24', exact: true })
+      await last.scrollIntoViewIfNeeded()
+      if (width < 768) await last.tap()
+      else await last.click()
+      await expect(question).toContainText('Не удалось выполнить действие')
+      await expect(last).toBeEnabled()
+      await last.focus()
+      await page.keyboard.press('Enter')
+      await expect.poll(() => Boolean(complete)).toBe(true)
+      await expect(answers.nth(0)).toBeDisabled()
+      await expect(last).toBeDisabled()
+      expect(attempts).toBe(2)
+      complete?.()
+      await expect(question).toContainText('Ответ принят')
+      await expect(question.getByRole('button', { name: /Вариант ответа 24/ })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      const accepted = question.getByRole('button', { name: /Вариант ответа 24/ })
+      await expect(accepted).toHaveCSS('box-shadow', /inset/)
+      await accepted.scrollIntoViewIfNeeded()
+      await question.screenshot({
+        path: testInfo.outputPath(`quiz-drawer-accepted-${width}.png`),
+        animations: 'disabled',
+      })
+      await question.getByRole('button', { name: 'Закрыть вопрос' }).click()
+      await page.getByRole('button', { name: 'Открыть вопрос' }).click()
+      await expect(question).toContainText('Ответ принят')
+    })
+  })
+}
+
+test('quiz drawer wraps long answers and blocks them at the local deadline', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 600 })
+  await mockGame(page, 'active', 'viewer')
+  const now = new Date('2026-09-30T12:00:00Z')
+  await page.clock.install({ time: now })
+  await page.route('**/api/game/quiz/current', (route) =>
+    route.fulfill({
+      json: {
+        questionSessionId: 'quiz-long',
+        gameId: board.gameId,
+        askOrder: 1,
+        questionId: 'question-long',
+        questionCode: 'Q-long',
+        categoryName: 'Охота',
+        text: 'Какой путь выбрать, если нужно добраться до мельницы незамеченным?',
+        options: Array.from({ length: 8 }, (_, index) => ({
+          optionId: `long-${index}`,
+          displayOrder: index,
+          text: `${index + 1}. Пройти вдоль берега реки, затем свернуть к заброшенной пристани и продолжить путь через камыши, избегая открытых участков.`,
+        })),
+        reward: 10,
+        status: 'open',
+        askedAtUtc: now.toISOString(),
+        closesAtUtc: new Date(now.getTime() + 10_000).toISOString(),
+      },
+    }),
+  )
+  await page.goto('/panel/game-board')
+  const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  await expect(question.getByRole('timer')).toBeVisible()
+  const answers = question.getByRole('button', { name: /Пройти вдоль/ })
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 600 })
+    const first = (await answers.nth(0).boundingBox())!
+    const second = (await answers.nth(1).boundingBox())!
+    expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
+    for (const answer of await answers.all())
+      expect(
+        await answer.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      ).toBe(true)
+    await question.screenshot({
+      path: testInfo.outputPath(`quiz-drawer-long-${width}.png`),
+      animations: 'disabled',
+    })
+  }
+  await page.clock.fastForward(11_000)
+  await expect(question.getByRole('timer')).toHaveText('00:00')
+  await expect(answers.nth(0)).toBeDisabled()
+  await expect(answers.nth(7)).toBeDisabled()
+  await expect(question.locator('[data-quiz-result]')).toHaveCount(0)
+})
+
 test('quiz petal disappears after the question closes', async ({ page }) => {
   let status = 'open'
   let sendEvent: ((message: string) => void) | undefined
@@ -1923,32 +2099,59 @@ test('quiz petal disappears after the question closes', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toHaveCount(0)
 })
 
-test('moderator sees the round question without player answer controls', async ({ page }) => {
+test('moderator can answer the round question and the accepted choice survives a failed refresh', async ({
+  page,
+}) => {
+  let submitted = false
+  let submissions = 0
   const writes = await mockGame(page, 'active', 'admin')
   await page.route('**/api/game/rounds/active', (route) =>
     route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
   )
   await page.route('**/api/game/quiz/current', (route) =>
-    route.fulfill({
-      json: {
-        questionSessionId: 'quiz-moderator',
-        gameId: board.gameId,
-        askOrder: 1,
-        questionId: 'question-moderator',
-        questionCode: 'Q-5',
-        categoryName: 'Охота',
-        text: 'Куда идти?',
-        options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
-        status: 'open',
-        askedAtUtc: new Date().toISOString(),
-        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
-      },
-    }),
+    submitted
+      ? route.fulfill({ status: 500 })
+      : route.fulfill({
+          json: {
+            questionSessionId: 'quiz-moderator',
+            gameId: board.gameId,
+            askOrder: 1,
+            questionId: 'question-moderator',
+            questionCode: 'Q-5',
+            categoryName: 'Охота',
+            text: 'Куда идти?',
+            options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
+            status: 'open',
+            askedAtUtc: new Date().toISOString(),
+            closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
   )
+  await page.route('**/api/game/quiz/question-sessions/quiz-moderator/submissions', (route) => {
+    submissions++
+    expect(route.request().postDataJSON()).toEqual({ optionId: 'one' })
+    submitted = true
+    return route.fulfill({
+      json: {
+        submissionId: 'submission-moderator',
+        questionSessionId: 'quiz-moderator',
+        userId: 'admin-one',
+        selectedOptionId: 'one',
+        submittedAtUtc: new Date().toISOString(),
+        isExisting: false,
+      },
+    })
+  })
   await page.goto('/panel/game-round')
   const question = page.getByRole('dialog', { name: 'Текущий вопрос' })
   await expect(question).toContainText('Куда идти?')
-  await expect(question.getByRole('button', { name: 'К берегу' })).toBeDisabled()
+  await expect(question.getByRole('button', { name: 'К берегу' })).toBeEnabled()
+  await question.getByRole('button', { name: 'К берегу' }).focus()
+  await page.keyboard.press('Enter')
+  await expect(question).toContainText('Ответ принят')
+  await expect(question.getByRole('button', { name: /К берегу/ })).toBeDisabled()
+  await expect(question).toContainText('Не удалось загрузить')
+  expect(submissions).toBe(1)
   expect(writes).toEqual([])
 })
 

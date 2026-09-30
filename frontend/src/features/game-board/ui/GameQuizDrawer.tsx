@@ -52,7 +52,6 @@ export function GameQuizDrawer({
       side={side}
       isError={quizQuery.isError}
       onRefresh={retry}
-      readOnly={!isPlayer}
     />
   )
 }
@@ -63,14 +62,12 @@ function QuizSessionDrawer({
   side,
   isError,
   onRefresh,
-  readOnly,
 }: {
   quiz: CurrentGameQuizState
   suspended: boolean
   side: 'left' | 'right'
   isError: boolean
   onRefresh: () => void
-  readOnly: boolean
 }) {
   const { t } = useTranslation()
   const id = useId()
@@ -94,12 +91,11 @@ function QuizSessionDrawer({
         open={open}
         onClose={() => setRequestedOpen(false)}
         title={t('gameQuiz.currentTitle')}
-        description={t(
-          readOnly ? 'gameQuiz.roundQuestionDescription' : 'gameQuiz.currentDescription',
-        )}
         closeLabel={t('gameBoard.currentRoundScreen.closeQuiz')}
         side={side}
-        width="wide"
+        width={560}
+        contentDensity="compact"
+        bodyTestId="quiz-question-scroll-body"
       >
         {isError ? (
           <InlineNotice
@@ -113,11 +109,7 @@ function QuizSessionDrawer({
             {t('gameQuiz.errorLoading')}
           </InlineNotice>
         ) : null}
-        <PlayerQuizCard
-          state={quiz}
-          disabled={isError || suspended || readOnly}
-          onDeadline={onRefresh}
-        />
+        <PlayerQuizCard state={quiz} disabled={isError || suspended} onDeadline={onRefresh} />
       </SidePanel>
     </>
   )
