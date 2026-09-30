@@ -62,9 +62,12 @@ test.beforeEach(async ({ page }) => {
 test('production entry point declares a bundled favicon', async ({ page }) => {
   await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
   await page.goto(`${origin}/`)
-  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.svg')
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
+    'href',
+    '/favicon.svg',
+  )
   const icon = await page.evaluate(async () => {
-    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')!
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]')!
     const response = await fetch(link.href)
     return {
       status: response.status,
@@ -75,6 +78,61 @@ test('production entry point declares a bundled favicon', async ({ page }) => {
   expect(icon.status).toBe(200)
   expect(icon.contentType).toBe('image/svg+xml')
   expect(icon.body).toContain('<svg')
+  for (const href of ['/favicon-16.png', '/favicon-32.png', '/apple-touch-icon.png']) {
+    const asset = await page.evaluate(async (path) => {
+      const response = await fetch(path)
+      const bitmap = await createImageBitmap(await response.blob())
+      const result = {
+        status: response.status,
+        type: response.headers.get('content-type'),
+        width: bitmap.width,
+        height: bitmap.height,
+      }
+      bitmap.close()
+      return result
+    }, href)
+    const size = href.includes('16') ? 16 : href.includes('32') ? 32 : 180
+    expect(asset).toEqual({ status: 200, type: 'image/png', width: size, height: size })
+  }
+})
+
+test('link preview metadata is present in the initial HTML without executing the app', async ({
+  page,
+}) => {
+  await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+  const response = await page.goto(`${origin}/`)
+  const html = await response!.text()
+  const metadata = await page.evaluate((source) => {
+    const document = new DOMParser().parseFromString(source, 'text/html')
+    return Object.fromEntries(
+      [...document.querySelectorAll('meta[property], meta[name]')].map((tag) => [
+        tag.getAttribute('property') ?? tag.getAttribute('name'),
+        tag.getAttribute('content'),
+      ]),
+    )
+  }, html)
+  expect(metadata).toMatchObject({
+    'og:title': "Deadman's - Набор мертвеца",
+    'og:type': 'website',
+    'og:url': 'https://deadman.bug.community/',
+    'og:image': 'https://deadman.bug.community/brand/share-card.png',
+    'og:image:type': 'image/png',
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'twitter:card': 'summary_large_image',
+  })
+  expect(metadata['og:description']).toBe(
+    "Примешь ли ты вызов Deadman's? Жестокие ладауты, непредсказуемые модификаторы и проверка знаний. Лишь сильнейшие способны пройти этот путь.",
+  )
+  expect(metadata['twitter:description']).toBe(metadata['og:description'])
+  expect(metadata['og:image:alt']).toBe("Надпись Deadman's на чёрном фоне")
+  const dimensions = await page.evaluate(async () => {
+    const image = new Image()
+    image.src = '/brand/share-card.png'
+    await image.decode()
+    return [image.naturalWidth, image.naturalHeight]
+  })
+  expect(dimensions).toEqual([1200, 630])
 })
 
 test('catalog answer editing preserves variants and validates duplicates under production CSP', async ({
