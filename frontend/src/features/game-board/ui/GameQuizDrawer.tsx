@@ -1,30 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gameBoardRoute } from '../../../routes/app-routes.ts'
 import type { CurrentGameQuizState } from '../../../shared/api/contracts/index.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
 import { hasPanelCapability } from '../../../shared/auth/panel-capabilities.ts'
-import {
-  AppButton,
-  AppLinkButton,
-  InlineNotice,
-  PanelTrigger,
-  SidePanel,
-} from '../../../shared/ui/index.ts'
+import { AppButton, InlineNotice, PanelTrigger, SidePanel } from '../../../shared/ui/index.ts'
 import { currentGameQuizQueryOptions } from '../../game-quiz/api/game-quiz-queries.ts'
 import { PlayerQuizCard } from '../../game-quiz/PlayerQuizCard.tsx'
 
 export function GameQuizDrawer({
   gameId,
   suspended = false,
-  showBoardLink = false,
   side = 'right',
   showForManagers = false,
 }: {
   gameId: string
   suspended?: boolean
-  showBoardLink?: boolean
   side?: 'left' | 'right'
   showForManagers?: boolean
 }) {
@@ -58,7 +49,6 @@ export function GameQuizDrawer({
       key={`${gameId}:${quiz.questionSessionId}`}
       quiz={quiz}
       suspended={suspended}
-      showBoardLink={showBoardLink}
       side={side}
       isError={quizQuery.isError}
       onRefresh={retry}
@@ -70,7 +60,6 @@ export function GameQuizDrawer({
 function QuizSessionDrawer({
   quiz,
   suspended,
-  showBoardLink,
   side,
   isError,
   onRefresh,
@@ -78,7 +67,6 @@ function QuizSessionDrawer({
 }: {
   quiz: CurrentGameQuizState
   suspended: boolean
-  showBoardLink: boolean
   side: 'left' | 'right'
   isError: boolean
   onRefresh: () => void
@@ -112,18 +100,6 @@ function QuizSessionDrawer({
         closeLabel={t('gameBoard.currentRoundScreen.closeQuiz')}
         side={side}
         width="wide"
-        header={
-          showBoardLink ? (
-            <AppLinkButton
-              to={gameBoardRoute.fullPath}
-              tone="secondary"
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              {t('gameBoard.currentRoundScreen.viewBoard')}
-            </AppLinkButton>
-          ) : null
-        }
       >
         {isError ? (
           <InlineNotice

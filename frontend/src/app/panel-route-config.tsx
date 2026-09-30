@@ -46,6 +46,7 @@ const panelPages = {
       translations.gameModifiers,
       translations.gameCatalog,
       translations.gameQuiz,
+      translations.gameHistory,
     ],
   ),
   'game-team-queue': lazyPanelPage(

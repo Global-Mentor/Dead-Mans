@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
@@ -8,6 +8,7 @@ import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { GameModifiersPage } from './GameModifiersPage.tsx'
+import { GameModifierActions } from './ui/GameModifierActions.tsx'
 import { gameModifierStateQueryOptions } from './api/game-modifier-queries.ts'
 
 const modifierMocks = vi.hoisted(() => ({
@@ -257,6 +258,40 @@ afterEach(() => {
 })
 
 describe('GameModifiersPage', () => {
+  it('keeps confirmation copy stable during refresh and when ordering closes', async () => {
+    const state = createState()
+    const client = new QueryClient()
+    const content = (disabled: boolean) => (
+      <QueryClientProvider client={client}>
+        <AuthContext.Provider value={authContextValue}>
+          <GameModifierActions state={state} roundId="round-1" disabled={disabled}>
+            {(actions) => (
+              <button onClick={() => actions.requestActivation('modifier-1')}>Activate</button>
+            )}
+          </GameModifierActions>
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    )
+    const { rerender } = renderWithAppProviders(content(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }))
+    const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+    const description = dialog.textContent
+    const confirm = within(dialog).getByRole('button', { name: 'Активировать', exact: true })
+
+    rerender(content(true))
+    expect(confirm).toBeDisabled()
+    expect(dialog.textContent).toBe(description)
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+    rerender(content(false))
+    expect(confirm).toBeEnabled()
+
+    state.isOrderingOpen = false
+    rerender(content(false))
+    expect(dialog.textContent).toBe(description)
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+    await waitFor(() => expect(dialog).not.toBeInTheDocument())
+  })
+
   it('shows no active game state without treating it as a load error', () => {
     mockPageQueries({ modifierState: null, snapshot: null, activeRound: null })
 
@@ -417,6 +452,60 @@ describe('GameModifiersPage', () => {
     }
   })
 
+  it('retains activation content until the cancelled dialog finishes closing', async () => {
+    renderGameModifiersPage()
+    const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
+    const activateButton = screen.getByRole('button', { name: 'Активировать модификатор' })
+    fireEvent.click(activateButton)
+    const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+    const content = dialog.textContent
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Отмена', exact: true }))
+
+    expect(dialog).toBeInTheDocument()
+    expect(dialog).toHaveTextContent(content ?? '')
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+    expect(activate).not.toHaveBeenCalled()
+    await waitFor(() => expect(dialog).not.toBeInTheDocument())
+
+    fireEvent.click(activateButton)
+    expect(
+      within(screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })).getByText(
+        'Активировать «Расходники» за 3 очк. викторины?',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it.each(['unavailable', 'removed'])(
+    'retains successful activation content when the modifier becomes %s during exit',
+    async (nextState) => {
+      const state = createState()
+      mockPageQueries({ modifierState: state })
+      renderGameModifiersPage()
+      const activate =
+        modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
+      activate.mockImplementation(async () => {
+        if (nextState === 'removed') state.availableModifiers = []
+        else {
+          for (const item of state.availableModifiers) item.canActivate = false
+        }
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Активировать модификатор' }))
+      const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+      const content = dialog.textContent
+
+      await act(async () => {
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Активировать', exact: true }))
+      })
+
+      expect(dialog).toBeInTheDocument()
+      expect(dialog.textContent).toBe(content)
+      expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+      await waitFor(() => expect(dialog).not.toBeInTheDocument())
+      expect(activate).toHaveBeenCalledOnce()
+    },
+  )
+
   it('asks for confirmation before activating a modifier', async () => {
     renderGameModifiersPage()
     const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
@@ -434,7 +523,8 @@ describe('GameModifiersPage', () => {
     expect(
       within(dialog).getByText('Активировать «Расходники» за 3 очк. викторины?'),
     ).toBeInTheDocument()
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Активировать модификатор' }))
+    expect(within(dialog).getByRole('button', { name: 'Отмена', exact: true })).toBeVisible()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Активировать', exact: true }))
 
     expect(activate).toHaveBeenCalledWith('modifier-1')
     await waitFor(() =>

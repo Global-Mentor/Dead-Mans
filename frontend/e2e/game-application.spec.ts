@@ -25,7 +25,7 @@ for (const viewport of [
 ]) {
   test(`application updates live and confirms disband requests at ${viewport.suffix}`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     const { width, height, suffix } = viewport
     await page.setViewportSize({ width, height })
     await page.clock.setFixedTime(new Date('2026-09-23T12:00:00Z'))
@@ -210,6 +210,10 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Выйти из команды' }).click()
     const leaveDialog = page.getByRole('dialog', { name: 'Выйти из команды?' })
     await expect(leaveDialog).toBeVisible()
+    await leaveDialog.screenshot({
+      path: testInfo.outputPath('leave-team.png'),
+      animations: 'disabled',
+    })
     await expect(leaveDialog.locator('.MuiDialogTitle-root')).toHaveCSS(
       'border-bottom-style',
       'solid',
@@ -272,6 +276,11 @@ for (const viewport of [
     mine.isReady = true
     publishRegistration()
     await expect(page.getByText('Вся команда готова', { exact: true })).toBeVisible()
+    await page.screenshot({
+      path: testInfo.outputPath('application-ready.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
     const readinessDescription = page.getByText(
       'Все игроки готовы. Администратор видит этот статус.',
       { exact: true },

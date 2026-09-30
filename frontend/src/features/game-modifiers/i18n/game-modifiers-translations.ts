@@ -24,6 +24,7 @@ const translations = {
     activeTitle: 'Active in this game',
     activeEmpty: 'No modifiers are active in this game.',
     activeGroupCount: '{{count}} activations',
+    activeStackMultiplier: '×{{count}}',
     activeGroupSpent: 'Spent total {{cost}} pts',
     summaryRoundSpentPoints: 'Spent this round',
     summaryRoundSpentPointsTooltip:
@@ -56,7 +57,6 @@ const translations = {
     activateCompactAction: 'Activate',
     activationConfirmTitle: 'Activate this modifier?',
     activationConfirmDescription: 'Activate {{modifier}} for {{cost}} quiz points?',
-    activationConfirmCancel: 'Do not activate',
     activatePending: 'Activating...',
     activateSuccess: 'Modifier activated.',
     selfCancelAction: 'Cancel purchase and refund',
@@ -209,6 +209,7 @@ const translations = {
     activeTitle: 'Активны в этой игре',
     activeEmpty: 'В этой игре нет активных модификаторов.',
     activeGroupCount: '{{count}} активац.',
+    activeStackMultiplier: '×{{count}}',
     activeGroupSpent: 'Всего потрачено {{cost}} очк.',
     summaryRoundSpentPoints: 'Потрачено за раунд',
     summaryRoundSpentPointsTooltip:
@@ -241,7 +242,6 @@ const translations = {
     activateCompactAction: 'Активировать',
     activationConfirmTitle: 'Активировать этот модификатор?',
     activationConfirmDescription: 'Активировать «{{modifier}}» за {{cost}} очк. викторины?',
-    activationConfirmCancel: 'Не активировать',
     activatePending: 'Активация...',
     activateSuccess: 'Модификатор активирован.',
     selfCancelAction: 'Отменить покупку и вернуть очки',
@@ -395,6 +395,7 @@ const translations = {
     activeTitle: 'Активні в цій грі',
     activeEmpty: 'У цій грі немає активних модифікаторів.',
     activeGroupCount: '{{count}} активац.',
+    activeStackMultiplier: '×{{count}}',
     activeGroupSpent: 'Усього витрачено {{cost}} очк.',
     summaryRoundSpentPoints: 'Витрачено за раунд',
     summaryRoundSpentPointsTooltip:
@@ -427,7 +428,6 @@ const translations = {
     activateCompactAction: 'Активувати',
     activationConfirmTitle: 'Активувати цей модифікатор?',
     activationConfirmDescription: 'Активувати «{{modifier}}» за {{cost}} очк. вікторини?',
-    activationConfirmCancel: 'Не активувати',
     activatePending: 'Активація...',
     activateSuccess: 'Модифікатор активовано.',
     selfCancelAction: 'Скасувати покупку й повернути очки',
@@ -581,6 +581,7 @@ const translations = {
     activeTitle: 'Aktywne w tej grze',
     activeEmpty: 'Brak aktywnych modyfikatorów w tej grze.',
     activeGroupCount: '{{count}} aktyw.',
+    activeStackMultiplier: '×{{count}}',
     activeGroupSpent: 'Łącznie wydano {{cost}} pkt',
     summaryRoundSpentPoints: 'Wydano w tej rundzie',
     summaryRoundSpentPointsTooltip:
@@ -613,7 +614,6 @@ const translations = {
     activateCompactAction: 'Aktywuj',
     activationConfirmTitle: 'Aktywować ten modyfikator?',
     activationConfirmDescription: 'Aktywować „{{modifier}}” za {{cost}} punktów quizowych?',
-    activationConfirmCancel: 'Nie aktywuj',
     activatePending: 'Aktywacja...',
     activateSuccess: 'Modyfikator aktywowany.',
     selfCancelAction: 'Cofnij zakup i zwróć punkty',

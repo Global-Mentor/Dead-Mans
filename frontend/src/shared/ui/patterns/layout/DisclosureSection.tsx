@@ -28,16 +28,18 @@ function GroupTitle({
   title,
   accent,
   leadingCountLabel,
+  showTitleMarker,
 }: {
   title: string
   accent: string
   leadingCountLabel?: string
+  showTitleMarker: boolean
 }) {
   return (
     <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
       {leadingCountLabel ? (
         <StatusBadge density="compact" variant="outlined" label={leadingCountLabel} />
-      ) : (
+      ) : showTitleMarker ? (
         <Box
           aria-hidden
           component="span"
@@ -50,7 +52,7 @@ function GroupTitle({
             boxShadow: `0 0 10px ${alpha(accent, 0.14)}`,
           }}
         />
-      )}
+      ) : null}
       <Typography
         component="span"
         variant="subtitle1"
@@ -70,6 +72,7 @@ function GroupTitle({
 
 interface DisclosureSectionProps {
   title: string
+  showTitleMarker?: boolean
   'data-testid'?: string
   description?: string
   countLabel?: string
@@ -85,6 +88,7 @@ interface DisclosureSectionProps {
 
 export function DisclosureSection({
   title,
+  showTitleMarker = true,
   description,
   countLabel,
   countPlacement = 'center',
@@ -137,6 +141,7 @@ export function DisclosureSection({
           <GroupTitle
             title={title}
             accent={accent}
+            showTitleMarker={showTitleMarker}
             leadingCountLabel={countPlacement === 'leading' ? (countLabel ?? '') : ''}
           />
           {countLabel && countPlacement === 'center' ? (

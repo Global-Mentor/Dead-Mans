@@ -25,6 +25,25 @@ describe('ParticipantNamesList', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 
+  it('frames each decorated name with two hidden diamonds and retains dense typography', () => {
+    renderWithAppProviders(
+      <ParticipantNamesList
+        names={['Player One', 'Player Two']}
+        emptyLabel="No players"
+        decorated
+        dense
+      />,
+    )
+
+    for (const item of screen.getAllByRole('listitem')) {
+      expect(item.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2)
+      expect(within(item).getByText(/Player/)).toHaveStyle({
+        lineHeight: '1.25',
+        overflowWrap: 'anywhere',
+      })
+    }
+  })
+
   it('can arrange participants horizontally', () => {
     renderWithAppProviders(
       <ParticipantNamesList

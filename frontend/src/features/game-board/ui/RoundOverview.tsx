@@ -1,24 +1,23 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   GameBoardCell,
   GameBoardSnapshot,
   GameModifierState,
+  GameTeamQueueItem,
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import { resolveBackendMediaUrl } from '../../../shared/api/media-url.ts'
-import { TeamIdentity } from '../../../shared/game-ui/index.ts'
 import {
-  AppButton,
-  AsyncSection,
-  FormSection,
-  ImageFrame,
-  ItemCard,
-  StatusBadge,
-} from '../../../shared/ui/index.ts'
-import { groupActiveGameModifiers } from '../../game-modifiers/model/game-modifier-groups.ts'
+  ParticipantNamesList,
+  RoundBriefingDivider,
+  RoundBriefingPanel,
+} from '../../../shared/game-ui/index.ts'
+import { AppButton, InlineNotice, ItemCard } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from '../model/game-management-flow.ts'
+import { RoundCardSection } from './RoundCardSection.tsx'
+import { RoundActiveModifiers } from './RoundActiveModifiers.tsx'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 
@@ -26,139 +25,290 @@ export function RoundOverview({
   snapshot,
   round,
   cell,
+  selectedTeam,
+  teamLoading,
+  teamError,
+  onRetryTeam,
+  roundLoading,
+  roundError,
   modifiers,
   modifiersLoading,
   modifiersError,
+  isOffline,
   onRetryModifiers,
+  phaseActions,
 }: {
   snapshot: GameBoardSnapshot
-  round: GameRoundDetails
+  round: GameRoundDetails | null
   cell: GameBoardCell | null
+  selectedTeam: GameTeamQueueItem | null
+  teamLoading: boolean
+  teamError: boolean
+  onRetryTeam: () => void
+  roundLoading: boolean
+  roundError: boolean
   modifiers: GameModifierState | null
   modifiersLoading: boolean
   modifiersError: boolean
+  isOffline: boolean
   onRetryModifiers: () => void
+  phaseActions: ReactNode
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const flow = buildGameManagementFlow(snapshot, round)
   const currentStep = flow.steps.find((step) => step.state === 'current')
-  const active =
-    modifiers?.gameId === round.gameId
-      ? modifiers.activeModifiers.filter((item) => item.roundId === round.roundId)
-      : []
-  const groups = groupActiveGameModifiers(active, i18n.resolvedLanguage)
-  const mediaUrl = resolveBackendMediaUrl(cell?.media[0]?.url)
-  const cardTitle =
-    cell?.title?.trim() || round.cellTitle?.trim() || t('gameBoard.roundSummaryCardFallback')
+  const active = round
+    ? (modifiers?.gameId === round.gameId
+        ? modifiers.activeModifiers
+        : snapshot.activeModifiers
+      ).filter((item) => item.roundId === round.roundId)
+    : []
+  const team = round ?? selectedTeam
+  const teamName = team
+    ? formatTeamNameWithFallback(
+        team.teamName,
+        t('common.teamWithSlot', { slot: team.teamSlotIndex }),
+      )
+    : null
+  const phase = roundLoading
+    ? t('gameBoard.currentRoundScreen.loadingRound')
+    : roundError
+      ? t('gameBoard.currentRoundScreen.roundUnavailable')
+      : snapshot.status === 'ready'
+        ? t('gameBoard.statusReady')
+        : snapshot.status === 'finished'
+          ? t('gameBoard.statusFinished')
+          : currentStep
+            ? t(currentStep.titleKey)
+            : t(flow.summaryKey)
+  const emptyModifiersKey =
+    !round || round.status === 'card_opened'
+      ? 'gameBoard.currentRoundScreen.modifiersNotStarted'
+      : round.status === 'awaiting_modifiers'
+        ? 'gameBoard.currentRoundScreen.modifiersChoosing'
+        : 'gameBoard.currentRoundScreen.noModifiers'
+  const cardWaitingMessage = t(
+    roundLoading
+      ? 'gameBoard.currentRoundScreen.loadingRound'
+      : roundError
+        ? 'gameBoard.currentRoundScreen.roundUnavailable'
+        : 'gameBoard.currentRoundScreen.cardNotOpened',
+  )
 
   return (
-    <Stack spacing={1.5} data-testid="current-round-overview">
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-        <Typography component="h1" variant="h5">
-          {t('navigation.items.gameRound.label')}
-        </Typography>
-        <StatusBadge
-          color="primary"
-          label={currentStep ? t(currentStep.titleKey) : t(flow.summaryKey)}
-        />
-      </Stack>
+    <Stack
+      data-testid="current-round-overview"
+      sx={{
+        position: 'relative',
+        '--round-header-height': { xs: '200px', lg: '128px' },
+        '@media (max-width:359px)': { '--round-header-height': '240px' },
+      }}
+    >
+      <Typography
+        component="h1"
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '1px',
+          height: '1px',
+          p: 0,
+          m: '-1px',
+          overflow: 'hidden',
+          clipPath: 'inset(50%)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {t('navigation.items.gameRound.label')}
+      </Typography>
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
-          gap: 1.5,
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gridTemplateAreas: '"cardMedia" "details"',
+          gap: 2,
           alignItems: 'start',
+          '@media (min-width:768px)': {
+            height: 'max(680px, calc(100dvh - 128px))',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gridTemplateAreas: '"cardMedia details"',
+            gridTemplateRows: 'minmax(0, 1fr)',
+            alignItems: 'stretch',
+          },
         }}
       >
-        <FormSection title={t('gameBoard.currentRoundScreen.card')}>
-          <Stack spacing={1.25}>
-            {mediaUrl ? (
-              <ImageFrame
-                src={mediaUrl}
-                alt={cardTitle}
-                loadingLabel={t('common.media.loading')}
-                errorLabel={t('common.media.error')}
-                fit="contain"
-                sx={{
-                  width: 'fit-content',
-                  maxWidth: '100%',
-                  maxHeight: 'min(44dvh, 420px)',
-                  alignSelf: 'center',
-                }}
-              />
-            ) : null}
-            <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
-              {cardTitle}
-            </Typography>
-            {cell?.description || round.cellDescription ? (
+        <RoundCardSection
+          round={round}
+          cell={cell}
+          categoryName={cell ? (snapshot.colLabels[cell.col]?.trim() ?? '') : ''}
+          waitingMessage={cardWaitingMessage}
+        />
+        <Box
+          data-testid="round-details-panel"
+          sx={{
+            gridArea: 'details',
+            minWidth: 0,
+            minHeight: 0,
+            display: 'grid',
+            gap: 1.5,
+            gridTemplateAreas: '"phase" "team" "modifiers"',
+            gridTemplateRows: 'var(--round-header-height) auto auto',
+            '@media (min-width:768px)': {
+              width: '100%',
+              justifySelf: 'start',
+              gridTemplateRows: 'var(--round-header-height) auto minmax(0, 1fr)',
+            },
+          }}
+        >
+          <RoundBriefingPanel
+            data-testid="round-phase"
+            contentEmphasis="strong"
+            sx={{ gridArea: 'phase' }}
+            header={
               <Typography
+                data-testid="round-phase-label"
+                component="div"
                 variant="body2"
                 color="text.secondary"
-                sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                fontWeight={700}
+                sx={{ textAlign: 'center', fontSize: 16 }}
               >
-                {cell?.description || round.cellDescription}
+                {t('gameBoard.currentRoundScreen.phaseLabel')}
               </Typography>
-            ) : null}
-            <StatusBadge label={t('gameBoard.cellCostLabel', { cost: round.baseScore })} />
-          </Stack>
-        </FormSection>
-        <Stack spacing={1.5}>
-          <FormSection title={t('gameBoard.currentRoundScreen.team')}>
-            <TeamIdentity
-              name={formatTeamNameWithFallback(
-                round.teamName,
-                t('common.teamWithSlot', { slot: round.teamSlotIndex }),
-              )}
-              participants={round.participants.map((participant) => participant.displayName)}
-              emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-            />
-          </FormSection>
-          <FormSection title={t('gameBoard.currentRoundScreen.modifiers')}>
-            <AsyncSection
-              isLoading={modifiersLoading}
-              isError={modifiersError}
-              hasData={modifiers !== null}
-              isEmpty={groups.length === 0}
-              loadingMessage={t('gameModifiers.loading')}
-              errorMessage={t('gameModifiers.errorLoading')}
-              emptyMessage={t(
-                modifiers ? 'gameBoard.currentRoundScreen.noModifiers' : 'gameModifiers.noGame',
-              )}
-              retryAction={
-                <AppButton size="small" onClick={onRetryModifiers}>
-                  {t('common.actions.retry')}
-                </AppButton>
-              }
+            }
+          >
+            <Stack
+              alignItems="center"
+              justifyContent="center"
+              sx={{ flex: 1, textAlign: 'center' }}
             >
-              <Stack spacing={0.75} component="ul" sx={{ m: 0, p: 0 }}>
-                {groups.map((group) => (
-                  <ItemCard key={group.modifierId} component="li" sx={{ listStyle: 'none' }}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      justifyContent="space-between"
-                      flexWrap="wrap"
-                    >
-                      <Typography
-                        variant="body2"
-                        fontWeight={700}
-                        sx={{ overflowWrap: 'anywhere' }}
-                      >
-                        {group.modifierName}
-                      </Typography>
-                      <StatusBadge
-                        color="success"
-                        label={t('gameModifiers.activeGroupCount', {
-                          count: group.activationsCount,
-                        })}
-                      />
-                    </Stack>
-                  </ItemCard>
-                ))}
-              </Stack>
-            </AsyncSection>
-          </FormSection>
-        </Stack>
+              <Typography
+                data-testid="round-phase-value"
+                component="p"
+                variant="h6"
+                color="text.primary"
+                fontWeight={700}
+                aria-live="polite"
+                aria-atomic="true"
+                sx={{
+                  fontSize: 28,
+                  lineHeight: 1.15,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {phase}
+              </Typography>
+            </Stack>
+            <Box
+              sx={{
+                flexShrink: 0,
+                '&:empty': { display: 'none' },
+              }}
+            >
+              {phaseActions}
+            </Box>
+          </RoundBriefingPanel>
+          <ItemCard
+            component="section"
+            aria-label={t('gameBoard.currentRoundScreen.team')}
+            emphasis={team ? 'selected' : 'none'}
+            sx={{
+              gridArea: 'team',
+              minWidth: 0,
+              minHeight: { xs: 176, md: 144 },
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Typography
+              component="h2"
+              variant="overline"
+              color="text.secondary"
+              fontWeight={600}
+              sx={{ textAlign: 'center', fontSize: 12, lineHeight: 1.5, letterSpacing: 0 }}
+            >
+              {t('gameBoard.currentRoundScreen.team')}
+            </Typography>
+            <Box
+              data-testid="round-team-content"
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.25,
+                justifyContent: 'safe center',
+                alignItems: 'center',
+                pt: 0.5,
+                textAlign: 'center',
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {team ? (
+                <>
+                  <Typography
+                    component="h3"
+                    variant="h5"
+                    fontWeight={700}
+                    color="text.primary"
+                    sx={{ m: 0, maxWidth: '100%', fontSize: 26, lineHeight: 1.1, flexShrink: 0 }}
+                  >
+                    {teamName}
+                  </Typography>
+                  <RoundBriefingDivider sx={{ maxWidth: 420 }} />
+                  <Box sx={{ width: '100%', minWidth: 0, flexShrink: 0 }}>
+                    <ParticipantNamesList
+                      names={team.participants.map((participant) => participant.displayName)}
+                      emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
+                      variant="body1"
+                      layout={team.participants.length === 2 ? 'flow' : 'columns'}
+                      decorated
+                      dense
+                    />
+                  </Box>
+                </>
+              ) : teamError && snapshot.activeTeamId ? (
+                <InlineNotice
+                  severity="warning"
+                  action={
+                    <AppButton tone="secondary" size="small" onClick={onRetryTeam}>
+                      {t('common.actions.retry')}
+                    </AppButton>
+                  }
+                >
+                  {t('gameBoard.currentRoundScreen.teamUnavailable')}
+                </InlineNotice>
+              ) : (
+                <Typography color="text.secondary" variant="body2">
+                  {t(
+                    roundLoading || teamLoading
+                      ? 'gameBoard.currentRoundScreen.loadingRound'
+                      : roundError
+                        ? 'gameBoard.currentRoundScreen.roundUnavailable'
+                        : snapshot.activeTeamId
+                          ? 'gameBoard.currentRoundScreen.teamUnavailable'
+                          : 'gameBoard.currentRoundScreen.teamNotSelected',
+                  )}
+                </Typography>
+              )}
+            </Box>
+          </ItemCard>
+          <RoundActiveModifiers
+            key={round?.roundId ?? 'pending'}
+            activations={active}
+            round={round}
+            modifiers={modifiers}
+            isError={modifiersError}
+            isOffline={isOffline}
+            onRetry={onRetryModifiers}
+            waitingMessage={t(
+              roundLoading || (round && modifiersLoading && !modifiers)
+                ? 'gameBoard.currentRoundScreen.loadingRound'
+                : roundError
+                  ? 'gameBoard.currentRoundScreen.roundUnavailable'
+                  : emptyModifiersKey,
+            )}
+          />
+        </Box>
       </Box>
     </Stack>
   )

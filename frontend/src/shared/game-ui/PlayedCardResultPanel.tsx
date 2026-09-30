@@ -11,6 +11,7 @@ import {
 import { RoundScoreBreakdown } from './RoundScoreBreakdown.tsx'
 import { RoundScoreTotal } from './RoundScoreTotal.tsx'
 import { getPlayedCardModifierPoints } from './played-card-modifiers.ts'
+import { ParticipantNamesList } from './ParticipantNamesList.tsx'
 
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
 
@@ -45,7 +46,7 @@ export function PlayedCardResultPanel({
         </InlineNotice>
       ) : (
         <>
-          <DisclosureSection title={t('common.scoreBreakdown.title')}>
+          <DisclosureSection title={t('common.scoreBreakdown.title')} showTitleMarker={false}>
             <RoundScoreBreakdown score={round.scoreDetails} showHeading={false} />
           </DisclosureSection>
           <ItemCard sx={{ flex: 1, display: 'flex', minWidth: 0 }}>
@@ -120,43 +121,12 @@ function PlayedCardTeam({ round }: { round: PlayedCardPreviewRound }) {
         </Typography>
       </Stack>
       {round.participants.length > 0 ? (
-        <Stack component="ul" spacing={0.5} sx={{ m: 0, p: 0, listStyle: 'none' }}>
-          {round.participants.map((participant, index) => (
-            <Stack
-              component="li"
-              key={`${participant.displayName}-${index}`}
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              justifyContent="center"
-              sx={{ minWidth: 0 }}
-            >
-              <Box
-                aria-hidden
-                sx={{
-                  width: 5,
-                  height: 5,
-                  flex: '0 0 5px',
-                  transform: 'rotate(45deg)',
-                  bgcolor: 'text.secondary',
-                }}
-              />
-              <Typography variant="body1" fontWeight={700} sx={{ minWidth: 0 }}>
-                {participant.displayName}
-              </Typography>
-              <Box
-                aria-hidden
-                sx={{
-                  width: 5,
-                  height: 5,
-                  flex: '0 0 5px',
-                  transform: 'rotate(45deg)',
-                  bgcolor: 'text.secondary',
-                }}
-              />
-            </Stack>
-          ))}
-        </Stack>
+        <ParticipantNamesList
+          names={round.participants.map((participant) => participant.displayName)}
+          emptyLabel={t('gameHistory.noParticipants')}
+          variant="body1"
+          decorated
+        />
       ) : (
         <Typography variant="body2" color="text.secondary">
           {t('gameHistory.noParticipants')}

@@ -9,6 +9,7 @@ interface ImageFrameProps {
   loadingLabel: string
   errorLabel: string
   fit?: 'contain' | 'cover'
+  sizing?: 'intrinsic' | 'fill'
   decorative?: boolean
   loading?: 'lazy' | 'eager'
   sx?: SxProps<Theme>
@@ -24,6 +25,7 @@ function ImageFrameContent({
   loadingLabel,
   errorLabel,
   fit = 'contain',
+  sizing = 'intrinsic',
   decorative = false,
   loading,
   sx,
@@ -78,7 +80,7 @@ function ImageFrameContent({
           gridArea: '1 / 1',
           display: 'block',
           visibility: status === 'loaded' ? 'visible' : 'hidden',
-          ...(fit === 'cover'
+          ...(fit === 'cover' || sizing === 'fill'
             ? { position: 'absolute', inset: 0, width: '100%', height: '100%' }
             : { maxWidth: '100%', maxHeight: 'inherit', width: 'auto', height: 'auto' }),
           objectFit: fit,

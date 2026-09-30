@@ -358,8 +358,789 @@ const activeRoundFixture = {
   scoreDetails: { finalScore: 0, calculationLines: [] },
 }
 
-for (const width of [390, 1440]) {
-  test(`current round keeps the board one action away at ${width}px`, async ({
+for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
+  test(`current round keeps its layout through live phases at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    const height = width === 1920 ? 1080 : width === 2560 ? 1440 : 900
+    await page.setViewportSize({ width, height })
+    let sendEvent: ((message: string) => void) | undefined
+    await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+      sendEvent = send
+    })
+    let activeTeamId: string | null = null
+    let roundStatus: string | null = null
+    let activeModifiers: GameBoardSnapshot['activeModifiers'] = []
+    let stressModifiers = false
+    let rosterCount = 3
+    const categoryName = width === 320 ? 'Длинная категория охоты и приключений' : 'Охота'
+    let releaseImage = () => {}
+    const imageGate = new Promise<void>((resolve) => {
+      releaseImage = resolve
+    })
+    await page.route('**/media/cards/round-layout.png', async (route) => {
+      await imageGate
+      await route.fulfill({
+        path: '../backend/assets/test-game-board/cards/1-1.png',
+        contentType: 'image/png',
+      })
+    })
+    await page.route('**/api/game', (route) =>
+      route.fulfill({
+        json: {
+          ...board,
+          activeTeamId,
+          activeModifiers,
+          colLabels: board.colLabels.map((label, index) => (index === 0 ? categoryName : label)),
+          cells: board.cells.map((cell, index) =>
+            index === 0 ? { ...cell, media: [{ url: '/media/cards/round-layout.png' }] } : cell,
+          ),
+        },
+      }),
+    )
+    await page.route('**/api/game/rounds/active', (route) =>
+      roundStatus
+        ? route.fulfill({
+            json: {
+              ...activeRoundFixture,
+              status: roundStatus,
+              participants: [
+                { userId: 'one', displayName: 'Ворон' },
+                { userId: 'two', displayName: 'Скиталец' },
+                { userId: 'three', displayName: 'Тихий охотник' },
+              ].slice(0, rosterCount),
+              ...(roundStatus === 'in_progress'
+                ? {
+                    gameplayStartedAtUtc: '2026-09-01T12:00:00Z',
+                    modifierResults: [
+                      {
+                        modifierResultId: 'result-runtime',
+                        modifierId: 'modifier-1',
+                        modifierName: 'Жажда',
+                        modifierDescription: 'Играть без лечения.',
+                        modifierCategory: 'round',
+                        outcomeStatus: 'pending',
+                        scoreDelta: 0,
+                        killDelta: 0,
+                        activationId: 'activation-1',
+                        definitionRevision: 1,
+                        runtimeBehavior: {
+                          phase: 'round',
+                          performer: 'activeTeam',
+                          requiresHostMonitoring: true,
+                          rule: 'Играть без лечения.',
+                          stackingPolicy: 'aggregateParameters',
+                          durationSecondsPerActivation: 120,
+                        },
+                      },
+                    ],
+                  }
+                : {}),
+            },
+          })
+        : route.fulfill({ status: 204 }),
+    )
+    await page.route('**/api/game/modifiers/state', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          availableQuizPoints: 10,
+          earnedQuizPoints: 10,
+          spentQuizPoints: 0,
+          isOrderingOpen: roundStatus === 'awaiting_modifiers',
+          activeModifiers,
+          availableModifiers: activeModifiers.map((activation, index) => ({
+            modifier: {
+              id: activation.modifierId,
+              name: activation.modifierName,
+              iconEmoji: ['🛡️', '💧', '🎯', '📖', '⌛'][index % 5],
+              description: (
+                [
+                  'Команда может один раз избежать штрафа. Решение подтверждает ведущий перед подведением итогов.',
+                  'На протяжении раунда запрещено использовать лечение.',
+                  'Разрешён один дополнительный патрон для выбранного оружия.',
+                  'Участники используют только навыки, указанные на карточке.',
+                  'После выполнения условий команда получает дополнительную попытку.',
+                ][index % 5] ?? ''
+              ).repeat(stressModifiers ? 4 : 1),
+              category: ['preparation', 'round', 'result'][index % 3],
+              activationCost: 3,
+              activationLimit: null,
+              conflictingModifierIds: [],
+              activationCommand: null,
+              revision: 1,
+              normalizedTags: [],
+              behaviorV2: {
+                schemaVersion: 2,
+                kind: 'rule',
+                phase: 'round',
+                performer: 'activeTeam',
+                requiresHostMonitoring: false,
+                rule: 'Правило раунда',
+                stackingPolicy: 'aggregateParameters',
+                resolution: { type: 'ruleStatus' },
+                reward: 'none',
+                formulaReference: null,
+              },
+            },
+            isActive: true,
+            canActivate: false,
+            blockedReason: 'ordering_closed',
+            activationsCount: 1,
+            limit: null,
+            isEmergencyDisabled: false,
+          })),
+        },
+      }),
+    )
+    const update = () =>
+      sendEvent?.(
+        JSON.stringify({ type: 1, target: 'roundStateChanged', arguments: [{}] }) + '\u001e',
+      )
+
+    await page.goto('/panel/game-round')
+    const overview = page.getByTestId('current-round-overview')
+    const team = overview.getByRole('region', { name: 'Играющая команда', exact: true })
+    const card = overview.getByRole('region', { name: 'Играемая карточка', exact: true })
+    const modifiers = overview.getByRole('region', { name: 'Активные модификаторы', exact: true })
+    const mediaPanel = page.getByTestId('round-media-panel')
+    const frame = page.getByTestId('round-card-frame')
+    const cardSummary = page.getByTestId('round-card-summary')
+    const phasePanel = page.getByTestId('round-phase')
+    const teamContent = page.getByTestId('round-team-content')
+    const phaseLabel = page.getByTestId('round-phase-label')
+    await expect(phaseLabel).toHaveText('Этап раунда:')
+    await expect(phaseLabel).toHaveCSS('text-align', 'center')
+    await expect(overview.getByRole('link', { name: 'Вернуться к доске' })).toHaveCount(0)
+    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '28px')
+    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-weight', '700')
+    const labelStyles = await Promise.all(
+      [cardSummary.locator('dt').first(), cardSummary.locator('dt').last(), phaseLabel].map(
+        (label) =>
+          label.evaluate((element) => {
+            const style = getComputedStyle(element)
+            return [style.fontSize, style.lineHeight, style.fontWeight, style.textTransform]
+          }),
+      ),
+    )
+    expect(labelStyles[1]).toEqual(labelStyles[0])
+    expect(labelStyles[2]).toEqual(labelStyles[0])
+    await expect(team).toContainText('Сейчас выбирают активную команду.')
+    expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).toBe(
+      'none',
+    )
+    await expect(frame).toContainText('Карточка ещё не открыта.')
+    await expect(cardSummary).toContainText('Карточка:')
+    await expect(cardSummary.locator('dt')).toHaveText(['Карточка:', 'Стоимость:'])
+    await expect(cardSummary.locator('dd')).toHaveText(['Ожидание', '-'])
+    await expect(modifiers).toContainText('Выбор модификаторов ещё не начался.')
+    await expect(overview).toContainText('Выбор активной команды')
+    await expect.poll(() => Boolean(sendEvent)).toBe(true)
+    await page.evaluate(() => document.fonts.ready)
+    const geometry = () =>
+      Promise.all(
+        [team, modifiers, mediaPanel].map((item, index) =>
+          item
+            .evaluate((element) => {
+              const rect = element.getBoundingClientRect()
+              return [rect.x + scrollX, rect.y + scrollY, rect.width, rect.height].map(Math.round)
+            })
+            .then((bounds) => (index < 2 ? [bounds[0], bounds[1], bounds[3]] : bounds)),
+        ),
+      )
+    const initialGeometry = await geometry()
+    const expectStable = async () => {
+      const labelSpacing = await phaseLabel.evaluate((label) => {
+        const header = label.parentElement!
+        const headerRect = header.getBoundingClientRect()
+        const labelRect = label.getBoundingClientRect()
+        return [labelRect.top - headerRect.top, headerRect.bottom - labelRect.bottom]
+      })
+      for (const gap of labelSpacing) expect(gap).toBeCloseTo(12, 0)
+      expect(await geometry()).toEqual(initialGeometry)
+      if (width >= 768) {
+        const widths = await Promise.all(
+          [frame, phasePanel, team, modifiers].map((panel) =>
+            panel.evaluate((element) => element.getBoundingClientRect().width),
+          ),
+        )
+        for (const panelWidth of widths.slice(1)) {
+          expect(panelWidth).toBeCloseTo(widths[0] ?? 0, 0)
+        }
+      }
+      expect(
+        await phasePanel.evaluate((element) => {
+          const panel = element.getBoundingClientRect()
+          return (
+            element.scrollHeight <= element.clientHeight + 1 &&
+            [...element.querySelectorAll('p, hr, a')].every((child) => {
+              const bounds = child.getBoundingClientRect()
+              return bounds.top >= panel.top && bounds.bottom <= panel.bottom
+            })
+          )
+        }),
+      ).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('waiting.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+
+    activeTeamId = 'team-one'
+    update()
+    await expect(team).toContainText('Ночные странники')
+    await expect(team.locator('h3')).toHaveCSS('font-size', '26px')
+    expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).not.toBe(
+      'none',
+    )
+    expect(await team.evaluate((element) => getComputedStyle(element).backgroundImage)).not.toBe(
+      await modifiers.evaluate((element) => getComputedStyle(element).backgroundImage),
+    )
+    await expect(overview).toContainText('Выбор карточки')
+    await expectStable()
+
+    roundStatus = 'card_opened'
+    update()
+    await expect(overview).toContainText('Карточка открыта')
+    await expect(team).toContainText('Тихий охотник')
+    const participantPositions = await team
+      .getByRole('listitem')
+      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect().left))
+    expect(participantPositions[1]).toBeGreaterThan(participantPositions[0] ?? 0)
+    expect(participantPositions[2]).toBeGreaterThan(participantPositions[1] ?? 0)
+    await expect(teamContent).toHaveCSS('overflow-y', 'visible')
+    expect(await team.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
+      true,
+    )
+    await expect(team.getByRole('listitem')).toHaveText(['Ворон', 'Скиталец', 'Тихий охотник'])
+    for (const count of [1, 2, 3]) {
+      rosterCount = count
+      update()
+      await expect(team.getByRole('listitem')).toHaveCount(count)
+      expect(
+        await team.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+      ).toBe(true)
+      for (const item of await team.getByRole('listitem').all()) {
+        await expect(item.locator('[aria-hidden="true"]')).toHaveCount(2)
+      }
+      const teamSpacing = await team.evaluate((element) => {
+        const name = element.querySelector('h3')!.getBoundingClientRect()
+        const divider = element.querySelector('hr')!.getBoundingClientRect()
+        const roster = element.querySelector('ul')!.getBoundingClientRect()
+        return [divider.top - name.bottom, roster.top - divider.bottom]
+      })
+      for (const gap of teamSpacing) expect(gap).toBeCloseTo(10, 0)
+      const roster = await team.getByRole('list').evaluate((element) => ({
+        width: element.getBoundingClientRect().width,
+        players: [...element.children].map((player) => ({
+          width: player.getBoundingClientRect().width,
+          fits: player.scrollWidth <= player.clientWidth + 1,
+        })),
+      }))
+      for (const player of roster.players) {
+        expect(player.width).toBeCloseTo(count === 2 ? roster.width : roster.width / count, 0)
+        expect(player.fits).toBe(true)
+      }
+      if (count === 2) {
+        const rows = await team.getByRole('listitem').evaluateAll((items) =>
+          items.map((item) => {
+            const rect = item.getBoundingClientRect()
+            return { top: rect.top, bottom: rect.bottom }
+          }),
+        )
+        expect(rows[1]?.top).toBeGreaterThanOrEqual(rows[0]?.bottom ?? 0)
+      }
+      await expectStable()
+      if ([390, 768, 1440].includes(width)) {
+        await team.screenshot({
+          path: testInfo.outputPath(`team-${count}-players.png`),
+          animations: 'disabled',
+        })
+      }
+    }
+    await expect(cardSummary.locator('dt')).toHaveText(['Карточка:', 'Стоимость:'])
+    await expect(cardSummary.locator('dd')).toHaveText([categoryName, '100 очк.'])
+    await expect(cardSummary).not.toContainText('Следы на болотах')
+    await expect(cardSummary).not.toContainText('Описание испытания')
+    const summaryScroll = await cardSummary.evaluate((element) => ({
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+    }))
+    expect(summaryScroll.scrollHeight, JSON.stringify(summaryScroll)).toBeLessThanOrEqual(
+      summaryScroll.clientHeight + 1,
+    )
+    const categoryBounds = await cardSummary.locator('dd').first().boundingBox()
+    const dividerBounds = await cardSummary.locator('hr').boundingBox()
+    expect(categoryBounds).not.toBeNull()
+    expect(dividerBounds).not.toBeNull()
+    expect(categoryBounds!.y + categoryBounds!.height).toBeLessThanOrEqual(dividerBounds!.y + 1)
+    const summaryBounds = await cardSummary.boundingBox()
+    const frameBounds = await frame.boundingBox()
+    const phaseBounds = await phasePanel.boundingBox()
+    const teamBounds = await team.boundingBox()
+    expect(summaryBounds).not.toBeNull()
+    expect(frameBounds).not.toBeNull()
+    expect(phaseBounds).not.toBeNull()
+    expect(teamBounds).not.toBeNull()
+    expect(summaryBounds!.y + summaryBounds!.height).toBeLessThan(frameBounds!.y)
+    expect(summaryBounds!.x).toBeCloseTo(frameBounds!.x, 0)
+    expect(summaryBounds!.width).toBeCloseTo(frameBounds!.width, 0)
+    expect(Math.abs(summaryBounds!.height - phaseBounds!.height)).toBeLessThanOrEqual(1)
+    expect(teamBounds!.y - phaseBounds!.y - phaseBounds!.height).toBeCloseTo(12, 0)
+    if (width >= 768) {
+      expect(teamBounds!.height).toBeLessThanOrEqual(width < 900 ? 176 : 144)
+      expect((await modifiers.boundingBox())!.height).toBeGreaterThan(teamBounds!.height * 2)
+      expect(Math.abs(summaryBounds!.y - phaseBounds!.y)).toBeLessThanOrEqual(1)
+      expect(teamBounds!.y).toBeCloseTo(frameBounds!.y, 0)
+      expect(summaryBounds!.x + summaryBounds!.width).toBeLessThan(phaseBounds!.x)
+    }
+    await expect(frame).not.toContainText('Охота')
+    await expect(frame.getByRole('status')).toBeVisible()
+    await expectStable()
+    if (width >= 1077) {
+      expect((await frame.boundingBox())?.width).toBeGreaterThanOrEqual(400)
+    }
+    releaseImage()
+    const image = frame.getByRole('img')
+    await expect(image).toBeVisible()
+    await expect.poll(() => image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0)
+    await expect
+      .poll(async () => {
+        const summary = await cardSummary.boundingBox()
+        const cardFrame = await frame.boundingBox()
+        return summary && cardFrame
+          ? [Math.round(summary.x - cardFrame.x), Math.round(summary.width - cardFrame.width)]
+          : null
+      })
+      .toEqual([0, 0])
+    const imageFits = await frame.evaluate((element) => {
+      const image = element.querySelector('img')
+      if (!image || image.naturalWidth === 0) return false
+      const media = image.getBoundingClientRect()
+      const frame = element.getBoundingClientRect()
+      return {
+        fits:
+          media.width > 0 &&
+          media.height > 0 &&
+          media.left >= frame.left &&
+          media.right <= frame.right &&
+          media.top >= frame.top &&
+          media.bottom <= frame.bottom,
+        uncropped: getComputedStyle(image).objectFit === 'contain',
+        media: media.toJSON(),
+        frame: frame.toJSON(),
+      }
+    })
+    expect(imageFits && imageFits.fits, JSON.stringify(imageFits)).toBe(true)
+    expect(imageFits && imageFits.uncropped, JSON.stringify(imageFits)).toBe(true)
+    if (width >= 1920) {
+      const alignment = await page.evaluate(() => {
+        const imageRight = document
+          .querySelector('[data-testid="round-card-frame"]')!
+          .getBoundingClientRect().right
+        const phaseLeft = document
+          .querySelector('[data-testid="round-phase"]')!
+          .getBoundingClientRect().left
+        return { center: innerWidth / 2, gapCenter: (imageRight + phaseLeft) / 2 }
+      })
+      expect(Math.abs(alignment.gapCenter - alignment.center)).toBeLessThan(1)
+      expect((await frame.boundingBox())!.width).toBeGreaterThan(width * 0.34)
+    }
+    await expectStable()
+
+    for (let visit = 0; visit < 2; visit += 1) {
+      const navigationToggle = page.getByRole('button', { name: 'Открыть навигацию' })
+      const compactNavigation = await navigationToggle.isVisible()
+      if (compactNavigation) await navigationToggle.click()
+      await page
+        .getByRole(compactNavigation ? 'menuitem' : 'link', { name: 'Доска', exact: true })
+        .click()
+      await expect(page).toHaveURL(/\/panel\/game-board$/)
+      if (compactNavigation) await navigationToggle.click()
+      const samplesPromise = page.evaluate(
+        () =>
+          new Promise<string[]>((resolve) => {
+            const samples: string[] = []
+            const startedAt = performance.now()
+            let firstFrame: number | null = null
+            const sample = () => {
+              const panels = ['round-card-summary', 'round-card-frame', 'round-details-panel'].map(
+                (id) => document.querySelector(`[data-testid="${id}"]`),
+              )
+              if (panels.every(Boolean)) {
+                firstFrame ??= performance.now()
+                samples.push(
+                  JSON.stringify(
+                    panels.map((panel) => {
+                      const rect = panel!.getBoundingClientRect()
+                      return [rect.x + scrollX, rect.y + scrollY, rect.width, rect.height].map(
+                        Math.round,
+                      )
+                    }),
+                  ),
+                )
+              }
+              if (
+                (firstFrame === null || performance.now() - firstFrame < 500) &&
+                performance.now() - startedAt < 5000
+              )
+                requestAnimationFrame(sample)
+              else resolve(samples)
+            }
+            requestAnimationFrame(sample)
+          }),
+      )
+      await page
+        .getByRole(compactNavigation ? 'menuitem' : 'link', { name: 'Текущий раунд', exact: true })
+        .click()
+      await expect(image).toBeVisible()
+      const samples = await samplesPromise
+      expect(samples.length).toBeGreaterThan(1)
+      expect([...new Set(samples)]).toHaveLength(1)
+      await expectStable()
+    }
+
+    await expect(card.getByRole('button')).toHaveCount(0)
+    await expect(phasePanel.getByRole('link')).toHaveCount(0)
+    expect(
+      await overview.getByRole('heading', { name: 'Текущий раунд' }).evaluate((heading) => {
+        const rect = heading.getBoundingClientRect()
+        return rect.width <= 1 && rect.height <= 1 && getComputedStyle(heading).clipPath !== 'none'
+      }),
+    ).toBe(true)
+    await expectStable()
+
+    roundStatus = 'awaiting_modifiers'
+    update()
+    await page
+      .getByRole('dialog', { name: 'Модификаторы', exact: true })
+      .getByRole('button', { name: 'Закрыть модификаторы' })
+      .click()
+    await expect(modifiers).toContainText('Пока никто не активировал модификаторы.')
+    await expectStable()
+    const modifierTrigger = page.getByRole('button', { name: 'Модификаторы', exact: true })
+    await expect(modifierTrigger).toBeVisible()
+    if (width >= 1200) {
+      await expect(modifierTrigger).toHaveCSS('height', '160px')
+      const insets = await modifierTrigger.evaluate((element) => {
+        const bounds = element.getBoundingClientRect()
+        const range = document.createRange()
+        range.selectNodeContents(element)
+        const text = range.getBoundingClientRect()
+        return [text.top - bounds.top, bounds.bottom - text.bottom]
+      })
+      expect(insets[0]).toBeGreaterThanOrEqual(12)
+      expect(insets[1]).toBeGreaterThanOrEqual(12)
+    } else {
+      await expect(modifierTrigger).toHaveCSS('writing-mode', 'horizontal-tb')
+      expect((await modifierTrigger.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    }
+    if ([390, 768, 1440, 1920].includes(width)) {
+      await page.screenshot({
+        path: testInfo.outputPath('modifier-trigger.png'),
+        animations: 'disabled',
+      })
+    }
+    const roundRefresh = page.waitForResponse('**/api/game/rounds/active')
+    update()
+    await roundRefresh
+    await expect(page.getByRole('dialog', { name: 'Модификаторы', exact: true })).not.toBeVisible()
+    roundStatus = 'preparing'
+    for (const count of [1, 5, 12]) {
+      activeModifiers = Array.from({ length: count }, (_, index) => ({
+        activationId: `activation-${index}`,
+        modifierId: `modifier-${index}`,
+        roundId: 'round-one',
+        roundVersion: 1,
+        modifierName: count === 1 ? 'Куст и корточки' : `Модификатор ${index + 1}`,
+        activationCost: 3,
+        activatedAtUtc: '2026-09-01T12:00:00Z',
+        activatedByUserId: 'spectator',
+        activatedByDisplayName: 'Зритель',
+      }))
+      update()
+      const list = modifiers.getByRole('list').first()
+      const rows = list.locator(':scope > li > ul > li')
+      await expect(rows).toHaveCount(count)
+      const categoryLabels = ['Перед раундом', 'Во время раунда', 'На итог раунда'].slice(
+        0,
+        Math.min(count, 3),
+      )
+      await expect(list.getByRole('heading', { level: 3 })).toHaveText(categoryLabels)
+      for (const [index, label] of categoryLabels.entries()) {
+        const expectedNames = activeModifiers
+          .filter((_, position) => position % 3 === index)
+          .map(({ modifierName }) => modifierName)
+          .sort((left, right) => left.localeCompare(right, 'ru'))
+        await expect(
+          list.getByRole('list', { name: label, exact: true }).getByRole('heading', { level: 4 }),
+        ).toHaveText(expectedNames)
+      }
+      await expect(modifiers.getByLabel(`Активно: ${count}`, { exact: true })).toBeVisible()
+      const listWidth = (await list.boundingBox())!.width
+      const listInsets = await list.evaluate((element) => {
+        const list = element.getBoundingClientRect()
+        const panel = element.closest('section')!.getBoundingClientRect()
+        return [list.left - panel.left, panel.right - list.right]
+      })
+      expect(listInsets[0]).toBeCloseTo(listInsets[1] ?? 0, 0)
+      expect(listInsets[0]).toBeLessThanOrEqual(18)
+      expect(listInsets[1]).toBeLessThanOrEqual(18)
+      const rowWidth = (await rows.first().boundingBox())!.width
+      const rowHeight = (await rows.first().boundingBox())!.height
+      const scrollArea = modifiers.getByRole('region', {
+        name: 'Активированные модификаторы раунда',
+      })
+      const availableHeight = await scrollArea.evaluate((element) => element.clientHeight - 8)
+      const categoryHeight = await list
+        .locator('[data-modifier-group-heading]')
+        .evaluateAll((headings) =>
+          headings.reduce(
+            (height, heading) => height + heading.getBoundingClientRect().height + 6,
+            0,
+          ),
+        )
+      const singleColumnHeight = count * rowHeight + (count - 1) * 6 + categoryHeight
+      expect(rowWidth).toBeCloseTo(
+        count > 1 && listWidth >= 480 && singleColumnHeight > availableHeight + 1
+          ? (listWidth - 6) / 2
+          : listWidth,
+        0,
+      )
+      const iconBounds = await rows
+        .first()
+        .getByRole('button')
+        .locator('[aria-hidden]')
+        .first()
+        .boundingBox()
+      expect(iconBounds?.width).toBe(32)
+      expect(iconBounds?.height).toBe(32)
+      await expectStable()
+      if ([390, 768, 1440].includes(width)) {
+        await modifiers.screenshot({
+          path: testInfo.outputPath(`active-${count}-modifiers.png`),
+          animations: 'disabled',
+        })
+      }
+      if (width === 1440 && count === 12) {
+        const expectColumns = async (columns: number) => {
+          await expect
+            .poll(() =>
+              list
+                .locator(':scope > li > ul')
+                .first()
+                .evaluate(
+                  (element) => getComputedStyle(element).gridTemplateColumns.split(' ').length,
+                ),
+            )
+            .toBe(columns)
+        }
+        await expectColumns(2)
+        await page.setViewportSize({ width, height: 1440 })
+        await expectColumns(1)
+        await rows.first().getByRole('button').click()
+        await expectColumns(1)
+        await rows.first().getByRole('button').click()
+        await page.setViewportSize({ width, height })
+        await expectColumns(2)
+        await rows.first().getByRole('button').click()
+        await expectColumns(2)
+        await rows.first().getByRole('button').click()
+        await expectStable()
+      }
+    }
+    for (const multiplier of [1, 2, 12]) {
+      activeModifiers = Array.from({ length: multiplier + 1 }, (_, index) => ({
+        activationId: `stack-activation-${index}`,
+        modifierId: index < multiplier ? 'modifier-0' : 'modifier-1',
+        roundId: 'round-one',
+        roundVersion: 1,
+        modifierName: index < multiplier ? 'Повторный модификатор' : 'Одиночный модификатор',
+        activationCost: 3,
+        activatedAtUtc: '2026-09-01T12:00:00Z',
+        activatedByUserId: `spectator-${index}`,
+        activatedByDisplayName: `Зритель ${index + 1}`,
+      }))
+      update()
+      const repeated = modifiers.getByRole('button', { name: /Повторный модификатор/ })
+      const single = modifiers.getByRole('button', { name: /Одиночный модификатор/ })
+      await expect(
+        modifiers.getByLabel(`Активно: ${multiplier + 1}`, { exact: true }),
+      ).toBeVisible()
+      await expect(repeated.getByRole('heading', { level: 4 })).toHaveText('Повторный модификатор')
+      await expect(single.getByText(/^×\d+$/)).toHaveCount(0)
+      if (multiplier === 1) await expect(repeated.getByText('×1', { exact: true })).toHaveCount(0)
+      else {
+        const badge = repeated.getByLabel(`${multiplier} активац.`, { exact: true })
+        await expect(badge).toHaveText(`×${multiplier}`)
+        await expect(badge).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+        await expect(badge.locator('span')).toHaveCSS('font-weight', '800')
+        await expect(badge.locator('span')).toHaveCSS('font-size', '16px')
+        await expect(badge).not.toHaveCSS('border-image-source', 'none')
+        await expect(badge).not.toHaveCSS('background-image', 'none')
+        expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(36)
+        expect(
+          await repeated.evaluate((element) => element.scrollWidth <= element.clientWidth),
+        ).toBe(true)
+      }
+      await expectStable()
+      if ([390, 768, 1440].includes(width)) {
+        await modifiers.screenshot({
+          path: testInfo.outputPath(`stacked-${multiplier}-activations.png`),
+          animations: 'disabled',
+        })
+      }
+    }
+    for (const [status, phase] of [
+      ['preparing', 'Подготовка к игре'],
+      ['in_progress', 'Проведение игры'],
+      ['reviewing_results', 'Подведение итогов'],
+    ]) {
+      roundStatus = status ?? null
+      activeModifiers = Array.from({ length: 5 }, (_, index) => ({
+        activationId: `activation-${index}`,
+        modifierId: `modifier-${index}`,
+        roundId: 'round-one',
+        roundVersion: 1,
+        modifierName: ['Защитный знак', 'Жажда', 'Патрон', 'Навыки', 'Последний шанс'][index] ?? '',
+        activationCost: 3,
+        activatedAtUtc: '2026-09-01T12:00:00Z',
+        activatedByUserId: 'spectator',
+        activatedByDisplayName: 'Зритель',
+      }))
+      update()
+      await expect(overview).toContainText(phase ?? '')
+      await expect(modifiers).toContainText('Защитный знак')
+      await expectStable()
+      if (status === 'in_progress') {
+        await expect(modifiers).toContainText(/1:5\d|2:00/)
+        if (width >= 768) {
+          expect(
+            await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+          ).toBe(true)
+        }
+        if (width === 1440) {
+          await page.evaluate(() => window.scrollTo(0, 0))
+          await page.screenshot({
+            path: testInfo.outputPath('runtime.png'),
+            fullPage: true,
+            animations: 'disabled',
+          })
+        }
+        await modifiers.getByRole('button', { name: /Жажда/ }).click()
+        await expect(modifiers).toContainText('Играть без лечения.')
+        await expect(modifiers).toContainText('Внимание ведущего')
+        await modifiers.getByRole('button', { name: /Жажда/ }).click()
+      }
+    }
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({
+      path: testInfo.outputPath('populated.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+    if (width >= 768) {
+      expect(
+        await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+      ).toBe(true)
+    }
+    const modifierList = modifiers.getByRole('region', {
+      name: 'Активированные модификаторы раунда',
+    })
+    await modifierList.focus()
+    await page.keyboard.press('End')
+    await expect(modifiers.getByText('Последний шанс', { exact: true })).toBeInViewport()
+
+    if ([390, 768, 1440].includes(width)) {
+      stressModifiers = true
+      const longModifierName = 'МодификаторСОченьДлиннымНепрерывнымНазваниемДляПроверкиПереноса'
+      activeModifiers = Array.from({ length: 26 }, (_, index) => ({
+        activationId: `stress-activation-${index}`,
+        modifierId: `stress-${index < 14 ? index : 0}`,
+        modifierName: index === 0 || index >= 14 ? longModifierName : `Испытание ${index}`,
+        roundId: 'round-one',
+        roundVersion: 1,
+        activationCost: 3,
+        activatedAtUtc: '2026-09-01T12:00:00Z',
+        activatedByUserId: `spectator-${index}`,
+        activatedByDisplayName: `ЗрительСДлиннымНепрерывнымНикнеймом${index}`,
+      }))
+      update()
+      const longRow = modifiers.getByRole('button', { name: new RegExp(longModifierName) })
+      await expect(longRow).toBeVisible()
+      await longRow.click()
+      await expect(longRow).toHaveAttribute('aria-expanded', 'true')
+      await expect(modifierList.locator('details[open]')).toHaveCount(1)
+      const activators = modifierList.locator('details[open] ul > li')
+      await expect(activators).toHaveCount(13)
+      expect(
+        await activators.evaluateAll((items) =>
+          items.every((item) => {
+            const style = getComputedStyle(item)
+            return style.display === 'list-item' && style.listStyleType === 'disc'
+          }),
+        ),
+      ).toBe(true)
+      for (const item of await activators.all()) {
+        await expect(item).toContainText('ЗрительСДлиннымНепрерывнымНикнеймом')
+      }
+      await expectStable()
+      expect(
+        await modifierList.evaluate((element) => element.scrollHeight > element.clientHeight),
+      ).toBe(true)
+      expect(
+        await modifiers.evaluate((element) =>
+          Array.from(element.querySelectorAll('summary, p, li')).every(
+            (item) => item.scrollWidth <= item.clientWidth + 1,
+          ),
+        ),
+      ).toBe(true)
+      const icon = longRow.locator('[aria-hidden]').first()
+      const iconBounds = await icon.boundingBox()
+      expect(iconBounds).not.toBeNull()
+      expect(iconBounds!.width).toBeGreaterThanOrEqual(30)
+      expect(iconBounds!.width).toBeLessThanOrEqual(44)
+      expect(iconBounds!.height).toBe(iconBounds!.width)
+      await modifierList.evaluate((element) => {
+        const expanded = element.querySelector('details[open]')
+        if (expanded)
+          element.scrollTop +=
+            expanded.getBoundingClientRect().top - element.getBoundingClientRect().top
+      })
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await page.screenshot({
+        path: testInfo.outputPath('expanded-long-modifier.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+      const secondRow = modifiers.getByRole('button', { name: /Испытание 2\b/ })
+      await secondRow.focus()
+      await page.keyboard.press('Enter')
+      await expect(secondRow).toHaveAttribute('aria-expanded', 'true')
+      await expect(longRow).toHaveAttribute('aria-expanded', 'false')
+      await expect(modifierList.locator('details[open]')).toHaveCount(1)
+      await expectStable()
+    }
+
+    activeTeamId = null
+    roundStatus = null
+    activeModifiers = []
+    update()
+    await expect(team).toContainText('Сейчас выбирают активную команду.')
+    expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).toBe(
+      'none',
+    )
+    await expect(frame).toContainText('Карточка ещё не открыта.')
+    await expect(modifiers).toContainText('Выбор модификаторов ещё не начался.')
+    await expectStable()
+  })
+}
+for (const width of [390, 768, 1440]) {
+  test(`current round modifier state survives navigation at ${width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
@@ -451,25 +1232,101 @@ for (const width of [390, 1440]) {
     await expect(modifiers).toBeVisible()
     await modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }).click()
     const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
-    await confirmation
-      .getByRole('button', { name: 'Активировать модификатор', exact: true })
-      .click()
+    const description = confirmation.getByText(
+      'Активировать «Защитный знак» за 1 очк. викторины?',
+      { exact: true },
+    )
+    await expect(description).toHaveCSS('text-align', 'center')
+    await expect(confirmation.getByRole('button', { name: 'Отмена', exact: true })).toBeVisible()
+    await expect(
+      confirmation.getByRole('button', { name: 'Не активировать', exact: true }),
+    ).toHaveCount(0)
+    await expect(
+      confirmation.getByRole('button', { name: 'Активировать модификатор', exact: true }),
+    ).toHaveCount(0)
+    await confirmation.screenshot({
+      path: testInfo.outputPath('activation-confirmation.png'),
+      animations: 'disabled',
+    })
+    const closingContent = await confirmation.evaluateHandle((dialog) => {
+      const samples = [dialog.textContent]
+      const observer = new MutationObserver(() => {
+        if (dialog.isConnected) samples.push(dialog.textContent)
+      })
+      observer.observe(dialog, { subtree: true, childList: true, characterData: true })
+      return { samples, observer }
+    })
+    await confirmation.getByRole('button', { name: 'Отмена', exact: true }).click()
+    await expect(confirmation).not.toBeVisible()
+    const exitSamples = await closingContent.evaluate(({ samples, observer }) => {
+      observer.disconnect()
+      return samples
+    })
+    await closingContent.dispose()
+    expect(exitSamples.every((text) => text === exitSamples[0])).toBe(true)
+    expect(activationAttempts).toBe(0)
+    await expect(
+      modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }),
+    ).toBeFocused()
+    await modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }).click()
+    await confirmation.getByRole('button', { name: 'Активировать', exact: true }).click()
     await expect(confirmation.getByRole('alert')).toBeVisible()
     await expect(confirmation).toBeVisible()
     expect(activationAttempts).toBe(1)
-    await confirmation
-      .getByRole('button', { name: 'Активировать модификатор', exact: true })
-      .click()
+    const successfulClosingContent = confirmation.evaluate(
+      (element) =>
+        new Promise<boolean[]>((resolve) => {
+          const samples: boolean[] = []
+          const started = performance.now()
+          const sample = () => {
+            if (!element.isConnected || performance.now() - started > 2000) {
+              resolve(samples)
+              return
+            }
+            const text = element.textContent ?? ''
+            samples.push(
+              text.includes('Активировать «Защитный знак» за 1 очк. викторины?') &&
+                !text.includes('Действие больше недоступно.'),
+            )
+            requestAnimationFrame(sample)
+          }
+          requestAnimationFrame(sample)
+        }),
+    )
+    await confirmation.getByRole('button', { name: 'Активировать', exact: true }).click()
     await expect(confirmation).not.toBeVisible()
+    const successSamples = await successfulClosingContent
+    expect(successSamples.length).toBeGreaterThan(1)
+    expect(successSamples.every(Boolean)).toBe(true)
     expect(activationAttempts).toBe(2)
     await expect(page.getByText('Не удалось активировать модификатор.')).toHaveCount(0)
     await expect(modifiers).toContainText('Защитный знак')
+    const activeRow = modifiers.getByRole('listitem', { name: 'Защитный знак' })
+    const cost = activeRow.getByText('Стоимость: 1 очк.', { exact: true })
+    const activeTag = activeRow.getByText('Активен', { exact: true })
+    await expect(activeTag).toBeVisible()
+    const costBounds = (await cost.boundingBox())!
+    const tagBounds = (await activeTag.boundingBox())!
+    expect(tagBounds.x).toBeGreaterThan(costBounds.x + costBounds.width)
+    expect(tagBounds.y + tagBounds.height / 2).toBeCloseTo(costBounds.y + costBounds.height / 2, 0)
+    expect(await activeTag.evaluate((element) => getComputedStyle(element).fontSize)).toBe(
+      await cost.evaluate((element) => getComputedStyle(element).fontSize),
+    )
+    await expect(modifiers.getByRole('heading', { name: 'Выбор модификаторов' })).toBeInViewport()
+    await page.screenshot({
+      path: testInfo.outputPath('active-modifier-row.png'),
+      animations: 'disabled',
+    })
     await modifiers
       .getByRole('listitem', { name: 'Защитный знак' })
       .getByRole('button', { name: 'Подробнее' })
       .click()
     const details = page.getByRole('dialog', { name: 'Защитный знак' })
     await expect(details).toContainText('Защищает команду в раунде.')
+    await expect(details.getByText('Защищает команду в раунде.', { exact: true })).toHaveCSS(
+      'text-align',
+      'center',
+    )
     const cancelPurchase = details.getByRole('button', { name: /Отменить мою покупку/ })
     await cancelPurchase.click()
     const cancelConfirmation = page.getByRole('dialog', { name: 'Отменить покупку модификатора?' })
@@ -485,11 +1342,19 @@ for (const width of [390, 1440]) {
     await expect(overview).toContainText('Ночные странники')
     await expect(overview).toContainText('Ворон')
     await expect(overview).toContainText('Защитный знак')
+    const activeModifier = overview.getByRole('button', { name: /Защитный знак/ })
+    await activeModifier.click()
+    await expect(overview.getByText('Защищает команду в раунде.', { exact: true })).toBeVisible()
+    await expect(overview.getByText('Охотник', { exact: true })).toBeVisible()
+    await activeModifier.click()
     await page.screenshot({
       path: testInfo.outputPath('current-round.png'),
       animations: 'disabled',
     })
-    await page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }).click()
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Посмотреть доску' }),
+    ).toHaveCount(0)
+    await page.goto('/panel/game-board')
     await expect(page).toHaveURL(/\/panel\/game-board$/)
     await expect(page.getByTestId('game-board-surface')).toBeVisible()
     modifierEnabled = false
@@ -500,6 +1365,7 @@ for (const width of [390, 1440]) {
       .getByRole('button', { name: 'Подробнее' })
       .click()
     await expect(details).toContainText('Этот модификатор больше не включён для текущей игры.')
+    const detailsElement = await details.evaluateHandle((dialog) => dialog)
     await cancelPurchase.click()
     await expect(
       cancelConfirmation.getByRole('button', { name: 'Отмена', exact: true }),
@@ -509,9 +1375,24 @@ for (const width of [390, 1440]) {
     })
     await confirmCancellation.click()
     await expect(cancelConfirmation.getByRole('alert')).toBeVisible()
+    const detailsClosingContent = await detailsElement.evaluateHandle((dialog) => {
+      const samples = [dialog.textContent]
+      const observer = new MutationObserver(() => {
+        if (dialog.isConnected) samples.push(dialog.textContent)
+      })
+      observer.observe(dialog, { subtree: true, childList: true, characterData: true })
+      return { samples, observer }
+    })
     await confirmCancellation.click()
     await expect(cancelConfirmation).not.toBeVisible()
     await expect(details).not.toBeVisible()
+    const detailsExitSamples = await detailsClosingContent.evaluate(({ samples, observer }) => {
+      observer.disconnect()
+      return samples
+    })
+    await detailsClosingContent.dispose()
+    await detailsElement.dispose()
+    expect([...new Set(detailsExitSamples)]).toEqual([detailsExitSamples[0]])
     await expect(modifiers.getByRole('listitem')).toHaveCount(0)
     expect(cancellationAttempts).toBe(2)
     expect(writes).toEqual([])
@@ -521,11 +1402,12 @@ for (const width of [390, 1440]) {
 for (const { width, height } of [
   { width: 320, height: 844 },
   { width: 390, height: 844 },
+  { width: 768, height: 900 },
   { width: 1366, height: 768 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`round modifier catalog fits without scrolling at ${width}px`, async ({
+  test(`round modifier catalog scrolls with balance and close action visible at ${width}px`, async ({
     page,
   }, testInfo) => {
     await mockGame(page, 'active', 'viewer')
@@ -568,8 +1450,8 @@ for (const { width, height } of [
               description: `Описание модификатора «${name}».`,
               activationCost: costs[index],
               activationLimit: null,
-              conflictingModifierIds: [],
-              iconEmoji: null,
+              conflictingModifierIds: index === 0 ? ['modifier-1', 'modifier-4'] : [],
+              iconEmoji: ['🛡️', '💧', '🎯', '📖', '⌛'][index % 5],
               activationCommand: null,
               revision: 1,
               normalizedTags: [],
@@ -601,20 +1483,119 @@ for (const { width, height } of [
     const list = panel.getByTestId('round-modifier-list')
     await expect(list.getByRole('listitem')).toHaveCount(names.length)
     const body = panel.getByTestId('round-modifier-scroll-body')
-    expect(await body.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
+    const balance = panel.getByTestId('round-modifier-balance')
+    await expect(balance).toHaveText('Ваши очки:12 очк.')
+    await expect(
+      panel.getByText('Доступные модификаторы и их стоимость для текущего раунда.'),
+    ).toHaveCount(0)
+    await expect(panel.getByText(/^Активно:/)).toHaveCount(0)
+    await expect(balance).toHaveCSS('border-top-width', '1px')
+    const balanceLine = await balance.locator('p, strong').evaluateAll((elements) =>
+      elements.map((element) => {
+        const bounds = element.getBoundingClientRect()
+        return bounds.y + bounds.height / 2
+      }),
+    )
+    expect(balanceLine[0]).toBeCloseTo(balanceLine[1] ?? 0, 0)
+    if (width >= 600) expect((await panel.boundingBox())!.width).toBe(560)
+    const skill = list.getByRole('listitem', { name: 'Навыки', exact: true })
+    await expect(skill).toContainText('Стоимость: 4 очк.')
+    const costLabel = skill.getByText('Стоимость: 4 очк.', { exact: true }).locator('..')
+    await expect(costLabel).toHaveCSS('border-top-width', '1px')
+    expect((await costLabel.boundingBox())!.height).toBeLessThanOrEqual(width === 320 ? 34 : 20)
+    expect(await costLabel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
       true,
     )
+    const iconBounds = await skill.locator('[aria-hidden="true"]').first().boundingBox()
+    expect(iconBounds?.width).toBe(40)
+    expect(iconBounds?.height).toBe(40)
+    await expect(skill.locator('[aria-hidden="true"]').first()).toHaveText('⌛')
+    const titleBounds = (await skill.getByRole('heading', { name: 'Навыки' }).boundingBox())!
+    const detailsAction = skill.getByRole('button', { name: 'Подробнее' })
+    await expect(detailsAction).toHaveCSS('border-top-width', '0px')
+    await expect(detailsAction).toHaveCSS('border-image-source', 'none')
+    const actionBounds = (await detailsAction.boundingBox())!
+    expect(actionBounds.x).toBeGreaterThan(titleBounds.x + titleBounds.width)
+    const rowHeight = (await skill.boundingBox())!.height
+    expect(rowHeight).toBeLessThanOrEqual(width >= 600 ? 56 : 94)
+    const headings = list.locator('section > header')
+    await expect(headings).toHaveCount(3)
+    await expect(headings.first()).toHaveCSS('border-left-width', '3px')
+    await expect(headings.first()).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    for (const category of ['Перед раундом', 'Во время раунда', 'На итог раунда']) {
+      const group = list.getByRole('region', { name: category, exact: true })
+      await expect(group).toHaveCSS('border-top-width', '1px')
+      await expect(group).toHaveCSS('border-bottom-width', '1px')
+      await expect(group.getByRole('listitem')).toHaveCount(5)
+    }
+    const close = panel.getByRole('button', { name: 'Закрыть модификаторы' })
+    const balanceBounds = await balance.boundingBox()
+    if (width === 1920)
+      expect(
+        await body.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+      ).toBe(true)
+    expect(await body.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await list.getByRole('listitem', { name: 'Хард75' }).scrollIntoViewIfNeeded()
+    await expect(
+      list.getByRole('listitem', { name: 'Хард75' }).getByRole('button', { name: 'Подробнее' }),
+    ).toBeInViewport()
+    await expect(balance).toBeInViewport()
+    await expect(close).toBeInViewport()
+    expect(await balance.boundingBox()).toEqual(balanceBounds)
+    await page.screenshot({
+      path: testInfo.outputPath('text-details-actions.png'),
+      animations: 'disabled',
+    })
     await list
       .getByRole('listitem', { name: 'Чирик' })
       .getByRole('button', { name: 'Подробнее' })
       .click()
     const details = page.getByRole('dialog', { name: 'Чирик' })
     await expect(details).toContainText('Описание модификатора «Чирик».')
+    await expect(details.getByText('Описание модификатора «Чирик».', { exact: true })).toHaveCSS(
+      'text-align',
+      'center',
+    )
+    const conflicts = details.getByRole('status')
+    await expect(conflicts).toHaveText('Конфликтует с: Жажда, Навыки')
+    await expect(conflicts.locator('p')).toHaveCSS('font-weight', '700')
+    await expect(conflicts.locator('p')).toHaveCSS('text-align', 'center')
+    await expect(conflicts.locator('svg')).toBeVisible()
     await page.screenshot({
       path: testInfo.outputPath('round-modifier-details.png'),
       animations: 'disabled',
     })
+    const closingContent = details.evaluate(
+      (element) =>
+        new Promise<boolean[]>((resolve) => {
+          const samples: boolean[] = []
+          const started = performance.now()
+          const sample = () => {
+            if (!element.isConnected || performance.now() - started > 600) {
+              resolve(samples)
+              return
+            }
+            if (Number(getComputedStyle(element).opacity) > 0)
+              samples.push(element.textContent?.includes('Описание модификатора «Чирик».') ?? false)
+            requestAnimationFrame(sample)
+          }
+          requestAnimationFrame(sample)
+        }),
+    )
     await details.getByRole('button', { name: 'Закрыть' }).click()
+    const closingSamples = await closingContent
+    expect(closingSamples.length).toBeGreaterThan(1)
+    expect(closingSamples.every(Boolean)).toBe(true)
+    await expect(details).not.toBeVisible()
+    await expect(
+      list.getByRole('listitem', { name: 'Чирик' }).getByRole('button', { name: 'Подробнее' }),
+    ).toBeFocused()
+    await skill.getByRole('button', { name: 'Подробнее' }).click()
+    const skillDetails = page.getByRole('dialog', { name: 'Навыки', exact: true })
+    await expect(skillDetails).toContainText('Описание модификатора «Навыки».')
+    await expect(skillDetails.getByRole('status')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(skillDetails).not.toBeVisible()
     if (width === 390) {
       await page.setViewportSize({ width, height: 640 })
       expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
@@ -625,6 +1606,9 @@ for (const { width, height } of [
       await expect(lastModifier.getByRole('button', { name: 'Подробнее' })).toBeVisible()
       await page.setViewportSize({ width, height })
     }
+    await body.evaluate((element) => {
+      element.scrollTop = 0
+    })
     await page.screenshot({
       path: testInfo.outputPath('round-modifiers.png'),
       animations: 'disabled',
@@ -1040,7 +2024,7 @@ test('round refresh errors preserve content and ordering takes priority over the
   await page.getByRole('main').getByRole('button', { name: 'Повторить', exact: true }).click()
   await expect(question).toBeVisible()
   await expect(modifiers).not.toBeVisible()
-  await expect(page.getByRole('button', { name: 'Открыть модификаторы' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Модификаторы', exact: true })).toHaveCount(0)
   await expect(page).toHaveURL(/\/panel\/game-round$/)
 })
 

@@ -3,7 +3,11 @@ import type {
   GameModifierActivation,
   GameModifierAvailability,
 } from '../../../shared/api/contracts/index.ts'
-import { groupActiveGameModifiers, groupAvailableGameModifiers } from './game-modifier-groups.ts'
+import {
+  groupActiveGameModifiers,
+  groupActiveModifierCategories,
+  groupAvailableGameModifiers,
+} from './game-modifier-groups.ts'
 
 function createActivation(overrides: Partial<GameModifierActivation> = {}): GameModifierActivation {
   return {
@@ -59,6 +63,59 @@ function createAvailability(
 }
 
 describe('game modifier groups', () => {
+  it('orders active categories and preserves cost order and repeated activations within each category', () => {
+    const groups = groupActiveGameModifiers([
+      createActivation({ modifierId: 'result', activationCost: 2 }),
+      createActivation({ modifierId: 'round-expensive', activationCost: 10 }),
+      createActivation({ modifierId: 'preparation', activationCost: 30 }),
+      createActivation({ modifierId: 'round-cheap', activationCost: 3 }),
+      createActivation({ modifierId: 'round-cheap', activationId: 'repeat', activationCost: 3 }),
+    ])
+    const available = ['result', 'round-expensive', 'preparation', 'round-cheap'].map((id) =>
+      createAvailability({
+        modifier: {
+          ...createAvailability().modifier,
+          id,
+          category: id === 'result' || id === 'preparation' ? id : 'round',
+        },
+      }),
+    )
+    const categories = groupActiveModifierCategories(groups, available, [])
+    expect(categories.map(({ category }) => category)).toEqual(['preparation', 'round', 'result'])
+    expect(categories[1]?.items.map(({ modifierId }) => modifierId)).toEqual([
+      'round-cheap',
+      'round-expensive',
+    ])
+    expect(categories[1]?.items[0]?.activationsCount).toBe(2)
+  })
+
+  it('prefers the saved round category and retains modifiers whose metadata is missing', () => {
+    const groups = groupActiveGameModifiers([
+      createActivation(),
+      createActivation({ modifierId: 'removed' }),
+      createActivation({ modifierId: 'unknown' }),
+    ])
+    const categories = groupActiveModifierCategories(
+      groups,
+      [createAvailability()],
+      [
+        { modifierId: 'modifier-1', modifierCategory: 'preparation' },
+        { modifierId: 'removed', modifierCategory: 'result' },
+        { modifierId: 'unknown', modifierCategory: 'future-category' },
+      ],
+    )
+    expect(categories.map(({ category }) => category)).toEqual(['preparation', 'result', null])
+    expect(categories.flatMap(({ items }) => items.map(({ modifierId }) => modifierId))).toEqual([
+      'modifier-1',
+      'removed',
+      'unknown',
+    ])
+    expect(groupActiveModifierCategories(groups, [], []).flatMap(({ items }) => items)).toEqual(
+      groups,
+    )
+    expect(groupActiveModifierCategories([], [], [])).toEqual([])
+  })
+
   it('groups identical active modifiers and sorts groups from cheaper to more expensive', () => {
     const grouped = groupActiveGameModifiers([
       createActivation({
