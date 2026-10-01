@@ -10,7 +10,7 @@ COPY frontend/ ./
 ARG VITE_PUBLIC_ORIGIN=https://deadman.bug.community
 RUN VITE_PUBLIC_ORIGIN="$VITE_PUBLIC_ORIGIN" npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400-alpine3.23 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.400-noble AS backend-build
 WORKDIR /src
 
 COPY global.json .editorconfig ./
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
     --output /out \
     /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.11-alpine3.23 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.11-noble AS runtime
 WORKDIR /app
 ARG RELEASE_SHA=local
 
@@ -34,7 +34,9 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_EnableDiagnostics=0
 
-RUN apk add --no-cache curl krb5-libs \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/lib/deadmans/keys \
     && chown -R app:app /var/lib/deadmans \
     && printf '%s' "$RELEASE_SHA" > /app/release-sha
@@ -48,6 +50,7 @@ VOLUME ["/var/lib/deadmans/keys"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD probe_host="${CanonicalUrl__Origin#https://}" \
-    && wget -q --spider --header "Host: ${probe_host%/}" http://127.0.0.1:8080/health/ready || exit 1
+    && curl --fail --silent --show-error --max-time 4 \
+        --header "Host: ${probe_host%/}" http://127.0.0.1:8080/health/ready || exit 1
 
 ENTRYPOINT ["dotnet", "backend.dll"]

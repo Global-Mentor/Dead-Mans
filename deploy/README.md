@@ -159,3 +159,28 @@ After the first launch is verified, set `PRODUCTION_DEPLOY_ENABLED` to `true`. E
 If a release fails, first set `PRODUCTION_DEPLOY_ENABLED` to `false` and keep the logs. Redeploy the digest of the last healthy image. Check database migration compatibility before rolling application code back. Never downgrade or delete a production database that already contains user data.
 
 Useful references include the Coolify guides for [firewalls and Docker](https://coolify.io/docs/knowledge-base/server/firewall) and [PostgreSQL TLS](https://coolify.io/docs/databases/ssl).
+
+## Runtime recovery
+
+The .NET build and runtime stages use Ubuntu Noble (glibc). Keep them on the same
+distribution family. Repeated native .NET worker faults in Alpine's
+`ld-musl-x86_64.so.1` were observed in production; moving off that runtime is a
+mitigation, not proof of the underlying native defect. Validate the image with
+the real PostgreSQL TLS and object storage health checks before rollout.
+
+Keep Docker and containerd enabled at boot and the application's Docker restart
+policy set to `unless-stopped`. In Coolify, set **Advanced > Operations > Max
+restart count** to `0`. A nonzero limit counts crashes across the container's
+lifetime and can stop an otherwise recoverable application permanently after
+several days. Zero disables that additional stop limit; it does not disable
+Docker's restart backoff or restart an intentionally stopped container.
+
+Monitor public `/health/ready`, container restart counts and kernel faults.
+Repeated restarts still require investigation. Configure an owner-approved
+notification channel in Coolify; a recovery policy alone is not an alert.
+
+Before redeploying after an incident, retain the affected container logs,
+healthcheck output, Docker journal and kernel messages in restricted server
+storage. Container replacement removes its local logs. Record timestamps in UTC
+and distinguish provider reset actions from the failure that prompted them.
+Do not reset a server or database merely to test recovery on production.
