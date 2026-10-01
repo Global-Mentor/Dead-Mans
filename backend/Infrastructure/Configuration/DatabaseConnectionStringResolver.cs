@@ -57,6 +57,16 @@ internal static class DatabaseConnectionStringResolver
             ValidateProductionTransport(builder);
         }
 
+        if (builder.GssEncryptionMode == GssEncryptionMode.Require)
+        {
+            throw new InvalidOperationException(
+                "GSS/Kerberos database encryption is not supported. Use TLS with SSL Mode=VerifyFull in Production."
+            );
+        }
+
+        // Npgsql prefers GSS before TLS by default; this application uses password authentication.
+        builder.GssEncryptionMode = GssEncryptionMode.Disable;
+
         return builder.ConnectionString;
     }
 

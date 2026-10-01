@@ -30,6 +30,12 @@ Create a PostgreSQL 16 service in Coolify with a persistent volume and no public
 
 The connection string must use `SSL Mode=VerifyFull` and a trusted CA certificate. Replace `postgres.internal` in [`deploy/.env.example`](.env.example) with the real internal database hostname covered by that certificate.
 
+The application disables optional GSS/Kerberos session encryption before opening
+PostgreSQL connections. Npgsql 10 otherwise tries GSS before TLS, including when
+`SSL Mode=VerifyFull` is set. Password authentication and certificate-verified TLS
+remain in use. An explicit `GSS Encryption Mode=Require` is rejected rather than
+silently replaced. Do not enable Kerberos negotiation for this deployment.
+
 Configure a daily encrypted backup to the private backup bucket. Restore one backup into a separate test database before opening the application to users. The detailed first database rollout is documented in [`docs/runbooks/initial-production-database-rollout.md`](../docs/runbooks/initial-production-database-rollout.md).
 
 ## Application
