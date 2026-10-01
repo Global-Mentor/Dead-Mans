@@ -4,7 +4,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import i18n from '../../i18n.ts'
 import { AuthContext, type AuthContextValue } from '../../shared/auth/auth-context.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
-import { huntPalette } from '../../shared/theme/hunt-palette.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { GameModifiersPage } from './GameModifiersPage.tsx'
@@ -318,17 +317,21 @@ describe('GameModifiersPage', () => {
     expect(within(summary).getByText('Энн Бонни')).toBeInTheDocument()
     expect(within(summary).getByText('Активная карточка')).toBeInTheDocument()
     expect(within(summary).getByText('Битва в порту')).toBeInTheDocument()
-    expect(within(summary).getByText('Посмотреть карточку')).toBeInTheDocument()
-    expect(within(summary).getByRole('list')).toHaveStyle({ flexDirection: 'row' })
+    expect(within(summary).getByRole('button', { name: /^Просмотр карточки/ })).toBeVisible()
+    expect(within(summary).queryByRole('button', { expanded: false })).not.toBeInTheDocument()
+    expect(within(summary).getByRole('list')).toHaveStyle({ flexDirection: 'column' })
 
     const pointsMetric = within(summary).getByRole('group', { name: 'Доступно очков' })
     expect(pointsMetric).toHaveAttribute('tabindex', '0')
     expect(pointsMetric.querySelector('dt')).toHaveTextContent('Доступно очков')
     expect(pointsMetric.querySelector('dd')).not.toBeEmptyDOMElement()
-    const viewCardButton = within(summary).getByRole('button', { name: 'Посмотреть карточку' })
+    const viewCardButton = within(summary).getByRole('button', { name: /^Просмотр карточки/ })
     expect(viewCardButton).toBeEnabled()
+    expect(viewCardButton).toHaveTextContent('Просмотр карточки')
+    expect(viewCardButton).not.toHaveTextContent('Битва в порту')
     expect(viewCardButton).toHaveStyle({ borderRadius: '0px' })
 
+    expect(screen.queryByRole('heading', { name: 'Модификаторы' })).not.toBeInTheDocument()
     const summaryText = summary.textContent ?? ''
     expect(summaryText.indexOf('Краткая сводка')).toBeLessThan(
       summaryText.indexOf('Доступно очков'),
@@ -344,7 +347,7 @@ describe('GameModifiersPage', () => {
   it('opens the active card in the shared card preview dialog', () => {
     renderGameModifiersPage()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Посмотреть карточку' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Просмотр карточки/ }))
 
     const dialog = screen.getByRole('dialog', { name: 'Битва в порту' })
     expect(dialog).toBeInTheDocument()
@@ -363,7 +366,7 @@ describe('GameModifiersPage', () => {
     expect(within(summary).getByText('Не выбрана')).toBeInTheDocument()
     expect(within(summary).getByText('Участники не указаны')).toBeInTheDocument()
     expect(within(summary).getByText('Не открыта')).toBeInTheDocument()
-    expect(within(summary).queryByRole('button', { name: 'Посмотреть карточку' })).toBeNull()
+    expect(within(summary).queryByRole('button', { name: /^Просмотр карточки/ })).toBeNull()
   })
 
   it('shows grouped activator display names for regular users', () => {
@@ -380,7 +383,10 @@ describe('GameModifiersPage', () => {
     expect(screen.getAllByText('9 очк.')).toHaveLength(2)
     expect(screen.getAllByText('Активны в этой игре')).toHaveLength(1)
     expect(screen.getByText('3 модификатора')).toBeInTheDocument()
-    expect(screen.getAllByText('1 модификатор')).toHaveLength(2)
+    expect(screen.getByText('1 модификатор')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Во время раунда · 1 модификатор' }),
+    ).toBeInTheDocument()
     expect(screen.queryByText('1 модификаторов')).not.toBeInTheDocument()
     expect(screen.queryByText('Текущий игрок')).not.toBeInTheDocument()
     expect(screen.queryByText(/Последний:/)).not.toBeInTheDocument()
@@ -426,7 +432,7 @@ describe('GameModifiersPage', () => {
       {
         label: 'Активная карточка',
         tooltip:
-          'Карточка, которая сейчас разыгрывается. Нажмите «Посмотреть карточку», чтобы открыть её полностью.',
+          'Карточка, которая сейчас разыгрывается. Кнопка «Просмотр карточки» открывает её полностью.',
       },
     ]
 
@@ -455,7 +461,7 @@ describe('GameModifiersPage', () => {
   it('retains activation content until the cancelled dialog finishes closing', async () => {
     renderGameModifiersPage()
     const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
-    const activateButton = screen.getByRole('button', { name: 'Активировать модификатор' })
+    const activateButton = screen.getByRole('button', { name: 'Активировать Расходники' })
     fireEvent.click(activateButton)
     const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
     const content = dialog.textContent
@@ -490,7 +496,7 @@ describe('GameModifiersPage', () => {
           for (const item of state.availableModifiers) item.canActivate = false
         }
       })
-      fireEvent.click(screen.getByRole('button', { name: 'Активировать модификатор' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Активировать Расходники' }))
       const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
       const content = dialog.textContent
 
@@ -509,7 +515,7 @@ describe('GameModifiersPage', () => {
   it('asks for confirmation before activating a modifier', async () => {
     renderGameModifiersPage()
     const activate = modifierMocks.useActivateGameModifier.mock.results.at(-1)?.value.activateAsync
-    const activateButton = screen.getByRole('button', { name: 'Активировать модификатор' })
+    const activateButton = screen.getByRole('button', { name: 'Активировать Расходники' })
 
     expect(activateButton).toHaveStyle({
       minHeight: '44px',
@@ -545,7 +551,10 @@ describe('GameModifiersPage', () => {
     mockPageQueries({ modifierState: state })
 
     renderGameModifiersPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Отменить мою покупку · вернуть 3 очк.' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Активные · 3' }))
+    const refund = screen.getByRole('button', { name: 'Вернуть 3 очк.: Расходники' })
+    expect(refund).toHaveTextContent('Вернуть 3 очк.')
+    fireEvent.click(refund)
 
     const dialog = screen.getByRole('dialog', { name: 'Отменить покупку модификатора?' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Отменить покупку и вернуть очки' }))
@@ -579,14 +588,15 @@ describe('GameModifiersPage', () => {
     const summary = screen.getByRole('region', { name: 'Краткая сводка' })
     const orderingAlert = within(summary).getByRole('status')
     expect(orderingAlert).toHaveTextContent('Заказ закрыт')
-    const orderingDescription = within(orderingAlert).getByText(
+    expect(orderingAlert).toHaveAttribute('tabindex', '0')
+    expect(orderingAlert).toHaveAttribute('title', 'Сейчас не фаза заказа модификаторов.')
+    fireEvent.mouseOver(orderingAlert)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Сейчас не фаза заказа модификаторов.',
     )
-    expect(orderingDescription).toHaveStyle({ color: huntPalette.parchmentMuted })
-    expect(
-      screen.queryAllByText('Заказ закрыт: сейчас не фаза заказа модификаторов.'),
-    ).toHaveLength(0)
-    expect(screen.getAllByText('Сейчас не фаза заказа модификаторов.')).toHaveLength(1)
+    fireEvent.mouseLeave(orderingAlert)
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument())
+    expect(screen.getByText('Заказ закрыт: сейчас не фаза заказа модификаторов.')).not.toBeVisible()
     const blockedButton = screen.getByRole('button', { name: 'Заказ закрыт' })
     expect(blockedButton).toBeDisabled()
     expect(blockedButton).toHaveStyle({ minHeight: '44px' })
@@ -631,10 +641,10 @@ describe('GameModifiersPage', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Заблокирован конфликтом с: Расходники',
     )
-    const detailsButton = screen.getAllByRole('button', { name: 'Подробнее' }).at(-1)
+    const detailsButton = screen.getByRole('button', { name: /^Конфликтный модификатор/ })
     expect(detailsButton).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(detailsButton as HTMLElement)
-    expect(detailsButton).toHaveAttribute('aria-expanded', 'true')
+    await waitFor(() => expect(detailsButton).toHaveAttribute('aria-expanded', 'true'))
     expect(screen.getByText('Конфликтует с: Расходники')).toBeInTheDocument()
   })
 

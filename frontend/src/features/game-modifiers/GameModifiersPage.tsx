@@ -1,10 +1,20 @@
-import { Box, Typography } from '@mui/material'
+import { Box, Stack, useMediaQuery } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameBoardCell, GameModifierState } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import { AppButton, InlineNotice, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  FieldAdornment,
+  FormTextField,
+  FormSelect,
+  TabStrip,
+  TabOption,
+  InlineNotice,
+  PageShell,
+  PageStatePanel,
+} from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import { GameBoardCardPreviewDialog } from '../game-board/ui/GameBoardCardPreviewDialog.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
@@ -15,6 +25,7 @@ import {
   groupAvailableGameModifiers,
 } from './model/game-modifier-groups.ts'
 import { deriveModifierRoundSummaryMeta } from './model/modifier-round-summary.ts'
+import { modifierCategoryCodes, type ModifierCategoryCode } from './model/modifier-categories.ts'
 import { matchesModifierSearch } from './model/modifier-search.ts'
 import { ActiveModifiersSection } from './ui/ActiveModifiersSection.tsx'
 import { AvailableModifiersSection } from './ui/AvailableModifiersSection.tsx'
@@ -32,6 +43,10 @@ export function GameModifiersPage() {
   const activeRoundQuery = useQuery(activeGameRoundQueryOptions)
   const sectionsGridRef = useModifierViewport()
   const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<ModifierCategoryCode | 'all'>('all')
+  const [selectedPanel, setSelectedPanel] = useState('available')
+  const wide = useMediaQuery('(min-width: 1000px)')
+  const panelId = useId()
   const [previewCell, setPreviewCell] = useState<GameBoardCell | null>(null)
   const state: GameModifierState | null = stateQuery.data ?? null
   const snapshot = snapshotQuery.data ?? null
@@ -62,59 +77,37 @@ export function GameModifiersPage() {
   )
   const filteredAvailableModifiers = useMemo(
     () =>
-      (state?.availableModifiers ?? []).filter((availability) =>
-        matchesModifierSearch(
-          availability.modifier,
-          search,
-          [
-            t(`common.modifiers.categories.${availability.modifier.category}`),
-            t(`gameCatalog.modifiers.wizard.kinds.${availability.modifier.behaviorV2.kind}`),
-            t(
-              `gameCatalog.modifiers.roundSummaryType.${
-                deriveModifierRoundSummaryMeta(availability.modifier).type
-              }`,
-            ),
-            availability.modifier.behaviorV2.requiresHostMonitoring
-              ? t('gameModifiers.hostControlTag')
-              : '',
-          ],
-          locale,
-        ),
+      (state?.availableModifiers ?? []).filter(
+        (availability) =>
+          (category === 'all' || availability.modifier.category === category) &&
+          matchesModifierSearch(
+            availability.modifier,
+            search,
+            [
+              t(`common.modifiers.categories.${availability.modifier.category}`),
+              t(`gameCatalog.modifiers.wizard.kinds.${availability.modifier.behaviorV2.kind}`),
+              t(
+                `gameCatalog.modifiers.roundSummaryType.${
+                  deriveModifierRoundSummaryMeta(availability.modifier).type
+                }`,
+              ),
+              availability.modifier.behaviorV2.requiresHostMonitoring
+                ? t('gameModifiers.hostControlTag')
+                : '',
+            ],
+            locale,
+          ),
       ),
-    [locale, search, state?.availableModifiers, t],
+    [category, locale, search, state?.availableModifiers, t],
   )
   const availableGroups = state
     ? groupAvailableGameModifiers(filteredAvailableModifiers, locale)
     : []
-  const activeGroups = useMemo(() => {
-    if (!state) {
-      return []
-    }
-
-    return groupActiveGameModifiers(state.activeModifiers, locale).filter((group) => {
-      const definition = availableDefinitionsById.get(group.modifierId)
-      if (!definition) {
-        return group.modifierName
-          .toLocaleLowerCase(locale)
-          .includes(search.trim().toLocaleLowerCase(locale))
-      }
-
-      return matchesModifierSearch(
-        definition,
-        search,
-        [
-          t(`common.modifiers.categories.${definition.category}`),
-          t(`gameCatalog.modifiers.wizard.kinds.${definition.behaviorV2.kind}`),
-          t(
-            `gameCatalog.modifiers.roundSummaryType.${deriveModifierRoundSummaryMeta(definition).type}`,
-          ),
-          definition.behaviorV2.requiresHostMonitoring ? t('gameModifiers.hostControlTag') : '',
-        ],
-        locale,
-      )
-    })
-  }, [availableDefinitionsById, locale, search, state, t])
-  const hasSearch = search.trim().length > 0
+  const activeGroups = useMemo(
+    () => groupActiveGameModifiers(state?.activeModifiers ?? [], locale),
+    [locale, state?.activeModifiers],
+  )
+  const hasSearch = search.trim().length > 0 || category !== 'all'
   const hasAdminPanel = user?.roles.includes('admin') ?? false
   const currentTeamLabel = activeRoundQuery.isLoading
     ? t('gameModifiers.summaryContextLoading')
@@ -185,29 +178,13 @@ export function GameModifiersPage() {
         <PageShell
           data-testid="game-modifiers-page"
           sx={{
-            maxWidth: 1800,
+            maxWidth: 1440,
             width: { xs: '100%', md: hasAdminPanel ? 'calc(100% - 72px)' : '100%' },
-            ml: { xs: 0, md: 'auto' },
-            mr: { xs: 0, md: hasAdminPanel ? 9 : 0 },
+            mx: 'auto',
             px: { xs: 0, sm: 0 },
+            pt: { xs: 0, sm: 0 },
           }}
         >
-          <Typography
-            component="h1"
-            sx={{
-              position: 'absolute',
-              width: '1px',
-              height: '1px',
-              p: 0,
-              m: -1,
-              overflow: 'hidden',
-              clipPath: 'inset(50%)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {t('common.entities.modifiers')}
-          </Typography>
-
           {state ? (
             <>
               {stateQuery.isError ? (
@@ -224,8 +201,6 @@ export function GameModifiersPage() {
               ) : null}
               <ModifierStatusBar
                 state={state}
-                search={search}
-                onSearchChange={setSearch}
                 currentTeamLabel={currentTeamLabel}
                 currentTeamParticipantNames={currentTeamParticipantNames}
                 currentTeamParticipantsEmptyLabel={currentTeamParticipantsEmptyLabel}
@@ -244,24 +219,93 @@ export function GameModifiersPage() {
                 isOffline={activeRoundQuery.isError || snapshotQuery.isError}
               />
 
+              <Box sx={{ mt: 1.5, display: wide ? 'none' : 'block' }}>
+                <TabStrip
+                  value={selectedPanel}
+                  onChange={(_, value: string) => setSelectedPanel(value)}
+                  variant="fullWidth"
+                  aria-label={t('common.entities.modifiers')}
+                >
+                  <TabOption
+                    value="available"
+                    id={`${panelId}-available-tab`}
+                    aria-controls={`${panelId}-available-panel`}
+                    label={t('gameModifiers.catalogTab')}
+                  />
+                  <TabOption
+                    value="active"
+                    id={`${panelId}-active-tab`}
+                    aria-controls={`${panelId}-active-panel`}
+                    label={t('gameModifiers.activeTab', { count: state.activeModifiers.length })}
+                  />
+                </TabStrip>
+              </Box>
               <Box
                 ref={sectionsGridRef}
                 data-testid="modifier-sections-grid"
                 sx={{
-                  mt: 1,
+                  mt: 1.5,
                   display: 'grid',
-                  gridTemplateAreas: { xs: '"available" "active"' },
+                  gridTemplateAreas: '"panel"',
                   gridTemplateColumns: 'minmax(0, 1fr)',
-                  gap: 1,
+                  gap: 2,
                   alignItems: 'start',
                   '@media (min-width: 1000px)': {
                     gridTemplateAreas: '"available active"',
-                    gridTemplateColumns: 'minmax(0, 1.42fr) minmax(280px, 0.78fr)',
+                    gridTemplateColumns: 'minmax(0, 1.6fr) minmax(300px, 0.8fr)',
                   },
                 }}
               >
-                <Box sx={{ gridArea: 'available', minWidth: 0 }}>
+                <Box
+                  id={`${panelId}-available-panel`}
+                  role={wide ? undefined : 'tabpanel'}
+                  aria-labelledby={wide ? undefined : `${panelId}-available-tab`}
+                  hidden={!wide && selectedPanel !== 'available'}
+                  sx={{
+                    gridArea: 'panel',
+                    minWidth: 0,
+                    '@media (min-width: 1000px)': { gridArea: 'available' },
+                  }}
+                >
                   <AvailableModifiersSection
+                    tools={
+                      <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.25}>
+                        <FormTextField
+                          value={search}
+                          label={t('common.modifiers.searchLabel')}
+                          onChange={(event) => setSearch(event.target.value)}
+                          sx={{ flex: 1, minWidth: 0 }}
+                          slotProps={{
+                            input: {
+                              endAdornment: search ? (
+                                <FieldAdornment position="end">
+                                  <AppButton
+                                    tone="ghost"
+                                    size="small"
+                                    onClick={() => setSearch('')}
+                                  >
+                                    {t('gameModifiers.clearSearch')}
+                                  </AppButton>
+                                </FieldAdornment>
+                              ) : null,
+                            },
+                          }}
+                        />
+                        <FormSelect
+                          value={category}
+                          label={t('gameModifiers.categoryFilter')}
+                          onChange={setCategory}
+                          options={[
+                            { value: 'all', label: t('gameModifiers.allCategories') },
+                            ...modifierCategoryCodes.map((value) => ({
+                              value,
+                              label: t(`common.modifiers.categories.${value}`),
+                            })),
+                          ]}
+                          sx={{ width: { xs: '100%', sm: 210 }, flexShrink: 0 }}
+                        />
+                      </Stack>
+                    }
                     groups={availableGroups}
                     modifierNamesById={modifierNamesById}
                     activeModifierIds={activeModifierIds}
@@ -271,7 +315,17 @@ export function GameModifiersPage() {
                     onActivate={actions.requestActivation}
                   />
                 </Box>
-                <Box sx={{ gridArea: 'active', minWidth: 0 }}>
+                <Box
+                  id={`${panelId}-active-panel`}
+                  role={wide ? undefined : 'tabpanel'}
+                  aria-labelledby={wide ? undefined : `${panelId}-active-tab`}
+                  hidden={!wide && selectedPanel !== 'active'}
+                  sx={{
+                    gridArea: 'panel',
+                    minWidth: 0,
+                    '@media (min-width: 1000px)': { gridArea: 'active' },
+                  }}
+                >
                   <ActiveModifiersSection
                     groups={activeGroups}
                     activationsCount={state.activeModifiers.length}
@@ -279,7 +333,6 @@ export function GameModifiersPage() {
                     currentUserId={user?.id ?? null}
                     canSelfCancel={state.isOrderingOpen}
                     isCancelling={actions.isBusy}
-                    hasSearch={hasSearch}
                     onSelfCancel={actions.requestSelfCancel}
                   />
                 </Box>

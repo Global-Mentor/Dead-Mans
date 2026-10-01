@@ -50,14 +50,18 @@ export function ModifierActivationControl({
           tone="primary"
           fullWidth={!compact}
           size={compact ? 'small' : 'medium'}
-          aria-label={compact ? t('gameModifiers.activateAction') : undefined}
+          aria-label={
+            compact
+              ? t('gameModifiers.activateAction')
+              : t('gameModifiers.activationLabel', { modifier: availability.modifier.name })
+          }
           disabled={isBusy}
           aria-busy={isPending}
           onClick={() => onActivate(availability.modifier.id)}
         >
           {isPending
             ? t('gameModifiers.activatePending')
-            : t(compact ? 'gameModifiers.activateCompactAction' : 'gameModifiers.activateAction')}
+            : t('gameModifiers.activateCompactAction')}
         </AppButton>
       ) : (
         <HelpTooltip

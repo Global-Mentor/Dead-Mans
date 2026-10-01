@@ -7,7 +7,7 @@ interface StatusBadgeProps extends ChipProps {
   appearance?: 'standard' | 'plain'
   textFlow?: 'wrap' | 'singleLine'
   density?: 'standard' | 'compact' | 'tight'
-  emphasis?: 'standard' | 'strong'
+  emphasis?: 'standard' | 'strong' | 'prominent'
 }
 /** A status or metadata label. Wrapping keeps translated and user-authored labels readable. */
 export function StatusBadge({
@@ -68,6 +68,33 @@ export function StatusBadge({
                 lineHeight: 1.2,
                 fontWeight: 800,
                 fontVariantNumeric: 'tabular-nums',
+              },
+            }
+          : undefined,
+        emphasis === 'prominent'
+          ? {
+              minHeight: 44,
+              height: 'auto',
+              borderInlineStartWidth: 3,
+              px: 1,
+              color: 'text.primary',
+              '&::before': {
+                content: '""',
+                width: 8,
+                height: 8,
+                flex: '0 0 8px',
+                borderRadius: '50%',
+                bgcolor:
+                  props.color && props.color !== 'default'
+                    ? `${props.color}.light`
+                    : 'text.secondary',
+              },
+              '& .MuiChip-label': {
+                px: 1,
+                py: 0.75,
+                fontSize: '1.125rem',
+                lineHeight: 1.25,
+                fontWeight: 700,
               },
             }
           : undefined,
