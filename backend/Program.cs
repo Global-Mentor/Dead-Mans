@@ -15,12 +15,40 @@ using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.Runtime.InteropServices;
+
+Serilog.Core.Logger? startupLogger = null;
+Serilog.Debugging.SelfLog.Enable(Console.Error);
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
     var isDevelopment = builder.Environment.IsDevelopment();
     var isTesting = builder.Environment.IsEnvironment("Testing");
+    if (isDevelopment)
+    {
+        builder.Configuration.AddJsonFile(
+            "appsettings.Local.json",
+            optional: true,
+            reloadOnChange: true
+        );
+    }
+
+    builder.Configuration.AddEnvironmentVariables();
+    var releaseShaPath = Path.Combine(builder.Environment.ContentRootPath, "release-sha");
+    var releaseSha = File.Exists(releaseShaPath) ? File.ReadAllText(releaseShaPath).Trim() : null;
+    startupLogger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .Enrich.WithProperty("ReleaseSha", releaseSha ?? "local")
+        .Enrich.WithProperty("ProcessId", Environment.ProcessId)
+        .Enrich.WithProperty("InstanceId", Environment.MachineName)
+        .CreateLogger();
+    startupLogger.Information(
+        AppMessages.Logs.ApplicationStarting,
+        RuntimeInformation.FrameworkDescription,
+        RuntimeInformation.OSDescription
+    );
+
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.AddServerHeader = false;
@@ -36,19 +64,12 @@ try
             loggerConfiguration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
+                .Enrich.WithProperty("ReleaseSha", releaseSha ?? "local")
+                .Enrich.WithProperty("ProcessId", Environment.ProcessId)
+                .Enrich.WithProperty("InstanceId", Environment.MachineName)
                 .Enrich.FromLogContext();
         }
     );
-    if (isDevelopment)
-    {
-        builder.Configuration.AddJsonFile(
-            "appsettings.Local.json",
-            optional: true,
-            reloadOnChange: true
-        );
-    }
-
-    builder.Configuration.AddEnvironmentVariables();
     builder.Services.AddDeadMansHostSecurity(builder.Configuration, builder.Environment);
     builder.Services
         .AddControllers()
@@ -80,8 +101,8 @@ try
     builder.Services.AddDeadMansForwardedHeaders(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
-    var releaseShaPath = Path.Combine(app.Environment.ContentRootPath, "release-sha");
-    var releaseSha = File.Exists(releaseShaPath) ? File.ReadAllText(releaseShaPath).Trim() : null;
+    startupLogger.Dispose();
+    startupLogger = null;
 
     app.UseForwardedHeaders();
     app.Use(async (context, next) =>
@@ -173,9 +194,10 @@ catch (Microsoft.Extensions.Hosting.HostAbortedException)
 }
 catch (Exception ex)
 {
-    if (Log.Logger != null)
+    var logger = startupLogger ?? Log.Logger;
+    if (logger.IsEnabled(Serilog.Events.LogEventLevel.Fatal))
     {
-        Log.Fatal(ex, AppMessages.Logs.ApplicationTerminatedUnexpectedly);
+        logger.Fatal(ex, AppMessages.Logs.ApplicationTerminatedUnexpectedly);
     }
     else
     {
@@ -186,6 +208,7 @@ catch (Exception ex)
 }
 finally
 {
+    startupLogger?.Dispose();
     Log.CloseAndFlush();
 }
 

@@ -32,13 +32,26 @@ ARG RELEASE_SHA=local
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
-    DOTNET_EnableDiagnostics=0
+    DOTNET_EnableDiagnostics=0 \
+    DOTNET_DbgEnableMiniDump=1 \
+    DOTNET_EnableCrashReportOnly=1 \
+    DOTNET_DbgMiniDumpName=/var/lib/deadmans/diagnostics/last-crash \
+    Serilog__Using__1=Serilog.Sinks.File \
+    Serilog__WriteTo__1__Name=File \
+    Serilog__WriteTo__1__Args__path=/var/lib/deadmans/diagnostics/app-.clef \
+    Serilog__WriteTo__1__Args__formatter="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" \
+    Serilog__WriteTo__1__Args__rollingInterval=Day \
+    Serilog__WriteTo__1__Args__fileSizeLimitBytes=5242880 \
+    Serilog__WriteTo__1__Args__rollOnFileSizeLimit=true \
+    Serilog__WriteTo__1__Args__retainedFileCountLimit=6 \
+    Serilog__WriteTo__1__Args__shared=true
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl libgssapi-krb5-2 \
     && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /var/lib/deadmans/keys \
+    && mkdir -p /var/lib/deadmans/keys /var/lib/deadmans/diagnostics \
     && chown -R app:app /var/lib/deadmans \
+    && chmod 700 /var/lib/deadmans/diagnostics \
     && printf '%s' "$RELEASE_SHA" > /app/release-sha
 
 COPY --from=backend-build --chown=app:app /out/ ./
@@ -46,7 +59,7 @@ COPY --from=frontend-build --chown=app:app /src/frontend/dist/ ./wwwroot/
 
 USER app
 EXPOSE 8080
-VOLUME ["/var/lib/deadmans/keys"]
+VOLUME ["/var/lib/deadmans/keys", "/var/lib/deadmans/diagnostics"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD probe_host="${CanonicalUrl__Origin#https://}" \

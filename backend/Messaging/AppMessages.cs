@@ -491,6 +491,9 @@ public static class AppMessages
 
     public static class Logs
     {
+        public const string ApplicationStarting =
+            "Application starting with runtime {RuntimeVersion} on {OperatingSystem}.";
+
         public const string ApplicationTerminatedUnexpectedly = "Application terminated unexpectedly.";
 
         public const string ApplicationDbContextNotRegistered =
