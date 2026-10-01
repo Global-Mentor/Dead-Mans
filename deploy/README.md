@@ -30,6 +30,12 @@ Create a PostgreSQL 16 service in Coolify with a persistent volume and no public
 
 The connection string must use `SSL Mode=VerifyFull` and a trusted CA certificate. Replace `postgres.internal` in [`deploy/.env.example`](.env.example) with the real internal database hostname covered by that certificate.
 
+The application disables optional GSS/Kerberos session encryption before opening
+PostgreSQL connections. Npgsql 10 otherwise tries GSS before TLS, including when
+`SSL Mode=VerifyFull` is set. Password authentication and certificate-verified TLS
+remain in use. An explicit `GSS Encryption Mode=Require` is rejected rather than
+silently replaced. Do not enable Kerberos negotiation for this deployment.
+
 Configure a daily encrypted backup to the private backup bucket. Restore one backup into a separate test database before opening the application to users. The detailed first database rollout is documented in [`docs/runbooks/initial-production-database-rollout.md`](../docs/runbooks/initial-production-database-rollout.md).
 
 ## Application
@@ -54,6 +60,14 @@ Copy the values from [`deploy/.env.example`](.env.example) into the Coolify envi
 4. The trusted CIDR of the actual Coolify proxy network.
 
 Mount a persistent volume at `/var/lib/deadmans/keys` and make it writable by the application user. Mount the PostgreSQL CA certificate at `/run/secrets/postgres-ca.crt` with read permission only. Never store production secrets in this repository.
+
+Also mount a named persistent volume at `/var/lib/deadmans/diagnostics` for this
+application. In Coolify, add a **Persistent Storage > Volume** entry with a stable
+name such as `deadmans-diagnostics` and that destination. Keep the same volume on
+redeployments. The Dockerfile's anonymous volume declaration alone does not
+guarantee that a replacement container reuses the old data. A new empty named
+volume inherits the image directory's `app` ownership (UID 1654) and mode `0700`;
+prepare an existing volume or bind mount with the same ownership and permissions.
 
 The media bucket may allow public reads for individual objects. It must not allow anonymous listing or writing. The backup bucket must remain private and use separate credentials.
 
@@ -184,3 +198,37 @@ healthcheck output, Docker journal and kernel messages in restricted server
 storage. Container replacement removes its local logs. Record timestamps in UTC
 and distinguish provider reset actions from the failure that prompted them.
 Do not reset a server or database merely to test recovery on production.
+
+### Persistent incident diagnostics
+
+The container writes structured JSON events to `app-*.clef` in the diagnostics
+volume, alongside console output. Events carry `ReleaseSha`, `InstanceId` and
+`ProcessId`. Startup logging begins before service configuration, so invalid
+configuration is retained even when host construction fails. Daily and size
+rotation retains at most six files of about 5 MiB each; a single large event may
+exceed the per-file threshold. Log-writer errors go to stderr.
+
+On a runtime crash, .NET writes `last-crash.crashreport.json` in the same volume.
+It contains thread stacks and exception information without a full memory dump.
+The fixed name keeps only the latest report; preserve it before another crash
+can replace it. Diagnostic ports remain disabled and no extra container
+capabilities are added. Collection runs on failure, not continuously.
+
+Treat these files as private: exception text and paths can contain sensitive
+information. Do not publish them or serve this volume over HTTP. Capture the
+report and nearby log events together with the container's exit code,
+`OOMKilled`, restart count, healthcheck result and the VPS kernel journal.
+SIGKILL, kernel OOM termination and host power loss cannot generate a runtime
+crash report; their evidence remains in Docker and the host journal.
+
+Before deploying packaging or logging changes, run the isolated smoke check:
+
+```sh
+docker build --build-arg RELEASE_SHA=diagnostics-check -t deadmans-diagnostics-check .
+node deploy/verify-runtime-diagnostics.mjs deadmans-diagnostics-check
+```
+
+It creates disposable containers with no network access, induces invalid
+production configuration, and checks startup logs, crash reports, rolling
+retention and persistence across container replacement. It removes only its own
+test containers and volume. Never induce a crash in production to test logging.

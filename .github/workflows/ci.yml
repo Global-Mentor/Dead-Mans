@@ -125,6 +125,10 @@ jobs:
         if: github.event_name == 'pull_request'
         run: docker build --pull --build-arg "RELEASE_SHA=$GITHUB_SHA" --tag deadmans-ci:pr .
 
+      - name: Verify persistent runtime diagnostics
+        if: github.event_name == 'pull_request'
+        run: node deploy/verify-runtime-diagnostics.mjs deadmans-ci:pr
+
   dependency-audit:
     runs-on: ubuntu-latest
 
