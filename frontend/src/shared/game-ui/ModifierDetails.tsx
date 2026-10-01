@@ -152,6 +152,7 @@ export function ModifierDetailsItem({
   reserveIcon = false,
   metadata,
   effect,
+  actions,
   children,
   open,
   onExpandedChange,
@@ -161,6 +162,7 @@ export function ModifierDetailsItem({
   reserveIcon?: boolean
   metadata?: ReactNode
   effect?: ReactNode
+  actions?: ReactNode
   children?: ReactNode
   open?: boolean
   onExpandedChange?: (open: boolean) => void
@@ -191,23 +193,54 @@ export function ModifierDetailsItem({
   return (
     <ItemCard
       component="li"
-      sx={{ py: 0.25, px: 0.75, minWidth: 0, listStyle: 'none', overflowWrap: 'anywhere' }}
+      sx={{
+        py: 0.25,
+        px: 0.75,
+        minWidth: 0,
+        listStyle: 'none',
+        overflowWrap: 'anywhere',
+        containerType: 'inline-size',
+      }}
     >
-      {children ? (
-        <NativeDisclosure
-          summary={summary}
-          density="compact"
-          indicator="chevron"
-          {...(open !== undefined ? { open } : {})}
-          {...(onExpandedChange ? { onExpandedChange } : {})}
-        >
-          <Stack spacing={1} sx={{ pt: 0.5, pb: 0.75 }}>
-            {children}
+      <Box
+        sx={
+          actions
+            ? {
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr)',
+                gap: 0.75,
+                '@container (min-width: 480px)': { gridTemplateColumns: 'minmax(0, 1fr) auto' },
+              }
+            : { minWidth: 0 }
+        }
+      >
+        {children ? (
+          <NativeDisclosure
+            summary={summary}
+            density="compact"
+            indicator="chevron"
+            {...(open !== undefined ? { open } : {})}
+            {...(onExpandedChange ? { onExpandedChange } : {})}
+          >
+            <Stack spacing={1} sx={{ pt: 0.5, pb: 0.75 }}>
+              {children}
+            </Stack>
+          </NativeDisclosure>
+        ) : (
+          <Box sx={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>{summary}</Box>
+        )}
+        {actions ? (
+          <Stack
+            direction="row"
+            useFlexGap
+            flexWrap="wrap"
+            gap={0.75}
+            sx={{ alignSelf: 'start', pb: 0.75 }}
+          >
+            {actions}
           </Stack>
-        </NativeDisclosure>
-      ) : (
-        <Box sx={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>{summary}</Box>
-      )}
+        ) : null}
+      </Box>
     </ItemCard>
   )
 }

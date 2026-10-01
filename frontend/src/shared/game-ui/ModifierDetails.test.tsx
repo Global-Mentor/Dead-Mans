@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
+import { AppButton } from '../ui/index.ts'
 import {
   ModifierDetailsGroup,
   ModifierDetailsItem,
@@ -10,6 +11,26 @@ import {
 afterEach(cleanup)
 
 describe('ModifierDetailsItem', () => {
+  it('keeps purchase actions outside the disclosure and its tab stop', () => {
+    const purchase = vi.fn()
+    renderWithAppProviders(
+      <ModifierDetailsList count={1}>
+        <ModifierDetailsItem
+          title="Modifier"
+          actions={<AppButton onClick={purchase}>Purchase</AppButton>}
+        >
+          Full description
+        </ModifierDetailsItem>
+      </ModifierDetailsList>,
+    )
+    const toggle = screen.getByRole('button', { name: 'Modifier' })
+    const action = screen.getByRole('button', { name: 'Purchase' })
+    expect(action.closest('summary')).toBeNull()
+    expect(action.closest('details')).toBeNull()
+    fireEvent.click(action)
+    expect(purchase).toHaveBeenCalledTimes(1)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  })
   it('renders named category lists without adding disclosure to category headings', () => {
     renderWithAppProviders(
       <ModifierDetailsList count={2}>
