@@ -1,3 +1,4 @@
+import { Stack, Typography } from '@mui/material'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +14,20 @@ import { gameModifierQueryKeys } from '../api/game-modifier-queries.ts'
 import { selfCancelGameModifierActivation } from '../api/game-modifiers-api.ts'
 import { useActivateGameModifier } from '../use-activate-game-modifier.ts'
 
-type ActionTarget = { context: string; kind: 'activate' | 'cancel'; id: string }
+type ActionTarget = {
+  context: string
+  kind: 'activate' | 'cancel'
+  id: string
+  name: string
+  cost: number
+}
+
+type ConfirmationContent = {
+  kind: ActionTarget['kind'] | null
+  description: string
+  errorMessage: string | null
+  unavailable: boolean
+}
 
 interface ModifierActions {
   isBusy: boolean
@@ -39,6 +53,8 @@ export function GameModifierActions({
   const queryClient = useQueryClient()
   const activation = useActivateGameModifier()
   const [target, setTarget] = useState<ActionTarget | null>(null)
+  const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [closingContent, setClosingContent] = useState<ConfirmationContent | null>(null)
   const [cancelMessage, setCancelMessage] = useState<string | null>(null)
   const context = `${state?.gameId ?? ''}:${roundId ?? ''}`
   const selected = target?.context === context ? target : null
@@ -65,33 +81,48 @@ export function GameModifierActions({
   })
   const busy = activation.isActivating || cancel.isPending
   const ordering = Boolean(state?.isOrderingOpen && roundId)
-  if (target && (!ordering || target.context !== context)) setTarget(null)
-  const canConfirm =
-    !disabled &&
+  const actionAvailable =
     ordering &&
     (selected?.kind === 'activate'
       ? availability?.canActivate
       : cancellation?.activatedByUserId === user?.id && cancellation?.roundId === roundId)
+  const canConfirm = !disabled && actionAvailable
   const errorMessage =
     selected?.kind === 'activate' ? activation.errorMessage : cancel.isError ? cancelMessage : null
-  const description = availability
-    ? t('gameModifiers.activationConfirmDescription', {
-        modifier: availability.modifier.name,
-        cost: availability.modifier.activationCost,
-      })
-    : cancellation
-      ? t('gameModifiers.selfCancelConfirmDescription', {
-          modifier: cancellation.modifierName,
-          cost: cancellation.activationCost,
-        })
-      : ''
+  const content: ConfirmationContent = closingContent ?? {
+    kind: target?.kind ?? null,
+    description: target
+      ? t(
+          target.kind === 'activate'
+            ? 'gameModifiers.activationConfirmDescription'
+            : 'gameModifiers.selfCancelConfirmDescription',
+          { modifier: target.name, cost: target.cost },
+        )
+      : '',
+    errorMessage,
+    unavailable: Boolean(selected && ordering && !actionAvailable && !busy),
+  }
+  const closeConfirmation = () => {
+    setClosingContent(content)
+    setConfirmationOpen(false)
+  }
+  if (confirmationOpen && (!ordering || target?.context !== context)) closeConfirmation()
 
   const request = (kind: ActionTarget['kind'], id: string) => {
     if (busy || disabled || !ordering) return
+    const available = state?.availableModifiers.find((item) => item.modifier.id === id)?.modifier
+    const active = state?.activeModifiers.find((item) => item.activationId === id)
+    const display =
+      kind === 'activate'
+        ? available && { name: available.name, cost: available.activationCost }
+        : active && { name: active.modifierName, cost: active.activationCost }
+    if (!display) return
     activation.reset()
     cancel.reset()
     setCancelMessage(null)
-    setTarget({ context, kind, id })
+    setTarget({ context, kind, id, ...display })
+    setClosingContent(null)
+    setConfirmationOpen(true)
   }
 
   return (
@@ -103,56 +134,55 @@ export function GameModifierActions({
         requestSelfCancel: (item) => request('cancel', item.activationId),
       })}
       <ConfirmDialog
-        open={selected !== null && ordering}
+        open={confirmationOpen && selected !== null && ordering}
         title={t(
-          selected?.kind === 'cancel'
+          content.kind === 'cancel'
             ? 'gameModifiers.selfCancelConfirmTitle'
             : 'gameModifiers.activationConfirmTitle',
         )}
         description={
-          <>
-            {description}
-            {errorMessage ? (
-              <InlineNotice severity="error" sx={{ mt: 1 }}>
-                {errorMessage}
-              </InlineNotice>
+          <Stack spacing={1} sx={{ textAlign: 'center', maxWidth: 500, mx: 'auto' }}>
+            <Typography variant="body1">{content.description}</Typography>
+            {content.errorMessage ? (
+              <InlineNotice severity="error">{content.errorMessage}</InlineNotice>
             ) : null}
-            {!canConfirm && !errorMessage ? (
-              <InlineNotice severity="warning" sx={{ mt: 1 }}>
-                {t('gameModifiers.actionUnavailable')}
-              </InlineNotice>
+            {content.unavailable && !content.errorMessage ? (
+              <InlineNotice severity="warning">{t('gameModifiers.actionUnavailable')}</InlineNotice>
             ) : null}
-          </>
+          </Stack>
         }
         confirmLabel={t(
-          selected?.kind === 'cancel'
+          content.kind === 'cancel'
             ? 'gameModifiers.selfCancelAction'
-            : 'gameModifiers.activateAction',
+            : 'gameModifiers.activateCompactAction',
         )}
-        cancelLabel={t(
-          selected?.kind === 'cancel'
-            ? 'common.actions.cancel'
-            : 'gameModifiers.activationConfirmCancel',
-        )}
-        confirmTone={selected?.kind === 'cancel' ? 'danger' : 'primary'}
+        cancelLabel={t('common.actions.cancel')}
+        confirmTone={content.kind === 'cancel' ? 'danger' : 'primary'}
         isBusy={busy}
         confirmDisabled={!canConfirm}
-        onClose={() => setTarget(null)}
+        onClose={closeConfirmation}
+        onExited={() => {
+          if (!confirmationOpen) {
+            setTarget(null)
+            setClosingContent(null)
+          }
+        }}
         onConfirm={async () => {
           if (!canConfirm || busy) return
           if (availability) await activation.activateAsync(availability.modifier.id)
           else if (cancellation) await cancel.mutateAsync(cancellation)
-          setTarget(null)
+          setClosingContent({ ...content, errorMessage: null, unavailable: false })
+          setConfirmationOpen(false)
         }}
       />
       <AppToast
-        message={selected ? null : activation.toastMessage}
+        message={confirmationOpen ? null : activation.toastMessage}
         onClose={activation.dismissToast}
         severity={activation.errorMessage ? 'error' : 'info'}
         autoHideDuration={3000}
       />
       <AppToast
-        message={selected ? null : cancelMessage}
+        message={confirmationOpen ? null : cancelMessage}
         onClose={() => setCancelMessage(null)}
         severity={cancel.isError ? 'error' : 'info'}
         autoHideDuration={3000}

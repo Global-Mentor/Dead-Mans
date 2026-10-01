@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
-import { ActionIcon, AppButton, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
+import { AppButton, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
 interface ModifierActivationControlProps {
   availability: GameModifierAvailability
   isBusy: boolean
@@ -46,37 +46,23 @@ export function ModifierActivationControl({
   return (
     <Box sx={{ width: compact ? 'auto' : { xs: '100%', sm: 168 }, flexShrink: 0 }}>
       {availability.canActivate ? (
-        <>
-          {compact ? (
-            <ActionIcon
-              appearance="framed"
-              size="small"
-              aria-label={t('gameModifiers.activateAction')}
-              disabled={isBusy}
-              aria-busy={isPending}
-              onClick={() => onActivate(availability.modifier.id)}
-              sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-            >
-              <Box component="span" aria-hidden>
-                +
-              </Box>
-            </ActionIcon>
-          ) : null}
-          <AppButton
-            tone="primary"
-            fullWidth={!compact}
-            size={compact ? 'small' : 'medium'}
-            aria-label={compact ? t('gameModifiers.activateAction') : undefined}
-            disabled={isBusy}
-            aria-busy={isPending}
-            onClick={() => onActivate(availability.modifier.id)}
-            sx={compact ? { display: { xs: 'none', sm: 'inline-flex' } } : undefined}
-          >
-            {isPending
-              ? t('gameModifiers.activatePending')
-              : t(compact ? 'gameModifiers.activateCompactAction' : 'gameModifiers.activateAction')}
-          </AppButton>
-        </>
+        <AppButton
+          tone="primary"
+          fullWidth={!compact}
+          size={compact ? 'small' : 'medium'}
+          aria-label={
+            compact
+              ? t('gameModifiers.activateAction')
+              : t('gameModifiers.activationLabel', { modifier: availability.modifier.name })
+          }
+          disabled={isBusy}
+          aria-busy={isPending}
+          onClick={() => onActivate(availability.modifier.id)}
+        >
+          {isPending
+            ? t('gameModifiers.activatePending')
+            : t('gameModifiers.activateCompactAction')}
+        </AppButton>
       ) : (
         <HelpTooltip
           title={blockedReasonTooltip}
@@ -91,24 +77,7 @@ export function ModifierActivationControl({
             aria-label={blockedReasonTooltip}
             sx={{ display: 'block', width: compact ? 'auto' : '100%' }}
           >
-            {compact ? (
-              <ActionIcon
-                appearance="framed"
-                size="small"
-                aria-label={blockedReasonTooltip}
-                disabled
-                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-              >
-                <Box component="span" aria-hidden>
-                  −
-                </Box>
-              </ActionIcon>
-            ) : null}
-            {compact ? (
-              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{blockedContent}</Box>
-            ) : (
-              blockedContent
-            )}
+            {blockedContent}
           </Box>
         </HelpTooltip>
       )}

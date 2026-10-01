@@ -2,8 +2,8 @@ import type {
   GameModifierActivation,
   GameModifierAvailability,
 } from '../../../shared/api/contracts/index.ts'
-
-const CATEGORY_ORDER = ['preparation', 'round', 'result'] as const
+import type { components } from '../../../shared/api/contracts/generated'
+import { modifierCategoryCodes, type ModifierCategoryCode } from './modifier-categories.ts'
 
 interface GroupedActiveModifier {
   modifierId: string
@@ -96,6 +96,31 @@ export function groupAvailableGameModifiers(
     .sort(compareAvailabilityCategory)
 }
 
+export function groupActiveModifierCategories(
+  groups: readonly GroupedActiveModifier[],
+  available: readonly GameModifierAvailability[],
+  results: readonly Pick<
+    components['schemas']['GameRoundModifierResultDto'],
+    'modifierId' | 'modifierCategory'
+  >[],
+): { category: ModifierCategoryCode | null; items: GroupedActiveModifier[] }[] {
+  const categories = new Map<ModifierCategoryCode | null, GroupedActiveModifier[]>()
+  for (const group of groups) {
+    const saved = results.find((result) => result.modifierId === group.modifierId)?.modifierCategory
+    const category =
+      modifierCategoryCodes.find((code) => code === saved) ??
+      available.find((item) => item.modifier.id === group.modifierId)?.modifier.category ??
+      null
+    const items = categories.get(category) ?? []
+    items.push(group)
+    categories.set(category, items)
+  }
+  return [...modifierCategoryCodes, null].flatMap((category) => {
+    const items = categories.get(category)
+    return items ? [{ category, items }] : []
+  })
+}
+
 function compareAvailability(
   left: GameModifierAvailability,
   right: GameModifierAvailability,
@@ -131,7 +156,9 @@ function compareAvailabilityCategory(
   left: GroupedAvailableModifierCategory,
   right: GroupedAvailableModifierCategory,
 ): number {
-  return CATEGORY_ORDER.indexOf(left.category) - CATEGORY_ORDER.indexOf(right.category)
+  return (
+    modifierCategoryCodes.indexOf(left.category) - modifierCategoryCodes.indexOf(right.category)
+  )
 }
 
 function getModifierAvailabilitySortRank(availability: GameModifierAvailability): number {

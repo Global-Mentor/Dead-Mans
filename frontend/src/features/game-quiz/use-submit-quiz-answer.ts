@@ -1,4 +1,5 @@
 import { useIsMutating, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
 import { gameModifierQueryKeys } from '../game-modifiers/api/game-modifier-queries.ts'
 import { submitGameQuizAnswer } from './api/game-quiz-api.ts'
@@ -17,6 +18,15 @@ export function useSubmitQuizAnswer(gameId: string) {
       questionSessionId: string
       optionId: string
     }) => submitGameQuizAnswer(questionSessionId, optionId),
+    onSuccess: (receipt) => {
+      queryClient.setQueryData<CurrentGameQuizState | null>(
+        gameQuizQueryKeys.current(gameId),
+        (state) =>
+          state?.gameId === gameId && state.questionSessionId === receipt.questionSessionId
+            ? { ...state, mySelectedOptionId: receipt.selectedOptionId }
+            : state,
+      )
+    },
     onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),

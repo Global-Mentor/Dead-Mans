@@ -7,7 +7,8 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY frontend/ ./
-RUN npm run build
+ARG VITE_PUBLIC_ORIGIN=https://deadman.bug.community
+RUN VITE_PUBLIC_ORIGIN="$VITE_PUBLIC_ORIGIN" npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400-alpine3.23 AS backend-build
 WORKDIR /src

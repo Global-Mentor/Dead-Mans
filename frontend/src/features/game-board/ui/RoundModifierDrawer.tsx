@@ -1,7 +1,14 @@
+import { Stack, Typography } from '@mui/material'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AsyncSection, PanelTrigger, SidePanel } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AsyncSection,
+  PanelTrigger,
+  SectionCard,
+  SidePanel,
+} from '../../../shared/ui/index.ts'
 import { RoundModifierPanel } from './RoundModifierPanel.tsx'
 
 /** Mounted for one ordering phase; reopening ordering starts a fresh drawer session. */
@@ -27,6 +34,8 @@ export function RoundModifierDrawer({
     <>
       <PanelTrigger
         placement="responsiveEdge"
+        size="medium"
+        tabSize="extended"
         side="left"
         aria-expanded={open}
         aria-controls={id}
@@ -38,12 +47,37 @@ export function RoundModifierDrawer({
         id={id}
         open={open}
         onClose={() => setOpen(false)}
-        title={t('common.entities.modifiers')}
+        title={t('gameBoard.currentRoundScreen.drawerTitle')}
+        label={t('common.entities.modifiers')}
         closeLabel={t('gameBoard.currentRoundScreen.closeModifiers')}
         side="left"
-        width="wide"
+        width={560}
         contentDensity="compact"
         bodyTestId="round-modifier-scroll-body"
+        header={
+          <SectionCard
+            surface="inset"
+            sx={{ mt: 1.5, px: 1, py: 0.25 }}
+            data-testid="round-modifier-balance"
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              gap={1}
+              sx={{ minWidth: 0 }}
+            >
+              <Typography variant="body1" color="text.secondary" fontWeight={700}>
+                {t('gameBoard.currentRoundScreen.drawerPointsLabel')}
+              </Typography>
+              <Typography component="strong" variant="h5" color="primary.light" fontWeight={700}>
+                {state
+                  ? t('gameModifiers.myPointsValue', { points: state.availableQuizPoints })
+                  : '-'}
+              </Typography>
+            </Stack>
+          </SectionCard>
+        }
       >
         <AsyncSection
           isLoading={isLoading}
@@ -54,7 +88,7 @@ export function RoundModifierDrawer({
           errorMessage={t('gameModifiers.errorLoading')}
           emptyMessage={t('gameModifiers.noGame')}
           retryAction={
-            <AppButton size="small" onClick={onRetry}>
+            <AppButton tone="secondary" size="small" onClick={onRetry}>
               {t('common.actions.retry')}
             </AppButton>
           }

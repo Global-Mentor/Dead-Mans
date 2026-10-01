@@ -6,7 +6,7 @@ import type {
 } from '../src/shared/api/contracts/index.ts'
 
 for (const width of [1440, 768, 390, 320]) {
-  test(`application invitation flow works at ${width}px`, async ({ page }) => {
+  test(`application invitation flow works at ${width}px`, async ({ page }, testInfo) => {
     const pageErrors: string[] = []
     page.on('pageerror', (error) => pageErrors.push(error.message))
     await page.setViewportSize({ width, height: 1000 })
@@ -125,6 +125,11 @@ for (const width of [1440, 768, 390, 320]) {
     state.myPendingInvitations = [invitation]
     await page.reload()
     await expect(page.getByRole('button', { name: 'Accept', exact: true })).toBeVisible()
+    await page.screenshot({
+      path: testInfo.outputPath('incoming-invitation.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
     expect(pageErrors).toEqual([])
   })
 }

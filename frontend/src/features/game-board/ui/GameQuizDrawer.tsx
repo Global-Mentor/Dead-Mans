@@ -1,30 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gameBoardRoute } from '../../../routes/app-routes.ts'
 import type { CurrentGameQuizState } from '../../../shared/api/contracts/index.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
 import { hasPanelCapability } from '../../../shared/auth/panel-capabilities.ts'
-import {
-  AppButton,
-  AppLinkButton,
-  InlineNotice,
-  PanelTrigger,
-  SidePanel,
-} from '../../../shared/ui/index.ts'
+import { AppButton, InlineNotice, PanelTrigger, SidePanel } from '../../../shared/ui/index.ts'
 import { currentGameQuizQueryOptions } from '../../game-quiz/api/game-quiz-queries.ts'
 import { PlayerQuizCard } from '../../game-quiz/PlayerQuizCard.tsx'
 
 export function GameQuizDrawer({
   gameId,
   suspended = false,
-  showBoardLink = false,
   side = 'right',
   showForManagers = false,
 }: {
   gameId: string
   suspended?: boolean
-  showBoardLink?: boolean
   side?: 'left' | 'right'
   showForManagers?: boolean
 }) {
@@ -58,11 +49,9 @@ export function GameQuizDrawer({
       key={`${gameId}:${quiz.questionSessionId}`}
       quiz={quiz}
       suspended={suspended}
-      showBoardLink={showBoardLink}
       side={side}
       isError={quizQuery.isError}
       onRefresh={retry}
-      readOnly={!isPlayer}
     />
   )
 }
@@ -70,19 +59,15 @@ export function GameQuizDrawer({
 function QuizSessionDrawer({
   quiz,
   suspended,
-  showBoardLink,
   side,
   isError,
   onRefresh,
-  readOnly,
 }: {
   quiz: CurrentGameQuizState
   suspended: boolean
-  showBoardLink: boolean
   side: 'left' | 'right'
   isError: boolean
   onRefresh: () => void
-  readOnly: boolean
 }) {
   const { t } = useTranslation()
   const id = useId()
@@ -106,24 +91,11 @@ function QuizSessionDrawer({
         open={open}
         onClose={() => setRequestedOpen(false)}
         title={t('gameQuiz.currentTitle')}
-        description={t(
-          readOnly ? 'gameQuiz.roundQuestionDescription' : 'gameQuiz.currentDescription',
-        )}
         closeLabel={t('gameBoard.currentRoundScreen.closeQuiz')}
         side={side}
-        width="wide"
-        header={
-          showBoardLink ? (
-            <AppLinkButton
-              to={gameBoardRoute.fullPath}
-              tone="secondary"
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              {t('gameBoard.currentRoundScreen.viewBoard')}
-            </AppLinkButton>
-          ) : null
-        }
+        width={560}
+        contentDensity="compact"
+        bodyTestId="quiz-question-scroll-body"
       >
         {isError ? (
           <InlineNotice
@@ -137,11 +109,7 @@ function QuizSessionDrawer({
             {t('gameQuiz.errorLoading')}
           </InlineNotice>
         ) : null}
-        <PlayerQuizCard
-          state={quiz}
-          disabled={isError || suspended || readOnly}
-          onDeadline={onRefresh}
-        />
+        <PlayerQuizCard state={quiz} disabled={isError || suspended} onDeadline={onRefresh} />
       </SidePanel>
     </>
   )

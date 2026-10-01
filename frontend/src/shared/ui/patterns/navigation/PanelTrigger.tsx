@@ -5,7 +5,7 @@ import { AppButton } from '../../primitives/buttons/AppButton.tsx'
 
 export type PanelTriggerPlacement = 'inline' | 'edge' | 'responsiveEdge'
 
-function edgeTabSx(theme: Theme, side: 'left' | 'right') {
+function edgeTabSx(theme: Theme, side: 'left' | 'right', tabSize: 'standard' | 'extended') {
   return {
     [theme.breakpoints.up('lg')]: {
       position: 'fixed',
@@ -15,7 +15,7 @@ function edgeTabSx(theme: Theme, side: 'left' | 'right') {
       zIndex: theme.zIndex.drawer - 1,
       width: uiTokens.control.height.standard,
       minWidth: uiTokens.control.height.standard,
-      height: 130,
+      height: tabSize === 'extended' ? 160 : 130,
       writingMode: 'vertical-rl',
       whiteSpace: 'nowrap',
     },
@@ -25,12 +25,14 @@ function edgeTabSx(theme: Theme, side: 'left' | 'right') {
 interface PanelTriggerProps extends Omit<ComponentProps<typeof AppButton>, 'tone' | 'sx'> {
   placement?: PanelTriggerPlacement
   side?: 'left' | 'right'
+  tabSize?: 'standard' | 'extended'
 }
 
 /** A named action that opens a modal side panel; placement owns its complete geometry. */
 export function PanelTrigger({
   placement = 'inline',
   side = 'right',
+  tabSize = 'standard',
   size = placement === 'responsiveEdge' ? 'small' : 'medium',
   ...props
 }: PanelTriggerProps) {
@@ -47,7 +49,7 @@ export function PanelTrigger({
               minWidth: 0,
               minHeight: uiTokens.control.height.standard,
               fontSize: '0.9rem',
-              ...edgeTabSx(theme, side),
+              ...edgeTabSx(theme, side, tabSize),
             }
           : placement === 'inline'
             ? { minHeight: uiTokens.control.height.standard }

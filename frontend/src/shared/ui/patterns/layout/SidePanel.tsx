@@ -16,7 +16,7 @@ interface SidePanelProps {
   description?: string
   closeLabel: string
   side?: 'left' | 'right'
-  width?: 'standard' | 'wide'
+  width?: 'standard' | 'wide' | number
   contentDensity?: 'comfortable' | 'compact'
   header?: ReactNode
   children: ReactNode
@@ -56,7 +56,10 @@ export function SidePanel({
           'aria-describedby': description ? descriptionId : undefined,
           sx: (theme) => ({
             ...sidePanelPaperSx(theme),
-            width: { xs: '100vw', sm: width === 'wide' ? 520 : 400 },
+            width: {
+              xs: '100vw',
+              sm: typeof width === 'number' ? width : width === 'wide' ? 520 : 400,
+            },
             maxWidth: '100vw',
             height: '100dvh',
             overflow: 'hidden',
