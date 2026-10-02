@@ -67,9 +67,6 @@ export function ModifierHistoryPage() {
 
   return (
     <PageShell sx={{ maxWidth: 1800, width: '100%', mx: 'auto', p: 0 }}>
-      <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 850 }}>
-        {t('modifierHistory.title')}
-      </Typography>
       <Box
         sx={{
           display: 'grid',

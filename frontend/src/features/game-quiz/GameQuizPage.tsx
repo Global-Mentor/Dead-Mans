@@ -192,6 +192,7 @@ export function GameQuizPage() {
 
       <Box
         ref={gridRef}
+        data-testid="quiz-sections-grid"
         sx={{
           mt: twitchPanel ? 1 : 0,
           display: 'grid',
@@ -199,7 +200,7 @@ export function GameQuizPage() {
           gap: 1.5,
           alignItems: 'start',
           '@media (min-width: 1000px)': {
-            gridTemplateColumns: 'minmax(0, 1.15fr) minmax(380px, 1fr)',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           },
         }}
       >

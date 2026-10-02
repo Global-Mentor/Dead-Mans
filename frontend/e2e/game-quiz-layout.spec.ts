@@ -165,6 +165,12 @@ for (const size of [
     await page.setViewportSize(size)
     await mockQuiz(page)
     await page.goto('/panel/game-quiz')
+    const columns = page.getByTestId('quiz-sections-grid').locator(':scope > *')
+    await expect(columns).toHaveCount(2)
+    const widths = await columns.evaluateAll((elements) =>
+      elements.map((element) => element.getBoundingClientRect().width),
+    )
+    expect(Math.abs(widths[0]! - widths[1]!)).toBeLessThanOrEqual(1)
     await page.getByRole('tab', { name: 'История вопросов' }).click()
     await page.locator('summary').first().click()
     const panel = page.getByRole('tabpanel', { name: 'История вопросов' })

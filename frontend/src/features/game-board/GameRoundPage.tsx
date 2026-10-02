@@ -78,7 +78,6 @@ export function GameRoundPage() {
         maxWidth: 'none',
         mx: 'auto',
         p: 0,
-        pt: { xs: 1.5, md: 2 },
         pb: { xs: canManageRound ? 9 : 0, md: 0 },
       }}
     >

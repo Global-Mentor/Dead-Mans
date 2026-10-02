@@ -4,7 +4,8 @@ import { uiTokens } from './tokens.ts'
 export const pageShellSx: SxProps<Theme> = {
   maxWidth: 1100,
   mx: 'auto',
-  p: uiTokens.spacing.page,
+  px: uiTokens.spacing.page,
+  pb: uiTokens.spacing.page,
 }
 
 export const setupSplitLayoutSx: SxProps<Theme> = {

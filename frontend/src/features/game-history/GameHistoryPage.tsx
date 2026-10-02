@@ -130,16 +130,6 @@ export function GameHistoryPage({
         p: { xs: 0, md: 0 },
       }}
     >
-      {activeBoard === 'history' ? (
-        <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 850 }}>
-          {t('gameHistory.archivePageTitle')}
-        </Typography>
-      ) : (
-        <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 850 }}>
-          {t('gameHistory.title')}
-        </Typography>
-      )}
-
       {isBoardSwitcherVisible ? (
         <SectionCard sx={{ mt: 1.5 }}>
           <SectionHeader

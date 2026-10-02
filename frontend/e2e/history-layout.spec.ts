@@ -199,6 +199,7 @@ for (const width of [390, 800, 1366, 2560]) {
     await page.setViewportSize({ width, height: width > 2000 ? 1440 : 900 })
     await mockHistory(page)
     await page.goto('/panel/game-history')
+    await expect(page.getByRole('heading', { name: 'История игр', exact: true })).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'Архивная игра 1', exact: true })).toBeVisible()
     const picker = page.locator('details').first()
     if (width < 1000) {
@@ -247,9 +248,10 @@ for (const width of [390, 800, 1366, 2560]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       width,
     )
-    await page
-      .getByRole('heading', { name: 'История модификаторов', exact: true })
-      .scrollIntoViewIfNeeded()
+    await expect(
+      page.getByRole('heading', { name: 'История модификаторов', exact: true }),
+    ).toHaveCount(0)
+    await page.getByRole('main').scrollIntoViewIfNeeded()
     await page.screenshot({
       path: testInfo.outputPath('modifier-history.png'),
       animations: 'disabled',
