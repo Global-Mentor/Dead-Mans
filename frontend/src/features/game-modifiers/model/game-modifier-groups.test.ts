@@ -63,6 +63,30 @@ function createAvailability(
 }
 
 describe('game modifier groups', () => {
+  it('keeps equally priced and named modifiers stable when activation order changes', () => {
+    const activations = [
+      createActivation({ modifierId: 'modifier-b', activationId: 'b' }),
+      createActivation({ modifierId: 'modifier-a', activationId: 'a' }),
+    ]
+    const available = activations.map((activation) =>
+      createAvailability({
+        modifier: { ...createAvailability().modifier, id: activation.modifierId },
+      }),
+    )
+    for (const input of [activations, [...activations].reverse()]) {
+      expect(groupActiveGameModifiers(input).map((group) => group.modifierId)).toEqual([
+        'modifier-a',
+        'modifier-b',
+      ])
+    }
+    for (const input of [available, [...available].reverse()]) {
+      expect(groupAvailableGameModifiers(input)[0]?.items.map((item) => item.modifier.id)).toEqual([
+        'modifier-a',
+        'modifier-b',
+      ])
+    }
+  })
+
   it('orders active categories and preserves cost order and repeated activations within each category', () => {
     const groups = groupActiveGameModifiers([
       createActivation({ modifierId: 'result', activationCost: 2 }),
@@ -230,7 +254,7 @@ describe('game modifier groups', () => {
     ])
   })
 
-  it('groups available modifiers by category, sorts activatable modifiers by cost and pushes conflicts and exhausted limits down', () => {
+  it('keeps modifier positions independent of availability and active state', () => {
     const grouped = groupAvailableGameModifiers([
       createAvailability({
         modifier: {
@@ -294,13 +318,26 @@ describe('game modifier groups', () => {
     expect(grouped).toHaveLength(2)
     expect(grouped[0]).toMatchObject({ category: 'round' })
     expect(grouped[0]?.items.map((item) => item.modifier.name)).toEqual([
-      'Cheap',
-      'Expensive',
-      'No points',
       'Conflict',
       'Limit reached',
+      'Cheap',
+      'No points',
+      'Expensive',
     ])
     expect(grouped[1]).toMatchObject({ category: 'result' })
+    const changed = groupAvailableGameModifiers(
+      grouped.flatMap((group) =>
+        group.items.map((item) => ({
+          ...item,
+          canActivate: !item.canActivate,
+          isActive: !item.isActive,
+          blockedReason: item.canActivate ? ('conflict_active' as const) : null,
+        })),
+      ),
+    )
+    expect(changed.map((group) => group.items.map((item) => item.modifier.id))).toEqual(
+      grouped.map((group) => group.items.map((item) => item.modifier.id)),
+    )
   })
 
   it('keeps category order stable when availability changes', () => {

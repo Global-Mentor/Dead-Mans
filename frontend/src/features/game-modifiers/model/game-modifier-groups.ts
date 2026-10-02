@@ -126,18 +126,14 @@ function compareAvailability(
   right: GameModifierAvailability,
   locale?: string,
 ): number {
-  const leftRank = getModifierAvailabilitySortRank(left)
-  const rightRank = getModifierAvailabilitySortRank(right)
-
-  if (leftRank !== rightRank) {
-    return leftRank - rightRank
-  }
-
   if (left.modifier.activationCost !== right.modifier.activationCost) {
     return left.modifier.activationCost - right.modifier.activationCost
   }
 
-  return left.modifier.name.localeCompare(right.modifier.name, locale)
+  return (
+    left.modifier.name.localeCompare(right.modifier.name, locale) ||
+    left.modifier.id.localeCompare(right.modifier.id)
+  )
 }
 
 function compareActiveModifierGroup(
@@ -149,7 +145,10 @@ function compareActiveModifierGroup(
     return left.activationCost - right.activationCost
   }
 
-  return left.modifierName.localeCompare(right.modifierName, locale)
+  return (
+    left.modifierName.localeCompare(right.modifierName, locale) ||
+    left.modifierId.localeCompare(right.modifierId)
+  )
 }
 
 function compareAvailabilityCategory(
@@ -159,21 +158,6 @@ function compareAvailabilityCategory(
   return (
     modifierCategoryCodes.indexOf(left.category) - modifierCategoryCodes.indexOf(right.category)
   )
-}
-
-function getModifierAvailabilitySortRank(availability: GameModifierAvailability): number {
-  if (availability.canActivate) {
-    return 0
-  }
-
-  if (
-    availability.blockedReason === 'conflict_active' ||
-    availability.blockedReason === 'limit_reached'
-  ) {
-    return 2
-  }
-
-  return 1
 }
 
 function groupModifierActivators(
