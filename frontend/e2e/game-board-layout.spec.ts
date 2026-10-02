@@ -1303,15 +1303,20 @@ for (const width of [390, 768, 1440]) {
     await expect(modifiers).toContainText('Защитный знак')
     const activeRow = modifiers.getByRole('listitem', { name: 'Защитный знак' })
     const cost = activeRow.getByText('Стоимость: 1 очк.', { exact: true })
-    const activeTag = activeRow.getByText('Активен', { exact: true })
-    await expect(activeTag).toBeVisible()
+    await expect(activeRow.getByText('Активен', { exact: true })).toHaveCount(0)
     const costBounds = (await cost.boundingBox())!
-    const tagBounds = (await activeTag.boundingBox())!
-    expect(tagBounds.x).toBeGreaterThan(costBounds.x + costBounds.width)
-    expect(tagBounds.y + tagBounds.height / 2).toBeCloseTo(costBounds.y + costBounds.height / 2, 0)
-    expect(await activeTag.evaluate((element) => getComputedStyle(element).fontSize)).toBe(
-      await cost.evaluate((element) => getComputedStyle(element).fontSize),
+    const activationCountBounds = (await activeRow
+      .getByText('1 из 1', { exact: true })
+      .boundingBox())!
+    expect(activationCountBounds.x).toBeGreaterThan(costBounds.x + costBounds.width)
+    expect(activationCountBounds.y + activationCountBounds.height / 2).toBeCloseTo(
+      costBounds.y + costBounds.height / 2,
+      0,
     )
+    const blockedAction = activeRow.getByRole('status')
+    await expect(blockedAction).toContainText('Лимит исчерпан')
+    expect((await blockedAction.boundingBox())!.width).toBe(144)
+    expect((await blockedAction.boundingBox())!.height).toBe(36)
     await expect(modifiers.getByRole('heading', { name: 'Выбор модификаторов' })).toBeInViewport()
     await page.screenshot({
       path: testInfo.outputPath('active-modifier-row.png'),
@@ -1325,9 +1330,10 @@ for (const width of [390, 768, 1440]) {
     await expect(details).toContainText('Защищает команду в раунде.')
     await expect(details.getByText('Защищает команду в раунде.', { exact: true })).toHaveCSS(
       'text-align',
-      'center',
+      'left',
     )
-    const cancelPurchase = details.getByRole('button', { name: /Отменить мою покупку/ })
+    const cancelPurchase = details.getByRole('button', { name: 'Отменить активацию', exact: true })
+    await expect(cancelPurchase).toHaveCount(1)
     await cancelPurchase.click()
     const cancelConfirmation = page.getByRole('dialog', { name: 'Отменить покупку модификатора?' })
     await expect(cancelConfirmation).toBeVisible()
@@ -1449,7 +1455,7 @@ for (const { width, height } of [
               name,
               description: `Описание модификатора «${name}».`,
               activationCost: costs[index],
-              activationLimit: null,
+              activationLimit: index === 4 ? { count: 5 } : null,
               conflictingModifierIds: index === 0 ? ['modifier-1', 'modifier-4'] : [],
               iconEmoji: ['🛡️', '💧', '🎯', '📖', '⌛'][index % 5],
               activationCommand: null,
@@ -1472,7 +1478,7 @@ for (const { width, height } of [
             canActivate: true,
             blockedReason: null,
             activationsCount: 0,
-            limit: null,
+            limit: index === 4 ? 5 : null,
           })),
         },
       }),
@@ -1500,7 +1506,20 @@ for (const { width, height } of [
     if (width >= 600) expect((await panel.boundingBox())!.width).toBe(560)
     const skill = list.getByRole('listitem', { name: 'Навыки', exact: true })
     await expect(skill).toContainText('Стоимость: 4 очк.')
+    const activationCount = skill.getByLabel('Активировано 0 / 5', { exact: true })
+    await expect(activationCount).toHaveText('0 из 5')
+    await expect(activationCount).toBeVisible()
+    await expect(
+      list.getByRole('listitem', { name: 'Расходник', exact: true }).getByText(/^Активировано/),
+    ).toHaveCount(0)
     const costLabel = skill.getByText('Стоимость: 4 очк.', { exact: true }).locator('..')
+    const costBounds = (await costLabel.boundingBox())!
+    const countBounds = (await activationCount.boundingBox())!
+    expect(countBounds.x).toBeGreaterThanOrEqual(costBounds.x + costBounds.width)
+    expect(countBounds.y + countBounds.height / 2).toBeCloseTo(
+      costBounds.y + costBounds.height / 2,
+      0,
+    )
     await expect(costLabel).toHaveCSS('border-top-width', '1px')
     expect((await costLabel.boundingBox())!.height).toBeLessThanOrEqual(width === 320 ? 34 : 20)
     expect(await costLabel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
@@ -1512,10 +1531,18 @@ for (const { width, height } of [
     await expect(skill.locator('[aria-hidden="true"]').first()).toHaveText('⌛')
     const titleBounds = (await skill.getByRole('heading', { name: 'Навыки' }).boundingBox())!
     const detailsAction = skill.getByRole('button', { name: 'Подробнее' })
+    await expect(detailsAction).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    const defaultBackground = await detailsAction.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    )
+    await detailsAction.hover()
+    await expect(detailsAction).not.toHaveCSS('background-color', defaultBackground)
+    await page.mouse.move(0, 0)
     await expect(detailsAction).toHaveCSS('border-top-width', '0px')
     await expect(detailsAction).toHaveCSS('border-image-source', 'none')
     const actionBounds = (await detailsAction.boundingBox())!
-    expect(actionBounds.x).toBeGreaterThan(titleBounds.x + titleBounds.width)
+    if (width > 320) expect(actionBounds.x).toBeGreaterThan(titleBounds.x + titleBounds.width)
+    else expect(actionBounds.y).toBeGreaterThan(titleBounds.y + titleBounds.height)
     const rowHeight = (await skill.boundingBox())!.height
     expect(rowHeight).toBeLessThanOrEqual(width >= 600 ? 56 : 94)
     const headings = list.locator('section > header')
@@ -1554,13 +1581,15 @@ for (const { width, height } of [
     await expect(details).toContainText('Описание модификатора «Чирик».')
     await expect(details.getByText('Описание модификатора «Чирик».', { exact: true })).toHaveCSS(
       'text-align',
-      'center',
+      'left',
     )
-    const conflicts = details.getByRole('status')
-    await expect(conflicts).toHaveText('Конфликтует с: Жажда, Навыки')
-    await expect(conflicts.locator('p')).toHaveCSS('font-weight', '700')
-    await expect(conflicts.locator('p')).toHaveCSS('text-align', 'center')
-    await expect(conflicts.locator('svg')).toBeVisible()
+    const conflicts = details.getByRole('region', { name: 'Несовместимые модификаторы' })
+    await expect(conflicts.getByText('Конфликты:')).toHaveCSS('font-weight', '700')
+    await expect(conflicts).toHaveCSS('text-align', 'left')
+    await expect(conflicts).toHaveText('Конфликты: Жажда, Навыки')
+    expect(await conflicts.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
     await page.screenshot({
       path: testInfo.outputPath('round-modifier-details.png'),
       animations: 'disabled',

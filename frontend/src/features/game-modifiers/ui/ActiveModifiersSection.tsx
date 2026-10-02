@@ -4,11 +4,17 @@ import type {
   GameModifierActivation,
   GameModifierDefinition,
 } from '../../../shared/api/contracts/index.ts'
-import { ModifierDetailsItem, ModifierDetailsList } from '../../../shared/game-ui/index.ts'
-import { AppButton, ListPanel, StatusBadge } from '../../../shared/ui/index.ts'
+import {
+  ModifierCatalogRow,
+  ModifierCatalogGroup,
+  ModifierDescriptionBlock,
+  ModifierConflictNotice,
+  ModifierActivatorsBlock,
+} from '../../../shared/game-ui/index.ts'
+import { AppButton, HelpTooltip, ListPanel, StatusBadge } from '../../../shared/ui/index.ts'
 import { groupActiveGameModifiers } from '../model/game-modifier-groups.ts'
-import { deriveModifierRoundSummaryMeta } from '../model/modifier-round-summary.ts'
 import { getCategoryLabel } from './modifier-category.ts'
+import { modifierCategoryCodes } from '../model/modifier-categories.ts'
 
 type ActiveModifierGroup = ReturnType<typeof groupActiveGameModifiers>[number]
 
@@ -32,10 +38,16 @@ export function ActiveModifiersSection({
   onSelfCancel,
 }: ActiveModifiersSectionProps) {
   const { t } = useTranslation()
+  const modifierNamesById = new Map(
+    [...definitionsById].map(([id, definition]) => [id, definition.name]),
+  )
+  for (const group of groups) modifierNamesById.set(group.modifierId, group.modifierName)
+  const activeModifierIds = new Set(groups.map((group) => group.modifierId))
   return (
     <ListPanel
       data-testid="active-modifiers-section"
       title={t('gameModifiers.activeTitle')}
+      headerMinHeight="var(--modifier-panel-header-height)"
       summary={
         <StatusBadge
           density="compact"
@@ -51,22 +63,37 @@ export function ActiveModifiersSection({
           {t('gameModifiers.activeEmpty')}
         </Typography>
       ) : (
-        <ModifierDetailsList count={groups.length} layout="fit">
-          {groups.map((group) => {
-            const definition = definitionsById.get(group.modifierId)
-            return (
-              <ActiveModifierRow
-                key={group.modifierId}
-                group={group}
-                {...(definition ? { definition } : {})}
-                currentUserId={currentUserId}
-                canSelfCancel={canSelfCancel}
-                isCancelling={isCancelling}
-                onSelfCancel={onSelfCancel}
-              />
+        <Stack spacing={1}>
+          {[...modifierCategoryCodes, null].map((category) => {
+            const categoryGroups = groups.filter(
+              (group) => (definitionsById.get(group.modifierId)?.category ?? null) === category,
             )
+            return categoryGroups.length > 0 ? (
+              <ModifierCatalogGroup
+                key={category ?? 'unavailable'}
+                title={category ? getCategoryLabel(t, category) : t('gameModifiers.notEnabled')}
+                count={categoryGroups.length}
+              >
+                {categoryGroups.map((group) => {
+                  const definition = definitionsById.get(group.modifierId)
+                  return (
+                    <ActiveModifierRow
+                      key={group.modifierId}
+                      group={group}
+                      {...(definition ? { definition } : {})}
+                      currentUserId={currentUserId}
+                      canSelfCancel={canSelfCancel}
+                      isCancelling={isCancelling}
+                      onSelfCancel={onSelfCancel}
+                      modifierNamesById={modifierNamesById}
+                      activeModifierIds={activeModifierIds}
+                    />
+                  )
+                })}
+              </ModifierCatalogGroup>
+            ) : null
           })}
-        </ModifierDetailsList>
+        </Stack>
       )}
     </ListPanel>
   )
@@ -79,6 +106,8 @@ function ActiveModifierRow({
   canSelfCancel,
   isCancelling,
   onSelfCancel,
+  modifierNamesById,
+  activeModifierIds,
 }: {
   group: ActiveModifierGroup
   definition?: GameModifierDefinition
@@ -86,100 +115,70 @@ function ActiveModifierRow({
   canSelfCancel: boolean
   isCancelling: boolean
   onSelfCancel: (activation: GameModifierActivation) => void
+  modifierNamesById: ReadonlyMap<string, string>
+  activeModifierIds: ReadonlySet<string>
 }) {
   const { t } = useTranslation()
-  const ownActivations = currentUserId
-    ? group.activations.filter((item) => item.activatedByUserId === currentUserId)
-    : []
+  const ownActivation = currentUserId
+    ? group.activations.find((item) => item.activatedByUserId === currentUserId)
+    : undefined
+  const cancelUnavailableReason = !canSelfCancel
+    ? t('gameModifiers.blockedReasons.ordering_closed')
+    : !ownActivation
+      ? t('gameModifiers.selfCancelOwnOnly')
+      : ''
   return (
-    <ModifierDetailsItem
-      title={group.modifierName}
+    <ModifierCatalogRow
+      name={group.modifierName}
+      cost={group.activationCost}
+      limit={definition?.activationLimit?.count}
+      activationsCount={group.activationsCount}
+      showActivationsCount
+      isActive
       emoji={definition?.iconEmoji}
-      reserveIcon
-      effect={
-        group.activationsCount > 1 ? (
-          <StatusBadge
-            component="span"
-            emphasis="strong"
-            label={t('gameModifiers.activeStackMultiplier', { count: group.activationsCount })}
-            aria-label={t('gameModifiers.activeGroupCount', { count: group.activationsCount })}
-          />
-        ) : null
-      }
-      metadata={
-        <Stack component="span" gap={0.25}>
-          <Typography component="span" variant="caption" color="text.secondary">
-            {t('gameModifiers.activeGroupSpent', {
-              cost: group.activations.reduce((total, item) => total + item.activationCost, 0),
-            })}
-          </Typography>
-          <Typography component="span" variant="caption" color="text.secondary">
-            {t('gameModifiers.activatorsLabel')}:{' '}
-            {group.activators
-              .map((activator) =>
-                activator.activationsCount > 1
-                  ? t('gameModifiers.activeGroupActivatorWithCount', {
-                      player: activator.displayName,
-                      count: activator.activationsCount,
-                    })
-                  : activator.displayName,
-              )
-              .join(', ')}
-          </Typography>
-        </Stack>
-      }
       actions={
-        canSelfCancel && ownActivations.length > 0 ? (
-          <Stack spacing={0.5}>
-            {ownActivations.map((item) => (
-              <AppButton
-                key={item.activationId}
-                tone="dangerSecondary"
-                size="small"
-                disabled={isCancelling}
-                aria-label={`${t('gameModifiers.selfCancelCompactAction', { cost: item.activationCost })}: ${group.modifierName}`}
-                onClick={() => onSelfCancel(item)}
-              >
-                {t('gameModifiers.selfCancelCompactAction', { cost: item.activationCost })}
-              </AppButton>
-            ))}
-          </Stack>
-        ) : null
+        <HelpTooltip title={cancelUnavailableReason} arrow describeChild enterTouchDelay={0}>
+          <Box
+            component="span"
+            tabIndex={cancelUnavailableReason ? 0 : undefined}
+            sx={{ display: 'block', width: 144, flexShrink: 0 }}
+          >
+            <AppButton
+              tone="dangerSecondary"
+              size="small"
+              fullWidth
+              disabled={isCancelling || !canSelfCancel || !ownActivation}
+              aria-label={`${t('gameModifiers.selfCancelCompactAction')}: ${group.modifierName}`}
+              onClick={() => {
+                if (canSelfCancel && ownActivation) onSelfCancel(ownActivation)
+              }}
+            >
+              {t('gameModifiers.selfCancelShortAction')}
+            </AppButton>
+          </Box>
+        </HelpTooltip>
       }
     >
       {definition?.description ? (
-        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>
-          {definition.description}
-        </Typography>
+        <ModifierDescriptionBlock description={definition.description} />
       ) : null}
-      {definition ? (
-        <Stack direction="row" gap={0.5} flexWrap="wrap" useFlexGap>
-          <StatusBadge density="tight" label={getCategoryLabel(t, definition.category)} />
-          <StatusBadge
-            density="tight"
-            label={t(
-              `gameCatalog.modifiers.roundSummaryType.${deriveModifierRoundSummaryMeta(definition).type}`,
-            )}
-          />
-        </Stack>
-      ) : null}
-      <Box>
-        <Typography variant="caption" color="text.secondary">
-          {t('gameModifiers.activatorsLabel')}
-        </Typography>
-        <Stack component="ul" spacing={0.5} sx={{ mt: 0.5, mb: 0, pl: 2 }}>
-          {group.activators.map((activator) => (
-            <Typography key={activator.userId} component="li" variant="body2">
-              {activator.activationsCount > 1
-                ? t('gameModifiers.activeGroupActivatorWithCount', {
-                    player: activator.displayName,
-                    count: activator.activationsCount,
-                  })
-                : activator.displayName}
-            </Typography>
-          ))}
-        </Stack>
-      </Box>
-    </ModifierDetailsItem>
+      <ModifierConflictNotice
+        conflicts={(definition?.conflictingModifierIds ?? []).map((id) => ({
+          id,
+          name: modifierNamesById.get(id) ?? id,
+          isActive: activeModifierIds.has(id),
+        }))}
+      />
+      <ModifierActivatorsBlock
+        names={group.activators.map((activator) =>
+          activator.activationsCount > 1
+            ? t('gameModifiers.activeGroupActivatorWithCount', {
+                player: activator.displayName,
+                count: activator.activationsCount,
+              })
+            : activator.displayName,
+        )}
+      />
+    </ModifierCatalogRow>
   )
 }
