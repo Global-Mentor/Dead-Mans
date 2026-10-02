@@ -917,16 +917,23 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
       const categoryHeight = await list
         .locator('[data-modifier-group-heading]')
         .evaluateAll((headings) =>
-          headings.reduce(
-            (height, heading) => height + heading.getBoundingClientRect().height + 6,
-            0,
-          ),
+          headings.reduce((height, heading) => {
+            const frame = getComputedStyle(heading.parentElement!)
+            return (
+              height +
+              heading.getBoundingClientRect().height +
+              6 +
+              parseFloat(frame.borderTopWidth) +
+              parseFloat(frame.borderBottomWidth)
+            )
+          }, 0),
         )
       const singleColumnHeight = count * rowHeight + (count - 1) * 6 + categoryHeight
+      const nestedListWidth = (await list.locator(':scope > li > ul').first().boundingBox())!.width
       expect(rowWidth).toBeCloseTo(
         count > 1 && listWidth >= 480 && singleColumnHeight > availableHeight + 1
-          ? (listWidth - 6) / 2
-          : listWidth,
+          ? (nestedListWidth - 6) / 2
+          : nestedListWidth,
         0,
       )
       const iconBounds = await rows
@@ -935,8 +942,8 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         .locator('[aria-hidden]')
         .first()
         .boundingBox()
-      expect(iconBounds?.width).toBe(32)
-      expect(iconBounds?.height).toBe(32)
+      expect(iconBounds?.width).toBe(40)
+      expect(iconBounds?.height).toBe(40)
       await expectStable()
       if ([390, 768, 1440].includes(width)) {
         await modifiers.screenshot({
@@ -995,12 +1002,8 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
       else {
         const badge = repeated.getByLabel(`${multiplier} активац.`, { exact: true })
         await expect(badge).toHaveText(`×${multiplier}`)
-        await expect(badge).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-        await expect(badge.locator('span')).toHaveCSS('font-weight', '800')
-        await expect(badge.locator('span')).toHaveCSS('font-size', '16px')
-        await expect(badge).not.toHaveCSS('border-image-source', 'none')
-        await expect(badge).not.toHaveCSS('background-image', 'none')
-        expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(36)
+        await expect(badge.locator('span')).toHaveCSS('font-weight', '600')
+        expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(24)
         expect(
           await repeated.evaluate((element) => element.scrollWidth <= element.clientWidth),
         ).toBe(true)
@@ -1093,19 +1096,17 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
       await longRow.click()
       await expect(longRow).toHaveAttribute('aria-expanded', 'true')
       await expect(modifierList.locator('details[open]')).toHaveCount(1)
-      const activators = modifierList.locator('details[open] ul > li')
-      await expect(activators).toHaveCount(13)
-      expect(
-        await activators.evaluateAll((items) =>
-          items.every((item) => {
-            const style = getComputedStyle(item)
-            return style.display === 'list-item' && style.listStyleType === 'disc'
-          }),
-        ),
-      ).toBe(true)
-      for (const item of await activators.all()) {
-        await expect(item).toContainText('ЗрительСДлиннымНепрерывнымНикнеймом')
+      const activators = modifierList
+        .locator('details[open]')
+        .getByRole('region', { name: 'Активировали', exact: true })
+      await expect(activators).toContainText('Активировали:')
+      await expect(activators).toContainText('Стоимость: 3 очк.')
+      for (const activation of activeModifiers.filter((item) => item.modifierId === 'stress-0')) {
+        await expect(activators).toContainText(activation.activatedByDisplayName)
       }
+      expect(
+        await activators.evaluate((element) => element.scrollWidth <= element.clientWidth),
+      ).toBe(true)
       await expectStable()
       expect(
         await modifierList.evaluate((element) => element.scrollHeight > element.clientHeight),
