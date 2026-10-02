@@ -515,23 +515,41 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '28px')
     await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-weight', '700')
     const labelStyles = await Promise.all(
-      [cardSummary.locator('dt').first(), cardSummary.locator('dt').last(), phaseLabel].map(
-        (label) =>
-          label.evaluate((element) => {
-            const style = getComputedStyle(element)
-            return [style.fontSize, style.lineHeight, style.fontWeight, style.textTransform]
-          }),
+      [cardSummary.locator('dt').first(), cardSummary.locator('dt').last()].map((label) =>
+        label.evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [style.fontSize, style.lineHeight, style.fontWeight, style.textTransform]
+        }),
       ),
     )
     expect(labelStyles[1]).toEqual(labelStyles[0])
-    expect(labelStyles[2]).toEqual(labelStyles[0])
+    for (const id of ['round-category-row', 'round-cost-row']) {
+      const offset = await page.getByTestId(id).evaluate((row) => {
+        const frame = row.getBoundingClientRect()
+        const parts = Array.from(row.querySelectorAll('dt,dd')).map((part) =>
+          part.getBoundingClientRect(),
+        )
+        return (
+          (Math.min(...parts.map((p) => p.left)) + Math.max(...parts.map((p) => p.right))) / 2 -
+          frame.left -
+          frame.width / 2
+        )
+      })
+      expect(Math.abs(offset)).toBeLessThanOrEqual(1)
+    }
+    for (const value of await cardSummary.locator('dd').all()) {
+      await expect(value).toHaveCSS('font-weight', '400')
+      expect(
+        await value.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+      ).toBeLessThan(parseFloat(labelStyles[0]![0]))
+    }
     await expect(team).toContainText('Сейчас выбирают активную команду.')
     expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).toBe(
       'none',
     )
     await expect(frame).toContainText('Карточка ещё не открыта.')
-    await expect(cardSummary).toContainText('Карточка:')
-    await expect(cardSummary.locator('dt')).toHaveText(['Карточка:', 'Стоимость:'])
+    await expect(cardSummary).toContainText('Категория:')
+    await expect(cardSummary.locator('dt')).toHaveText(['Категория:', 'Стоимость:'])
     await expect(cardSummary.locator('dd')).toHaveText(['Ожидание', '-'])
     await expect(modifiers).toContainText('Выбор модификаторов ещё не начался.')
     await expect(overview).toContainText('Выбор активной команды')
@@ -662,7 +680,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         })
       }
     }
-    await expect(cardSummary.locator('dt')).toHaveText(['Карточка:', 'Стоимость:'])
+    await expect(cardSummary.locator('dt')).toHaveText(['Категория:', 'Стоимость:'])
     await expect(cardSummary.locator('dd')).toHaveText([categoryName, '100 очк.'])
     await expect(cardSummary).not.toContainText('Следы на болотах')
     await expect(cardSummary).not.toContainText('Описание испытания')
@@ -1491,6 +1509,16 @@ for (const { width, height } of [
     const body = panel.getByTestId('round-modifier-scroll-body')
     const balance = panel.getByTestId('round-modifier-balance')
     await expect(balance).toHaveText('Ваши очки:12 очк.')
+    const pointsLabel = balance.getByText('Ваши очки:', { exact: true })
+    const pointsValue = balance.getByText('12 очк.', { exact: true })
+    await expect(pointsLabel).toHaveCSS('font-weight', '700')
+    await expect(pointsLabel).toHaveCSS('font-size', '18px')
+    await expect(pointsValue).toHaveCSS('font-weight', '400')
+    expect(
+      await pointsLabel.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+    ).toBeGreaterThan(
+      await pointsValue.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+    )
     await expect(
       panel.getByText('Доступные модификаторы и их стоимость для текущего раунда.'),
     ).toHaveCount(0)

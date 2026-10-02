@@ -67,10 +67,16 @@ export function RoundModifierDrawer({
               gap={1}
               sx={{ minWidth: 0 }}
             >
-              <Typography variant="body1" color="text.secondary" fontWeight={700}>
+              <Typography
+                component="p"
+                variant="body1"
+                color="primary.light"
+                fontWeight={700}
+                sx={{ fontSize: 18 }}
+              >
                 {t('gameBoard.currentRoundScreen.drawerPointsLabel')}
               </Typography>
-              <Typography component="strong" variant="h5" color="primary.light" fontWeight={700}>
+              <Typography component="p" variant="caption" color="text.secondary" fontWeight={400}>
                 {state
                   ? t('gameModifiers.myPointsValue', { points: state.availableQuizPoints })
                   : '-'}
