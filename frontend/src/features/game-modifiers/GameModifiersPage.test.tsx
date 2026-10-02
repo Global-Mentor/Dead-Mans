@@ -333,10 +333,8 @@ describe('GameModifiersPage', () => {
 
     expect(screen.queryByRole('heading', { name: 'Модификаторы' })).not.toBeInTheDocument()
     const summaryText = summary.textContent ?? ''
-    expect(summaryText.indexOf('Краткая сводка')).toBeLessThan(
-      summaryText.indexOf('Доступно очков'),
-    )
-    expect(summaryText.indexOf('Краткая сводка')).toBeLessThan(
+    expect(summaryText.indexOf('Статус заказа')).toBeLessThan(summaryText.indexOf('Доступно очков'))
+    expect(summaryText.indexOf('Статус заказа')).toBeLessThan(
       summaryText.indexOf('Текущая команда'),
     )
     expect(summaryText.indexOf('Текущая команда')).toBeLessThan(
@@ -421,7 +419,7 @@ describe('GameModifiersPage', () => {
           'Сумма стоимости всех модификаторов, активных в текущем раунде, независимо от того, кто их активировал.',
       },
       {
-        label: 'Краткая сводка',
+        label: 'Статус заказа',
         tooltip:
           'Показывает, можно ли сейчас заказывать модификаторы. Заказ открыт только в нужной фазе раунда.',
       },
@@ -449,7 +447,7 @@ describe('GameModifiersPage', () => {
       'Доступно очков',
       'Потрачено вами',
       'Потрачено за раунд',
-      'Краткая сводка',
+      'Статус заказа',
       'Текущая команда',
     ]) {
       expect(
@@ -588,6 +586,8 @@ describe('GameModifiersPage', () => {
     const summary = screen.getByRole('region', { name: 'Краткая сводка' })
     const orderingAlert = within(summary).getByRole('status')
     expect(orderingAlert).toHaveTextContent('Заказ закрыт')
+    expect(orderingAlert).toHaveAccessibleName('Статус заказа')
+    expect(within(orderingAlert).queryByRole('button')).not.toBeInTheDocument()
     expect(orderingAlert).toHaveAttribute('tabindex', '0')
     expect(orderingAlert).toHaveAttribute('title', 'Сейчас не фаза заказа модификаторов.')
     fireEvent.mouseOver(orderingAlert)

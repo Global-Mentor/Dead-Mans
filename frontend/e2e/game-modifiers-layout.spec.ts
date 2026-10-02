@@ -5,6 +5,35 @@ const longTeamName = 'Команда исследователей заброше
 const longCardTitle = 'Последний бой за сокровища затонувшего корабля'
 const longParticipantName = 'ОченьДлинныйНикИгрокаБезПробелов'
 
+async function expectEqualSummaryCells(page: Page) {
+  const cells = [
+    'modifier-ordering-cell',
+    'modifier-available-points-cell',
+    'modifier-round-spent-cell',
+    'modifier-personal-spent-cell',
+  ]
+  const bounds = await Promise.all(cells.map((id) => page.getByTestId(id).boundingBox()))
+  for (const box of bounds) {
+    expect(box).not.toBeNull()
+    expect(Math.abs(box!.height - bounds[0]!.height)).toBeLessThanOrEqual(1)
+  }
+  expect(Math.abs(bounds[0]!.y - bounds[1]!.y)).toBeLessThanOrEqual(1)
+  expect(Math.abs(bounds[2]!.y - bounds[3]!.y)).toBeLessThanOrEqual(1)
+  expect(bounds[2]!.y - bounds[0]!.y - bounds[0]!.height).toBeCloseTo(1, 0)
+  for (const id of cells) {
+    const offsets = await page.getByTestId(id).evaluate((cell) => {
+      const frame = cell.getBoundingClientRect()
+      const content = cell.querySelector('dl')!.getBoundingClientRect()
+      return {
+        x: content.x + content.width / 2 - frame.x - frame.width / 2,
+        y: content.y + content.height / 2 - frame.y - frame.height / 2,
+      }
+    })
+    expect(Math.abs(offsets.x)).toBeLessThanOrEqual(1)
+    expect(Math.abs(offsets.y)).toBeLessThanOrEqual(1)
+  }
+}
+
 const modifiers = Array.from({ length: 18 }, (_, index) => ({
   modifier: {
     id: `modifier-${index + 1}`,
@@ -213,13 +242,31 @@ for (const size of [
     const summary = page.getByRole('region', { name: 'Краткая сводка' })
     const available = page.getByTestId('available-modifiers-section')
     await expect(summary).toBeVisible()
+    const orderingStatus = summary.getByRole('status', { name: 'Статус заказа', exact: true })
+    await expect(orderingStatus).toContainText('Заказ открыт')
+    await expect(orderingStatus.locator('.MuiChip-root, button')).toHaveCount(0)
+    await expect(orderingStatus).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(page.getByRole('heading', { name: 'Модификаторы', exact: true })).toHaveCount(0)
-    expect((await summary.boundingBox())!.height).toBeLessThanOrEqual(190)
+    expect((await summary.boundingBox())!.height).toBeLessThanOrEqual(110)
+    await expectEqualSummaryCells(page)
+    for (const name of ['Потрачено за раунд', 'Доступно очков', 'Потрачено вами']) {
+      const metric = summary.getByRole('group', { name, exact: true })
+      await expect(metric.locator('dt')).toHaveCSS('font-weight', '700')
+      await expect(metric.locator('dd')).toHaveCSS('font-weight', '400')
+    }
     await expect(summary.getByText('Морские волки')).toBeVisible()
     await expect(summary.getByText('Битва в порту')).toBeVisible()
     await expect(
       summary.getByRole('button', { name: 'Просмотр карточки: Битва в порту', exact: true }),
     ).toBeVisible()
+    const previewArea = (await summary.getByTestId('modifier-preview-action').boundingBox())!
+    const previewButton = (await summary
+      .getByRole('button', { name: 'Просмотр карточки: Битва в порту', exact: true })
+      .boundingBox())!
+    expect(previewButton.y - previewArea.y).toBeCloseTo(
+      previewArea.y + previewArea.height - previewButton.y - previewButton.height,
+      0,
+    )
     await expect(available).toBeVisible()
     await expect(
       available.getByRole('button', { name: 'Активировать Модификатор 1', exact: true }),
@@ -462,6 +509,7 @@ for (const locale of ['en', 'ru', 'uk', 'pl']) {
     await page.goto('/panel/game-modifiers')
     const summary = page.getByTestId('modifier-summary-row')
     await expect(summary.getByRole('status')).toBeVisible()
+    await expectEqualSummaryCells(page)
     await summary.screenshot({ path: info.outputPath('closed-header.png'), animations: 'disabled' })
     const available = page.getByTestId('available-modifiers-section')
     await expect(available.getByRole('heading', { level: 4 })).toHaveCount(18)
