@@ -71,13 +71,11 @@ export function GameRoundPage() {
     <PageShell
       data-testid="current-round-screen"
       sx={{
-        width: {
-          xs: '100%',
-          md: 'min(calc(100vw - 48px), calc((100dvh - 128px) * 1.55))',
-        },
-        maxWidth: 'none',
+        width: '100%',
+        minWidth: 0,
+        maxWidth: { xs: '100%', md: 'calc((100dvh - 128px) * 1.55)' },
         mx: 'auto',
-        p: 0,
+        px: { xs: 0, md: 0 },
         pb: { xs: canManageRound ? 9 : 0, md: 0 },
       }}
     >

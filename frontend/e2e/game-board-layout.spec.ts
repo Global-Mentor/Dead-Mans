@@ -3703,3 +3703,53 @@ for (const width of [390, 768, 1440]) {
     expect(writes).toEqual([])
   })
 }
+
+for (const viewport of [
+  { width: 1366, height: 768 },
+  { width: 1280, height: 1024 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+]) {
+  test(`current round fits its parent without horizontal scrolling at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize(viewport)
+    await mockGame(page, 'active', 'admin')
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
+    )
+    await page.goto('/panel/game-round')
+    await expect(page.getByTestId('round-phase-value')).toContainText('Проведение игры')
+    // Classic vertical scrollbars reduce the parent's available width on desktop.
+    await page.addStyleTag({ content: 'html { overflow-y: scroll; }' })
+    const bounds = await page.getByTestId('current-round-screen').evaluate((el) => {
+      const main = el.closest('main')!
+      const mainBounds = main.getBoundingClientRect()
+      const styles = getComputedStyle(main)
+      const contentLeft = mainBounds.left + parseFloat(styles.paddingLeft)
+      const contentRight = mainBounds.left + main.clientWidth - parseFloat(styles.paddingRight)
+      const screen = el.getBoundingClientRect()
+      return { left: screen.left, right: screen.right, contentLeft, contentRight }
+    })
+    expect(bounds.left).toBeGreaterThanOrEqual(bounds.contentLeft - 1)
+    expect(bounds.right).toBeLessThanOrEqual(bounds.contentRight + 1)
+    expect(bounds.left - bounds.contentLeft).toBeCloseTo(bounds.contentRight - bounds.right, 0)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true)
+    const overflowing = await page.getByTestId('current-round-screen').evaluate(
+      (el) =>
+        [el, ...el.querySelectorAll('*')].filter((child) => {
+          const styles = getComputedStyle(child)
+          return (
+            ['auto', 'scroll'].includes(styles.overflowX) &&
+            child.scrollWidth > child.clientWidth + 1
+          )
+        }).length,
+    )
+    expect(overflowing).toBe(0)
+    await page.screenshot({ path: info.outputPath('round.png'), animations: 'disabled' })
+  })
+}
