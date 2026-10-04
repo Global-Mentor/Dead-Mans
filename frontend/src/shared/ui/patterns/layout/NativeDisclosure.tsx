@@ -6,7 +6,7 @@ interface NativeDisclosureProps {
   summary: ReactNode
   children: ReactNode
   density?: 'standard' | 'compact'
-  indicator?: 'native' | 'chevron'
+  indicator?: 'native' | 'chevron' | 'inline-chevron'
   open?: boolean
   onExpandedChange?: (expanded: boolean) => void
   pinned?: boolean
@@ -28,6 +28,8 @@ export function NativeDisclosure({
   ...props
 }: NativeDisclosureProps) {
   const [nativeExpanded, setNativeExpanded] = useState(false)
+  const customIndicator = indicator !== 'native'
+  const inlineIndicator = indicator === 'inline-chevron'
 
   return (
     <Box
@@ -44,8 +46,8 @@ export function NativeDisclosure({
     >
       <Box
         component="summary"
-        role={indicator === 'chevron' ? 'button' : undefined}
-        aria-expanded={indicator === 'chevron' ? pinned || (open ?? nativeExpanded) : undefined}
+        role={customIndicator ? 'button' : undefined}
+        aria-expanded={customIndicator ? pinned || (open ?? nativeExpanded) : undefined}
         onClick={
           onExpandedChange
             ? (event) => {
@@ -62,7 +64,7 @@ export function NativeDisclosure({
           cursor: 'pointer',
           overflowWrap: 'anywhere',
           color: 'text.secondary',
-          ...(indicator === 'chevron'
+          ...(customIndicator
             ? {
                 '&::marker': { content: '""' },
                 '&::-webkit-details-marker': { display: 'none' },
@@ -75,7 +77,7 @@ export function NativeDisclosure({
           },
         }}
       >
-        {indicator === 'chevron' ? (
+        {customIndicator ? (
           <Box
             component="span"
             sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, width: '100%' }}
@@ -87,15 +89,18 @@ export function NativeDisclosure({
               aria-hidden
               component="span"
               sx={{
-                width: 10,
-                height: 10,
-                mr: 1,
+                width: inlineIndicator ? 6 : 10,
+                height: inlineIndicator ? 6 : 10,
+                mr: inlineIndicator ? 0 : 1,
+                order: inlineIndicator ? -1 : undefined,
                 flexShrink: 0,
-                borderRight: '2px solid',
-                borderBottom: '2px solid',
-                transform: 'translateY(-3px) rotate(45deg)',
+                borderRight: inlineIndicator ? '1.5px solid' : '2px solid',
+                borderBottom: inlineIndicator ? '1.5px solid' : '2px solid',
+                transform: `translateY(-${inlineIndicator ? 2 : 3}px) rotate(45deg)`,
                 transition: 'transform 150ms ease',
-                'details[open] &': { transform: 'translateY(3px) rotate(225deg)' },
+                'details[open] > summary &': {
+                  transform: `translateY(${inlineIndicator ? 2 : 3}px) rotate(225deg)`,
+                },
                 '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
               }}
             />

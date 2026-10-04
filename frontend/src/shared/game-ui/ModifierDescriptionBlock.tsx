@@ -1,13 +1,13 @@
-import { Box, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { modifierDetailBlockSx } from './modifier-detail-block-sx.ts'
+import { DetailBlock } from '../ui/index.ts'
 
 export function ModifierDescriptionBlock({ description }: { description: string }) {
   const { t } = useTranslation()
   if (!description.trim()) return null
 
   return (
-    <Box data-modifier-description sx={modifierDetailBlockSx}>
+    <DetailBlock data-modifier-description>
       <Typography
         component="div"
         variant="caption"
@@ -22,6 +22,6 @@ export function ModifierDescriptionBlock({ description }: { description: string 
       >
         {description}
       </Typography>
-    </Box>
+    </DetailBlock>
   )
 }

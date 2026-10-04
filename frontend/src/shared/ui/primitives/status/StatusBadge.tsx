@@ -1,10 +1,11 @@
 import { Chip, type ChipProps } from '@mui/material'
+import { feedbackSurfaceSx } from '../../../theme/feedback-surface-sx.ts'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { huntPaperTexture, huntWornFrame } from '../../../theme/hunt-materials.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
 
 interface StatusBadgeProps extends ChipProps {
-  appearance?: 'standard' | 'plain'
+  appearance?: 'standard' | 'plain' | 'textured'
   textFlow?: 'wrap' | 'singleLine'
   density?: 'standard' | 'compact' | 'tight'
   emphasis?: 'standard' | 'strong' | 'prominent'
@@ -24,6 +25,13 @@ export function StatusBadge({
       sx={mergeSx(
         appearance === 'plain'
           ? { border: 0, bgcolor: 'transparent', color: 'text.secondary' }
+          : undefined,
+        appearance === 'textured' && (props.color === 'success' || props.color === 'error')
+          ? (theme) => ({
+              ...feedbackSurfaceSx(theme, props.color === 'success' ? 'success' : 'error'),
+              borderImageOutset: 0,
+              borderImageWidth: '3px',
+            })
           : undefined,
         textFlow === 'wrap'
           ? {

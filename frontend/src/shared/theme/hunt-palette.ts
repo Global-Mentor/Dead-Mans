@@ -18,6 +18,7 @@ export const huntPalette = {
   amber: '#aa9270',
   ember: '#b86d32',
   fern: '#909780',
+  fernDeep: '#405735',
   twitch: '#6441A5',
   twitchHover: '#7c4fd9',
 } as const

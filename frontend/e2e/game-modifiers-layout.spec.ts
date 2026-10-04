@@ -586,6 +586,12 @@ for (const locale of ['en', 'ru', 'uk', 'pl']) {
     await expect(available.getByRole('heading', { level: 4 })).toHaveCount(18)
     const blockedRow = available.getByRole('listitem', { name: 'Модификатор 1', exact: true })
     await expect(blockedRow.getByRole('status')).toBeVisible()
+    const blockedStatus = blockedRow.getByRole('status')
+    await expect(blockedStatus).toHaveCSS('background-color', 'rgb(84, 27, 23)')
+    const material = await blockedStatus.evaluate(
+      (element) => getComputedStyle(element).backgroundImage,
+    )
+    expect(material).toContain('charcoal-paper')
     await expect(blockedRow.getByRole('button')).toHaveCount(1)
     expect((await blockedRow.getByRole('status').boundingBox())!.width).toBe(144)
     expect((await blockedRow.getByRole('status').boundingBox())!.height).toBe(36)

@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { modifierDetailBlockSx } from './modifier-detail-block-sx.ts'
+import { DetailBlock } from '../ui/index.ts'
 
 export interface ModifierConflict {
   id: string
@@ -13,11 +13,10 @@ export function ModifierConflictNotice({ conflicts }: { conflicts: readonly Modi
   if (conflicts.length === 0) return null
 
   return (
-    <Box
+    <DetailBlock
       component="section"
       role="region"
       aria-label={t('gameModifiers.conflictDetailsTitle')}
-      sx={modifierDetailBlockSx}
     >
       <Typography variant="body2" sx={{ overflowWrap: 'anywhere', lineHeight: 1.55 }}>
         <Box component="span" sx={{ fontWeight: 700 }}>
@@ -36,6 +35,6 @@ export function ModifierConflictNotice({ conflicts }: { conflicts: readonly Modi
           </Box>
         ))}
       </Typography>
-    </Box>
+    </DetailBlock>
   )
 }

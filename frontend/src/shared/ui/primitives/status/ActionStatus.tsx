@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { feedbackSurfaceSx } from '../../../theme/feedback-surface-sx.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
 
 /** Non-interactive state occupying the same slot as an action. */
@@ -37,6 +38,7 @@ export function ActionStatus({
         overflowWrap: 'anywhere',
         textAlign: 'center',
         cursor: 'default',
+        ...(tone === 'error' ? feedbackSurfaceSx(theme, tone) : {}),
       })}
     >
       <Typography
