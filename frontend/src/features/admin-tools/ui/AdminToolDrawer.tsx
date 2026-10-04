@@ -24,6 +24,7 @@ export function AdminToolDrawer({
 }: AdminToolDrawerProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
+  const [hasOpened, setHasOpened] = useState(false)
   const [activeToolId, setActiveToolId] = useState(initialToolId)
   const panelId = useId()
   const availableToolIds = useMemo(() => tools.map((tool) => tool.id), [tools])
@@ -60,7 +61,11 @@ export function AdminToolDrawer({
         ref={openerRef}
         placement={triggerPlacement}
         size="medium"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setActiveToolId(initialToolId)
+          setHasOpened(true)
+          setIsOpen(true)
+        }}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? panelId : undefined}
@@ -105,18 +110,19 @@ export function AdminToolDrawer({
           </>
         }
       >
-        {tools.map((tool) => (
-          <Box
-            key={tool.id}
-            role="tabpanel"
-            id={`${panelId}-panel-${tool.id}`}
-            aria-labelledby={hasMultipleTools ? `${panelId}-tab-${tool.id}` : undefined}
-            aria-label={tool.label}
-            hidden={tool.id !== resolvedActiveToolId}
-          >
-            {tool.content}
-          </Box>
-        ))}
+        {hasOpened &&
+          tools.map((tool) => (
+            <Box
+              key={tool.id}
+              role="tabpanel"
+              id={`${panelId}-panel-${tool.id}`}
+              aria-labelledby={hasMultipleTools ? `${panelId}-tab-${tool.id}` : undefined}
+              aria-label={tool.label}
+              hidden={tool.id !== resolvedActiveToolId}
+            >
+              {tool.content}
+            </Box>
+          ))}
       </SidePanel>
     </>
   )

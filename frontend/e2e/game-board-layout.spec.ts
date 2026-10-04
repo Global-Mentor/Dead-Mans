@@ -108,7 +108,11 @@ test('board renders while the active round loads and keeps commands unavailable'
   await page.goto('/panel/game-board')
   await expect(page.getByTestId('viewport-board')).toBeVisible()
   await expect(page.locator('[data-cell-id="card-2"]')).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'Управление игрой' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Управление игрой' }).click()
+  await expect(page.getByRole('tabpanel', { name: 'Управление игрой', exact: true })).toContainText(
+    'Загрузка игрового поля',
+  )
+  await page.getByRole('button', { name: 'Закрыть инструменты управления', exact: true }).click()
   releaseRound()
   await expect(page.locator('[data-cell-id="card-2"]')).toBeEnabled()
   expect(writes).toEqual([])
@@ -2016,7 +2020,7 @@ for (const width of [320, 390, 768, 1440]) {
         .poll(() => logo.evaluate((image) => (image as HTMLImageElement).naturalWidth))
         .toBe(192)
       await expect(logo).toBeVisible()
-      await expect(question).not.toContainText('Скрытая категория')
+      await expect(question).toContainText('Скрытая категория')
       const answers = question.getByRole('button', { name: /^Вариант ответа/ })
       await expect(answers).toHaveCount(24)
       const first = (await answers.nth(0).boundingBox())!
@@ -2669,15 +2673,19 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     const managementBox = await page
       .getByRole('button', { name: 'Управление игрой', exact: true })
       .boundingBox()
-    if (width >= 1200) {
+    if (width >= 900) {
       expect(managementBox!.x + managementBox!.width).toBe(width)
-      expect(managementBox!.width).toBe(44)
-      expect(managementBox!.height).toBe(130)
-      const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
-      expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
+      expect(managementBox!.width).toBe(60)
+      expect(managementBox!.height).toBeGreaterThanOrEqual(192)
+      expect(managementBox!.y + managementBox!.height / 2).toBeCloseTo(height / 2, 0)
+      if (width >= 1200) {
+        const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
+        expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
+      }
     } else {
-      expect(managementBox!.height).toBe(44)
-      expect(managementBox!.y + managementBox!.height).toBeLessThan(firstCardBox!.y)
+      expect(managementBox!.height).toBeGreaterThanOrEqual(44)
+      expect(managementBox!.x + managementBox!.width).toBeLessThanOrEqual(width)
+      expect(managementBox!.y + managementBox!.height).toBeLessThanOrEqual(height)
     }
     if (width < 600) {
       await expect(page.getByRole('tab', { name: 'Охота', exact: true })).toHaveAttribute(

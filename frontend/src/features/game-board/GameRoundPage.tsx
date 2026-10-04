@@ -1,9 +1,6 @@
 import { Stack } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { hasPanelCapability } from '../../shared/auth/panel-capabilities.ts'
-import { useAuth } from '../../shared/auth/use-auth.ts'
-import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import { AppButton, InlineNotice, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
 import { gameModifierStateQueryOptions } from '../game-modifiers/api/game-modifier-queries.ts'
@@ -17,7 +14,6 @@ import { GameQuizDrawer } from './ui/GameQuizDrawer.tsx'
 
 export function GameRoundPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const roundQuery = useQuery(activeGameRoundQueryOptions)
   const snapshot = snapshotQuery.data ?? null
@@ -66,7 +62,6 @@ export function GameRoundPage() {
   }
 
   const ordering = round?.status === 'awaiting_modifiers'
-  const canManageRound = hasPanelCapability('startGame', user?.roles)
   return (
     <PageShell
       data-testid="current-round-screen"
@@ -76,7 +71,7 @@ export function GameRoundPage() {
         maxWidth: { xs: '100%', md: 'calc((100dvh - 128px) * 1.55)' },
         mx: 'auto',
         px: { xs: 0, md: 0 },
-        pb: { xs: canManageRound ? 9 : 0, md: 0 },
+        pb: { xs: 0, md: 0 },
       }}
     >
       <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>
@@ -132,7 +127,6 @@ export function GameRoundPage() {
           }
         />
       </Stack>
-      {canManageRound ? <GameAdminToolsPanel initialToolId="game" triggerPlacement="edge" /> : null}
     </PageShell>
   )
 }

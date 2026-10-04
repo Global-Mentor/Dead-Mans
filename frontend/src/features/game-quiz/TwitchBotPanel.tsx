@@ -1,7 +1,9 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
-import { AppButton, InlineNotice, SectionCard, StatusBadge } from '../../shared/ui/index.ts'
+import { RoundBriefingPanel, RoundBriefingDivider } from '../../shared/game-ui/index.ts'
+import { AppButton, InlineNotice, SectionDivider, StatusReadout } from '../../shared/ui/index.ts'
 type Props = {
   status: TwitchBotStatus
   canAdmin: boolean
@@ -26,115 +28,134 @@ export function TwitchBotPanel({
   const unresolvedOutcome =
     publication?.outcomeDeliveryStatus === 'failed' ||
     publication?.outcomeDeliveryStatus === 'uncertain'
-  const showDeliveryDetails = publication != null && publication.status !== 'completed'
+  const hasDetails =
+    (canAdmin && (!status.botConnected || !status.broadcasterConnected)) ||
+    needsRecovery ||
+    unresolvedOutcome ||
+    Boolean(publication?.lastError || status.lastError)
 
   return (
-    <SectionCard component="section" sx={{ p: { xs: 1.5, sm: 1.75 } }}>
-      <Stack spacing={1}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.25}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
+    <RoundBriefingPanel
+      component="section"
+      aria-label={t('gameQuiz.twitch.title')}
+      sx={{ px: 1, py: 0 }}
+    >
+      <Box sx={{ display: 'grid', gridTemplateRows: 'minmax(0, 1fr) auto minmax(0, 1fr)' }}>
+        <Typography
+          component="h2"
+          variant="h6"
+          color="primary.light"
+          fontWeight={700}
+          textAlign="center"
+          sx={{
+            py: 1,
+            minHeight: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <Box sx={{ minWidth: { sm: 112 } }}>
-            <Typography variant="overline" color="text.secondary">
-              {t('gameQuiz.twitch.title')}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ flex: 1 }}>
-            <StatusBadge
-              size="small"
-              color={status.botConnected ? 'success' : 'warning'}
-              label={t(
+          {t('gameQuiz.twitch.title')}
+        </Typography>
+        <RoundBriefingDivider />
+        <Stack direction="row" spacing={1} alignItems="stretch" sx={{ py: 1, minHeight: 48 }}>
+          {[
+            {
+              label: t('gameQuiz.twitch.botLabel'),
+              connected: status.botConnected,
+              value: t(
                 status.botConnected
                   ? 'gameQuiz.twitch.botConnected'
                   : 'gameQuiz.twitch.botDisconnected',
-              )}
-            />
-            <StatusBadge
-              size="small"
-              color={status.broadcasterConnected ? 'success' : 'warning'}
-              label={t(
+              ),
+            },
+            {
+              label: t('gameQuiz.twitch.channelLabel'),
+              connected: status.broadcasterConnected,
+              value: t(
                 status.broadcasterConnected
                   ? 'gameQuiz.twitch.channelConnected'
                   : 'gameQuiz.twitch.channelDisconnected',
-              )}
-            />
-            <StatusBadge
-              size="small"
-              color={status.eventSubConnected ? 'success' : 'warning'}
-              label={t(
+              ),
+            },
+            {
+              label: t('gameQuiz.twitch.eventSubLabel'),
+              connected: status.eventSubConnected,
+              value: t(
                 status.eventSubConnected
                   ? 'gameQuiz.twitch.eventSubConnected'
                   : 'gameQuiz.twitch.eventSubDisconnected',
-              )}
-            />
-            {publication ? (
-              <StatusBadge size="small" label={t(`gameQuiz.twitch.status.${publication.status}`)} />
-            ) : null}
-          </Stack>
+              ),
+            },
+          ].map(({ label, connected, value }, index) => (
+            <Fragment key={label}>
+              {index > 0 ? <SectionDivider orientation="vertical" flexItem /> : null}
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+                <StatusReadout
+                  density="compact"
+                  label={label}
+                  value={value}
+                  tone={connected ? 'success' : 'error'}
+                />
+              </Box>
+            </Fragment>
+          ))}
         </Stack>
-        {showDeliveryDetails ? (
-          <Typography variant="caption" color="text.secondary">
-            {t('gameQuiz.twitch.delivery', {
-              question: t(`gameQuiz.twitch.deliveryStatus.${publication.questionDeliveryStatus}`),
-              options: t(`gameQuiz.twitch.deliveryStatus.${publication.optionsDeliveryStatus}`),
-              outcome: t(`gameQuiz.twitch.deliveryStatus.${publication.outcomeDeliveryStatus}`),
-            })}
-          </Typography>
-        ) : null}
-        {canAdmin && (!status.botConnected || !status.broadcasterConnected) ? (
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            {!status.botConnected ? (
-              <AppButton
-                size="small"
-                onClick={() => window.location.assign('/api/integrations/twitch/oauth/bot')}
-              >
-                {t('gameQuiz.twitch.connectBot')}
-              </AppButton>
-            ) : null}
-            {!status.broadcasterConnected ? (
-              <AppButton
-                size="small"
-                tone="secondary"
-                onClick={() => window.location.assign('/api/integrations/twitch/oauth/broadcaster')}
-              >
-                {t('gameQuiz.twitch.connectChannel')}
-              </AppButton>
-            ) : null}
-          </Stack>
-        ) : null}
-        {publication?.status === 'publishing' ? (
-          <InlineNotice severity="info">{t('gameQuiz.twitch.publishing')}</InlineNotice>
-        ) : null}
-        {publication?.status === 'uncertain' ? (
-          <InlineNotice severity="warning">{t('gameQuiz.twitch.uncertainWarning')}</InlineNotice>
-        ) : null}
-        {publication?.lastError || status.lastError ? (
-          <InlineNotice severity={publication?.status === 'uncertain' ? 'warning' : 'error'}>
-            {publication?.lastError ?? status.lastError}
-          </InlineNotice>
-        ) : null}
-        {needsRecovery || unresolvedOutcome ? (
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            {needsRecovery ? (
-              <AppButton size="small" disabled={busy} onClick={onRetry}>
-                {t('gameQuiz.twitch.retry')}
-              </AppButton>
-            ) : null}
-            {!unresolvedOutcome && publication?.status !== 'completed' ? (
-              <AppButton size="small" tone="secondary" disabled={busy} onClick={onCancel}>
-                {t('gameQuiz.twitch.cancel')}
-              </AppButton>
-            ) : null}
-            {unresolvedOutcome ? (
-              <AppButton size="small" tone="ghost" disabled={busy} onClick={onSkipOutcome}>
-                {t('gameQuiz.twitch.skipOutcome')}
-              </AppButton>
-            ) : null}
-          </Stack>
-        ) : null}
-      </Stack>
-    </SectionCard>
+      </Box>
+      {hasDetails ? (
+        <Stack spacing={1} sx={{ pb: 1 }}>
+          {canAdmin && (!status.botConnected || !status.broadcasterConnected) ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center">
+              {!status.botConnected ? (
+                <AppButton
+                  size="small"
+                  onClick={() => window.location.assign('/api/integrations/twitch/oauth/bot')}
+                >
+                  {t('gameQuiz.twitch.connectBot')}
+                </AppButton>
+              ) : null}
+              {!status.broadcasterConnected ? (
+                <AppButton
+                  size="small"
+                  tone="secondary"
+                  onClick={() =>
+                    window.location.assign('/api/integrations/twitch/oauth/broadcaster')
+                  }
+                >
+                  {t('gameQuiz.twitch.connectChannel')}
+                </AppButton>
+              ) : null}
+            </Stack>
+          ) : null}
+          {publication?.status === 'uncertain' ? (
+            <InlineNotice severity="warning">{t('gameQuiz.twitch.uncertainWarning')}</InlineNotice>
+          ) : null}
+          {publication?.lastError || status.lastError ? (
+            <InlineNotice severity={publication?.status === 'uncertain' ? 'warning' : 'error'}>
+              {t('gameQuiz.twitch.deliveryError')}
+            </InlineNotice>
+          ) : null}
+          {needsRecovery || unresolvedOutcome ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center">
+              {needsRecovery ? (
+                <AppButton size="small" disabled={busy} onClick={onRetry}>
+                  {t('gameQuiz.twitch.retry')}
+                </AppButton>
+              ) : null}
+              {!unresolvedOutcome && publication?.status !== 'completed' ? (
+                <AppButton size="small" tone="secondary" disabled={busy} onClick={onCancel}>
+                  {t('gameQuiz.twitch.cancel')}
+                </AppButton>
+              ) : null}
+              {unresolvedOutcome ? (
+                <AppButton size="small" tone="ghost" disabled={busy} onClick={onSkipOutcome}>
+                  {t('gameQuiz.twitch.skipOutcome')}
+                </AppButton>
+              ) : null}
+            </Stack>
+          ) : null}
+        </Stack>
+      ) : null}
+    </RoundBriefingPanel>
   )
 }

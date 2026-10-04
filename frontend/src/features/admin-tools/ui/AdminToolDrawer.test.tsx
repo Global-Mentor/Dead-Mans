@@ -29,6 +29,20 @@ describe('AdminToolDrawer', () => {
     expect(screen.getByRole('textbox', { name: 'Поле игры' })).toHaveValue('несохранённое значение')
   })
 
+  it('mounts tools on first opening and keeps drafts after closing', async () => {
+    renderDrawer()
+    expect(screen.queryByRole('textbox', { hidden: true })).not.toBeInTheDocument()
+    const opener = screen.getByRole('button', { name: 'Управление игрой' })
+    fireEvent.click(opener)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Поле игры' }), {
+      target: { value: 'черновик' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть инструменты управления' }))
+    await waitFor(() => expect(opener).toHaveFocus())
+    fireEvent.click(opener)
+    expect(screen.getByRole('textbox', { name: 'Поле игры' })).toHaveValue('черновик')
+  })
+
   it('associates the selected tab with its panel', () => {
     renderDrawer()
     fireEvent.click(screen.getByRole('button', { name: 'Управление игрой' }))

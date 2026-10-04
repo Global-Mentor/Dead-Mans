@@ -11,7 +11,6 @@ import { gameQuizQueryKeys } from './api/game-quiz-queries.ts'
 
 const QUIZ_EVENTS = [
   realtimeHubs.gameBoard.events.quizStateChanged,
-  realtimeHubs.gameBoard.events.twitchQuizStateChanged,
   realtimeHubs.gameBoard.events.modifierActivated,
   realtimeHubs.gameBoard.events.modifierActivationCancelled,
   realtimeHubs.gameBoard.events.roundStateChanged,

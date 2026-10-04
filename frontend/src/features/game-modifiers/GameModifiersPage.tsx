@@ -15,7 +15,7 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { currentGameBoardQueryOptions } from '../game-board/index.ts'
+import { currentGameBoardQueryOptions, GameQuizDrawer } from '../game-board/index.ts'
 import { GameBoardCardPreviewDialog } from '../game-board/ui/GameBoardCardPreviewDialog.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
@@ -351,6 +351,14 @@ export function GameModifiersPage() {
             playResult={{ round: null, isLoading: false, isError: false }}
             onClose={() => setPreviewCell(null)}
           />
+          {snapshot?.status === 'active' ? (
+            <GameQuizDrawer
+              gameId={snapshot.gameId}
+              side="left"
+              showForManagers
+              suspended={actions.isConfirming}
+            />
+          ) : null}
         </PageShell>
       )}
     </GameModifierActions>

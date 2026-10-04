@@ -50,8 +50,8 @@ describe('quiz submission history', () => {
       <QuizQuestionSessionHistoryItem questionSession={session} currentUserId="alice" />,
     )
     expect(
-      screen.getByText(i18n.t('gameQuiz.correctAnswerLabel', { answer: 'Paris' })),
-    ).toBeInTheDocument()
+      screen.getByText(i18n.t('gameQuiz.correctAnswerHeading')).parentElement,
+    ).toHaveTextContent('Paris')
     expect(screen.getByRole('status')).toHaveTextContent(
       i18n.t('gameQuiz.resultCorrect', { points: 5 }),
     )

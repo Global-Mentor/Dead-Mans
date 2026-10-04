@@ -6,6 +6,10 @@ import { gameModifiersRoute } from '../../routes/app-routes.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { GameAdminToolsHost } from './GameAdminToolsHost.tsx'
 
+vi.mock('../game-quiz/index.ts', () => ({
+  QuizManagementTool: () => <div>Управление вопросами</div>,
+}))
+
 const mocks = vi.hoisted(() => ({
   useGameBoardPage: vi.fn(),
   useGameBoardLaunchPanel: vi.fn(),
@@ -148,14 +152,15 @@ describe('GameAdminToolsHost', () => {
 
     expect(screen.getByRole('tabpanel', { name: 'Управление игрой' })).toBeVisible()
     expect(screen.queryByText('Содержимое управления модификаторами')).not.toBeInTheDocument()
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Управление викториной' })).toBeVisible()
   })
 
-  it('does not mount administration queries outside supported pages', () => {
+  it('exposes the same administration on other panel pages', () => {
     renderAt('/panel/history')
 
-    expect(screen.queryByRole('button', { name: 'Управление игрой' })).not.toBeInTheDocument()
-    expect(mocks.useGameBoardPage).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Управление игрой' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Управление игрой' }))
+    expect(screen.getByText('Содержимое управления игрой')).toBeVisible()
   })
 })
 

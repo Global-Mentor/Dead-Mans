@@ -1,5 +1,7 @@
 const translations = {
   en: {
+    quizTab: 'Quiz',
+    quizTool: 'Quiz management',
     gameTab: 'Game',
     modifierTab: 'Modifiers',
     inlineOpenAction: 'Manage',
@@ -14,6 +16,8 @@ const translations = {
     modifierTool: 'Modifier management',
   },
   ru: {
+    quizTab: 'Викторина',
+    quizTool: 'Управление викториной',
     gameTab: 'Игра',
     modifierTab: 'Модификаторы',
     inlineOpenAction: 'Управление',
@@ -28,6 +32,8 @@ const translations = {
     modifierTool: 'Управление модификаторами',
   },
   uk: {
+    quizTab: 'Вікторина',
+    quizTool: 'Керування вікториною',
     gameTab: 'Гра',
     modifierTab: 'Модифікатори',
     inlineOpenAction: 'Керування',
@@ -42,6 +48,8 @@ const translations = {
     modifierTool: 'Керування модифікаторами',
   },
   pl: {
+    quizTab: 'Quiz',
+    quizTool: 'Zarządzanie quizem',
     gameTab: 'Gra',
     modifierTab: 'Modyfikatory',
     inlineOpenAction: 'Zarządzanie',
