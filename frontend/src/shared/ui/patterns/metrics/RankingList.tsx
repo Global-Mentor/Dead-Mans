@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
+import { itemCardSx } from '../../primitives/surfaces/item-card-sx.ts'
 import { RankBadge } from '../../primitives/metrics/RankBadge.tsx'
 
 interface RankingEntry {
@@ -21,6 +22,7 @@ export function RankingList({
   density = 'default',
   rowTestId,
   alignment = 'default',
+  highlightAppearance = 'tint',
 }: {
   entries: readonly RankingEntry[]
   label: string
@@ -30,6 +32,7 @@ export function RankingList({
   detailLabel?: string
   density?: 'default' | 'compact'
   alignment?: 'default' | 'center'
+  highlightAppearance?: 'tint' | 'selected'
   rowTestId?: string
 }) {
   const centered = alignment === 'center'
@@ -69,23 +72,32 @@ export function RankingList({
             key={entry.id}
             role="row"
             data-testid={rowTestId}
-            sx={(theme) => ({
-              display: 'grid',
-              gridTemplateColumns: columns,
-              gap: 1,
-              alignItems: 'center',
-              px: 1.25,
-              py: compact ? 0.75 : centered ? 1.5 : 1,
-              minHeight: compact ? 44 : centered ? 68 : undefined,
-              textAlign: centered ? 'center' : undefined,
-              backgroundColor: alpha(
-                theme.palette.primary.main,
-                entry.highlighted ? 0.17 : index % 2 === 0 ? 0.065 : 0,
-              ),
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              overflowWrap: 'anywhere',
-            })}
+            sx={(theme) => {
+              const selectedSurface =
+                entry.highlighted && highlightAppearance === 'selected'
+                  ? itemCardSx(theme, 'selected')
+                  : null
+              return {
+                ...selectedSurface,
+                display: 'grid',
+                gridTemplateColumns: columns,
+                gap: 1,
+                alignItems: 'center',
+                px: 1.25,
+                py: compact ? 0.75 : centered ? 1.5 : 1,
+                minHeight: compact ? 44 : centered ? 68 : undefined,
+                textAlign: centered ? 'center' : undefined,
+                backgroundColor:
+                  selectedSurface?.backgroundColor ??
+                  alpha(
+                    theme.palette.primary.main,
+                    entry.highlighted ? 0.17 : index % 2 === 0 ? 0.065 : 0,
+                  ),
+                borderBottom: '1px solid',
+                borderColor: selectedSurface?.borderColor ?? 'divider',
+                overflowWrap: 'anywhere',
+              }
+            }}
           >
             <Box role="cell">
               <RankBadge rank={index + 1} compact={compact || !centered} />

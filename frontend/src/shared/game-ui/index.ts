@@ -11,3 +11,6 @@ export * from './ModifierCatalogRow.tsx'
 export * from './ModifierConflictNotice.tsx'
 export * from './ModifierDescriptionBlock.tsx'
 export * from './ModifierActivatorsBlock.tsx'
+export * from './TeamBriefing.tsx'
+
+export * from './HistoryWorkspace.tsx'

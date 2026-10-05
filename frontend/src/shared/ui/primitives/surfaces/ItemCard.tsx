@@ -22,7 +22,9 @@ export function ItemCard({
       {...props}
       sx={mergeSx(
         (theme) => itemCardSx(theme, emphasis, tone),
-        frame === 'corner' ? (theme) => cornerFrameSx(theme, 'strong') : null,
+        frame === 'corner'
+          ? (theme) => ({ ...cornerFrameSx(theme, 'strong'), borderImage: 'none' })
+          : null,
         leadingAccent
           ? {
               position: 'relative',
