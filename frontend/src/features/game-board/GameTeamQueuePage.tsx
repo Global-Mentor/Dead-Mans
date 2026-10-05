@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { AppButton, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
-import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
+import { useAuth } from '../../shared/auth/use-auth.ts'
+import { activeGameRoundQueryOptions } from '../game-rounds/index.ts'
 import {
   currentGameBoardQueryOptions,
   currentGameTeamQueueForGameQueryOptions,
@@ -10,6 +11,7 @@ import { TeamQueuePanel } from './ui/TeamQueuePanel.tsx'
 
 export function GameTeamQueuePage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const snapshot = snapshotQuery.data ?? null
   const roundQuery = useQuery({
@@ -58,8 +60,23 @@ export function GameTeamQueuePage() {
     roundQuery.data?.gameId === snapshot.gameId ? roundQuery.data.teamId : snapshot.activeTeamId
 
   return (
-    <PageShell sx={{ width: '100%', maxWidth: 1200, mx: 'auto', p: 0 }}>
+    <PageShell
+      sx={{
+        width: '100%',
+        maxWidth: 1200,
+        mx: 'auto',
+        p: 0,
+        px: { xs: 0, md: 0 },
+        pb: { xs: 0, md: 0 },
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <TeamQueuePanel
+        key={snapshot.gameId}
+        currentUserId={user?.id ?? null}
         teams={queue?.teams ?? []}
         isLoading={queueQuery.isLoading}
         isError={queueQuery.isError}

@@ -32,7 +32,7 @@ const props = {
 it('retains the loaded teams and search when a refresh fails', () => {
   const onRetry = vi.fn()
   const { rerender } = renderWithAppProviders(<TeamQueuePanel {...props} onRetry={onRetry} />)
-  const search = screen.getByRole('textbox', { name: 'Найти команду или игрока' })
+  const search = screen.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
   fireEvent.change(search, { target: { value: 'ворон' } })
   rerender(<TeamQueuePanel {...props} isError onRetry={onRetry} />)
   const panel = screen.getByTestId('team-queue-panel')
@@ -93,6 +93,72 @@ it('keeps remaining teams ahead of teams sorted by play time', () => {
   const late = within(panel).getByRole('article', { name: 'Поздние' })
   expect(waiting.compareDocumentPosition(early)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   expect(early.compareDocumentPosition(late)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  expect(within(early).getByText('Отыгрыш #1')).toBeInTheDocument()
-  expect(within(late).getByText('Отыгрыш #2')).toBeInTheDocument()
+  expect(within(early).getByLabelText('Место в очереди 3')).toBeInTheDocument()
+  expect(within(late).getByLabelText('Место в очереди 2')).toBeInTheDocument()
+  expect(within(panel).queryByText(/Отыгрыш #/)).not.toBeInTheDocument()
+})
+
+it('preserves slots while filtering and restores search focus on clear', () => {
+  const base = teams[0]!
+  renderWithAppProviders(
+    <TeamQueuePanel
+      {...props}
+      teams={[
+        {
+          ...base,
+          teamId: 'early',
+          teamName: 'Ранние',
+          teamSlotIndex: 3,
+          isPlayed: true,
+          playedAtUtc: '2026-08-09T10:00:00Z',
+        },
+        {
+          ...base,
+          teamId: 'late',
+          teamName: 'Поздние',
+          teamSlotIndex: 7,
+          isPlayed: true,
+          playedAtUtc: '2026-08-09T10:05:00Z',
+        },
+      ]}
+    />,
+  )
+  const search = screen.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
+  fireEvent.change(search, { target: { value: '  поздние  ' } })
+  const late = screen.getByRole('article', { name: 'Поздние' })
+  expect(within(late).getByLabelText('Место в очереди 7')).toBeVisible()
+  expect(screen.getByRole('region', { name: 'Отыгравшие' })).toHaveTextContent('1 из 2')
+  fireEvent.click(screen.getByRole('button', { name: 'Очистить поиск команд' }))
+  expect(search).toHaveValue('')
+  expect(search).toHaveFocus()
+  expect(screen.getByRole('article', { name: 'Ранние' })).toBeVisible()
+})
+
+it('identifies active and personal teams and distinguishes signed, zero and missing scores', () => {
+  const base = teams[0]!
+  renderWithAppProviders(
+    <TeamQueuePanel
+      {...props}
+      currentUserId="player-1"
+      activeTeamId="active"
+      teams={[
+        { ...base, teamId: 'active', teamName: 'Активные' },
+        { ...base, teamId: 'negative', teamName: 'Отрицательные', isPlayed: true, finalScore: -20 },
+        { ...base, teamId: 'zero', teamName: 'Нулевые', isPlayed: true, finalScore: 0 },
+        {
+          ...base,
+          teamId: 'missing',
+          teamName: 'Без результата',
+          isPlayed: true,
+          finalScore: null,
+        },
+      ]}
+    />,
+  )
+  const active = screen.getByRole('article', { name: 'Активные' })
+  expect(within(active).getByText('Играет')).toBeVisible()
+  expect(within(active).getByText('Ваша команда')).toBeVisible()
+  expect(screen.getByLabelText('Итоговый результат: -20 очков')).toHaveTextContent('-20')
+  expect(screen.getByLabelText('Итоговый результат: 0 очков')).toHaveTextContent('0')
+  expect(screen.getByLabelText('Нет завершённого раунда')).toHaveTextContent('-')
 })
