@@ -14,7 +14,7 @@ const panelPages = {
   'game-history': lazyPanelPage(
     () => import('../features/game-history/GameHistoryPage.tsx'),
     'GameHistoryPage',
-    [translations.gameHistory],
+    [translations.gameHistory, translations.gameBoard],
   ),
   'modifier-history': lazyPanelPage(
     () => import('../features/modifier-history/ModifierHistoryPage.tsx'),

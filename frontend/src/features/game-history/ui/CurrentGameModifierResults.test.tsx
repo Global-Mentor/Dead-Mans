@@ -1,10 +1,10 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeAll, describe, expect, it } from 'vitest'
 import i18n from '../../../i18n.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import { renderWithAppProviders } from '../../../test/render-with-app-providers.tsx'
-import { GameModifierHistorySummary } from './GameModifierHistorySummary.tsx'
+import { CurrentGameModifierResults } from './CurrentGameModifierResults.tsx'
 
 type Snapshot = components['schemas']['GameHistoryModifierSnapshotDto']
 
@@ -45,13 +45,29 @@ function snapshot(overrides: Partial<Snapshot>): Snapshot {
   }
 }
 
-describe('GameModifierHistorySummary', () => {
+function game(
+  snapshots: Snapshot[],
+  status: 'complete' | 'legacy_unavailable' = 'complete',
+): components['schemas']['GameHistoryGameDetailsDto'] {
+  return {
+    gameId: 'archive',
+    gameTitle: 'Archive',
+    gameStatus: 'finished',
+    createdAtUtc: '2026-09-21T12:00:00Z',
+    mainGame: { teamStats: [], playerStats: [], rounds: [], modifierActivations: [] },
+    quiz: { totalPoints: 0, playerStats: [], questionSessions: [], manualAwards: [] },
+    modifierSnapshots: snapshots,
+    modifierSnapshotStatus: status,
+  }
+}
+
+describe('Archived modifier results', () => {
   it('shows the complete pinned set including unused, cancelled and emergency-disabled entries', () => {
     renderWithAppProviders(
       <MemoryRouter>
-        <GameModifierHistorySummary
-          rounds={[]}
-          snapshots={[
+        <CurrentGameModifierResults
+          includeUnused
+          game={game([
             snapshot({ name: 'Не использован' }),
             snapshot({
               name: 'Отменён и отключён',
@@ -60,23 +76,29 @@ describe('GameModifierHistorySummary', () => {
               resultsCount: 1,
               isEmergencyDisabled: true,
             }),
-          ]}
+          ])}
         />
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Не использован · Редакция 2')).toBeInTheDocument()
-    expect(screen.getByText('Отменён и отключён · Редакция 2')).toBeInTheDocument()
-    expect(screen.getAllByText('Не активирован')).toHaveLength(2)
-    expect(screen.getByText('Отменено: 1')).toBeInTheDocument()
-    expect(screen.getByText('Результатов: 1')).toBeInTheDocument()
+    expect(screen.getByText('Не использован')).toBeInTheDocument()
+    expect(screen.getByText('Отменён и отключён')).toBeInTheDocument()
     expect(screen.getByText('Аварийно отключён')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Отменён и отключён').closest('summary')!)
+    expect(
+      screen.getByText('Зафиксировано результатов во всех состояниях раундов: 1'),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByText('Отменён и отключён').closest('li')!).getByRole('link', {
+        name: 'История редакции',
+      }),
+    ).toHaveAttribute('href', expect.stringContaining('revision=2'))
   })
 
   it('shows the legacy warning only when revision snapshots are unavailable', () => {
     renderWithAppProviders(
       <MemoryRouter>
-        <GameModifierHistorySummary rounds={[]} snapshotStatus="legacy_unavailable" />
+        <CurrentGameModifierResults includeUnused game={game([], 'legacy_unavailable')} />
       </MemoryRouter>,
     )
     expect(screen.getByText(/недостающие редакции не восстанавливаются/i)).toBeInTheDocument()

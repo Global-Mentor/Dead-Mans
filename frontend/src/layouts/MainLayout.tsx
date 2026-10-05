@@ -5,6 +5,8 @@ import { lazyPanelPage } from '../app/lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import {
   gameBoardRoute,
+  gameLeaderboardRoute,
+  gameHistoryRoute,
   gameModifiersRoute,
   gameQuizRoute,
   gameTeamQueueRoute,
@@ -47,7 +49,11 @@ export function MainLayout() {
 function MainLayoutContent() {
   const { user } = useAuth()
   const { pathname } = useLocation()
-  const boundedWorkspace = [gameTeamQueueRoute.fullPath].includes(pathname)
+  const boundedWorkspace = [
+    gameTeamQueueRoute.fullPath,
+    gameLeaderboardRoute.fullPath,
+    gameHistoryRoute.fullPath,
+  ].includes(pathname)
   const hasManagementPanel =
     hasPanelCapability('startGame', user?.roles) ||
     (hasPanelCapability('manageGame', user?.roles) &&

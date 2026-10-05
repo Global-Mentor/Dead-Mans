@@ -4,15 +4,26 @@ import { normalizePlayedCardModifierOutcomeStatus } from '../lib/played-card-for
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
 type PlayedCardPreviewModifier = PlayedCardPreviewRound['modifiers'][number]
 
+export function getPlayedCardModifierEffect(
+  modifier: PlayedCardPreviewModifier,
+  scoreUnit: number,
+) {
+  const killPoints = modifier.killDelta * scoreUnit
+  return {
+    bonus: Math.max(0, modifier.scoreDelta) + Math.max(0, killPoints),
+    penalty: Math.min(0, modifier.scoreDelta) + Math.min(0, killPoints),
+  }
+}
+
 export function getPlayedCardModifierPoints(round: PlayedCardPreviewRound | null) {
   let bonus = 0
   let penalty = 0
 
   if (round?.status === 'completed') {
     for (const modifier of round.modifiers) {
-      const killPoints = modifier.killDelta * round.scoreDetails.scoreUnit
-      bonus += Math.max(0, modifier.scoreDelta) + Math.max(0, killPoints)
-      penalty += Math.min(0, modifier.scoreDelta) + Math.min(0, killPoints)
+      const effect = getPlayedCardModifierEffect(modifier, round.scoreDetails.scoreUnit)
+      bonus += effect.bonus
+      penalty += effect.penalty
     }
   }
 

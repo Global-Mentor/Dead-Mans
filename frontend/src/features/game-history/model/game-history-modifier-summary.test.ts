@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { components } from '../../../shared/api/contracts/generated'
+import { buildCurrentGameModifierResults } from './game-modifier-results.ts'
 import { buildGameHistoryModifierSummary } from './game-history-modifier-summary.ts'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -98,3 +99,107 @@ function createModifier(
     ...overrides,
   }
 }
+
+function snapshot(
+  overrides: Partial<components['schemas']['GameHistoryModifierSnapshotDto']> = {},
+): components['schemas']['GameHistoryModifierSnapshotDto'] {
+  return {
+    modifierId: 'modifier-1',
+    versionId: 'version-1',
+    revision: 1,
+    name: 'Pinned modifier',
+    description: 'Pinned description',
+    category: 'round',
+    activationCost: 2,
+    normalizedTags: [],
+    conflicts: [],
+    behaviorV2: {
+      schemaVersion: 2,
+      kind: 'rule',
+      phase: 'round',
+      performer: 'activeTeam',
+      requiresHostMonitoring: false,
+      rule: 'Pinned rule',
+      stackingPolicy: 'aggregateParameters',
+      resolution: { type: 'ruleStatus' },
+      reward: 'none',
+    },
+    successfulActivationsCount: 4,
+    cancelledActivationsCount: 1,
+    resultsCount: 2,
+    isEmergencyDisabled: false,
+    ...overrides,
+  }
+}
+
+describe('current game modifier results', () => {
+  it('joins the same revision once and keeps usage distinct from completed results', () => {
+    const items = buildCurrentGameModifierResults(
+      [
+        createRound('completed', [
+          createModifier({ definitionRevision: 1, scoreDelta: 5, killDelta: 1 }),
+          createModifier({ definitionRevision: 1, scoreDelta: -2 }),
+          createModifier({ definitionRevision: 2, scoreDelta: 20 }),
+        ]),
+        createRound('cancelled', [createModifier({ definitionRevision: 1, scoreDelta: 999 })]),
+      ],
+      [
+        snapshot(),
+        snapshot({ versionId: 'version-2', revision: 2, successfulActivationsCount: 1 }),
+      ],
+    )
+    expect(items).toHaveLength(2)
+    expect(items[0]).toMatchObject({
+      name: 'Pinned modifier',
+      description: 'Pinned description',
+      snapshot: { successfulActivationsCount: 4, cancelledActivationsCount: 1 },
+      result: {
+        activationCount: 2,
+        roundCount: 1,
+        pointsDelta: 3,
+        bonusKillsDelta: 1,
+        bonusPoints: 105,
+        penaltyPoints: -2,
+      },
+    })
+    expect(items[1]).toMatchObject({ revision: 2, result: { pointsDelta: 20 } })
+  })
+
+  it('retains cancellation-only, disabled and legacy entries without inventing usage', () => {
+    const items = buildCurrentGameModifierResults(
+      [createRound('completed', [createModifier()])],
+      [
+        snapshot({
+          modifierId: 'cancelled',
+          successfulActivationsCount: 0,
+          cancelledActivationsCount: 2,
+          resultsCount: 0,
+        }),
+        snapshot({
+          modifierId: 'disabled',
+          successfulActivationsCount: 0,
+          cancelledActivationsCount: 0,
+          resultsCount: 0,
+          isEmergencyDisabled: true,
+        }),
+        snapshot({
+          modifierId: 'unused',
+          successfulActivationsCount: 0,
+          cancelledActivationsCount: 0,
+          resultsCount: 0,
+        }),
+      ],
+    )
+    expect(items).toHaveLength(3)
+    expect(items.find((item) => item.modifierId === 'modifier-1')).toMatchObject({
+      revision: null,
+      snapshot: null,
+      name: 'Frozen modifier',
+    })
+    expect(items.find((item) => item.modifierId === 'cancelled')).toMatchObject({
+      result: null,
+      snapshot: { cancelledActivationsCount: 2 },
+    })
+    expect(buildCurrentGameModifierResults([], [])).toEqual([])
+  })
+})

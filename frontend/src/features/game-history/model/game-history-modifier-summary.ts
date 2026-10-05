@@ -1,3 +1,4 @@
+import { getPlayedCardModifierEffect } from '../../../shared/game-ui/played-card-modifiers.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
@@ -11,6 +12,8 @@ interface GameHistoryModifierSummaryItem {
   activationCount: number
   roundCount: number
   pointsDelta: number
+  bonusPoints: number
+  penaltyPoints: number
   bonusKillsDelta: number
   outcomes: readonly { status: string; count: number }[]
 }
@@ -26,12 +29,15 @@ export function buildGameHistoryModifierSummary(
   for (const round of rounds) {
     if (round.status !== 'completed') continue
     for (const modifier of round.modifiers) {
+      const effect = getPlayedCardModifierEffect(modifier, round.scoreDetails.scoreUnit)
       const key = `${modifier.modifierId}:revision-${modifier.definitionRevision}`
       const current = grouped.get(key)
       if (current) {
         current.activationCount += 1
         current.roundIds.add(round.roundId)
         current.pointsDelta += modifier.scoreDelta
+        current.bonusPoints += effect.bonus
+        current.penaltyPoints += effect.penalty
         current.bonusKillsDelta += modifier.killDelta
         current.outcomeCounts.set(
           modifier.outcomeStatus,
@@ -50,6 +56,8 @@ export function buildGameHistoryModifierSummary(
         roundCount: 1,
         roundIds: new Set([round.roundId]),
         pointsDelta: modifier.scoreDelta,
+        bonusPoints: effect.bonus,
+        penaltyPoints: effect.penalty,
         bonusKillsDelta: modifier.killDelta,
         outcomes: [],
         outcomeCounts: new Map([[modifier.outcomeStatus, 1]]),

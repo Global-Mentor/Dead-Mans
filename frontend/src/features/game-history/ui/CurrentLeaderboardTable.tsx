@@ -1,15 +1,28 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
-import { AppButton, ItemCard, RankBadge, StatusBadge } from '../../../shared/ui/index.ts'
+import { useAuth } from '../../../shared/auth/use-auth.ts'
+import { ParticipantNamesList, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
+import { HelpTooltip, RankBadge, SelectionRow } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName } from '../model/game-history-formatters.ts'
-import {
-  getTeamBestScore,
-  getTeamFinalScore,
-  getTeamPenaltyTotal,
-  type GameHistoryTeamLeaderboardEntry,
-} from '../model/game-history-team-leaderboard.ts'
-import { ColumnLabel, TableValue } from './game-history-display.tsx'
+import type { LeaderboardResult } from '../model/leaderboard-results.ts'
+
+const columns = '44px minmax(0, 1fr) minmax(44px, 0.35fr)'
+const roundsVisibility = {
+  display: 'none',
+  '@container standings (min-width: 480px)': { display: 'block' },
+}
+const rowLayout = {
+  display: 'grid',
+  gridTemplateColumns: columns,
+  '@container standings (min-width: 480px)': {
+    gridTemplateColumns:
+      '44px minmax(0, 1fr) minmax(48px, 0.3fr) repeat(2, minmax(60px, 0.4fr)) minmax(56px, 0.35fr)',
+  },
+  gap: 0.5,
+  alignItems: 'center',
+  px: 0.75,
+  py: 0.75,
+}
 
 export function CurrentLeaderboardTable({
   entries,
@@ -17,185 +30,157 @@ export function CurrentLeaderboardTable({
   onSelectTeam,
   inlineDetails = true,
 }: {
-  entries: readonly GameHistoryTeamLeaderboardEntry[]
+  entries: readonly LeaderboardResult[]
   selectedTeamId: string | null
   onSelectTeam: (teamId: string) => void
   inlineDetails?: boolean
 }) {
   const { t } = useTranslation()
-
+  const { user } = useAuth()
   return (
-    <ItemCard
+    <RoundBriefingPanel
       data-testid="current-leaderboard-table"
-      sx={{
-        containerType: 'inline-size',
-        containerName: 'standings',
-        overflow: 'hidden',
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        '@media (min-width: 1000px) and (min-height: 680px)': {
-          maxHeight: 'var(--leaderboard-panel-height)',
-        },
-      }}
-    >
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={0.8}
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        justifyContent="space-between"
-        sx={(theme) => ({
-          px: 1.25,
-          py: 1,
-          flexShrink: 0,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-        })}
-      >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>
+      sx={{ minHeight: 0, containerType: 'inline-size', containerName: 'standings' }}
+      header={
+        <HelpTooltip title={t('gameHistory.summary.bestTeamsDescription')} describeChild>
+          <Typography component="h2" variant="h6" textAlign="center" tabIndex={0}>
             {t('gameHistory.currentTableTitle')}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t('gameHistory.summary.bestTeamsDescription')}
-          </Typography>
-        </Box>
-        <StatusBadge
-          density="compact"
-          variant="outlined"
-          label={t('gameHistory.summary.teamCountShort', { count: entries.length })}
-        />
-      </Stack>
-
+        </HelpTooltip>
+      }
+    >
       <Box
         role="table"
         aria-label={t('gameHistory.currentTableTitle')}
-        sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          flex: 1,
+        }}
       >
         <Box
           role="row"
-          sx={(theme) => ({
-            display: 'grid',
-            gridTemplateColumns: '52px minmax(0, 1fr) 68px',
-            gap: 0.75,
+          sx={{
+            ...rowLayout,
             flexShrink: 0,
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-            backgroundColor: theme.palette.background.paper,
-            px: 1.25,
-            py: 0.65,
-            color: 'text.secondary',
-            borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-            '& > :nth-of-type(n+4)': { display: 'none' },
-            '@container standings (min-width: 620px)': {
-              gridTemplateColumns: '52px minmax(0, 1fr) repeat(4, 68px)',
-              '& > :nth-of-type(n+4)': { display: 'block' },
-            },
-          })}
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            mb: 0.5,
+          }}
         >
-          <ColumnLabel>{t('gameHistory.table.rank')}</ColumnLabel>
-          <ColumnLabel>{t('common.entities.team')}</ColumnLabel>
-          <ColumnLabel align="right">{t('gameHistory.table.final')}</ColumnLabel>
-          <ColumnLabel align="right">{t('gameHistory.table.penalties')}</ColumnLabel>
-          <ColumnLabel align="right">{t('gameHistory.table.best')}</ColumnLabel>
-          <ColumnLabel align="right">{t('gameHistory.table.rounds')}</ColumnLabel>
-        </Box>
-
-        <Stack role="rowgroup">
-          {entries.map((entry, index) => (
-            <CurrentLeaderboardTableRow
-              key={entry.teamId}
-              entry={entry}
-              rank={index + 1}
-              isSelected={entry.teamId === selectedTeamId}
-              inlineDetails={inlineDetails}
-              onSelect={() => onSelectTeam(entry.teamId)}
-            />
+          {[
+            t('gameHistory.table.rank'),
+            t('common.entities.team'),
+            t('gameHistory.table.rounds'),
+            t('gameHistory.summary.totalKills'),
+            t('gameHistory.summary.totalBounties'),
+            t('gameHistory.table.final'),
+          ].map((label, index) => (
+            <Typography
+              key={label}
+              role="columnheader"
+              variant="caption"
+              textAlign="center"
+              sx={{ fontWeight: 700, ...(index >= 2 && index <= 4 ? roundsVisibility : {}) }}
+            >
+              {label}
+            </Typography>
           ))}
+        </Box>
+        <Stack
+          role="rowgroup"
+          spacing={0.5}
+          sx={{
+            minHeight: 0,
+            overflowY: 'auto',
+            overscrollBehaviorY: 'contain',
+          }}
+        >
+          {entries.map((entry, index) => {
+            const selected = entry.teamId === selectedTeamId
+            const ownTeam = entry.rounds.some((round) =>
+              round.participants.some((participant) => participant.userId === user?.id),
+            )
+            return (
+              <SelectionRow
+                component="div"
+                tabIndex={0}
+                key={entry.teamId}
+                role="row"
+                data-own-team={ownTeam || undefined}
+                emphasis={ownTeam ? 'selected' : 'none'}
+                selected={selected}
+                selectionAppearance="outline"
+                aria-label={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
+                aria-controls={inlineDetails ? 'leaderboard-team-details' : undefined}
+                aria-haspopup={inlineDetails ? undefined : 'dialog'}
+                onClick={() => onSelectTeam(entry.teamId)}
+                tone={index % 2 ? 'alternate' : 'default'}
+                sx={{ ...rowLayout, width: '100%', flexShrink: 0 }}
+              >
+                <Box role="cell" sx={{ display: 'flex', justifyContent: 'center' }}>
+                  {entry.rank ? (
+                    <RankBadge rank={entry.rank} compact />
+                  ) : (
+                    t('gameHistory.notAvailable')
+                  )}
+                </Box>
+                <Box role="cell" sx={{ minWidth: 0 }}>
+                  <Typography
+                    variant="body2"
+                    textAlign="center"
+                    sx={{ fontWeight: 700, overflowWrap: 'anywhere', minWidth: 0, mb: 0.5 }}
+                  >
+                    {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
+                  </Typography>
+                  <ParticipantNamesList
+                    names={entry.participantNames}
+                    emptyLabel={t('gameHistory.noParticipants')}
+                    variant="caption"
+                    leadingMarker
+                    alignment="center"
+                    direction="column"
+                    dense
+                  />
+                </Box>
+                <Typography
+                  role="cell"
+                  variant="body2"
+                  textAlign="center"
+                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                >
+                  {entry.roundsPlayed}
+                </Typography>
+                <Typography
+                  role="cell"
+                  variant="body2"
+                  textAlign="center"
+                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                >
+                  {entry.totalKills}
+                </Typography>
+                <Typography
+                  role="cell"
+                  variant="body2"
+                  textAlign="center"
+                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                >
+                  {entry.totalBounties}
+                </Typography>
+                <Typography
+                  role="cell"
+                  variant="body2"
+                  textAlign="center"
+                  sx={{ fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}
+                >
+                  {entry.finalScore ?? t('gameHistory.finalResultDidNotPlay')}
+                </Typography>
+              </SelectionRow>
+            )
+          })}
         </Stack>
       </Box>
-    </ItemCard>
-  )
-}
-
-function CurrentLeaderboardTableRow({
-  entry,
-  rank,
-  isSelected,
-  onSelect,
-  inlineDetails,
-}: {
-  entry: GameHistoryTeamLeaderboardEntry
-  rank: number
-  isSelected: boolean
-  onSelect: () => void
-  inlineDetails: boolean
-}) {
-  const { t } = useTranslation()
-  const bestScore = getTeamBestScore(entry)
-  const finalScore = getTeamFinalScore(entry)
-  const penaltyTotal = getTeamPenaltyTotal(entry)
-
-  return (
-    <ItemCard
-      role="row"
-      emphasis={isSelected ? 'selected' : 'none'}
-      sx={{ width: '100%', minWidth: 0, color: 'inherit', textAlign: 'left' }}
-    >
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 0.75,
-          gridTemplateColumns: '52px minmax(0, 1fr) 68px',
-          '@container standings (min-width: 620px)': {
-            gridTemplateColumns: '52px minmax(0, 1fr) repeat(4, 68px)',
-          },
-          alignItems: 'center',
-        }}
-      >
-        <Box role="cell">
-          <RankBadge rank={rank} compact />
-        </Box>
-
-        <Box role="cell" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-          <AppButton
-            type="button"
-            aria-pressed={isSelected}
-            aria-controls={inlineDetails ? 'leaderboard-team-details' : undefined}
-            aria-haspopup={inlineDetails ? undefined : 'dialog'}
-            onClick={onSelect}
-            tone="ghost"
-            sx={{ width: '100%', justifyContent: 'flex-start' }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>
-              {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
-            </Typography>
-          </AppButton>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {entry.participantNames.length > 0
-              ? entry.participantNames.join(', ')
-              : t('gameHistory.noParticipants')}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              display: 'block',
-              '@container standings (min-width: 620px)': { display: 'none' },
-            }}
-          >
-            {t('gameHistory.summary.bestAndPenaltyShort', {
-              best: bestScore,
-              penalty: penaltyTotal,
-            })}
-          </Typography>
-        </Box>
-
-        <TableValue strong>{finalScore}</TableValue>
-        <TableValue hideOnMobile>{penaltyTotal}</TableValue>
-        <TableValue hideOnMobile>{bestScore}</TableValue>
-        <TableValue hideOnMobile>{entry.roundsPlayed}</TableValue>
-      </Box>
-    </ItemCard>
+    </RoundBriefingPanel>
   )
 }
