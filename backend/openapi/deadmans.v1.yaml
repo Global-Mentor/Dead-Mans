@@ -7257,6 +7257,12 @@ components:
         modifierSnapshots:
           type: array
           items: { $ref: '#/components/schemas/GameHistoryModifierSnapshotDto' }
+        board:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/GameBoardSnapshotDto'
+          nullable: true
+          description: Final persisted board of this finished game. Null for unfinished games or legacy records without a board. Unopened cards retain hidden content.
     GameRoundParticipantDto:
       type: object
       required: [userId, displayName]

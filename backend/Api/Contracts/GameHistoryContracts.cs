@@ -260,5 +260,6 @@ public sealed record GameHistoryGameDetailsDto(
     GameHistoryQuizSectionDto Quiz,
     GameFinishSummaryDto? FinalResult,
     string ModifierSnapshotStatus,
-    IReadOnlyList<GameHistoryModifierSnapshotDto> ModifierSnapshots
+    IReadOnlyList<GameHistoryModifierSnapshotDto> ModifierSnapshots,
+    GameBoardSnapshotDto? Board = null
 );
