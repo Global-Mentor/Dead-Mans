@@ -161,11 +161,12 @@ function QuizTimelineQuestion({
   const pinned = current != null || latest
   const [expanded, setExpanded] = useState(false)
   const title = current?.text ?? questionSession?.questionText ?? ''
-  const status = current?.status ?? questionSession?.status ?? 'closed'
+  const correctAnswers =
+    questionSession?.submissions.filter((answer) => answer.isCorrect).length ?? 0
   const reward = current?.reward ?? questionSession?.reward
   const summary = (
     <Stack component={pinned ? 'div' : 'span'} spacing={1.75}>
-      {pinned || expanded ? (
+      {pinned ? (
         <QuizQuestionMetadata
           category={current?.categoryName ?? questionSession?.categoryName ?? ''}
           {...(reward != null ? { reward } : {})}
@@ -180,11 +181,18 @@ function QuizTimelineQuestion({
         >
           {title}
         </Typography>
-        {!pinned && status !== 'open' ? (
+        {!pinned ? (
           <StatusBadge
             appearance="plain"
             density="compact"
-            label={t(`gameQuiz.status.${status}`)}
+            aria-label={`${t('gameQuiz.correctAnswersLabel')}: ${t('gameQuiz.answerRatio', {
+              correct: correctAnswers,
+              attempts: questionSession?.submissions.length ?? 0,
+            })}`}
+            label={t('gameQuiz.answerRatio', {
+              correct: correctAnswers,
+              attempts: questionSession?.submissions.length ?? 0,
+            })}
           />
         ) : null}
       </Stack>
@@ -207,6 +215,14 @@ function QuizTimelineQuestion({
         onExpandedChange={setExpanded}
         summary={pinned ? null : summary}
       >
+        {!pinned && expanded ? (
+          <Box sx={{ mb: 0.75 }}>
+            <QuizQuestionMetadata
+              category={questionSession?.categoryName ?? ''}
+              {...(reward != null ? { reward } : {})}
+            />
+          </Box>
+        ) : null}
         {current ? (
           <>
             {actions.error ? (

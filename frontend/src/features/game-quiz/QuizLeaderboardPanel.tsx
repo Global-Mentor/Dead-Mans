@@ -90,6 +90,7 @@ export function QuizLeaderboardPanel({
           <RankingList
             alignment="center"
             density="compact"
+            highlightAppearance="selected"
             detailLabel={t('gameQuiz.correctAnswersLabel')}
             label={t('gameQuiz.leaderboardTitle')}
             rankLabel={t('gameQuiz.rankLabel')}

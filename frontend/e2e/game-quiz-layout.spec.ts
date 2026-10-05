@@ -966,6 +966,19 @@ for (const width of [390, 768, 1440]) {
     const older = history.getByTestId('quiz-timeline-question').nth(1)
     await expect(older.locator('details').first()).not.toHaveAttribute('open', '')
     expect((await older.boundingBox())!.height).toBeLessThanOrEqual(52)
+    const olderTitle = older.getByText('Заданный вопрос 1', { exact: true })
+    await expect(older.getByLabel('Верных ответов: 1 из 2', { exact: true })).toBeVisible()
+    await expect(older.getByText('Закрыт', { exact: true })).toHaveCount(0)
+    const titleBefore = await olderTitle.boundingBox()
+    await older.locator('summary').first().click()
+    const titleAfter = await olderTitle.boundingBox()
+    expect(titleAfter!.x).toBeCloseTo(titleBefore!.x, 1)
+    expect(titleAfter!.y).toBeCloseTo(titleBefore!.y, 1)
+    const category = older.getByText('Категория: История', { exact: true })
+    await expect(category).toBeVisible()
+    expect((await category.boundingBox())!.y).toBeGreaterThan(titleAfter!.y + titleAfter!.height)
+    await older.screenshot({ path: info.outputPath('older-question-expanded.png') })
+    await older.locator('summary').first().click()
     const award = history.getByRole('button', { name: /Ручное начисление для Ведущий.*20/ })
     await expect(award).toBeVisible()
     const historyAccents = await history
@@ -1037,6 +1050,21 @@ for (const width of [390, 768, 1440]) {
         mode === 'Заработано'
           ? ['1', 'Первый', '3 из 4', '100 очк.']
           : ['1', 'Второй', '2 из 4', '50 очк.'],
+      )
+      const personalRow = rows.filter({ hasText: 'Первый' })
+      const personalSurface = await personalRow.evaluate((el) => ({
+        background: getComputedStyle(el).backgroundImage,
+        frame: getComputedStyle(el).borderImageSource,
+      }))
+      expect(personalSurface.background).toContain('charcoal-paper')
+      expect(personalSurface.frame).toMatch(/^url\(/)
+      expect(
+        await rows
+          .filter({ hasText: 'Второй' })
+          .evaluate((el) => getComputedStyle(el).borderImageSource),
+      ).toBe('none')
+      expect(await personalRow.evaluate((el) => getComputedStyle(el, '::before').content)).toBe(
+        'none',
       )
       const headers = await panel
         .getByRole('columnheader')
