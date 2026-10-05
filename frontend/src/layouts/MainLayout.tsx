@@ -7,6 +7,7 @@ import {
   gameBoardRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
+  modifierHistoryRoute,
   gameModifiersRoute,
   gameQuizRoute,
   gameTeamQueueRoute,
@@ -53,6 +54,7 @@ function MainLayoutContent() {
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,
     gameHistoryRoute.fullPath,
+    modifierHistoryRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
     hasPanelCapability('startGame', user?.roles) ||

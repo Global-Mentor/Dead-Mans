@@ -382,80 +382,128 @@ for (const width of [390, 768, 1440, 2560]) {
     await expect(page).toHaveURL(/gameId=game-24/)
   })
 
-  test(`modifier archive revisions and related games at ${width}px`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: width > 2000 ? 1440 : 900 })
-    await mockHistory(page)
-    await page.goto('/panel/modifier-history?modifierId=modifier-0&revision=10')
-    const detail = page.getByRole('heading', { name: '⚓ Модификатор 1', exact: true, level: 2 })
-    await expect(detail).toBeVisible()
-    const revisions = page
-      .locator('details')
-      .filter({ has: page.locator('summary').filter({ hasText: 'Таймлайн редакций' }) })
-    await revisions.locator('summary').click()
-    await revisions.getByRole('button', { name: /Редакция 10 / }).focus()
-    await page.keyboard.press('ArrowDown')
-    await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/revision=9/)
-    await expect(page.getByText('Было: 8', { exact: true })).toBeVisible()
-    await expect(page.getByText('Стало: 9', { exact: true })).toBeVisible()
-    await revisions.locator('summary').click()
-    const behavior = page
-      .locator('details')
-      .filter({ has: page.locator('summary').filter({ hasText: /^Поведение$/ }) })
-    await expect(behavior).not.toHaveAttribute('open', '')
-    await behavior.locator('summary').click()
-    await expect(page.getByText('Не менять оружие во время раунда.', { exact: true })).toBeVisible()
-    await behavior.locator('summary').click()
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      width,
-    )
-    await expect(
-      page.getByRole('heading', { name: 'История модификаторов', exact: true }),
-    ).toHaveCount(0)
-    await page.getByRole('main').scrollIntoViewIfNeeded()
-    await page.screenshot({
-      path: testInfo.outputPath('modifier-history.png'),
-      animations: 'disabled',
-    })
-    await expect(page.getByRole('link', { name: 'Архивная игра 3', exact: true })).toHaveAttribute(
-      'href',
-      '/panel/game-leaderboard',
-    )
-    await page.getByRole('link', { name: 'Архивная игра 1', exact: true }).click()
-    await expect(page).toHaveURL(/game-history\?gameId=game-0/)
-    await expect(page.getByRole('heading', { name: 'Архивная игра 1', exact: true })).toBeVisible()
-  })
+  test(
+    'modifier archive revisions and related games at ' + width + 'px',
+    async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height })
+      await mockHistory(page)
+      await page.goto('/panel/modifier-history?modifierId=modifier-0&revision=10')
+      await expect(
+        page.getByRole('heading', { name: '⚓ Модификатор 1', exact: true }),
+      ).toBeVisible()
+      await assertBounded(page, width, height)
+      await page.screenshot({
+        path: testInfo.outputPath('modifier-history.png'),
+        animations: 'disabled',
+      })
+      await expect(
+        page.getByRole('tablist', { name: 'История модификаторов' }).getByRole('tab'),
+      ).toHaveText(['Конфигурация', 'Редакции', 'Изменения', 'Связанные игры'])
+      await page.getByRole('tab', { name: 'Редакции' }).click()
+      const revisions = page.getByRole('region', { name: 'Редакции', exact: true })
+      await revisions.getByRole('button', { name: /Редакция 10 / }).focus()
+      await page.keyboard.press('ArrowDown')
+      await page.keyboard.press('Enter')
+      await expect(page).toHaveURL(/revision=9/)
+      await expect(page.getByRole('tab', { name: 'Редакции' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+      await page.getByRole('tab', { name: 'Изменения', exact: true }).click()
+      await expect(
+        page.getByRole('group', { name: 'Было: Цена активации' }).getByText('8', { exact: true }),
+      ).toBeVisible()
+      await expect(
+        page.getByRole('group', { name: 'Стало: Цена активации' }).getByText('9', { exact: true }),
+      ).toBeVisible()
+      await page.getByRole('tab', { name: 'Редакции' }).click()
+      await revisions.getByRole('button', { name: /Редакция 6 / }).click()
+      await expect(page).toHaveURL(/revision=6/)
+      await expect(page.getByRole('tab', { name: 'Редакции' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+      await page.getByRole('tab', { name: 'Изменения', exact: true }).click()
+      await expect(
+        page.getByRole('group', { name: 'Стало: Цена активации' }).getByText('6', { exact: true }),
+      ).toBeVisible()
+      await page.getByRole('tab', { name: 'Конфигурация', exact: true }).click()
+      const behavior = page
+        .locator('details')
+        .filter({ has: page.locator('summary').filter({ hasText: /^Поведение$/ }) })
+      await behavior.locator('summary').click()
+      await expect(
+        page.getByText('Не менять оружие во время раунда.', { exact: true }),
+      ).toBeVisible()
+      await assertBounded(page, width, height)
+      await page.getByRole('tab', { name: 'Связанные игры', exact: true }).click()
+      await expect(
+        page.getByRole('link', { name: 'Посмотреть игру: Архивная игра 3', exact: true }),
+      ).toHaveAttribute('href', '/panel/game-leaderboard')
+      await assertBounded(page, width, height)
+      await page.screenshot({
+        path: testInfo.outputPath('modifier-related-games.png'),
+        animations: 'disabled',
+      })
+      await page.getByRole('heading', { name: 'Архивная игра 1', exact: true }).click()
+      await expect(page).toHaveURL(/modifierId=modifier-0&revision=6/)
+      await page
+        .getByRole('link', { name: 'Посмотреть игру: Архивная игра 1', exact: true })
+        .focus()
+      await page.keyboard.press('Enter')
+      await expect(page).toHaveURL(/game-history\?gameId=game-0/)
+      await expect(
+        page.getByRole('heading', { name: 'Архивная игра 1', exact: true }),
+      ).toBeVisible()
+    },
+  )
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`modifier selection and search preserve readable details at ${width}px`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width, height: 900 })
-    await mockHistory(page)
-    await page.goto('/panel/modifier-history')
-    const picker = page.locator('details').first()
-    const search = page.getByRole('textbox', { name: 'Поиск модификаторов' })
-    await search.fill('Модификатор 20')
-    await picker.getByRole('button', { name: /Модификатор 20/ }).click()
-    await expect(page).toHaveURL(/modifierId=modifier-19&revision=10/)
-    await expect(
-      page.getByRole('heading', { name: '⚓ Модификатор 20', level: 2, exact: true }),
-    ).toBeVisible()
-    if (width < 1000) {
-      await expect(picker).not.toHaveAttribute('open', '')
-      await picker.locator('summary').click()
-    }
-    await search.fill('Несуществующий')
-    await expect(page.getByText('По фильтрам ничего не найдено.')).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: '⚓ Модификатор 20', level: 2, exact: true }),
-    ).toBeVisible()
-    await search.fill('Модификатор 2')
-    await picker.getByRole('button', { name: /^⚓ Модификатор 2 Редакция/ }).click()
-    await expect(page).toHaveURL(/modifierId=modifier-1&revision=10/)
-    if (width < 1000) await expect(picker).not.toHaveAttribute('open', '')
-  })
+  test(
+    'modifier selection and search preserve readable details at ' + width + 'px',
+    async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 })
+      await mockHistory(page)
+      await page.goto('/panel/modifier-history')
+      await expect(page).toHaveURL(/modifierId=modifier-0&revision=10/)
+      await expect(
+        page.getByRole('heading', { name: '⚓ Модификатор 1', exact: true }),
+      ).toBeVisible()
+      if (width < 1000) await page.locator('details').first().locator('summary').click()
+      const picker = page.getByRole('region', { name: 'История модификаторов', exact: true })
+      const search = page.getByRole('textbox', { name: 'Поиск модификаторов' })
+      const searched = page.waitForResponse((response) => {
+        const url = new URL(response.url())
+        return (
+          url.pathname === '/api/game/modifiers/history' &&
+          url.searchParams.get('search') === 'Модификатор 20'
+        )
+      })
+      await search.fill('Модификатор 20')
+      await searched
+      const row = picker.getByRole('button', { name: /Модификатор 20/ })
+      await expect(row).toBeVisible()
+      const bounds = await row.boundingBox()
+      expect(bounds!.height).toBeGreaterThanOrEqual(44)
+      expect(bounds!.height).toBeLessThanOrEqual(60)
+      await row.click()
+      await expect(page).toHaveURL(/modifierId=modifier-19&revision=10/)
+      await expect(
+        page.getByRole('heading', { name: '⚓ Модификатор 20', exact: true }),
+      ).toBeVisible()
+      if (width < 1000) await page.locator('details').first().locator('summary').click()
+      await search.fill('Несуществующий')
+      await expect(page.getByText('По фильтрам ничего не найдено.')).toBeVisible()
+      await expect(
+        page.getByRole('heading', { name: '⚓ Модификатор 20', exact: true }),
+      ).toBeVisible()
+      await search.fill('Модификатор 2')
+      await picker.getByRole('button', { name: /^⚓ Модификатор 2 Редакция/ }).click()
+      await expect(page).toHaveURL(/modifierId=modifier-1&revision=10/)
+      await assertBounded(page, width, 900)
+    },
+  )
 }
 
 test('saved modifier activations remain accessible inside modifier results', async ({ page }) => {
@@ -608,6 +656,61 @@ for (const width of [390, 1440]) {
     },
   )
 }
+
+test('modifier archive restores tab, modifier and revision through Back, Forward and reload', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await mockHistory(page)
+  await page.goto('/panel/modifier-history?modifierId=modifier-0&revision=10')
+  await page.getByRole('tab', { name: 'Редакции', exact: true }).click()
+  await page
+    .getByRole('region', { name: 'Редакции', exact: true })
+    .getByRole('button', { name: /Редакция 9 / })
+    .click()
+  const original = page.url()
+  await page
+    .getByRole('region', { name: 'История модификаторов', exact: true })
+    .getByRole('button', { name: /^⚓ Модификатор 2 Редакция/ })
+    .click()
+  await expect(page.getByRole('heading', { name: '⚓ Модификатор 2', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Редакции', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect.poll(() => new URL(page.url()).searchParams.get('revision')).toBe('10')
+  const next = page.url()
+  await page.goBack()
+  await expect(page).toHaveURL(original)
+  await expect(page.getByRole('heading', { name: '⚓ Модификатор 1', exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Редакции', exact: true })
+      .getByRole('button', { name: /Редакция 9 / }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.goForward()
+  await expect(page).toHaveURL(next)
+  await expect(page.getByRole('tab', { name: 'Редакции', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await page.getByRole('tab', { name: 'Связанные игры', exact: true }).click()
+  const related = page.url()
+  await page.getByRole('link', { name: 'Посмотреть игру: Архивная игра 1', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Архивная игра 1', exact: true })).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL(related)
+  await expect(page.getByRole('tab', { name: 'Связанные игры', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Связанные игры', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect(page.getByRole('heading', { name: '⚓ Модификатор 2', exact: true })).toBeVisible()
+})
 
 test('game archive retains tab and selected team while restoring games and search', async ({
   page,
