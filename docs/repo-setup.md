@@ -6,52 +6,44 @@ the setup changes.
 
 ## Branching model
 
-Trunk-based development with a single long-lived branch.
+Local development uses one primary checkout and the `develop` branch. Additional
+linked worktrees and task-specific branches are created only when explicitly
+requested. Worktrees are optional extra working directories of the same Git
+repository; they are not required for normal development.
 
-- `main` is the only permanent branch. It is always releasable and is protected.
-- All work happens on **short-lived branches created off `main`**.
-- Merge back into `main` exclusively through a Pull Request.
-- Delete the branch after the PR is merged (GitHub does this automatically).
-
-### Branch naming
-
-Use `type/short-description`, matching the commit type:
-
-| Prefix      | Use for                                  |
-| ----------- | ---------------------------------------- |
-| `feat/`     | New feature                              |
-| `fix/`      | Bug fix                                  |
-| `chore/`    | Tooling, deps, config, housekeeping      |
-| `refactor/` | Code change with no behaviour change     |
-| `docs/`     | Documentation only                       |
-| `test/`     | Tests only                               |
-| `ci/`       | CI / workflow changes                    |
-
-Example: `feat/team-invitations`, `fix/board-cell-race`.
+- `develop` is the owner-designated local working branch. Keep related changes
+  in atomic Conventional Commits after review and validation.
+- `main` remains the protected release branch on the remote. Local development
+  does not change its protection, the remote default branch or deployment settings.
+- Publishing `develop`, opening a PR and merging into `main` are separate actions
+  that require explicit authorization. A push to `main` runs publication and can
+  deploy production.
+- Keep local configuration and ignored working materials out of commits. Before
+  removing an old working directory, preserve its unique commits, uncommitted
+  changes and necessary ignored files, then verify the destination.
 
 ## Daily workflow
 
+Use the primary repository folder (on the owner's machine, `D:/Dev/Dead-Mans`):
+
 ```bash
-# 1. Start from an up-to-date main
-git switch main
-git pull
+git switch develop
+git status
 
-# 2. Create a short-lived branch
-git switch -c feat/my-change
-
-# 3. Work, committing in small logical steps
-git add -A
+# Work and validate, then stage one logical change at a time.
+git add path/to/changed-file path/to/related-test
+git diff --cached
 git commit -m "feat(game): add team invitation flow"
 
-# 4. Push and open a PR into main
-git push -u origin feat/my-change
-# Open the PR on GitHub (base: main)
-
-# 5. Wait for green CI + required review, then "Squash and merge".
-#    The branch is deleted automatically after merge.
+# Only when publication is requested:
+git push -u origin develop
+# Open a PR with base main; verify CI and review before an authorized merge.
 ```
 
-Never commit directly to `main` - the branch protection will reject the push.
+If the local `develop` branch does not exist, create it from the reviewed current
+base in the primary checkout. Do not reset an existing branch or discard local
+work to synchronize it. The remote `main` branch continues to receive changes
+through PRs; renaming the local working branch does not rename the remote branch.
 
 ## `main` branch protection (ruleset)
 
