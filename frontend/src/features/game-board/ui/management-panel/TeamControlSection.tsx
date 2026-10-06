@@ -6,8 +6,10 @@ import {
   AppButton,
   AsyncSection,
   SectionDivider,
+  NativeDisclosure,
   SelectionRow,
   StatusBadge,
+  SectionCard,
 } from '../../../../shared/ui/index.ts'
 import { formatManagementTeamName } from '../../model/game-management-panel.ts'
 import {
@@ -50,7 +52,7 @@ export function TeamControlSection({
 
   return (
     <ManagementControlSurface kind="team">
-      <Stack spacing={1.5}>
+      <Stack spacing={1}>
         <Stack
           direction="row"
           gap={1}
@@ -58,12 +60,12 @@ export function TeamControlSection({
           useFlexGap
           alignItems="center"
           justifyContent="space-between"
-          sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}
+          sx={{ pb: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}
         >
           <ManagementSectionTitle
             icon="team"
             title={t('gameBoard.managementActiveTeamTitle')}
-            tooltip={t('gameBoard.managementActiveTeamTooltip')}
+            help={t('gameBoard.managementHelp.team')}
           />
           <StatusBadge
             size="small"
@@ -90,19 +92,7 @@ export function TeamControlSection({
             emptyMessage={t('gameBoard.managementActiveTeamNoTeams')}
           >
             <>
-              <TeamSpotlight
-                team={spotlightTeam}
-                isCurrent={currentActiveTeam !== null}
-                description={
-                  currentActiveTeam
-                    ? null
-                    : resumableTeam
-                      ? t('gameBoard.managementActiveTeamResumeHint', {
-                          slot: resumableTeam.teamSlotIndex,
-                        })
-                      : t('gameBoard.managementActiveTeamRequired')
-                }
-              />
+              <TeamSpotlight team={spotlightTeam} />
 
               {isActiveTeamLocked ? (
                 <ManagementStateNotice tone="warning">
@@ -116,16 +106,17 @@ export function TeamControlSection({
                 </ManagementStateNotice>
               ) : null}
 
-              <Stack
-                direction="row"
-                flexWrap="wrap"
-                useFlexGap
-                spacing={0.75}
-                sx={{ '& > button': { flex: '1 1 140px' } }}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: 0.75,
+                }}
               >
                 {resumableTeam && !currentActiveTeam ? (
                   <AppButton
                     tone="secondary"
+                    size="small"
                     disabled={isTeamControlBusy || isActiveTeamLocked}
                     onClick={() =>
                       onSetTeamPlayedState({ teamId: resumableTeam.teamId, isPlayed: true })
@@ -139,6 +130,7 @@ export function TeamControlSection({
                   <>
                     <AppButton
                       tone="secondary"
+                      size="small"
                       onClick={() => onSelectActiveTeam(null)}
                       disabled={isTeamControlBusy || isActiveTeamLocked}
                     >
@@ -146,6 +138,7 @@ export function TeamControlSection({
                     </AppButton>
                     <AppButton
                       tone="secondary"
+                      size="small"
                       disabled={isTeamControlBusy || isActiveTeamLocked}
                       onClick={() =>
                         onSetTeamPlayedState({
@@ -160,16 +153,24 @@ export function TeamControlSection({
                     </AppButton>
                   </>
                 ) : null}
-              </Stack>
+              </Box>
 
               {otherTeams.length > 0 ? (
                 <>
                   <SectionDivider />
 
-                  <Stack spacing={0.65}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 850 }}>
-                      {t('gameBoard.managementActiveTeamQuickListTitle')}
-                    </Typography>
+                  <NativeDisclosure
+                    density="tight"
+                    indicator="chevron"
+                    surface="panel"
+                    pinned={!currentActiveTeam}
+                    summary={t('gameBoard.managementActiveTeamQuickListTitle')}
+                  >
+                    {!currentActiveTeam ? (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 850 }}>
+                        {t('gameBoard.managementActiveTeamQuickListTitle')}
+                      </Typography>
+                    ) : null}
                     <Stack spacing={0.55} sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.25 }}>
                       {otherTeams.map((team) => {
                         const isCurrent = team.teamId === currentActiveTeam?.teamId
@@ -186,7 +187,7 @@ export function TeamControlSection({
                         )
                       })}
                     </Stack>
-                  </Stack>
+                  </NativeDisclosure>
                 </>
               ) : null}
 
@@ -203,21 +204,17 @@ export function TeamControlSection({
   )
 }
 
-function TeamSpotlight({
-  team,
-  isCurrent,
-  description,
-}: {
-  team: GameTeamQueueItem | null
-  isCurrent: boolean
-  description: string | null
-}) {
+function TeamSpotlight({ team }: { team: GameTeamQueueItem | null }) {
   const { t } = useTranslation()
 
   return (
-    <Box sx={{ minWidth: 0 }}>
+    <SectionCard surface="inset" sx={{ minWidth: 0, p: 1.25 }}>
       <Stack spacing={1}>
         <TeamIdentity
+          compact
+          alignment="center"
+          participantMarkers
+          divider
           name={
             team
               ? formatManagementTeamName(t, team.teamName, team.teamSlotIndex)
@@ -225,24 +222,9 @@ function TeamSpotlight({
           }
           participants={team?.participants.map((participant) => participant.displayName) ?? []}
           emptyLabel={team ? t('gameBoard.roundSummaryNoParticipants') : ''}
-          status={
-            isCurrent ? (
-              <StatusBadge
-                size="small"
-                color="success"
-                variant="filled"
-                label={t('gameBoard.teamQueueActiveChip')}
-              />
-            ) : null
-          }
         />
-        {description ? (
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        ) : null}
       </Stack>
-    </Box>
+    </SectionCard>
   )
 }
 
@@ -264,6 +246,7 @@ function CompactTeamRow({
       type="button"
       disabled={disabled}
       selected={isCurrent}
+      density="compact"
       onClick={onSelect}
       sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 0.8 }}
     >

@@ -1,16 +1,14 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import {
   AppButton,
   AsyncSection,
-  Combobox,
   ConfirmDialog,
-  createFilterOptions,
   FormSelect,
   FormTextField,
-  FormNumberField,
   InlineNotice,
 } from '../../../shared/ui/index.ts'
 
+import { PlayerPicker } from '../../../shared/game-ui/index.ts'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -32,11 +30,6 @@ interface ManualQuizAwardControlProps {
   }) => void
   showHeader?: boolean
 }
-
-const filterManualAwardPlayers = createFilterOptions<ManualQuizAwardPlayer>({
-  limit: 30,
-  stringify: (player) => `${player.displayName} ${player.login}`,
-})
 
 export function ManualQuizAwardControl({
   isActiveGame,
@@ -108,60 +101,44 @@ export function ManualQuizAwardControl({
             emptyMessage={t('gameBoard.manualQuizAwardNoPlayers')}
           >
             <>
-              <Combobox
-                size="small"
-                fullWidth
-                autoHighlight
-                selectOnFocus
-                options={players}
+              <PlayerPicker
+                players={players}
                 value={selectedPlayer}
-                filterOptions={filterManualAwardPlayers}
+                label={t('common.entities.player')}
                 disabled={isAwarding}
-                noOptionsText={t('gameBoard.manualQuizAwardNoPlayerMatches')}
-                getOptionLabel={(player) =>
-                  player.login ? `${player.displayName} · ${player.login}` : player.displayName
-                }
-                isOptionEqualToValue={(option, value) => option.userId === value.userId}
-                onChange={(_, player) => setSelectedUserId(player?.userId ?? '')}
-                slotProps={{
-                  popper: {
-                    sx: (theme) => ({
-                      zIndex: theme.zIndex.modal + 1,
-                    }),
-                  },
-                }}
-                renderInput={(params) => (
-                  <FormTextField {...params} label={t('common.entities.player')} />
-                )}
+                onChange={(player) => setSelectedUserId(player?.userId ?? '')}
               />
+              <Box
+                sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}
+              >
+                <FormSelect
+                  label={t('gameBoard.manualQuizAwardOperationLabel')}
+                  value={operationType}
+                  disabled={isAwarding}
+                  onChange={setOperationType}
+                  options={[
+                    { value: 'award', label: t('gameBoard.manualQuizAwardOperationAward') },
+                    { value: 'deduct', label: t('gameBoard.manualQuizAwardOperationDeduct') },
+                  ]}
+                />
 
-              <FormSelect
-                label={t('gameBoard.manualQuizAwardOperationLabel')}
-                value={operationType}
-                disabled={isAwarding}
-                onChange={setOperationType}
-                options={[
-                  { value: 'award', label: t('gameBoard.manualQuizAwardOperationAward') },
-                  { value: 'deduct', label: t('gameBoard.manualQuizAwardOperationDeduct') },
-                ]}
-              />
-
-              <FormNumberField
-                label={t('gameBoard.manualQuizAwardPointsLabel')}
-                value={points}
-                disabled={isAwarding}
-                min={1}
-                onValueChange={setPoints}
-              />
+                <FormTextField
+                  label={t('gameBoard.manualQuizAwardPointsLabel')}
+                  value={points}
+                  disabled={isAwarding}
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  onChange={(event) => setPoints(event.target.value)}
+                />
+              </Box>
 
               <FormTextField
                 label={t('gameBoard.manualQuizAwardReasonLabel')}
+                required
                 value={reason}
                 disabled={isAwarding}
                 multiline
-                minRows={2}
+                minRows={1}
                 inputProps={{ maxLength: 500 }}
-                helperText={t('gameBoard.manualQuizAwardReasonHint')}
                 onChange={(event) => setReason(event.target.value)}
               />
 
@@ -180,6 +157,7 @@ export function ManualQuizAwardControl({
               ) : null}
 
               <AppButton
+                fullWidth
                 type="submit"
                 disabled={!canAward}
                 loading={isAwarding}

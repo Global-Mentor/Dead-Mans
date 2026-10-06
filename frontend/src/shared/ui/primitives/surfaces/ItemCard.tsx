@@ -6,6 +6,7 @@ import { SectionCard } from './SectionCard.tsx'
 
 export function ItemCard({
   emphasis = 'none',
+  density = 'standard',
   tone = 'default',
   leadingAccent = false,
   frame = 'standard',
@@ -13,6 +14,7 @@ export function ItemCard({
   ...props
 }: Omit<ComponentProps<typeof SectionCard>, 'surface'> & {
   emphasis?: 'none' | 'available' | 'selected'
+  density?: 'standard' | 'flush'
   tone?: 'default' | 'alternate'
   leadingAccent?: boolean | 'success' | 'error'
   frame?: 'standard' | 'corner'
@@ -22,6 +24,7 @@ export function ItemCard({
       {...props}
       sx={mergeSx(
         (theme) => itemCardSx(theme, emphasis, tone),
+        density === 'flush' ? { p: 0 } : null,
         frame === 'corner'
           ? (theme) => ({ ...cornerFrameSx(theme, 'strong'), borderImage: 'none' })
           : null,

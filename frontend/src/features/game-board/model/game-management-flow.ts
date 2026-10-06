@@ -5,7 +5,7 @@ type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 
 type GameManagementPhase = 'ready' | 'active_idle' | 'round_running' | 'reviewing' | 'finished'
 
-export type GameManagementFlowStepId =
+type GameManagementFlowStepId =
   | 'select_team'
   | 'select_card'
   | 'start_modifiers'

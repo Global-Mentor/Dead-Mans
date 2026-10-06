@@ -60,7 +60,7 @@ export function AdminToolDrawer({
       <PanelTrigger
         ref={openerRef}
         placement={triggerPlacement}
-        size="medium"
+        tabSize="compact"
         onClick={() => {
           setActiveToolId(initialToolId)
           setHasOpened(true)
@@ -71,7 +71,7 @@ export function AdminToolDrawer({
         aria-controls={isOpen ? panelId : undefined}
         aria-label={t('adminTools.openAction')}
       >
-        {t(triggerPlacement !== 'edge' ? 'adminTools.inlineOpenAction' : 'adminTools.openAction')}
+        {t('adminTools.inlineOpenAction')}
       </PanelTrigger>
 
       <SidePanel
@@ -81,7 +81,9 @@ export function AdminToolDrawer({
         title={t('adminTools.inlineOpenAction')}
         label={t('adminTools.drawerLabel')}
         closeLabel={t('adminTools.closeAction')}
-        width="wide"
+        width={440}
+        contentDensity="compact"
+        headerDensity="compact"
         bodyTestId="admin-tool-drawer-scroll-body"
         header={
           <>
@@ -92,7 +94,8 @@ export function AdminToolDrawer({
                 aria-label={t('adminTools.chooseTool')}
                 variant="fullWidth"
                 appearance="framed"
-                sx={{ mt: 2 }}
+                density="compact"
+                sx={{ mt: 1 }}
               >
                 {tools.map((tool) => (
                   <TabOption
@@ -103,6 +106,7 @@ export function AdminToolDrawer({
                     id={`${panelId}-tab-${tool.id}`}
                     aria-controls={`${panelId}-panel-${tool.id}`}
                     appearance="framed"
+                    density="compact"
                   />
                 ))}
               </TabStrip>

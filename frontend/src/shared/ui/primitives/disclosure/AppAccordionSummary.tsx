@@ -19,14 +19,19 @@ export function AppAccordionSummary({
       {...props}
       expandIcon={
         expandIcon ?? (
-          <Box component="span" aria-hidden sx={{ fontSize: 18, lineHeight: 1 }}>
-            ⌄
+          <Box
+            component="svg"
+            aria-hidden
+            viewBox="0 0 24 24"
+            sx={{ width: 20, height: 20, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }}
+          >
+            <path d="m6 9 6 6 6-6" />
           </Box>
         )
       }
       sx={mergeSx(
         {
-          px: density === 'compact' ? 1.25 : 1.75,
+          px: density === 'compact' ? 2 : 1.75,
           py: density === 'compact' ? 0.1 : 0.25,
           minHeight: density === 'compact' ? 46 : 52,
           '& .MuiAccordionSummary-content': {

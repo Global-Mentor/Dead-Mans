@@ -2551,6 +2551,92 @@ test('queue dialog survives resizing and restores focus when its mobile trigger 
   await expect(page.getByTestId('game-board-team-queue').getByText('Последний рубеж')).toBeVisible()
 })
 
+for (const width of [390, 1440]) {
+  test(`management quick team selection is a framed keyboard disclosure at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const writes = await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 6)
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const team = page.getByTestId('management-team-section')
+    const selection = team.getByRole('button', { name: 'Быстрый выбор команды', exact: true })
+    await expect(selection).toHaveAttribute('aria-expanded', 'false')
+    const phase = page.getByTestId('management-round-phase')
+    expect((await phase.locator('[aria-current="step"]').boundingBox())!.height).toBeCloseTo(
+      await selection.evaluate((element) => element.parentElement!.getBoundingClientRect().height),
+      0,
+    )
+    const help = page.getByRole('tooltip').filter({ hasText: 'Выбор активной команды и отметка' })
+    await team.getByText('Ворон', { exact: true }).hover()
+    await expect(help).not.toBeVisible()
+    const heading = team
+      .getByRole('heading', { name: 'Активная команда', exact: true })
+      .locator('span[tabindex="0"]')
+    await heading.hover()
+    await expect(help).toBeVisible()
+    await expect(help).toHaveAttribute('data-popper-placement', width === 1440 ? 'left' : 'top')
+    await team.getByText('Ночные странники', { exact: true }).hover()
+    await expect(help).not.toBeVisible()
+
+    expect(
+      await selection.evaluate((element) =>
+        parseFloat(getComputedStyle(element.parentElement!).borderTopWidth),
+      ),
+    ).toBeGreaterThanOrEqual(1)
+    await selection.focus()
+    await page.keyboard.press('Enter')
+    await expect(selection).toHaveAttribute('aria-expanded', 'true')
+    await expect(team.getByRole('button').filter({ hasText: 'Команда' })).not.toHaveCount(0)
+    expect(await team.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await page
+      .getByRole('dialog', { name: 'Инструменты управления игрой' })
+      .screenshot({ path: info.outputPath('quick-team-selection.png'), animations: 'disabled' })
+    expect(writes).toEqual([])
+  })
+}
+
+for (const width of [320, 390, 1440]) {
+  test(`compact manual points keeps fields aligned and requires confirmation at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const writes = await mockGame(page)
+    await page.route('**/api/game/quiz/manual-awards/players', (route) =>
+      route.fulfill({
+        json: [
+          { userId: 'player-one', login: 'raven', displayName: 'Ворон', availableQuizPoints: 20 },
+        ],
+      }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const section = page.getByTestId('management-manual-quiz-section')
+    await section.getByRole('button', { name: 'Очки викторины', exact: true }).click()
+    await section.getByRole('combobox', { name: 'Игрок', exact: true }).click()
+    await page.getByRole('option').filter({ hasText: 'Ворон' }).click()
+    const points = section.getByRole('textbox', { name: 'Очки', exact: true })
+    await points.fill('5')
+    await section
+      .getByRole('textbox', { name: 'Причина корректировки', exact: true })
+      .fill('Исправление результата')
+    const operation = section.getByRole('combobox', { name: /^Операция/ })
+    const bounds = await Promise.all([points.boundingBox(), operation.boundingBox()])
+    expect(Math.abs(bounds[0]!.y - bounds[1]!.y)).toBeLessThanOrEqual(1)
+    expect(await section.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await section.screenshot({
+      path: info.outputPath('compact-manual-points.png'),
+      animations: 'disabled',
+    })
+    await section.getByRole('button', { name: 'Применить корректировку', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: /корректиров/i })).toBeVisible()
+    expect(writes).toEqual([])
+    await page.keyboard.press('Escape')
+  })
+}
+
 for (const width of [320, 1440]) {
   test(`long team names and large scores remain readable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 320 ? 500 : 900 })
@@ -2684,15 +2770,15 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       .boundingBox()
     if (width >= 900) {
       expect(managementBox!.x + managementBox!.width).toBe(width)
-      expect(managementBox!.width).toBe(60)
-      expect(managementBox!.height).toBeGreaterThanOrEqual(192)
+      expect(managementBox!.width).toBe(36)
+      expect(managementBox!.height).toBe(128)
       expect(managementBox!.y + managementBox!.height / 2).toBeCloseTo(height / 2, 0)
       if (width >= 1200) {
         const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
         expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
       }
     } else {
-      expect(managementBox!.height).toBeGreaterThanOrEqual(44)
+      expect(managementBox!.height).toBe(36)
       expect(managementBox!.x + managementBox!.width).toBeLessThanOrEqual(width)
       expect(managementBox!.y + managementBox!.height).toBeLessThanOrEqual(height)
     }
@@ -2761,7 +2847,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     await expect(page.getByTestId('game-management-tool')).toBeVisible()
     const management = page.getByTestId('game-management-tool')
     await expect(management.getByText('Фаза раунда', { exact: true })).toHaveCount(0)
-    await expect(management.getByRole('heading', { name: 'Ассистент раунда' })).toBeVisible()
+    await expect(management.getByRole('heading', { name: 'Раунд' })).toBeVisible()
     await expect(management.getByRole('heading', { name: 'Активная команда' })).toBeVisible()
     for (const section of ['round', 'team', 'manual-quiz', 'finish-game']) {
       const block = management.getByTestId(`management-${section}-section`)
@@ -2778,8 +2864,9 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     }
     const assistantBounds = await management.getByTestId('management-round-section').boundingBox()
     const teamBounds = await management.getByTestId('management-team-section').boundingBox()
-    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeGreaterThanOrEqual(15)
-    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeGreaterThanOrEqual(8)
+    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeLessThanOrEqual(12)
+    for (const label of ['Снять выбор', 'Отыграла']) {
       const action = management.getByRole('button', { name: label, exact: true })
       await expect(action).toHaveClass(/MuiButton-outlinedPrimary/)
       await expect(action).toBeEnabled()
@@ -3154,7 +3241,7 @@ for (const status of ['ready', 'finished'] as const) {
   }
 }
 
-for (const width of [320, 1440]) {
+for (const width of [320, 390, 768, 1440]) {
   test(`management highlights the round action at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     const writes = await mockGame(page)
@@ -3175,15 +3262,70 @@ for (const width of [320, 1440]) {
     await page.goto('/panel/game-board')
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
     const assistant = page.getByTestId('management-round-section')
-    await expect(assistant.getByRole('button')).toBeVisible()
-    await expect(assistant.getByRole('button')).toBeEnabled()
-    await assistant.locator('summary').click()
-    const steps = assistant.getByRole('list', { name: 'Фаза раунда' })
-    await expect(steps.getByRole('listitem')).toHaveCount(7)
-    await expect(steps.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
-    await assistant.locator('summary').click()
+    const primaryAction = assistant.getByRole('button', {
+      name: 'Завершить заказ модификаторов',
+      exact: true,
+    })
+    await expect(primaryAction).toBeVisible()
+    await expect(primaryAction).toBeEnabled()
+    const stages = assistant.getByRole('button', { name: 'Выбор модификаторов', exact: true })
+    const phase = assistant.getByTestId('management-round-phase')
+    const currentStep = assistant.locator('[aria-current="step"]')
+    const currentFill = await currentStep.evaluate(
+      (element) => getComputedStyle(element).backgroundImage,
+    )
+    const neutralFill = await phase.evaluate((element) => getComputedStyle(element).backgroundImage)
+    await expect(stages).toHaveAttribute('aria-expanded', 'false')
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    await expect(phase.getByRole('listitem').nth(0)).toContainText('Карточка открыта')
+    await expect(phase.getByRole('listitem').nth(2)).toContainText('Подготовка к игре')
+    await stages.focus()
+    await page.keyboard.press('Enter')
+    await expect(stages).toHaveAttribute('aria-expanded', 'true')
+    await expect(assistant.getByRole('listitem')).toHaveCount(7)
+    await expect(assistant.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
+    await expect(assistant.locator('[data-state="complete"]')).toHaveCount(3)
+    expect(await currentStep.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      currentFill,
+    )
+    expect(await phase.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      neutralFill,
+    )
+    const list = assistant.getByRole('list')
+    const listGeometry = await list.evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      const borderLeft = parseFloat(getComputedStyle(element).borderLeftWidth)
+      const borderRight = parseFloat(getComputedStyle(element).borderRightWidth)
+      return {
+        width: bounds.width - borderLeft - borderRight,
+        rows: Array.from(element.querySelectorAll('[role="listitem"]'), (row) => {
+          const rowBounds = row.getBoundingClientRect()
+          return { offset: rowBounds.x - bounds.x - borderLeft, width: rowBounds.width }
+        }),
+      }
+    })
+    expect(listGeometry.width).toBeCloseTo(
+      await phase.evaluate((element) => element.clientWidth),
+      0,
+    )
+    for (const row of listGeometry.rows) {
+      expect(row.offset).toBeCloseTo(0, 0)
+      expect(row.width).toBeCloseTo(listGeometry.width, 0)
+    }
+    await assistant.screenshot({
+      path: `../.tmp/game-board-design/round-stages-${width}.png`,
+      animations: 'disabled',
+    })
+    await expect(
+      assistant.getByRole('listitem').filter({ hasText: 'Подготовка к игре' }),
+    ).toBeVisible()
+    await stages.click()
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    expect(await phase.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      neutralFill,
+    )
     await expect(page.getByTestId('management-team-section')).toContainText('Ворон')
-    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+    for (const label of ['Снять выбор', 'Отыграла']) {
       const action = page
         .getByTestId('management-team-section')
         .getByRole('button', { name: label, exact: true })
@@ -3271,10 +3413,57 @@ test('admin starts gameplay after preparation', async ({ page }) => {
     path: '../.tmp/game-board-design/management-preparing-390.png',
     animations: 'disabled',
   })
+  await roundSection.getByRole('button', { name: 'Подготовка к игре', exact: true }).click()
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Подготовка к игре')
+  await roundSection.screenshot({
+    path: '../.tmp/game-board-design/round-stages-preparing-390.png',
+    animations: 'disabled',
+  })
   await roundSection.getByRole('button', { name: 'Начать игру', exact: true }).click()
   await expect(roundSection).toContainText('Проведение игры')
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Проведение игры')
   await expect(roundSection.getByRole('button', { name: 'Завершить игру' })).toBeVisible()
 })
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`round context reveals both sides with motion preference ${reducedMotion}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ reducedMotion })
+    await mockGame(page)
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({ json: { ...activeRoundFixture, status: 'preparing' } }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const phase = page.getByTestId('management-round-phase')
+    const trigger = phase.getByRole('button', { name: 'Подготовка к игре', exact: true })
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    const samples = await trigger.evaluate(async (button) => {
+      const ids = button.getAttribute('aria-controls')!.split(' ')
+      ;(button as HTMLButtonElement).click()
+      const heights: number[][] = []
+      for (let frame = 0; frame < 14; frame += 1) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+        heights.push(ids.map((id) => document.getElementById(id)!.getBoundingClientRect().height))
+      }
+      return heights
+    })
+    await expect(phase.getByRole('listitem')).toHaveCount(7)
+    for (const side of [0, 1]) {
+      const heights = samples.map((sample) => sample[side]!)
+      if (reducedMotion === 'reduce')
+        expect(Math.max(...heights)).toBeCloseTo(Math.min(...heights), 0)
+      else expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(5)
+    }
+    await trigger.focus()
+    await page.keyboard.press('Space')
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    await expect(trigger).toBeFocused()
+  })
+}
 
 test('current-round management is an edge petal on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })

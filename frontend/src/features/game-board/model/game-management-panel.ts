@@ -3,17 +3,13 @@ import type { components } from '../../../shared/api/contracts/generated'
 import type { GameBoardSnapshot, GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
 import type { AppButtonTone } from '../../../shared/ui/primitives/buttons/app-button-tone.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
-import type { GameManagementFlowStepId } from './game-management-flow.ts'
 
 export type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 
 export interface RoundActionModel {
-  stepNumber: number | null
-  stepId: GameManagementFlowStepId | null
   statusTone: 'info' | 'warning' | 'success'
   statusLabel: string
   title: string
-  description: string
   actionLabel: string | null
   actionTone: AppButtonTone
   onAction: (() => void) | null
@@ -54,12 +50,9 @@ export function buildRoundActionModel({
 }): RoundActionModel {
   if (snapshot.status !== 'active') {
     return {
-      stepNumber: null,
-      stepId: null,
       statusTone: 'info',
       statusLabel: t('gameBoard.managementLaunchTitle'),
       title: t('gameBoard.managementRoundIdleDescription'),
-      description: t('gameBoard.managementActiveTeamInactive'),
       actionLabel: null,
       actionTone: 'primary',
       onAction: null,
@@ -68,12 +61,9 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'card_opened') {
     return {
-      stepNumber: 3,
-      stepId: 'start_modifiers',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.start_modifiers.title'),
       title: t('gameBoard.flowSteps.start_modifiers.title'),
-      description: t('gameBoard.managementRoundCardOpenedHint'),
       actionLabel: t('gameBoard.roundPanelStartModifierOrdering'),
       actionTone: 'primary',
       onAction: () =>
@@ -86,12 +76,9 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'awaiting_modifiers') {
     return {
-      stepNumber: 4,
-      stepId: 'activate_modifiers',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.activate_modifiers.title'),
       title: t('gameBoard.flowSteps.activate_modifiers.title'),
-      description: t('gameBoard.managementRoundAwaitingActionHint'),
       actionLabel: t('gameBoard.roundPanelStart'),
       actionTone: 'primary',
       onAction: () =>
@@ -104,12 +91,9 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'preparing') {
     return {
-      stepNumber: 5,
-      stepId: 'start_round',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.start_round.title'),
       title: t('gameBoard.flowSteps.start_round.title'),
-      description: t('gameBoard.managementRoundPreparingHint'),
       actionLabel: t('gameBoard.roundPanelBeginGameplay'),
       actionTone: 'primary',
       onAction: () =>
@@ -122,12 +106,9 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'in_progress') {
     return {
-      stepNumber: 6,
-      stepId: 'play_round',
       statusTone: 'success',
       statusLabel: t('gameBoard.flowSteps.play_round.title'),
       title: t('gameBoard.flowSteps.play_round.title'),
-      description: t('gameBoard.managementRoundInProgressHint'),
       actionLabel: t('gameBoard.roundPanelReview'),
       actionTone: 'primary',
       onAction: () =>
@@ -140,12 +121,9 @@ export function buildRoundActionModel({
 
   if (activeRound?.status === 'reviewing_results') {
     return {
-      stepNumber: 7,
-      stepId: 'review_round',
       statusTone: 'success',
       statusLabel: t('gameBoard.flowSteps.review_round.title'),
       title: t('gameBoard.flowSteps.review_round.title'),
-      description: t('gameBoard.managementRoundReviewActionHint'),
       actionLabel: t('gameBoard.roundPanelOpenSummary'),
       actionTone: 'success',
       onAction: onOpenSummary,
@@ -154,12 +132,9 @@ export function buildRoundActionModel({
 
   if (hasCurrentActiveTeam) {
     return {
-      stepNumber: 2,
-      stepId: 'select_card',
       statusTone: 'info',
       statusLabel: t('gameBoard.flowSteps.select_card.title'),
       title: t('gameBoard.flowSteps.select_card.title'),
-      description: t('gameBoard.managementRoundNextActionBoardHint'),
       actionLabel: null,
       actionTone: 'primary',
       onAction: null,
@@ -168,14 +143,9 @@ export function buildRoundActionModel({
 
   if (resumableTeam) {
     return {
-      stepNumber: 1,
-      stepId: 'select_team',
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.select_team.title'),
       title: t('gameBoard.managementActiveTeamResumeAction'),
-      description: t('gameBoard.managementActiveTeamResumeHint', {
-        slot: resumableTeam.teamSlotIndex,
-      }),
       actionLabel: t('gameBoard.managementActiveTeamResumeAction'),
       actionTone: 'primary',
       onAction: () => onResumeTeam(resumableTeam.teamId),
@@ -183,12 +153,9 @@ export function buildRoundActionModel({
   }
 
   return {
-    stepNumber: 1,
-    stepId: 'select_team',
     statusTone: 'warning',
     statusLabel: t('gameBoard.flowSteps.select_team.title'),
     title: t('gameBoard.flowSteps.select_team.title'),
-    description: t('gameBoard.managementRoundNextActionTeamHint'),
     actionLabel: null,
     actionTone: 'primary',
     onAction: null,

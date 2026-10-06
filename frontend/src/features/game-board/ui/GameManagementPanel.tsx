@@ -155,12 +155,12 @@ export function GameManagementTool({
   return (
     <>
       <Box data-testid="game-management-tool">
-        <Stack spacing={2}>
+        <Stack spacing={1}>
           {flow.phase === 'ready' ? (
             <SecondaryManagementSection
               sectionId="launch"
+              icon="round"
               title={t('gameBoard.managementLaunchTitle')}
-              tooltip={t('gameBoard.managementLaunchTooltip')}
               defaultExpanded
             >
               {launchPanel.isLoadingLaunchState ? (
@@ -168,16 +168,11 @@ export function GameManagementTool({
                   {t('gameBoard.managementLaunchLoading')}
                 </Typography>
               ) : canShowLaunchAction ? (
-                <Stack spacing={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('gameBoard.managementLaunchDescription')}
-                  </Typography>
-                  <AdminGameLaunchDrawer
-                    snapshot={canShowLaunchAction}
-                    isStartingGame={launchPanel.isStartingGame}
-                    onStartGame={launchPanel.startGame}
-                  />
-                </Stack>
+                <AdminGameLaunchDrawer
+                  snapshot={canShowLaunchAction}
+                  isStartingGame={launchPanel.isStartingGame}
+                  onStartGame={launchPanel.startGame}
+                />
               ) : launchPanel.canStartGame ? (
                 <Typography variant="body2" color="text.secondary">
                   {t('gameBoard.managementLaunchNoRegistrationState')}
@@ -216,25 +211,10 @@ export function GameManagementTool({
                 onSetTeamPlayedState={onSetTeamPlayedState}
               />
 
-              {activeRound ? (
-                <SecondaryManagementSection
-                  sectionId="round-safety"
-                  title={t('gameBoard.roundPanelSafetyTitle')}
-                  tooltip={t('gameBoard.roundPanelSafetyTooltip')}
-                >
-                  <RoundSafetyControls
-                    activeRound={activeRound}
-                    isBusy={isChangingRoundStage}
-                    onRebuild={onRebuildRound}
-                    onTechnicalCancel={onTechnicalCancelRound}
-                  />
-                </SecondaryManagementSection>
-              ) : null}
-
               <SecondaryManagementSection
                 sectionId="manual-quiz"
+                icon="points"
                 title={t('gameBoard.manualQuizAwardTitle')}
-                tooltip={t('gameBoard.manualQuizAwardTooltip')}
               >
                 <ManualQuizAwardControl
                   isActiveGame={isActiveGame}
@@ -247,20 +227,37 @@ export function GameManagementTool({
                 />
               </SecondaryManagementSection>
 
+              {activeRound ? (
+                <SecondaryManagementSection
+                  sectionId="round-safety"
+                  icon="recovery"
+                  title={t('gameBoard.roundPanelSafetyTitle')}
+                >
+                  <RoundSafetyControls
+                    key={activeRound.roundId}
+                    activeRound={activeRound}
+                    isBusy={isChangingRoundStage}
+                    onRebuild={onRebuildRound}
+                    onTechnicalCancel={onTechnicalCancelRound}
+                  />
+                </SecondaryManagementSection>
+              ) : null}
+
               {launchPanel.canFinishGame ? (
                 <SecondaryManagementSection
                   sectionId="finish-game"
+                  icon="finish"
                   title={t('gameBoard.finishSectionTitle')}
-                  tooltip={t('gameBoard.finishSectionTooltip')}
                 >
                   <Stack spacing={1}>
-                    <Typography variant="body2" color="text.secondary">
-                      {activeRound
-                        ? t('gameBoard.finishBlockedByRound')
-                        : t('gameBoard.finishSectionDescription')}
-                    </Typography>
+                    {activeRound ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {t('gameBoard.finishBlockedByRound')}
+                      </Typography>
+                    ) : null}
                     <AppButton
                       tone="danger"
+                      size="small"
                       disabled={activeRound !== null}
                       onClick={() => {
                         finishState.resetError()

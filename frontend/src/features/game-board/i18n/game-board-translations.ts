@@ -158,8 +158,6 @@ const translations = {
       'Current game phase, board size, and whether a round is already running.',
     managementBoardSize: '{{rows}} x {{cols}}',
     managementActiveTeamTitle: 'Active team',
-    managementActiveTeamTooltip:
-      'Select the team whose turn is currently being played before opening new cards.',
     managementActiveTeamInactive: 'Active team selection is available after the game starts.',
     managementActiveTeamNone: 'Not selected',
     managementActiveTeamLoading: 'Loading teams...',
@@ -171,27 +169,25 @@ const translations = {
     managementActiveTeamCurrentLabel: 'Current active team',
     managementActiveTeamRecentLabel: 'Last round team',
     managementActiveTeamResumeAction: 'Continue with this team',
-    managementActiveTeamResumeHint:
-      'After a round is completed, the active team is cleared. You can quickly return team #{{slot}} or choose another one.',
-    managementActiveTeamClearAction: 'Clear active team',
+    managementActiveTeamClearAction: 'Clear selection',
     managementActiveTeamQuickListTitle: 'Quick team list',
-    teamPlayedMarkAction: 'Mark as played',
+    teamPlayedMarkAction: 'Played',
     teamPlayedResetAction: 'Return to queue',
     teamPlayedSelectedNotice:
       'This team is marked as played and should not be selected for new rounds.',
-    manualQuizAwardTitle: 'Manual quiz points',
+    manualQuizAwardTitle: 'Quiz points',
     manualQuizAwardDescription: 'Award or deduct quiz points and record the reason in history.',
     manualQuizAwardInactive: 'Manual quiz points are available only while the game is active.',
     manualQuizAwardLoading: 'Loading players...',
     manualQuizAwardError: 'Failed to load players.',
     manualQuizAwardNoPlayers: 'No active players are available.',
     manualQuizAwardNoPlayerMatches: 'No players found.',
-    manualQuizAwardPointsLabel: 'Quiz points',
+    manualQuizAwardPointsLabel: 'Points',
     manualQuizAwardOperationLabel: 'Operation',
     manualQuizAwardOperationAward: 'Award',
     manualQuizAwardOperationDeduct: 'Deduct',
     manualQuizAwardReasonLabel: 'Reason',
-    manualQuizAwardReasonHint: 'Required, 3-500 characters.',
+
     manualQuizAwardBalancePreview: 'Available balance: {{before}} {{sign}} {{points}} = {{after}}.',
     manualQuizAwardAction: 'Apply adjustment',
     manualQuizAwardSaving: 'Saving...',
@@ -204,38 +200,14 @@ const translations = {
     manualQuizAwardConfirmDescription:
       '{{operation}} {{player}}: {{sign}}{{points}}. Balance: {{before}} → {{after}}. Reason: {{reason}}',
     manualQuizAwardConfirmAction: 'Confirm',
-    manualQuizAwardTooltip: 'Manual score correction that is written into the quiz history.',
     managementRoundTitle: 'Round',
     managementRoundIdleDescription: 'No round is running right now.',
-    managementRoundAssistantTitle: 'Round assistant',
-    managementRoundAssistantTooltip:
-      'Follow each round phase: open the card, start and finish modifier ordering, prepare and play, then record the result.',
-    managementRoundStepProgress: 'Step {{current}} of {{total}}',
-    managementRoundNextActionBoardHint:
-      'The team is ready. Open the next card on the board to create a new round.',
-    managementRoundNextActionTeamHint:
-      'Select the active team first so the next card can be opened without extra clicks.',
-    managementRoundAwaitingActionHint:
-      'Players can activate modifiers now. Close ordering when everyone has finished.',
-    managementRoundCardOpenedHint:
-      'The card is open. Start modifier selection when you are ready to accept orders.',
-    managementRoundPreparingHint:
-      'Modifier ordering is closed. Prepare the team, then start the game.',
-    managementRoundInProgressHint:
-      'The team is playing the card. Finish the game when play is over.',
-    managementRoundReviewActionHint:
-      'Gameplay has ended. Open the results form to record the round outcome.',
     managementLaunchTitle: 'Launch',
-    managementLaunchTooltip:
-      'Final registration checks and the admin-only action that starts the game.',
-    managementLaunchDescription: 'Run the final registration checklist before starting the game.',
     managementLaunchUnavailable: 'Launch controls are available only while registration is open.',
     managementLaunchLoading: 'Checking registration state...',
     managementLaunchAdminOnly: 'Only administrators can start the game.',
     managementLaunchNoRegistrationState: 'Registration state is unavailable. Refresh the page.',
     finishSectionTitle: 'Finish game',
-    finishSectionTooltip: 'Create and preserve the official final result of the whole game.',
-    finishSectionDescription: 'Review the server-calculated standings before closing the game.',
     finishBlockedByRound: 'Finish or technically cancel the current round first.',
     finishOpenAction: 'Review and finish game',
     finishDialogTitle: 'Finish the whole game',
@@ -289,10 +261,8 @@ const translations = {
     roundPanelBeginGameplayFailed: 'Unable to start gameplay.',
     roundPanelReviewFailed: 'Unable to finish gameplay.',
     roundPanelCompleteFailed: 'Unable to complete the round.',
-    roundPanelSafetyTitle: 'Round recovery and cancellation',
-    roundPanelSafetyTooltip: 'Destructive recovery actions with full purchase refunds.',
+    roundPanelSafetyTitle: 'Round recovery',
     roundPanelRebuild: 'Rebuild modifier order',
-    roundPanelRebuildHint: 'Refund every purchase and reopen modifier ordering for this card.',
     roundPanelRebuildConfirmTitle: 'Rebuild this modifier order?',
     roundPanelRebuildConfirmDescription:
       'Every purchase in this round will be cancelled and refunded. The card and team stay selected.',
@@ -454,6 +424,20 @@ const translations = {
     activeTeamSaveFailed: 'Failed to update active team.',
     activeTeamAlreadyPlayed: 'A played team cannot become active again.',
     activeTeamRoundInProgress: 'Finish the active round before changing the active team.',
+    managementHelp: {
+      round:
+        'All round stages are shown here. Completed steps are dimmed; the current step is highlighted. The button advances to the next allowed stage.',
+      team: 'Select the active team or mark whether it has played. Team changes are locked while a round is active.',
+      launch: 'Start the game using its published configuration and confirmed teams.',
+      'manual-quiz':
+        'Credit or deduct quiz points for the selected player. A reason is required and the adjustment is recorded in the ledger.',
+      'round-safety':
+        'Recover a round after a technical failure: reopen modifier ordering or cancel the round with a recorded reason.',
+      'finish-game':
+        'Finish the whole game and save its final standings. Finish or cancel the active round first.',
+    },
+    roundPanelRebuildHelp:
+      'Reopens modifier ordering during preparation: cancels every activation in this round and refunds its owner. The card and team stay selected. Unavailable after results are recorded or while a quiz question is open.',
   },
   ru: {
     progress: {
@@ -616,8 +600,6 @@ const translations = {
     managementStatusTooltip: 'Текущая фаза игры, размер поля и наличие уже запущенного раунда.',
     managementBoardSize: '{{rows}} x {{cols}}',
     managementActiveTeamTitle: 'Активная команда',
-    managementActiveTeamTooltip:
-      'Выберите команду, чей ход сейчас разыгрывается, перед открытием новой карточки.',
     managementActiveTeamInactive: 'Выбор активной команды доступен после старта игры.',
     managementActiveTeamNone: 'Не выбрана',
     managementActiveTeamLoading: 'Загружаем команды...',
@@ -630,15 +612,13 @@ const translations = {
     managementActiveTeamCurrentLabel: 'Текущая активная команда',
     managementActiveTeamRecentLabel: 'Последняя команда раунда',
     managementActiveTeamResumeAction: 'Продолжить этой командой',
-    managementActiveTeamResumeHint:
-      'После завершения раунда активная команда сбрасывается. Можно быстро вернуть команду #{{slot}} или выбрать другую.',
-    managementActiveTeamClearAction: 'Снять активную команду',
+    managementActiveTeamClearAction: 'Снять выбор',
     managementActiveTeamQuickListTitle: 'Быстрый выбор команды',
-    teamPlayedMarkAction: 'Отметить как отыгравшую',
+    teamPlayedMarkAction: 'Отыграла',
     teamPlayedResetAction: 'Вернуть в очередь',
     teamPlayedSelectedNotice:
       'Эта команда уже отмечена как отыгравшая и не должна выбираться на новые раунды.',
-    manualQuizAwardTitle: 'Ручная корректировка очков викторины',
+    manualQuizAwardTitle: 'Очки викторины',
     manualQuizAwardDescription:
       'Начислите или вычтите очки игрока. Причина и администратор сохранятся в истории.',
     manualQuizAwardInactive: 'Ручное начисление доступно только во время активной игры.',
@@ -646,12 +626,12 @@ const translations = {
     manualQuizAwardError: 'Не удалось загрузить игроков.',
     manualQuizAwardNoPlayers: 'Нет активных игроков для начисления.',
     manualQuizAwardNoPlayerMatches: 'Игроки не найдены.',
-    manualQuizAwardPointsLabel: 'Очки викторины',
+    manualQuizAwardPointsLabel: 'Очки',
     manualQuizAwardOperationLabel: 'Операция',
     manualQuizAwardOperationAward: 'Начислить',
     manualQuizAwardOperationDeduct: 'Вычесть',
     manualQuizAwardReasonLabel: 'Причина корректировки',
-    manualQuizAwardReasonHint: 'Обязательное поле, от 3 до 500 символов.',
+
     manualQuizAwardBalancePreview: 'Доступный баланс: {{before}} {{sign}} {{points}} = {{after}}.',
     manualQuizAwardAction: 'Применить корректировку',
     manualQuizAwardSaving: 'Сохраняем...',
@@ -664,37 +644,14 @@ const translations = {
     manualQuizAwardConfirmDescription:
       '{{operation}} игроку {{player}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
     manualQuizAwardConfirmAction: 'Подтвердить',
-    manualQuizAwardTooltip: 'Ручная корректировка очков с записью действия в историю викторины.',
     managementRoundTitle: 'Раунд',
     managementRoundIdleDescription: 'Сейчас нет запущенного раунда.',
-    managementRoundAssistantTitle: 'Ассистент раунда',
-    managementRoundAssistantTooltip:
-      'Последовательность раунда: откройте карточку, проведите заказ модификаторов, подготовьте и проведите игру, затем подведите итоги.',
-    managementRoundStepProgress: 'Шаг {{current}} из {{total}}',
-    managementRoundNextActionBoardHint:
-      'Команда уже готова. Откройте следующую карточку на поле, чтобы создать новый раунд.',
-    managementRoundNextActionTeamHint:
-      'Сначала назначьте активную команду, чтобы следующий раунд запускался без лишних действий.',
-    managementRoundAwaitingActionHint:
-      'Игроки могут активировать модификаторы. Когда все закончат, завершите заказ.',
-    managementRoundCardOpenedHint:
-      'Карточка открыта. Начните выбор модификаторов, когда будете готовы принимать заказы.',
-    managementRoundPreparingHint:
-      'Заказ модификаторов закрыт. Подготовьте команду, затем начните игру.',
-    managementRoundInProgressHint:
-      'Команда играет свою карточку. Когда игра закончится, нажмите «Завершить игру».',
-    managementRoundReviewActionHint:
-      'Игра завершена. Откройте форму итогов, чтобы зафиксировать результат раунда.',
     managementLaunchTitle: 'Запуск',
-    managementLaunchTooltip: 'Финальная проверка регистрации и администраторский запуск игры.',
-    managementLaunchDescription: 'Перед стартом пройдите финальные проверки регистрации.',
     managementLaunchUnavailable: 'Запуск доступен только на этапе приёма заявок.',
     managementLaunchLoading: 'Проверяем состояние регистрации...',
     managementLaunchAdminOnly: 'Запустить игру может только администратор.',
     managementLaunchNoRegistrationState: 'Состояние регистрации недоступно. Обновите страницу.',
     finishSectionTitle: 'Завершение игры',
-    finishSectionTooltip: 'Создать и сохранить официальный итог всей игры.',
-    finishSectionDescription: 'Проверьте рассчитанный сервером рейтинг перед завершением игры.',
     finishBlockedByRound: 'Сначала завершите или технически отмените текущий раунд.',
     finishOpenAction: 'Проверить и завершить игру',
     finishDialogTitle: 'Завершить всю игру',
@@ -748,11 +705,8 @@ const translations = {
     roundPanelBeginGameplayFailed: 'Не удалось начать игру.',
     roundPanelReviewFailed: 'Не удалось завершить игру.',
     roundPanelCompleteFailed: 'Не удалось завершить раунд.',
-    roundPanelSafetyTitle: 'Восстановление и отмена раунда',
-    roundPanelSafetyTooltip: 'Критические действия с полным возвратом покупок.',
+    roundPanelSafetyTitle: 'Сбои раунда',
     roundPanelRebuild: 'Пересобрать заказ модификаторов',
-    roundPanelRebuildHint:
-      'Вернуть все покупки и снова открыть заказ модификаторов для этой карточки.',
     roundPanelRebuildConfirmTitle: 'Пересобрать заказ модификаторов?',
     roundPanelRebuildConfirmDescription:
       'Все покупки раунда будут отменены и возвращены. Карточка и команда останутся выбранными.',
@@ -916,6 +870,20 @@ const translations = {
     activeTeamSaveFailed: 'Не удалось обновить активную команду.',
     activeTeamAlreadyPlayed: 'Отыгравшую команду нельзя снова сделать активной.',
     activeTeamRoundInProgress: 'Завершите текущий раунд, прежде чем менять активную команду.',
+    managementHelp: {
+      round:
+        'Здесь показаны все этапы раунда. Пройденные затемнены, текущий выделен. Кнопка переводит раунд на следующий доступный этап.',
+      team: 'Выбор активной команды и отметка, сыграла ли она. Во время активного раунда смена команды заблокирована.',
+      launch: 'Запускает игру с опубликованными настройками и подтверждёнными командами.',
+      'manual-quiz':
+        'Начисляет или списывает очки викторины у выбранного игрока. Причина обязательна; корректировка сохраняется в журнале.',
+      'round-safety':
+        'Восстановление после технического сбоя: повторный выбор модификаторов или отмена раунда с записью причины.',
+      'finish-game':
+        'Завершает всю игру и сохраняет итоговый рейтинг. Сначала нужно завершить или отменить активный раунд.',
+    },
+    roundPanelRebuildHelp:
+      'Возвращает подготовку к выбору модификаторов: отменяет все активации этого раунда и возвращает очки их владельцам. Карточка и команда сохраняются. Недоступно после записи результатов или пока открыт вопрос викторины.',
   },
   uk: {
     progress: {
@@ -1077,8 +1045,6 @@ const translations = {
     managementStatusTooltip: 'Поточна фаза гри, розмір поля та наявність уже запущеного раунду.',
     managementBoardSize: '{{rows}} x {{cols}}',
     managementActiveTeamTitle: 'Активна команда',
-    managementActiveTeamTooltip:
-      'Оберіть команду, чий хід зараз розігрується, перед відкриттям нової картки.',
     managementActiveTeamInactive: 'Вибір активної команди доступний після старту гри.',
     managementActiveTeamNone: 'Не вибрано',
     managementActiveTeamLoading: 'Завантаження команд...',
@@ -1090,15 +1056,13 @@ const translations = {
     managementActiveTeamCurrentLabel: 'Поточна активна команда',
     managementActiveTeamRecentLabel: 'Остання команда раунду',
     managementActiveTeamResumeAction: 'Продовжити цією командою',
-    managementActiveTeamResumeHint:
-      'Після завершення раунду активна команда скидається. Можна швидко повернути команду #{{slot}} або вибрати іншу.',
-    managementActiveTeamClearAction: 'Зняти активну команду',
+    managementActiveTeamClearAction: 'Зняти вибір',
     managementActiveTeamQuickListTitle: 'Швидкий вибір команди',
-    teamPlayedMarkAction: 'Позначити як відіграну',
+    teamPlayedMarkAction: 'Відіграла',
     teamPlayedResetAction: 'Повернути в чергу',
     teamPlayedSelectedNotice:
       'Ця команда вже позначена як відіграна і не повинна обиратися для нових раундів.',
-    manualQuizAwardTitle: 'Ручне коригування очок вікторини',
+    manualQuizAwardTitle: 'Очки вікторини',
     manualQuizAwardDescription:
       'Нарахуйте або відніміть очки гравця. Причина й адміністратор збережуться в історії.',
     manualQuizAwardInactive: 'Ручне нарахування доступне лише під час активної гри.',
@@ -1106,12 +1070,12 @@ const translations = {
     manualQuizAwardError: 'Не вдалося завантажити гравців.',
     manualQuizAwardNoPlayers: 'Немає активних гравців для нарахування.',
     manualQuizAwardNoPlayerMatches: 'Гравців не знайдено.',
-    manualQuizAwardPointsLabel: 'Очки вікторини',
+    manualQuizAwardPointsLabel: 'Очки',
     manualQuizAwardOperationLabel: 'Операція',
     manualQuizAwardOperationAward: 'Нарахувати',
     manualQuizAwardOperationDeduct: 'Відняти',
     manualQuizAwardReasonLabel: 'Причина коригування',
-    manualQuizAwardReasonHint: 'Обов’язкове поле, від 3 до 500 символів.',
+
     manualQuizAwardBalancePreview: 'Доступний баланс: {{before}} {{sign}} {{points}} = {{after}}.',
     manualQuizAwardAction: 'Застосувати коригування',
     manualQuizAwardSaving: 'Зберігаємо...',
@@ -1124,37 +1088,14 @@ const translations = {
     manualQuizAwardConfirmDescription:
       '{{operation}} гравцю {{player}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
     manualQuizAwardConfirmAction: 'Підтвердити',
-    manualQuizAwardTooltip: 'Ручне коригування очок із записом дії в історію вікторини.',
     managementRoundTitle: 'Раунд',
     managementRoundIdleDescription: 'Зараз немає запущеного раунду.',
-    managementRoundAssistantTitle: 'Асистент раунду',
-    managementRoundAssistantTooltip:
-      'Послідовність раунду: відкрийте картку, проведіть замовлення модифікаторів, підготуйте та проведіть гру, потім підбийте підсумки.',
-    managementRoundStepProgress: 'Крок {{current}} з {{total}}',
-    managementRoundNextActionBoardHint:
-      'Команда вже готова. Відкрийте наступну картку на полі, щоб створити новий раунд.',
-    managementRoundNextActionTeamHint:
-      'Спочатку призначте активну команду, щоб наступний раунд запускався без зайвих дій.',
-    managementRoundAwaitingActionHint:
-      'Гравці можуть активувати модифікатори. Коли всі закінчать, завершіть замовлення.',
-    managementRoundCardOpenedHint:
-      'Картку відкрито. Почніть вибір модифікаторів, коли будете готові приймати замовлення.',
-    managementRoundPreparingHint:
-      'Замовлення модифікаторів закрито. Підготуйте команду, потім почніть гру.',
-    managementRoundInProgressHint:
-      'Команда грає свою картку. Коли гра завершиться, натисніть «Завершити гру».',
-    managementRoundReviewActionHint:
-      'Гру завершено. Відкрийте форму підсумків, щоб зафіксувати результат раунду.',
     managementLaunchTitle: 'Запуск',
-    managementLaunchTooltip: 'Фінальна перевірка реєстрації та адміністраторський запуск гри.',
-    managementLaunchDescription: 'Перед стартом пройдіть фінальні перевірки реєстрації.',
     managementLaunchUnavailable: 'Запуск доступний лише на етапі прийому заявок.',
     managementLaunchLoading: 'Перевіряємо стан реєстрації...',
     managementLaunchAdminOnly: 'Запустити гру може лише адміністратор.',
     managementLaunchNoRegistrationState: 'Стан реєстрації недоступний. Оновіть сторінку.',
     finishSectionTitle: 'Завершення гри',
-    finishSectionTooltip: 'Створити й зберегти офіційний підсумок усієї гри.',
-    finishSectionDescription: 'Перевірте розрахований сервером рейтинг перед завершенням гри.',
     finishBlockedByRound: 'Спочатку завершіть або технічно скасуйте поточний раунд.',
     finishOpenAction: 'Перевірити й завершити гру',
     finishDialogTitle: 'Завершити всю гру',
@@ -1208,10 +1149,8 @@ const translations = {
     roundPanelBeginGameplayFailed: 'Не вдалося почати гру.',
     roundPanelReviewFailed: 'Не вдалося завершити гру.',
     roundPanelCompleteFailed: 'Не вдалося завершити раунд.',
-    roundPanelSafetyTitle: 'Відновлення та скасування раунду',
-    roundPanelSafetyTooltip: 'Критичні дії з повним поверненням покупок.',
+    roundPanelSafetyTitle: 'Збої раунду',
     roundPanelRebuild: 'Перезібрати замовлення модифікаторів',
-    roundPanelRebuildHint: 'Повернути всі покупки й знову відкрити замовлення модифікаторів.',
     roundPanelRebuildConfirmTitle: 'Перезібрати замовлення модифікаторів?',
     roundPanelRebuildConfirmDescription:
       'Усі покупки раунду буде скасовано й повернено. Картка та команда лишаться вибраними.',
@@ -1375,6 +1314,20 @@ const translations = {
     activeTeamSaveFailed: 'Не вдалося оновити активну команду.',
     activeTeamAlreadyPlayed: 'Відіграну команду не можна знову зробити активною.',
     activeTeamRoundInProgress: 'Завершіть поточний раунд, перш ніж змінювати активну команду.',
+    managementHelp: {
+      round:
+        'Тут показано всі етапи раунду. Пройдені затемнено, поточний виділено. Кнопка переводить раунд на наступний доступний етап.',
+      team: 'Вибір активної команди та позначка, чи зіграла вона. Під час активного раунду зміну команди заблоковано.',
+      launch: 'Запускає гру з опублікованими налаштуваннями та підтвердженими командами.',
+      'manual-quiz':
+        'Нараховує або списує очки вікторини обраному гравцю. Причина обов’язкова; коригування зберігається в журналі.',
+      'round-safety':
+        'Відновлення після технічного збою: повторний вибір модифікаторів або скасування раунду із записом причини.',
+      'finish-game':
+        'Завершує всю гру та зберігає підсумковий рейтинг. Спочатку завершіть або скасуйте активний раунд.',
+    },
+    roundPanelRebuildHelp:
+      'Повертає підготовку до вибору модифікаторів: скасовує всі активації цього раунду й повертає очки власникам. Картка та команда зберігаються. Недоступно після запису результатів або поки відкрите питання вікторини.',
   },
   pl: {
     progress: {
@@ -1537,8 +1490,6 @@ const translations = {
       'Aktualna faza gry, rozmiar planszy oraz informacja, czy runda już trwa.',
     managementBoardSize: '{{rows}} x {{cols}}',
     managementActiveTeamTitle: 'Aktywna drużyna',
-    managementActiveTeamTooltip:
-      'Wybierz drużynę, której tura jest teraz rozgrywana, zanim otworzysz nową kartę.',
     managementActiveTeamInactive: 'Wybór aktywnej drużyny jest dostępny po starcie gry.',
     managementActiveTeamNone: 'Nie wybrano',
     managementActiveTeamLoading: 'Ładowanie drużyn...',
@@ -1551,15 +1502,13 @@ const translations = {
     managementActiveTeamCurrentLabel: 'Obecnie aktywna drużyna',
     managementActiveTeamRecentLabel: 'Drużyna z poprzedniej rundy',
     managementActiveTeamResumeAction: 'Kontynuuj tą drużyną',
-    managementActiveTeamResumeHint:
-      'Po zakończeniu rundy aktywna drużyna jest czyszczona. Możesz szybko przywrócić drużynę #{{slot}} albo wybrać inną.',
-    managementActiveTeamClearAction: 'Wyczyść aktywną drużynę',
+    managementActiveTeamClearAction: 'Wyczyść wybór',
     managementActiveTeamQuickListTitle: 'Szybki wybór drużyny',
-    teamPlayedMarkAction: 'Oznacz jako rozegraną',
+    teamPlayedMarkAction: 'Rozegrana',
     teamPlayedResetAction: 'Przywróć do kolejki',
     teamPlayedSelectedNotice:
       'Ta drużyna jest już oznaczona jako rozegrana i nie powinna być wybierana do nowych rund.',
-    manualQuizAwardTitle: 'Ręczna korekta punktów quizu',
+    manualQuizAwardTitle: 'Punkty quizu',
     manualQuizAwardDescription:
       'Przyznaj lub odejmij punkty gracza. Powód i administrator zostaną zapisani w historii.',
     manualQuizAwardInactive: 'Ręczne punkty są dostępne tylko podczas aktywnej gry.',
@@ -1567,12 +1516,12 @@ const translations = {
     manualQuizAwardError: 'Nie udało się załadować graczy.',
     manualQuizAwardNoPlayers: 'Brak aktywnych graczy do punktowania.',
     manualQuizAwardNoPlayerMatches: 'Nie znaleziono graczy.',
-    manualQuizAwardPointsLabel: 'Punkty quizowe',
+    manualQuizAwardPointsLabel: 'Punkty',
     manualQuizAwardOperationLabel: 'Operacja',
     manualQuizAwardOperationAward: 'Przyznaj',
     manualQuizAwardOperationDeduct: 'Odejmij',
     manualQuizAwardReasonLabel: 'Powód korekty',
-    manualQuizAwardReasonHint: 'Pole wymagane, od 3 do 500 znaków.',
+
     manualQuizAwardBalancePreview: 'Dostępne saldo: {{before}} {{sign}} {{points}} = {{after}}.',
     manualQuizAwardAction: 'Zastosuj korektę',
     manualQuizAwardSaving: 'Zapisywanie...',
@@ -1585,37 +1534,14 @@ const translations = {
     manualQuizAwardConfirmDescription:
       '{{operation}} graczowi {{player}}: {{sign}}{{points}}. Saldo: {{before}} → {{after}}. Powód: {{reason}}',
     manualQuizAwardConfirmAction: 'Potwierdź',
-    manualQuizAwardTooltip: 'Ręczna korekta punktów z zapisem akcji w historii quizu.',
     managementRoundTitle: 'Runda',
     managementRoundIdleDescription: 'Nie ma teraz uruchomionej rundy.',
-    managementRoundAssistantTitle: 'Asystent rundy',
-    managementRoundAssistantTooltip:
-      'Kolejność rundy: otwórz kartę, rozpocznij i zakończ zamawianie modyfikatorów, przygotuj i rozegraj grę, a potem podsumuj wyniki.',
-    managementRoundStepProgress: 'Krok {{current}} z {{total}}',
-    managementRoundNextActionBoardHint:
-      'Drużyna jest gotowa. Otwórz następną kartę na planszy, aby utworzyć nową rundę.',
-    managementRoundNextActionTeamHint:
-      'Najpierw wybierz aktywną drużynę, aby kolejna runda ruszała bez zbędnych kliknięć.',
-    managementRoundAwaitingActionHint:
-      'Gracze mogą aktywować modyfikatory. Gdy wszyscy skończą, zakończ zamawianie.',
-    managementRoundCardOpenedHint:
-      'Karta jest otwarta. Rozpocznij wybór modyfikatorów, gdy będziesz gotowy przyjmować zamówienia.',
-    managementRoundPreparingHint:
-      'Zamawianie modyfikatorów jest zamknięte. Przygotuj drużynę, a potem rozpocznij grę.',
-    managementRoundInProgressHint:
-      'Drużyna rozgrywa kartę. Po zakończeniu gry wybierz „Zakończ grę”.',
-    managementRoundReviewActionHint:
-      'Gra jest zakończona. Otwórz formularz podsumowania, aby zapisać wynik rundy.',
     managementLaunchTitle: 'Start',
-    managementLaunchTooltip: 'Końcowa kontrola rejestracji i administracyjne uruchomienie gry.',
-    managementLaunchDescription: 'Przed startem przejdź końcową listę kontroli rejestracji.',
     managementLaunchUnavailable: 'Start jest dostępny tylko podczas otwartej rejestracji.',
     managementLaunchLoading: 'Sprawdzanie stanu rejestracji...',
     managementLaunchAdminOnly: 'Tylko administrator może uruchomić grę.',
     managementLaunchNoRegistrationState: 'Stan rejestracji jest niedostępny. Odśwież stronę.',
     finishSectionTitle: 'Zakończenie gry',
-    finishSectionTooltip: 'Utwórz i zachowaj oficjalny wynik całej gry.',
-    finishSectionDescription: 'Sprawdź ranking obliczony przez serwer przed zakończeniem gry.',
     finishBlockedByRound: 'Najpierw zakończ lub technicznie anuluj bieżącą rundę.',
     finishOpenAction: 'Sprawdź i zakończ grę',
     finishDialogTitle: 'Zakończ całą grę',
@@ -1668,10 +1594,8 @@ const translations = {
     roundPanelBeginGameplayFailed: 'Nie udało się rozpocząć gry.',
     roundPanelReviewFailed: 'Nie udało się zakończyć gry.',
     roundPanelCompleteFailed: 'Nie udało się zakończyć rundy.',
-    roundPanelSafetyTitle: 'Odzyskiwanie i anulowanie rundy',
-    roundPanelSafetyTooltip: 'Krytyczne działania z pełnym zwrotem zakupów.',
+    roundPanelSafetyTitle: 'Naprawa rundy',
     roundPanelRebuild: 'Przebuduj zamówienie modyfikatorów',
-    roundPanelRebuildHint: 'Zwróć wszystkie zakupy i ponownie otwórz zamawianie modyfikatorów.',
     roundPanelRebuildConfirmTitle: 'Przebudować zamówienie modyfikatorów?',
     roundPanelRebuildConfirmDescription:
       'Wszystkie zakupy rundy zostaną anulowane i zwrócone. Karta i drużyna pozostaną wybrane.',
@@ -1836,6 +1760,20 @@ const translations = {
     activeTeamSaveFailed: 'Nie udało się zaktualizować aktywnej drużyny.',
     activeTeamAlreadyPlayed: 'Rozegranej drużyny nie można ponownie ustawić jako aktywnej.',
     activeTeamRoundInProgress: 'Zakończ aktywną rundę przed zmianą aktywnej drużyny.',
+    managementHelp: {
+      round:
+        'Wszystkie etapy rundy są widoczne tutaj. Ukończone są przyciemnione, a bieżący jest wyróżniony. Przycisk przechodzi do następnego dostępnego etapu.',
+      team: 'Wybierz aktywną drużynę lub oznacz, czy już grała. Zmiana drużyny jest zablokowana podczas aktywnej rundy.',
+      launch: 'Uruchamia grę z opublikowaną konfiguracją i potwierdzonymi drużynami.',
+      'manual-quiz':
+        'Dodaje lub odejmuje punkty quizu wybranemu graczowi. Powód jest wymagany; korekta trafia do rejestru.',
+      'round-safety':
+        'Przywracanie po awarii: ponowny wybór modyfikatorów lub anulowanie rundy z zapisanym powodem.',
+      'finish-game':
+        'Kończy całą grę i zapisuje końcową klasyfikację. Najpierw zakończ lub anuluj aktywną rundę.',
+    },
+    roundPanelRebuildHelp:
+      'Ponownie otwiera wybór modyfikatorów podczas przygotowania: anuluje wszystkie aktywacje tej rundy i zwraca punkty właścicielom. Karta i drużyna pozostają wybrane. Niedostępne po zapisaniu wyników lub gdy pytanie quizu jest otwarte.',
   },
 }
 

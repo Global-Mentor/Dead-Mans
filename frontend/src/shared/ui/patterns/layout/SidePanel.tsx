@@ -18,6 +18,7 @@ interface SidePanelProps {
   side?: 'left' | 'right'
   width?: 'standard' | 'wide' | number
   contentDensity?: 'comfortable' | 'compact'
+  headerDensity?: 'comfortable' | 'compact'
   header?: ReactNode
   children: ReactNode
   bodyTestId?: string
@@ -35,6 +36,7 @@ export function SidePanel({
   side = 'right',
   width = 'standard',
   contentDensity = 'comfortable',
+  headerDensity = 'comfortable',
   header,
   children,
   bodyTestId,
@@ -78,9 +80,20 @@ export function SidePanel({
           gridTemplateRows: 'auto minmax(0, 1fr)',
         }}
       >
-        <Box sx={sidePanelHeaderSx}>
+        <Box
+          sx={(theme) => ({
+            ...sidePanelHeaderSx(theme),
+            ...(headerDensity === 'compact'
+              ? { px: 1.5, pt: 'max(8px, env(safe-area-inset-top))', pb: 1 }
+              : {}),
+          })}
+        >
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-            <Typography component="h2" variant="h6" sx={sidePanelTitleSx}>
+            <Typography
+              component="h2"
+              variant="h6"
+              sx={{ ...sidePanelTitleSx, ...(headerDensity === 'compact' ? { fontSize: 22 } : {}) }}
+            >
               {title}
             </Typography>
             <ActionIcon aria-label={closeLabel} onClick={onClose} appearance="framed">
