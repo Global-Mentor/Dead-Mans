@@ -1,10 +1,4 @@
-import {
-  SectionDivider,
-  MenuGroupLabel,
-  ActionMenu,
-  ActionMenuItem,
-  NavigationButton,
-} from '../shared/ui/index.ts'
+import { MenuGroupLabel, ActionMenu, ActionMenuItem, NavigationButton } from '../shared/ui/index.ts'
 import { useId, useState } from 'react'
 import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useTranslation } from 'react-i18next'
@@ -109,6 +103,7 @@ export function PanelPrimaryNavigation({ activeRouteId, gameStatus }: PanelPrima
         <NavigationChevron open={open} />
       </NavigationButton>
       <ActionMenu
+        appearance="index"
         id={menuId}
         anchorEl={anchor}
         open={open}
@@ -116,11 +111,15 @@ export function PanelPrimaryNavigation({ activeRouteId, gameStatus }: PanelPrima
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{
-          paper: { sx: { mt: 1, width: compact ? 300 : 260, maxWidth: 'calc(100vw - 32px)' } },
+          paper: { sx: { mt: 1, width: 'max-content' } },
           list: { 'aria-labelledby': `${menuId}-trigger` },
         }}
       >
-        {compact && <MenuGroupLabel disableSticky>{t('navigation.primary')}</MenuGroupLabel>}
+        {compact && (
+          <MenuGroupLabel disableSticky appearance="section">
+            {t('navigation.primary')}
+          </MenuGroupLabel>
+        )}
         {compact &&
           visibleRoutes.map((route) => (
             <ActionMenuItem
@@ -130,13 +129,15 @@ export function PanelPrimaryNavigation({ activeRouteId, gameStatus }: PanelPrima
               selected={route.id === activeRouteId}
               aria-current={route.id === activeRouteId ? 'page' : undefined}
               onClick={closeMenu}
-              sx={{ minHeight: 44 }}
             >
               {t(route.labelKey)}
             </ActionMenuItem>
           ))}
-        {compact && <SectionDivider />}
-        {compact && <MenuGroupLabel disableSticky>{t('navigation.history')}</MenuGroupLabel>}
+        {compact && (
+          <MenuGroupLabel disableSticky appearance="section">
+            {t('navigation.history')}
+          </MenuGroupLabel>
+        )}
         {historyRoutes.map((route) => (
           <ActionMenuItem
             key={route.id}
@@ -145,7 +146,6 @@ export function PanelPrimaryNavigation({ activeRouteId, gameStatus }: PanelPrima
             selected={route.id === activeRouteId}
             aria-current={route.id === activeRouteId ? 'page' : undefined}
             onClick={closeMenu}
-            sx={{ minHeight: 44 }}
           >
             {t(route.labelKey)}
           </ActionMenuItem>

@@ -40,7 +40,7 @@ const translations = {
     modifierFallback: 'Unknown modifier',
     someone: 'Someone',
     administration: 'Administration',
-    language: 'Interface language',
+    language: 'Language',
     logout: 'Log out',
     roles: {
       superadmin: 'Super administrator',
@@ -135,7 +135,7 @@ const translations = {
     modifierFallback: 'Неизвестный модификатор',
     someone: 'Кто-то',
     administration: 'Администрирование',
-    language: 'Язык интерфейса',
+    language: 'Язык',
     logout: 'Выйти',
     roles: {
       superadmin: 'Суперадминистратор',
@@ -230,7 +230,7 @@ const translations = {
     modifierFallback: 'Невідомий модифікатор',
     someone: 'Хтось',
     administration: 'Адміністрування',
-    language: 'Мова інтерфейсу',
+    language: 'Мова',
     logout: 'Вийти',
     roles: {
       superadmin: 'Суперадміністратор',
@@ -325,7 +325,7 @@ const translations = {
     modifierFallback: 'Nieznany modyfikator',
     someone: 'Ktoś',
     administration: 'Administracja',
-    language: 'Język interfejsu',
+    language: 'Język',
     logout: 'Wyloguj się',
     roles: {
       superadmin: 'Superadministrator',

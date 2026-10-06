@@ -21,6 +21,10 @@ export const uiTokens = {
       large: 48,
     },
   },
+  navigation: {
+    fontSize: 14.4,
+    menuItemHeight: 28,
+  },
   texture: {
     panelSize: '640px auto',
     actionSize: '360px auto',

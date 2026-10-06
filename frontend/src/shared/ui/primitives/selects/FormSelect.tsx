@@ -3,6 +3,7 @@ import { alpha, MenuItem, Select } from '@mui/material'
 import type { ChangeEvent, ReactNode } from 'react'
 import { createContext, forwardRef, useContext } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
+import { uiTokens } from '../../../theme/tokens.ts'
 import type { FormTextFieldProps } from '../fields/FormTextField.tsx'
 import { FormTextField } from '../fields/FormTextField.tsx'
 
@@ -68,6 +69,8 @@ export function FormSelect<TValue extends string | number>({
           appearance === 'toolbar'
             ? (theme) => ({
                 minWidth: 70,
+                '& .MuiInputBase-root': { minHeight: uiTokens.control.height.compact },
+                '& .MuiSelect-icon': { fontSize: 20 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: alpha(theme.palette.primary.main, 0.35),
                 },
