@@ -1,7 +1,7 @@
 import { createContext } from 'react'
 import type { AuthRole } from '../api/contracts/index.ts'
 
-export type AuthStatus = 'checking' | 'authenticated' | 'anonymous'
+type AuthStatus = 'checking' | 'authenticated' | 'anonymous'
 
 export interface AuthUser {
   id: string

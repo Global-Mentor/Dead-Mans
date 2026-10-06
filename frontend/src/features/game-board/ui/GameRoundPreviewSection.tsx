@@ -6,7 +6,7 @@ import { BusyIndicator, InlineNotice, FormSection, Metric } from '../../../share
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ScorePreview = components['schemas']['GameRoundScorePreviewDto']
-export type GameRoundPreviewStatus =
+type GameRoundPreviewStatus =
   'incomplete' | 'debouncing' | 'loading' | 'success' | 'error' | 'stale'
 
 export interface GameRoundPreviewState {
