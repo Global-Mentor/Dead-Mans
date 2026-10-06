@@ -1,34 +1,35 @@
 import { Stack, Typography } from '@mui/material'
-import { AppButton, Combobox, FormTextField } from '../../../shared/ui/index.ts'
-
-import type { ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierActivation } from '../../../shared/api/contracts/index.ts'
-import type { CancelModifierOption } from '../model/admin-modifier-support.ts'
+import { PlayerPicker, type PickerPlayer } from '../../../shared/game-ui/index.ts'
+import type { ModifierSelectOption } from '../model/admin-modifier-support.ts'
+import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import { AdminModifierBlock } from './admin-modifier-panel-primitives.tsx'
-
-interface AdminModifierCancellationBlockProps {
+import { AdminModifierSelect } from './AdminModifierSelect.tsx'
+interface Props {
   activeActivations: GameModifierActivation[]
-  modifierOptions: CancelModifierOption[]
-  selectedModifier: CancelModifierOption | null
-  activationOptions: GameModifierActivation[]
+  modifiers: ModifierSelectOption[]
+  players: PickerPlayer[]
+  selectedPlayer: PickerPlayer | null
+  onPlayerChange: (id: string) => void
+  selectedModifierId: string
   selectedActivation: GameModifierActivation | null
   cancelReason: string
   isLoading: boolean
   isError: boolean
   isBusy: boolean
   isCancelling: boolean
-  onModifierChange: (modifierId: string) => void
-  onActivationChange: (activationId: string) => void
+  onModifierChange: (id: string) => void
   onCancelReasonChange: (reason: string) => void
   onRequestCancel: () => void
 }
-
 export function AdminModifierCancellationBlock({
   activeActivations,
-  modifierOptions,
-  selectedModifier,
-  activationOptions,
+  modifiers,
+  players,
+  selectedPlayer,
+  onPlayerChange,
+  selectedModifierId,
   selectedActivation,
   cancelReason,
   isLoading,
@@ -36,18 +37,15 @@ export function AdminModifierCancellationBlock({
   isBusy,
   isCancelling,
   onModifierChange,
-  onActivationChange,
   onCancelReasonChange,
   onRequestCancel,
-}: AdminModifierCancellationBlockProps) {
-  const { t, i18n } = useTranslation()
-
+}: Props) {
+  const { t } = useTranslation()
   return (
     <AdminModifierBlock
       sectionId="cancel"
-      step={t('gameModifiers.adminPanel.stepTwo')}
-      title={t('gameModifiers.adminPanel.cancelModifierLabel')}
-      tooltip={t('gameModifiers.adminPanel.cancelTooltip')}
+      icon="refund"
+      title={t('gameModifiers.adminPanel.cancelModifierTitle')}
     >
       {isLoading ? (
         <Typography variant="body2" color="text.secondary">
@@ -63,48 +61,21 @@ export function AdminModifierCancellationBlock({
         </Typography>
       ) : (
         <Stack spacing={1}>
-          <Combobox
-            size="small"
-            options={modifierOptions}
-            value={selectedModifier}
-            onChange={(_event, value) => onModifierChange(value?.modifierId ?? '')}
-            getOptionLabel={(option) => option.modifierName}
-            isOptionEqualToValue={(option, value) => option.modifierId === value.modifierId}
+          <AdminModifierSelect
+            modifiers={modifiers}
+            value={selectedModifierId}
+            onChange={onModifierChange}
+            label={t('gameModifiers.adminPanel.activateModifierLabel')}
             disabled={isBusy}
-            renderInput={(params) => (
-              <FormTextField
-                {...(params as unknown as ComponentProps<typeof FormTextField>)}
-                size="small"
-                label={t('gameModifiers.adminPanel.cancelModifierLabel')}
-              />
-            )}
           />
-
-          <Combobox
-            size="small"
-            options={activationOptions}
-            value={selectedActivation}
-            onChange={(_event, value) => onActivationChange(value?.activationId ?? '')}
-            getOptionLabel={(option) =>
-              t('gameModifiers.adminPanel.activationOption', {
-                player: option.activatedByDisplayName,
-                time: new Date(option.activatedAtUtc).toLocaleTimeString(i18n.resolvedLanguage),
-                cost: option.activationCost,
-              })
-            }
-            isOptionEqualToValue={(option, value) => option.activationId === value.activationId}
-            disabled={isBusy || selectedModifier == null}
-            renderInput={(params) => (
-              <FormTextField
-                {...(params as unknown as ComponentProps<typeof FormTextField>)}
-                size="small"
-                label={t('gameModifiers.adminPanel.cancelActivationLabel')}
-              />
-            )}
+          <PlayerPicker
+            players={players}
+            value={selectedPlayer}
+            onChange={(player) => onPlayerChange(player?.userId ?? '')}
+            label={t('common.entities.player')}
+            disabled={isBusy || !selectedModifierId}
           />
-
           <FormTextField
-            size="small"
             label={t('gameModifiers.adminPanel.cancelReasonLabel')}
             value={cancelReason}
             onChange={(event) => onCancelReasonChange(event.target.value)}
@@ -112,17 +83,15 @@ export function AdminModifierCancellationBlock({
             required
             inputProps={{ maxLength: 1000 }}
           />
-
           <AppButton
             tone="dangerSecondary"
             size="small"
             fullWidth
             disabled={isBusy || selectedActivation == null || cancelReason.trim().length === 0}
+            loading={isCancelling}
             onClick={onRequestCancel}
           >
-            {isCancelling
-              ? t('gameModifiers.adminPanel.cancelPending')
-              : t('gameModifiers.adminPanel.cancelAction')}
+            {t('gameModifiers.adminPanel.cancelAction')}
           </AppButton>
         </Stack>
       )}

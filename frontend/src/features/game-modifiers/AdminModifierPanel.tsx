@@ -1,26 +1,21 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   GameModifierAdminPlayer,
   GameModifierAdminPlayersResult,
+  GameModifierActivation,
 } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
-import {
-  AppToast,
-  ConfirmDialog,
-  FieldHelp,
-  Metric,
-  SectionCard,
-  StatusBadge,
-} from '../../shared/ui/index.ts'
+import { AppToast, ConfirmDialog } from '../../shared/ui/index.ts'
 import { currentGameBoardQueryOptions } from '../game-board/index.ts'
 import {
   adminGameModifierActivationsQueryOptions,
   adminGameModifierPlayersQueryOptions,
   adminGameModifierStateQueryOptions,
   gameModifierQueryKeys,
+  gameModifierCatalogQueryOptions,
 } from './api/game-modifier-queries.ts'
 import {
   adminActivateGameModifier,
@@ -31,9 +26,12 @@ import {
   buildCancelModifierOptions,
   resolveAdminActivateErrorKey,
   resolveAdminCancelErrorKey,
+  modifierSelectOption,
 } from './model/admin-modifier-support.ts'
 import { AdminModifierActivationBlock } from './ui/AdminModifierActivationBlock.tsx'
 import { AdminModifierCancellationBlock } from './ui/AdminModifierCancellationBlock.tsx'
+import { AdminModifierStopBlock } from './ui/AdminModifierStopBlock.tsx'
+import { AdminModifierSummary } from './ui/AdminModifierSummary.tsx'
 
 const emptyAdminPlayers: readonly GameModifierAdminPlayer[] = []
 const emptyAdminPlayersSummary: GameModifierAdminPlayersResult['summary'] = {
@@ -44,21 +42,32 @@ const emptyAdminPlayersSummary: GameModifierAdminPlayersResult['summary'] = {
 }
 
 export function AdminModifierTool() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [selectedPlayerId, setSelectedPlayerId] = useState('')
   const [selectedAvailableModifierId, setSelectedAvailableModifierId] = useState('')
   const [selectedCancelModifierId, setSelectedCancelModifierId] = useState('')
-  const [selectedActivationId, setSelectedActivationId] = useState('')
+  const [selectedCancelPlayerId, setSelectedCancelPlayerId] = useState('')
+  const [selectedStopModifierId, setSelectedStopModifierId] = useState('')
+  const [stoppedModifierIds, setStoppedModifierIds] = useState<string[]>([])
   const [cancelReason, setCancelReason] = useState('')
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<GameModifierActivation | null>(null)
   const [emergencyDisableReason, setEmergencyDisableReason] = useState('')
-  const [isEmergencyDisableConfirmOpen, setIsEmergencyDisableConfirmOpen] = useState(false)
+  const [stopTarget, setStopTarget] = useState<{
+    gameId: string
+    modifierId: string
+    modifierName: string
+    reason: string
+  } | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toastSeverity, setToastSeverity] = useState<'info' | 'error'>('info')
 
   const isAdmin = user?.roles.includes('admin') ?? false
+  const catalogQuery = useQuery({ ...gameModifierCatalogQueryOptions, enabled: isAdmin })
+  const gameQuery = useQuery({ ...currentGameBoardQueryOptions, enabled: isAdmin })
+  const currentGameId = gameQuery.data?.gameId ?? null
   const adminPlayersQuery = useQuery({
     ...adminGameModifierPlayersQueryOptions,
     enabled: isAdmin,
@@ -110,7 +119,8 @@ export function AdminModifierTool() {
       setToastSeverity('info')
       setToastMessage(t('gameModifiers.adminPanel.cancelSuccess'))
       setSelectedCancelModifierId('')
-      setSelectedActivationId('')
+      setSelectedCancelPlayerId('')
+      setCancelTarget(null)
       setCancelReason('')
       invalidateModifierCaches()
     },
@@ -122,10 +132,11 @@ export function AdminModifierTool() {
   })
 
   const emergencyDisableMutation = useMutation({
-    mutationFn: (input: { modifierId: string; reason: string }) =>
+    mutationFn: (input: { modifierId: string; reason: string; gameId: string }) =>
       emergencyDisableGameModifier(input.modifierId, input.reason),
-    onSuccess: () => {
-      setIsEmergencyDisableConfirmOpen(false)
+    onSuccess: (_, input) => {
+      setStoppedModifierIds((ids) => [...ids, `${input.gameId}:${input.modifierId}`])
+      setStopTarget(null)
       setEmergencyDisableReason('')
       setToastSeverity('info')
       setToastMessage(t('gameModifiers.adminPanel.emergencyDisableSuccess'))
@@ -160,76 +171,64 @@ export function AdminModifierTool() {
     state?.availableModifiers.find(
       (item) => item.modifier.id === effectiveSelectedAvailableModifierId,
     ) ?? null
-  const selectedCancelModifier =
-    cancelModifierOptions.find((item) => item.modifierId === effectiveSelectedCancelModifierId) ??
-    null
-  const cancelActivationOptions = activeActivations
-    .filter((item) => item.modifierId === effectiveSelectedCancelModifierId)
-    .sort((left, right) => right.activatedAtUtc.localeCompare(left.activatedAtUtc))
-  const effectiveSelectedActivationId =
-    selectedActivationId.length > 0 &&
-    cancelActivationOptions.some((item) => item.activationId === selectedActivationId)
-      ? selectedActivationId
-      : ''
+  const catalog = catalogQuery.data ?? []
+  const stopModifiers =
+    gameQuery.data?.status === 'active'
+      ? catalog.filter((modifier) => gameQuery.data?.enabledModifierIds.includes(modifier.id))
+      : []
+  const selectedStopModifier =
+    stopModifiers.find((modifier) => modifier.id === selectedStopModifierId) ?? null
+  const cancelPlayers = [
+    ...new Map(
+      activeActivations
+        .filter((activation) => activation.modifierId === effectiveSelectedCancelModifierId)
+        .map((activation) => [
+          activation.activatedByUserId,
+          {
+            userId: activation.activatedByUserId,
+            displayName:
+              players.find((player) => player.userId === activation.activatedByUserId)
+                ?.displayName ?? activation.activatedByDisplayName,
+            login:
+              players.find((player) => player.userId === activation.activatedByUserId)?.login ??
+              null,
+          },
+        ]),
+    ).values(),
+  ].sort((left, right) => left.displayName.localeCompare(right.displayName, i18n.resolvedLanguage))
+  const selectedCancelPlayer =
+    cancelPlayers.find((player) => player.userId === selectedCancelPlayerId) ?? null
   const selectedActivation =
-    cancelActivationOptions.find((item) => item.activationId === effectiveSelectedActivationId) ??
-    null
+    activeActivations
+      .filter(
+        (item) =>
+          item.modifierId === effectiveSelectedCancelModifierId &&
+          item.activatedByUserId === selectedCancelPlayer?.userId,
+      )
+      .sort(
+        (left, right) =>
+          right.activatedAtUtc.localeCompare(left.activatedAtUtc) ||
+          left.activationId.localeCompare(right.activationId),
+      )[0] ?? null
+  const cancelModifiers = cancelModifierOptions.map((option) => ({
+    ...(catalog.find((modifier) => modifier.id === option.modifierId) ??
+      state?.availableModifiers.find((item) => item.modifier.id === option.modifierId)
+        ?.modifier ?? { id: option.modifierId, name: option.modifierName, iconEmoji: null }),
+    activationCount: option.activationCount,
+  }))
+  const stopDisabled =
+    stoppedModifierIds.includes(`${currentGameId}:${selectedStopModifierId}`) ||
+    (state?.availableModifiers.some(
+      (item) => item.modifier.id === selectedStopModifierId && item.isEmergencyDisabled,
+    ) ??
+      false)
   const isBusy =
     activateMutation.isPending || cancelMutation.isPending || emergencyDisableMutation.isPending
 
   return (
     <>
-      <Stack data-testid="modifier-management-tool" spacing={2}>
-        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          <StatusBadge
-            color="warning"
-            variant="outlined"
-            label={t('gameModifiers.adminPanel.summaryUsedCount', {
-              count: activeActivations.length,
-            })}
-          />
-        </Stack>
-
-        <SectionCard surface="inset" sx={{ p: 1.5 }}>
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="subtitle2">
-                {t('gameModifiers.adminPanel.summaryTitle')}
-              </Typography>
-              <FieldHelp title={t('gameModifiers.adminPanel.summaryTooltip')} />
-            </Stack>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                gap: 1,
-              }}
-            >
-              <Metric
-                label={t('gameModifiers.adminPanel.summaryAvailablePoints')}
-                value={t('gameModifiers.myPointsValue', {
-                  points: summary.totalAvailableQuizPoints,
-                })}
-              />
-              <Metric
-                label={t('gameModifiers.adminPanel.summarySpentPoints')}
-                value={t('gameModifiers.myPointsValue', {
-                  points: summary.totalSpentQuizPoints,
-                })}
-              />
-              <Metric
-                label={t('gameModifiers.adminPanel.summaryEarnedPoints')}
-                value={t('gameModifiers.myPointsValue', {
-                  points: summary.totalEarnedQuizPoints,
-                })}
-              />
-              <Metric
-                label={t('gameModifiers.adminPanel.summaryUsedLabel')}
-                value={String(activeActivations.length)}
-              />
-            </Box>
-          </Stack>
-        </SectionCard>
+      <Stack data-testid="modifier-management-tool" spacing={1}>
+        <AdminModifierSummary summary={summary} usedCount={activeActivations.length} />
 
         <AdminModifierActivationBlock
           players={players}
@@ -242,17 +241,13 @@ export function AdminModifierTool() {
           isStateError={adminStateQuery.isError}
           isBusy={isBusy}
           isActivating={activateMutation.isPending}
-          isEmergencyDisabling={emergencyDisableMutation.isPending}
-          emergencyDisableReason={emergencyDisableReason}
           onPlayerChange={(playerId) => {
             setSelectedPlayerId(playerId)
             setSelectedAvailableModifierId('')
           }}
           onModifierChange={(modifierId) => {
             setSelectedAvailableModifierId(modifierId)
-            setEmergencyDisableReason('')
           }}
-          onEmergencyDisableReasonChange={setEmergencyDisableReason}
           onActivate={() => {
             if (!effectiveSelectedPlayerId || !effectiveSelectedAvailableModifierId) {
               return
@@ -263,14 +258,18 @@ export function AdminModifierTool() {
               playerId: effectiveSelectedPlayerId,
             })
           }}
-          onRequestEmergencyDisable={() => setIsEmergencyDisableConfirmOpen(true)}
         />
 
         <AdminModifierCancellationBlock
           activeActivations={activeActivations}
-          modifierOptions={cancelModifierOptions}
-          selectedModifier={selectedCancelModifier}
-          activationOptions={cancelActivationOptions}
+          modifiers={cancelModifiers}
+          players={cancelPlayers}
+          selectedPlayer={selectedCancelPlayer}
+          onPlayerChange={(id) => {
+            setSelectedCancelPlayerId(id)
+            setCancelReason('')
+          }}
+          selectedModifierId={effectiveSelectedCancelModifierId}
           selectedActivation={selectedActivation}
           cancelReason={cancelReason}
           isLoading={adminActivationsQuery.isLoading}
@@ -279,42 +278,83 @@ export function AdminModifierTool() {
           isCancelling={cancelMutation.isPending}
           onModifierChange={(modifierId) => {
             setSelectedCancelModifierId(modifierId)
-            setSelectedActivationId('')
-            setCancelReason('')
-          }}
-          onActivationChange={(activationId) => {
-            setSelectedActivationId(activationId)
+            setSelectedCancelPlayerId('')
             setCancelReason('')
           }}
           onCancelReasonChange={setCancelReason}
-          onRequestCancel={() => setIsCancelConfirmOpen(true)}
+          onRequestCancel={() => {
+            setCancelTarget(selectedActivation)
+            setIsCancelConfirmOpen(true)
+          }}
+        />
+        <AdminModifierStopBlock
+          modifiers={stopModifiers.map(modifierSelectOption)}
+          selectedId={selectedStopModifier?.id ?? ''}
+          reason={emergencyDisableReason}
+          stopped={stopDisabled}
+          disabled={isBusy}
+          loading={catalogQuery.isLoading || gameQuery.isLoading}
+          error={catalogQuery.isError || gameQuery.isError}
+          pending={emergencyDisableMutation.isPending}
+          onChange={(id) => {
+            setSelectedStopModifierId(id)
+            setEmergencyDisableReason('')
+          }}
+          onReasonChange={setEmergencyDisableReason}
+          onStop={() => {
+            if (currentGameId && selectedStopModifier && emergencyDisableReason.trim()) {
+              setStopTarget({
+                gameId: currentGameId,
+                modifierId: selectedStopModifier.id,
+                modifierName: selectedStopModifier.name,
+                reason: emergencyDisableReason.trim(),
+              })
+            }
+          }}
         />
       </Stack>
 
       <ConfirmDialog
-        open={isEmergencyDisableConfirmOpen}
+        open={stopTarget != null}
         title={t('gameModifiers.adminPanel.emergencyDisableConfirmTitle')}
         description={
-          selectedAvailableModifier
+          stopTarget
             ? t('gameModifiers.adminPanel.emergencyDisableConfirmDescription', {
-                modifier: selectedAvailableModifier.modifier.name,
+                modifier: stopTarget.modifierName,
               })
             : ''
+        }
+        confirmDisabled={
+          !stopTarget ||
+          stopTarget.gameId !== currentGameId ||
+          !stopModifiers.some((modifier) => modifier.id === stopTarget.modifierId) ||
+          stopDisabled ||
+          gameQuery.isError ||
+          catalogQuery.isError
+        }
+        errorMessage={
+          stopTarget && stopTarget.gameId !== currentGameId
+            ? t('gameModifiers.adminPanel.gameChanged')
+            : null
         }
         confirmLabel={t('gameModifiers.adminPanel.emergencyDisableAction')}
         cancelLabel={t('common.actions.cancel')}
         confirmTone="danger"
         isBusy={emergencyDisableMutation.isPending}
-        onClose={() => setIsEmergencyDisableConfirmOpen(false)}
+        onClose={() => setStopTarget(null)}
         onConfirm={() => {
-          if (!selectedAvailableModifier || emergencyDisableReason.trim().length === 0) {
+          if (
+            !stopTarget ||
+            stopTarget.gameId !== currentGameId ||
+            stopDisabled ||
+            gameQuery.isError ||
+            catalogQuery.isError ||
+            !stopModifiers.some((modifier) => modifier.id === stopTarget.modifierId)
+          ) {
             return
           }
 
-          emergencyDisableMutation.mutate({
-            modifierId: selectedAvailableModifier.modifier.id,
-            reason: emergencyDisableReason.trim(),
-          })
+          return emergencyDisableMutation.mutateAsync(stopTarget)
         }}
       />
 
@@ -322,11 +362,11 @@ export function AdminModifierTool() {
         open={isCancelConfirmOpen}
         title={t('gameModifiers.adminPanel.cancelConfirmTitle')}
         description={
-          selectedActivation
+          cancelTarget
             ? t('gameModifiers.adminPanel.cancelConfirmDescription', {
-                modifier: selectedActivation.modifierName,
-                player: selectedActivation.activatedByDisplayName,
-                cost: selectedActivation.activationCost,
+                modifier: cancelTarget.modifierName,
+                player: cancelTarget.activatedByDisplayName,
+                cost: cancelTarget.activationCost,
               })
             : ''
         }
@@ -336,13 +376,13 @@ export function AdminModifierTool() {
         isBusy={cancelMutation.isPending}
         onClose={() => setIsCancelConfirmOpen(false)}
         onConfirm={() => {
-          if (!selectedActivation || cancelReason.trim().length === 0) {
+          if (!cancelTarget || cancelReason.trim().length === 0) {
             return
           }
 
           cancelMutation.mutate({
-            activationId: selectedActivation.activationId,
-            roundVersion: selectedActivation.roundVersion,
+            activationId: cancelTarget.activationId,
+            roundVersion: cancelTarget.roundVersion,
             reason: cancelReason.trim(),
           })
         }}

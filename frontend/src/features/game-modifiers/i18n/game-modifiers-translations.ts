@@ -64,7 +64,7 @@ const translations = {
     activationLabel: 'Activate {{modifier}}',
     activationConfirmTitle: 'Activate this modifier?',
     activationConfirmDescription: 'Activate {{modifier}} for {{cost}} quiz points?',
-    activatePending: 'Activating...',
+
     activateSuccess: 'Modifier activated.',
     selfCancelAction: 'Cancel purchase and refund',
     selfCancelConfirmTitle: 'Cancel your modifier purchase?',
@@ -135,37 +135,28 @@ const translations = {
       closeAction: 'Close admin panel',
       title: 'Admin controls',
       summaryTitle: 'Quick summary',
-      summaryTooltip: 'Shows live totals based on the current modifier state for active players.',
-      summaryAvailablePoints: 'Players available',
-      summarySpentPoints: 'Players spent',
-      summaryEarnedPoints: 'Players earned in this game',
-      summaryUsedLabel: 'Total modifier activations used',
-      summaryUsedCount: 'Used: {{count}}',
-      stepOne: 'Step 1 · choose player and modifier',
-      stepTwo: 'Step 2 · undo an activation',
+      summaryAvailablePoints: 'Available',
+      summarySpentPoints: 'Spent',
+      summaryEarnedPoints: 'Earned',
+      summaryUsedLabel: 'Activations',
       activateLabel: 'Add modifier',
       activateModifierLabel: 'Modifier',
-      activateTooltip:
-        'The same limits and conflicts apply as for normal players. Search works by display name and login.',
       activateHint:
         'Rules stay the same as for normal players. The selected player must have enough quiz points.',
       activateAction: 'Activate for player',
-      activatePending: 'Activating...',
+
       activateSuccess: 'Modifier activated for the selected player.',
       emergencyDisableReasonLabel: 'Emergency-disable reason',
       emergencyDisableAction: 'Disable new activations',
-      emergencyDisablePending: 'Disabling...',
+
       emergencyDisableSuccess: 'New activations are disabled for this game.',
       emergencyDisableError: 'Could not disable new activations.',
       emergencyDisabledNotice: 'New activations are already disabled for this game.',
       emergencyDisableConfirmTitle: 'Disable new activations?',
       emergencyDisableConfirmDescription:
         '“{{modifier}}” will no longer accept new activations in this game. Existing activations and history will remain unchanged.',
-      cancelModifierLabel: 'Modifier to undo',
-      cancelActivationLabel: 'Activation to undo',
+
       cancelReasonLabel: 'Audit reason',
-      cancelTooltip:
-        'Only unused activations can be removed. The original quiz points are refunded automatically.',
       cancelHint:
         'Only unused activations can be cancelled. Successful undo refunds the original quiz points.',
       cancelAction: 'Undo and refund',
@@ -173,7 +164,7 @@ const translations = {
       cancelConfirmDescription:
         '{{modifier}} activated by {{player}} will be removed and {{cost}} quiz points will be refunded.',
       cancelConfirmCancel: 'Keep activation',
-      cancelPending: 'Undoing...',
+
       cancelSuccess: 'Modifier activation removed and quiz points refunded.',
       noPlayers: 'No active players are available.',
       noAvailableModifiers: 'No modifiers are available for this player right now.',
@@ -183,17 +174,34 @@ const translations = {
       pointsAvailable: 'Available: {{points}} pts',
       pointsEarned: 'Earned: {{points}} pts',
       pointsSpent: 'Spent: {{points}} pts',
-      playerOption: '{{player}} · {{login}} · {{points}} pts',
-      playerPointsOption: '{{points}} pts available',
+
       modifierCostOption: '{{cost}} pts',
-      activationOption: '{{player}} · {{time}} · refund {{cost}} pts',
+
       playerNotFound: 'The selected player was not found or is inactive.',
       activationNotFound: 'The selected modifier activation was not found.',
       alreadyAppliedInRound:
         'This activation is already linked to a round result and cannot be undone.',
       staleRound: 'The round changed. Refreshing data; select the activation again.',
       reasonRequired: 'Enter an audit reason for the cancellation.',
+      summaryAvailablePointsHelp: 'Quiz points currently available to all players in this game.',
+      summarySpentPointsHelp: 'Total quiz points spent on modifiers in this game, after refunds.',
+      summaryEarnedPointsHelp:
+        'Total quiz points earned in this game, including manual adjustments.',
+      summaryUsedLabelHelp:
+        'Active modifier activations in the current round. Cancelled and completed activations are excluded.',
+      cancelModifierTitle: 'Cancel modifier',
+      stopTitle: 'Stop modifier',
+      gameChanged:
+        'The current game changed. Close this confirmation and select the modifier again.',
+      sectionHelp: {
+        activate:
+          'Adds a modifier for the selected player using their quiz points. Availability, limits and conflicts are checked by the server.',
+        cancel:
+          'Select a modifier and its owner to cancel one unused activation and refund that player. Repeated purchases are grouped; one activation is cancelled at a time.',
+        stop: 'Blocks new activations of this modifier for everyone in the current game, for example after a rule failure. Existing activations and history stay unchanged; no points are refunded.',
+      },
     },
+    activatePending: 'Activating...',
   },
   ru: {
     selfCancelCompactAction: 'Отменить активацию',
@@ -261,7 +269,7 @@ const translations = {
     activationLabel: 'Активировать {{modifier}}',
     activationConfirmTitle: 'Активировать этот модификатор?',
     activationConfirmDescription: 'Активировать «{{modifier}}» за {{cost}} очк. викторины?',
-    activatePending: 'Активация...',
+
     activateSuccess: 'Модификатор активирован.',
     selfCancelAction: 'Отменить покупку и вернуть очки',
     selfCancelConfirmTitle: 'Отменить покупку модификатора?',
@@ -332,38 +340,28 @@ const translations = {
       closeAction: 'Закрыть панель администратора',
       title: 'Панель администратора',
       summaryTitle: 'Краткая сводка',
-      summaryTooltip:
-        'Показывает актуальные суммарные значения по активным игрокам на основе текущего состояния модификаторов.',
-      summaryAvailablePoints: 'Доступно у игроков',
-      summarySpentPoints: 'Потрачено игроками',
-      summaryEarnedPoints: 'Заработано игроками за игру',
-      summaryUsedLabel: 'Всего использовано модификаторов',
-      summaryUsedCount: 'Использовано: {{count}}',
-      stepOne: 'Шаг 1 · выбрать игрока и модификатор',
-      stepTwo: 'Шаг 2 · отменить активацию',
+      summaryAvailablePoints: 'Доступно',
+      summarySpentPoints: 'Потрачено',
+      summaryEarnedPoints: 'Заработано',
+      summaryUsedLabel: 'Активации',
       activateLabel: 'Добавить модификатор',
       activateModifierLabel: 'Модификатор',
-      activateTooltip:
-        'Действуют те же лимиты и конфликты, что и для обычного игрока. Поиск работает по display name и логину.',
       activateHint:
         'Правила те же, что и у обычного игрока. У выбранного игрока должно хватать очков викторины.',
       activateAction: 'Активировать игроку',
-      activatePending: 'Активация...',
+
       activateSuccess: 'Модификатор активирован для выбранного игрока.',
       emergencyDisableReasonLabel: 'Причина аварийного отключения',
       emergencyDisableAction: 'Отключить новые активации',
-      emergencyDisablePending: 'Отключение...',
+
       emergencyDisableSuccess: 'Новые активации отключены для этой игры.',
       emergencyDisableError: 'Не удалось отключить новые активации.',
       emergencyDisabledNotice: 'Новые активации уже отключены для этой игры.',
       emergencyDisableConfirmTitle: 'Отключить новые активации?',
       emergencyDisableConfirmDescription:
         '«{{modifier}}» больше нельзя будет активировать в этой игре. Существующие активации и история не изменятся.',
-      cancelModifierLabel: 'Какой модификатор отменить',
-      cancelActivationLabel: 'Какая активация',
+
       cancelReasonLabel: 'Причина отмены',
-      cancelTooltip:
-        'Удалить можно только неиспользованную активацию. Очки вернутся игроку автоматически.',
       cancelHint:
         'Отменить можно только неиспользованную активацию. При успешной отмене очки вернутся игроку.',
       cancelAction: 'Отменить и вернуть очки',
@@ -371,7 +369,7 @@ const translations = {
       cancelConfirmDescription:
         'Модификатор «{{modifier}}», активированный игроком {{player}}, будет удалён, а {{cost}} очк. викторины вернутся.',
       cancelConfirmCancel: 'Оставить активацию',
-      cancelPending: 'Отмена...',
+
       cancelSuccess: 'Активация удалена, очки возвращены.',
       noPlayers: 'Нет доступных активных игроков.',
       noAvailableModifiers: 'Для этого игрока сейчас нет доступных модификаторов.',
@@ -381,17 +379,34 @@ const translations = {
       pointsAvailable: 'Доступно: {{points}} очк.',
       pointsEarned: 'Заработано: {{points}} очк.',
       pointsSpent: 'Потрачено: {{points}} очк.',
-      playerOption: '{{player}} · {{login}} · {{points}} очк.',
-      playerPointsOption: 'Доступно {{points}} очк.',
+
       modifierCostOption: '{{cost}} очк.',
-      activationOption: '{{player}} · {{time}} · вернуть {{cost}} очк.',
+
       playerNotFound: 'Выбранный игрок не найден или неактивен.',
       activationNotFound: 'Выбранная активация модификатора не найдена.',
       alreadyAppliedInRound:
         'Эта активация уже привязана к результату раунда и не может быть отменена.',
       staleRound: 'Раунд изменился. Данные обновляются; выберите активацию заново.',
       reasonRequired: 'Укажите причину отмены для аудита.',
+      summaryAvailablePointsHelp: 'Очки викторины, сейчас доступные всем игрокам этой игры.',
+      summarySpentPointsHelp:
+        'Всего очков викторины потрачено на модификаторы за эту игру, за вычетом возвратов.',
+      summaryEarnedPointsHelp:
+        'Всего очков викторины заработано за эту игру, включая ручные корректировки.',
+      summaryUsedLabelHelp:
+        'Активные активации модификаторов в текущем раунде. Отменённые и завершённые не учитываются.',
+      cancelModifierTitle: 'Отменить модификатор',
+      stopTitle: 'Остановить модификатор',
+      gameChanged: 'Текущая игра изменилась. Закройте подтверждение и выберите модификатор заново.',
+      sectionHelp: {
+        activate:
+          'Добавляет модификатор выбранному игроку за его очки викторины. Доступность, лимиты и конфликты проверяет сервер.',
+        cancel:
+          'Выберите модификатор и его владельца, чтобы отменить одну неиспользованную активацию и вернуть очки этому игроку. Повторные покупки объединены; за одно действие отменяется одна активация.',
+        stop: 'Запрещает всем игрокам новые активации этого модификатора в текущей игре, например при сбое его правила. Уже сделанные активации и история сохраняются; очки не возвращаются.',
+      },
     },
+    activatePending: 'Активация...',
   },
   uk: {
     selfCancelCompactAction: 'Скасувати активацію',
@@ -459,7 +474,7 @@ const translations = {
     activationLabel: 'Активувати {{modifier}}',
     activationConfirmTitle: 'Активувати цей модифікатор?',
     activationConfirmDescription: 'Активувати «{{modifier}}» за {{cost}} очк. вікторини?',
-    activatePending: 'Активація...',
+
     activateSuccess: 'Модифікатор активовано.',
     selfCancelAction: 'Скасувати покупку й повернути очки',
     selfCancelConfirmTitle: 'Скасувати покупку модифікатора?',
@@ -530,38 +545,28 @@ const translations = {
       closeAction: 'Закрити панель адміністратора',
       title: 'Панель адміністратора',
       summaryTitle: 'Коротка зведення',
-      summaryTooltip:
-        'Показує актуальні сумарні значення для активних гравців на основі поточного стану модифікаторів.',
-      summaryAvailablePoints: 'Доступно у гравців',
-      summarySpentPoints: 'Витрачено гравцями',
-      summaryEarnedPoints: 'Зароблено гравцями за гру',
-      summaryUsedLabel: 'Усього використано модифікаторів',
-      summaryUsedCount: 'Використано: {{count}}',
-      stepOne: 'Крок 1 · обрати гравця й модифікатор',
-      stepTwo: 'Крок 2 · скасувати активацію',
+      summaryAvailablePoints: 'Доступно',
+      summarySpentPoints: 'Витрачено',
+      summaryEarnedPoints: 'Зароблено',
+      summaryUsedLabel: 'Активації',
       activateLabel: 'Додати модифікатор',
       activateModifierLabel: 'Модифікатор',
-      activateTooltip:
-        'Діють ті самі ліміти й конфлікти, що і для звичайного гравця. Пошук працює за display name та логіном.',
       activateHint:
         'Правила ті самі, що й для звичайного гравця. У вибраного гравця має вистачати очок вікторини.',
       activateAction: 'Активувати для гравця',
-      activatePending: 'Активація...',
+
       activateSuccess: 'Модифікатор активовано для вибраного гравця.',
       emergencyDisableReasonLabel: 'Причина аварійного вимкнення',
       emergencyDisableAction: 'Вимкнути нові активації',
-      emergencyDisablePending: 'Вимкнення...',
+
       emergencyDisableSuccess: 'Нові активації вимкнено для цієї гри.',
       emergencyDisableError: 'Не вдалося вимкнути нові активації.',
       emergencyDisabledNotice: 'Нові активації вже вимкнено для цієї гри.',
       emergencyDisableConfirmTitle: 'Вимкнути нові активації?',
       emergencyDisableConfirmDescription:
         '«{{modifier}}» більше не можна буде активувати в цій грі. Наявні активації та історія не зміняться.',
-      cancelModifierLabel: 'Який модифікатор скасувати',
-      cancelActivationLabel: 'Яку активацію',
+
       cancelReasonLabel: 'Причина скасування',
-      cancelTooltip:
-        'Видалити можна лише невикористану активацію. Очки повернуться гравцеві автоматично.',
       cancelHint:
         'Скасувати можна лише невикористану активацію. Після успіху очки повернуться гравцеві.',
       cancelAction: 'Скасувати й повернути очки',
@@ -569,7 +574,7 @@ const translations = {
       cancelConfirmDescription:
         'Модифікатор «{{modifier}}», активований гравцем {{player}}, буде видалено, а {{cost}} очк. вікторини повернуться.',
       cancelConfirmCancel: 'Залишити активацію',
-      cancelPending: 'Скасування...',
+
       cancelSuccess: 'Активацію видалено, очки повернуто.',
       noPlayers: 'Немає доступних активних гравців.',
       noAvailableModifiers: 'Для цього гравця зараз немає доступних модифікаторів.',
@@ -579,17 +584,34 @@ const translations = {
       pointsAvailable: 'Доступно: {{points}} очк.',
       pointsEarned: 'Зароблено: {{points}} очк.',
       pointsSpent: 'Витрачено: {{points}} очк.',
-      playerOption: '{{player}} · {{login}} · {{points}} очк.',
-      playerPointsOption: 'Доступно {{points}} очк.',
+
       modifierCostOption: '{{cost}} очк.',
-      activationOption: '{{player}} · {{time}} · повернути {{cost}} очк.',
+
       playerNotFound: 'Вибраного гравця не знайдено або він неактивний.',
       activationNotFound: 'Вибрану активацію модифікатора не знайдено.',
       alreadyAppliedInRound:
         'Ця активація вже прив’язана до результату раунду й не може бути скасована.',
       staleRound: 'Раунд змінився. Дані оновлюються; виберіть активацію знову.',
       reasonRequired: 'Укажіть причину скасування для аудиту.',
+      summaryAvailablePointsHelp: 'Очки вікторини, зараз доступні всім гравцям цієї гри.',
+      summarySpentPointsHelp:
+        'Усього очок вікторини витрачено на модифікатори за цю гру, за вирахуванням повернень.',
+      summaryEarnedPointsHelp:
+        'Усього очок вікторини зароблено за цю гру, включно з ручними коригуваннями.',
+      summaryUsedLabelHelp:
+        'Активні активації модифікаторів у поточному раунді. Скасовані та завершені не враховуються.',
+      cancelModifierTitle: 'Скасувати модифікатор',
+      stopTitle: 'Зупинити модифікатор',
+      gameChanged: 'Поточна гра змінилася. Закрийте підтвердження й виберіть модифікатор знову.',
+      sectionHelp: {
+        activate:
+          'Додає модифікатор обраному гравцю за його очки вікторини. Доступність, ліміти й конфлікти перевіряє сервер.',
+        cancel:
+          'Оберіть модифікатор і власника, щоб скасувати одну невикористану активацію та повернути очки цьому гравцю. Повторні покупки об’єднано; за одну дію скасовується одна активація.',
+        stop: 'Забороняє всім гравцям нові активації цього модифікатора в поточній грі, наприклад у разі збою правила. Наявні активації та історія зберігаються; очки не повертаються.',
+      },
     },
+    activatePending: 'Активація...',
   },
   pl: {
     selfCancelCompactAction: 'Cofnij aktywację',
@@ -657,7 +679,7 @@ const translations = {
     activationLabel: 'Aktywuj {{modifier}}',
     activationConfirmTitle: 'Aktywować ten modyfikator?',
     activationConfirmDescription: 'Aktywować „{{modifier}}” za {{cost}} punktów quizowych?',
-    activatePending: 'Aktywacja...',
+
     activateSuccess: 'Modyfikator aktywowany.',
     selfCancelAction: 'Cofnij zakup i zwróć punkty',
     selfCancelConfirmTitle: 'Cofnąć zakup modyfikatora?',
@@ -728,37 +750,28 @@ const translations = {
       closeAction: 'Zamknij panel administratora',
       title: 'Panel administratora',
       summaryTitle: 'Szybkie podsumowanie',
-      summaryTooltip:
-        'Pokazuje aktualne wartości zbiorcze dla aktywnych graczy na podstawie bieżącego stanu modyfikatorów.',
-      summaryAvailablePoints: 'Dostępne u graczy',
-      summarySpentPoints: 'Wydane przez graczy',
-      summaryEarnedPoints: 'Zdobyte przez graczy w tej grze',
-      summaryUsedLabel: 'Łączna liczba użytych modyfikatorów',
-      summaryUsedCount: 'Użyto: {{count}}',
-      stepOne: 'Krok 1 · wybierz gracza i modyfikator',
-      stepTwo: 'Krok 2 · cofnij aktywację',
+      summaryAvailablePoints: 'Dostępne',
+      summarySpentPoints: 'Wydane',
+      summaryEarnedPoints: 'Zdobyte',
+      summaryUsedLabel: 'Aktywacje',
       activateLabel: 'Dodaj modyfikator',
       activateModifierLabel: 'Modyfikator',
-      activateTooltip:
-        'Obowiązują te same limity i konflikty co dla zwykłych graczy. Wyszukiwanie działa po display name i loginie.',
       activateHint:
         'Obowiązują te same zasady co dla zwykłych graczy. Wybrany gracz musi mieć wystarczająco punktów quizowych.',
       activateAction: 'Aktywuj dla gracza',
-      activatePending: 'Aktywowanie...',
+
       activateSuccess: 'Modyfikator aktywowano dla wybranego gracza.',
       emergencyDisableReasonLabel: 'Powód awaryjnego wyłączenia',
       emergencyDisableAction: 'Wyłącz nowe aktywacje',
-      emergencyDisablePending: 'Wyłączanie...',
+
       emergencyDisableSuccess: 'Nowe aktywacje zostały wyłączone w tej grze.',
       emergencyDisableError: 'Nie udało się wyłączyć nowych aktywacji.',
       emergencyDisabledNotice: 'Nowe aktywacje są już wyłączone w tej grze.',
       emergencyDisableConfirmTitle: 'Wyłączyć nowe aktywacje?',
       emergencyDisableConfirmDescription:
         'Modyfikatora „{{modifier}}” nie będzie można ponownie aktywować w tej grze. Istniejące aktywacje i historia pozostaną bez zmian.',
-      cancelModifierLabel: 'Który modyfikator cofnąć',
-      cancelActivationLabel: 'Którą aktywację',
+
       cancelReasonLabel: 'Powód cofnięcia',
-      cancelTooltip: 'Usunąć można tylko nieużytą aktywację. Punkty wrócą do gracza automatycznie.',
       cancelHint:
         'Cofnąć można tylko nieużytą aktywację. Udane cofnięcie zwraca oryginalne punkty quizowe.',
       cancelAction: 'Cofnij i zwróć punkty',
@@ -766,7 +779,7 @@ const translations = {
       cancelConfirmDescription:
         'Modyfikator „{{modifier}}” aktywowany przez {{player}} zostanie usunięty, a {{cost}} pkt wróci do puli.',
       cancelConfirmCancel: 'Zostaw aktywację',
-      cancelPending: 'Cofanie...',
+
       cancelSuccess: 'Aktywacja usunięta, punkty zwrócone.',
       noPlayers: 'Brak dostępnych aktywnych graczy.',
       noAvailableModifiers: 'Ten gracz nie ma teraz dostępnych modyfikatorów.',
@@ -776,17 +789,35 @@ const translations = {
       pointsAvailable: 'Dostępne: {{points}} pkt',
       pointsEarned: 'Zdobyte: {{points}} pkt',
       pointsSpent: 'Wydane: {{points}} pkt',
-      playerOption: '{{player}} · {{login}} · {{points}} pkt',
-      playerPointsOption: 'Dostępne {{points}} pkt',
+
       modifierCostOption: '{{cost}} pkt',
-      activationOption: '{{player}} · {{time}} · zwrot {{cost}} pkt',
+
       playerNotFound: 'Wybrany gracz nie został znaleziony lub jest nieaktywny.',
       activationNotFound: 'Wybranej aktywacji modyfikatora nie znaleziono.',
       alreadyAppliedInRound:
         'Ta aktywacja jest już powiązana z wynikiem rundy i nie może zostać cofnięta.',
       staleRound: 'Runda uległa zmianie. Dane są odświeżane; wybierz aktywację ponownie.',
       reasonRequired: 'Podaj powód cofnięcia do audytu.',
+      summaryAvailablePointsHelp: 'Punkty quizu obecnie dostępne wszystkim graczom tej gry.',
+      summarySpentPointsHelp:
+        'Łączna liczba punktów quizu wydanych na modyfikatory w tej grze, po odliczeniu zwrotów.',
+      summaryEarnedPointsHelp:
+        'Łączna liczba punktów quizu zdobytych w tej grze, wraz z ręcznymi korektami.',
+      summaryUsedLabelHelp:
+        'Aktywne aktywacje modyfikatorów w bieżącej rundzie. Anulowane i zakończone nie są liczone.',
+      cancelModifierTitle: 'Anuluj modyfikator',
+      stopTitle: 'Zatrzymaj modyfikator',
+      gameChanged:
+        'Bieżąca gra się zmieniła. Zamknij potwierdzenie i wybierz modyfikator ponownie.',
+      sectionHelp: {
+        activate:
+          'Dodaje modyfikator wybranemu graczowi za jego punkty quizu. Serwer sprawdza dostępność, limity i konflikty.',
+        cancel:
+          'Wybierz modyfikator i właściciela, aby anulować jedną niewykorzystaną aktywację i zwrócić mu punkty. Powtórzone zakupy są grupowane; jedna akcja anuluje jedną aktywację.',
+        stop: 'Blokuje wszystkim graczom nowe aktywacje tego modyfikatora w bieżącej grze, na przykład po awarii reguły. Istniejące aktywacje i historia pozostają bez zmian; punkty nie są zwracane.',
+      },
     },
+    activatePending: 'Aktywacja...',
   },
 }
 

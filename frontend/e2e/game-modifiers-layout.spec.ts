@@ -68,6 +68,138 @@ const modifiers = Array.from({ length: 18 }, (_, index) => ({
   limit: index % 3 === 0 ? 2 : null,
 }))
 
+for (const width of [390, 768, 1440]) {
+  test(`compact modifier management preserves its draft at ${width}px`, async ({ page }, info) => {
+    page.on('pageerror', (error) => {
+      throw error
+    })
+    await page.setViewportSize({ width, height: 844 })
+    await mockModifiers(page, { role: 'admin' })
+    await page.route('**/api/game/modifiers/admin/players', (route) =>
+      route.fulfill({
+        json: {
+          players: [
+            {
+              userId: 'player',
+              login: 'player',
+              displayName: 'Капитан Флинт',
+              availableQuizPoints: 17,
+            },
+          ],
+          summary: {
+            playersCount: 1,
+            totalAvailableQuizPoints: 17,
+            totalEarnedQuizPoints: 20,
+            totalSpentQuizPoints: 3,
+          },
+        },
+      }),
+    )
+    await page.route('**/api/game/modifiers/admin/state/*', (route) =>
+      route.fulfill({
+        json: {
+          availableQuizPoints: 17,
+          earnedQuizPoints: 20,
+          spentQuizPoints: 3,
+          isOrderingOpen: true,
+          activeModifiers: [],
+          availableModifiers: modifiers,
+        },
+      }),
+    )
+    await page.route('**/api/game/modifiers/catalog', (route) =>
+      route.fulfill({ json: modifiers.map((item) => item.modifier) }),
+    )
+    await page.route('**/api/game/modifiers/admin/activations', (route) =>
+      route.fulfill({
+        json: Array.from({ length: 3 }, (_, index) => ({
+          activationId: `activation-${index}`,
+          roundId: 'round',
+          roundVersion: 3,
+          modifierId: modifiers[1]!.modifier.id,
+          modifierName: modifiers[1]!.modifier.name,
+          activatedByUserId: index === 2 ? 'other-player' : 'player',
+          activatedByDisplayName: index === 2 ? 'Ворон' : 'Капитан Флинт',
+          activationCost: 3,
+          activatedAtUtc: `2026-10-06T18:0${index}:00Z`,
+        })),
+      }),
+    )
+    await page.goto('/panel/game-modifiers')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление модификаторами', exact: true }).click()
+    const panel = page.getByTestId('admin-tool-drawer-scroll-body')
+    const activation = panel.getByRole('region', { name: 'Добавить модификатор' })
+    await expect(activation.getByRole('combobox', { name: 'Игрок', exact: true })).toHaveValue(
+      'Капитан Флинт',
+    )
+    const player = activation.getByRole('combobox', { name: 'Игрок', exact: true })
+    await player.click()
+    await player.fill('player')
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await expect(page.getByRole('option')).toHaveText('Капитан Флинт')
+    await page.getByRole('option').click()
+    const modifier = activation.getByRole('combobox', { name: 'Модификатор', exact: true })
+    await modifier.click()
+    const firstOption = page.getByRole('option').first()
+    await expect(firstOption).toBeVisible()
+    expect(
+      await firstOption.evaluate((element) =>
+        parseFloat(getComputedStyle(element).borderBottomWidth),
+      ),
+    ).toBeGreaterThan(0)
+    await page.getByRole('option').filter({ hasText: 'Модификатор 2' }).first().click()
+    const cancellation = panel.getByRole('region', { name: 'Отменить модификатор' })
+    await cancellation.getByRole('combobox', { name: 'Модификатор', exact: true }).click()
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await expect(page.getByRole('option')).toContainText('×3')
+    await page.getByRole('option').click()
+    await cancellation.getByRole('combobox', { name: 'Игрок', exact: true }).click()
+    await expect(page.getByRole('option')).toHaveCount(2)
+    await page.getByRole('option', { name: 'Ворон', exact: true }).click()
+    await cancellation
+      .getByRole('textbox', { name: 'Причина отмены', exact: true })
+      .fill('Ошибочная активация')
+    await expect(
+      cancellation.getByRole('button', { name: 'Отменить и вернуть очки', exact: true }),
+    ).toBeEnabled()
+    const stopHeader = panel.getByRole('button', { name: 'Остановить модификатор', exact: true })
+    await stopHeader.locator('span[tabindex="0"]').hover()
+    const stopHelp = page.getByRole('tooltip').filter({ hasText: 'Запрещает всем игрокам' })
+    await expect(stopHelp).toBeVisible()
+    await expect(stopHelp).toHaveAttribute('data-popper-placement', width >= 768 ? 'left' : 'top')
+    await stopHeader.click()
+    const stopping = panel.getByRole('region', { name: 'Остановить модификатор' })
+    await stopping.getByRole('combobox', { name: 'Модификатор', exact: true }).click()
+    await page.getByRole('option').filter({ hasText: 'Модификатор 3' }).first().click()
+    const reason = stopping.getByRole('textbox', {
+      name: 'Причина аварийного отключения',
+      exact: true,
+    })
+    await reason.fill('Проверка сохранения черновика')
+    await page.getByRole('tab', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление модификаторами', exact: true }).click()
+    await expect(reason).toHaveValue('Проверка сохранения черновика')
+    await page.getByRole('button', { name: 'Закрыть инструменты управления', exact: true }).click()
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await expect(reason).toHaveValue('Проверка сохранения черновика')
+    await expect(modifier).toHaveValue('Модификатор 2')
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    const drawer = page.getByRole('complementary', { name: 'Инструменты управления игрой' })
+    await expect
+      .poll(() =>
+        page
+          .getByRole('dialog', { name: 'Инструменты управления игрой' })
+          .evaluate((element) => parseFloat(getComputedStyle(element).width)),
+      )
+      .toBe(Math.min(width, 440))
+    await drawer.screenshot({
+      path: info.outputPath('compact-modifier-management.png'),
+      animations: 'disabled',
+    })
+  })
+}
+
 async function mockModifiers(
   page: Page,
   options: { locale?: string; role?: string; orderingOpen?: boolean; longNames?: boolean } = {},

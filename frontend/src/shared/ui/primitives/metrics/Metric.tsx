@@ -11,6 +11,7 @@ export function Metric({
   emphasis = 'normal',
   description,
   help,
+  helpTarget = 'group',
   action,
   tone = 'default',
   appearance = 'card',
@@ -21,6 +22,7 @@ export function Metric({
   emphasis?: 'normal' | 'result' | 'label'
   description?: ReactNode
   help?: string
+  helpTarget?: 'group' | 'label'
   action?: ReactNode
   tone?: 'default' | 'success' | 'error'
   appearance?: 'card' | 'summary' | 'row'
@@ -79,7 +81,15 @@ export function Metric({
                 }
           }
         >
-          {label}
+          {help && helpTarget === 'label' ? (
+            <HelpTooltip placement="left" title={help} describeChild>
+              <Box component="span" tabIndex={0}>
+                {label}
+              </Box>
+            </HelpTooltip>
+          ) : (
+            label
+          )}
         </Typography>
         <Typography
           component="dd"
@@ -136,7 +146,7 @@ export function Metric({
   const groupProps = {
     role: tone === 'default' ? 'group' : 'status',
     'aria-labelledby': labelId,
-    tabIndex: help ? 0 : undefined,
+    tabIndex: help && helpTarget === 'group' ? 0 : undefined,
   }
   const content = summary ? (
     <Box
@@ -162,7 +172,7 @@ export function Metric({
       {body}
     </SectionCard>
   )
-  return help ? (
+  return help && helpTarget === 'group' ? (
     <HelpTooltip title={help} arrow describeChild enterTouchDelay={0}>
       {content}
     </HelpTooltip>
