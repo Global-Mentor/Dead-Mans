@@ -2,6 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { ItemCard, NativeDisclosure, SectionDivider } from '../ui/index.ts'
 import { ModifierIconTile } from './ModifierIconTile.tsx'
+import { ModifierCatalogHeading } from './ModifierCatalogGroup.tsx'
 
 export function ModifierDetailsList({
   count,
@@ -108,13 +109,30 @@ function measureCompactList(list: Element): number {
   )
 }
 
-export function ModifierDetailsGroup({ title, children }: { title?: string; children: ReactNode }) {
+export function ModifierDetailsGroup({
+  title,
+  count,
+  children,
+}: {
+  title?: string
+  count?: number
+  children: ReactNode
+}) {
   return (
     <Box
       component="li"
-      sx={{ gridColumn: '1 / -1', minWidth: 0, listStyle: 'none', display: 'grid', gap: 0.75 }}
+      sx={{
+        gridColumn: '1 / -1',
+        minWidth: 0,
+        listStyle: 'none',
+        display: 'grid',
+        gap: 0.75,
+        ...(count != null ? { border: '1px solid', borderColor: 'divider' } : {}),
+      }}
     >
-      {title ? (
+      {title && count != null ? (
+        <ModifierCatalogHeading title={title} count={count} />
+      ) : title ? (
         <Stack
           data-modifier-group-heading
           direction="row"
@@ -150,6 +168,7 @@ export function ModifierDetailsItem({
   title,
   emoji,
   reserveIcon = false,
+  catalog = false,
   metadata,
   effect,
   actions,
@@ -160,6 +179,7 @@ export function ModifierDetailsItem({
   title: string
   emoji?: string | null | undefined
   reserveIcon?: boolean
+  catalog?: boolean
   metadata?: ReactNode
   effect?: ReactNode
   actions?: ReactNode
@@ -172,7 +192,9 @@ export function ModifierDetailsItem({
       component="span"
       sx={{ display: 'flex', width: '100%', minWidth: 0, alignItems: 'center', columnGap: 1 }}
     >
-      {emoji || reserveIcon ? <ModifierIconTile emoji={emoji} /> : null}
+      {emoji || reserveIcon ? (
+        <ModifierIconTile emoji={emoji} size={catalog ? 'large' : 'standard'} />
+      ) : null}
       <Box component="span" sx={{ flex: 1, minWidth: 0, display: 'grid', gap: 0.25 }}>
         <Typography
           component="span"
@@ -181,7 +203,7 @@ export function ModifierDetailsItem({
           variant="body1"
           fontWeight={700}
           color="text.primary"
-          sx={{ lineHeight: 1.2 }}
+          sx={{ lineHeight: catalog ? 1.25 : 1.2 }}
         >
           {title}
         </Typography>
@@ -194,8 +216,8 @@ export function ModifierDetailsItem({
     <ItemCard
       component="li"
       sx={{
-        py: 0.25,
-        px: 0.75,
+        py: catalog ? 0.5 : 0.25,
+        px: catalog ? 1 : 0.75,
         minWidth: 0,
         listStyle: 'none',
         overflowWrap: 'anywhere',

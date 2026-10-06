@@ -2989,6 +2989,8 @@ export interface components {
             /** @enum {string} */
             modifierSnapshotStatus: "complete" | "legacy_unavailable";
             modifierSnapshots: components["schemas"]["GameHistoryModifierSnapshotDto"][];
+            /** @description Final persisted board of this finished game. Null for unfinished games or legacy records without a board. Unopened cards retain hidden content. */
+            board?: components["schemas"]["GameBoardSnapshotDto"] | null;
         };
         GameRoundParticipantDto: {
             /** Format: uuid */

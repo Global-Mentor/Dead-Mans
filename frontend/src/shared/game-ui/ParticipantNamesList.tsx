@@ -7,6 +7,8 @@ interface ParticipantNamesListProps {
   dense?: boolean
   direction?: 'column' | 'row'
   decorated?: boolean
+  leadingMarker?: boolean
+  alignment?: 'start' | 'center'
   layout?: 'flow' | 'columns'
 }
 
@@ -17,13 +19,15 @@ export function ParticipantNamesList({
   dense = false,
   direction = 'column',
   decorated = false,
+  leadingMarker = false,
+  alignment,
   layout = 'flow',
 }: ParticipantNamesListProps) {
   const columns = layout === 'columns'
   const columnCount = Math.min(names.length, 3)
   if (names.length === 0) {
     return (
-      <Typography variant={variant} color="text.secondary">
+      <Typography variant={variant} color="text.secondary" textAlign={alignment}>
         {emptyLabel}
       </Typography>
     )
@@ -54,14 +58,14 @@ export function ParticipantNamesList({
       }}
     >
       {names.map((name, index) =>
-        decorated ? (
+        decorated || leadingMarker ? (
           <Stack
             component="li"
             key={`${name}-${index}`}
             direction="row"
             spacing={dense ? 0.5 : 1}
             alignItems="center"
-            justifyContent="center"
+            justifyContent={decorated || alignment === 'center' ? 'center' : 'flex-start'}
             sx={{
               minWidth: 0,
               ...(columns
@@ -77,12 +81,17 @@ export function ParticipantNamesList({
             <ParticipantDiamond />
             <Typography
               variant={variant}
-              fontWeight={700}
-              sx={{ minWidth: 0, overflowWrap: 'anywhere', ...(dense ? { lineHeight: 1.25 } : {}) }}
+              fontWeight={decorated ? 700 : undefined}
+              sx={{
+                minWidth: 0,
+                textAlign: alignment,
+                overflowWrap: 'anywhere',
+                ...(dense ? { lineHeight: 1.25 } : {}),
+              }}
             >
               {name}
             </Typography>
-            <ParticipantDiamond />
+            {decorated ? <ParticipantDiamond /> : null}
           </Stack>
         ) : (
           <Typography
@@ -90,6 +99,7 @@ export function ParticipantNamesList({
             key={`${name}-${index}`}
             variant={variant}
             sx={{
+              textAlign: alignment,
               ...(dense ? { lineHeight: 1.25 } : {}),
               ...(columns
                 ? {

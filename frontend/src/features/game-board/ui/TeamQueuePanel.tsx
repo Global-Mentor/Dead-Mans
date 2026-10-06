@@ -1,20 +1,19 @@
-import { TeamIdentity } from '../../../shared/game-ui/index.ts'
-import { Box, Stack, Typography } from '@mui/material'
-import type { TFunction } from 'i18next'
-import { useId, useState, type ReactNode } from 'react'
+import { Box, Stack, SvgIcon, Typography } from '@mui/material'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
+import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
 import {
   ActionIcon,
   AppButton,
   AsyncSection,
+  FieldAdornment,
   FormTextField,
-  ItemCard,
-  SectionCard,
   StatusBadge,
 } from '../../../shared/ui/index.ts'
-import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
+import { formatTeamNameWithFallback } from '../../game-registration/index.ts'
 import { groupTeamQueueTeams } from '../model/team-queue-order.ts'
+import { TeamQueueCard } from './TeamQueueCard.tsx'
 
 interface TeamQueuePanelProps {
   teams: readonly GameTeamQueueItem[]
@@ -24,6 +23,7 @@ interface TeamQueuePanelProps {
   isRefreshing: boolean
   onRetry: () => void
   activeTeamId?: string | null
+  currentUserId?: string | null
 }
 
 export function TeamQueuePanel({
@@ -34,221 +34,208 @@ export function TeamQueuePanel({
   isRefreshing,
   onRetry,
   activeTeamId,
+  currentUserId = null,
 }: TeamQueuePanelProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const panelId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
-  const query = search.trim().toLocaleLowerCase()
+  const query = search.trim().toLocaleLowerCase(i18n.resolvedLanguage)
   const matchingTeams = teams.filter(
     (team) =>
       !query ||
       [
-        formatTeamQueueName(t, team.teamName),
+        formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam')),
         ...team.participants.map((player) => player.displayName),
-      ].some((value) => value.toLocaleLowerCase().includes(query)),
+      ].some((value) => value.toLocaleLowerCase(i18n.resolvedLanguage).includes(query)),
   )
-  const groupedTeams = groupTeamQueueTeams(teams)
-  // Search must not renumber the historical play order.
+  const grouped = groupTeamQueueTeams(teams)
+  // Filtering keeps authoritative queue slots and historical play positions.
   const matchingIds = new Set(matchingTeams.map((team) => team.teamId))
-  const remainingTeams = groupedTeams.remainingTeams.filter(({ team }) =>
-    matchingIds.has(team.teamId),
-  )
-  const playedTeams = groupedTeams.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))
+  const remaining = grouped.remainingTeams.filter(({ team }) => matchingIds.has(team.teamId))
+  const played = grouped.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))
+  const countLabel = (count: number, total: number) =>
+    query
+      ? t('gameBoard.teamQueueMatches', { matched: count, total })
+      : count.toLocaleString(i18n.resolvedLanguage)
 
   return (
-    <SectionCard
+    <Stack
       component="section"
-      aria-labelledby={`${panelId}-title`}
+      aria-labelledby={panelId + '-title'}
       data-testid="team-queue-panel"
-      sx={{ p: { xs: 2, sm: 2.5 }, minWidth: 0 }}
+      spacing={2}
+      sx={{ minWidth: 0, minHeight: 0, flex: 1 }}
     >
-      <Stack spacing={2.5}>
-        <Stack
-          component="header"
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          gap={1}
-          sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}
-        >
-          <Typography id={`${panelId}-title`} component="h1" variant="h5">
-            {t('gameBoard.teamQueueTitle')}
-          </Typography>
-          {hasData ? <StatusBadge size="small" label={teams.length} /> : null}
-        </Stack>
+      <RoundBriefingPanel
+        sx={{ flexShrink: 0 }}
+        header={
+          <Stack direction="row" alignItems="center" justifyContent="center" gap={1.5}>
+            <Typography id={panelId + '-title'} component="h1" variant="h5">
+              {t('gameBoard.teamQueueTitle')}
+            </Typography>
+          </Stack>
+        }
+      >
         {hasData && teams.length > 0 ? (
           <FormTextField
+            fullWidth
+            inputRef={inputRef}
             label={t('gameBoard.teamQueueSearch')}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             slotProps={{
               input: {
                 endAdornment: search ? (
-                  <ActionIcon
-                    aria-label={t('gameBoard.teamQueueClearSearch')}
-                    onClick={() => setSearch('')}
-                    edge="end"
-                  >
-                    <Box component="span" aria-hidden>
-                      ×
-                    </Box>
-                  </ActionIcon>
+                  <FieldAdornment position="end">
+                    <ActionIcon
+                      aria-label={t('gameBoard.teamQueueClearSearch')}
+                      onClick={() => {
+                        setSearch('')
+                        inputRef.current?.focus()
+                      }}
+                      edge="end"
+                    >
+                      <SvgIcon fontSize="small" aria-hidden>
+                        <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4Z" />
+                      </SvgIcon>
+                    </ActionIcon>
+                  </FieldAdornment>
                 ) : undefined,
               },
             }}
           />
         ) : null}
-        <AsyncSection
-          isLoading={isLoading}
-          isError={isError}
-          isEmpty={teams.length === 0}
-          hasData={hasData}
-          loadingMessage={t('gameBoard.teamQueueLoading')}
-          errorMessage={t('gameBoard.teamQueueError')}
-          emptyMessage={t('gameBoard.teamQueueEmpty')}
-          retryAction={
-            <AppButton tone="secondary" onClick={onRetry} loading={isRefreshing}>
-              {t('common.actions.retry')}
-            </AppButton>
-          }
+      </RoundBriefingPanel>
+      <AsyncSection
+        isLoading={isLoading}
+        isError={isError}
+        isEmpty={false}
+        hasData={hasData}
+        loadingMessage={t('gameBoard.teamQueueLoading')}
+        errorMessage={t('gameBoard.teamQueueError')}
+        emptyMessage={t('gameBoard.teamQueueEmpty')}
+        retryAction={
+          <AppButton tone="secondary" onClick={onRetry} loading={isRefreshing}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
+      >
+        {query && matchingTeams.length === 0 ? (
+          <Typography role="status" variant="body2" color="text.secondary">
+            {t('gameBoard.teamQueueNoResults')}
+          </Typography>
+        ) : null}
+        <Box
+          sx={{
+            display: 'grid',
+            flex: 1,
+            minHeight: 0,
+            gridTemplateRows: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'minmax(0, 1fr)' },
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+            gap: 2,
+            alignItems: 'stretch',
+          }}
         >
-          {matchingTeams.length === 0 ? (
-            <Typography role="status" variant="body2" color="text.secondary">
-              {t('gameBoard.teamQueueNoResults')}
-            </Typography>
-          ) : (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
-                gap: { xs: 3, md: 2.5 },
-                alignItems: 'start',
-              }}
-            >
-              <TeamQueueSection
-                title={t('gameBoard.teamQueueRemainingTitle')}
-                count={remainingTeams.length}
-                emptyMessage={t('gameBoard.teamQueueRemainingEmpty')}
-              >
-                {remainingTeams.map(({ team }) => (
-                  <TeamQueueCard
-                    key={team.teamId}
-                    team={team}
-                    isActive={team.teamId === activeTeamId}
-                  />
-                ))}
-              </TeamQueueSection>
-              <TeamQueueSection
-                title={t('gameBoard.teamQueuePlayedTitle')}
-                count={playedTeams.length}
-                emptyMessage={t('gameBoard.teamQueuePlayedEmpty')}
-              >
-                {playedTeams.map(({ team, playedOrder }) => (
-                  <TeamQueueCard
-                    key={team.teamId}
-                    team={team}
-                    isActive={team.teamId === activeTeamId}
-                    playedOrder={playedOrder}
-                  />
-                ))}
-              </TeamQueueSection>
-            </Box>
-          )}
-        </AsyncSection>
-      </Stack>
-    </SectionCard>
+          <TeamQueueSection
+            title={t('gameBoard.teamQueueRemainingTitle')}
+            count={countLabel(remaining.length, grouped.remainingTeams.length)}
+            emptyMessage={t(
+              query
+                ? 'gameBoard.teamQueueNoResults'
+                : teams.length
+                  ? 'gameBoard.teamQueueRemainingEmpty'
+                  : 'gameBoard.teamQueueEmpty',
+            )}
+            empty={remaining.length === 0}
+          >
+            {remaining.map(({ team }, index) => (
+              <TeamQueueCard
+                key={team.teamId}
+                team={team}
+                isActive={team.teamId === activeTeamId}
+                currentUserId={currentUserId}
+                tone={index % 2 ? 'alternate' : 'default'}
+              />
+            ))}
+          </TeamQueueSection>
+          <TeamQueueSection
+            title={t('gameBoard.teamQueuePlayedTitle')}
+            count={countLabel(played.length, grouped.playedTeams.length)}
+            emptyMessage={t(
+              query ? 'gameBoard.teamQueueNoResults' : 'gameBoard.teamQueuePlayedEmpty',
+            )}
+            empty={played.length === 0}
+          >
+            {played.map(({ team }, index) => (
+              <TeamQueueCard
+                key={team.teamId}
+                team={team}
+                isActive={team.teamId === activeTeamId}
+                currentUserId={currentUserId}
+                tone={index % 2 ? 'alternate' : 'default'}
+              />
+            ))}
+          </TeamQueueSection>
+        </Box>
+      </AsyncSection>
+    </Stack>
   )
 }
 
 function TeamQueueSection({
   title,
   count,
+  empty,
   emptyMessage,
   children,
 }: {
   title: string
-  count: number
+  count: string
+  empty: boolean
   emptyMessage: string
   children: ReactNode
 }) {
   return (
-    <Stack
+    <RoundBriefingPanel
       component="section"
-      spacing={1}
-      sx={{ minWidth: 0, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-        <Typography component="h2" variant="h6">
-          {title}
-        </Typography>
-        <StatusBadge size="small" label={count} />
-      </Stack>
-      {count === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          {emptyMessage}
-        </Typography>
-      ) : (
-        <Stack spacing={0.75}>{children}</Stack>
-      )}
-    </Stack>
-  )
-}
-
-function TeamQueueCard({
-  team,
-  isActive,
-  playedOrder,
-}: {
-  team: GameTeamQueueItem
-  isActive: boolean
-  playedOrder?: number
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <ItemCard
-      component="article"
-      aria-label={formatTeamQueueName(t, team.teamName)}
-      emphasis={isActive ? 'selected' : 'none'}
-    >
-      <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ minWidth: 0 }}>
-        <StatusBadge
-          size="small"
-          variant="outlined"
-          color={isActive ? 'primary' : 'default'}
-          label={team.teamSlotIndex}
-          aria-label={t('gameBoard.teamQueueSlotLabel', { slot: team.teamSlotIndex })}
-        />
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <TeamIdentity
-            name={formatTeamQueueName(t, team.teamName)}
-            participants={team.participants.map((participant) => participant.displayName)}
-            emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-            status={
-              isActive ? (
-                <StatusBadge
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  label={t('gameBoard.teamQueueActiveChip')}
-                />
-              ) : playedOrder ? (
-                <StatusBadge
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  appearance="plain"
-                  label={t('gameBoard.teamQueuePlayedOrderLabel', { order: playedOrder })}
-                />
-              ) : null
-            }
-          />
+      aria-label={title}
+      sx={{ minHeight: 0 }}
+      header={
+        <Box sx={{ position: 'relative', px: 5, minHeight: 28, alignContent: 'center' }}>
+          <Typography component="h2" variant="h6" textAlign="center">
+            {title}
+          </Typography>
+          <Box sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}>
+            <StatusBadge density="compact" variant="outlined" label={count} />
+          </Box>
         </Box>
-      </Stack>
-    </ItemCard>
+      }
+    >
+      <Box
+        role="group"
+        aria-label={title}
+        tabIndex={0}
+        sx={{
+          minHeight: 0,
+          flex: 1,
+          overflowY: 'auto',
+          overscrollBehaviorY: 'contain',
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: 2,
+          },
+        }}
+      >
+        {empty ? (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+            {emptyMessage}
+          </Typography>
+        ) : (
+          <Stack spacing={0.75}>{children}</Stack>
+        )}
+      </Box>
+    </RoundBriefingPanel>
   )
-}
-
-function formatTeamQueueName(t: TFunction, teamName: string | null | undefined) {
-  return formatTeamNameWithFallback(teamName, t('gameBoard.teamQueueUnnamedTeam'))
 }

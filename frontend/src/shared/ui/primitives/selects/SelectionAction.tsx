@@ -2,6 +2,7 @@ import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ComponentProps } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
+import { feedbackSurfaceSx } from '../../../theme/feedback-surface-sx.ts'
 import { getAppSurfaceSx } from '../../../theme/surface-sx.ts'
 import { AppButton } from '../buttons/AppButton.tsx'
 
@@ -80,17 +81,8 @@ export function SelectionAction({
                     selected ? 0.18 : 0.3,
                   ),
                   boxShadow: selected ? `inset 3px 0 0 ${theme.palette.primary.light}` : 'none',
-                  color: outcome
-                    ? theme.palette[outcome].light
-                    : selected
-                      ? theme.palette.text.primary
-                      : theme.palette.text.secondary,
-                  ...(outcome
-                    ? {
-                        borderColor: alpha(theme.palette[outcome].main, 0.7),
-                        backgroundColor: alpha(theme.palette[outcome].main, 0.18),
-                      }
-                    : {}),
+                  color: selected ? theme.palette.text.primary : theme.palette.text.secondary,
+                  ...(outcome ? feedbackSurfaceSx(theme, outcome) : {}),
                 },
               }
             : {

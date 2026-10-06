@@ -56,6 +56,7 @@ const translations = {
       },
     },
     entities: {
+      card: 'Card',
       categories: 'Categories',
       modifiers: 'Modifiers',
       player: 'Player',
@@ -136,6 +137,7 @@ const translations = {
       },
     },
     entities: {
+      card: 'Карточка',
       categories: 'Категории',
       modifiers: 'Модификаторы',
       player: 'Игрок',
@@ -216,6 +218,7 @@ const translations = {
       },
     },
     entities: {
+      card: 'Картка',
       categories: 'Категорії',
       modifiers: 'Модифікатори',
       player: 'Гравець',
@@ -293,6 +296,7 @@ const translations = {
       },
     },
     entities: {
+      card: 'Karta',
       categories: 'Kategorie',
       modifiers: 'Modyfikatory',
       player: 'Gracz',

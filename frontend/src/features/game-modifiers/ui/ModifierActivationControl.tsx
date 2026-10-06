@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
-import { AppButton, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
+import { AppButton, HelpTooltip, ActionStatus } from '../../../shared/ui/index.ts'
 interface ModifierActivationControlProps {
   availability: GameModifierAvailability
   isBusy: boolean
@@ -9,6 +9,7 @@ interface ModifierActivationControlProps {
   blockedReasonLabel: string
   blockedReasonTooltip: string
   onActivate: (modifierId: string) => void
+  activationAriaLabel?: string
   compact?: boolean
 }
 
@@ -20,40 +21,42 @@ export function ModifierActivationControl({
   blockedReasonTooltip,
   onActivate,
   compact = false,
+  activationAriaLabel,
 }: ModifierActivationControlProps) {
   const { t } = useTranslation()
   const reason = availability.blockedReason
-  const blockedContent =
-    reason === 'ordering_closed' ? (
-      <AppButton tone="primary" size={compact ? 'small' : 'medium'} fullWidth={!compact} disabled>
-        {compact ? t('gameModifiers.unavailableAction') : blockedReasonLabel}
-      </AppButton>
-    ) : (
-      <StatusBadge
-        role="status"
-        aria-label={blockedReasonTooltip}
-        label={compact ? t('gameModifiers.unavailableAction') : blockedReasonLabel}
-        density={compact ? 'compact' : 'standard'}
-        color={
-          reason === 'limit_reached' || reason === 'active_team_member'
-            ? 'error'
-            : reason === 'insufficient_points'
-              ? 'warning'
-              : 'info'
-        }
-      />
-    )
+  const blockedContent = (
+    <ActionStatus
+      label={
+        compact
+          ? t(
+              reason === 'conflict_active'
+                ? 'gameModifiers.conflictStatus'
+                : reason === 'limit_reached'
+                  ? 'gameModifiers.blockedReasonLabels.limit_reached'
+                  : 'gameModifiers.unavailableAction',
+            )
+          : blockedReasonLabel
+      }
+      description={blockedReasonTooltip}
+      compact={compact}
+      tone={
+        reason === 'conflict_active' ? 'warning' : reason === 'limit_reached' ? 'default' : 'error'
+      }
+    />
+  )
   return (
-    <Box sx={{ width: compact ? 'auto' : { xs: '100%', sm: 168 }, flexShrink: 0 }}>
+    <Box sx={{ width: compact ? 144 : { xs: '100%', sm: 168 }, flexShrink: 0 }}>
       {availability.canActivate ? (
         <AppButton
           tone="primary"
-          fullWidth={!compact}
+          fullWidth
           size={compact ? 'small' : 'medium'}
           aria-label={
-            compact
+            activationAriaLabel ??
+            (compact
               ? t('gameModifiers.activateAction')
-              : t('gameModifiers.activationLabel', { modifier: availability.modifier.name })
+              : t('gameModifiers.activationLabel', { modifier: availability.modifier.name }))
           }
           disabled={isBusy}
           aria-busy={isPending}

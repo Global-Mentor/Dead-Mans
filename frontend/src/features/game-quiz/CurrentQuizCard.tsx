@@ -1,60 +1,31 @@
-import { Stack, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
-import { useMemo, useState } from 'react'
+import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import type { components } from '../../shared/api/contracts/generated'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
-import { AppButton, InlineNotice, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import { InlineNotice, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
 import { QuizQuestionContent } from './QuizQuestionContent.tsx'
-import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
-
-type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
 type CurrentQuizCardProps = {
   state: CurrentGameQuizState | null
-  canManage: boolean
-  questions: readonly AvailableQuestion[]
-  questionsLoading?: boolean
-  questionsError?: boolean
-  onRetryQuestions?: () => void
   isSubmitting: boolean
   answerDisabled?: boolean
-  isStarting: boolean
-  modifierOrderingActive?: boolean
   embedded?: boolean
   error: Error | null
   onSubmit: (questionSessionId: string, optionId: string) => void
-  onAskNext?: () => void
-  onAskSpecific?: (questionId: string) => void
   onDeadline: () => void
 }
 
 export function CurrentQuizCard({
   state,
-  canManage,
-  questions,
-  questionsLoading = false,
-  questionsError = false,
-  onRetryQuestions,
   isSubmitting,
   answerDisabled = false,
-  isStarting,
-  modifierOrderingActive = false,
   embedded = false,
   error,
   onSubmit,
-  onAskNext,
-  onAskSpecific,
   onDeadline,
 }: CurrentQuizCardProps) {
   const { t } = useTranslation()
-  const [questionPickerOpen, setQuestionPickerOpen] = useState(false)
-  const usedQuestionIds = useMemo(() => new Set(state ? [state.questionId] : []), [state])
-  const selectableQuestions = questions.filter(
-    (question) => !usedQuestionIds.has(question.questionId),
-  )
   const isOpen = state?.status === 'open'
   const description = !state
     ? t('gameQuiz.waitingDescription')
@@ -85,50 +56,20 @@ export function CurrentQuizCard({
     >
       {!embedded ? (
         <SectionHeader
-          title={state ? t('gameQuiz.currentTitle') : t('gameQuiz.waitingTitle')}
+          title={t(
+            !state
+              ? 'gameQuiz.waitingTitle'
+              : isOpen
+                ? 'gameQuiz.currentTitle'
+                : 'gameQuiz.resultTitle',
+          )}
           description={description}
         />
       ) : null}
 
-      {canManage && onAskNext && onAskSpecific ? (
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'stretch' }}
-          sx={(theme) => ({
-            mt: 1.5,
-            pb: 1.5,
-            borderBottom: '1px solid',
-            borderColor: alpha(theme.palette.primary.main, 0.2),
-          })}
-        >
-          <AppButton
-            size="small"
-            disabled={isOpen || isStarting || modifierOrderingActive}
-            onClick={onAskNext}
-            sx={{ flexShrink: 0, whiteSpace: 'normal' }}
-          >
-            {t('gameQuiz.nextQuestion')}
-          </AppButton>
-          <AppButton
-            size="small"
-            tone="secondary"
-            disabled={isOpen || isStarting || modifierOrderingActive}
-            onClick={() => setQuestionPickerOpen(true)}
-          >
-            {t('gameQuiz.askSpecificQuestion')}
-          </AppButton>
-        </Stack>
-      ) : null}
-
-      {canManage && modifierOrderingActive ? (
-        <InlineNotice severity="info" sx={{ mt: 1.5 }}>
-          {t('gameQuiz.modifierOrderingActive')}
-        </InlineNotice>
-      ) : null}
-
       {error ? (
         <InlineNotice
+          appearance="textured"
           severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
           sx={{ mt: 1.5 }}
         >
@@ -150,18 +91,6 @@ export function CurrentQuizCard({
           onDeadline={onDeadline}
         />
       )}
-      {canManage && onAskSpecific ? (
-        <QuizQuestionPickerDialog
-          open={questionPickerOpen}
-          questions={selectableQuestions}
-          busy={isStarting || isOpen || modifierOrderingActive}
-          loading={questionsLoading}
-          error={questionsError}
-          {...(onRetryQuestions ? { onRetry: onRetryQuestions } : {})}
-          onClose={() => setQuestionPickerOpen(false)}
-          onSelect={onAskSpecific}
-        />
-      ) : null}
     </SectionCard>
   )
 }

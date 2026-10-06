@@ -1,16 +1,22 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
 import { ModifierHistoryPage } from './ModifierHistoryPage.tsx'
+import {
+  fetchModifierHistory,
+  fetchModifierVersion,
+  fetchModifierVersions,
+} from './api/modifier-history-api.ts'
 
 const modifierId = '10000000-0000-0000-0000-000000000001'
 const versionId = '20000000-0000-0000-0000-000000000001'
 const gameId = '30000000-0000-0000-0000-000000000001'
 
 beforeAll(async () => i18n.changeLanguage('ru'))
+afterEach(cleanup)
 
 vi.mock('./api/modifier-history-api.ts', () => ({
   fetchModifierHistory: vi.fn(async () => ({
@@ -68,7 +74,7 @@ vi.mock('./api/modifier-history-api.ts', () => ({
       phase: 'round',
       performer: 'activeTeam',
       requiresHostMonitoring: false,
-      rule: 'Неизменяемое правило',
+      rule: revision === 1 ? 'Первое правило' : 'Неизменяемое правило',
       stackingPolicy: 'aggregateParameters',
       resolution: { type: 'ruleStatus' },
       reward: 'none',
@@ -84,7 +90,10 @@ vi.mock('./api/modifier-history-api.ts', () => ({
     changeNote: '<img src=x onerror=alert(1)>',
     changeType: 'compatibility_cascade',
     cascadeSourceModifierId: '50000000-0000-0000-0000-000000000001',
-    changedFields: revision === 1 ? ['created'] : ['compatibility', 'activationCost'],
+    changedFields:
+      revision === 1
+        ? ['created']
+        : ['compatibility', 'activationCost', 'normalizedTags', 'behaviorV2'],
     isCurrent: revision === 2,
     isArchived: true,
   })),
@@ -107,6 +116,78 @@ vi.mock('./api/modifier-history-api.ts', () => ({
 }))
 
 describe('ModifierHistoryPage', () => {
+  function renderHistory(entry: string) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    renderWithAppProviders(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[entry]}>
+          <ModifierHistoryPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  it('selects the first modifier and its latest revision when opening the archive', async () => {
+    renderHistory('/panel/modifier-history')
+    expect(await screen.findByText('Сохранённое описание')).toBeVisible()
+    expect(screen.getByRole('heading', { name: '🧭 Архивная редакция', exact: true })).toBeVisible()
+    expect(screen.getByText('Текущая', { exact: true })).toBeVisible()
+  })
+
+  it('retries revision discovery instead of leaving the first selection loading forever', async () => {
+    vi.mocked(fetchModifierVersions).mockRejectedValueOnce(new Error('Temporary failure'))
+    renderHistory('/panel/modifier-history?modifierId=' + modifierId)
+    expect(await screen.findByText(i18n.t('modifierHistory.error'))).toBeVisible()
+    expect(screen.queryByText(i18n.t('modifierHistory.loading'))).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.actions.retry') }))
+    expect(
+      await screen.findByRole('heading', { name: '🧭 Архивная редакция', exact: true }),
+    ).toBeVisible()
+  })
+
+  it('keeps the older revision explicitly requested in the URL', async () => {
+    renderHistory('/panel/modifier-history?modifierId=' + modifierId + '&revision=1')
+    expect(
+      await screen.findByRole('heading', { name: '🧭 Первая редакция', exact: true }),
+    ).toBeVisible()
+    expect(screen.queryByText('Текущая', { exact: true })).not.toBeInTheDocument()
+  })
+
+  it('does not show the previous revision while the selected revision is loading', async () => {
+    const original = vi.mocked(fetchModifierVersion).getMockImplementation()!
+    let finishRequest!: () => void
+    renderHistory('/panel/modifier-history?modifierId=' + modifierId + '&revision=1&tab=revisions')
+    expect(
+      await screen.findByRole('heading', { name: '🧭 Первая редакция', exact: true }),
+    ).toBeVisible()
+    vi.mocked(fetchModifierVersion).mockImplementationOnce(async (id, revision) => {
+      await new Promise<void>((resolve) => {
+        finishRequest = resolve
+      })
+      return original(id, revision)
+    })
+    fireEvent.click(
+      within(screen.getByRole('tabpanel', { name: 'Редакции' })).getByRole('button', {
+        name: /Редакция 2/,
+      }),
+    )
+    await waitFor(() => expect(finishRequest).toBeTypeOf('function'))
+    expect(
+      screen.queryByRole('heading', { name: '🧭 Первая редакция', exact: true }),
+    ).not.toBeInTheDocument()
+    finishRequest()
+    expect(
+      await screen.findByRole('heading', { name: '🧭 Архивная редакция', exact: true }),
+    ).toBeVisible()
+  })
+
+  it('shows an empty archive without requesting a modifier', async () => {
+    vi.mocked(fetchModifierHistory).mockResolvedValueOnce({ items: [], nextCursor: null })
+    renderHistory('/panel/modifier-history')
+    expect(await screen.findByText('По фильтрам ничего не найдено.')).toBeVisible()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+  })
+
   it('renders archived cascade detail, semantic diff and related game without mutation controls', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     renderWithAppProviders(
@@ -119,20 +200,49 @@ describe('ModifierHistoryPage', () => {
       </QueryClientProvider>,
     )
 
-    expect(await screen.findByText('Каскад совместимости')).toBeInTheDocument()
-    expect(screen.getAllByText('В архиве')).toHaveLength(2)
+    expect(await screen.findByText('Сохранённое описание')).toBeVisible()
+    expect(screen.queryByText('Теги', { exact: true })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Изменения' }))
+    expect(screen.getByText('Каскад совместимости')).toBeVisible()
+    expect(screen.getAllByText('В архиве').length).toBeGreaterThan(0)
     expect(screen.getByText('Совместимость')).toBeInTheDocument()
-    expect(screen.getByText(/Было: Конфликтов нет/)).toBeInTheDocument()
-    expect(screen.getByText(/Стало: Конфликт-снимок/)).toBeInTheDocument()
-    expect(screen.getByText('Неизменяемое правило')).toBeInTheDocument()
+    expect(screen.queryByText('Теги', { exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Стало: Теги' })).not.toBeInTheDocument()
+    expect(
+      within(screen.getByRole('group', { name: 'Было: Совместимость' })).getByText(
+        'Конфликтов нет',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('group', { name: 'Стало: Совместимость' })).getByText(
+        'Конфликт-снимок',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Правило: Неизменяемое правило', { exact: true })).not.toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Поведение', exact: true }))
+    expect(screen.getByText('Правило: Первое правило', { exact: true })).toBeVisible()
+    expect(screen.getByText('Правило: Неизменяемое правило', { exact: true })).toBeVisible()
+    expect(screen.queryByText(/schemaVersion: 2/)).not.toBeInTheDocument()
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
     expect(document.querySelector('img[src="x"]')).toBeNull()
-    expect(screen.getByText('Конфликт-снимок')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Конфигурация' }))
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Конфигурация' })).getByText('Конфликт-снимок'),
+    ).toBeVisible()
+    const configuration = within(screen.getByRole('tabpanel', { name: 'Конфигурация' }))
+    fireEvent.click(configuration.getByRole('button', { name: 'Поведение', exact: true }))
+    expect(configuration.getByText('Формула', { exact: true })).toBeVisible()
+    expect(screen.queryByText(/returned an object instead of string/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Связанные игры' }))
     expect(screen.getByText('Аварийно отключён')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Игра со второй редакцией' })).toHaveAttribute(
-      'href',
-      `/panel/game-history?gameId=${gameId}`,
-    )
+    expect(
+      screen.getByRole('link', { name: 'Посмотреть игру: Игра со второй редакцией' }),
+    ).toHaveAttribute('href', `/panel/game-history?gameId=${gameId}`)
+    expect(
+      screen.getByRole('heading', { name: 'Игра со второй редакцией' }).closest('a'),
+    ).toBeNull()
+    expect(screen.queryByText('Отменено', { exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByText('Результатов', { exact: true })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /редактировать|удалить/i })).not.toBeInTheDocument()
   })
 })

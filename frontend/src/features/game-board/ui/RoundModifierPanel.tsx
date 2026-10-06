@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,15 +6,13 @@ import type {
   GameModifierState,
 } from '../../../shared/api/contracts/index.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
-import { ModifierIconTile } from '../../../shared/game-ui/index.ts'
 import {
-  AppButton,
-  AppDialog,
-  ContentList,
-  ItemCard,
-  InlineNotice,
-  StatusBadge,
-} from '../../../shared/ui/index.ts'
+  ModifierCatalogGroup,
+  ModifierCatalogRow,
+  ModifierConflictNotice,
+  ModifierDescriptionBlock,
+} from '../../../shared/game-ui/index.ts'
+import { AppButton, AppDialog, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   groupActiveGameModifiers,
   groupAvailableGameModifiers,
@@ -72,8 +70,9 @@ export function RoundModifierPanel({
   )
   for (const item of detailsState?.activeModifiers ?? [])
     namesById.set(item.modifierId, item.modifierName)
-  const ownActivations =
-    selectedActive?.activations.filter((item) => item.activatedByUserId === user?.id) ?? []
+  const ownActivation = selectedActive?.activations.find(
+    (item) => item.activatedByUserId === user?.id,
+  )
 
   return (
     <GameModifierActions state={state} roundId={roundId} disabled={disabled}>
@@ -87,66 +86,44 @@ export function RoundModifierPanel({
             ) : (
               <Stack spacing={1}>
                 {availableGroups.map((group) => (
-                  <Box
+                  <ModifierCatalogGroup
                     key={group.category}
-                    component="section"
-                    aria-label={getCategoryLabel(t, group.category)}
-                    sx={{ border: '1px solid', borderColor: 'divider', minWidth: 0 }}
+                    title={getCategoryLabel(t, group.category)}
+                    count={group.items.length}
                   >
-                    <RoundModifierCategoryHeading
-                      title={getCategoryLabel(t, group.category)}
-                      count={group.items.length}
-                    />
-                    <ContentList
-                      disablePadding
-                      component="ul"
-                      sx={{ display: 'grid', gap: 0.5, px: 0.25 }}
-                    >
-                      {group.items.map((item) => (
-                        <RoundModifierRow
-                          key={item.modifier.id}
-                          availability={item}
-                          isActive={activeById.has(item.modifier.id)}
-                          isBusy={actions.isBusy}
-                          isPending={actions.pendingModifierId === item.modifier.id}
-                          onActivate={actions.requestActivation}
-                          onDetails={() => showDetails(item.modifier.id)}
-                        />
-                      ))}
-                    </ContentList>
-                  </Box>
+                    {group.items.map((item) => (
+                      <RoundModifierRow
+                        key={item.modifier.id}
+                        availability={item}
+                        isActive={activeById.has(item.modifier.id)}
+                        isBusy={actions.isBusy}
+                        isPending={actions.pendingModifierId === item.modifier.id}
+                        onActivate={actions.requestActivation}
+                        onDetails={() => showDetails(item.modifier.id)}
+                      />
+                    ))}
+                  </ModifierCatalogGroup>
                 ))}
                 {unavailableActive.length > 0 ? (
-                  <Box
-                    component="section"
-                    aria-label={t('gameBoard.currentRoundScreen.drawerActiveOnly')}
-                    sx={{ border: '1px solid', borderColor: 'divider', minWidth: 0 }}
+                  <ModifierCatalogGroup
+                    title={t('gameBoard.currentRoundScreen.drawerActiveOnly')}
+                    count={unavailableActive.length}
                   >
-                    <RoundModifierCategoryHeading
-                      title={t('gameBoard.currentRoundScreen.drawerActiveOnly')}
-                      count={unavailableActive.length}
-                    />
-                    <ContentList
-                      disablePadding
-                      component="ul"
-                      sx={{ display: 'grid', gap: 0.5, px: 0.25 }}
-                    >
-                      {unavailableActive.map((group) => (
-                        <RoundModifierRow
-                          key={group.modifierId}
-                          activeOnly={{
-                            name: group.modifierName,
-                            cost: group.activationCost,
-                          }}
-                          isActive
-                          isBusy={actions.isBusy}
-                          isPending={false}
-                          onActivate={actions.requestActivation}
-                          onDetails={() => showDetails(group.modifierId)}
-                        />
-                      ))}
-                    </ContentList>
-                  </Box>
+                    {unavailableActive.map((group) => (
+                      <RoundModifierRow
+                        key={group.modifierId}
+                        activeOnly={{
+                          name: group.modifierName,
+                          cost: group.activationCost,
+                        }}
+                        isActive
+                        isBusy={actions.isBusy}
+                        isPending={false}
+                        onActivate={actions.requestActivation}
+                        onDetails={() => showDetails(group.modifierId)}
+                      />
+                    ))}
+                  </ModifierCatalogGroup>
                 ) : null}
               </Stack>
             )}
@@ -173,9 +150,6 @@ export function RoundModifierPanel({
             }
           >
             <Stack spacing={1.5} sx={{ pt: 1, textAlign: 'center' }}>
-              <Typography variant="body2">
-                {selected?.modifier.description ?? t('gameModifiers.notEnabled')}
-              </Typography>
               <Stack direction="row" gap={0.75} justifyContent="center" flexWrap="wrap">
                 {selected ? (
                   <StatusBadge label={getCategoryLabel(t, selected.modifier.category)} />
@@ -203,16 +177,29 @@ export function RoundModifierPanel({
                   />
                 ) : null}
               </Stack>
+              <ModifierDescriptionBlock
+                description={selected?.modifier.description ?? t('gameModifiers.notEnabled')}
+              />
               {selected?.modifier.conflictingModifierIds.length ? (
-                <InlineNotice severity="warning">
-                  <Typography variant="body2" fontWeight={700}>
-                    {t('gameModifiers.conflictsListLabel', {
-                      names: selected.modifier.conflictingModifierIds
-                        .map((id) => namesById.get(id) ?? id)
-                        .join(', '),
-                    })}
-                  </Typography>
-                </InlineNotice>
+                <ModifierConflictNotice
+                  conflicts={selected.modifier.conflictingModifierIds.map((id) => ({
+                    id,
+                    name: namesById.get(id) ?? id,
+                    isActive:
+                      detailsState?.activeModifiers.some((item) => item.modifierId === id) ?? false,
+                  }))}
+                />
+              ) : null}
+              {detailsState?.isOrderingOpen && ownActivation ? (
+                <AppButton
+                  tone="dangerSecondary"
+                  size="small"
+                  fullWidth
+                  disabled={!detailsOpen || actions.isBusy || !state.isOrderingOpen}
+                  onClick={() => actions.requestSelfCancel(ownActivation)}
+                >
+                  {t('gameModifiers.selfCancelCompactAction')}
+                </AppButton>
               ) : null}
               {selectedActive ? (
                 <Stack spacing={0.5}>
@@ -234,64 +221,11 @@ export function RoundModifierPanel({
                   </Stack>
                 </Stack>
               ) : null}
-              {detailsState?.isOrderingOpen && ownActivations.length > 0 ? (
-                <Stack spacing={0.5}>
-                  {ownActivations.map((item) => (
-                    <AppButton
-                      key={item.activationId}
-                      tone="dangerSecondary"
-                      size="small"
-                      disabled={!detailsOpen || actions.isBusy || !state.isOrderingOpen}
-                      onClick={() => actions.requestSelfCancel(item)}
-                    >
-                      {t('gameModifiers.selfCancelActionWithCost', { cost: item.activationCost })}
-                    </AppButton>
-                  ))}
-                </Stack>
-              ) : null}
             </Stack>
           </AppDialog>
         </>
       )}
     </GameModifierActions>
-  )
-}
-
-function RoundModifierCategoryHeading({ title, count }: { title: string; count: number }) {
-  const { t } = useTranslation()
-  return (
-    <Stack
-      component="header"
-      direction="row"
-      alignItems="center"
-      justifyContent="space-between"
-      gap={1}
-      sx={{
-        px: 1,
-        py: 0.25,
-        bgcolor: 'action.selected',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        borderLeft: '3px solid',
-        borderLeftColor: 'primary.main',
-      }}
-    >
-      <Typography
-        component="h3"
-        variant="body1"
-        color="primary.light"
-        fontWeight={700}
-        sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
-      >
-        {title}
-      </Typography>
-      <StatusBadge
-        density="compact"
-        variant="outlined"
-        label={count}
-        aria-label={t('gameModifiers.categoryCountLabel', { count })}
-      />
-    </Stack>
   )
 }
 
@@ -327,86 +261,27 @@ function RoundModifierRow({
     : t('gameModifiers.unavailableAction')
 
   return (
-    <ItemCard
-      component="li"
-      aria-label={name}
-      emphasis={isActive ? 'selected' : 'none'}
-      sx={{
-        listStyle: 'none',
-        minWidth: 0,
-        px: 1,
-        py: 0.5,
-        containerType: 'inline-size',
-      }}
-    >
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 0.5,
-          minWidth: 0,
-          gridTemplateColumns: 'minmax(0, 1fr) auto',
-          alignItems: 'center',
-        }}
-      >
-        <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
-          <ModifierIconTile emoji={modifier?.iconEmoji} size="large" />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              component="h4"
-              variant="body1"
-              fontWeight={700}
-              sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}
-            >
-              {name}
-            </Typography>
-            <Box sx={{ mt: 0.25, display: 'flex', gap: 0.5, flexWrap: 'wrap', minWidth: 0 }}>
-              <StatusBadge
-                density="tight"
-                variant="outlined"
-                color="warning"
-                label={t('gameModifiers.costLabel', { cost })}
-              />
-              {isActive ? (
-                <StatusBadge
-                  density="tight"
-                  variant="outlined"
-                  label={t('gameModifiers.activeTag')}
-                  color="success"
-                />
-              ) : null}
-            </Box>
-          </Box>
-        </Stack>
-        {availability && !availability.canActivate ? (
-          <Typography variant="caption" color="text.secondary" sx={{ gridColumn: '1 / -1' }}>
-            {blockedReasonLabel}
-          </Typography>
-        ) : null}
-        <Stack
-          alignItems="flex-end"
-          gap={0.5}
-          sx={{
-            gridColumn: 2,
-            gridRow: 1,
-            '@container (min-width:460px)': { flexDirection: 'row', alignItems: 'center' },
-          }}
-        >
-          <AppButton tone="ghost" size="small" onClick={onDetails}>
-            {t('gameModifiers.detailsAction')}
-          </AppButton>
-          {availability ? (
-            <ModifierActivationControl
-              compact
-              availability={availability}
-              isBusy={isBusy}
-              isPending={isPending}
-              blockedReasonLabel={blockedReasonLabel}
-              blockedReasonTooltip={blockedReasonTooltip}
-              onActivate={onActivate}
-            />
-          ) : null}
-        </Stack>
-      </Box>
-    </ItemCard>
+    <ModifierCatalogRow
+      name={name}
+      emoji={modifier?.iconEmoji}
+      cost={cost}
+      limit={availability?.limit}
+      activationsCount={availability?.activationsCount ?? 0}
+      isActive={isActive}
+      onDetails={onDetails}
+      actions={
+        availability ? (
+          <ModifierActivationControl
+            compact
+            availability={availability}
+            isBusy={isBusy}
+            isPending={isPending}
+            blockedReasonLabel={blockedReasonLabel}
+            blockedReasonTooltip={blockedReasonTooltip}
+            onActivate={onActivate}
+          />
+        ) : null
+      }
+    />
   )
 }

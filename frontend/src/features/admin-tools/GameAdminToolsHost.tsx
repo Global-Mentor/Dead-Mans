@@ -1,29 +1,28 @@
+import {
+  GameManagementTool,
+  useActiveGameTeam,
+  useGameBoardLaunchPanel,
+  useGameBoardPage,
+  useGameFinish,
+  useGameTeamPlayedState,
+  useManualQuizAwardPlayers,
+  useManualQuizAward,
+  useStartGameRound,
+} from '../game-board/index.ts'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
-import { gameModifiersRoute } from '../../routes/app-routes.ts'
+import { gameModifiersRoute, gameQuizRoute } from '../../routes/app-routes.ts'
 import type { PanelTriggerPlacement } from '../../shared/ui/index.ts'
-import { AppToast } from '../../shared/ui/index.ts'
-import { GameManagementTool } from '../game-board/ui/GameManagementPanel.tsx'
-import { useActiveGameTeam } from '../game-board/use-active-game-team.ts'
-import { useGameBoardLaunchPanel } from '../game-board/use-game-board-launch-panel.ts'
-import { useGameBoardPage } from '../game-board/use-game-board-page.ts'
-import { useGameFinish } from '../game-board/use-game-finish.ts'
-import { useGameTeamPlayedState } from '../game-board/use-game-team-played-state.ts'
-import { useManualQuizAwardPlayers } from '../game-board/use-manual-quiz-award-players.ts'
-import { useManualQuizAward } from '../game-board/use-manual-quiz-award.ts'
-import { useStartGameRound } from '../game-board/use-start-game-round.ts'
-import { AdminModifierTool } from '../game-modifiers/AdminModifierPanel.tsx'
+import { AppToast, PageStatePanel } from '../../shared/ui/index.ts'
+import { AdminModifierTool } from '../game-modifiers/index.ts'
+import { QuizManagementTool } from '../game-quiz/index.ts'
 import { AdminToolDrawer, type AdminToolDescriptor } from './ui/AdminToolDrawer.tsx'
 
-type AdminToolId = 'game' | 'modifiers'
+type AdminToolId = 'game' | 'modifiers' | 'quiz'
 
 export function GameAdminToolsHost() {
   const { pathname } = useLocation()
   const initialToolId = resolveInitialToolId(pathname)
-
-  if (!initialToolId) {
-    return null
-  }
 
   return <GameAdminToolsPanel initialToolId={initialToolId} />
 }
@@ -44,6 +43,7 @@ export function GameAdminToolsPanel({
     isTeamQueueError,
     isTeamQueueLoading,
     isError,
+    isRefreshError,
     isLoading,
   } = useGameBoardPage()
   const activeTeam = useActiveGameTeam()
@@ -55,7 +55,7 @@ export function GameAdminToolsPanel({
   const manualQuizAwardPlayers = useManualQuizAwardPlayers(launchPanel.canManageGame)
   const isAdmin = launchPanel.canStartGame
 
-  if (isLoading || isError || !hasActiveRoundData || !data || !launchPanel.canManageGame) {
+  if (!launchPanel.canManageGame) {
     return null
   }
 
@@ -64,39 +64,51 @@ export function GameAdminToolsPanel({
       id: 'game',
       label: t('adminTools.gameTool'),
       tabLabel: t('adminTools.gameTab'),
-      content: (
-        <GameManagementTool
-          snapshot={data}
-          activeRound={activeRound}
-          teams={teamQueue}
-          isTeamQueueLoading={isTeamQueueLoading}
-          isTeamQueueError={isTeamQueueError}
-          isSelectingActiveTeam={activeTeam.isSelectingActiveTeam}
-          onSelectActiveTeam={activeTeam.selectActiveTeam}
-          manualQuizAwardPlayers={manualQuizAwardPlayers.players}
-          isManualQuizAwardPlayersLoading={manualQuizAwardPlayers.isLoading}
-          isManualQuizAwardPlayersError={manualQuizAwardPlayers.isError}
-          isAwardingManualQuizPoints={manualQuizAward.isAwardingManualQuizPoints}
-          onAwardManualQuizPoints={manualQuizAward.awardManualQuizPoints}
-          isChangingRoundStage={startRound.isChangingRoundStage}
-          roundStageError={startRound.errorMessage}
-          onStartRound={startRound.startRound}
-          onStartModifierOrdering={startRound.startModifierOrdering}
-          onBeginGameplay={startRound.beginGameplay}
-          onReviewRound={startRound.reviewRound}
-          onRebuildRound={startRound.rebuildRound}
-          onTechnicalCancelRound={startRound.technicalCancelRound}
-          onCompleteRound={startRound.completeRound}
-          isUpdatingPlayedState={teamPlayedState.isUpdatingPlayedState}
-          onSetTeamPlayedState={teamPlayedState.setTeamPlayedState}
-          launchPanel={launchPanel}
-          finishState={gameFinish}
-        />
-      ),
+      content:
+        data && hasActiveRoundData && !isLoading && !isError ? (
+          <GameManagementTool
+            snapshot={data}
+            activeRound={activeRound}
+            teams={teamQueue}
+            isTeamQueueLoading={isTeamQueueLoading}
+            isTeamQueueError={isTeamQueueError}
+            isSelectingActiveTeam={activeTeam.isSelectingActiveTeam}
+            onSelectActiveTeam={activeTeam.selectActiveTeam}
+            manualQuizAwardPlayers={manualQuizAwardPlayers.players}
+            isManualQuizAwardPlayersLoading={manualQuizAwardPlayers.isLoading}
+            isManualQuizAwardPlayersError={manualQuizAwardPlayers.isError}
+            isAwardingManualQuizPoints={manualQuizAward.isAwardingManualQuizPoints}
+            onAwardManualQuizPoints={manualQuizAward.awardManualQuizPoints}
+            isChangingRoundStage={startRound.isChangingRoundStage}
+            roundStageError={startRound.errorMessage}
+            onStartRound={startRound.startRound}
+            onStartModifierOrdering={startRound.startModifierOrdering}
+            onBeginGameplay={startRound.beginGameplay}
+            onReviewRound={startRound.reviewRound}
+            onRebuildRound={startRound.rebuildRound}
+            onTechnicalCancelRound={startRound.technicalCancelRound}
+            onCompleteRound={startRound.completeRound}
+            isUpdatingPlayedState={teamPlayedState.isUpdatingPlayedState}
+            onSetTeamPlayedState={teamPlayedState.setTeamPlayedState}
+            launchPanel={launchPanel}
+            finishState={gameFinish}
+          />
+        ) : (
+          <PageStatePanel
+            title={t('adminTools.gameTool')}
+            message={t(
+              isError || isRefreshError
+                ? 'gameBoard.errorLoading'
+                : isLoading || !hasActiveRoundData
+                  ? 'gameBoard.loading'
+                  : 'gameBoard.empty',
+            )}
+          />
+        ),
     },
   ]
 
-  if (isAdmin && data.status === 'active') {
+  if (isAdmin && data?.status === 'active') {
     tools.push({
       id: 'modifiers',
       label: t('adminTools.modifierTool'),
@@ -104,6 +116,13 @@ export function GameAdminToolsPanel({
       content: <AdminModifierTool />,
     })
   }
+
+  tools.push({
+    id: 'quiz',
+    label: t('adminTools.quizTool'),
+    tabLabel: t('adminTools.quizTab'),
+    content: <QuizManagementTool />,
+  })
 
   const resolvedInitialToolId = tools.some((tool) => tool.id === initialToolId)
     ? initialToolId
@@ -151,7 +170,7 @@ export function GameAdminToolsPanel({
   )
 }
 
-function resolveInitialToolId(pathname: string): AdminToolId | null {
+function resolveInitialToolId(pathname: string): AdminToolId {
   if (
     pathname === gameModifiersRoute.fullPath ||
     pathname.startsWith(`${gameModifiersRoute.fullPath}/`)
@@ -159,5 +178,5 @@ function resolveInitialToolId(pathname: string): AdminToolId | null {
     return 'modifiers'
   }
 
-  return null
+  return pathname === gameQuizRoute.fullPath ? 'quiz' : 'game'
 }

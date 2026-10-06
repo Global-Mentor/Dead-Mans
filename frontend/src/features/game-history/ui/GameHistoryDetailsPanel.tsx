@@ -1,235 +1,183 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ContentTabsSelection } from '../../../shared/ui/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
+import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
 import {
+  AppButton,
+  AppDialog,
   ContentTabs,
-  DisclosureSection,
-  ItemCard,
-  Metric,
-  SectionCard,
-  StatusBadge,
+  DetailBlock,
+  HelpTooltip,
 } from '../../../shared/ui/index.ts'
 import { sortTeamLeaderboardEntries } from '../model/game-history-team-leaderboard.ts'
-import {
-  formatDateTime,
-  formatOptionalDateTime,
-  getGameStatusColor,
-  isCountedRound,
-  normalizeStatus,
-} from '../model/game-history-view.ts'
+import { formatDateTime } from '../model/game-history-view.ts'
 import { CancelledRoundsSection } from './CancelledRoundsSection.tsx'
-import { FinalResultSnapshot } from './GameHistoryFinalResult.tsx'
-import { TeamLeaderboardRow } from './GameHistoryLeaderboard.tsx'
-import { RoundHistoryRow } from './GameHistoryRoundRow.tsx'
-import { GameModifierHistorySummary } from './GameModifierHistorySummary.tsx'
+import { CurrentGameStatistics } from './CurrentGameStatistics.tsx'
+import { CurrentGameModifierResults } from './CurrentGameModifierResults.tsx'
+import { GameTeamResults } from './GameTeamResults.tsx'
+import { buildLeaderboardResults } from '../model/leaderboard-results.ts'
+import { HistoryModifierActivations } from './HistoryModifierActivations.tsx'
 import { QuizLeaderboard } from './QuizLeaderboard.tsx'
 
-type GameHistoryGameDetails = components['schemas']['GameHistoryGameDetailsDto']
-type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
+type Game = components['schemas']['GameHistoryGameDetailsDto']
+type Round = components['schemas']['GameHistoryRoundItemDto']
 
 export function GameDetailsPanel({
+  tabs,
+  selectedTeamId,
+  onSelectTeam,
   game,
   onPreviewCard,
+  onViewBoard,
 }: {
-  game: GameHistoryGameDetails | null
-  onPreviewCard: (round: GameHistoryRound) => void
+  tabs: ContentTabsSelection
+  selectedTeamId: string | null
+  onSelectTeam: (teamId: string) => void
+  onViewBoard: () => void
+  game: Game | null
+  onPreviewCard: (round: Round) => void
 }) {
   const { t, i18n } = useTranslation()
-
-  if (!game) {
-    return null
-  }
-  const teamStats = sortTeamLeaderboardEntries(game.mainGame.teamStats)
-  const finalResult = game.finalResult ?? null
-  const completedRounds = game.mainGame.rounds.filter(isCountedRound)
-  const cancelledRounds = game.mainGame.rounds.filter((round) => round.status === 'cancelled')
-
+  const [commentOpen, setCommentOpen] = useState(false)
+  const compact = useMediaQuery('(max-width: 999px)')
+  if (!game) return null
+  const publicNote = game.finalResult?.publicNote?.trim() || null
+  const teams = sortTeamLeaderboardEntries(game.mainGame.teamStats)
+  const cancelled = game.mainGame.rounds.filter((round) => round.status === 'cancelled')
   return (
-    <Stack spacing={1} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-      <ItemCard>
-        <Stack spacing={1.25}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} alignItems="flex-start">
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <StatusBadge
-                  label={t(`gameHistory.status.${normalizeStatus(game.gameStatus)}`, {
-                    defaultValue: t('gameHistory.notAvailable'),
-                  })}
-                  color={getGameStatusColor(game.gameStatus)}
-                />
-                <StatusBadge
-                  label={t('gameHistory.statusChipArchived')}
-                  color="default"
-                  variant="outlined"
-                />
-              </Stack>
-
-              <Typography component="h2" variant="h5" sx={{ mt: 0.75, fontWeight: 800 }}>
-                {game.gameTitle}
-              </Typography>
+    <Stack gap={1} sx={{ flex: 1, minHeight: 0, overflowWrap: 'anywhere' }}>
+      <RoundBriefingPanel sx={{ flexShrink: 0, p: 1.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 1,
+            alignItems: 'center',
+            gridTemplateColumns: {
+              xs: 'auto minmax(0, 1fr)',
+              lg: 'minmax(190px, 1fr) minmax(0, 3fr) minmax(190px, 1fr)',
+            },
+          }}
+        >
+          <HelpTooltip
+            title={
+              game.board
+                ? t('gameHistory.boardTitle', { game: game.gameTitle })
+                : t('gameHistory.boardUnavailable')
+            }
+            describeChild
+          >
+            <Box component="span" sx={{ justifySelf: 'start', gridColumn: 1, gridRow: 1 }}>
+              <AppButton tone="secondary" size="small" onClick={onViewBoard} disabled={!game.board}>
+                {t('gameHistory.viewBoard')}
+              </AppButton>
             </Box>
+          </HelpTooltip>
+          <Stack sx={{ minWidth: 0, gridColumn: 2, gridRow: 1 }}>
+            <Typography component="h2" variant="h6" textAlign="center" fontWeight={700}>
+              {game.gameTitle}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              textAlign="center"
+              display="block"
+              sx={{ mt: 0.5 }}
+            >
+              {game.finalResult
+                ? t('gameHistory.finalResultMeta', {
+                    admin: game.finalResult.finishedByDisplayName ?? t('gameHistory.unknownValue'),
+                    date: game.finalResult.finishedAtUtc
+                      ? formatDateTime(game.finalResult.finishedAtUtc, i18n.resolvedLanguage)
+                      : t('gameHistory.unknownValue'),
+                  })
+                : game.finishedAtUtc
+                  ? formatDateTime(game.finishedAtUtc, i18n.resolvedLanguage)
+                  : t('gameHistory.notAvailable')}
+            </Typography>
           </Stack>
-
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Metric
-              label={t('gameHistory.summary.createdAt')}
-              value={formatDateTime(game.createdAtUtc, i18n.resolvedLanguage)}
-            />
-            <Metric
-              label={t('gameHistory.summary.startedAt')}
-              value={formatOptionalDateTime(game.startedAtUtc, t, i18n.resolvedLanguage)}
-            />
-            <Metric
-              label={t('gameHistory.summary.finishedAt')}
-              value={formatOptionalDateTime(game.finishedAtUtc, t, i18n.resolvedLanguage)}
-            />
-          </Stack>
-
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Metric
-              label={t('gameHistory.summary.roundCount')}
-              value={t('gameHistory.countValue', { count: completedRounds.length })}
-            />
-            <Metric
-              label={t('common.entities.modifiers')}
-              value={t('gameHistory.countValue', {
-                count: game.mainGame.modifierActivations.length,
-              })}
-            />
-            <Metric
-              label={t('gameHistory.summary.quizCount')}
-              value={t('gameHistory.countValue', { count: game.quiz.questionSessions.length })}
-            />
-            <Metric
-              label={t('gameHistory.summary.quizPoints')}
-              value={t('gameHistory.pointsValue', { points: game.quiz.totalPoints })}
-            />
-          </Stack>
-        </Stack>
-      </ItemCard>
-
+          {publicNote ? (
+            <AppButton
+              tone="secondary"
+              size="small"
+              aria-haspopup="dialog"
+              onClick={() => setCommentOpen(true)}
+              sx={{
+                justifySelf: 'end',
+                gridColumn: { xs: '1 / -1', lg: 3 },
+                gridRow: { xs: 2, lg: 1 },
+              }}
+            >
+              {t('gameHistory.gameComment')}
+            </AppButton>
+          ) : null}
+        </Box>
+      </RoundBriefingPanel>
       <ContentTabs
-        label={t('gameHistory.title')}
+        {...tabs}
+        layout="fill"
+        appearance="framed"
+        variant={compact ? 'scrollable' : 'fullWidth'}
+        label={t('gameHistory.completedGamesTitle')}
         items={[
           {
             id: 'teams',
-            label: t('common.entities.teams'),
+            label: t('gameHistory.gameTab'),
             content: (
-              <>
-                {finalResult ? <FinalResultSnapshot summary={finalResult} /> : null}
-
-                {!finalResult ? (
-                  <SectionCard surface="inset" sx={{ p: 0 }}>
-                    <DisclosureSection
-                      title={t('gameHistory.summary.bestTeams')}
-                      description={t('gameHistory.summary.bestTeamsDescription')}
-                      countLabel={t('gameHistory.summary.teamCountShort', {
-                        count: teamStats.length,
-                      })}
-                      defaultExpanded
-                    >
-                      {teamStats.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {t('gameHistory.summary.noRounds')}
-                        </Typography>
-                      ) : (
-                        <Stack spacing={1}>
-                          {teamStats.map((entry, index) => (
-                            <TeamLeaderboardRow
-                              key={entry.teamId}
-                              entry={entry}
-                              rank={index + 1}
-                              onPreviewCard={onPreviewCard}
-                            />
-                          ))}
-                        </Stack>
-                      )}
-                    </DisclosureSection>
-                  </SectionCard>
-                ) : null}
-              </>
+              <GameTeamResults
+                selectedTeamId={selectedTeamId}
+                onSelectTeam={onSelectTeam}
+                archived
+                boardLabels={game.board ?? undefined}
+                results={buildLeaderboardResults(teams, game.finalResult)}
+                onPreviewCard={onPreviewCard}
+              />
             ),
           },
           {
             id: 'quiz',
-            label: t('gameHistory.quizLeaderboardTitle'),
-            content: <QuizLeaderboard entries={game.quiz.playerStats} defaultExpanded />,
+            label: t('gameHistory.quizTab'),
+            content: <QuizLeaderboard entries={game.quiz.playerStats} presentation="panel" />,
+          },
+          {
+            id: 'modifiers',
+            label: t('common.entities.modifiers'),
+            content: (
+              <CurrentGameModifierResults game={game} includeUnused>
+                <HistoryModifierActivations game={game} />
+              </CurrentGameModifierResults>
+            ),
+          },
+          {
+            id: 'statistics',
+            label: t('gameHistory.statisticsTab'),
+            content: (
+              <CurrentGameStatistics game={game} boardLabels={game.board ?? undefined}>
+                <CancelledRoundsSection rounds={cancelled} onPreviewCard={onPreviewCard} />
+              </CurrentGameStatistics>
+            ),
           },
         ]}
       />
-
-      <GameModifierHistorySummary
-        rounds={completedRounds}
-        snapshots={game.modifierSnapshots}
-        snapshotStatus={game.modifierSnapshotStatus}
-        collapsible
-      />
-
-      <SectionCard surface="inset" sx={{ p: 0 }}>
-        <DisclosureSection
-          title={t('gameHistory.summary.modifierTimeline')}
-          description={t('gameHistory.summary.modifierTimelineDescription')}
-          countLabel={t('gameHistory.summary.modifierCountShort', {
-            count: game.mainGame.modifierActivations.length,
-          })}
-        >
-          {game.mainGame.modifierActivations.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              {t('gameHistory.summary.noModifiers')}
-            </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {game.mainGame.modifierActivations.map((activation) => (
-                <ItemCard key={activation.activationId}>
-                  <Stack
-                    direction={{ xs: 'column', md: 'row' }}
-                    spacing={1}
-                    alignItems="flex-start"
-                  >
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {activation.modifierName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {t('gameHistory.modifierActivatedBy', {
-                          user: activation.activatedByDisplayName,
-                        })}
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDateTime(activation.activatedAtUtc, i18n.resolvedLanguage)}
-                    </Typography>
-                  </Stack>
-                </ItemCard>
-              ))}
-            </Stack>
-          )}
-        </DisclosureSection>
-      </SectionCard>
-
-      <SectionCard surface="inset" sx={{ p: 0 }}>
-        <DisclosureSection
-          title={t('gameHistory.summary.roundHistory')}
-          description={t('gameHistory.summary.roundHistoryDescription')}
-          countLabel={t('gameHistory.summary.roundCountShort', {
-            count: completedRounds.length,
-          })}
-        >
-          {completedRounds.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              {t('gameHistory.summary.noRounds')}
-            </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {completedRounds.map((round) => (
-                <RoundHistoryRow key={round.roundId} round={round} onPreviewCard={onPreviewCard} />
-              ))}
-            </Stack>
-          )}
-        </DisclosureSection>
-      </SectionCard>
-
-      <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />
+      <AppDialog
+        open={commentOpen && publicNote !== null}
+        onClose={() => setCommentOpen(false)}
+        title={t('gameHistory.gameComment')}
+        description={game.gameTitle}
+        contentDensity="compact"
+        actions={
+          <AppButton tone="danger" onClick={() => setCommentOpen(false)}>
+            {t('common.actions.close')}
+          </AppButton>
+        }
+      >
+        <DetailBlock>
+          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+            {publicNote}
+          </Typography>
+        </DetailBlock>
+      </AppDialog>
     </Stack>
   )
 }

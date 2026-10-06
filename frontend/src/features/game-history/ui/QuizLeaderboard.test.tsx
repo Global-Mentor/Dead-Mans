@@ -1,9 +1,13 @@
 import { screen, within } from '@testing-library/react'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../../i18n.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import { renderWithAppProviders } from '../../../test/render-with-app-providers.tsx'
 import { QuizLeaderboard } from './QuizLeaderboard.tsx'
+
+vi.mock('../../../shared/auth/use-auth.ts', () => ({
+  useAuth: () => ({ user: { id: 'current-player' } }),
+}))
 
 type QuizPlayer = components['schemas']['GameHistoryQuizPlayerSummaryDto']
 

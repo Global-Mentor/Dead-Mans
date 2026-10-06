@@ -15,10 +15,7 @@ export function PlayerQuizCard({
   return (
     <CurrentQuizCard
       state={state}
-      canManage={false}
-      questions={[]}
       isSubmitting={submit.isPending}
-      isStarting={false}
       embedded
       answerDisabled={disabled}
       error={submit.variables?.questionSessionId === state.questionSessionId ? submit.error : null}

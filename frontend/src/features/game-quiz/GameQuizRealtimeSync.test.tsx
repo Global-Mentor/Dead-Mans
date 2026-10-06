@@ -37,7 +37,6 @@ describe('quiz realtime reconciliation', () => {
     } as unknown as HubConnection)
     expect(on.mock.calls.map(([event]) => event)).toEqual([
       'quizStateChanged',
-      'twitchQuizStateChanged',
       'modifierActivated',
       'modifierActivationCancelled',
       'roundStateChanged',

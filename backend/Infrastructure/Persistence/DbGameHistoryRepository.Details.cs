@@ -524,7 +524,8 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             ),
             finalResult,
             enabledModifierCount == pinnedRows.Length ? "complete" : "legacy_unavailable",
-            modifierSnapshots
+            modifierSnapshots,
+            await LoadFinishedBoardAsync(gameId, cancellationToken)
         );
     }
 

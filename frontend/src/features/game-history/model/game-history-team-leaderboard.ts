@@ -8,10 +8,6 @@ export function getRoundScore(round: GameHistoryRound) {
   return round.scoreDetails.finalScore
 }
 
-export function getRoundBonusDelta(round: GameHistoryRound) {
-  return round.scoreDetails.bonusDelta
-}
-
 function getRoundScoreBeforePenalty(round: GameHistoryRound) {
   return round.scoreDetails.finalScore + round.scoreDetails.penaltyTotal
 }

@@ -3,7 +3,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
+import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import { GameBoardPage } from './GameBoardPage.tsx'
+
+vi.mock('../game-quiz/index.ts', () => ({ QuizManagementTool: () => null }))
 
 vi.mock('../../shared/auth/use-auth.ts', () => ({
   useAuth: () => ({ user: null }),
@@ -174,7 +177,8 @@ vi.mock('./use-open-game-board-cell.ts', () => ({
   useOpenGameBoardCell: pageMocks.useOpenGameBoardCell,
 }))
 
-vi.mock('../game-rounds/api/game-rounds-api.ts', () => ({
+vi.mock('../game-rounds/api/game-rounds-api.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../game-rounds/api/game-rounds-api.ts')>()),
   previewGameRoundScore: pageMocks.previewGameRoundScore,
 }))
 
@@ -190,6 +194,7 @@ function renderBoard() {
   return renderWithAppProviders(
     <MemoryRouter>
       <GameBoardPage />
+      <GameAdminToolsPanel initialToolId="game" />
     </MemoryRouter>,
   )
 }
@@ -311,6 +316,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -326,6 +332,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
     expect(screen.getByText('Загрузка игрового поля...')).toBeInTheDocument()
@@ -426,6 +433,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -460,6 +468,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -491,6 +500,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -578,6 +588,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -648,6 +659,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -678,6 +690,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -1126,6 +1139,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 
@@ -1214,6 +1228,7 @@ describe('GameBoardPage', () => {
     renderWithAppProviders(
       <MemoryRouter>
         <GameBoardPage />
+        <GameAdminToolsPanel initialToolId="game" />
       </MemoryRouter>,
     )
 

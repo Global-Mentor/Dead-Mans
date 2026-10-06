@@ -3,19 +3,18 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
 
 interface GameBoardLayoutProps {
+  fullBleed?: boolean
   columns: number
   rowLabelColumnWidth: number
   context: (stacked: boolean) => ReactNode
-  management: ReactNode
   children: (categoryLayout: boolean) => ReactNode
 }
 
-// Edge tabs stay out of the board's flow; on smaller screens they become normal buttons.
 export function GameBoardLayout({
+  fullBleed = true,
   columns,
   rowLabelColumnWidth,
   context,
-  management,
   children,
 }: GameBoardLayoutProps) {
   const theme = useTheme()
@@ -104,13 +103,13 @@ export function GameBoardLayout({
         gridTemplateColumns: 'minmax(0, 1fr)',
         gridTemplateAreas: sideBySide
           ? '"board"'
-          : { xs: '"management" "context" "board"', lg: '"context" "board"' },
+          : { xs: '"context" "board"', lg: '"context" "board"' },
         gap: 0.9,
         alignItems: 'start',
         minWidth: 0,
         position: 'relative',
-        width: { lg: '100vw' },
-        ml: { lg: 'calc(50% - 50vw)' },
+        width: fullBleed ? { lg: '100vw' } : '100%',
+        ml: fullBleed ? { lg: 'calc(50% - 50vw)' } : 0,
         // Reserve equal space at both edges so the cards stay centered on the viewport.
         px: { lg: 2 },
       }}
@@ -129,20 +128,6 @@ export function GameBoardLayout({
         }}
       >
         {context(!sideBySide)}
-      </Box>
-      <Box
-        data-testid="game-board-management"
-        sx={{
-          gridArea: 'management',
-          minWidth: 0,
-          width: cardColumnsWidth,
-          maxWidth: '100%',
-          justifySelf: 'center',
-          display: { xs: 'flex', lg: 'contents' },
-          justifyContent: 'flex-end',
-        }}
-      >
-        {management}
       </Box>
       <Box
         sx={{

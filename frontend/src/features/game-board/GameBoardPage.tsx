@@ -12,7 +12,6 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { GameAdminToolsPanel } from '../admin-tools/GameAdminToolsHost.tsx'
 import { getBoardRowLabelColumnWidth } from './theme/board-grid-metrics.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
@@ -156,9 +155,6 @@ export function GameBoardPage() {
               }}
             />
           )}
-          management={
-            <GameAdminToolsPanel initialToolId="game" triggerPlacement="responsiveEdge" />
-          }
         >
           {(categoryLayout) => (
             <GameBoardGrid

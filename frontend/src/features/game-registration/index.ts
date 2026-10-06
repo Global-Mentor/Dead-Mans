@@ -31,6 +31,7 @@ export {
 export { useGameRegistrationToast } from './api/use-game-registration-toast.ts'
 
 export {
+  formatTeamNameWithFallback,
   isTeamNameTaken,
   normalizeTeamNameInput,
   TEAM_NAME_MAX_LENGTH,

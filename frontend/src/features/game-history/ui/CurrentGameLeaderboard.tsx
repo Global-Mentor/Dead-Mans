@@ -1,150 +1,99 @@
-import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
-import { useState } from 'react'
+import { useMediaQuery } from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
+import { currentGameQuizQueryOptions } from '../../game-quiz/index.ts'
 import { useTranslation } from 'react-i18next'
+import type { ContentTabsSelection } from '../../../shared/ui/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import { useViewportPanelHeight } from '../../../shared/lib/use-viewport-panel-height.ts'
-import { AppButton, AppDialog, ContentTabs, ItemCard } from '../../../shared/ui/index.ts'
+import { ContentTabs } from '../../../shared/ui/index.ts'
+import type { GameHistoryBoardLabels } from '../model/game-history-formatters.ts'
 import { type GameHistoryTeamLeaderboardEntry } from '../model/game-history-team-leaderboard.ts'
+import { CurrentGameStatistics } from './CurrentGameStatistics.tsx'
 import { CancelledRoundsSection } from './CancelledRoundsSection.tsx'
-import { CurrentLeaderboardTable } from './CurrentLeaderboardTable.tsx'
-import { CurrentLeaderboardTeamDetails } from './CurrentLeaderboardTeamDetails.tsx'
-import { GameModifierHistorySummary } from './GameModifierHistorySummary.tsx'
+import { GameTeamResults } from './GameTeamResults.tsx'
+import { buildLeaderboardResults } from '../model/leaderboard-results.ts'
+import { CurrentGameModifierResults } from './CurrentGameModifierResults.tsx'
 import { QuizLeaderboard } from './QuizLeaderboard.tsx'
 
 type GameHistoryGameDetails = components['schemas']['GameHistoryGameDetailsDto']
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 
 export function CurrentGameLeaderboard({
+  tabs,
+  selectedTeamId,
+  onSelectTeam,
   gameDetails,
+  boardLabels,
   leaderboard,
   onPreviewCard,
 }: {
+  tabs: ContentTabsSelection
+  selectedTeamId: string | null
+  onSelectTeam: (teamId: string) => void
+  boardLabels?: GameHistoryBoardLabels | undefined
   gameDetails: GameHistoryGameDetails | null
   leaderboard: GameHistoryTeamLeaderboardEntry[]
   onPreviewCard: (round: GameHistoryRound) => void
 }) {
   const { t } = useTranslation()
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
-  const [teamDialogOpen, setTeamDialogOpen] = useState(false)
-  const isWide = useMediaQuery('(min-width: 1000px)')
+  const currentQuiz = useQuery({
+    ...currentGameQuizQueryOptions(gameDetails?.gameId ?? ''),
+    enabled: gameDetails?.gameStatus === 'active',
+  })
   const isPhone = useMediaQuery('(max-width: 599px)')
-  const leaderboardGridRef = useViewportPanelHeight('--leaderboard-panel-height', 340)
 
   if (!gameDetails) {
     return null
   }
 
-  const topEntry = leaderboard[0] ?? null
-  const selectedEntry =
-    leaderboard.find((entry) => entry.teamId === selectedTeamId) ?? topEntry ?? null
   const cancelledRounds = gameDetails.mainGame.rounds.filter(
     (round) => round.status === 'cancelled',
   )
-  const relevantModifierSnapshots = gameDetails.modifierSnapshots.filter(
-    (snapshot) =>
-      snapshot.successfulActivationsCount > 0 ||
-      snapshot.cancelledActivationsCount > 0 ||
-      snapshot.resultsCount > 0 ||
-      snapshot.isEmergencyDisabled,
-  )
 
   return (
-    <Stack spacing={1}>
-      <ContentTabs
-        label={t('gameHistory.title')}
-        items={[
-          {
-            id: 'teams',
-            label: t('common.entities.teams'),
-            content: (
-              <>
-                {leaderboard.length === 0 ? (
-                  <ItemCard>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('gameHistory.currentRoundsMissing')}
-                    </Typography>
-                  </ItemCard>
-                ) : (
-                  <Box
-                    ref={leaderboardGridRef}
-                    data-testid="current-leaderboard-grid"
-                    sx={{
-                      display: 'grid',
-                      gap: 1,
-                      gridTemplateColumns: 'minmax(0, 1fr)',
-                      '@media (min-width: 1000px)': {
-                        gridTemplateColumns: 'minmax(0, 1.22fr) minmax(340px, 0.78fr)',
-                      },
-                      alignItems: 'start',
-                    }}
-                  >
-                    <CurrentLeaderboardTable
-                      entries={leaderboard}
-                      inlineDetails={isWide}
-                      selectedTeamId={selectedEntry?.teamId ?? null}
-                      onSelectTeam={(teamId) => {
-                        setSelectedTeamId(teamId)
-                        if (!isWide) setTeamDialogOpen(true)
-                      }}
-                    />
-
-                    {isWide ? (
-                      <CurrentLeaderboardTeamDetails
-                        key={selectedEntry?.teamId}
-                        entry={selectedEntry}
-                        rank={
-                          selectedEntry
-                            ? leaderboard.findIndex(
-                                (entry) => entry.teamId === selectedEntry.teamId,
-                              ) + 1
-                            : 0
-                        }
-                        onPreviewCard={onPreviewCard}
-                      />
-                    ) : null}
-                  </Box>
-                )}
-                <AppDialog
-                  fullScreen={isPhone}
-                  open={!isWide && teamDialogOpen}
-                  onClose={() => setTeamDialogOpen(false)}
-                  title={t('common.entities.team')}
-                  actions={
-                    <AppButton tone="secondary" onClick={() => setTeamDialogOpen(false)}>
-                      {t('common.actions.close')}
-                    </AppButton>
-                  }
-                  contentDensity="compact"
-                >
-                  <CurrentLeaderboardTeamDetails
-                    key={selectedEntry?.teamId}
-                    entry={selectedEntry}
-                    rank={
-                      selectedEntry
-                        ? leaderboard.findIndex((entry) => entry.teamId === selectedEntry.teamId) +
-                          1
-                        : 0
-                    }
-                    onPreviewCard={onPreviewCard}
-                  />
-                </AppDialog>
-              </>
-            ),
-          },
-          {
-            id: 'quiz',
-            label: t('gameHistory.quizLeaderboardTitle'),
-            content: <QuizLeaderboard entries={gameDetails.quiz.playerStats} defaultExpanded />,
-          },
-        ]}
-      />
-      <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />
-      <GameModifierHistorySummary
-        rounds={gameDetails.mainGame.rounds}
-        snapshots={relevantModifierSnapshots}
-        snapshotStatus={gameDetails.modifierSnapshotStatus}
-        collapsible
-      />
-    </Stack>
+    <ContentTabs
+      {...tabs}
+      variant={isPhone ? 'scrollable' : 'fullWidth'}
+      layout="fill"
+      appearance="framed"
+      label={t('gameHistory.title')}
+      items={[
+        {
+          id: 'teams',
+          label: t('common.entities.teams'),
+          content: (
+            <GameTeamResults
+              selectedTeamId={selectedTeamId}
+              onSelectTeam={onSelectTeam}
+              results={buildLeaderboardResults(leaderboard)}
+              boardLabels={boardLabels}
+              onPreviewCard={onPreviewCard}
+            />
+          ),
+        },
+        {
+          id: 'quiz',
+          label: t('gameHistory.quizTab'),
+          content: <QuizLeaderboard entries={gameDetails.quiz.playerStats} presentation="panel" />,
+        },
+        {
+          id: 'modifiers',
+          label: t('common.entities.modifiers'),
+          content: <CurrentGameModifierResults game={gameDetails} />,
+        },
+        {
+          id: 'statistics',
+          label: t('gameHistory.statisticsTab'),
+          content: (
+            <CurrentGameStatistics
+              game={gameDetails}
+              boardLabels={boardLabels}
+              activeQuestionId={currentQuiz.data?.questionSessionId ?? null}
+            >
+              <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />
+            </CurrentGameStatistics>
+          ),
+        },
+      ]}
+    />
   )
 }

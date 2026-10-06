@@ -9,7 +9,7 @@ import {
   FormSelect,
   FormTextField,
   InlineNotice,
-  ItemCard,
+  SelectionRow,
   StatusBadge,
 } from '../../shared/ui/index.ts'
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
@@ -17,12 +17,13 @@ type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 type Props = {
   open: boolean
   questions: readonly AvailableQuestion[]
-  busy: boolean
+  launchDisabled: boolean
+  unavailableReason?: string
   loading?: boolean
   error?: boolean
   onRetry?: () => void
   onClose: () => void
-  onSelect: (questionId: string) => void
+  onSelect: (questionId: string) => void | Promise<unknown>
 }
 
 const allCategories = '__all__'
@@ -30,7 +31,8 @@ const allCategories = '__all__'
 export function QuizQuestionPickerDialog({
   open,
   questions,
-  busy,
+  launchDisabled,
+  unavailableReason,
   loading = false,
   error = false,
   onRetry,
@@ -40,6 +42,10 @@ export function QuizQuestionPickerDialog({
   const { t, i18n } = useTranslation()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(allCategories)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitFailed, setSubmitFailed] = useState(false)
+  const submittingRef = useRef(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const categories = useMemo(
@@ -61,24 +67,56 @@ export function QuizQuestionPickerDialog({
   const close = () => {
     setQuery('')
     setCategory(allCategories)
+    setSelectedId(null)
+    setSubmitFailed(false)
     onClose()
+  }
+  const selectedQuestion = visibleQuestions.find((question) => question.questionId === selectedId)
+  const pending = submitting
+  const startSelected = async () => {
+    if (!selectedQuestion || launchDisabled || pending || submittingRef.current || loading || error)
+      return
+    submittingRef.current = true
+    setSubmitting(true)
+    setSubmitFailed(false)
+    try {
+      await onSelect(selectedQuestion.questionId)
+      close()
+    } catch {
+      setSubmitFailed(true)
+    } finally {
+      submittingRef.current = false
+      setSubmitting(false)
+    }
   }
 
   return (
     <AppDialog
       open={open}
-      onClose={busy ? undefined : close}
+      onClose={pending ? undefined : close}
       maxWidth="md"
       slotProps={{ transition: { onEntered: () => searchRef.current?.focus() } }}
       title={t('gameQuiz.questionPickerTitle')}
       description={t('gameQuiz.questionPickerDescription')}
       actions={
-        <AppButton tone="ghost" onClick={close} disabled={busy}>
-          {t('common.actions.close')}
-        </AppButton>
+        <>
+          <AppButton tone="ghost" onClick={close} disabled={pending}>
+            {t('common.actions.close')}
+          </AppButton>
+          <AppButton
+            loading={submitting}
+            disabled={launchDisabled || pending || loading || error || !selectedQuestion}
+            onClick={() => void startSelected()}
+          >
+            {t('gameQuiz.startSelected')}
+          </AppButton>
+        </>
       }
     >
       <Stack spacing={1.5}>
+        {unavailableReason ? (
+          <InlineNotice severity="info">{unavailableReason}</InlineNotice>
+        ) : null}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <FormTextField
             autoFocus
@@ -88,7 +126,12 @@ export function QuizQuestionPickerDialog({
             label={t('gameQuiz.questionSearchLabel')}
             placeholder={t('gameQuiz.questionSearchPlaceholder')}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            disabled={pending}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setSelectedId(null)
+              setSubmitFailed(false)
+            }}
           />
           <FormSelect
             size="small"
@@ -98,11 +141,19 @@ export function QuizQuestionPickerDialog({
               { value: allCategories, label: t('gameQuiz.allQuestionCategories') },
               ...categories.map((item) => ({ value: item, label: item })),
             ]}
-            onChange={(value) => setCategory(String(value))}
+            disabled={pending}
+            onChange={(value) => {
+              setCategory(String(value))
+              setSelectedId(null)
+              setSubmitFailed(false)
+            }}
             sx={{ width: { xs: '100%', sm: 240 }, flexShrink: 0 }}
           />
         </Stack>
 
+        {submitFailed ? (
+          <InlineNotice severity="error">{t('gameQuiz.questionStartError')}</InlineNotice>
+        ) : null}
         {!loading && !error ? (
           <Typography variant="caption" color="text.secondary" aria-live="polite">
             {t('gameQuiz.questionPickerResults', { count: visibleQuestions.length })}
@@ -153,31 +204,37 @@ export function QuizQuestionPickerDialog({
               </Typography>
             ) : (
               visibleQuestions.map((question) => (
-                <ItemCard
+                <Box
                   component="li"
                   key={question.questionId}
                   sx={{ listStyle: 'none', overflowWrap: 'anywhere' }}
                 >
-                  <Stack direction="row" spacing={1.25} alignItems="center">
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <StatusBadge size="small" label={question.categoryName} sx={{ mb: 0.5 }} />
-                      <Typography variant="body2" fontWeight={700}>
+                  <SelectionRow
+                    selected={selectedId === question.questionId}
+                    disabled={pending}
+                    onClick={() => {
+                      setSelectedId(question.questionId)
+                      setSubmitFailed(false)
+                    }}
+                  >
+                    <Stack component="span" spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
+                      <StatusBadge
+                        component="span"
+                        density="compact"
+                        appearance="plain"
+                        label={question.categoryName}
+                      />
+                      <Typography component="span" variant="body1" fontWeight={700}>
                         {question.text}
                       </Typography>
-                    </Box>
-                    <AppButton
-                      size="small"
-                      disabled={busy}
-                      onClick={() => {
-                        close()
-                        onSelect(question.questionId)
-                      }}
-                      sx={{ flexShrink: 0 }}
-                    >
-                      {t('gameQuiz.selectQuestion')}
-                    </AppButton>
-                  </Stack>
-                </ItemCard>
+                      {selectedId === question.questionId ? (
+                        <Typography component="span" variant="caption" color="primary.light">
+                          {t('gameQuiz.questionSelected')}
+                        </Typography>
+                      ) : null}
+                    </Stack>
+                  </SelectionRow>
+                </Box>
               ))
             )}
           </Stack>

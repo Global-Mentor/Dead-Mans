@@ -14,38 +14,57 @@ export function Metric({
   action,
   tone = 'default',
   appearance = 'card',
+  density = 'standard',
 }: {
   label: string
   value: ReactNode
-  emphasis?: 'normal' | 'result'
+  emphasis?: 'normal' | 'result' | 'label'
   description?: ReactNode
   help?: string
   action?: ReactNode
   tone?: 'default' | 'success' | 'error'
-  appearance?: 'card' | 'summary'
+  appearance?: 'card' | 'summary' | 'row'
+  density?: 'standard' | 'compact'
 }) {
   const labelId = useId()
-  const summary = appearance === 'summary'
+  const row = appearance === 'row'
+  const summary = appearance !== 'card'
+  const compact = summary && density === 'compact'
+  const emphasizeLabel = emphasis === 'label'
   const body = (
     <Stack
-      spacing={summary ? 1.5 : 1}
-      sx={summary ? { width: '100%', textAlign: 'center', alignItems: 'center' } : undefined}
+      spacing={compact ? 0.5 : summary ? 1.5 : 1}
+      sx={
+        summary
+          ? {
+              width: '100%',
+              textAlign: row ? 'left' : 'center',
+              alignItems: row ? 'stretch' : 'center',
+            }
+          : undefined
+      }
     >
       <Box
         component="dl"
         sx={{
           m: 0,
           minWidth: 0,
-          ...(summary ? { width: '100%', minHeight: 60, alignContent: 'center' } : {}),
+          ...(summary
+            ? { width: '100%', minHeight: row ? 0 : compact ? 38 : 60, alignContent: 'center' }
+            : {}),
+          ...(row
+            ? { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1.5 }
+            : {}),
         }}
       >
         <Typography
           id={labelId}
           component="dt"
-          variant={summary ? 'body1' : 'caption'}
-          color="text.secondary"
+          variant={row ? 'body2' : emphasizeLabel || (summary && !compact) ? 'body1' : 'caption'}
+          color={emphasizeLabel ? 'primary.light' : 'text.secondary'}
+          fontWeight={emphasizeLabel ? 700 : undefined}
           sx={
-            summary && tone !== 'default'
+            summary && !row && tone !== 'default'
               ? {
                   position: 'absolute',
                   width: '1px',
@@ -54,18 +73,46 @@ export function Metric({
                   clipPath: 'inset(50%)',
                   whiteSpace: 'nowrap',
                 }
-              : undefined
+              : {
+                  ...(compact ? { lineHeight: 1.2 } : {}),
+                  ...(row ? { flex: 1, minWidth: 0 } : {}),
+                }
           }
         >
           {label}
         </Typography>
         <Typography
           component="dd"
-          variant={emphasis === 'result' ? 'h5' : summary ? 'h6' : 'body2'}
+          variant={
+            row
+              ? 'body2'
+              : emphasizeLabel
+                ? 'caption'
+                : compact
+                  ? 'body1'
+                  : emphasis === 'result'
+                    ? 'h5'
+                    : summary
+                      ? 'h6'
+                      : 'body2'
+          }
           sx={{
             m: 0,
-            fontWeight: 700,
-            color: emphasis === 'result' ? 'primary.light' : 'text.primary',
+            ...(row
+              ? {
+                  textAlign: 'right',
+                  maxWidth: '48%',
+                  flexShrink: 0,
+                  fontVariantNumeric: 'tabular-nums',
+                }
+              : {}),
+            fontWeight: emphasizeLabel ? 400 : 700,
+            ...(compact ? { lineHeight: 1.2 } : {}),
+            color: emphasizeLabel
+              ? 'text.secondary'
+              : emphasis === 'result'
+                ? 'primary.light'
+                : 'text.primary',
           }}
         >
           {tone === 'default' ? (
@@ -96,9 +143,10 @@ export function Metric({
       {...groupProps}
       sx={{
         minWidth: 0,
-        minHeight: 44,
+        minHeight: row ? 44 : compact ? 38 : 44,
         display: 'flex',
         alignItems: 'center',
+        ...(row ? { borderBottom: '1px solid', borderColor: 'divider', py: 0.5 } : {}),
         overflowWrap: 'anywhere',
         '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
       }}

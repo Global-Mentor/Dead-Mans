@@ -1,14 +1,26 @@
 import { useLayoutEffect, useRef } from 'react'
 
 export function useModifierViewport() {
-  const ref = useRef<HTMLDivElement>(null)
+  const pageRef = useRef<HTMLDivElement>(null)
+  const sectionsGridRef = useRef<HTMLDivElement>(null)
+  const toolsRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
-    const grid = ref.current
-    if (!grid) return
+    const page = pageRef.current
+    const grid = sectionsGridRef.current
+    if (!page || !grid) return
 
     const update = () => {
-      const top = grid.getBoundingClientRect().top + window.scrollY
+      const toolsHeight = `${toolsRef.current?.getBoundingClientRect().height ?? 0}px`
+      if (grid.style.getPropertyValue('--modifier-tools-height') !== toolsHeight) {
+        grid.style.setProperty('--modifier-tools-height', toolsHeight)
+      }
+      const pageTop = page.getBoundingClientRect().top + window.scrollY
+      const pageHeight = `${Math.max(0, window.innerHeight - pageTop - 24)}px`
+      if (page.style.getPropertyValue('--modifier-page-height') !== pageHeight) {
+        page.style.setProperty('--modifier-page-height', pageHeight)
+      }
+      const top = grid.getBoundingClientRect().top + window.scrollY + page.scrollTop
       const height = `${Math.max(320, window.innerHeight - top - 24)}px`
       if (grid.style.getPropertyValue('--modifier-panel-height') !== height) {
         grid.style.setProperty('--modifier-panel-height', height)
@@ -18,6 +30,7 @@ export function useModifierViewport() {
     update()
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update)
     if (observer) {
+      if (toolsRef.current) observer.observe(toolsRef.current)
       for (let parent = grid.parentElement; parent; parent = parent.parentElement) {
         observer.observe(parent)
       }
@@ -29,5 +42,5 @@ export function useModifierViewport() {
     }
   })
 
-  return ref
+  return { pageRef, sectionsGridRef, toolsRef }
 }

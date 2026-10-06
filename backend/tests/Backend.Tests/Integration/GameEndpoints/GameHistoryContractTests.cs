@@ -34,6 +34,67 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetGameDetails_FinishedBoardUsesSelectedGameAndMasksClosedCards()
+    {
+        var seeded = await SeedHistoryAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var board = await db.GameBoards.SingleAsync(x => x.GameId == seeded.GameId);
+            var otherCell = await db.BoardCells.SingleAsync(x => x.BoardId == board.Id && x.Id != seeded.CellOneId);
+            otherCell.State = BoardCellState.Closed;
+            otherCell.Title = "Hidden archive title";
+            otherCell.Description = "Hidden archive description";
+            db.Games.Add(new Game
+            {
+                Id = Guid.NewGuid(),
+                Title = "Unrelated active game",
+                Status = GameStatusValue.Active,
+                CreatedAtUtc = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+            $"/api/game/history/games/{seeded.GameId}");
+        var savedBoard = Assert.IsType<GameBoardSnapshotDto>(details?.Board);
+        Assert.Equal(seeded.GameId.ToString(), savedBoard.GameId);
+        Assert.Equal(GameStatusValue.Finished, savedBoard.Status);
+        Assert.Equal(["A"], savedBoard.RowLabels);
+        Assert.Equal(["1", "2"], savedBoard.ColLabels);
+        var open = Assert.Single(savedBoard.Cells, x => x.Id == seeded.CellOneId.ToString());
+        Assert.Equal("Card One", open.Title);
+        Assert.NotEmpty(open.Media);
+        var closed = Assert.Single(savedBoard.Cells, x => x.Id != seeded.CellOneId.ToString());
+        Assert.Equal("closed", closed.State);
+        Assert.Null(closed.Title);
+        Assert.Null(closed.Description);
+        Assert.Empty(closed.Media);
+        Assert.Empty(savedBoard.ActiveModifiers);
+    }
+
+    [Theory]
+    [InlineData(GameStatusValue.Active)]
+    [InlineData(GameStatusValue.Ready)]
+    public async Task GetGameDetails_UnfinishedGameDoesNotExposeArchiveBoard(string status)
+    {
+        var seeded = await SeedHistoryAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var game = await db.Games.SingleAsync(x => x.Id == seeded.GameId);
+            game.Status = status;
+            game.FinishedAtUtc = null;
+            await db.SaveChangesAsync();
+        }
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+            $"/api/game/history/games/{seeded.GameId}");
+        Assert.NotNull(details);
+        Assert.Null(details.Board);
+    }
+
     [Theory]
     [InlineData(GameQuizQuestionSessionStatusValue.Open)]
     [InlineData(GameQuizQuestionSessionStatusValue.Skipped)]

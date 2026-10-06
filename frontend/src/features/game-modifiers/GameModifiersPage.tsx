@@ -15,7 +15,7 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { currentGameBoardQueryOptions } from '../game-board/index.ts'
+import { currentGameBoardQueryOptions, GameQuizDrawer } from '../game-board/index.ts'
 import { GameBoardCardPreviewDialog } from '../game-board/ui/GameBoardCardPreviewDialog.tsx'
 import { formatTeamNameWithFallback } from '../game-registration/model/team-name.ts'
 import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
@@ -41,7 +41,7 @@ export function GameModifiersPage() {
   const stateQuery = useQuery(gameModifierStateQueryOptions)
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const activeRoundQuery = useQuery(activeGameRoundQueryOptions)
-  const sectionsGridRef = useModifierViewport()
+  const { pageRef, sectionsGridRef, toolsRef } = useModifierViewport()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<ModifierCategoryCode | 'all'>('all')
   const [selectedPanel, setSelectedPanel] = useState('available')
@@ -176,13 +176,16 @@ export function GameModifiersPage() {
     >
       {(actions) => (
         <PageShell
+          ref={pageRef}
           data-testid="game-modifiers-page"
           sx={{
             maxWidth: 1440,
             width: { xs: '100%', md: hasAdminPanel ? 'calc(100% - 72px)' : '100%' },
             mx: 'auto',
-            px: { xs: 0, sm: 0 },
-            pt: { xs: 0, sm: 0 },
+            p: { xs: 0, md: 0 },
+            maxHeight: 'var(--modifier-page-height)',
+            overflowY: 'auto',
+            minHeight: 0,
           }}
         >
           {state ? (
@@ -250,9 +253,12 @@ export function GameModifiersPage() {
                   gridTemplateColumns: 'minmax(0, 1fr)',
                   gap: 2,
                   alignItems: 'start',
+                  '--modifier-panel-header-height': '0px',
                   '@media (min-width: 1000px)': {
+                    '--modifier-panel-header-height':
+                      'calc(var(--modifier-tools-height, 56px) + 12px)',
                     gridTemplateAreas: '"available active"',
-                    gridTemplateColumns: 'minmax(0, 1.6fr) minmax(300px, 0.8fr)',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   },
                 }}
               >
@@ -269,7 +275,7 @@ export function GameModifiersPage() {
                 >
                   <AvailableModifiersSection
                     tools={
-                      <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.25}>
+                      <Stack ref={toolsRef} direction={{ xs: 'column', sm: 'row' }} gap={1.25}>
                         <FormTextField
                           value={search}
                           label={t('common.modifiers.searchLabel')}
@@ -345,6 +351,14 @@ export function GameModifiersPage() {
             playResult={{ round: null, isLoading: false, isError: false }}
             onClose={() => setPreviewCell(null)}
           />
+          {snapshot?.status === 'active' ? (
+            <GameQuizDrawer
+              gameId={snapshot.gameId}
+              side="left"
+              showForManagers
+              suspended={actions.isConfirming}
+            />
+          ) : null}
         </PageShell>
       )}
     </GameModifierActions>

@@ -1,4 +1,4 @@
-import { Box, Stack } from '@mui/material'
+import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
 import {
@@ -6,7 +6,7 @@ import {
   RoundBriefingPanel,
   RoundBriefingDivider,
 } from '../../../shared/game-ui/index.ts'
-import { AppButton, Metric, SectionDivider } from '../../../shared/ui/index.ts'
+import { AppButton, Metric, SectionDivider, StatusReadout } from '../../../shared/ui/index.ts'
 
 interface ModifierStatusBarProps {
   state: GameModifierState
@@ -17,6 +17,20 @@ interface ModifierStatusBarProps {
   canOpenActiveCard: boolean
   onOpenActiveCard: () => void
 }
+
+const summaryCellSx = {
+  minWidth: 0,
+  py: 0.5,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const
+
+const pairedColumnSx = {
+  minWidth: 0,
+  display: 'grid',
+  gridTemplateRows: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+} as const
 
 export function ModifierStatusBar({
   state,
@@ -34,65 +48,82 @@ export function ModifierStatusBar({
   )
 
   return (
-    <RoundBriefingPanel component="section" aria-label={t('gameModifiers.summaryTitle')}>
+    <RoundBriefingPanel
+      component="section"
+      aria-label={t('gameModifiers.summaryTitle')}
+      sx={{ px: 1, py: 0 }}
+    >
       <Box
         data-testid="modifier-summary-row"
         sx={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 2,
-          alignItems: 'start',
+          gap: 1,
+          alignItems: 'stretch',
           '@media (min-width: 1000px)': {
             gridTemplateColumns:
               'minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr)',
           },
         }}
       >
-        <Stack spacing={1.5} sx={{ minWidth: 0 }}>
-          <Metric
-            appearance="summary"
-            label={t('gameModifiers.summaryTitle')}
-            value={
-              state.isOrderingOpen
-                ? t('gameModifiers.orderingOpen')
-                : t('gameModifiers.orderingClosed')
-            }
-            tone={state.isOrderingOpen ? 'success' : 'error'}
-            help={
-              state.isOrderingOpen
-                ? t('gameModifiers.summaryOrderingStatusTooltip')
-                : t('gameModifiers.orderingClosedSummary')
-            }
-          />
+        <Box sx={pairedColumnSx}>
+          <Box data-testid="modifier-ordering-cell" sx={summaryCellSx}>
+            <StatusReadout
+              density="compact"
+              label={t('gameModifiers.orderingStatusLabel')}
+              value={
+                state.isOrderingOpen
+                  ? t('gameModifiers.orderingOpen')
+                  : t('gameModifiers.orderingClosed')
+              }
+              tone={state.isOrderingOpen ? 'success' : 'error'}
+              help={
+                state.isOrderingOpen
+                  ? t('gameModifiers.summaryOrderingStatusTooltip')
+                  : t('gameModifiers.orderingClosedSummary')
+              }
+            />
+          </Box>
           <RoundBriefingDivider />
-          <Metric
-            appearance="summary"
-            label={t('gameModifiers.summaryRoundSpentPoints')}
-            value={t('gameModifiers.myPointsValue', { points: activeRoundSpentPoints })}
-            help={t('gameModifiers.summaryRoundSpentPointsTooltip')}
-          />
-        </Stack>
+          <Box data-testid="modifier-round-spent-cell" sx={summaryCellSx}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              emphasis="label"
+              label={t('gameModifiers.summaryRoundSpentPoints')}
+              value={t('gameModifiers.myPointsValue', { points: activeRoundSpentPoints })}
+              help={t('gameModifiers.summaryRoundSpentPointsTooltip')}
+            />
+          </Box>
+        </Box>
         <SectionDivider
           orientation="vertical"
           flexItem
           sx={{ display: { xs: 'none' }, '@media (min-width: 1000px)': { display: 'block' } }}
         />
-        <Stack spacing={1.5} sx={{ minWidth: 0 }}>
-          <Metric
-            appearance="summary"
-            label={t('gameModifiers.summaryAvailablePoints')}
-            emphasis="result"
-            value={t('gameModifiers.myPointsValue', { points: state.availableQuizPoints })}
-            help={t('gameModifiers.summaryAvailablePointsTooltip')}
-          />
+        <Box sx={pairedColumnSx}>
+          <Box data-testid="modifier-available-points-cell" sx={summaryCellSx}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              label={t('gameModifiers.summaryAvailablePoints')}
+              emphasis="label"
+              value={t('gameModifiers.myPointsValue', { points: state.availableQuizPoints })}
+              help={t('gameModifiers.summaryAvailablePointsTooltip')}
+            />
+          </Box>
           <RoundBriefingDivider />
-          <Metric
-            appearance="summary"
-            label={t('gameModifiers.summarySpentPoints')}
-            value={t('gameModifiers.myPointsValue', { points: state.spentQuizPoints })}
-            help={t('gameModifiers.summarySpentPointsTooltip')}
-          />
-        </Stack>
+          <Box data-testid="modifier-personal-spent-cell" sx={summaryCellSx}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              emphasis="label"
+              label={t('gameModifiers.summarySpentPoints')}
+              value={t('gameModifiers.myPointsValue', { points: state.spentQuizPoints })}
+              help={t('gameModifiers.summarySpentPointsTooltip')}
+            />
+          </Box>
+        </Box>
         <SectionDivider
           orientation="vertical"
           flexItem
@@ -101,9 +132,10 @@ export function ModifierStatusBar({
         <RoundBriefingDivider
           sx={{ gridColumn: '1 / -1', '@media (min-width: 1000px)': { display: 'none' } }}
         />
-        <Box sx={{ minWidth: 0, '@media (max-width: 359px)': { gridColumn: '1 / -1' } }}>
+        <Box sx={{ ...summaryCellSx, '@media (max-width: 359px)': { gridColumn: '1 / -1' } }}>
           <Metric
             appearance="summary"
+            density="compact"
             label={t('gameModifiers.summaryCurrentTeam')}
             value={currentTeamLabel}
             help={t('gameModifiers.summaryCurrentTeamTooltip')}
@@ -111,8 +143,9 @@ export function ModifierStatusBar({
               <ParticipantNamesList
                 names={currentTeamParticipantNames}
                 emptyLabel={currentTeamParticipantsEmptyLabel}
-                variant="body1"
+                variant="body2"
                 direction="column"
+                dense
                 decorated
               />
             }
@@ -123,28 +156,36 @@ export function ModifierStatusBar({
           flexItem
           sx={{ display: { xs: 'none' }, '@media (min-width: 1000px)': { display: 'block' } }}
         />
-        <Box sx={{ minWidth: 0, '@media (max-width: 359px)': { gridColumn: '1 / -1' } }}>
-          <Metric
-            appearance="summary"
-            label={t('gameModifiers.summaryActiveCard')}
-            value={activeCardLabel}
-            action={
-              canOpenActiveCard ? (
-                <Stack spacing={1.5} sx={{ width: '100%', alignItems: 'center' }}>
-                  <RoundBriefingDivider />
-                  <AppButton
-                    tone="secondary"
-                    size="medium"
-                    aria-label={`${t('gameModifiers.previewCardAction')}: ${activeCardLabel}`}
-                    onClick={onOpenActiveCard}
-                  >
-                    {t('gameModifiers.previewCardAction')}
-                  </AppButton>
-                </Stack>
-              ) : null
-            }
-            help={t('gameModifiers.summaryActiveCardTooltip')}
-          />
+        <Box
+          sx={{
+            ...(canOpenActiveCard ? pairedColumnSx : summaryCellSx),
+            '@media (max-width: 359px)': { gridColumn: '1 / -1' },
+          }}
+        >
+          <Box sx={summaryCellSx}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              label={t('gameModifiers.summaryActiveCard')}
+              value={activeCardLabel}
+              help={t('gameModifiers.summaryActiveCardTooltip')}
+            />
+          </Box>
+          {canOpenActiveCard ? (
+            <>
+              <RoundBriefingDivider />
+              <Box data-testid="modifier-preview-action" sx={summaryCellSx}>
+                <AppButton
+                  tone="secondary"
+                  size="small"
+                  aria-label={`${t('gameModifiers.previewCardAction')}: ${activeCardLabel}`}
+                  onClick={onOpenActiveCard}
+                >
+                  {t('gameModifiers.previewCardAction')}
+                </AppButton>
+              </Box>
+            </>
+          ) : null}
         </Box>
       </Box>
     </RoundBriefingPanel>

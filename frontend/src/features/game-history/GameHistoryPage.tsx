@@ -1,15 +1,19 @@
-import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { urlTabSelection } from '../../shared/routing/url-tab-selection.ts'
+import { useUrlSearchParams } from '../../shared/routing/use-url-search-params.ts'
 import type { components } from '../../shared/api/contracts/generated'
-import { PlayedCardPreviewDialog } from '../../shared/game-ui/index.ts'
+import {
+  HistoryWorkspace,
+  PlayedCardPreviewDialog,
+  RoundBriefingPanel,
+} from '../../shared/game-ui/index.ts'
 import {
   AppButton,
   AsyncSection,
   FormTextField,
-  NativeDisclosure,
   PageShell,
   SectionCard,
   SectionHeader,
@@ -20,14 +24,12 @@ import {
   gameHistoryGameDetailsQueryOptions,
   gameHistoryGamesQueryOptions,
 } from './api/game-history-queries.ts'
-import {
-  getTeamFinalScore,
-  sortTeamLeaderboardEntries,
-} from './model/game-history-team-leaderboard.ts'
-import { isCountedRound, normalizeStatus } from './model/game-history-view.ts'
+import { sortTeamLeaderboardEntries } from './model/game-history-team-leaderboard.ts'
+import { normalizeStatus } from './model/game-history-view.ts'
 import { CurrentGameLeaderboard } from './ui/CurrentGameLeaderboard.tsx'
+import { HistoryBoardView } from './ui/HistoryBoardView.tsx'
 import { GameDetailsPanel } from './ui/GameHistoryDetailsPanel.tsx'
-import { CurrentGameLeaderboardSummary, GameSummaryButton } from './ui/GameHistoryOverview.tsx'
+import { GameSummaryButton } from './ui/GameHistoryOverview.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 type GameHistoryBoard = 'realtime' | 'history'
@@ -46,18 +48,27 @@ export function GameHistoryPage({
   lockedBoard = 'history',
 }: GameHistoryPageProps = {}) {
   const { t } = useTranslation()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useUrlSearchParams()
+  const selectTeam = (teamId: string) =>
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('teamId', teamId)
+      return next
+    })
   const requestedGameId = searchParams.get('gameId')
-  const [search, setSearch] = useState('')
+  const search = searchParams.get('q') ?? ''
   const [pickerOpen, setPickerOpen] = useState(false)
-  const isWide = useMediaQuery('(min-width: 1000px)')
   const [previewRound, setPreviewRound] = useState<GameHistoryRound | null>(null)
   const [activeBoardState, setActiveBoardState] = useState<GameHistoryBoard>(initialBoard)
   const activeBoard = lockedBoard ?? activeBoardState
+  const showHistoryBoard = activeBoard === 'history' && searchParams.get('view') === 'board'
   const isBoardSwitcherVisible = lockedBoard == null
 
   const currentGameQuery = useQuery(currentGameBoardQueryOptions)
-  const gamesQuery = useQuery(gameHistoryGamesQueryOptions)
+  const gamesQuery = useQuery({
+    ...gameHistoryGamesQueryOptions,
+    enabled: activeBoard === 'history',
+  })
   const currentGameId = currentGameQuery.data?.gameId ?? null
   const completedGames = (gamesQuery.data ?? []).filter(
     (game) => normalizeStatus(game.gameStatus) === 'finished',
@@ -70,6 +81,19 @@ export function GameHistoryPage({
     game.gameTitle.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   )
   const selectedGame = completedGames.find((game) => game.gameId === selectedCompletedGameId)
+
+  useEffect(() => {
+    if (activeBoard === 'history' && !requestedGameId && selectedCompletedGameId) {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          next.set('gameId', selectedCompletedGameId)
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }, [activeBoard, requestedGameId, selectedCompletedGameId, setSearchParams])
 
   const currentGameDetailsQuery = useQuery({
     ...gameHistoryGameDetailsQueryOptions(currentGameId ?? ''),
@@ -87,38 +111,9 @@ export function GameHistoryPage({
     currentGameDetailsQuery.data?.mainGame.teamStats ?? [],
   )
   const currentGameDetails = currentGameDetailsQuery.data ?? null
-  const currentGamePlayedRounds = (currentGameDetails?.mainGame.rounds ?? []).filter(isCountedRound)
-  const currentGameSummary =
+  const currentGameTitle =
     activeBoard === 'realtime' && currentGameQuery.data
-      ? {
-          title: currentGameDetails?.gameTitle ?? currentGameQuery.data.title,
-          status: currentGameDetails?.gameStatus ?? currentGameQuery.data.status,
-          playedTeamCount: currentGameDetails ? currentGameLeaderboard.length : null,
-          playedRoundCount: currentGameDetails ? currentGamePlayedRounds.length : null,
-          activatedModifierCount: currentGameDetails?.mainGame.modifierActivations.length ?? null,
-          quizPoints: currentGameDetails?.quiz.totalPoints ?? null,
-          totalKills:
-            currentGameDetails === null
-              ? null
-              : currentGamePlayedRounds.reduce(
-                  (total, round) => total + round.scoreDetails.totalKillCount,
-                  0,
-                ),
-          totalTokens:
-            currentGameDetails === null
-              ? null
-              : currentGamePlayedRounds.reduce((total, round) => total + round.bountyCount, 0),
-          penaltyTotal:
-            currentGameDetails === null
-              ? null
-              : currentGamePlayedRounds.reduce(
-                  (total, round) => total + round.scoreDetails.penaltyTotal,
-                  0,
-                ),
-          teamFinalScoreTotal: currentGameDetails
-            ? currentGameLeaderboard.reduce((total, entry) => total + getTeamFinalScore(entry), 0)
-            : null,
-        }
+      ? (currentGameDetails?.gameTitle ?? currentGameQuery.data.title)
       : null
 
   return (
@@ -128,18 +123,14 @@ export function GameHistoryPage({
         width: '100%',
         mx: 'auto',
         p: { xs: 0, md: 0 },
+        px: { xs: 0, md: 0 },
+        pb: { xs: 0, md: 0 },
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      {activeBoard === 'history' ? (
-        <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 850 }}>
-          {t('gameHistory.archivePageTitle')}
-        </Typography>
-      ) : (
-        <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 850 }}>
-          {t('gameHistory.title')}
-        </Typography>
-      )}
-
       {isBoardSwitcherVisible ? (
         <SectionCard sx={{ mt: 1.5 }}>
           <SectionHeader
@@ -166,24 +157,22 @@ export function GameHistoryPage({
 
       {activeBoard === 'realtime' ? (
         <>
-          {currentGameSummary ? (
-            <CurrentGameLeaderboardSummary
-              title={currentGameSummary.title}
-              status={currentGameSummary.status}
-              playedTeamCount={currentGameSummary.playedTeamCount}
-              playedRoundCount={currentGameSummary.playedRoundCount}
-              activatedModifierCount={currentGameSummary.activatedModifierCount}
-              quizPoints={currentGameSummary.quizPoints}
-              totalKills={currentGameSummary.totalKills}
-              totalTokens={currentGameSummary.totalTokens}
-              penaltyTotal={currentGameSummary.penaltyTotal}
-              teamFinalScoreTotal={currentGameSummary.teamFinalScoreTotal}
-            />
+          {currentGameTitle !== null ? (
+            <RoundBriefingPanel data-testid="current-game-summary" sx={{ flexShrink: 0, mb: 1 }}>
+              <Typography
+                component="h1"
+                variant="h6"
+                textAlign="center"
+                sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+              >
+                {currentGameTitle}
+              </Typography>
+            </RoundBriefingPanel>
           ) : null}
 
-          <SectionCard
+          <Box
             data-testid="current-leaderboard-surface"
-            sx={{ mt: currentGameSummary ? 1 : 0, p: { xs: 0.75, sm: 1 } }}
+            sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
           >
             <AsyncSection
               isLoading={
@@ -210,119 +199,171 @@ export function GameHistoryPage({
             >
               <CurrentGameLeaderboard
                 key={currentGameId}
+                tabs={urlTabSelection(searchParams, setSearchParams, 'teams')}
+                selectedTeamId={searchParams.get('teamId')}
+                onSelectTeam={selectTeam}
                 gameDetails={currentGameDetailsQuery.data ?? null}
+                boardLabels={
+                  currentGameQuery.data?.gameId === currentGameDetailsQuery.data?.gameId
+                    ? (currentGameQuery.data ?? undefined)
+                    : undefined
+                }
                 leaderboard={currentGameLeaderboard}
                 onPreviewCard={setPreviewRound}
               />
             </AsyncSection>
-          </SectionCard>
+          </Box>
         </>
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 1,
-            mt: 0,
-            alignItems: 'start',
-            gridTemplateColumns: 'minmax(0, 1fr)',
-            '@media (min-width: 1000px)': { gridTemplateColumns: '300px minmax(0, 1fr)' },
-          }}
-        >
-          <SectionCard
+        <>
+          <Box
             sx={{
-              minWidth: 0,
-              p: 1,
-              '@media (min-width: 1000px)': { position: 'sticky', top: 80 },
+              display: showHistoryBoard ? 'none' : 'flex',
+              flex: 1,
+              minHeight: 0,
+              flexDirection: 'column',
             }}
           >
-            <NativeDisclosure
-              open={isWide || pickerOpen || !selectedGame}
-              pinned={isWide}
-              onExpandedChange={setPickerOpen}
-              summary={
-                <>
-                  {t('gameHistory.completedGamesListTitle')}
-                  {selectedGame ? ` · ${selectedGame.gameTitle}` : ''}
-                </>
+            <HistoryWorkspace
+              title={t('gameHistory.completedGamesListTitle')}
+              selectedLabel={selectedGame?.gameTitle}
+              hasSelection={selectedCompletedGameId !== null}
+              pickerOpen={pickerOpen}
+              onPickerOpenChange={setPickerOpen}
+              tools={
+                <FormTextField
+                  label={t('gameHistory.searchGames')}
+                  value={search}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setSearchParams(
+                      (current) => {
+                        const next = new URLSearchParams(current)
+                        if (value) next.set('q', value)
+                        else next.delete('q')
+                        return next
+                      },
+                      { replace: true },
+                    )
+                  }}
+                  fullWidth
+                />
+              }
+              records={
+                <AsyncSection
+                  isLoading={gamesQuery.isLoading}
+                  isError={gamesQuery.isError}
+                  hasData={gamesQuery.data != null}
+                  isEmpty={visibleGames.length === 0}
+                  loadingMessage={t('gameHistory.loadingGames')}
+                  errorMessage={t('gameHistory.errorGames')}
+                  emptyMessage={t(
+                    search.trim() ? 'gameHistory.searchEmpty' : 'gameHistory.completedGamesEmpty',
+                  )}
+                  retryAction={
+                    <AppButton tone="ghost" onClick={() => void gamesQuery.refetch()}>
+                      {t('common.actions.retry')}
+                    </AppButton>
+                  }
+                >
+                  <Stack gap={0.6}>
+                    {visibleGames.map((game, index) => (
+                      <GameSummaryButton
+                        key={game.gameId}
+                        game={game}
+                        tone={index % 2 === 0 ? 'default' : 'alternate'}
+                        isSelected={game.gameId === selectedCompletedGameId}
+                        onClick={() => {
+                          setSearchParams((current) => {
+                            const next = new URLSearchParams(current)
+                            next.set('gameId', game.gameId)
+                            next.delete('teamId')
+                            next.delete('view')
+                            return next
+                          })
+                          setPickerOpen(false)
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </AsyncSection>
               }
             >
-              <Typography
-                component="h2"
-                variant="subtitle2"
-                sx={{ fontWeight: 850, mb: 1, display: isWide ? 'block' : 'none' }}
+              <Box
+                key={selectedCompletedGameId}
+                sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
               >
-                {t('gameHistory.completedGamesListTitle')}
-              </Typography>
-              <FormTextField
-                label={t('gameHistory.searchGames')}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                sx={{ my: 0.5 }}
-              />
-
-              <AsyncSection
-                isLoading={gamesQuery.isLoading}
-                isError={gamesQuery.isError}
-                hasData={gamesQuery.data != null}
-                retryAction={
-                  <AppButton tone="ghost" onClick={() => void gamesQuery.refetch()}>
-                    {t('common.actions.retry')}
-                  </AppButton>
-                }
-                isEmpty={visibleGames.length === 0}
-                loadingMessage={t('gameHistory.loadingGames')}
-                errorMessage={t('gameHistory.errorGames')}
-                emptyMessage={t(
-                  search.trim() ? 'gameHistory.searchEmpty' : 'gameHistory.completedGamesEmpty',
-                )}
-              >
-                <Stack
-                  spacing={0.6}
-                  sx={{
-                    mt: 1,
-                    maxHeight: 'max(280px, calc(100dvh - 260px))',
-                    overflowY: 'auto',
-                    overscrollBehaviorY: 'contain',
+                <AsyncSection
+                  isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
+                  isError={selectedGameDetailsQuery.isError}
+                  hasData={selectedGameDetailsQuery.data != null}
+                  isEmpty={selectedCompletedGameId === null}
+                  loadingMessage={t('gameHistory.loadingGameDetails')}
+                  errorMessage={t('gameHistory.errorGameDetails')}
+                  emptyMessage={t('gameHistory.completedGameSelectPrompt')}
+                  retryAction={
+                    <AppButton tone="ghost" onClick={() => void selectedGameDetailsQuery.refetch()}>
+                      {t('common.actions.retry')}
+                    </AppButton>
+                  }
+                >
+                  <GameDetailsPanel
+                    tabs={urlTabSelection(searchParams, setSearchParams, 'teams')}
+                    selectedTeamId={searchParams.get('teamId')}
+                    onSelectTeam={selectTeam}
+                    game={selectedGameDetailsQuery.data ?? null}
+                    onPreviewCard={setPreviewRound}
+                    onViewBoard={() => {
+                      if (selectedCompletedGameId)
+                        setSearchParams((current) => {
+                          const next = new URLSearchParams(current)
+                          next.set('gameId', selectedCompletedGameId)
+                          next.set('view', 'board')
+                          return next
+                        })
+                    }}
+                  />
+                </AsyncSection>
+              </Box>
+            </HistoryWorkspace>
+          </Box>
+          {showHistoryBoard ? (
+            <AsyncSection
+              isLoading={selectedGameDetailsQuery.isLoading || gamesQuery.isLoading}
+              isError={selectedGameDetailsQuery.isError || gamesQuery.isError}
+              hasData={selectedGameDetailsQuery.data != null}
+              isEmpty={selectedCompletedGameId === null}
+              emptyMessage={t('gameHistory.completedGamesEmpty')}
+              loadingMessage={t('gameHistory.loadingGameDetails')}
+              errorMessage={t('gameHistory.errorGameDetails')}
+              retryAction={
+                <AppButton
+                  tone="secondary"
+                  onClick={() => {
+                    void selectedGameDetailsQuery.refetch()
+                    void gamesQuery.refetch()
                   }}
                 >
-                  {visibleGames.map((game) => (
-                    <GameSummaryButton
-                      key={game.gameId}
-                      game={game}
-                      isSelected={game.gameId === selectedCompletedGameId}
-                      onClick={() => {
-                        setSearchParams({ gameId: game.gameId }, { replace: true })
-                        setPickerOpen(false)
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </AsyncSection>
-            </NativeDisclosure>
-          </SectionCard>
-
-          <Box key={selectedCompletedGameId} sx={{ minWidth: 0 }}>
-            <AsyncSection
-              isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
-              isError={selectedGameDetailsQuery.isError}
-              hasData={selectedGameDetailsQuery.data != null}
-              retryAction={
-                <AppButton tone="ghost" onClick={() => void selectedGameDetailsQuery.refetch()}>
                   {t('common.actions.retry')}
                 </AppButton>
               }
-              isEmpty={selectedCompletedGameId === null}
-              loadingMessage={t('gameHistory.loadingGameDetails')}
-              errorMessage={t('gameHistory.errorGameDetails')}
-              emptyMessage={t('gameHistory.completedGameSelectPrompt')}
             >
-              <GameDetailsPanel
-                game={selectedGameDetailsQuery.data ?? null}
-                onPreviewCard={setPreviewRound}
-              />
+              {selectedGameDetailsQuery.data ? (
+                <HistoryBoardView
+                  game={selectedGameDetailsQuery.data}
+                  onBack={() => {
+                    if (selectedCompletedGameId)
+                      setSearchParams((current) => {
+                        const next = new URLSearchParams(current)
+                        next.delete('view')
+                        return next
+                      })
+                  }}
+                />
+              ) : null}
             </AsyncSection>
-          </Box>
-        </Box>
+          ) : null}
+        </>
       )}
 
       <PlayedCardPreviewDialog

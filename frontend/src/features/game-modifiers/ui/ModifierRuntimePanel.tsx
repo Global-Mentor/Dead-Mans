@@ -59,6 +59,7 @@ export function ModifierRuntimePanel({
           <StatusBadge
             size="small"
             color={isOffline ? 'warning' : 'success'}
+            appearance={isOffline ? 'standard' : 'textured'}
             variant="outlined"
             label={t(
               isOffline ? 'gameModifiers.runtime.clockStale' : 'gameModifiers.runtime.clockSynced',

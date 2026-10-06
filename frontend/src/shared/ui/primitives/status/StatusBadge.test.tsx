@@ -8,6 +8,24 @@ import { huntPaperTexture, huntWornFrame } from '../../../theme/hunt-materials.t
 afterEach(cleanup)
 
 describe('StatusBadge', () => {
+  it.each(['success', 'error'] as const)(
+    'applies textured %s feedback only when requested',
+    (color) => {
+      renderWithAppProviders(
+        <>
+          <StatusBadge color={color} label="Standard" />
+          <StatusBadge color={color} appearance="textured" label="Feedback" />
+        </>,
+      )
+      const standard = getComputedStyle(screen.getByText('Standard').parentElement!)
+      const textured = getComputedStyle(screen.getByText('Feedback').parentElement!)
+      expect(standard.backgroundImage).not.toContain('charcoal-paper')
+      expect(textured.backgroundImage).toContain('charcoal-paper')
+      expect(textured.color).toBe(standard.color)
+      expect(textured.backgroundColor).not.toBe(standard.backgroundColor)
+    },
+  )
+
   it('retains default wrapping and minimum height', () => {
     renderWithAppProviders(<StatusBadge label="Metadata" />)
     expect(screen.getByText('Metadata').parentElement).toHaveStyle({ minHeight: '24px' })

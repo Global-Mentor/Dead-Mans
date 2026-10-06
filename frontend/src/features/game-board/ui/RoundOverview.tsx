@@ -8,11 +8,7 @@ import type {
   GameTeamQueueItem,
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import {
-  ParticipantNamesList,
-  RoundBriefingDivider,
-  RoundBriefingPanel,
-} from '../../../shared/game-ui/index.ts'
+import { TeamBriefing, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
 import { AppButton, InlineNotice, ItemCard } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from '../model/game-management-flow.ts'
@@ -64,12 +60,6 @@ export function RoundOverview({
       ).filter((item) => item.roundId === round.roundId)
     : []
   const team = round ?? selectedTeam
-  const teamName = team
-    ? formatTeamNameWithFallback(
-        team.teamName,
-        t('common.teamWithSlot', { slot: team.teamSlotIndex }),
-      )
-    : null
   const phase = roundLoading
     ? t('gameBoard.currentRoundScreen.loadingRound')
     : roundError
@@ -244,28 +234,14 @@ export function RoundOverview({
               }}
             >
               {team ? (
-                <>
-                  <Typography
-                    component="h3"
-                    variant="h5"
-                    fontWeight={700}
-                    color="text.primary"
-                    sx={{ m: 0, maxWidth: '100%', fontSize: 26, lineHeight: 1.1, flexShrink: 0 }}
-                  >
-                    {teamName}
-                  </Typography>
-                  <RoundBriefingDivider sx={{ maxWidth: 420 }} />
-                  <Box sx={{ width: '100%', minWidth: 0, flexShrink: 0 }}>
-                    <ParticipantNamesList
-                      names={team.participants.map((participant) => participant.displayName)}
-                      emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-                      variant="body1"
-                      layout={team.participants.length === 2 ? 'flow' : 'columns'}
-                      decorated
-                      dense
-                    />
-                  </Box>
-                </>
+                <TeamBriefing
+                  name={formatTeamNameWithFallback(
+                    team.teamName,
+                    t('common.teamWithSlot', { slot: team.teamSlotIndex }),
+                  )}
+                  participants={team.participants.map((participant) => participant.displayName)}
+                  emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
+                />
               ) : teamError && snapshot.activeTeamId ? (
                 <InlineNotice
                   severity="warning"

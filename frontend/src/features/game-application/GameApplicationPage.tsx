@@ -107,7 +107,7 @@ export function GameApplicationPage() {
   )
 
   return (
-    <PageShell sx={{ maxWidth: 1280, width: '100%', p: { xs: 0, md: 1 }, pt: 0 }}>
+    <PageShell sx={{ maxWidth: 1280, width: '100%', px: { xs: 0, md: 1 }, pb: { xs: 0, md: 1 } }}>
       <Stack spacing={2}>
         <Box component="header">
           <Stack

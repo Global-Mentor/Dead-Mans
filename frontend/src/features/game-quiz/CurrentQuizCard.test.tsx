@@ -1,11 +1,13 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
+import { QuizLaunchControls } from './QuizLaunchControls.tsx'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
+import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
 beforeAll(async () => i18n.changeLanguage('en'))
 afterEach(() => {
@@ -31,11 +33,11 @@ const baseState: CurrentGameQuizState = {
   closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
 }
 
-function renderCard(
-  state: CurrentGameQuizState | null,
-  overrides: Partial<Parameters<typeof CurrentQuizCard>[0]> = {},
-) {
-  const props: Parameters<typeof CurrentQuizCard>[0] = {
+type TestProps = Parameters<typeof CurrentQuizCard>[0] &
+  Parameters<typeof QuizLaunchControls>[0] & { canManage: boolean }
+
+function renderCard(state: CurrentGameQuizState | null, overrides: Partial<TestProps> = {}) {
+  const props: TestProps = {
     state,
     canManage: false,
     questions: [],
@@ -48,11 +50,32 @@ function renderCard(
     onDeadline: vi.fn(),
     ...overrides,
   }
-  renderWithAppProviders(<CurrentQuizCard {...props} />)
+  renderWithAppProviders(
+    <>
+      <CurrentQuizCard {...props} error={props.canManage ? null : props.error} />
+      {props.canManage ? <QuizLaunchControls {...props} /> : null}
+    </>,
+  )
   return props
 }
 
-describe('CurrentQuizCard', () => {
+describe('Quiz cards and launch controls', () => {
+  it('allows closing the picker when a phase change blocks launching a question', () => {
+    const close = vi.fn()
+    renderWithAppProviders(
+      <QuizQuestionPickerDialog
+        open
+        launchDisabled
+        unavailableReason={i18n.t('gameQuiz.modifierOrderingActive')}
+        questions={[]}
+        onClose={close}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.actions.close') }))
+    expect(close).toHaveBeenCalledOnce()
+  })
   it('emphasizes the embedded question and timer without showing the category', () => {
     vi.useFakeTimers()
     const props = renderCard(
@@ -144,8 +167,45 @@ describe('CurrentQuizCard', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByText('Which planet is closest to the Sun?')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.selectQuestion') }))
+    fireEvent.click(screen.getByRole('button', { name: /Which planet is closest to the Sun/ }))
+    expect(props.onAskSpecific).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') }))
     expect(props.onAskSpecific).toHaveBeenCalledWith('66666666-6666-6666-6666-666666666666')
+  })
+
+  it('retains the selected question and filters when starting fails, then allows retry', async () => {
+    const onAskSpecific = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(undefined)
+    renderCard(null, {
+      canManage: true,
+      onAskSpecific,
+      questions: [
+        {
+          questionId: 'planet',
+          questionCode: 'q',
+          categoryName: 'Science',
+          text: 'Which planet?',
+        },
+      ],
+    })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.askSpecificQuestion') }))
+    const search = screen.getByRole('textbox', { name: i18n.t('gameQuiz.questionSearchLabel') })
+    fireEvent.change(search, { target: { value: 'planet' } })
+    fireEvent.click(screen.getByRole('button', { name: /Which planet/ }))
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') }))
+    await waitFor(() =>
+      expect(screen.getByText(i18n.t('gameQuiz.questionStartError'))).toBeVisible(),
+    )
+    expect(search).toHaveValue('planet')
+    expect(screen.getByRole('button', { name: /Which planet/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(onAskSpecific).toHaveBeenCalledTimes(2)
   })
 
   it('distinguishes loading, failed loading, and an exhausted picker', () => {

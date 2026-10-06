@@ -10,6 +10,9 @@ import {
   ModifierDetailsGroup,
   ModifierDetailsItem,
   ModifierDetailsList,
+  ModifierDescriptionBlock,
+  ModifierConflictNotice,
+  ModifierActivatorsBlock,
 } from '../../../shared/game-ui/index.ts'
 import { AppButton, InlineNotice, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import {
@@ -49,6 +52,13 @@ export function RoundActiveModifiers({
   const runtimeUnits = useMemo(() => (round ? buildModifierRuntimeUnits(round) : []), [round])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const allActivations = modifiers?.activeModifiers ?? activations
+  const activeModifierIds = new Set(allActivations.map((item) => item.modifierId))
+  const namesById = new Map(
+    modifiers?.availableModifiers.map((item) => [item.modifier.id, item.modifier.name]),
+  )
+  for (const activation of allActivations)
+    namesById.set(activation.modifierId, activation.modifierName)
 
   return (
     <SectionCard
@@ -134,12 +144,14 @@ export function RoundActiveModifiers({
               {categories.map(({ category, items }) => (
                 <ModifierDetailsGroup
                   key={category ?? 'unknown'}
+                  count={items.length}
                   {...(category ? { title: getCategoryLabel(t, category) } : {})}
                 >
                   {items.map((group) => {
-                    const definition = modifiers?.availableModifiers.find(
+                    const availability = modifiers?.availableModifiers.find(
                       (item) => item.modifier.id === group.modifierId,
-                    )?.modifier
+                    )
+                    const definition = availability?.modifier
                     const savedDescriptions = [
                       ...new Set(
                         round?.modifierResults
@@ -163,18 +175,9 @@ export function RoundActiveModifiers({
                         title={group.modifierName}
                         emoji={definition?.iconEmoji}
                         reserveIcon
+                        catalog
                         open={expandedId === group.modifierId}
                         onExpandedChange={(open) => setExpandedId(open ? group.modifierId : null)}
-                        metadata={
-                          round && primaryRuntime?.durationSeconds === null ? (
-                            <RoundRuntimeClock
-                              key={`${primaryRuntime.key}:${round.serverNowUtc}`}
-                              round={round}
-                              unit={primaryRuntime}
-                              isOffline={isOffline}
-                            />
-                          ) : null
-                        }
                         effect={
                           group.activationsCount > 1 ||
                           (round && primaryRuntime?.durationSeconds != null) ? (
@@ -188,7 +191,8 @@ export function RoundActiveModifiers({
                               {group.activationsCount > 1 ? (
                                 <StatusBadge
                                   component="span"
-                                  emphasis="strong"
+                                  density="tight"
+                                  variant="outlined"
                                   label={t('gameModifiers.activeStackMultiplier', {
                                     count: group.activationsCount,
                                   })}
@@ -211,61 +215,78 @@ export function RoundActiveModifiers({
                         }
                       >
                         {descriptions.map((description) => (
-                          <SectionCard key={description} surface="inset" sx={{ p: 1.25 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}
-                            >
-                              {description}
-                            </Typography>
-                          </SectionCard>
+                          <ModifierDescriptionBlock key={description} description={description} />
                         ))}
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            {t('gameModifiers.activatorsLabel')}
-                          </Typography>
+                        <ModifierConflictNotice
+                          conflicts={(definition?.conflictingModifierIds ?? []).map((id) => ({
+                            id,
+                            name: namesById.get(id) ?? id,
+                            isActive: activeModifierIds.has(id),
+                          }))}
+                        />
+                        <ModifierActivatorsBlock
+                          names={group.activators.map((activator) =>
+                            activator.activationsCount > 1
+                              ? t('gameModifiers.activeGroupActivatorWithCount', {
+                                  player: activator.displayName,
+                                  count: activator.activationsCount,
+                                })
+                              : activator.displayName,
+                          )}
+                        >
                           <Stack
-                            component="ul"
-                            spacing={0.5}
-                            sx={{ mt: 0.5, mb: 0, pl: 2, listStyleType: 'disc' }}
+                            direction="row"
+                            gap={0.5}
+                            flexWrap="wrap"
+                            sx={{ mb: groupRuntimeUnits.length ? 1 : 0 }}
                           >
-                            {group.activators.map((activator) => (
-                              <Typography key={activator.userId} component="li" variant="body2">
-                                {activator.activationsCount > 1
-                                  ? t('gameModifiers.activeGroupActivatorWithCount', {
-                                      player: activator.displayName,
-                                      count: activator.activationsCount,
-                                    })
-                                  : activator.displayName}
-                              </Typography>
-                            ))}
+                            <StatusBadge
+                              density="tight"
+                              variant="outlined"
+                              color="warning"
+                              label={t('gameModifiers.costLabel', { cost: group.activationCost })}
+                            />
+                            {availability?.limit != null ? (
+                              <StatusBadge
+                                density="tight"
+                                variant="outlined"
+                                label={t('gameModifiers.limitProgressShortLabel', {
+                                  count: availability.activationsCount,
+                                  limit: availability.limit,
+                                })}
+                                aria-label={t('gameModifiers.limitProgressLabel', {
+                                  count: availability.activationsCount,
+                                  limit: availability.limit,
+                                })}
+                              />
+                            ) : null}
                           </Stack>
-                        </Box>
-                        {groupRuntimeUnits.map((unit) => {
-                          if (!round) return null
-                          return (
-                            <Box key={unit.key}>
-                              {!descriptions.includes(unit.rule) ? (
-                                <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
-                                  {unit.rule}
+                          {groupRuntimeUnits.map((unit) => {
+                            if (!round) return null
+                            return (
+                              <Box key={unit.key}>
+                                {!descriptions.includes(unit.rule) ? (
+                                  <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
+                                    {unit.rule}
+                                  </Typography>
+                                ) : null}
+                                <Typography variant="caption" color="text.secondary">
+                                  {t(`gameModifiers.runtime.performer.${unit.performer}`)} ·{' '}
+                                  <RoundRuntimeClock
+                                    key={`${unit.key}:${round.serverNowUtc}`}
+                                    round={round}
+                                    unit={unit}
+                                    isOffline={isOffline}
+                                  />
+                                  {unit.requiresHostMonitoring
+                                    ? ` · ${t('gameModifiers.runtime.hostMonitoring')}`
+                                    : ''}
+                                  {isOffline ? ` · ${t('gameModifiers.runtime.clockStale')}` : ''}
                                 </Typography>
-                              ) : null}
-                              <Typography variant="caption" color="text.secondary">
-                                {t(`gameModifiers.runtime.performer.${unit.performer}`)} ·{' '}
-                                <RoundRuntimeClock
-                                  key={`${unit.key}:${round.serverNowUtc}`}
-                                  round={round}
-                                  unit={unit}
-                                  isOffline={isOffline}
-                                />
-                                {unit.requiresHostMonitoring
-                                  ? ` · ${t('gameModifiers.runtime.hostMonitoring')}`
-                                  : ''}
-                                {isOffline ? ` · ${t('gameModifiers.runtime.clockStale')}` : ''}
-                              </Typography>
-                            </Box>
-                          )
-                        })}
+                              </Box>
+                            )
+                          })}
+                        </ModifierActivatorsBlock>
                       </ModifierDetailsItem>
                     )
                   })}

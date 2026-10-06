@@ -106,7 +106,8 @@ public static partial class ApiContractMapper
             item.Quiz.ToDto(),
             item.FinalResult?.ToDto(),
             item.ModifierSnapshotStatus,
-            item.ModifierSnapshots.Select(ToDto).ToArray()
+            item.ModifierSnapshots.Select(ToDto).ToArray(),
+            item.Board?.ToDto()
         );
     }
 

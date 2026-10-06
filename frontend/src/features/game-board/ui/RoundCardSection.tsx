@@ -47,6 +47,7 @@ export function RoundCardSection({
           width: '100%',
           height: 'var(--round-header-height)',
           flexShrink: 0,
+          py: 0,
         }}
       >
         <Box
@@ -55,56 +56,79 @@ export function RoundCardSection({
             m: 0,
             height: '100%',
             display: 'grid',
-            gridTemplateColumns: 'max-content minmax(0, 1fr)',
             gridTemplateRows: '1fr auto 1fr',
-            alignItems: 'center',
-            columnGap: 1,
             overflowWrap: 'anywhere',
           }}
         >
-          <Typography
-            component="dt"
-            variant="body2"
-            color="text.secondary"
-            fontWeight={700}
-            sx={{ fontSize: 16 }}
-          >
-            {t('gameBoard.currentRoundScreen.cardLabel')}
-          </Typography>
-          <Typography
-            component="dd"
-            variant="body1"
-            color="primary.light"
-            fontWeight={700}
-            textAlign="right"
+          <Box
+            data-testid="round-category-row"
             sx={{
-              m: 0,
-              fontSize: 20,
-              lineHeight: 1.15,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+              py: 1,
+              textAlign: 'center',
             }}
           >
-            {round ? categoryName || '-' : t('gameBoard.currentRoundScreen.waiting')}
-          </Typography>
-          <RoundBriefingDivider sx={{ gridColumn: '1 / -1' }} />
-          <Typography
-            component="dt"
-            variant="body2"
-            color="text.secondary"
-            fontWeight={700}
-            sx={{ fontSize: 16 }}
+            <Typography
+              component="dt"
+              variant="body1"
+              color="primary.light"
+              fontWeight={700}
+              sx={{ fontSize: 20, lineHeight: 1.2 }}
+            >
+              {t('gameBoard.currentRoundScreen.cardLabel')}
+            </Typography>
+            <Typography
+              component="dd"
+              variant="body2"
+              color="text.secondary"
+              fontWeight={400}
+              textAlign="center"
+              sx={{
+                m: 0,
+                fontSize: 16,
+                lineHeight: 1.2,
+              }}
+            >
+              {round ? categoryName || '-' : t('gameBoard.currentRoundScreen.waiting')}
+            </Typography>
+          </Box>
+          <RoundBriefingDivider />
+          <Box
+            data-testid="round-cost-row"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+              py: 1,
+              textAlign: 'center',
+            }}
           >
-            {t('gameBoard.currentRoundScreen.costLabel')}
-          </Typography>
-          <Typography
-            component="dd"
-            variant="h6"
-            fontWeight={700}
-            color="primary.light"
-            textAlign="right"
-            sx={{ m: 0, fontSize: 26, lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}
-          >
-            {round ? t('gameBoard.costLabel', { cost: round.baseScore }) : '-'}
-          </Typography>
+            <Typography
+              component="dt"
+              variant="body1"
+              color="primary.light"
+              fontWeight={700}
+              sx={{ fontSize: 20, lineHeight: 1.2 }}
+            >
+              {t('gameBoard.currentRoundScreen.costLabel')}
+            </Typography>
+            <Typography
+              component="dd"
+              variant="body2"
+              fontWeight={400}
+              color="text.secondary"
+              textAlign="center"
+              sx={{ m: 0, fontSize: 16, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {round ? t('gameBoard.costLabel', { cost: round.baseScore }) : '-'}
+            </Typography>
+          </Box>
         </Box>
       </RoundBriefingPanel>
       <Box

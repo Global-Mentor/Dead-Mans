@@ -1,5 +1,6 @@
 import type { ButtonProps } from '@mui/material'
 import { Button } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
 import type { AppButtonTone } from './app-button-tone.ts'
@@ -17,6 +18,17 @@ export function AppButton({ tone = 'primary', brand, loading, sx, ...props }: Ap
       {...toneProps}
       {...props}
       sx={mergeSx(
+        tone === 'subtle'
+          ? (theme) => ({
+              backgroundColor: theme.palette.action.hover,
+              '&:hover': {
+                backgroundColor: alpha(
+                  theme.palette.text.primary,
+                  theme.palette.action.hoverOpacity * 2,
+                ),
+              },
+            })
+          : undefined,
         brand === 'twitch'
           ? {
               px: 4,

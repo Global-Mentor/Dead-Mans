@@ -2,6 +2,7 @@ import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ComponentProps, ReactNode } from 'react'
 import { SectionCard, SectionDivider } from '../ui/index.ts'
+import { cornerFrameSx } from '../theme/corner-frame-sx.ts'
 import { mergeSx } from '../theme/merge-sx.ts'
 
 export function RoundBriefingPanel({
@@ -20,36 +21,11 @@ export function RoundBriefingPanel({
       surface="panel"
       sx={mergeSx(
         (theme) => ({
-          position: 'relative',
           minWidth: 0,
           p: header ? 0 : 2,
           ...(header ? { display: 'flex', flexDirection: 'column' } : {}),
-          borderColor: alpha(theme.palette.primary.light, 0.36),
+          ...cornerFrameSx(theme),
           boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.12)}, inset 0 -1px 0 ${alpha(theme.palette.common.black, 0.32)}`,
-          '&::before, &::after': {
-            content: '""',
-            position: 'absolute',
-            width: 12,
-            height: 12,
-            borderColor: alpha(theme.palette.primary.light, 0.65),
-            pointerEvents: 'none',
-          },
-          '&::before': {
-            top: 5,
-            left: 5,
-            borderTopWidth: '1px',
-            borderTopStyle: 'solid',
-            borderLeftWidth: '1px',
-            borderLeftStyle: 'solid',
-          },
-          '&::after': {
-            bottom: 5,
-            right: 5,
-            borderBottomWidth: '1px',
-            borderBottomStyle: 'solid',
-            borderRightWidth: '1px',
-            borderRightStyle: 'solid',
-          },
         }),
         sx,
       )}

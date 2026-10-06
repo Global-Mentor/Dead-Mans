@@ -9,6 +9,8 @@ import {
   StatusBadge,
   TaskProgress,
 } from '../../shared/ui/index.ts'
+import { QuizQuestionMetadata } from './QuizQuestionMetadata.tsx'
+import { QuizTextBlock } from './QuizTextBlock.tsx'
 import { useQuizCountdown } from './use-quiz-countdown.ts'
 
 export function QuizQuestionContent({
@@ -18,6 +20,8 @@ export function QuizQuestionContent({
   answerDisabled,
   onSubmit,
   onDeadline,
+  showQuestionText = true,
+  showMetadata = true,
 }: {
   state: CurrentGameQuizState
   embedded: boolean
@@ -25,6 +29,8 @@ export function QuizQuestionContent({
   answerDisabled: boolean
   onSubmit: (questionSessionId: string, optionId: string) => void
   onDeadline: () => void
+  showQuestionText?: boolean
+  showMetadata?: boolean
 }) {
   const { t } = useTranslation()
   const isOpen = state.status === 'open'
@@ -102,7 +108,13 @@ export function QuizQuestionContent({
             </Stack>
           }
         >
-          {question}
+          {showMetadata ? (
+            <QuizQuestionMetadata
+              category={state.categoryName}
+              {...(state.reward != null ? { reward: state.reward } : {})}
+            />
+          ) : null}
+          {showQuestionText ? question : null}
           {isOpen ? (
             <Box sx={{ pt: 0.5, pb: 1 }}>
               <TaskProgress
@@ -115,36 +127,54 @@ export function QuizQuestionContent({
         </RoundBriefingPanel>
       ) : (
         <>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <StatusBadge label={state.categoryName} size="small" />
-            {isOpen ? (
-              <StatusBadge
-                color="warning"
-                label={t('gameQuiz.timeLeft', { seconds: countdown.secondsLeft })}
+          <Stack direction="row" gap={1.5} alignItems="center" justifyContent="space-between">
+            {showMetadata ? (
+              <QuizQuestionMetadata
+                category={state.categoryName}
+                {...(state.reward != null ? { reward: state.reward } : {})}
               />
-            ) : (
+            ) : null}
+            {isOpen ? (
+              <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 'auto' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('gameQuiz.countdownLabel')}
+                </Typography>
+                <Typography
+                  component="div"
+                  role="timer"
+                  aria-live="off"
+                  aria-label={t('gameQuiz.timeLeft', { seconds: countdown.secondsLeft })}
+                  variant="h4"
+                  sx={{ fontVariantNumeric: 'tabular-nums', minWidth: '5ch' }}
+                  color={countdown.secondsLeft <= 10 ? 'error.light' : 'primary.light'}
+                >
+                  {clock}
+                </Typography>
+              </Box>
+            ) : showQuestionText ? (
               <StatusBadge
                 color={state.status === 'closed' ? 'success' : 'default'}
                 label={t(`gameQuiz.status.${state.status}`)}
               />
-            )}
-            {!isOpen ? (
-              <StatusBadge label={t('gameQuiz.rewardLabel', { reward: state.reward })} />
             ) : null}
           </Stack>
-          {isOpen ? <TaskProgress variant="determinate" value={countdown.progress} /> : null}
-          {question}
+          {isOpen ? (
+            <TaskProgress
+              variant="determinate"
+              value={countdown.progress}
+              aria-label={t('gameQuiz.countdownLabel')}
+            />
+          ) : null}
+          {showQuestionText ? question : null}
         </>
       )}
       <Box sx={{ containerType: 'inline-size' }}>
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: embedded
-              ? 'minmax(0, 1fr)'
-              : { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
-            gap: embedded ? 0.75 : 1,
-            ...(embedded && state.options.every((option) => option.text.length <= 100)
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            gap: 0.75,
+            ...(state.options.every((option) => option.text.length <= 100)
               ? {
                   '@container (min-width: 440px)': {
                     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -167,11 +197,19 @@ export function QuizQuestionContent({
             return (
               <SelectionAction
                 key={option.optionId}
-                tone={embedded ? 'secondary' : 'ghost'}
-                density={embedded ? 'compact' : 'standard'}
-                appearance={embedded ? 'inset' : 'standard'}
-                marker={embedded ? optionMarker(index) : undefined}
+                tone="secondary"
+                density="compact"
+                appearance="inset"
+                marker={optionMarker(index)}
                 data-quiz-result={resultKind}
+                aria-label={[
+                  option.text,
+                  resultKind === 'correct' ? t('gameQuiz.answerCorrectStatus') : null,
+                  isSelected ? t('gameQuiz.yourChoice') : null,
+                  !isOpen && result ? `${result.answerCount} · ${result.percentage}%` : null,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
                 disabled={
                   !isOpen ||
                   countdown.secondsLeft === 0 ||
@@ -189,19 +227,7 @@ export function QuizQuestionContent({
                       : undefined
                 }
               >
-                <span>
-                  {option.text}
-                  {isSelected ? ` · ${t('gameQuiz.yourChoice')}` : ''}
-                  {resultKind === 'correct' ? (
-                    <Typography
-                      component="span"
-                      variant="caption"
-                      sx={{ display: 'block', fontWeight: 700 }}
-                    >
-                      {t('gameQuiz.answerCorrectStatus')}
-                    </Typography>
-                  ) : null}
-                </span>
+                <span>{option.text}</span>
                 {!isOpen && result ? (
                   <span>
                     {result.answerCount} · {result.percentage}%
@@ -212,11 +238,32 @@ export function QuizQuestionContent({
           })}
         </Box>
       </Box>
+      {!embedded && !isOpen && state.correctOptionId ? (
+        <QuizTextBlock label={t('gameQuiz.correctAnswerHeading')} inline>
+          {state.options.find((option) => option.optionId === state.correctOptionId)?.text}
+        </QuizTextBlock>
+      ) : null}
       {isOpen && hasAnswered ? (
-        <InlineNotice severity="info">{t('gameQuiz.answerAccepted')}</InlineNotice>
+        <InlineNotice appearance="textured" icon={false} severity="info">
+          {t('gameQuiz.answerAccepted')}
+        </InlineNotice>
+      ) : null}
+      {isOpen && isSubmitting && !hasAnswered ? (
+        <InlineNotice appearance="textured" icon={false} severity="info">
+          {t('gameQuiz.answerSending')}
+        </InlineNotice>
+      ) : null}
+      {isOpen && countdown.secondsLeft === 0 && !hasAnswered ? (
+        <InlineNotice appearance="textured" icon={false} severity="info">
+          {t('gameQuiz.waitingForResults')}
+        </InlineNotice>
       ) : null}
       {!isOpen && state.status === 'closed' && state.mySelectedOptionId ? (
-        <InlineNotice severity={state.myIsCorrect ? 'success' : 'error'}>
+        <InlineNotice
+          appearance="textured"
+          icon={false}
+          severity={state.myIsCorrect ? 'success' : 'error'}
+        >
           {state.myIsCorrect
             ? t('gameQuiz.resultCorrect', { points: state.myAwardedPoints ?? 0 })
             : t('gameQuiz.resultWrong')}

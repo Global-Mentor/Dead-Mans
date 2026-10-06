@@ -31,6 +31,7 @@ type ConfirmationContent = {
 
 interface ModifierActions {
   isBusy: boolean
+  isConfirming: boolean
   pendingModifierId: string | null
   requestActivation: (id: string) => void
   requestSelfCancel: (activation: GameModifierActivation) => void
@@ -129,6 +130,7 @@ export function GameModifierActions({
     <>
       {children({
         isBusy: busy || disabled || !ordering,
+        isConfirming: confirmationOpen && selected !== null && ordering,
         pendingModifierId: activation.pendingModifierId,
         requestActivation: (id) => request('activate', id),
         requestSelfCancel: (item) => request('cancel', item.activationId),
