@@ -22,10 +22,15 @@ interface AppDialogProps extends Omit<
   description?: ReactNode
   actions?: ReactNode
   contentDensity?: 'comfortable' | 'compact'
+  height?: 'content' | 'viewport'
   slotProps?: Pick<NonNullable<DialogProps['slotProps']>, 'transition'>
 }
 
-function dialogSx(maxWidth: DialogProps['maxWidth'], fullScreen: boolean) {
+function dialogSx(
+  maxWidth: DialogProps['maxWidth'],
+  fullScreen: boolean,
+  height: 'content' | 'viewport',
+) {
   return (theme: Theme) => ({
     '& .MuiBackdrop-root': {
       backgroundColor: alpha(theme.palette.common.black, 0.8),
@@ -34,7 +39,11 @@ function dialogSx(maxWidth: DialogProps['maxWidth'], fullScreen: boolean) {
       width: fullScreen ? '100%' : { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
       maxWidth: fullScreen ? 'none' : maxWidth === 'sm' ? 540 : undefined,
       m: fullScreen ? 0 : { xs: 2, sm: 4 },
-      ...(fullScreen ? { height: '100dvh' } : {}),
+      ...(fullScreen
+        ? { height: '100dvh' }
+        : height === 'viewport'
+          ? { height: { xs: 'calc(100dvh - 32px)', sm: 'min(900px, calc(100dvh - 64px))' } }
+          : {}),
       overflow: 'hidden',
       borderColor: alpha(huntPalette.amber, 0.62),
       backgroundColor: huntPalette.bark,
@@ -49,6 +58,7 @@ export function AppDialog({
   description,
   actions,
   contentDensity = 'comfortable',
+  height = 'content',
   children,
   sx,
   maxWidth = 'sm',
@@ -92,7 +102,7 @@ export function AppDialog({
       {...dialogProps}
       transitionDuration={reducedMotion ? 0 : dialogProps.transitionDuration}
       {...(description ? { 'aria-describedby': descriptionId } : {})}
-      sx={mergeSx(dialogSx(maxWidth, fullScreen), sx)}
+      sx={mergeSx(dialogSx(maxWidth, fullScreen, height), sx)}
     >
       <DialogTitle
         sx={{
@@ -129,6 +139,7 @@ export function AppDialog({
       <DialogContent
         sx={{
           p: 0,
+          ...(height === 'viewport' ? { display: 'flex', minHeight: 0 } : {}),
           borderBottom: '1px solid',
           borderColor: alpha(huntPalette.amber, 0.3),
           backgroundColor: alpha(huntPalette.soot, 0.14),
@@ -136,6 +147,9 @@ export function AppDialog({
       >
         <Box
           sx={{
+            ...(height === 'viewport'
+              ? { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0 }
+              : {}),
             px: { xs: 1.5, sm: 2.5 },
             py: isStandaloneMessage
               ? 3.5

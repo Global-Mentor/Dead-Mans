@@ -20,6 +20,67 @@ const questions = [
   },
 ]
 
+for (const width of [390, 768, 1440]) {
+  test(`question picker shows ten questions with a standard close action at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const quiz = await mockQuiz(page)
+    await page.route('**/api/game/quiz/questions/available', (route) =>
+      route.fulfill({
+        json: Array.from({ length: 10 }, (_, index) => ({
+          questionId: `preview-${index}`,
+          questionCode: `preview-${index}`,
+          categoryName: index % 2 ? 'География' : 'Наука',
+          text: `${index + 1}. ${questions[index % 2]!.text}`,
+        })),
+      }),
+    )
+    await page.goto('/panel/game-quiz')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+    await page.getByRole('button', { name: 'Задать конкретный вопрос', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Задать конкретный вопрос', exact: true })
+    await expect(dialog.getByRole('button', { name: /Наука|География/ })).toHaveCount(10)
+    await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true })).toHaveClass(
+      /MuiButton-containedError/,
+    )
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await dialog.screenshot({
+      path: info.outputPath('question-picker-ten.png'),
+      animations: 'disabled',
+    })
+    const initialHeight = (await dialog.boundingBox())!.height
+    const choices = dialog.getByRole('button', { name: /Наука|География/ })
+    const labels = await choices.allTextContents()
+    expect(labels.slice(0, 5).every((label) => label.includes('География'))).toBe(true)
+    expect(labels.slice(5).every((label) => label.includes('Наука'))).toBe(true)
+    await choices.first().click()
+    await expect(choices.first()).toHaveAttribute('aria-pressed', 'true')
+    await expect(dialog.locator('label').filter({ hasText: 'Поиск вопросов' })).toHaveAttribute(
+      'data-shrink',
+      'true',
+    )
+    await dialog.screenshot({
+      path: info.outputPath('question-picker-selected.png'),
+      animations: 'disabled',
+    })
+    await expect(dialog.getByText('Выбранный', { exact: true })).toHaveCount(0)
+    await dialog.getByRole('combobox', { name: /^Категория/ }).click()
+    await page.getByRole('option', { name: 'Наука', exact: true }).click()
+    await expect(choices).toHaveCount(5)
+    expect((await dialog.boundingBox())!.height).toBeCloseTo(initialHeight, 0)
+    await dialog.getByRole('textbox', { name: 'Поиск вопросов', exact: true }).fill('планета')
+    expect((await dialog.boundingBox())!.height).toBeCloseTo(initialHeight, 0)
+    await expect(dialog.getByRole('button', { name: /Наука|География/ })).toHaveCount(5)
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    expect(quiz.starts()).toBe(0)
+  })
+}
+
 async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
   let starts = 0
   let refreshFailed = false
@@ -194,6 +255,23 @@ async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
       refreshFailed = false
     },
   }
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`compact quiz management fits at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    await mockQuiz(page)
+    await page.goto('/panel/game-quiz')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Следующий вопрос', exact: true })).toBeVisible()
+    const panel = page.getByTestId('admin-tool-drawer-scroll-body')
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await page.getByRole('complementary', { name: 'Инструменты управления игрой' }).screenshot({
+      path: info.outputPath('compact-quiz-management.png'),
+      animations: 'disabled',
+    })
+  })
 }
 
 for (const width of [390, 768, 1440]) {

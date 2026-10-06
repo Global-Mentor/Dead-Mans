@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { AppButton, InlineNotice, SectionCard, SectionHeader } from '../../shared/ui/index.ts'
+import { AppButton, InlineNotice, SectionCard } from '../../shared/ui/index.ts'
 import { QuizLaunchControls } from './QuizLaunchControls.tsx'
 import { useQuizManagement } from './use-quiz-management.ts'
 
@@ -7,8 +7,7 @@ export function QuizManagementTool() {
   const { t } = useTranslation()
   const management = useQuizManagement()
   return (
-    <SectionCard>
-      <SectionHeader title={t('gameQuiz.hostControls')} />
+    <SectionCard sx={{ p: 1.25 }}>
       {management.hasLoadError ? (
         <InlineNotice
           severity="warning"

@@ -1,10 +1,10 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
-import { AppButton, InlineNotice } from '../../shared/ui/index.ts'
+import { AppButton, InlineNotice, HelpTooltip } from '../../shared/ui/index.ts'
 import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
 export function QuizLaunchControls({
@@ -46,40 +46,47 @@ export function QuizLaunchControls({
         ? 'gameQuiz.modifierOrderingActive'
         : 'gameQuiz.actionError'
   return (
-    <Stack spacing={1.5}>
-      <Typography variant="body2" color="text.secondary">
-        {t('gameQuiz.questionPickerDescription')}
-      </Typography>
-      {isOpen || modifierOrderingActive ? (
-        <InlineNotice severity="info">
-          {t(
-            modifierOrderingActive
-              ? 'gameQuiz.modifierOrderingActive'
-              : 'gameQuiz.waitForQuestionEnd',
-          )}
-        </InlineNotice>
-      ) : null}
-      {error ? (
-        <InlineNotice
-          severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
+    <>
+      <Stack spacing={1}>
+        {isOpen || modifierOrderingActive ? (
+          <InlineNotice severity="info">
+            {t(
+              modifierOrderingActive
+                ? 'gameQuiz.modifierOrderingActive'
+                : 'gameQuiz.waitForQuestionEnd',
+            )}
+          </InlineNotice>
+        ) : null}
+        {error ? (
+          <InlineNotice
+            severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
+          >
+            {t(errorKey)}
+          </InlineNotice>
+        ) : null}
+        <AppButton
+          loading={isLaunching}
+          disabled={isOpen || isStarting || modifierOrderingActive}
+          onClick={onAskNext}
         >
-          {t(errorKey)}
-        </InlineNotice>
-      ) : null}
-      <AppButton
-        loading={isLaunching}
-        disabled={isOpen || isStarting || modifierOrderingActive}
-        onClick={onAskNext}
-      >
-        {t('gameQuiz.nextQuestion')}
-      </AppButton>
-      <AppButton
-        tone="secondary"
-        disabled={isOpen || isStarting || modifierOrderingActive}
-        onClick={() => setPickerOpen(true)}
-      >
-        {t('gameQuiz.askSpecificQuestion')}
-      </AppButton>
+          <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
+            <Box component="span" tabIndex={0}>
+              {t('gameQuiz.nextQuestion')}
+            </Box>
+          </HelpTooltip>
+        </AppButton>
+        <AppButton
+          tone="secondary"
+          disabled={isOpen || isStarting || modifierOrderingActive}
+          onClick={() => setPickerOpen(true)}
+        >
+          <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
+            <Box component="span" tabIndex={0}>
+              {t('gameQuiz.askSpecificQuestion')}
+            </Box>
+          </HelpTooltip>
+        </AppButton>
+      </Stack>
       <QuizQuestionPickerDialog
         open={pickerOpen}
         questions={questions.filter((question) => question.questionId !== state?.questionId)}
@@ -95,6 +102,6 @@ export function QuizLaunchControls({
         onClose={() => setPickerOpen(false)}
         onSelect={onAskSpecific}
       />
-    </Stack>
+    </>
   )
 }
