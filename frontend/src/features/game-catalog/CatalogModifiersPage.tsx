@@ -1,21 +1,29 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Stack, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { GameModifierDefinition } from '../../shared/api/contracts/index.ts'
 import {
   AppButton,
+  AppDialog,
+  AsyncSection,
   ConfirmDialog,
-  InlineNotice,
   PageShell,
   SectionCard,
   SectionHeader,
 } from '../../shared/ui/index.ts'
+import { ModifierCatalogDetails } from './ui/ModifierCatalogDetails.tsx'
 import { ModifierCatalogFilters, type ModifierCatalogSort } from './ui/ModifierCatalogFilters.tsx'
-import { ModifierFormDialog } from './ui/ModifierFormDialog.tsx'
 import { ModifierCatalogList } from './ui/ModifierCatalogList.tsx'
+import { ModifierFormDialog } from './ui/ModifierFormDialog.tsx'
 import { useCatalogFeedback } from './use-catalog-feedback.ts'
 import { useCatalogModifiers } from './use-catalog-modifiers.ts'
+
 export function CatalogModifiersPage() {
   const { t, i18n } = useTranslation()
+  const theme = useTheme()
+  const wide = useMediaQuery(theme.breakpoints.up('lg'))
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [sort, setSort] = useState<ModifierCatalogSort>('name')
   const {
     search,
@@ -43,8 +51,7 @@ export function CatalogModifiersPage() {
     confirmDelete,
     isDeleting,
   } = useCatalogModifiers()
-  const { listError, clearListError, resetFeedback, showResolvedError } = useCatalogFeedback(t)
-
+  const { listError, resetFeedback, showResolvedError } = useCatalogFeedback(t)
   const modifiers = useMemo(() => {
     const collator = new Intl.Collator(i18n.resolvedLanguage, {
       numeric: true,
@@ -57,74 +64,57 @@ export function CatalogModifiersPage() {
         a.id.localeCompare(b.id),
     )
   }, [filteredModifiers, i18n.resolvedLanguage, sort])
+  const selected = modifiers.find((item) => item.id === selectedId) ?? modifiers[0] ?? null
+  const hasFilters =
+    search.trim().length > 0 || selectedCategory !== null || selectedRoundSummaryType !== null
   const resetFilters = () => {
     setSearch('')
     setSelectedCategory(null)
     setSelectedRoundSummaryType(null)
   }
+  const selectModifier = (modifier: GameModifierDefinition) => {
+    setSelectedId(modifier.id)
+    setPreviewOpen(true)
+  }
+  const editModifier = (modifier: GameModifierDefinition) => {
+    setSelectedId(modifier.id)
+    openEdit(modifier)
+  }
+  const deleteModifier = (modifier: GameModifierDefinition) => {
+    setSelectedId(modifier.id)
+    resetFeedback()
+    requestDelete(modifier)
+  }
   const handleConfirmDelete = async () => {
     resetFeedback()
     try {
       await confirmDelete()
+      setPreviewOpen(false)
     } catch (error) {
       showResolvedError(error)
     }
   }
+  const details = selected ? (
+    <ModifierCatalogDetails
+      modifier={selected}
+      modifiers={catalogQuery.data ?? []}
+      onEdit={editModifier}
+      onDelete={deleteModifier}
+    />
+  ) : null
+
   return (
-    <PageShell
-      sx={{
-        maxWidth: 1200,
-        px: { xs: 0.5, sm: 2, md: 3 },
-        width: '100%',
-        flex: '1 1 0%',
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.5,
-      }}
-    >
-      {listError && !deleteTarget ? (
-        <InlineNotice severity="error" onClose={clearListError}>
-          {listError}
-        </InlineNotice>
-      ) : null}
-      <SectionCard
-        sx={{
-          flex: '1 1 0%',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          p: { xs: 1, sm: 2 },
-        }}
-      >
-        <Box
-          role="group"
-          aria-label={t('gameCatalog.modifiers.menuTitle')}
-          sx={{
-            flexShrink: 0,
-            maxHeight: '65%',
-            overflowY: 'auto',
-            scrollbarWidth: 'thin',
-            scrollbarGutter: 'stable both-edges',
-            p: 0.5,
-          }}
-        >
+    <PageShell sx={{ maxWidth: 1600, width: '100%', px: 0, pb: 0 }}>
+      <Stack gap={2}>
+        <SectionCard>
           <SectionHeader
             headingLevel="h1"
             title={t('gameCatalog.modifiers.title')}
+            description={t('gameCatalog.modifiers.catalog.description')}
             actions={
-              <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
-                <Typography variant="body2" color="text.secondary" role="status">
-                  {t('gameCatalog.workspace.results', {
-                    count: filteredModifiers.length,
-                    total: catalogQuery.data?.length ?? 0,
-                  })}
-                </Typography>
-                <AppButton framePlacement="inset" onClick={openCreate}>
-                  {t('gameCatalog.modifiers.add')}
-                </AppButton>
-              </Stack>
+              <AppButton tone="primary" onClick={openCreate}>
+                {t('gameCatalog.modifiers.add')}
+              </AppButton>
             }
           />
           <ModifierCatalogFilters
@@ -138,28 +128,75 @@ export function CatalogModifiersPage() {
             summaryCounts={roundSummaryCounts}
             sort={sort}
             onSortChange={setSort}
-            hasFilters={
-              search.trim().length > 0 ||
-              selectedCategory !== null ||
-              selectedRoundSummaryType !== null
-            }
+            hasFilters={hasFilters}
             onReset={resetFilters}
           />
-        </Box>
-        <ModifierCatalogList
-          modifiers={modifiers}
-          catalog={catalogQuery.data ?? []}
+        </SectionCard>
+        <AsyncSection
           isLoading={catalogQuery.isLoading}
           isError={catalogQuery.isError}
-          onRetry={() => void catalogQuery.refetch()}
-          isActionDialogOpen={dialog !== null || deleteTarget !== null}
-          onEdit={openEdit}
-          onDelete={(modifier) => {
-            clearListError()
-            requestDelete(modifier)
-          }}
-        />
-      </SectionCard>
+          hasData={catalogQuery.data != null}
+          isEmpty={modifiers.length === 0}
+          loadingMessage={t('gameCatalog.modifiers.loading')}
+          errorMessage={t('gameCatalog.modifiers.error')}
+          emptyMessage={t(
+            hasFilters && (catalogQuery.data?.length ?? 0) > 0
+              ? 'common.modifiers.emptySearch'
+              : 'gameCatalog.modifiers.empty',
+          )}
+          retryAction={
+            <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
+              {t('common.actions.retry')}
+            </AppButton>
+          }
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              alignItems: 'start',
+              gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
+            }}
+          >
+            <ModifierCatalogList
+              modifiers={modifiers}
+              totalCount={catalogQuery.data?.length ?? 0}
+              selectedId={wide ? (selected?.id ?? null) : null}
+              onSelect={selectModifier}
+            />
+            {wide ? (
+              <SectionCard
+                component="section"
+                role="region"
+                aria-label={t('gameCatalog.modifiers.catalog.details')}
+                tabIndex={0}
+                sx={{
+                  minWidth: 0,
+                  maxHeight: 'min(800px, 72dvh)',
+                  overflowY: 'auto',
+                  position: 'sticky',
+                  top: 16,
+                }}
+              >
+                {details}
+              </SectionCard>
+            ) : null}
+          </Box>
+        </AsyncSection>
+      </Stack>
+      <AppDialog
+        open={!wide && previewOpen && selected !== null && dialog === null && deleteTarget === null}
+        onClose={() => setPreviewOpen(false)}
+        title={t('gameCatalog.modifiers.catalog.details')}
+        contentDensity="compact"
+        actions={
+          <AppButton tone="secondary" onClick={() => setPreviewOpen(false)}>
+            {t('common.actions.close')}
+          </AppButton>
+        }
+      >
+        {!wide ? details : null}
+      </AppDialog>
       <ModifierFormDialog
         open={dialog !== null}
         mode={dialog?.mode ?? 'create'}
@@ -173,20 +210,17 @@ export function CatalogModifiersPage() {
         onClose={closeDialog}
         onSubmit={submitModifier}
       />
-
       <ConfirmDialog
-        errorMessage={listError}
         open={deleteTarget !== null}
         title={t('gameCatalog.modifiers.deleteTitle')}
-        description={t('gameCatalog.modifiers.deleteConfirm', {
-          name: deleteTarget?.name ?? '__all__',
-        })}
+        description={t('gameCatalog.modifiers.deleteConfirm', { name: deleteTarget?.name ?? '' })}
+        errorMessage={listError}
         confirmLabel={t('gameCatalog.actions.delete')}
         cancelLabel={t('common.actions.cancel')}
         confirmTone="danger"
         isBusy={isDeleting}
         onClose={cancelDelete}
-        onConfirm={() => void handleConfirmDelete()}
+        onConfirm={handleConfirmDelete}
       />
     </PageShell>
   )

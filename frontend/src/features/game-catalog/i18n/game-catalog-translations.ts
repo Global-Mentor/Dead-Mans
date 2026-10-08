@@ -49,7 +49,11 @@ const translations = {
     modifiers: {
       title: 'Modifier catalog',
       catalog: {
+        description: 'Find a modifier and select it to view its rules or make changes.',
         details: 'Modifier details',
+        selectHint: 'Select a modifier to view its details.',
+        results: '{{count}} of {{total}}',
+        cost: 'Cost',
         filters: 'Filters ({{count}})',
         sort: 'Sort by',
         sortName: 'Name',
@@ -74,7 +78,6 @@ const translations = {
       meta: '{{category}} · cost {{cost}}',
       hostControlBadge: 'Host tracks this modifier',
       contentLockedBadge: 'Locked by active game',
-      contentEditableBadge: 'Available to edit',
       contentLockedReason:
         'This modifier is included in the active game. Its content is read-only until the game finishes or is archived.',
       staleDraftPreserved:
@@ -585,7 +588,12 @@ const translations = {
     modifiers: {
       title: 'Каталог модификаторов',
       catalog: {
+        description:
+          'Найдите модификатор и выберите его, чтобы посмотреть правила или внести изменения.',
         details: 'Карточка модификатора',
+        selectHint: 'Выберите модификатор, чтобы открыть его карточку.',
+        results: '{{count}} из {{total}}',
+        cost: 'Стоимость',
         filters: 'Фильтры ({{count}})',
         sort: 'Сортировка',
         sortName: 'По названию',
@@ -610,7 +618,6 @@ const translations = {
       meta: '{{category}} · стоимость {{cost}}',
       hostControlBadge: 'Нужен контроль ведущего',
       contentLockedBadge: 'Заблокирован активной игрой',
-      contentEditableBadge: 'Можно изменить',
       contentLockedReason:
         'Модификатор включён в активную игру. Его содержимое доступно только для просмотра до завершения или архивации игры.',
       staleDraftPreserved:
@@ -1129,7 +1136,12 @@ const translations = {
     modifiers: {
       title: 'Каталог модифікаторів',
       catalog: {
+        description:
+          'Знайдіть модифікатор і виберіть його, щоб переглянути правила або внести зміни.',
         details: 'Картка модифікатора',
+        selectHint: 'Виберіть модифікатор, щоб відкрити його картку.',
+        results: '{{count}} з {{total}}',
+        cost: 'Вартість',
         filters: 'Фільтри ({{count}})',
         sort: 'Сортування',
         sortName: 'За назвою',
@@ -1154,7 +1166,6 @@ const translations = {
       meta: '{{category}} · вартість {{cost}}',
       hostControlBadge: 'Потрібен контроль ведучого',
       contentLockedBadge: 'Заблоковано активною грою',
-      contentEditableBadge: 'Можна змінити',
       contentLockedReason:
         'Модифікатор включено до активної гри. Його вміст доступний лише для перегляду до завершення або архівації гри.',
       staleDraftPreserved:
@@ -1665,7 +1676,11 @@ const translations = {
     modifiers: {
       title: 'Katalog modyfikatorów',
       catalog: {
+        description: 'Znajdź i wybierz modyfikator, aby zobaczyć zasady lub wprowadzić zmiany.',
         details: 'Szczegóły modyfikatora',
+        selectHint: 'Wybierz modyfikator, aby zobaczyć jego szczegóły.',
+        results: '{{count}} z {{total}}',
+        cost: 'Koszt',
         filters: 'Filtry ({{count}})',
         sort: 'Sortowanie',
         sortName: 'Nazwa',
@@ -1690,7 +1705,6 @@ const translations = {
       meta: '{{category}} · koszt {{cost}}',
       hostControlBadge: 'Wymaga kontroli prowadzącego',
       contentLockedBadge: 'Zablokowany przez aktywną grę',
-      contentEditableBadge: 'Można edytować',
       contentLockedReason:
         'Modyfikator jest używany w aktywnej grze. Jego zawartość pozostaje tylko do odczytu do zakończenia lub archiwizacji gry.',
       staleDraftPreserved:

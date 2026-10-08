@@ -52,6 +52,7 @@ export function ModifierCatalogFilters({
         alignItems: 'start',
         gridTemplateColumns: {
           xs: 'minmax(0, 1fr)',
+          lg: 'minmax(220px, 1fr) minmax(0, 3fr)',
         },
       }}
     >
@@ -79,7 +80,7 @@ export function ModifierCatalogFilters({
             gridTemplateColumns: {
               xs: 'minmax(0, 1fr)',
               sm: 'repeat(2, minmax(0, 1fr))',
-              md: 'minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr) auto',
+              lg: 'minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr) auto',
             },
           }}
         >

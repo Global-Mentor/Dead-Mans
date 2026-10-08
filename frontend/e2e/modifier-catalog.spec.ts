@@ -124,7 +124,7 @@ for (const width of [320, 390, 768, 1440]) {
     await mockCatalog(page, 'ru')
     await page.goto('/panel/catalog-modifiers')
     const list = page.getByTestId('modifier-catalog-list')
-    await expect(list.getByRole('listitem')).toHaveCount(catalog.length)
+    await expect(list.getByRole('button')).toHaveCount(catalog.length)
     await expect(
       page.getByRole('button', { name: 'Добавить модификатор', exact: true }),
     ).toBeVisible()
@@ -139,9 +139,9 @@ for (const width of [320, 390, 768, 1440]) {
       const filters = page.getByTestId('modifier-catalog-filters')
       await filters.getByRole('button', { name: 'Фильтры (0)' }).click()
       await choose(page, 'Категории', /^Перед раундом \(/)
-      await expect(list.getByRole('listitem')).toHaveCount(4)
+      await expect(list.getByRole('button')).toHaveCount(4)
       await filters.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
-      await expect(list.getByRole('listitem')).toHaveCount(12)
+      await expect(list.getByRole('button')).toHaveCount(12)
       await page.screenshot({
         path: info.outputPath('expanded-filters.png'),
         fullPage: true,
@@ -149,9 +149,7 @@ for (const width of [320, 390, 768, 1440]) {
       })
       await filters.getByRole('button', { name: 'Фильтры (0)' }).click()
     }
-    const selected = list
-      .getByRole('listitem', { name: 'Адреналин', exact: true })
-      .getByRole('button', { name: 'Подробнее', exact: true })
+    const selected = list.getByRole('button', { name: 'Адреналин', exact: true })
     await selected.focus()
     await page.keyboard.press('Enter')
     const details = page.getByTestId('modifier-catalog-details')
@@ -163,17 +161,21 @@ for (const width of [320, 390, 768, 1440]) {
       /modifierId=00000000-0000-4000-8000-000000000001/,
     )
     await page.screenshot({ path: info.outputPath('details.png'), animations: 'disabled' })
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(selected).toBeFocused()
-    await selected.click()
+    if (width < 1200) {
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await expect(selected).toBeFocused()
+      await selected.click()
+    }
     await details.getByRole('button', { name: 'Изменить', exact: true }).click()
     const editor = page.getByRole('dialog')
     await expect(editor.getByRole('textbox', { name: /^Название/ })).toHaveValue('Адреналин')
-    await editor.getByRole('button', { name: 'Отмена', exact: true }).click()
-    await expect(details.getByRole('heading', { name: 'Адреналин', exact: true })).toBeVisible()
-    await details.getByRole('button', { name: 'Изменить', exact: true }).click()
-    await expect(editor.getByRole('textbox', { name: /^Название/ })).toHaveValue('Адреналин')
+    if (width < 1200) {
+      await editor.getByRole('button', { name: 'Отмена', exact: true }).click()
+      await expect(details.getByRole('heading', { name: 'Адреналин', exact: true })).toBeVisible()
+      await details.getByRole('button', { name: 'Изменить', exact: true }).click()
+      await expect(editor.getByRole('textbox', { name: /^Название/ })).toHaveValue('Адреналин')
+    }
     await editor.getByRole('textbox', { name: /^Название/ }).fill('Новый черновик')
     await page.setViewportSize({ width: width === 1440 ? 390 : 1440, height: 900 })
     await expect(editor.getByRole('textbox', { name: /^Название/ })).toHaveValue('Новый черновик')
@@ -186,22 +188,19 @@ test('combined filters, cost ordering, reset and locked records', async ({ page 
   await mockCatalog(page)
   await page.goto('/panel/catalog-modifiers')
   const list = page.getByTestId('modifier-catalog-list')
-  await expect(list.getByRole('listitem')).toHaveCount(12)
+  await expect(list.getByRole('button')).toHaveCount(12)
   await choose(page, 'Sort by', 'Cost: low to high')
-  await expect(list.getByRole('listitem').first()).toHaveAccessibleName('Без права на ошибку')
+  await expect(list.getByRole('button').first()).toHaveAccessibleName('Без права на ошибку')
   await choose(page, 'Categories', /^During the round \(/)
   await choose(page, 'Round summary behavior', 'Host confirms a condition (6)')
-  await expect(list.getByRole('listitem')).toHaveCount(2)
+  await expect(list.getByRole('button')).toHaveCount(2)
   await page.getByRole('textbox', { name: 'Search modifiers' }).fill('Адреналин')
-  await expect(list.getByRole('listitem')).toHaveCount(1)
+  await expect(list.getByRole('button')).toHaveCount(1)
   await page.getByRole('textbox', { name: 'Search modifiers' }).fill('missing-result')
-  await expect(list.getByRole('listitem')).toHaveCount(0)
+  await expect(list).toHaveCount(0)
   await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
-  await expect(list.getByRole('listitem')).toHaveCount(12)
-  await list
-    .getByRole('listitem', { name: 'Двойная ставка', exact: true })
-    .getByRole('button', { name: 'Details', exact: true })
-    .click()
+  await expect(list.getByRole('button')).toHaveCount(12)
+  await list.getByRole('button', { name: 'Двойная ставка', exact: true }).click()
   const details = page.getByTestId('modifier-catalog-details')
   await expect(details.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled()
   await details.getByRole('button', { name: 'View', exact: true }).click()
@@ -217,7 +216,7 @@ for (const [language, title] of [
     await mockCatalog(page, language)
     await page.goto('/panel/catalog-modifiers')
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
-    await expect(page.getByTestId('modifier-catalog-list').getByRole('listitem')).toHaveCount(12)
+    await expect(page.getByTestId('modifier-catalog-list').getByRole('button')).toHaveCount(12)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.evaluate(() => document.fonts.ready)
     await page.screenshot({
@@ -233,11 +232,6 @@ test('deletion failure keeps its target, then retry updates the catalog', async 
   const server = await mockCatalog(page)
   await page.goto('/panel/catalog-modifiers')
   await page
-    .getByTestId('modifier-catalog-list')
-    .getByRole('listitem', { name: 'Адреналин', exact: true })
-    .getByRole('button', { name: 'Details', exact: true })
-    .click()
-  await page
     .getByTestId('modifier-catalog-details')
     .getByRole('button', { name: 'Delete', exact: true })
     .click()
@@ -246,8 +240,8 @@ test('deletion failure keeps its target, then retry updates the catalog', async 
   await expect(confirmation.getByRole('alert')).toBeVisible()
   await expect(confirmation).toContainText('Адреналин')
   await confirmation.getByRole('button', { name: 'Delete', exact: true }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page.getByTestId('modifier-catalog-list').getByRole('listitem')).toHaveCount(11)
+  await expect(confirmation).toHaveCount(0)
+  await expect(page.getByTestId('modifier-catalog-list').getByRole('button')).toHaveCount(11)
   expect(server.deletes()).toBe(2)
 })
 
