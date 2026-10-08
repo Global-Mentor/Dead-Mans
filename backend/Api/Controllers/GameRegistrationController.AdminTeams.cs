@@ -61,6 +61,7 @@ public sealed partial class GameRegistrationController
             request.TeamSlotId,
             request.RecruitmentOpen,
             request.Name,
+            allowAdditionalSlot: User.IsInRole(AuthRoleCodes.Admin) || User.IsInRole(AuthRoleCodes.SuperAdmin),
             cancellationToken
         );
         return ToTeamResult(result, StatusCodes.Status201Created);

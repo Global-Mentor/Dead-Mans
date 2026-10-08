@@ -18,9 +18,10 @@ public interface IGameRegistrationPersistence
     Task<GameRegistrationResult<RegistrationTeamDto>> PersistCreateEmptyTeamAsync(
         Guid gameId,
         Guid adminUserId,
-        Guid teamSlotId,
+        Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool appendToQueue = false,
         CancellationToken cancellationToken = default
     );
 

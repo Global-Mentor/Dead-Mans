@@ -11,6 +11,7 @@ public sealed partial class GameRegistrationService
         Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool allowAdditionalSlot = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -26,7 +27,7 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
-        Guid resolvedTeamSlotId;
+        Guid? resolvedTeamSlotId;
         if (teamSlotId.HasValue)
         {
             var slot = await _reads.GetTeamSlotAsync(game.GameId, teamSlotId.Value, cancellationToken);
@@ -42,6 +43,11 @@ public sealed partial class GameRegistrationService
             }
 
             resolvedTeamSlotId = slot.TeamSlotId;
+        }
+        else if (allowAdditionalSlot)
+        {
+            // Resolve automatic placement under the persistence game lock.
+            resolvedTeamSlotId = null;
         }
         else
         {
@@ -60,6 +66,7 @@ public sealed partial class GameRegistrationService
             resolvedTeamSlotId,
             recruitmentOpen,
             normalizedName,
+            appendToQueue: !teamSlotId.HasValue,
             cancellationToken
         ));
     }

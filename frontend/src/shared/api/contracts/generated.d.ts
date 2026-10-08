@@ -1299,6 +1299,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Admins and superadmins may create an additional reserved slot when all public slots are occupied and no explicit slot is requested. Moderators require an available slot. Additional slots do not expand public self-registration capacity. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot. */
         post: operations["createAdminRegistrationTeam"];
         delete?: never;
         options?: never;

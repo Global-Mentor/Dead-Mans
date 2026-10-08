@@ -60,6 +60,7 @@ public interface IGameRegistrationService
         Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool allowAdditionalSlot = false,
         CancellationToken cancellationToken = default
     );
 

@@ -48,7 +48,8 @@ public sealed class ApplicationMigrationChainTests
                 "20260920180839_AddTwitchQuizIntegration",
                 "20260923123000_SeedBaseModifierCatalog",
                 "20260925145728_StartModifierOrderingPhase",
-                "20260925153554_AllowCardOpenedRoundTransition"
+                "20260925153554_AllowCardOpenedRoundTransition",
+                "20261008093609_AllowAdditionalAdminTeamSlots"
             ],
             migrations
         );

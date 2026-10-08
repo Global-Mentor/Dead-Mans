@@ -212,6 +212,30 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         return await LoadTeamResultAsync(sourceTeam.Id, cancellationToken);
     }
 
+    private async Task<GameRegistrationResult<RegistrationTeamDto>> AppendCreatedTeamToQueueAsync(
+        Guid gameId, Guid adminUserId, Guid teamId, CancellationToken cancellationToken)
+    {
+        var slotIndex = await (from team in _dbContext.GameTeams
+                               join slot in _dbContext.GameTeamSlots on team.SlotId equals slot.Id
+                               where team.Id == teamId
+                               select slot.SlotIndex).SingleAsync(cancellationToken);
+        var laterSlots = await (from team in _dbContext.GameTeams.AsNoTracking()
+                                join slot in _dbContext.GameTeamSlots on team.SlotId equals slot.Id
+                                where team.GameId == gameId && team.Id != teamId
+                                    && (team.Status == TeamStatusValue.Forming || team.Status == TeamStatusValue.Confirmed)
+                                    && slot.SlotIndex > slotIndex
+                                orderby slot.SlotIndex
+                                select slot.Id).ToArrayAsync(cancellationToken);
+        // The caller holds the game lock and one transaction throughout creation and placement.
+        // Adjacent queue swaps retain the relative order and pending invitations of existing teams.
+        foreach (var slotId in laterSlots)
+        {
+            var result = await MoveTeamToSlotCoreAsync(gameId, adminUserId, teamId, slotId, cancellationToken);
+            if (!result.Success) return result;
+        }
+        return await LoadTeamResultAsync(teamId, cancellationToken);
+    }
+
     private async Task MovePendingTeamInvitationsAsync(
         Guid teamId,
         Guid targetSlotId,

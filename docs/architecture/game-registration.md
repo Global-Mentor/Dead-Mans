@@ -80,6 +80,10 @@ browser validation bubbles.
 Leaving requires confirmation. The dialog stays open while the request is pending and
 after a failed request, allowing a retry; it closes only after success or cancellation.
 
+## Additional administrator teams
+
+Admins and superadmins can create empty teams beyond the initial slot count in ready and active games. Automatic placement reuses an available slot or creates a new reserved slot at the end of the queue. Slot and team creation share the game roster lock and transaction, including concurrent requests. Moderators still need an available public slot or an explicitly selected available slot; clients cannot grant themselves overflow permission. Reserved overflow slots do not increase public self-registration capacity. Explicit occupied or invalid slot requests still fail.
+
 ## Registration API
 
 - `GET /api/game/registration` - snapshot for the ready game
@@ -160,3 +164,5 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - **Infrastructure**: `IGameRegistrationReadStore` + `IGameRegistrationPersistence`, `IGameLifecycleReadStore` + `IGameLifecyclePersistence`; team slot seeding via `GameTeamSlotInitializer` in `Infrastructure/Persistence/`.
 - **History**: admin reject marks a team as `rejected`, closes active memberships, and cancels pending team invitations. Player leave marks `LeftAtUtc`; if the last active member leaves, the team becomes `disbanded`. Confirmed teams cannot be left directly; a member can store `DisbandRequestedAtUtc` / `DisbandRequestedByUserId`, and an admin disband records `DisbandedAtUtc` / `DisbandedByUserId`, closes active memberships, and cancels pending team invitations. Rows are preserved so future player/team/game history can be built from the same tables.
 - **Frontend**: transport in `frontend/src/features/game-registration/api/`; UI in `game-application/` and `team-registrations/`. The admin panel is reused across both admin entry points. A missing ready-game snapshot (`404`) renders a normal unavailable state without disabled mock controls.
+
+Automatic administrative team creation appends the new team after all existing teams. A free slot is reused without increasing capacity; if it is inside the queue, transactional adjacent swaps preserve the relative order of existing teams and move their pending invitations with them. Creation and placement share the game-row lock and commit once. Explicit API slot placement remains explicit.
