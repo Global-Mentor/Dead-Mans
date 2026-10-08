@@ -16,6 +16,7 @@ import {
   gameQuizRoute,
   gameTeamQueueRoute,
   roleAdministrationRoute,
+  teamRegistrationsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
 } from '../routes/app-routes.ts'
@@ -67,6 +68,7 @@ function MainLayoutContent() {
     gameHistoryRoute.fullPath,
     modifierHistoryRoute.fullPath,
     roleAdministrationRoute.fullPath,
+    teamRegistrationsRoute.fullPath,
     catalogModifiersRoute.fullPath,
     catalogQuestionsRoute.fullPath,
   ].includes(pathname)

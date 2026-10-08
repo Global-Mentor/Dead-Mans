@@ -104,6 +104,12 @@ public interface IGameRegistrationService
         CancellationToken cancellationToken = default
     );
 
+    Task<GameRegistrationResult<RegistrationTeamDto>> UnconfirmTeamAsync(
+        Guid adminUserId,
+        Guid teamId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<GameRegistrationResult<bool>> RejectTeamAsync(
         Guid adminUserId,
         Guid teamId,

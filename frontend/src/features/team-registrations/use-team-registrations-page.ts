@@ -4,6 +4,7 @@ import {
   useAssignGameRegistrationPlayerToTeamMutation,
   useCancelGameRegistrationTeamInvitationMutation,
   useConfirmGameRegistrationTeamMutation,
+  useUnconfirmGameRegistrationTeamMutation,
   useCreateAdminGameRegistrationInvitationMutation,
   useCreateAdminGameRegistrationTeamMutation,
   useDisbandGameRegistrationTeamMutation,
@@ -19,15 +20,16 @@ import { useGameTeamPlayedState } from '../game-board/use-game-team-played-state
 export function useTeamRegistrationsPage() {
   const { toastMessage, onMutationError, dismissToast } = useGameRegistrationToast()
   const createAdminTeam = useCreateAdminGameRegistrationTeamMutation(onMutationError)
-  const createAdminInvitation = useCreateAdminGameRegistrationInvitationMutation(onMutationError)
-  const assignPlayerToTeam = useAssignGameRegistrationPlayerToTeamMutation(onMutationError)
-  const removePlayerFromTeam = useRemoveGameRegistrationPlayerFromTeamMutation(onMutationError)
+  const createAdminInvitation = useCreateAdminGameRegistrationInvitationMutation(() => {})
+  const assignPlayerToTeam = useAssignGameRegistrationPlayerToTeamMutation(() => {})
+  const removePlayerFromTeam = useRemoveGameRegistrationPlayerFromTeamMutation(() => {})
   const cancelTeamInvitation = useCancelGameRegistrationTeamInvitationMutation(onMutationError)
   const moveTeamToSlot = useMoveGameRegistrationTeamToSlotMutation(onMutationError)
-  const confirmTeam = useConfirmGameRegistrationTeamMutation(onMutationError)
-  const rejectTeam = useRejectGameRegistrationTeamMutation(onMutationError)
-  const disbandTeam = useDisbandGameRegistrationTeamMutation(onMutationError)
-  const teamPlayedState = useGameTeamPlayedState()
+  const unconfirmTeam = useUnconfirmGameRegistrationTeamMutation(() => {})
+  const confirmTeam = useConfirmGameRegistrationTeamMutation(() => {})
+  const rejectTeam = useRejectGameRegistrationTeamMutation(() => {})
+  const disbandTeam = useDisbandGameRegistrationTeamMutation(() => {})
+  const teamPlayedState = useGameTeamPlayedState({ notifications: false })
   const updateTeamName = useUpdateAdminGameRegistrationTeamNameMutation(onMutationError)
   const gameBoardQuery = useQuery(currentGameBoardQueryOptions)
   const isTeamManagementAvailable =
@@ -41,7 +43,14 @@ export function useTeamRegistrationsPage() {
     isLoading:
       gameBoardQuery.isLoading ||
       (isTeamManagementAvailable && registrationAdminSnapshotQuery.isLoading),
-    isError: gameBoardQuery.isError || registrationAdminSnapshotQuery.isError,
+    isError:
+      gameBoardQuery.isError ||
+      (isTeamManagementAvailable && registrationAdminSnapshotQuery.isError),
+    refetch: async () => {
+      const game = await gameBoardQuery.refetch()
+      if (game.data?.status === 'ready' || game.data?.status === 'active')
+        await registrationAdminSnapshotQuery.refetch()
+    },
   }
 
   return {
@@ -53,6 +62,7 @@ export function useTeamRegistrationsPage() {
     cancelTeamInvitation,
     moveTeamToSlot,
     confirmTeam,
+    unconfirmTeam,
     rejectTeam,
     disbandTeam,
     teamPlayedState,

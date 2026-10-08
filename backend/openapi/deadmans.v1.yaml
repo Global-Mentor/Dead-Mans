@@ -3658,6 +3658,51 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/registration/teams/{teamId}/unconfirm:
+    post:
+      operationId: unconfirmRegistrationTeam
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Team returned to forming by moderator/admin; roster and readiness preserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationTeamDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Team is active, has opened a card, is not confirmed, or game is not ready/active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/registration/teams/{teamId}/reject:
     post:
       operationId: rejectRegistrationTeam

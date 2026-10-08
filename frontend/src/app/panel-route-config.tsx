@@ -104,7 +104,12 @@ const panelPages = {
   'team-registrations': lazyPanelPage(
     () => import('../features/team-registrations/TeamRegistrationsPage.tsx'),
     'TeamRegistrationsPage',
-    [translations.teamRegistrations, translations.gameApplication, translations.gameRegistration],
+    [
+      translations.teamRegistrations,
+      translations.gameApplication,
+      translations.gameRegistration,
+      translations.gameBoard,
+    ],
   ),
   'role-administration': lazyPanelPage(
     () => import('../features/role-administration/RoleAdministrationPage.tsx'),

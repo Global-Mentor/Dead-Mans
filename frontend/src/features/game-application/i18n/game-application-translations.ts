@@ -168,7 +168,6 @@ const translations = {
       summaryTeamsDescription: 'Private and open rosters are managed from one team-slot board.',
       summaryPlayers: 'Free players',
       summaryPlayersValue: '{{count}} waiting for assignment',
-      summaryPlayersDescription: 'Drag a free player into any team to fill it instantly.',
       summaryRules: 'Team rules',
       summaryRulesValue: '{{min}} to {{max}} players per team',
       summaryRulesDescription: '{{count}} team(s) already confirmed for play.',
@@ -177,12 +176,10 @@ const translations = {
       freePlayersStatus: 'Free players',
       disbandRequestsStatus: 'Disband requests',
       teamRulesStatus: 'Team size: {{min}}-{{max}}',
-      moreTeamActions: 'More team actions',
-      hideTeamActions: 'Hide team actions',
       emptyTeams: 'No teams yet. Create an empty roster and assign players manually.',
       availablePlayers: 'Available players',
       availablePlayersDescription:
-        'Drag a player into a team, or let them create/join a roster themselves.',
+        'Choose a player and use Assign to select a team with a free place.',
       noAvailablePlayers: 'No free players right now.',
       noPlayersMatched: 'No free players matched this search.',
       playerSearchLabel: 'Search players',
@@ -208,13 +205,7 @@ const translations = {
       slotLabel: 'Order {{slot}}',
       emptySlotChip: 'Empty team slot',
       emptySlotTitle: 'This team slot is free',
-      emptySlotDescription:
-        'Create a new team here, or drag another team card to move it into this team slot.',
       emptyTeam: 'Empty team',
-      dropPlayer: 'Drop a player here',
-      dropTeam: 'Drop another team here to swap order',
-      assignHint:
-        'Drag players between teams to reassign rosters. Move teams up or down to define the game turn order.',
       membersChip: '{{count}} player(s)',
       moveTeamUp: 'Up',
       moveTeamDown: 'Down',
@@ -228,7 +219,7 @@ const translations = {
       teamNeedsPlayersHint:
         'Players can mark ready when all {{max}} places are filled. An administrator may confirm a roster with {{min}}-{{max}} players.',
       invitePlayer: 'Invite player',
-      activeTeamChip: 'Active turn',
+      activeTeamChip: 'Active team',
       playedTeamChip: 'Played',
       teamPlayedHint:
         'This team already finished its planned rounds and stays in the queue only as a marker.',
@@ -459,8 +450,6 @@ const translations = {
       summaryTeamsDescription: 'Открытые и закрытые составы собраны на одной панели по слотам.',
       summaryPlayers: 'Свободные игроки',
       summaryPlayersValue: 'Ожидают распределения: {{count}}',
-      summaryPlayersDescription:
-        'Перетащите свободного игрока в нужную команду, чтобы сразу добавить его в состав.',
       summaryRules: 'Правила состава',
       summaryRulesValue: 'От {{min}} до {{max}} игроков в команде',
       summaryRulesDescription: 'Уже подтверждено команд: {{count}}.',
@@ -469,12 +458,10 @@ const translations = {
       freePlayersStatus: 'Свободные игроки',
       disbandRequestsStatus: 'Запросы на роспуск',
       teamRulesStatus: 'Размер команды: {{min}}-{{max}}',
-      moreTeamActions: 'Другие действия',
-      hideTeamActions: 'Скрыть действия',
       emptyTeams: 'Пока нет команд. Создайте пустой состав и распределите игроков вручную.',
       availablePlayers: 'Свободные игроки',
       availablePlayersDescription:
-        'Перетащите игрока в команду или дайте ему создать/выбрать состав самостоятельно.',
+        'Выберите игрока и нажмите «В команду», чтобы указать команду со свободным местом.',
       noAvailablePlayers: 'Сейчас нет свободных игроков.',
       noPlayersMatched: 'По этому запросу свободные игроки не найдены.',
       playerSearchLabel: 'Поиск игрока',
@@ -499,13 +486,7 @@ const translations = {
       slotLabel: 'Очередь {{slot}}',
       emptySlotChip: 'Свободное место команды',
       emptySlotTitle: 'Место команды свободно',
-      emptySlotDescription:
-        'Здесь можно создать новую команду или перетащить сюда другую команду, чтобы переставить её.',
       emptyTeam: 'Команда пока пустая',
-      dropPlayer: 'Перетащите сюда игрока',
-      dropTeam: 'Перетащите сюда другую команду, чтобы поменять порядок',
-      assignHint:
-        'Игроков можно перетаскивать между командами. Команды можно переставлять выше или ниже, чтобы задать порядок игр.',
       membersChip: 'Игроков: {{count}}',
       moveTeamUp: 'Выше',
       moveTeamDown: 'Ниже',
@@ -520,7 +501,7 @@ const translations = {
       teamNeedsPlayersHint:
         'Игроки смогут отметить готовность при заполнении всех {{max}} мест. Администратор может подтвердить состав из {{min}}-{{max}} игроков.',
       invitePlayer: 'Пригласить игрока',
-      activeTeamChip: 'Активный ход',
+      activeTeamChip: 'Активная команда',
       playedTeamChip: 'Отыграла',
       teamPlayedHint:
         'Эта команда уже закончила свои раунды и остаётся в списке только как отметка.',
@@ -751,8 +732,6 @@ const translations = {
       summaryTeamsDescription: 'Відкриті та закриті склади зібрані на одній панелі за слотами.',
       summaryPlayers: 'Вільні гравці',
       summaryPlayersValue: 'Очікують розподілу: {{count}}',
-      summaryPlayersDescription:
-        'Перетягніть вільного гравця в потрібну команду, щоб одразу додати його до складу.',
       summaryRules: 'Правила складу',
       summaryRulesValue: 'Від {{min}} до {{max}} гравців у команді',
       summaryRulesDescription: 'Уже підтверджено команд: {{count}}.',
@@ -761,12 +740,10 @@ const translations = {
       freePlayersStatus: 'Вільні гравці',
       disbandRequestsStatus: 'Запити на розформування',
       teamRulesStatus: 'Розмір команди: {{min}}-{{max}}',
-      moreTeamActions: 'Інші дії',
-      hideTeamActions: 'Сховати дії',
       emptyTeams: 'Команд поки немає. Створіть порожній склад і розподіліть гравців вручну.',
       availablePlayers: 'Вільні гравці',
       availablePlayersDescription:
-        'Перетягніть гравця в команду або дайте йому створити/обрати склад самостійно.',
+        'Оберіть гравця та натисніть «До команди», щоб вказати команду з вільним місцем.',
       noAvailablePlayers: 'Зараз немає вільних гравців.',
       noPlayersMatched: 'За цим запитом вільних гравців не знайдено.',
       playerSearchLabel: 'Пошук гравця',
@@ -791,13 +768,7 @@ const translations = {
       slotLabel: 'Черга {{slot}}',
       emptySlotChip: 'Вільне місце команди',
       emptySlotTitle: 'Місце команди вільне',
-      emptySlotDescription:
-        'Тут можна створити нову команду або перетягнути сюди іншу команду, щоб переставити її.',
       emptyTeam: 'Команда поки порожня',
-      dropPlayer: 'Перетягніть сюди гравця',
-      dropTeam: 'Перетягніть сюди іншу команду, щоб змінити порядок',
-      assignHint:
-        'Гравців можна перетягувати між командами. Команди можна переставляти вище або нижче, щоб задати порядок гри.',
       membersChip: 'Гравців: {{count}}',
       moveTeamUp: 'Вище',
       moveTeamDown: 'Нижче',
@@ -812,7 +783,7 @@ const translations = {
       teamNeedsPlayersHint:
         'Гравці зможуть позначити готовність після заповнення всіх {{max}} місць. Адміністратор може підтвердити склад із {{min}}-{{max}} гравців.',
       invitePlayer: 'Запросити гравця',
-      activeTeamChip: 'Активний хід',
+      activeTeamChip: 'Активна команда',
       playedTeamChip: 'Відіграла',
       teamPlayedHint:
         'Ця команда вже завершила свої раунди й залишається в списку лише як позначка.',
@@ -1045,8 +1016,6 @@ const translations = {
         'Otwarte i prywatne składy są zebrane na jednej planszy miejsc drużyn.',
       summaryPlayers: 'Wolni gracze',
       summaryPlayersValue: 'Czeka na przydział: {{count}}',
-      summaryPlayersDescription:
-        'Przeciągnij wolnego gracza do wybranej drużyny, aby dodać go od razu.',
       summaryRules: 'Zasady składu',
       summaryRulesValue: 'Od {{min}} do {{max}} graczy w drużynie',
       summaryRulesDescription: 'Już zatwierdzonych drużyn: {{count}}.',
@@ -1055,12 +1024,10 @@ const translations = {
       freePlayersStatus: 'Wolni gracze',
       disbandRequestsStatus: 'Prośby o rozwiązanie',
       teamRulesStatus: 'Rozmiar drużyny: {{min}}-{{max}}',
-      moreTeamActions: 'Więcej działań',
-      hideTeamActions: 'Ukryj działania',
       emptyTeams: 'Nie ma jeszcze drużyn. Utwórz pusty skład i przydziel graczy ręcznie.',
       availablePlayers: 'Wolni gracze',
       availablePlayersDescription:
-        'Przeciągnij gracza do drużyny albo pozwól mu samodzielnie utworzyć lub wybrać skład.',
+        'Wybierz gracza i użyj przycisku przypisania, aby wskazać drużynę z wolnym miejscem.',
       noAvailablePlayers: 'Brak wolnych graczy.',
       noPlayersMatched: 'Brak wolnych graczy pasujących do tego wyszukiwania.',
       playerSearchLabel: 'Szukaj gracza',
@@ -1086,13 +1053,7 @@ const translations = {
       slotLabel: 'Kolejka {{slot}}',
       emptySlotChip: 'Wolne miejsce drużyny',
       emptySlotTitle: 'To miejsce drużyny jest wolne',
-      emptySlotDescription:
-        'Możesz tu utworzyć nową drużynę albo przeciągnąć inną drużynę, aby ją tu przenieść.',
       emptyTeam: 'Drużyna jest jeszcze pusta',
-      dropPlayer: 'Przeciągnij tutaj gracza',
-      dropTeam: 'Przeciągnij tutaj inną drużynę, aby zmienić kolejność',
-      assignHint:
-        'Graczy można przeciągać między drużynami. Drużyny można przesuwać w górę lub w dół, aby ustawić kolejność gry.',
       membersChip: 'Graczy: {{count}}',
       moveTeamUp: 'Wyżej',
       moveTeamDown: 'Niżej',
@@ -1107,7 +1068,7 @@ const translations = {
       teamNeedsPlayersHint:
         'Gracze mogą oznaczyć gotowość po obsadzeniu wszystkich {{max}} miejsc. Administrator może zatwierdzić skład liczący {{min}}-{{max}} graczy.',
       invitePlayer: 'Zaproś gracza',
-      activeTeamChip: 'Aktywna tura',
+      activeTeamChip: 'Aktywna drużyna',
       playedTeamChip: 'Zagrała',
       teamPlayedHint:
         'Ta drużyna zakończyła już swoje rundy i pozostaje na liście tylko jako oznaczenie.',

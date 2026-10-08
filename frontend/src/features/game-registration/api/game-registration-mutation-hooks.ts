@@ -5,6 +5,7 @@ import {
   cancelGameRegistrationTeamInvitationMutationOptions,
   cancelPlayerGameRegistrationInvitationMutationOptions,
   confirmGameRegistrationTeamMutationOptions,
+  unconfirmGameRegistrationTeamMutationOptions,
   createAdminGameRegistrationInvitationMutationOptions,
   createAdminGameRegistrationTeamMutationOptions,
   createPlayerGameRegistrationInvitationMutationOptions,
@@ -119,6 +120,13 @@ export function useConfirmGameRegistrationTeamMutation(
 ) {
   const queryClient = useQueryClient()
   return useMutation(confirmGameRegistrationTeamMutationOptions(queryClient, onError))
+}
+
+export function useUnconfirmGameRegistrationTeamMutation(
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  const queryClient = useQueryClient()
+  return useMutation(unconfirmGameRegistrationTeamMutationOptions(queryClient, onError))
 }
 
 export function useRejectGameRegistrationTeamMutation(

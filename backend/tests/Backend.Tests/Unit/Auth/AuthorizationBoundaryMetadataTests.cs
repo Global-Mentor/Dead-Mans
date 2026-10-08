@@ -109,6 +109,7 @@ public sealed class AuthorizationBoundaryMetadataTests
                 nameof(GameRegistrationController.CancelTeamInvitation),
                 nameof(GameRegistrationController.MoveTeam),
                 nameof(GameRegistrationController.ConfirmTeam),
+                nameof(GameRegistrationController.UnconfirmTeam),
                 nameof(GameRegistrationController.RejectTeam),
                 nameof(GameRegistrationController.DisbandTeam),
                 nameof(GameRegistrationController.CreateInvitation)

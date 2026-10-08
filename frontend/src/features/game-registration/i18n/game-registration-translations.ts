@@ -6,6 +6,7 @@ const translations = {
       disbanded: 'Disbanded',
     },
     errors: {
+      teamNotReady: 'Only a full forming team with every player ready can be refused admission.',
       teamNameTaken:
         'A team with this name already exists. Case and whitespace do not distinguish names.',
       disbandRequestNotOwned: 'Only the player who sent the request can withdraw it.',
@@ -22,9 +23,10 @@ const translations = {
       slotNotFound: 'Team slot was not found.',
       slotNotAvailable: 'Team slot is not available.',
       pendingInvitation: 'This player already has a pending invitation for this game.',
-      teamActiveInGame: 'The active team cannot be disbanded while it is taking its turn.',
+      teamActiveInGame:
+        'This team is active. Disbanding and cancelling confirmation are unavailable.',
       teamAlreadyPlayed:
-        'A team that has opened a card or is marked as played cannot be disbanded.',
+        'This team has opened a card or is marked as played. Disbanding and cancelling confirmation are unavailable.',
       invalidTeamName: 'Enter a team name of 3 to 18 characters.',
       teamNameRequired: 'Give the team a name before marking ready or confirming it.',
       teamNotFull: 'The team must be full before you can mark ready.',
@@ -49,6 +51,8 @@ const translations = {
       disbanded: 'Расформирована',
     },
     errors: {
+      teamNotReady:
+        'Отклонить можно только формирующуюся команду с полным составом и готовностью всех игроков.',
       teamNameTaken: 'Команда с таким названием уже существует. Регистр и пробелы не учитываются.',
       disbandRequestNotOwned: 'Отозвать запрос может только отправивший его игрок.',
       notOpen: 'Приём заявок сейчас не открыт.',
@@ -65,9 +69,9 @@ const translations = {
       slotNotFound: 'Слот команды не найден.',
       slotNotAvailable: 'Слот команды недоступен.',
       pendingInvitation: 'У этого игрока уже есть ожидающее приглашение на эту игру.',
-      teamActiveInGame: 'Нельзя распустить команду, чей ход сейчас активен.',
+      teamActiveInGame: 'Команда сейчас активна. Роспуск и отмена подтверждения недоступны.',
       teamAlreadyPlayed:
-        'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
+        'Команда уже открывала карточку или отмечена отыгравшей. Роспуск и отмена подтверждения недоступны.',
       invalidTeamName: 'Введите название команды длиной от 3 до 18 символов.',
       teamNameRequired: 'Укажите название команды перед готовностью или подтверждением.',
       teamNotFull: 'Чтобы отметить готовность, команда должна быть полностью заполнена.',
@@ -92,6 +96,8 @@ const translations = {
       disbanded: 'Розформована',
     },
     errors: {
+      teamNotReady:
+        'Відхилити можна лише команду, що формується, з повним складом і готовністю всіх гравців.',
       teamNameTaken: 'Команда з такою назвою вже існує. Регістр і пробіли не враховуються.',
       disbandRequestNotOwned: 'Відкликати запит може лише гравець, який його надіслав.',
       notOpen: 'Прийом заявок зараз не відкритий.',
@@ -107,9 +113,10 @@ const translations = {
       slotNotFound: 'Слот команди не знайдено.',
       slotNotAvailable: 'Слот команди недоступний.',
       pendingInvitation: 'У цього гравця вже є очікуване запрошення на цю гру.',
-      teamActiveInGame: 'Не можна розформувати команду, чий хід зараз активний.',
+      teamActiveInGame:
+        'Команда зараз активна. Розформування та скасування підтвердження недоступні.',
       teamAlreadyPlayed:
-        'Команда вже відкривала картку або позначена як зіграна. Розформувати її не можна.',
+        'Команда вже відкривала картку або позначена як зіграна. Розформування та скасування підтвердження недоступні.',
       invalidTeamName: 'Введіть назву команди завдовжки від 3 до 18 символів.',
       teamNameRequired: 'Укажіть назву команди перед готовністю або підтвердженням.',
       teamNotFull: 'Щоб позначити готовність, команда має бути повністю заповнена.',
@@ -134,6 +141,8 @@ const translations = {
       disbanded: 'Rozwiązana',
     },
     errors: {
+      teamNotReady:
+        'Odmowa dotyczy tylko pełnej tworzącej się drużyny, której wszyscy gracze są gotowi.',
       teamNameTaken:
         'Drużyna o tej nazwie już istnieje. Wielkość liter i odstępy nie mają znaczenia.',
       disbandRequestNotOwned: 'Tylko gracz, który wysłał prośbę, może ją wycofać.',
@@ -150,9 +159,10 @@ const translations = {
       slotNotFound: 'Nie znaleziono slotu drużyny.',
       slotNotAvailable: 'Slot drużyny jest niedostępny.',
       pendingInvitation: 'Ten gracz ma już oczekujące zaproszenie w tej grze.',
-      teamActiveInGame: 'Nie można rozwiązać drużyny, która ma aktywną turę.',
+      teamActiveInGame:
+        'Drużyna jest aktywna. Rozwiązanie i cofnięcie potwierdzenia są niedostępne.',
       teamAlreadyPlayed:
-        'Nie można rozwiązać drużyny, która otworzyła kartę lub jest oznaczona jako rozegrana.',
+        'Drużyna otworzyła kartę lub jest oznaczona jako rozegrana. Rozwiązanie i cofnięcie potwierdzenia są niedostępne.',
       invalidTeamName: 'Wpisz nazwę drużyny o długości od 3 do 18 znaków.',
       teamNameRequired: 'Nadaj drużynie nazwę przed gotowością lub zatwierdzeniem.',
       teamNotFull: 'Drużyna musi być pełna, zanim oznaczysz gotowość.',

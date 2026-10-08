@@ -1,34 +1,27 @@
-import { Stack, Typography } from '@mui/material'
-import { useMemo, useState, type DragEvent } from 'react'
+import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   GameRegistrationAdminSnapshot,
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import {
-  AppButton,
-  AppToast,
-  ConfirmDialog,
-  HelpTooltip,
-  SectionCard,
-  StatusBadge,
-} from '../../../shared/ui/index.ts'
+import { SectionCard, SectionHeader, TabStrip, TabOption } from '../../../shared/ui/index.ts'
 import { AdminAvailablePlayersPanel } from './AdminAvailablePlayersPanel.tsx'
-import { AdminInvitePlayerDialog, type AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
+import { AdminTeamPlayerDialog, type AdminTeamTarget } from './AdminTeamPlayerDialog.tsx'
+import { AdminRegistrationConfirmations } from './AdminRegistrationConfirmations.tsx'
+import { useAdminRegistrationCatalog } from '../use-admin-registration-catalog.ts'
+import { AdminRegistrationTeamDetails } from './AdminRegistrationTeamDetails.tsx'
 import { AdminRegistrationTeamsList } from './AdminRegistrationTeamsList.tsx'
-import {
-  AdminRegistrationOperationalStatus,
-  type OrderedAdminTeamEntry,
-} from './admin-registration-components.tsx'
-import {
-  createTeamButtonSx,
-  readRegistrationDragPayload,
-  writeRegistrationDragPayload,
-  type RegistrationDragPayload,
-} from './admin-registration-support.ts'
+import { AdminTeamRejectionConfirmation } from './AdminTeamRejectionConfirmation.tsx'
+import { AdminTeamWorkspaceHeader } from './AdminTeamWorkspaceHeader.tsx'
+import { AdminRegistrationToolbar } from './AdminRegistrationToolbar.tsx'
+import { getGameRegistrationMutationErrorMessage } from '../api/game-registration-mutation-errors.ts'
+import { AdminTeamPlayedConfirmation } from './AdminTeamPlayedConfirmation.tsx'
+import { AdminAssignPlayerDialog } from './AdminAssignPlayerDialog.tsx'
 
 export interface AdminRegistrationPanelProps {
+  canCreateAdditionalTeams?: boolean
   snapshot: GameRegistrationAdminSnapshot
   isCreatingTeam: boolean
   isCreatingInvitation: (teamId: string) => boolean
@@ -36,297 +29,422 @@ export interface AdminRegistrationPanelProps {
   isRemovingPlayer: (teamId: string, userId: string) => boolean
   isCancellingTeamInvitation: (teamId: string, invitationId: string) => boolean
   isMovingTeam: boolean
+  isUnconfirmingTeam: (teamId: string) => boolean
   isConfirmingTeam: (teamId: string) => boolean
   isRejectingTeam: (teamId: string) => boolean
   isDisbandingTeam: (teamId: string) => boolean
   isTogglingPlayedState: (teamId: string) => boolean
   isUpdatingTeamName: (teamId: string) => boolean
   onCreateTeam: (recruitmentOpen: boolean, teamSlotId?: string) => void
-  onCreateInvitation: (teamSlotId: string, invitedUserId: string, teamId: string) => void
-  onAssignPlayer: (teamId: string, userId: string) => void
-  onRemovePlayer: (teamId: string, userId: string) => void
+  onCreateInvitation: (
+    teamSlotId: string,
+    invitedUserId: string,
+    teamId: string,
+    onSuccess: () => void,
+    onError: (error: Error) => void,
+  ) => void
+  onAssignPlayer: (
+    teamId: string,
+    userId: string,
+    onSuccess?: () => void,
+    onError?: (error: Error) => void,
+  ) => void
+  onRemovePlayer: (
+    teamId: string,
+    userId: string,
+    onSuccess: () => void,
+    onError: (error: Error) => void,
+  ) => void
   onCancelTeamInvitation: (teamId: string, invitationId: string) => void
   onMoveTeam: (teamId: string, targetTeamSlotId: string) => void
-  onConfirmTeam: (teamId: string) => void
-  onRejectTeam: (teamId: string) => void
-  onDisbandTeam: (teamId: string) => void
-  onTogglePlayedState: (teamId: string, isPlayed: boolean) => void
+  onUnconfirmTeam: (teamId: string, onSuccess: () => void, onError: (error: Error) => void) => void
+  onConfirmTeam: (teamId: string, onSuccess: () => void, onError: (error: Error) => void) => void
+  onRejectTeam: (teamId: string, onSuccess: () => void, onError: (error: Error) => void) => void
+  onDisbandTeam: (teamId: string, onSuccess: () => void, onError: (error: Error) => void) => void
+  onTogglePlayedState: (teamId: string, isPlayed: boolean) => Promise<string | null>
   onUpdateTeamName: (teamId: string, name?: string) => void
 }
 
 export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
-  const {
-    snapshot,
-    isCreatingTeam,
-    isCreatingInvitation,
-    isRemovingPlayer,
-    isDisbandingTeam,
-    onCreateTeam,
-    onCreateInvitation,
-    onRemovePlayer,
-    onDisbandTeam,
-  } = props
+  const { snapshot, isCreatingTeam, isCreatingInvitation, onCreateTeam, onCreateInvitation } = props
   const { t } = useTranslation()
-  const [activeDropTeamId, setActiveDropTeamId] = useState<string | null>(null)
-  const [activeDropTeamSlotId, setActiveDropTeamSlotId] = useState<string | null>(null)
-  const [activeRegistrationDragPayload, setActiveRegistrationDragPayload] =
-    useState<RegistrationDragPayload | null>(null)
-  const [inviteDialog, setInviteDialog] = useState<AdminInviteTeamTarget | null>(null)
+  const workspaceId = useId()
+  const [activePanel, setActivePanel] = useState('teams')
+  const [playerQuery, setPlayerQuery] = useState('')
+  const resetFilters = () => {
+    setSearch('')
+    setStatus('all')
+    setPlayerQuery('')
+  }
+  const isDesktop = useMediaQuery(useTheme().breakpoints.up('lg'))
+  const [dialogError, setDialogError] = useState<string | null>(null)
+  const onDialogError = (error: Error) =>
+    setDialogError(getGameRegistrationMutationErrorMessage(error, t))
+  const [assignPlayer, setAssignPlayer] = useState<RegistrationPlayer | null>(null)
+  const [inviteDialog, setInviteDialog] = useState<AdminTeamTarget | null>(null)
+  const [pendingPlayedTeam, setPendingPlayedTeam] = useState<RegistrationTeam | null>(null)
+  const [pendingConfirmTeam, setPendingConfirmTeam] = useState<RegistrationTeam | null>(null)
+  const [pendingUnconfirmTeam, setPendingUnconfirmTeam] = useState<RegistrationTeam | null>(null)
+  const [pendingRejectTeam, setPendingRejectTeam] = useState<RegistrationTeam | null>(null)
   const [pendingDisbandTeam, setPendingDisbandTeam] = useState<RegistrationTeam | null>(null)
-  const [disbandError, setDisbandError] = useState<'teamActiveInGame' | 'teamAlreadyPlayed' | null>(
-    null,
-  )
   const [pendingRemovePlayer, setPendingRemovePlayer] = useState<{
     teamId: string
     teamSlotIndex: number
     player: RegistrationPlayer
   } | null>(null)
 
-  const sortedTeamSlots = useMemo(
-    () => [...snapshot.teamSlots].sort((left, right) => left.teamSlotIndex - right.teamSlotIndex),
-    [snapshot.teamSlots],
+  const {
+    search,
+    setSearch,
+    status,
+    setStatus,
+    orderedTeamEntries,
+    hasAvailableCreateTeamSlot,
+    disbandRequestsCount,
+    visibleEntries,
+    assignableTeams,
+  } = useAdminRegistrationCatalog(snapshot)
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
+    () => orderedTeamEntries[0]?.team.teamId ?? null,
   )
-
-  const teamsById = useMemo(
-    () => new Map(snapshot.teams.map((team) => [team.teamId, team])),
-    [snapshot.teams],
-  )
-
-  const orderedTeamEntries = useMemo(
-    () =>
-      sortedTeamSlots.reduce<OrderedAdminTeamEntry[]>((entries, slot) => {
-        if (!slot.teamId) {
-          return entries
-        }
-
-        const team = teamsById.get(slot.teamId)
-        if (!team) {
-          return entries
-        }
-
-        entries.push({ slot, team })
-        return entries
-      }, []),
-    [sortedTeamSlots, teamsById],
-  )
-
-  const readyTeamsCount = snapshot.teams.filter((team) => team.isReady).length
-  const hasAvailableCreateTeamSlot = sortedTeamSlots.some((slot) => slot.isAvailableForNewTeam)
-  const disbandRequestEntries = orderedTeamEntries.filter(
-    ({ team }) => team.disbandRequestedAtUtc != null,
-  )
-
-  const resolveRegistrationDragPayload = (event: DragEvent<HTMLElement>) =>
-    activeRegistrationDragPayload ?? readRegistrationDragPayload(event)
-
-  const clearDragState = () => {
-    setActiveRegistrationDragPayload(null)
-    setActiveDropTeamId(null)
-    setActiveDropTeamSlotId(null)
+  const [nameDirty, setNameDirty] = useState(false)
+  const [pendingSelection, setPendingSelection] = useState<string | null>(null)
+  const selectedEntry =
+    orderedTeamEntries.find(({ team }) => team.teamId === selectedTeamId) ?? orderedTeamEntries[0]
+  const selectTeam = (teamId: string) => {
+    if (selectedEntry && props.isUpdatingTeamName(selectedEntry.team.teamId)) return
+    if (nameDirty && selectedEntry?.team.teamId !== teamId) {
+      setPendingSelection(teamId)
+      return
+    }
+    setSelectedTeamId(teamId)
+    setActivePanel('detail')
   }
+
+  const playersPanel = (
+    <AdminAvailablePlayersPanel
+      players={snapshot.availablePlayers}
+      playerQuery={playerQuery}
+      onPlayerQuery={setPlayerQuery}
+      onAssign={(player) => {
+        setDialogError(null)
+        setAssignPlayer(player)
+      }}
+      isAssigning={props.isAssigningPlayer}
+    />
+  )
+  const detailPanel = selectedEntry ? (
+    <AdminRegistrationTeamDetails
+      key={selectedEntry.team.teamId}
+      entry={selectedEntry}
+      controls={props}
+      onDirtyChange={setNameDirty}
+      onMovePlayer={(player) => {
+        setDialogError(null)
+        setAssignPlayer(player)
+      }}
+      onInvite={(target) => {
+        setDialogError(null)
+        setInviteDialog(target)
+      }}
+      onRequestPlayed={setPendingPlayedTeam}
+      onRequestConfirm={(team) => {
+        setDialogError(null)
+        setPendingConfirmTeam(team)
+      }}
+      onRequestUnconfirm={(team) => {
+        setDialogError(null)
+        setPendingUnconfirmTeam(team)
+      }}
+      onRequestReject={(team) => {
+        setDialogError(null)
+        setPendingRejectTeam(team)
+      }}
+      onRequestDisband={(team) => {
+        setDialogError(null)
+        setPendingDisbandTeam(team)
+      }}
+      onRequestRemove={(target) => {
+        setDialogError(null)
+        setPendingRemovePlayer(target)
+      }}
+    />
+  ) : (
+    <Typography color="text.secondary" sx={{ p: 2 }}>
+      {t('teamRegistrations.selectPrompt')}
+    </Typography>
+  )
 
   return (
     <>
-      <Stack spacing={2}>
-        <AppToast
-          message={disbandError ? t(`gameRegistration.errors.${disbandError}`) : null}
-          severity="error"
-          onClose={() => setDisbandError(null)}
-          autoHideDuration={5000}
-        />
-        <AdminRegistrationOperationalStatus
-          readyTeamsCount={readyTeamsCount}
-          availablePlayersCount={snapshot.availablePlayers.length}
-          disbandRequestsCount={disbandRequestEntries.length}
-          minPlayers={snapshot.minPlayersPerTeam}
-          maxPlayers={snapshot.maxPlayersPerTeam}
-        />
-
-        {disbandRequestEntries.length > 0 ? (
-          <SectionCard surface="inset">
-            <Stack
-              direction={{ xs: 'column', lg: 'row' }}
-              spacing={1.5}
-              justifyContent="space-between"
-              alignItems={{ xs: 'stretch', lg: 'center' }}
-            >
-              <Stack spacing={0.5}>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <StatusBadge
-                    textFlow="singleLine"
-                    size="small"
-                    color="warning"
-                    label={t('gameApplication.adminPanel.disbandRequestsAlertChip', {
-                      count: disbandRequestEntries.length,
-                    })}
-                  />
-                  <Typography variant="subtitle1">
-                    {t('gameApplication.adminPanel.disbandRequestsAlertTitle')}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameApplication.adminPanel.disbandRequestsAlertDescription')}
-                </Typography>
-              </Stack>
-
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {disbandRequestEntries.slice(0, 3).map(({ team }) => (
-                  <StatusBadge
-                    textFlow="singleLine"
-                    key={team.teamId}
-                    color="warning"
-                    variant="outlined"
-                    label={t('gameApplication.adminPanel.disbandRequestsAlertTeam', {
-                      slot: team.teamSlotIndex,
-                      player:
-                        team.disbandRequestedByDisplayName ?? t('gameApplication.unknownPlayer'),
-                    })}
-                  />
-                ))}
-              </Stack>
-            </Stack>
-          </SectionCard>
-        ) : null}
-
-        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1.5} alignItems="stretch">
-          <AdminAvailablePlayersPanel
-            players={snapshot.availablePlayers}
-            onDragStart={(event, payload) => {
-              setActiveRegistrationDragPayload(payload)
-              writeRegistrationDragPayload(event, payload)
-            }}
-            onDragEnd={clearDragState}
+      <SectionCard
+        sx={{
+          flex: '1 1 0%',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            maxHeight: '45%',
+            flexShrink: 0,
+            overflowY: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarGutter: 'stable both-edges',
+          }}
+        >
+          <Box sx={{ mb: 1.5 }}>
+            <SectionHeader headingLevel="h1" title={t('teamRegistrations.title')} />
+          </Box>
+          <AdminRegistrationToolbar
+            search={search}
+            onSearch={setSearch}
+            status={status}
+            onStatus={setStatus}
+            requestsCount={disbandRequestsCount}
+            onReset={resetFilters}
           />
-          <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
-            {orderedTeamEntries.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('gameApplication.adminPanel.emptyTeams')}
-              </Typography>
-            ) : null}
-
-            <AdminRegistrationTeamsList
-              controls={props}
-              orderedTeamEntries={orderedTeamEntries}
-              activeDropTeamId={activeDropTeamId}
-              activeDropTeamSlotId={activeDropTeamSlotId}
-              setActiveDropTeamId={setActiveDropTeamId}
-              setActiveDropTeamSlotId={setActiveDropTeamSlotId}
-              resolveDragPayload={resolveRegistrationDragPayload}
-              clearDragState={clearDragState}
-              onPlayerDragStart={(event, payload) => {
-                setActiveRegistrationDragPayload(payload)
-                writeRegistrationDragPayload(event, payload)
-              }}
-              onInvite={setInviteDialog}
-              onRequestDisband={(team) => {
-                const reason = team.isActiveInGame
-                  ? 'teamActiveInGame'
-                  : team.isPlayed
-                    ? 'teamAlreadyPlayed'
-                    : null
-                setDisbandError(reason)
-                if (!reason) {
-                  setPendingDisbandTeam(team)
-                }
-              }}
-              onRequestRemove={setPendingRemovePlayer}
+        </Box>
+        <Box
+          sx={{
+            display: { xs: 'block', lg: 'none' },
+            mt: 1,
+            flexShrink: 0,
+            overflow: 'hidden',
+            scrollbarWidth: 'thin',
+            scrollbarGutter: 'stable both-edges',
+          }}
+        >
+          <TabStrip
+            appearance="framed"
+            density="compact"
+            value={activePanel}
+            onChange={(_, value: string) => setActivePanel(value)}
+            aria-label={t('teamRegistrations.title')}
+            variant="fullWidth"
+          >
+            <TabOption
+              appearance="framed"
+              density="compact"
+              value="teams"
+              id={workspaceId + '-teams-tab'}
+              aria-controls={workspaceId + '-teams-panel'}
+              label={t('teamRegistrations.teamsTab', { count: orderedTeamEntries.length })}
             />
-
-            <SectionCard surface="inset" sx={{ p: 1.25 }}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1}
-                justifyContent="space-between"
-                alignItems={{ xs: 'stretch', sm: 'center' }}
-              >
-                <HelpTooltip
-                  title={t('gameApplication.adminPanel.createTeamActionsDescription')}
-                  describeChild
-                  arrow
-                >
-                  <Typography variant="subtitle2" tabIndex={0} sx={{ width: 'fit-content' }}>
-                    {t('gameApplication.adminPanel.createTeamActionsTitle')}
-                  </Typography>
-                </HelpTooltip>
-
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={0.75}
-                  alignItems="flex-start"
-                  sx={{ flex: '0 0 auto' }}
-                >
-                  <AppButton
-                    sx={createTeamButtonSx}
-                    disabled={isCreatingTeam || !hasAvailableCreateTeamSlot}
-                    onClick={() => onCreateTeam(true)}
-                  >
-                    {t('gameApplication.adminPanel.createOpenTeam')}
-                  </AppButton>
-                  <AppButton
-                    tone="secondary"
-                    sx={createTeamButtonSx}
-                    disabled={isCreatingTeam || !hasAvailableCreateTeamSlot}
-                    onClick={() => onCreateTeam(false)}
-                  >
-                    {t('gameApplication.adminPanel.createPrivateTeam')}
-                  </AppButton>
-                </Stack>
+            <TabOption
+              appearance="framed"
+              density="compact"
+              value="detail"
+              id={workspaceId + '-detail-tab'}
+              aria-controls={workspaceId + '-detail-panel'}
+              label={t('teamRegistrations.details')}
+            />
+            <TabOption
+              appearance="framed"
+              density="compact"
+              value="players"
+              id={workspaceId + '-players-tab'}
+              aria-controls={workspaceId + '-players-panel'}
+              label={t('teamRegistrations.playersTab', { count: snapshot.availablePlayers.length })}
+            />
+          </TabStrip>
+        </Box>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'minmax(0,1fr)', lg: 'repeat(2,minmax(0,1fr))' },
+            gap: 2,
+            flex: '1 1 0%',
+            minHeight: 0,
+            mt: { xs: 1, lg: 1.5 },
+          }}
+        >
+          <Box
+            id={workspaceId + '-teams-panel'}
+            role={isDesktop ? undefined : 'tabpanel'}
+            aria-labelledby={isDesktop ? undefined : workspaceId + '-teams-tab'}
+            sx={{
+              display: { xs: activePanel === 'teams' ? 'flex' : 'none', lg: 'flex' },
+              flexDirection: 'column',
+              minHeight: 0,
+              minWidth: 0,
+            }}
+          >
+            <Box
+              role="region"
+              aria-label={t('teamRegistrations.list')}
+              tabIndex={0}
+              sx={{
+                flex: '1 1 0%',
+                minHeight: 0,
+                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+                scrollbarWidth: 'thin',
+                scrollbarGutter: 'stable both-edges',
+              }}
+            >
+              <Stack gap={0.5}>
+                {!visibleEntries.length ? (
+                  <Stack gap={1} alignItems="center" sx={{ p: 2 }}>
+                    <Typography color="text.secondary">
+                      {t(
+                        orderedTeamEntries.length
+                          ? 'teamRegistrations.noMatches'
+                          : 'gameApplication.adminPanel.emptyTeams',
+                      )}
+                    </Typography>
+                  </Stack>
+                ) : null}
+                <AdminRegistrationTeamsList
+                  controls={props}
+                  orderedTeamEntries={orderedTeamEntries}
+                  visibleTeamIds={new Set(visibleEntries.map(({ team }) => team.teamId))}
+                  selectedTeamId={selectedEntry?.team.teamId}
+                  onSelect={selectTeam}
+                />
               </Stack>
-            </SectionCard>
-          </Stack>
-        </Stack>
-      </Stack>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              overflow: 'hidden',
+              display: { xs: activePanel === 'teams' ? 'none' : 'flex', lg: 'flex' },
+              flexDirection: 'column',
+              minHeight: 0,
+              minWidth: 0,
+            }}
+          >
+            <AdminTeamWorkspaceHeader
+              workspaceId={workspaceId}
+              activePanel={activePanel}
+              onPanelChange={setActivePanel}
+              playerCount={snapshot.availablePlayers.length}
+              canCreate={hasAvailableCreateTeamSlot || Boolean(props.canCreateAdditionalTeams)}
+              isCreating={isCreatingTeam}
+              onCreate={onCreateTeam}
+            />
+            <Box
+              sx={{
+                p: 0,
+                flex: '1 1 0%',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                id={workspaceId + '-detail-panel'}
+                role="tabpanel"
+                aria-labelledby={workspaceId + (isDesktop ? '-desktop-detail-tab' : '-detail-tab')}
+                sx={{
+                  display: activePanel === 'players' ? 'none' : 'block',
+                  flex: '1 1 0%',
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  overscrollBehavior: 'contain',
+                  scrollbarWidth: 'thin',
+                  scrollbarGutter: 'stable both-edges',
+                  pb: 1,
+                  pt: 0,
+                }}
+              >
+                {detailPanel}
+              </Box>
+              <Box
+                id={workspaceId + '-players-panel'}
+                role="tabpanel"
+                aria-labelledby={
+                  workspaceId + (isDesktop ? '-desktop-players-tab' : '-players-tab')
+                }
+                sx={{
+                  display: activePanel === 'players' ? 'flex' : 'none',
+                  flex: '1 1 0%',
+                  minHeight: 0,
+                  overflow: 'hidden',
+                  scrollbarWidth: 'thin',
+                  scrollbarGutter: 'stable both-edges',
+                  pb: 1,
+                  pt: 0,
+                }}
+              >
+                {playersPanel}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </SectionCard>
+      {pendingPlayedTeam ? (
+        <AdminTeamPlayedConfirmation
+          team={pendingPlayedTeam}
+          controls={props}
+          onClose={() => setPendingPlayedTeam(null)}
+        />
+      ) : null}
+      <AdminTeamRejectionConfirmation
+        controls={props}
+        team={pendingRejectTeam}
+        error={dialogError}
+        onClose={() => setPendingRejectTeam(null)}
+        onError={onDialogError}
+      />
+      <AdminRegistrationConfirmations
+        controls={props}
+        dialogError={dialogError}
+        onDialogError={onDialogError}
+        pendingConfirmTeam={pendingConfirmTeam}
+        setPendingConfirmTeam={setPendingConfirmTeam}
+        pendingUnconfirmTeam={pendingUnconfirmTeam}
+        setPendingUnconfirmTeam={setPendingUnconfirmTeam}
+        pendingDisbandTeam={pendingDisbandTeam}
+        setPendingDisbandTeam={setPendingDisbandTeam}
+        pendingRemovePlayer={pendingRemovePlayer}
+        setPendingRemovePlayer={setPendingRemovePlayer}
+        pendingSelection={pendingSelection}
+        setPendingSelection={setPendingSelection}
+        setSelectedTeamId={setSelectedTeamId}
+        setNameDirty={setNameDirty}
+        setActivePanel={setActivePanel}
+      />
+      {assignPlayer ? (
+        <AdminAssignPlayerDialog
+          player={assignPlayer}
+          teams={assignableTeams.filter(
+            (team) => !team.members.some((member) => member.player.userId === assignPlayer.userId),
+          )}
+          initialTeamId={selectedEntry?.team.teamId}
+          isBusy={props.isAssigningPlayer}
+          onClose={() => setAssignPlayer(null)}
+          errorMessage={dialogError}
+          onAssign={(teamId, userId, onSuccess) =>
+            props.onAssignPlayer(teamId, userId, onSuccess, onDialogError)
+          }
+        />
+      ) : null}
 
-      <ConfirmDialog
-        confirmTone="danger"
-        open={pendingDisbandTeam !== null}
-        onClose={() => setPendingDisbandTeam(null)}
-        onConfirm={() => {
-          if (pendingDisbandTeam) {
-            onDisbandTeam(pendingDisbandTeam.teamId)
-            setPendingDisbandTeam(null)
-          }
-        }}
-        isBusy={pendingDisbandTeam ? isDisbandingTeam(pendingDisbandTeam.teamId) : false}
-        title={t('gameApplication.adminPanel.disbandConfirmTitle')}
-        description={t('gameApplication.adminPanel.disbandConfirmDescription', {
-          slot: pendingDisbandTeam?.teamSlotIndex ?? '-',
-          count: pendingDisbandTeam?.members.length ?? 0,
-        })}
-        cancelLabel={t('gameApplication.adminPanel.disbandConfirmCancel')}
-        confirmLabel={t('gameApplication.adminPanel.disbandConfirmAction')}
-      />
-      <ConfirmDialog
-        confirmTone="danger"
-        open={pendingRemovePlayer !== null}
-        onClose={() => setPendingRemovePlayer(null)}
-        onConfirm={() => {
-          if (pendingRemovePlayer) {
-            onRemovePlayer(pendingRemovePlayer.teamId, pendingRemovePlayer.player.userId)
-            setPendingRemovePlayer(null)
-          }
-        }}
-        isBusy={
-          pendingRemovePlayer
-            ? isRemovingPlayer(pendingRemovePlayer.teamId, pendingRemovePlayer.player.userId)
-            : false
-        }
-        title={t('gameApplication.adminPanel.removePlayerConfirmTitle')}
-        description={t('gameApplication.adminPanel.removePlayerConfirmDescription', {
-          player: pendingRemovePlayer?.player.displayName ?? t('gameApplication.unknownPlayer'),
-          slot: pendingRemovePlayer?.teamSlotIndex ?? '-',
-        })}
-        cancelLabel={t('gameApplication.adminPanel.removePlayerConfirmCancel')}
-        confirmLabel={t('gameApplication.adminPanel.removePlayerConfirmAction')}
-      />
-      <AdminInvitePlayerDialog
+      <AdminTeamPlayerDialog
+        key={inviteDialog?.team.teamId ?? 'closed'}
+        errorMessage={dialogError}
         target={inviteDialog}
         availablePlayers={snapshot.availablePlayers}
-        isBusy={inviteDialog ? isCreatingInvitation(inviteDialog.team.teamId) : false}
+        isBusy={
+          props.isAssigningPlayer ||
+          (inviteDialog ? isCreatingInvitation(inviteDialog.team.teamId) : false)
+        }
         onClose={() => setInviteDialog(null)}
+        onAdd={(teamId, userId) =>
+          props.onAssignPlayer(teamId, userId, () => setInviteDialog(null), onDialogError)
+        }
         onInvite={(teamSlotId, invitedUserId, teamId) => {
-          onCreateInvitation(teamSlotId, invitedUserId, teamId)
-          setInviteDialog(null)
+          onCreateInvitation(
+            teamSlotId,
+            invitedUserId,
+            teamId,
+            () => setInviteDialog(null),
+            onDialogError,
+          )
         }}
       />
     </>

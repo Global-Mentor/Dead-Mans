@@ -13,6 +13,7 @@ export {
   useCreateAdminGameRegistrationTeamMutation,
   useCreatePlayerGameRegistrationInvitationMutation,
   useConfirmGameRegistrationTeamMutation,
+  useUnconfirmGameRegistrationTeamMutation,
   useCreateGameRegistrationTeamMutation,
   useDeclineGameRegistrationInvitationMutation,
   useDisbandGameRegistrationTeamMutation,

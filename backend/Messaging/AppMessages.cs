@@ -131,9 +131,9 @@ public static class AppMessages
         public const string GameRegistrationTeamInviteNotAllowed =
             "You cannot invite players from this team in its current state.";
         public const string GameRegistrationTeamActiveInGame =
-            "The active team cannot be disbanded while it is taking its turn.";
+            "The active team cannot be disbanded or have its confirmation cancelled.";
         public const string GameRegistrationTeamAlreadyPlayed =
-            "A team that has opened a card or is marked as played cannot be disbanded.";
+            "A team that has opened a card or is marked as played cannot be disbanded or have its confirmation cancelled.";
         public const string GameRegistrationInvalidTeamName =
             "Enter a team name of 3 to 18 characters.";
         public const string GameRegistrationTeamNameTaken =

@@ -103,6 +103,10 @@ public interface IGameRegistrationPersistence
         CancellationToken cancellationToken = default
     );
 
+    Task<GameRegistrationResult<RegistrationTeamDto>> PersistUnconfirmTeamAsync(
+        Guid gameId, Guid adminUserId, Guid teamId, CancellationToken cancellationToken = default
+    );
+
     Task<GameRegistrationResult<bool>> PersistRejectTeamAsync(
         Guid gameId,
         Guid adminUserId,
