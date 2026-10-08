@@ -94,7 +94,7 @@ const panelPages = {
   'catalog-modifiers': lazyPanelPage(
     () => import('../features/game-catalog/CatalogModifiersPage.tsx'),
     'CatalogModifiersPage',
-    [translations.gameCatalog],
+    [translations.gameCatalog, translations.gameModifiers],
   ),
   'catalog-questions': lazyPanelPage(
     () => import('../features/game-catalog/CatalogQuestionsPage.tsx'),

@@ -48,6 +48,14 @@ const translations = {
     },
     modifiers: {
       title: 'Modifier catalog',
+      catalog: {
+        details: 'Modifier details',
+        filters: 'Filters ({{count}})',
+        sort: 'Sort by',
+        sortName: 'Name',
+        sortCost: 'Cost: low to high',
+        resetFilters: 'Reset filters',
+      },
       description:
         'Master list of modifiers. Create, edit and remove the modifiers available to any game.',
       add: 'Add modifier',
@@ -66,6 +74,7 @@ const translations = {
       meta: '{{category}} · cost {{cost}}',
       hostControlBadge: 'Host tracks this modifier',
       contentLockedBadge: 'Locked by active game',
+      contentEditableBadge: 'Available to edit',
       contentLockedReason:
         'This modifier is included in the active game. Its content is read-only until the game finishes or is archived.',
       staleDraftPreserved:
@@ -575,6 +584,14 @@ const translations = {
     },
     modifiers: {
       title: 'Каталог модификаторов',
+      catalog: {
+        details: 'Карточка модификатора',
+        filters: 'Фильтры ({{count}})',
+        sort: 'Сортировка',
+        sortName: 'По названию',
+        sortCost: 'Сначала дешевле',
+        resetFilters: 'Сбросить фильтры',
+      },
       description:
         'Общий список модификаторов. Создавайте, редактируйте и удаляйте модификаторы, доступные любым играм.',
       add: 'Добавить модификатор',
@@ -593,6 +610,7 @@ const translations = {
       meta: '{{category}} · стоимость {{cost}}',
       hostControlBadge: 'Нужен контроль ведущего',
       contentLockedBadge: 'Заблокирован активной игрой',
+      contentEditableBadge: 'Можно изменить',
       contentLockedReason:
         'Модификатор включён в активную игру. Его содержимое доступно только для просмотра до завершения или архивации игры.',
       staleDraftPreserved:
@@ -1110,6 +1128,14 @@ const translations = {
     },
     modifiers: {
       title: 'Каталог модифікаторів',
+      catalog: {
+        details: 'Картка модифікатора',
+        filters: 'Фільтри ({{count}})',
+        sort: 'Сортування',
+        sortName: 'За назвою',
+        sortCost: 'Спочатку дешевші',
+        resetFilters: 'Скинути фільтри',
+      },
       description:
         'Загальний список модифікаторів. Створюйте, редагуйте та видаляйте модифікатори, доступні будь-яким іграм.',
       add: 'Додати модифікатор',
@@ -1128,6 +1154,7 @@ const translations = {
       meta: '{{category}} · вартість {{cost}}',
       hostControlBadge: 'Потрібен контроль ведучого',
       contentLockedBadge: 'Заблоковано активною грою',
+      contentEditableBadge: 'Можна змінити',
       contentLockedReason:
         'Модифікатор включено до активної гри. Його вміст доступний лише для перегляду до завершення або архівації гри.',
       staleDraftPreserved:
@@ -1637,6 +1664,14 @@ const translations = {
     },
     modifiers: {
       title: 'Katalog modyfikatorów',
+      catalog: {
+        details: 'Szczegóły modyfikatora',
+        filters: 'Filtry ({{count}})',
+        sort: 'Sortowanie',
+        sortName: 'Nazwa',
+        sortCost: 'Od najtańszych',
+        resetFilters: 'Resetuj filtry',
+      },
       description:
         'Główna lista modyfikatorów. Twórz, edytuj i usuwaj modyfikatory dostępne dla dowolnej gry.',
       add: 'Dodaj modyfikator',
@@ -1655,6 +1690,7 @@ const translations = {
       meta: '{{category}} · koszt {{cost}}',
       hostControlBadge: 'Wymaga kontroli prowadzącego',
       contentLockedBadge: 'Zablokowany przez aktywną grę',
+      contentEditableBadge: 'Można edytować',
       contentLockedReason:
         'Modyfikator jest używany w aktywnej grze. Jego zawartość pozostaje tylko do odczytu do zakończenia lub archiwizacji gry.',
       staleDraftPreserved:

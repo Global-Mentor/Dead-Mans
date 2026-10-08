@@ -14,6 +14,8 @@ export function ModifierCatalogRow({
   showActivationsCount = false,
   isActive = false,
   actions,
+  managementActions,
+  status,
   onDetails,
   metadata,
   children,
@@ -26,6 +28,8 @@ export function ModifierCatalogRow({
   showActivationsCount?: boolean
   isActive?: boolean
   actions?: ReactNode
+  managementActions?: ReactNode
+  status?: ReactNode
   onDetails?: (() => void) | undefined
   metadata?: ReactNode
   children?: ReactNode
@@ -44,6 +48,7 @@ export function ModifierCatalogRow({
         px: 1,
         py: 0.5,
         containerType: 'inline-size',
+        ...(managementActions ? { minHeight: 104, display: 'grid', alignItems: 'center' } : {}),
       }}
     >
       <Box
@@ -53,6 +58,16 @@ export function ModifierCatalogRow({
           minWidth: 0,
           gridTemplateColumns: 'minmax(0, 1fr) auto',
           alignItems: 'center',
+          ...(managementActions
+            ? {
+                gridTemplateColumns: 'minmax(0, 1fr)',
+                gap: 1,
+                '@container (min-width:600px)': { gridTemplateColumns: 'minmax(0, 1fr) 272px' },
+                '@container (min-width:900px)': {
+                  gridTemplateColumns: 'minmax(0, 1fr) 220px 272px',
+                },
+              }
+            : {}),
         }}
       >
         <Stack
@@ -61,7 +76,11 @@ export function ModifierCatalogRow({
           gap={1}
           sx={{
             minWidth: 0,
-            ...(limit != null ? { '@container (max-width:319px)': { gridColumn: '1 / -1' } } : {}),
+            ...(managementActions
+              ? { gridColumn: 1, gridRow: 1, minHeight: 80 }
+              : limit != null
+                ? { '@container (max-width:319px)': { gridColumn: '1 / -1' } }
+                : {}),
           }}
         >
           <ModifierIconTile emoji={emoji} size="large" />
@@ -115,35 +134,72 @@ export function ModifierCatalogRow({
             {metadata}
           </Box>
         </Stack>
+        {managementActions ? (
+          <Box
+            data-modifier-catalog-status
+            sx={{
+              minWidth: 0,
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gridColumn: 1,
+              gridRow: 2,
+              '@container (min-width:900px)': { gridColumn: 2, gridRow: 1 },
+            }}
+          >
+            {status}
+          </Box>
+        ) : null}
         <Stack
           alignItems="flex-end"
           gap={0.5}
           sx={{
-            gridColumn: 2,
-            gridRow: 1,
-            '@container (min-width:460px)': { flexDirection: 'row', alignItems: 'center' },
-            ...(limit != null
+            ...(managementActions
               ? {
-                  '@container (max-width:319px)': {
-                    gridColumn: '1 / -1',
-                    gridRow: 2,
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gridAutoRows: 'minmax(44px, auto)',
+                  gap: 1,
+                  alignItems: 'stretch',
+                  gridColumn: 1,
+                  gridRow: 3,
+                  '@container (min-width:460px)': {
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
                   },
+                  '@container (min-width:600px)': { gridColumn: 2, gridRow: '1 / span 2' },
+                  '@container (min-width:900px)': { gridColumn: 3, gridRow: 1 },
                 }
-              : {}),
+              : {
+                  gridColumn: 2,
+                  gridRow: 1,
+                  '@container (min-width:460px)': { flexDirection: 'row', alignItems: 'center' },
+                  ...(limit != null
+                    ? {
+                        '@container (max-width:319px)': {
+                          gridColumn: '1 / -1',
+                          gridRow: 2,
+                          flexDirection: 'row',
+                          justifyContent: 'flex-end',
+                          alignItems: 'center',
+                        },
+                      }
+                    : {}),
+                }),
           }}
         >
           <AppButton
             tone="subtle"
             size="small"
+            fullWidth={Boolean(managementActions)}
             aria-expanded={children ? detailsOpen : undefined}
             onClick={onDetails ?? (() => setDetailsOpen(!detailsOpen))}
           >
             {t('gameModifiers.detailsAction')}
           </AppButton>
           {actions}
+          {managementActions}
         </Stack>
       </Box>
       {children ? (

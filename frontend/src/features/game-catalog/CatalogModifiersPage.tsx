@@ -1,34 +1,22 @@
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AppButton,
-  CatalogWorkspace,
   ConfirmDialog,
-  FormTextField,
-  FormSelect,
   InlineNotice,
   PageShell,
   SectionCard,
   SectionHeader,
 } from '../../shared/ui/index.ts'
-import { modifierCategoryCodes, modifierRoundSummaryTypes } from '../game-modifiers/index.ts'
+import { ModifierCatalogFilters, type ModifierCatalogSort } from './ui/ModifierCatalogFilters.tsx'
 import { ModifierFormDialog } from './ui/ModifierFormDialog.tsx'
 import { ModifierCatalogList } from './ui/ModifierCatalogList.tsx'
 import { useCatalogFeedback } from './use-catalog-feedback.ts'
 import { useCatalogModifiers } from './use-catalog-modifiers.ts'
 export function CatalogModifiersPage() {
-  const { t } = useTranslation()
-  const categoryLabels = {
-    preparation: t('common.modifiers.categories.preparation'),
-    round: t('common.modifiers.categories.round'),
-    result: t('common.modifiers.categories.result'),
-  } as const
-  const roundSummaryLabels = {
-    passive: t('gameCatalog.modifiers.roundSummaryType.passive'),
-    automatic: t('gameCatalog.modifiers.roundSummaryType.automatic'),
-    condition: t('gameCatalog.modifiers.roundSummaryType.condition'),
-    manual_count: t('gameCatalog.modifiers.roundSummaryType.manual_count'),
-  } as const
+  const { t, i18n } = useTranslation()
+  const [sort, setSort] = useState<ModifierCatalogSort>('name')
   const {
     search,
     setSearch,
@@ -57,6 +45,18 @@ export function CatalogModifiersPage() {
   } = useCatalogModifiers()
   const { listError, clearListError, resetFeedback, showResolvedError } = useCatalogFeedback(t)
 
+  const modifiers = useMemo(() => {
+    const collator = new Intl.Collator(i18n.resolvedLanguage, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+    return [...filteredModifiers].sort(
+      (a, b) =>
+        (sort === 'cost' ? a.activationCost - b.activationCost : 0) ||
+        collator.compare(a.name, b.name) ||
+        a.id.localeCompare(b.id),
+    )
+  }, [filteredModifiers, i18n.resolvedLanguage, sort])
   const resetFilters = () => {
     setSearch('')
     setSelectedCategory(null)
@@ -73,7 +73,8 @@ export function CatalogModifiersPage() {
   return (
     <PageShell
       sx={{
-        maxWidth: 1440,
+        maxWidth: 1200,
+        px: { xs: 0.5, sm: 2, md: 3 },
         width: '100%',
         flex: '1 1 0%',
         minHeight: 0,
@@ -87,86 +88,78 @@ export function CatalogModifiersPage() {
           {listError}
         </InlineNotice>
       ) : null}
-      <CatalogWorkspace
-        toolsLabel={t('gameCatalog.modifiers.menuTitle')}
-        tools={
-          <SectionCard>
-            <Stack
-              direction="row"
-              gap={1}
-              justifyContent="space-between"
-              alignItems="center"
-              flexWrap="wrap"
-            >
-              <SectionHeader headingLevel="h1" title={t('gameCatalog.modifiers.title')} />
-              <AppButton onClick={openCreate}>{t('gameCatalog.modifiers.add')}</AppButton>
-            </Stack>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'minmax(0,1fr)',
-                  md: 'minmax(0,1fr) minmax(180px,260px) minmax(200px,280px)',
-                },
-                gap: 1,
-                mt: 1.5,
-              }}
-            >
-              <FormTextField
-                value={search}
-                label={t('common.modifiers.searchLabel')}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <FormSelect
-                label={t('common.entities.categories')}
-                value={selectedCategory ?? '__all__'}
-                onChange={(value) =>
-                  setSelectedCategory(
-                    modifierCategoryCodes.find((category) => category === value) ?? null,
-                  )
-                }
-                options={[
-                  { value: '__all__', label: t('common.filters.allCategories') },
-                  ...modifierCategoryCodes.map((category) => ({
-                    value: category,
-                    label: categoryLabels[category] + ' (' + categoryCounts[category] + ')',
-                  })),
-                ]}
-              />
-              <FormSelect
-                label={t('gameCatalog.modifiers.roundSummaryTitle')}
-                value={selectedRoundSummaryType ?? '__all__'}
-                onChange={(value) =>
-                  setSelectedRoundSummaryType(
-                    modifierRoundSummaryTypes.find((type) => type === value) ?? null,
-                  )
-                }
-                options={[
-                  { value: '__all__', label: t('gameCatalog.modifiers.allRoundSummaries') },
-                  ...modifierRoundSummaryTypes.map((type) => ({
-                    value: type,
-                    label: roundSummaryLabels[type] + ' (' + roundSummaryCounts[type] + ')',
-                  })),
-                ]}
-              />
-            </Box>
-          </SectionCard>
-        }
+      <SectionCard
+        sx={{
+          flex: '1 1 0%',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          p: { xs: 1, sm: 2 },
+        }}
       >
+        <Box
+          role="group"
+          aria-label={t('gameCatalog.modifiers.menuTitle')}
+          sx={{
+            flexShrink: 0,
+            maxHeight: '65%',
+            overflowY: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarGutter: 'stable both-edges',
+            p: 0.5,
+          }}
+        >
+          <SectionHeader
+            headingLevel="h1"
+            title={t('gameCatalog.modifiers.title')}
+            actions={
+              <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
+                <Typography variant="body2" color="text.secondary" role="status">
+                  {t('gameCatalog.workspace.results', {
+                    count: filteredModifiers.length,
+                    total: catalogQuery.data?.length ?? 0,
+                  })}
+                </Typography>
+                <AppButton framePlacement="inset" onClick={openCreate}>
+                  {t('gameCatalog.modifiers.add')}
+                </AppButton>
+              </Stack>
+            }
+          />
+          <ModifierCatalogFilters
+            search={search}
+            onSearchChange={setSearch}
+            category={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            categoryCounts={categoryCounts}
+            summaryType={selectedRoundSummaryType}
+            onSummaryTypeChange={setSelectedRoundSummaryType}
+            summaryCounts={roundSummaryCounts}
+            sort={sort}
+            onSortChange={setSort}
+            hasFilters={
+              search.trim().length > 0 ||
+              selectedCategory !== null ||
+              selectedRoundSummaryType !== null
+            }
+            onReset={resetFilters}
+          />
+        </Box>
         <ModifierCatalogList
-          modifiers={filteredModifiers}
+          modifiers={modifiers}
           catalog={catalogQuery.data ?? []}
           isLoading={catalogQuery.isLoading}
           isError={catalogQuery.isError}
           onRetry={() => void catalogQuery.refetch()}
+          isActionDialogOpen={dialog !== null || deleteTarget !== null}
           onEdit={openEdit}
           onDelete={(modifier) => {
             clearListError()
             requestDelete(modifier)
           }}
-          onReset={resetFilters}
         />
-      </CatalogWorkspace>
+      </SectionCard>
       <ModifierFormDialog
         open={dialog !== null}
         mode={dialog?.mode ?? 'create'}

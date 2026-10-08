@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
-async function mockAdmin(page: Page, roles = ['viewer', 'admin']) {
-  await page.addInitScript(() => localStorage.setItem('i18nextLng', 'en'))
+async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en') {
+  await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), locale)
   await page.routeWebSocket(/\/hubs\//, (socket) =>
     socket.onMessage((message) => {
       if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
@@ -140,6 +140,7 @@ async function mockAdmin(page: Page, roles = ['viewer', 'admin']) {
   )
   return {
     questions,
+    modifiers,
     questionIds: () => setup.enabledQuestionIds,
     duration: () => setup.quizAnswerDurationSeconds,
     writes: () => writes,
@@ -181,7 +182,9 @@ for (const width of [320, 390, 768, 1440]) {
           page.getByRole('checkbox', { name: 'Include Night watch 1 in the game', exact: true }),
         ).toBeChecked()
       } else {
-        await expect(page.getByText('Night watch 1', { exact: true })).toBeVisible()
+        await expect(
+          page.getByTestId('modifier-catalog-list').getByText('Night watch 1', { exact: true }),
+        ).toBeVisible()
       }
       await page.evaluate(() => document.fonts.ready)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -810,13 +813,17 @@ for (const viewport of [
         await page.goto('/panel/catalog-' + kind)
         // The region is the sole scrolling list on each catalogue.
         const list = page.locator('[role="region"][tabindex="0"]')
-        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+        await expect(
+          list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+        ).toHaveCount(kind === 'questions' ? 12 : 9)
         const search = page.getByRole('textbox').first()
         const top = (await search.boundingBox())!.y
         await list.evaluate((element) => {
           element.scrollTop = element.scrollHeight
         })
-        await expect(list.locator('article').last()).toBeInViewport()
+        await expect(
+          list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]').last(),
+        ).toBeInViewport()
         expect((await search.boundingBox())!.y).toBe(top)
         expect(
           await page.evaluate(
@@ -827,23 +834,34 @@ for (const viewport of [
         ).toBe(true)
         const readsBefore = reads
         await search.fill('nothing matches')
-        await expect(list.locator('article')).toHaveCount(0)
+        await expect(
+          list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+        ).toHaveCount(0)
+        if (kind === 'modifiers' && viewport.width < 600) {
+          await page.getByRole('button', { name: 'Filters (0)', exact: true }).click()
+        }
         await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
         await expect(search).toHaveValue('')
-        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+        await expect(
+          list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+        ).toHaveCount(kind === 'questions' ? 12 : 9)
         await page.getByRole('combobox', { name: /^Categories/ }).click()
         await page
           .getByRole('option', { name: kind === 'questions' ? /^Geography/ : /^Before the round/ })
           .click()
-        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 3)
+        await expect(
+          list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+        ).toHaveCount(kind === 'questions' ? 12 : 3)
         if (kind === 'questions') {
           await page.getByRole('combobox', { name: /^Availability/ }).click()
           await page.getByRole('option', { name: 'globally disabled', exact: true }).click()
-          await expect(list.locator('article')).toHaveCount(1)
+          await expect(
+            list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+          ).toHaveCount(1)
         }
         expect(reads).toBe(readsBefore)
         await list
-          .getByRole('button', { name: /^Preview:/ })
+          .getByRole('button', { name: kind === 'questions' ? /^Preview:/ : 'Details' })
           .first()
           .click()
         const dialog = page.getByRole('dialog')
@@ -884,8 +902,86 @@ test('catalogue deletion errors keep the selected record and confirmation open',
       dialog.getByText('The operation could not be completed. Please try again.', { exact: true }),
     ).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Delete', exact: true })).toBeEnabled()
-    await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+    await expect(
+      list.locator(kind === 'questions' ? 'article' : '[data-modifier-catalog-row]'),
+    ).toHaveCount(kind === 'questions' ? 12 : 9)
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(dialog).toHaveCount(0)
   }
 })
+
+for (const width of [320, 390, 768, 1440]) {
+  test(
+    'modifier catalogue preserves compact actions and locks in Russian at ' + width + 'px',
+    async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      const server = await mockAdmin(page, ['viewer', 'admin'], 'ru')
+      server.modifiers[0]!.name = 'Ночной дозор: испытание для всей команды'
+      await page.goto('/panel/catalog-modifiers')
+      const rows = page.locator('[data-modifier-catalog-row]')
+      await expect(rows).toHaveCount(9)
+      await page.evaluate(() => document.fonts.ready)
+      const first = rows.first()
+      const edit = first.getByRole('button', { name: 'Изменить', exact: true })
+      const remove = first.getByRole('button', { name: 'Удалить', exact: true })
+      const editBounds = (await edit.boundingBox())!
+      const deleteBounds = (await remove.boundingBox())!
+      expect(Math.abs(editBounds.y - deleteBounds.y)).toBeLessThan(1)
+      const firstBounds = (await first.boundingBox())!
+      const secondBounds = (await rows.nth(1).boundingBox())!
+      expect(secondBounds.y).toBeGreaterThan(firstBounds.y + firstBounds.height)
+      expect(Math.abs(firstBounds.height - secondBounds.height)).toBeLessThan(1)
+      for (const action of [
+        first.getByRole('button', { name: 'Подробнее', exact: true }),
+        first.getByRole('link', { name: 'История', exact: true }),
+        edit,
+        remove,
+      ]) {
+        const bounds = (await action.boundingBox())!
+        expect(Math.abs(bounds.width - editBounds.width)).toBeLessThan(1)
+        expect(Math.abs(bounds.height - editBounds.height)).toBeLessThan(1)
+      }
+
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <= innerWidth &&
+            document.documentElement.scrollHeight <= innerHeight,
+        ),
+      ).toBe(true)
+      await expect(first.getByRole('link', { name: 'История', exact: true })).toHaveAttribute(
+        'href',
+        /modifierId=modifier-0/,
+      )
+      await page.evaluate(() => document.fonts.ready)
+      await page.screenshot({
+        path: info.outputPath('catalog-modifiers-ru.png'),
+        animations: 'disabled',
+      })
+      await page.getByRole('button', { name: 'Добавить модификатор', exact: true }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await edit.click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      server.modifiers[0]!.isLockedByActiveGame = true
+      await page.reload()
+      await expect(first.getByRole('button', { name: 'Просмотр', exact: true })).toBeVisible()
+      await expect(remove).toBeDisabled()
+      expect(Math.abs((await first.boundingBox())!.height - firstBounds.height)).toBeLessThan(1)
+      await page.screenshot({
+        path: info.outputPath('catalog-modifiers-locked-ru.png'),
+        animations: 'disabled',
+      })
+      await remove.locator('..').focus()
+      await expect(page.getByRole('tooltip')).toHaveText('Заблокирован активной игрой')
+      await first.getByRole('button', { name: 'Просмотр', exact: true }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+      await expect(
+        page.getByRole('dialog').getByRole('button', { name: 'Сохранить', exact: true }),
+      ).toHaveCount(0)
+    },
+  )
+}
