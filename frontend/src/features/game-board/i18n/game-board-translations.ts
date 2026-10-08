@@ -409,7 +409,8 @@ const translations = {
     teamPlayedNoActiveGame: 'No active game is available for updating this team.',
     teamPlayedNotFound: 'The selected team was not found in the current active game.',
     teamPlayedNotConfirmed: 'Only confirmed teams can be marked as played.',
-    teamPlayedRoundInProgress: 'Finish the active round before changing team play status.',
+    teamPlayedActiveTeam: 'Choose another active team before marking this team as played.',
+    teamPlayedNoOpenedCard: 'The team must open at least one card before being marked as played.',
     runFinalizeFailed: 'Failed to finalize round.',
     openConfirmTitle: 'Open card?',
     openPending: 'Opening',
@@ -855,7 +856,10 @@ const translations = {
     teamPlayedNoActiveGame: 'Нет активной игры, в которой можно обновить эту команду.',
     teamPlayedNotFound: 'Выбранная команда не найдена в текущей активной игре.',
     teamPlayedNotConfirmed: 'Отмечать как отыгравшие можно только подтверждённые команды.',
-    teamPlayedRoundInProgress: 'Сначала завершите текущий раунд, а потом меняйте статус команды.',
+    teamPlayedActiveTeam:
+      'Сначала выберите другую активную команду, затем отметьте эту как отыгравшую.',
+    teamPlayedNoOpenedCard:
+      'Можно отметить отыгравшей только команду, которая открыла хотя бы одну карточку.',
     runFinalizeFailed: 'Не удалось завершить раунд.',
     openConfirmTitle: 'Открыть карточку?',
     openPending: 'Открываем',
@@ -1298,8 +1302,10 @@ const translations = {
     teamPlayedNoActiveGame: 'Немає активної гри, у якій можна оновити цю команду.',
     teamPlayedNotFound: 'Обрану команду не знайдено в поточній активній грі.',
     teamPlayedNotConfirmed: 'Позначати як відіграні можна лише підтверджені команди.',
-    teamPlayedRoundInProgress:
-      'Спочатку завершіть поточний раунд, а потім змінюйте статус команди.',
+    teamPlayedActiveTeam:
+      'Спочатку виберіть іншу активну команду, потім позначте цю як таку, що відіграла.',
+    teamPlayedNoOpenedCard:
+      'Позначити як таку, що відіграла, можна лише команду, яка відкрила хоча б одну картку.',
     runFinalizeFailed: 'Не вдалося завершити раунд.',
     openConfirmTitle: 'Відкрити картку?',
     openPending: 'Відкриваємо',
@@ -1745,7 +1751,9 @@ const translations = {
     teamPlayedNoActiveGame: 'Brak aktywnej gry, w której można zaktualizować tę drużynę.',
     teamPlayedNotFound: 'Wybrana drużyna nie została znaleziona w bieżącej aktywnej grze.',
     teamPlayedNotConfirmed: 'Jako rozegrane można oznaczać tylko potwierdzone drużyny.',
-    teamPlayedRoundInProgress: 'Najpierw zakończ aktywną rundę, a potem zmień status drużyny.',
+    teamPlayedActiveTeam: 'Najpierw wybierz inną aktywną drużynę, potem oznacz tę jako zakończoną.',
+    teamPlayedNoOpenedCard:
+      'Drużyna musi otworzyć co najmniej jedną kartę, zanim oznaczysz ją jako zakończoną.',
     runFinalizeFailed: 'Nie udało się zakończyć rundy.',
     openConfirmTitle: 'Otworzyć kartę?',
     openPending: 'Otwieranie',

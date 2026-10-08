@@ -78,7 +78,8 @@ public sealed record RegistrationTeamDto(
     bool IsActiveInGame,
     bool IsReady,
     IReadOnlyList<RegistrationTeamMemberDto> Members,
-    IReadOnlyList<RegistrationTeamPendingInvitationDto> PendingInvitations
+    IReadOnlyList<RegistrationTeamPendingInvitationDto> PendingInvitations,
+    bool HasOpenedCard = false
 );
 
 public sealed record RegistrationTeamSlotDto(

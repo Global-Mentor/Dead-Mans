@@ -2869,7 +2869,8 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     for (const label of ['Снять выбор', 'Отыграла']) {
       const action = management.getByRole('button', { name: label, exact: true })
       await expect(action).toHaveClass(/MuiButton-outlinedPrimary/)
-      await expect(action).toBeEnabled()
+      if (label === 'Отыграла') await expect(action).toBeDisabled()
+      else await expect(action).toBeEnabled()
     }
     await expect(page.getByRole('tab', { name: 'Управление игрой' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Управление модификаторами' })).toBeVisible()

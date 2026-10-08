@@ -228,20 +228,6 @@ public sealed partial class DbGameBoardRepository
             }
         }
 
-        if (isPlayed && await _dbContext.GameRounds.AnyAsync(
-                round =>
-                    round.GameId == activeGame.Id
-                    && (round.Status == GameRoundStatusValue.CardOpened
-                        || round.Status == GameRoundStatusValue.AwaitingModifiers
-                        || round.Status == GameRoundStatusValue.Preparing
-                        || round.Status == GameRoundStatusValue.InProgress
-                        || round.Status == GameRoundStatusValue.ReviewingResults),
-                cancellationToken
-            ))
-        {
-            return SetGameTeamPlayedStateOutcome.RoundInProgress;
-        }
-
         var team = await _dbContext.GameTeams.FirstOrDefaultAsync(
             candidate => candidate.Id == teamId && candidate.GameId == activeGame.Id,
             cancellationToken
@@ -256,15 +242,22 @@ public sealed partial class DbGameBoardRepository
             return SetGameTeamPlayedStateOutcome.TeamNotConfirmed;
         }
 
+        if (activeGame.ActiveTeamId == team.Id)
+        {
+            return SetGameTeamPlayedStateOutcome.TeamActiveInGame;
+        }
+
+        if (isPlayed && !await _dbContext.GameRounds.AnyAsync(
+                round => round.GameId == activeGame.Id && round.TeamId == team.Id,
+                cancellationToken))
+        {
+            return SetGameTeamPlayedStateOutcome.TeamHasNotOpenedCard;
+        }
+
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         team.IsPlayed = isPlayed;
         team.PlayedAtUtc = isPlayed ? now : null;
         team.UpdatedAtUtc = now;
-
-        if (isPlayed && activeGame.ActiveTeamId == team.Id)
-        {
-            activeGame.ActiveTeamId = null;
-        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null)

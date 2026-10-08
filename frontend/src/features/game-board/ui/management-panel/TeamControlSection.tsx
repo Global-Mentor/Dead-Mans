@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../../shared/api/contracts/index.ts'
 import {
   AppButton,
+  HelpTooltip,
   AsyncSection,
   SectionDivider,
   NativeDisclosure,
@@ -136,21 +137,25 @@ export function TeamControlSection({
                     >
                       {t('gameBoard.managementActiveTeamClearAction')}
                     </AppButton>
-                    <AppButton
-                      tone="secondary"
-                      size="small"
-                      disabled={isTeamControlBusy || isActiveTeamLocked}
-                      onClick={() =>
-                        onSetTeamPlayedState({
-                          teamId: currentActiveTeam.teamId,
-                          isPlayed: !currentActiveTeam.isPlayed,
-                        })
-                      }
-                    >
-                      {currentActiveTeam.isPlayed
-                        ? t('gameBoard.teamPlayedResetAction')
-                        : t('gameBoard.teamPlayedMarkAction')}
-                    </AppButton>
+                    <HelpTooltip title={t('gameBoard.teamPlayedActiveTeam')} describeChild arrow>
+                      <Box component="span" sx={{ display: 'flex' }} tabIndex={0}>
+                        <AppButton
+                          tone="secondary"
+                          size="small"
+                          disabled
+                          onClick={() =>
+                            onSetTeamPlayedState({
+                              teamId: currentActiveTeam.teamId,
+                              isPlayed: !currentActiveTeam.isPlayed,
+                            })
+                          }
+                        >
+                          {currentActiveTeam.isPlayed
+                            ? t('gameBoard.teamPlayedResetAction')
+                            : t('gameBoard.teamPlayedMarkAction')}
+                        </AppButton>
+                      </Box>
+                    </HelpTooltip>{' '}
                   </>
                 ) : null}
               </Box>

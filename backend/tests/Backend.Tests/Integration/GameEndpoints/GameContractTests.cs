@@ -366,7 +366,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             await playedStateResponse.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.NotNull(playedStatePayload);
         Assert.Equal(
-            AppMessages.ErrorCodes.GameBoardTeamPlayedStateRoundInProgress,
+            AppMessages.ErrorCodes.GameBoardTeamPlayedStateActiveTeam,
             playedStatePayload.Code
         );
 
@@ -387,7 +387,25 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task SetTeamPlayedState_WhenModerator_MarksTeamAndClearsActiveSelection()
+    public async Task SetTeamPlayedState_WhenNoCardWasOpened_ReturnsConflict()
+    {
+        await SeedSingleCellAsync(selectActiveTeam: false);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var teamId = await db.GameTeams.Select(team => team.Id).SingleAsync();
+        using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
+        var response = await moderatorClient.PutAsJsonAsync($"/api/game/teams/{teamId}/played-state", new SetGameTeamPlayedStateRequestDto(true));
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(AppMessages.ErrorCodes.GameBoardTeamPlayedStateNoOpenedCard, payload.Code);
+        var snapshot = await (await moderatorClient.GetAsync("/api/game/registration/admin")).Content.ReadFromJsonAsync<backend.Api.Contracts.GameRegistrationAdminSnapshotDto>();
+        Assert.NotNull(snapshot);
+        Assert.False(Assert.Single(snapshot.Teams).HasOpenedCard);
+    }
+
+    [Fact]
+    public async Task SetTeamPlayedState_WhenModerator_MarksInactiveTeamThatOpenedACard()
     {
         var cellId = await SeedSingleCellAsync();
         using var scope = _factory.Services.CreateScope();
@@ -397,6 +415,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             .SelectMany(cell => dbContext.GameTeams.Where(team => team.GameId == cell.Board.GameId))
             .Select(team => team.Id)
             .SingleAsync();
+        await SeedOpenedCardForInactiveTeamAsync(teamId);
         using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
 
         var response = await moderatorClient.PutAsJsonAsync(
@@ -702,6 +721,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             .SelectMany(cell => dbContext.GameTeams.Where(team => team.GameId == cell.Board.GameId))
             .Select(team => team.Id)
             .SingleAsync();
+        await SeedOpenedCardForInactiveTeamAsync(teamId);
         using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
 
         var markResponse = await moderatorClient.PutAsJsonAsync(
@@ -726,6 +746,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     public async Task SetTeamPlayedState_WhenMultipleActiveGamesExist_UsesLatestActiveGame()
     {
         var teamId = await SeedTwoActiveGamesAndReturnLatestTeamIdAsync();
+        await SeedOpenedCardForInactiveTeamAsync(teamId);
         using var moderatorClient = CreateAuthenticatedClient([AuthRoleCodes.Moderator]);
 
         var response = await moderatorClient.PutAsJsonAsync(
@@ -2964,6 +2985,33 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         await dbContext.SaveChangesAsync();
         return finishedGameId;
+    }
+
+    private async Task SeedOpenedCardForInactiveTeamAsync(Guid teamId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var team = await db.GameTeams.SingleAsync(team => team.Id == teamId);
+        var game = await db.Games.SingleAsync(game => game.Id == team.GameId);
+        game.ActiveTeamId = null;
+        var cell = await db.BoardCells.Include(cell => cell.Board).FirstAsync(cell => cell.Board.GameId == team.GameId);
+        var now = DateTime.UtcNow;
+        db.GameRounds.Add(new GameRound
+        {
+            Id = Guid.NewGuid(),
+            GameId = team.GameId,
+            TeamId = teamId,
+            BoardId = cell.BoardId,
+            BoardCellId = cell.Id,
+            Status = GameRoundStatusValue.Cancelled,
+            TeamSlotIndexSnapshot = 1,
+            CellTitleSnapshot = cell.Title,
+            CellCostSnapshot = cell.Cost,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            FinishedAtUtc = now
+        });
+        await db.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedSingleCellAsync(bool selectActiveTeam = true, string? teamName = null)

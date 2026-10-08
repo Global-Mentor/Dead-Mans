@@ -52,8 +52,10 @@ public static class AppMessages
             "Requested team was not found for the active game.";
         public const string GameTeamPlayedStateNotConfirmed =
             "Only confirmed teams can be marked as played.";
-        public const string GameTeamPlayedStateRoundInProgress =
-            "Finish the active round before changing team play status.";
+        public const string GameTeamPlayedStateActiveTeam =
+            "The active team cannot be marked as played.";
+        public const string GameTeamPlayedStateNoOpenedCard =
+            "The team must open at least one card before being marked as played.";
         public const string NoDraftGameForSetup = "No draft game is available for setup.";
         public const string DraftGameAlreadyExists = "A draft game is already being configured.";
         public const string InvalidGameSetupTitle = "Game title must be between 1 and 200 characters.";
@@ -265,8 +267,10 @@ public static class AppMessages
             "game_board.team_played_state_not_found";
         public const string GameBoardTeamPlayedStateNotConfirmed =
             "game_board.team_played_state_not_confirmed";
-        public const string GameBoardTeamPlayedStateRoundInProgress =
-            "game_board.team_played_state_round_in_progress";
+        public const string GameBoardTeamPlayedStateActiveTeam =
+            "game_board.team_played_state_active_team";
+        public const string GameBoardTeamPlayedStateNoOpenedCard =
+            "game_board.team_played_state_no_opened_card";
         public const string GameSetupNoDraft = "game_setup.no_draft";
         public const string GameSetupDraftExists = "game_setup.draft_exists";
         public const string InvalidGameSetupTitle = "game_setup.invalid_title";

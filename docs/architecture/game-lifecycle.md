@@ -59,8 +59,7 @@ best completed-round result before penalties
 
 Cancelled rounds do not contribute to scores. Only teams that opened a card enter the
 finish preview, final results and history; opening creates a round. Teams with only
-cancelled rounds remain in history with no scored rounds or placement. Marking a team
-played without opening any card does not add it to history. A completed round with a
+cancelled rounds remain in history with no scored rounds or placement. A team can only be manually marked played after opening a card and while it is not active. Existing legacy manual flags without opened cards do not add teams to history. A completed round with a
 zero score still counts. Registration audit records remain available. Equal final scores share a competition
 placement (`1, 1, 3`); the existing best/total/latest/slot ordering is only a stable
 display order inside a tie. Quiz points are reported separately and never enter team

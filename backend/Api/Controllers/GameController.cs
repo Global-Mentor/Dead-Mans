@@ -148,9 +148,13 @@ public sealed class GameController : ControllerBase
                 AppMessages.Client.GameTeamPlayedStateNotConfirmed,
                 AppMessages.ErrorCodes.GameBoardTeamPlayedStateNotConfirmed
             ),
-            Application.Contracts.SetGameTeamPlayedStateOutcome.RoundInProgress => this.ConflictError(
-                AppMessages.Client.GameTeamPlayedStateRoundInProgress,
-                AppMessages.ErrorCodes.GameBoardTeamPlayedStateRoundInProgress
+            Application.Contracts.SetGameTeamPlayedStateOutcome.TeamActiveInGame => this.ConflictError(
+                AppMessages.Client.GameTeamPlayedStateActiveTeam,
+                AppMessages.ErrorCodes.GameBoardTeamPlayedStateActiveTeam
+            ),
+            Application.Contracts.SetGameTeamPlayedStateOutcome.TeamHasNotOpenedCard => this.ConflictError(
+                AppMessages.Client.GameTeamPlayedStateNoOpenedCard,
+                AppMessages.ErrorCodes.GameBoardTeamPlayedStateNoOpenedCard
             ),
             _ => this.BadRequestError(
                 AppMessages.Client.UnableToOpenGameCell,

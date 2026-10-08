@@ -60,6 +60,9 @@ public sealed partial class PostgresPersistenceBoundaryTests
         Assert.Null((await db.Games.SingleAsync()).ActiveTeamId);
         // Removing the manual flag must not allow deleting a team's actual contribution.
         Assert.Equal(SetGameTeamPlayedStateOutcome.Updated, await board.SetGameTeamPlayedStateAsync(seeded.TeamId, false));
+        var registrationTeam = await new GameRegistrationReadStore(db).LoadTeamDtoAsync(seeded.TeamId, CancellationToken.None);
+        Assert.NotNull(registrationTeam);
+        Assert.True(registrationTeam.HasOpenedCard);
         var registration = new DbGameRegistrationPersistence(db, new GameRegistrationReadStore(db),
             NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System);
         Assert.Equal(GameRegistrationErrorCode.TeamAlreadyPlayed,

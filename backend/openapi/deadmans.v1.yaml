@@ -4607,6 +4607,7 @@ components:
         - teamSlotType
         - recruitmentOpen
         - status
+        - hasOpenedCard
         - isPlayed
         - isActiveInGame
         - isReady
@@ -4632,6 +4633,9 @@ components:
           type: boolean
         status:
           type: string
+        hasOpenedCard:
+          type: boolean
+          description: The team has opened at least one card, including technically cancelled rounds.
         isPlayed:
           type: boolean
         disbandRequestedAtUtc:
@@ -7928,7 +7932,8 @@ components:
             - game_board.team_played_state_no_active_game
             - game_board.team_played_state_not_found
             - game_board.team_played_state_not_confirmed
-            - game_board.team_played_state_round_in_progress
+            - game_board.team_played_state_active_team
+            - game_board.team_played_state_no_opened_card
             - game_setup.no_draft
             - game_setup.draft_exists
             - game_setup.invalid_title
