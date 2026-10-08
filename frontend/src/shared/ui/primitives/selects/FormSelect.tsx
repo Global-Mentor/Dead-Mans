@@ -20,17 +20,13 @@ const OptionsSelect = forwardRef<HTMLDivElement, SelectProps>(function OptionsSe
   const options = useContext(OptionsContext)
   return (
     <Select {...props} ref={ref}>
-      {options.map((option) =>
-        props.native ? (
-          <option key={String(option.value)} value={option.value}>
-            {option.label}
-          </option>
-        ) : (
-          <MenuItem key={String(option.value)} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ),
-      )}
+      {props.native
+        ? options.map((option) => (
+            <option key={String(option.value)} value={option.value}>
+              {option.label}
+            </option>
+          ))
+        : props.children}
     </Select>
   )
 })
@@ -115,7 +111,13 @@ export function FormSelect<TValue extends string | number>({
           )
           onChange(selected ? selected.value : (event.target.value as TValue))
         }}
-      />
+      >
+        {options.map((option) => (
+          <MenuItem key={String(option.value)} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </FormTextField>
     </OptionsContext.Provider>
   )
 }
