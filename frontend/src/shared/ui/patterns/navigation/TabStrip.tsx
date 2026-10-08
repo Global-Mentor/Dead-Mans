@@ -11,9 +11,10 @@ type TabDensity = 'comfortable' | 'compact'
 export function TabStrip({
   appearance = 'underline',
   density = 'comfortable',
+  stretch = false,
   sx,
   ...props
-}: TabsProps & { appearance?: TabAppearance; density?: TabDensity }) {
+}: TabsProps & { appearance?: TabAppearance; density?: TabDensity; stretch?: boolean }) {
   return (
     <Tabs
       {...props}
@@ -21,6 +22,13 @@ export function TabStrip({
         {
           minHeight: density === 'compact' ? 44 : uiTokens.control.height.large,
           minWidth: 0,
+          ...(stretch
+            ? {
+                height: '100%',
+                '& .MuiTabs-scroller': { display: 'flex' },
+                '& .MuiTabs-list': { flex: 1, alignItems: 'stretch' },
+              }
+            : {}),
           ...(appearance === 'framed'
             ? {
                 '& .MuiTabs-flexContainer': { gap: density === 'compact' ? 0.5 : 1 },

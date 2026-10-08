@@ -12,6 +12,7 @@ export const helpTheme: Components<Theme> = {
         color: huntPalette.parchment,
         fontFamily: huntTypography.body,
         fontSize: '0.8rem',
+        textAlign: 'center',
         boxShadow: `0 8px 20px ${alpha(huntPalette.soot, 0.45)}`,
       },
       arrow: {

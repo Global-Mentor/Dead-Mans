@@ -130,11 +130,11 @@ export function FormTextField({
             ? undefined
             : {
                 '& .MuiInputLabel-root': { lineHeight: 1.2 },
-                ...(layout === 'matrixRow' ? { '& .MuiInputBase-root': { minHeight: 72 } } : {}),
+                '& .MuiInputBase-root': { minHeight: 44 },
                 '& .MuiInputBase-input': {
                   px: layout === 'matrixRow' ? 1 : 1.25,
                   ...(layout === 'matrixRow'
-                    ? { py: 2, textAlign: 'center', fontWeight: 600 }
+                    ? { py: 0, textAlign: 'center', fontWeight: 600 }
                     : {}),
                   lineHeight: 1.2,
                   overflow: 'hidden',

@@ -113,7 +113,6 @@ export function Metric({
                   textAlign: 'right',
                   maxWidth: '48%',
                   flexShrink: 0,
-                  fontVariantNumeric: 'tabular-nums',
                 }
               : {}),
             fontWeight: emphasizeLabel ? 400 : 700,
@@ -153,7 +152,7 @@ export function Metric({
       {...groupProps}
       sx={{
         minWidth: 0,
-        minHeight: row ? 44 : compact ? 38 : 44,
+        minHeight: row ? (compact && !help ? 28 : 44) : compact ? 38 : 44,
         display: 'flex',
         alignItems: 'center',
         ...(row ? { borderBottom: '1px solid', borderColor: 'divider', py: 0.5 } : {}),

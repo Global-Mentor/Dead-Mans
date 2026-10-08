@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { lazyPanelPage } from '../app/lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import {
+  getPanelRouteByPath,
   gameBoardRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
@@ -50,6 +51,7 @@ export function MainLayout() {
 function MainLayoutContent() {
   const { user } = useAuth()
   const { pathname } = useLocation()
+  const isAdministration = getPanelRouteByPath(pathname)?.group === 'admin'
   const boundedWorkspace = [
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,
@@ -57,11 +59,12 @@ function MainLayoutContent() {
     modifierHistoryRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
-    hasPanelCapability('startGame', user?.roles) ||
-    (hasPanelCapability('manageGame', user?.roles) &&
-      [gameBoardRoute.fullPath, gameModifiersRoute.fullPath, gameQuizRoute.fullPath].includes(
-        pathname,
-      ))
+    !isAdministration &&
+    (hasPanelCapability('startGame', user?.roles) ||
+      (hasPanelCapability('manageGame', user?.roles) &&
+        [gameBoardRoute.fullPath, gameModifiersRoute.fullPath, gameQuizRoute.fullPath].includes(
+          pathname,
+        )))
   return (
     <Box
       sx={{

@@ -871,7 +871,18 @@ for (const path of [
   'team-registrations',
   'role-administration',
 ]) {
-  test(`one management panel is available on ${path}`, async ({ page }) => {
+  const isAdministration = [
+    'game-setup',
+    'admin-modifiers',
+    'admin-questions',
+    'catalog-modifiers',
+    'catalog-questions',
+    'team-registrations',
+    'role-administration',
+  ].includes(path)
+  test(`management panel is ${isAdministration ? 'hidden' : 'available'} on ${path}`, async ({
+    page,
+  }) => {
     const pageErrors: string[] = []
     page.on('pageerror', (error) => pageErrors.push(error.message))
     await mockQuiz(page)
@@ -888,8 +899,10 @@ for (const path of [
     }
     await page.goto(`/panel/${path}`)
     const trigger = page.getByRole('button', { name: 'Управление игрой', exact: true })
-    await expect(trigger).toHaveCount(1)
+    await expect(page.locator('main')).toBeVisible()
+    await expect(trigger).toHaveCount(isAdministration ? 0 : 1)
     expect(pageErrors).toEqual([])
+    if (isAdministration) return
     await trigger.click()
     await expect(
       page.getByRole('tab', { name: 'Управление викториной', exact: true }),
@@ -1086,7 +1099,8 @@ for (const width of [390, 768, 1440]) {
     expect(availableBounds!.height).toEqual(firstBounds!.height)
     await page.getByRole('tab', { name: 'Заработано', exact: true }).click()
     await page.getByRole('tab', { name: 'Заработано', exact: true }).hover()
-    await expect(page.getByRole('tooltip')).toContainText('без учёта трат')
+    await expect(page.getByRole('tooltip', { name: /без учёта трат/ })).toBeVisible()
+    await expect(page.getByRole('tooltip', { name: /Текущий баланс/ })).toBeHidden()
     await page.mouse.move(0, 0)
     const columns = await page
       .getByTestId('quiz-sections-grid')
