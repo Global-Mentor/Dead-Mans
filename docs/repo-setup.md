@@ -6,10 +6,16 @@ the setup changes.
 
 ## Branching model
 
-Local development uses one primary checkout and the `develop` branch. Additional
-linked worktrees and task-specific branches are created only when explicitly
-requested. Worktrees are optional extra working directories of the same Git
-repository; they are not required for normal development.
+All normal implementation, verification and local startup use the primary checkout
+at `D:/Dev/Dead-Mans` on `develop`. This applies even if a tool initially opens
+a task in a linked worktree: inspect both copies and preserve existing work before
+continuing in the primary checkout.
+
+Do not create or use an additional linked worktree automatically for isolation,
+review, fixes or commit preparation. An exceptional worktree requires both an
+actual need and an explicit owner instruction. Task-specific branches likewise
+require an explicit instruction; never create a `codex/` or other tool-branded
+branch automatically.
 
 - `develop` is the owner-designated local working branch. Keep related changes
   in atomic Conventional Commits after review and validation.
