@@ -36,6 +36,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/users/{userId}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Sets application access without changing roles or history. Blocking denies new sign-ins and rejects existing authenticated sessions on their next request. Permanent owners and self-blocking are protected. Repeating the same state is idempotent. */
+        put: operations["updateRoleAdministrationUserAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game": {
         parameters: {
             query?: never;
@@ -3165,15 +3182,38 @@ export interface components {
             userId: string;
             twitchLogin: string;
             displayName: string;
+            /** @description Enabled account; disabled accounts cannot sign in or use authenticated functions. Unrelated to online presence. */
             isActive: boolean;
+            /** @description Effective roles, including all inherited roles below the highest assigned role (superadmin > admin > moderator > viewer). */
             roles: components["schemas"]["AuthRole"][];
             isPermanentSuperAdmin: boolean;
+            /**
+             * Format: date-time
+             * @description First appearance in the local system, including Twitch chat participation.
+             */
+            createdAtUtc: string;
+            /**
+             * Format: date-time
+             * @description Most recent successful application sign-in; null means no application sign-in.
+             */
+            lastLoginAtUtc: string | null;
+        };
+        RoleAdministrationSummaryDto: {
+            totalUsers: number;
+            loggedInUsers: number;
+            /** @description Users first recorded within the last thirty days. */
+            newUsers: number;
         };
         RoleAdministrationPageDto: {
+            summary: components["schemas"]["RoleAdministrationSummaryDto"];
             items: components["schemas"]["RoleAdministrationUserDto"][];
             page: number;
             pageSize: number;
             totalCount: number;
+        };
+        UpdateUserAccessRequestDto: {
+            /** @description True allows application access; false blocks application sign-in and authenticated requests. */
+            isActive: boolean;
         };
         UpdateUserRolesRequestDto: {
             roles: components["schemas"]["AuthRole"][];
@@ -3184,7 +3224,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
+            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "role_administration.self_block_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -3311,6 +3351,12 @@ export interface operations {
                 search?: string;
                 page?: number;
                 pageSize?: number;
+                isActive?: boolean;
+                hasLoggedIn?: boolean;
+                role?: "moderator" | "admin" | "superadmin";
+                registeredWithinDays?: number;
+                /** @description Role sorting uses the highest effective role, including permanent owners; roleDesc orders superadmin, admin, moderator, then viewer. */
+                sort?: "createdDesc" | "createdAsc" | "lastLoginDesc" | "lastLoginAsc" | "nameAsc" | "nameDesc" | "roleAsc" | "roleDesc";
             };
             header?: never;
             path?: never;
@@ -3325,6 +3371,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleAdministrationPageDto"];
+                };
+            };
+            /** @description Invalid filters or pagination */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not authenticated */
@@ -3409,6 +3464,78 @@ export interface operations {
                 };
             };
             /** @description Permanent super administrator assignment is protected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    updateRoleAdministrationUserAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserAccessRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Updated user application access */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleAdministrationUserDto"];
+                };
+            };
+            /** @description Missing or invalid access state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing super administrator role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Blocking a permanent owner or the current user is forbidden */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -1,287 +1,162 @@
-import { Box, Stack, Typography } from '@mui/material'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState, type FormEvent } from 'react'
+import { Box, Stack } from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  AuthRole,
-  RoleAdministrationUser,
-  RoleAdministrationPage as UsersPage,
-} from '../../shared/api/contracts/index.ts'
+import type { RoleAdministrationUser } from '../../shared/api/contracts/index.ts'
+import { AsyncSection, PagePagination, PageShell, SectionCard } from '../../shared/ui/index.ts'
 import {
-  AppButton,
-  ChoiceLabel,
-  DataTable,
-  DataTableCell,
-  DataTableRow,
-  FormCheckbox,
-  FormTextField,
-  HelpTooltip,
-  InlineNotice,
-  PagePagination,
-  PageShell,
-  PageStatePanel,
-  SectionCard,
-  SectionHeader,
-  StatusBadge,
-} from '../../shared/ui/index.ts'
-import {
-  roleAdministrationQueryKeys,
   roleAdministrationUsersQueryOptions,
-  updateRoleAdministrationUserRoles,
+  type UserFilters as Filters,
 } from './api/role-administration-api.ts'
+import { useAuth } from '../../shared/auth/use-auth.ts'
+import { UserAccessDialog } from './UserAccessDialog.tsx'
+import { UserFilters } from './UserFilters.tsx'
+import { UsersTable } from './UsersTable.tsx'
+import { RoleEditorDialog } from './RoleEditorDialog.tsx'
+import { UserStatistics } from './UserStatistics.tsx'
+import { useUserPageSize } from './use-user-page-size.ts'
 
-const pageSize = 25
-const managedRoles = ['moderator', 'admin', 'superadmin'] as const satisfies readonly AuthRole[]
-
+const initialFilters: Filters = { page: 1, pageSize: 1, sort: 'createdDesc' }
 export function RoleAdministrationPage() {
-  const { t } = useTranslation()
-  const [searchInput, setSearchInput] = useState('')
+  const { t, i18n } = useTranslation()
+  const { user: currentUser } = useAuth()
+  const [accessUser, setAccessUser] = useState<RoleAdministrationUser | null>(null)
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const usersQuery = useQuery(roleAdministrationUsersQueryOptions(search, page, pageSize))
-
-  const submitSearch = (event: FormEvent) => {
-    event.preventDefault()
-    setPage(1)
-    setSearch(searchInput.trim())
-  }
-
-  const clearSearch = () => {
-    setSearchInput('')
-    setSearch('')
-    setPage(1)
-  }
-
-  return (
-    <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
-      <SectionHeader
-        headingLevel="h1"
-        title={t('roleAdministration.title')}
-        description={t('roleAdministration.description')}
-      />
-
-      <InlineNotice severity="info" sx={{ mt: 2 }}>
-        {t('roleAdministration.viewerNotice')}
-      </InlineNotice>
-
-      <SectionCard sx={{ mt: 2 }}>
-        <Stack
-          component="form"
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          onSubmit={submitSearch}
-        >
-          <FormTextField
-            value={searchInput}
-            label={t('roleAdministration.searchLabel')}
-            size="small"
-            slotProps={{ htmlInput: { maxLength: 100 } }}
-            onChange={(event) => setSearchInput(event.target.value)}
-            sx={{ flex: 1 }}
-          />
-          <AppButton type="submit">{t('roleAdministration.searchAction')}</AppButton>
-          <AppButton tone="secondary" disabled={!search && !searchInput} onClick={clearSearch}>
-            {t('roleAdministration.clearSearch')}
-          </AppButton>
-        </Stack>
-      </SectionCard>
-
-      {usersQuery.isLoading ? (
-        <Box sx={{ mt: 2 }}>
-          <PageStatePanel message={t('roleAdministration.loading')} showSpinner />
-        </Box>
-      ) : null}
-      {usersQuery.isError ? (
-        <Box sx={{ mt: 2 }}>
-          <PageStatePanel message={t('roleAdministration.errorLoading')} tone="error" />
-        </Box>
-      ) : null}
-      {usersQuery.data && usersQuery.data.items.length === 0 ? (
-        <Box sx={{ mt: 2 }}>
-          <PageStatePanel message={t('roleAdministration.empty')} />
-        </Box>
-      ) : null}
-      {usersQuery.data && usersQuery.data.items.length > 0 ? (
-        <SectionCard sx={{ mt: 2, p: 0, overflow: 'hidden' }}>
-          <DataTable
-            label={t('roleAdministration.title')}
-            columns={[
-              t('roleAdministration.user'),
-              t('roleAdministration.status'),
-              t('roleAdministration.roles'),
-              t('common.actions.save'),
-            ]}
-          >
-            {usersQuery.data.items.map((user) => (
-              <RoleEditorRow key={user.userId} user={user} />
-            ))}
-          </DataTable>
-          <PagePagination
-            total={usersQuery.data.totalCount}
-            page={usersQuery.data.page}
-            pageSize={usersQuery.data.pageSize}
-            onChange={setPage}
-            previousLabel={t('common.actions.back')}
-            nextLabel={t('common.actions.next')}
-            summary={t('common.pagination.summary', {
-              from: (usersQuery.data.page - 1) * usersQuery.data.pageSize + 1,
-              to: Math.min(
-                usersQuery.data.page * usersQuery.data.pageSize,
-                usersQuery.data.totalCount,
-              ),
-              total: usersQuery.data.totalCount,
-            })}
-          />
-        </SectionCard>
-      ) : null}
-    </PageShell>
+  const [filters, setFilters] = useState<Filters>(initialFilters)
+  const [editingUser, setEditingUser] = useState<RoleAdministrationUser | null>(null)
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () =>
+        setFilters((current) =>
+          current.search === (search.trim() || undefined)
+            ? current
+            : { ...current, page: 1, search: search.trim() },
+        ),
+      300,
+    )
+    return () => window.clearTimeout(timer)
+  }, [search])
+  const usersQuery = useQuery(roleAdministrationUsersQueryOptions(filters))
+  const data = usersQuery.data
+  const resizePage = useCallback((pageSize: number) => {
+    setFilters((current) =>
+      current.pageSize === pageSize
+        ? current
+        : {
+            ...current,
+            pageSize,
+            page: Math.floor((((current.page ?? 1) - 1) * (current.pageSize ?? 1)) / pageSize) + 1,
+          },
+    )
+  }, [])
+  const tableRegionRef = useUserPageSize(
+    resizePage,
+    usersQuery.dataUpdatedAt,
+    i18n.resolvedLanguage ?? 'en',
+    usersQuery.isError,
   )
-}
-
-function RoleEditorRow({ user }: { user: RoleAdministrationUser }) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const [draftRoles, setDraftRoles] = useState<AuthRole[] | null>(null)
-  const update = useMutation({
-    mutationFn: (roles: AuthRole[]) => updateRoleAdministrationUserRoles(user.userId, roles),
-    onSuccess: async (savedUser) => {
-      // The mutation response is authoritative even if the following refresh fails.
-      await queryClient.cancelQueries({ queryKey: roleAdministrationQueryKeys.all })
-      queryClient.setQueriesData<UsersPage>(
-        { queryKey: roleAdministrationQueryKeys.all },
-        (page) =>
-          page
-            ? {
-                ...page,
-                items: page.items.map((item) =>
-                  item.userId === savedUser.userId ? savedUser : item,
-                ),
-              }
-            : page,
-      )
-      setDraftRoles(null)
-      await queryClient.invalidateQueries({ queryKey: roleAdministrationQueryKeys.all })
-    },
-  })
-  const isSaving = update.isPending
-  const initialRoles = useMemo(
-    () => managedRoles.filter((role) => user.roles.includes(role)),
-    [user.roles],
-  )
-  const selectedRoles = draftRoles ?? initialRoles
-
-  const isDirty = managedRoles.some(
-    (role) => selectedRoles.includes(role) !== initialRoles.includes(role),
-  )
-  const hasSuperAdmin = selectedRoles.includes('superadmin')
-
-  const setRole = (role: AuthRole, checked: boolean) => {
-    update.reset()
-    setDraftRoles((current) => {
-      const next = new Set(current ?? initialRoles)
-      if (checked) {
-        next.add(role)
-      } else {
-        next.delete(role)
-      }
-      if (role === 'superadmin' && checked) {
-        next.add('admin')
-      }
-      return managedRoles.filter((candidate) => next.has(candidate))
+  const changeFilter = <K extends keyof Filters>(key: K, value: Filters[K] | null) => {
+    setFilters((current) => {
+      const next: Filters = { ...current, page: 1 }
+      if (value == null) delete next[key]
+      else next[key] = value
+      return next
     })
   }
-
+  const reset = () => {
+    setSearch('')
+    setFilters((current) => ({ ...initialFilters, pageSize: current.pageSize ?? 1 }))
+  }
+  const selectedUser =
+    data?.items.find((user) => user.userId === editingUser?.userId) ?? editingUser
   return (
-    <DataTableRow aria-label={user.displayName}>
-      <DataTableCell>
-        <Stack spacing={0.25}>
-          <Typography variant="body2" fontWeight={700}>
-            {user.displayName}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            @{user.twitchLogin}
-          </Typography>
-          {user.isPermanentSuperAdmin ? (
-            <StatusBadge
-              label={t('roleAdministration.permanentOwner')}
-              color="warning"
-              size="small"
-              sx={{ alignSelf: 'flex-start', mt: 0.5 }}
-            />
-          ) : null}
+    <PageShell
+      sx={{
+        maxWidth: 'none',
+        width: '100%',
+        px: { xs: 0, sm: 0, md: 0 },
+        pb: { xs: 0, sm: 0, md: 0 },
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
+        <Stack spacing={1} sx={{ flexShrink: 0 }}>
+          {data ? <UserStatistics summary={data.summary} /> : null}
+          <UserFilters
+            onReset={reset}
+            filters={filters}
+            search={search}
+            onSearch={setSearch}
+            onChange={changeFilter}
+          />
         </Stack>
-      </DataTableCell>
-      <DataTableCell>
-        <StatusBadge
-          label={user.isActive ? t('roleAdministration.active') : t('roleAdministration.inactive')}
-          color={user.isActive ? 'success' : 'default'}
-          size="small"
-        />
-      </DataTableCell>
-      <DataTableCell>
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          {managedRoles.map((role) => {
-            const isPermanentRole =
-              user.isPermanentSuperAdmin && (role === 'superadmin' || role === 'admin')
-            const isInheritedAdmin = role === 'admin' && hasSuperAdmin
-            return (
-              <HelpTooltip
-                key={role}
-                title={isInheritedAdmin ? t('roleAdministration.adminInherited') : ''}
-                describeChild
-              >
-                <Box component="span" tabIndex={isInheritedAdmin ? 0 : undefined}>
-                  <ChoiceLabel
-                    control={
-                      <FormCheckbox
-                        size="small"
-                        checked={selectedRoles.includes(role)}
-                        disabled={isSaving || isPermanentRole || isInheritedAdmin}
-                        onChange={(event) => setRole(role, event.target.checked)}
-                      />
-                    }
-                    label={t(`navigation.roles.${role}`)}
-                  />
-                </Box>
-              </HelpTooltip>
-            )
-          })}
-        </Stack>
-      </DataTableCell>
-      <DataTableCell>
-        <AppButton
-          fullWidth
-          loading={isSaving}
-          disabled={!isDirty || isSaving}
-          onClick={() => {
-            if (!isSaving) update.mutate(selectedRoles)
-          }}
-        >
-          {t('roleAdministration.save')}
-        </AppButton>
-        {update.isError ? (
-          <InlineNotice severity="error" sx={{ mt: 1 }}>
-            {t('roleAdministration.saveError')}
-          </InlineNotice>
-        ) : null}
-        {update.isSuccess ? (
-          <Typography role="status" color="success.main" variant="body2" sx={{ mt: 1 }}>
-            {t('roleAdministration.saved', { name: user.displayName })}
-          </Typography>
-        ) : null}
-        {isDirty ? (
-          <AppButton
-            tone="ghost"
-            disabled={isSaving}
-            onClick={() => {
-              setDraftRoles(null)
-              update.reset()
-            }}
+        <Box ref={tableRegionRef} sx={{ flex: 1, minHeight: 0 }}>
+          <AsyncSection
+            isLoading={usersQuery.isPending}
+            isError={usersQuery.isError}
+            hasData={Boolean(data)}
+            isEmpty={false}
+            loadingMessage={t('roleAdministration.loading')}
+            errorMessage={t('roleAdministration.errorLoading')}
+            emptyMessage={t('roleAdministration.empty')}
           >
-            {t('common.actions.cancel')}
-          </AppButton>
+            {data ? (
+              <SectionCard
+                data-user-list
+                aria-busy={usersQuery.isFetching}
+                sx={{ p: 0, height: '100%' }}
+              >
+                <UsersTable
+                  users={data.items}
+                  sort={filters.sort}
+                  onSort={(value) => changeFilter('sort', value)}
+                  onEdit={setEditingUser}
+                  onAccess={setAccessUser}
+                  currentUserId={currentUser?.id}
+                />
+              </SectionCard>
+            ) : null}
+          </AsyncSection>
+        </Box>
+        {data ? (
+          <Box sx={{ flexShrink: 0 }}>
+            <PagePagination
+              density="compact"
+              disabled={usersQuery.isPlaceholderData}
+              total={data.totalCount}
+              page={data.page}
+              pageSize={data.pageSize}
+              onChange={(page) => setFilters((current) => ({ ...current, page }))}
+              previousLabel={t('common.actions.back')}
+              nextLabel={t('common.actions.next')}
+              pageLabel={(page) => t('roleAdministration.pageNumber', { page: String(page) })}
+              navigationLabel={t('roleAdministration.pagination')}
+              summary={t('common.pagination.summary', {
+                from: data.totalCount === 0 ? 0 : (data.page - 1) * data.pageSize + 1,
+                to: Math.min(data.page * data.pageSize, data.totalCount),
+                total: data.totalCount,
+              })}
+            />
+          </Box>
         ) : null}
-      </DataTableCell>
-    </DataTableRow>
+      </Stack>
+      {accessUser ? (
+        <UserAccessDialog
+          key={accessUser.userId}
+          user={accessUser}
+          onClose={() => setAccessUser(null)}
+        />
+      ) : null}
+      {selectedUser ? (
+        <RoleEditorDialog
+          key={selectedUser.userId}
+          user={selectedUser}
+          onClose={() => setEditingUser(null)}
+        />
+      ) : null}
+    </PageShell>
   )
 }

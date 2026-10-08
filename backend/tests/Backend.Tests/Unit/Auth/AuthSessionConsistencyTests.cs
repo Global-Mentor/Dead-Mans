@@ -104,7 +104,7 @@ public sealed class AuthSessionConsistencyTests
     }
 
     [Fact]
-    public async Task EnsureEffectiveRolesAsync_PermanentOwnerGetsInheritedAdminAndSuperAdmin()
+    public async Task EnsureEffectiveRolesAsync_PermanentOwnerGetsAllInheritedRoles()
     {
         await using var dbContext = CreateDbContext();
         var expectedTimestamp = new DateTimeOffset(2026, 9, 9, 18, 0, 0, TimeSpan.Zero);
@@ -135,11 +135,11 @@ public sealed class AuthSessionConsistencyTests
         var roles = await roleService.EnsureEffectiveRolesAsync(userId, CancellationToken.None);
 
         Assert.Equal(
-            [AuthRoleCodes.Viewer, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
+            [AuthRoleCodes.Viewer, AuthRoleCodes.Moderator, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
             roles
         );
-        Assert.Equal(3, await dbContext.UserRoles.CountAsync());
-        Assert.Equal(3, await dbContext.UserRoleAuditEvents.CountAsync());
+        Assert.Equal(4, await dbContext.UserRoles.CountAsync());
+        Assert.Equal(4, await dbContext.UserRoleAuditEvents.CountAsync());
     }
 
     [Fact]
@@ -389,6 +389,79 @@ public sealed class AuthSessionConsistencyTests
         await Assert.ThrowsAsync<InactiveUserLoginException>(
             () => service.AuthenticateAsync("code-123", CancellationToken.None)
         );
+    }
+
+    [Theory]
+    [InlineData(AuthRoleCodes.Moderator, 2)]
+    [InlineData(AuthRoleCodes.Admin, 3)]
+    [InlineData(AuthRoleCodes.SuperAdmin, 4)]
+    public async Task ClaimsTransformation_HydratesInheritedRolesFromSingleAssignment(string roleCode, int roleCount)
+    {
+        await using var db = CreateDbContext();
+        var now = new DateTimeOffset(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            TwitchUserId = "hierarchy",
+            Login = "hierarchy",
+            DisplayName = "Hierarchy",
+            IsActive = true,
+            CreatedAtUtc = now.UtcDateTime,
+            UpdatedAtUtc = now.UtcDateTime
+        };
+        var roles = CreateRoles(now.UtcDateTime);
+        db.Users.Add(user);
+        db.Roles.AddRange(roles);
+        db.UserRoles.Add(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = roles.Single(role => role.Code == roleCode).Id,
+            AssignedAtUtc = now.UtcDateTime,
+            ExpiresAtUtc = now.UtcDateTime.AddDays(1)
+        });
+        await db.SaveChangesAsync();
+        var service = new UserRoleService(db, new FixedTimeProvider(now), NullLogger<UserRoleService>.Instance);
+        var transformation = new CurrentUserRoleClaimsTransformation(
+            new DbAuthUserReader(db, NullLogger<DbAuthUserReader>.Instance), service,
+            NullLogger<CurrentUserRoleClaimsTransformation>.Instance);
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Role, AuthRoleCodes.SuperAdmin)], "test"));
+
+        var transformed = await transformation.TransformAsync(principal);
+
+        Assert.Equal(AuthRoleCodes.Supported.Take(roleCount), transformed.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
+        Assert.Equal(1, await db.UserRoles.CountAsync());
+    }
+
+    [Fact]
+    public async Task GetEffectiveRolesAsync_DoesNotInheritExpiredSuperAdminGrant()
+    {
+        await using var db = CreateDbContext();
+        var now = new DateTimeOffset(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            TwitchUserId = "expired-hierarchy",
+            Login = "expired",
+            DisplayName = "Expired",
+            IsActive = true,
+            CreatedAtUtc = now.UtcDateTime,
+            UpdatedAtUtc = now.UtcDateTime
+        };
+        var roles = CreateRoles(now.UtcDateTime);
+        db.Users.Add(user);
+        db.Roles.AddRange(roles);
+        db.UserRoles.Add(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = roles.Single(role => role.Code == AuthRoleCodes.SuperAdmin).Id,
+            AssignedAtUtc = now.UtcDateTime.AddDays(-2),
+            ExpiresAtUtc = now.UtcDateTime.AddDays(-1)
+        });
+        await db.SaveChangesAsync();
+        var service = new UserRoleService(db, new FixedTimeProvider(now), NullLogger<UserRoleService>.Instance);
+
+        Assert.Equal([AuthRoleCodes.Viewer], await service.GetEffectiveRolesAsync(user.Id, default));
     }
 
     private static ApplicationDbContext CreateDbContext()

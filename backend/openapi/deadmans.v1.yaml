@@ -32,27 +32,69 @@ paths:
             minimum: 1
             maximum: 100
             default: 25
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: hasLoggedIn
+          in: query
+          schema:
+            type: boolean
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [moderator, admin, superadmin]
+        - name: registeredWithinDays
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+        - name: sort
+          in: query
+          description: Role sorting uses the highest effective role, including permanent owners; roleDesc orders superadmin, admin, moderator, then viewer.
+          schema:
+            type: string
+            enum:
+              [
+                createdDesc,
+                createdAsc,
+                lastLoginDesc,
+                lastLoginAsc,
+                nameAsc,
+                nameDesc,
+                roleAsc,
+                roleDesc,
+              ]
+            default: lastLoginDesc
       responses:
-        '200':
+        "400":
+          description: Invalid filters or pagination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
           description: Paged users and their effective application roles
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoleAdministrationPageDto'
-        '401':
+                $ref: "#/components/schemas/RoleAdministrationPageDto"
+        "401":
           description: Not authenticated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
           description: Missing super administrator role
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /admin/users/{userId}/roles:
     put:
       operationId: updateRoleAdministrationUserRoles
@@ -110,6 +152,64 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /admin/users/{userId}/access:
+    put:
+      operationId: updateRoleAdministrationUserAccess
+      description: Sets application access without changing roles or history. Blocking denies new sign-ins and rejects existing authenticated sessions on their next request. Permanent owners and self-blocking are protected. Repeating the same state is idempotent.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserAccessRequestDto"
+      responses:
+        "200":
+          description: Updated user application access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleAdministrationUserDto"
+        "400":
+          description: Missing or invalid access state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Missing super administrator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Blocking a permanent owner or the current user is forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /game:
     get:
       operationId: getCurrentGameBoard
@@ -7703,7 +7803,17 @@ components:
             $ref: '#/components/schemas/AuthRole'
     RoleAdministrationUserDto:
       type: object
-      required: [userId, twitchLogin, displayName, isActive, roles, isPermanentSuperAdmin]
+      required:
+        [
+          userId,
+          twitchLogin,
+          displayName,
+          isActive,
+          roles,
+          isPermanentSuperAdmin,
+          createdAtUtc,
+          lastLoginAtUtc,
+        ]
       properties:
         userId:
           type: string
@@ -7714,21 +7824,48 @@ components:
           type: string
         isActive:
           type: boolean
+          description: Enabled account; disabled accounts cannot sign in or use authenticated functions. Unrelated to online presence.
         roles:
           type: array
+          description: Effective roles, including all inherited roles below the highest assigned role (superadmin > admin > moderator > viewer).
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/AuthRole'
+            $ref: "#/components/schemas/AuthRole"
         isPermanentSuperAdmin:
           type: boolean
+        createdAtUtc:
+          type: string
+          format: date-time
+          description: First appearance in the local system, including Twitch chat participation.
+        lastLoginAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+          description: Most recent successful application sign-in; null means no application sign-in.
+    RoleAdministrationSummaryDto:
+      type: object
+      required: [totalUsers, loggedInUsers, newUsers]
+      properties:
+        totalUsers:
+          type: integer
+          minimum: 0
+        loggedInUsers:
+          type: integer
+          minimum: 0
+        newUsers:
+          type: integer
+          minimum: 0
+          description: Users first recorded within the last thirty days.
     RoleAdministrationPageDto:
       type: object
-      required: [items, page, pageSize, totalCount]
+      required: [items, page, pageSize, totalCount, summary]
       properties:
+        summary:
+          $ref: "#/components/schemas/RoleAdministrationSummaryDto"
         items:
           type: array
           items:
-            $ref: '#/components/schemas/RoleAdministrationUserDto'
+            $ref: "#/components/schemas/RoleAdministrationUserDto"
         page:
           type: integer
           minimum: 1
@@ -7739,6 +7876,13 @@ components:
         totalCount:
           type: integer
           minimum: 0
+    UpdateUserAccessRequestDto:
+      type: object
+      required: [isActive]
+      properties:
+        isActive:
+          type: boolean
+          description: True allows application access; false blocks application sign-in and authenticated requests.
     UpdateUserRolesRequestDto:
       type: object
       required: [roles]
@@ -7763,6 +7907,7 @@ components:
             - role_administration.invalid_request
             - role_administration.user_not_found
             - role_administration.permanent_superadmin_protected
+            - role_administration.self_block_protected
             - game_board.cell_not_found
             - game_board.active_team_required
             - game_board.active_team_no_active_game

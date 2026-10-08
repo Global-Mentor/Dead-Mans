@@ -53,7 +53,7 @@ public sealed class UserRoleService : IUserRoleService
         var isPermanentSuperAdmin = twitchUserId is not null
             && _permanentSuperAdminTwitchUserIds.Contains(twitchUserId);
         var requiredRoleCodes = isPermanentSuperAdmin
-            ? new[] { ViewerRoleCode, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin }
+            ? ExpandRoles([AuthRoleCodes.SuperAdmin])
             : [ViewerRoleCode];
         var requiredRoles = await _dbContext.Roles
             .Where(x => requiredRoleCodes.Contains(x.Code))
@@ -156,23 +156,23 @@ public sealed class UserRoleService : IUserRoleService
             effectiveRoles.Add(AuthRoleCodes.SuperAdmin);
         }
 
-        if (effectiveRoles.Contains(AuthRoleCodes.SuperAdmin, StringComparer.Ordinal))
-        {
-            effectiveRoles.Add(AuthRoleCodes.Admin);
-        }
-
-        if (!effectiveRoles.Contains(ViewerRoleCode, StringComparer.Ordinal))
-        {
-            effectiveRoles.Add(ViewerRoleCode);
-        }
-
-        return NormalizeRoles(effectiveRoles);
+        return ExpandRoles(effectiveRoles);
     }
 
-    internal static string[] NormalizeRoles(IEnumerable<string> roleCodes)
+    internal static string[] ExpandRoles(IEnumerable<string> roleCodes)
     {
-        return roleCodes
-            .Distinct(StringComparer.Ordinal)
+        var roles = roleCodes.ToHashSet(StringComparer.Ordinal);
+        roles.Add(AuthRoleCodes.Viewer);
+        if (roles.Contains(AuthRoleCodes.SuperAdmin))
+        {
+            roles.Add(AuthRoleCodes.Admin);
+        }
+        if (roles.Contains(AuthRoleCodes.Admin))
+        {
+            roles.Add(AuthRoleCodes.Moderator);
+        }
+
+        return roles
             .OrderBy(RoleOrder)
             .ThenBy(code => code, StringComparer.Ordinal)
             .ToArray();

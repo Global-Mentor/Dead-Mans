@@ -10,14 +10,27 @@ public sealed record RoleAdministrationUser(
     string DisplayName,
     bool IsActive,
     IReadOnlyList<string> Roles,
-    bool IsPermanentSuperAdmin
+    bool IsPermanentSuperAdmin,
+    DateTime CreatedAtUtc,
+    DateTime? LastLoginAtUtc
 );
 
 public sealed record RoleAdministrationPage(
     IReadOnlyList<RoleAdministrationUser> Items,
     int Page,
     int PageSize,
-    int TotalCount
+    int TotalCount,
+    RoleAdministrationSummary Summary
+);
+
+public sealed record RoleAdministrationSummary(int TotalUsers, int LoggedInUsers, int NewUsers);
+
+public sealed record RoleAdministrationFilter(
+    bool? IsActive = null,
+    bool? HasLoggedIn = null,
+    string? Role = null,
+    int? RegisteredWithinDays = null,
+    string Sort = "lastLoginDesc"
 );
 
 public enum UpdateUserRolesOutcome
@@ -30,6 +43,19 @@ public enum UpdateUserRolesOutcome
 
 public sealed record UpdateUserRolesResult(
     UpdateUserRolesOutcome Outcome,
+    RoleAdministrationUser? User = null
+);
+
+public enum UpdateUserAccessOutcome
+{
+    Updated,
+    UserNotFound,
+    PermanentSuperAdminProtected,
+    SelfBlockProtected
+}
+
+public sealed record UpdateUserAccessResult(
+    UpdateUserAccessOutcome Outcome,
     RoleAdministrationUser? User = null
 );
 
@@ -64,10 +90,18 @@ public interface IUserRoleService
 
 public interface IRoleAdministrationService
 {
+    Task<UpdateUserAccessResult> UpdateAccessAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        bool isActive,
+        CancellationToken cancellationToken
+    );
+
     Task<RoleAdministrationPage> GetUsersAsync(
         string? search,
         int page,
         int pageSize,
+        RoleAdministrationFilter filter,
         CancellationToken cancellationToken
     );
 

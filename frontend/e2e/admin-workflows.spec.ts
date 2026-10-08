@@ -222,7 +222,7 @@ for (const width of [320, 390, 768, 1440]) {
 }
 
 for (const width of [320, 390, 768, 1440]) {
-  test(`independent role edits survive background refresh at ${width}px`, async ({
+  test(`role editor preserves drafts, failures and busy state at ${width}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 })
@@ -232,9 +232,11 @@ for (const width of [320, 390, 768, 1440]) {
         userId: `user-${i}`,
         displayName,
         twitchLogin: `player${i}`,
-        roles: i === 0 ? ['viewer', 'admin', 'superadmin'] : ['viewer'],
+        roles: i === 0 ? ['viewer', 'moderator', 'admin', 'superadmin'] : ['viewer'],
         isActive: true,
         isPermanentSuperAdmin: i === 0,
+        createdAtUtc: '2026-09-01T12:00:00Z',
+        lastLoginAtUtc: i === 2 ? null : '2026-10-05T12:00:00Z',
       }),
     )
     let releaseFirst: (() => void) | undefined
@@ -252,11 +254,30 @@ for (const width of [320, 390, 768, 1440]) {
             json: {
               userId: 'abf3680b-ac92-43ce-8c4f-c542f806e520',
               displayName: 'Owner',
-              roles: ['viewer', 'admin', 'superadmin'],
+              roles: ['viewer', 'moderator', 'admin', 'superadmin'],
             },
           })
-        if (path === '/api/admin/users')
-          return route.fulfill({ json: { items: users, page: 1, pageSize: 25, totalCount: 3 } })
+        if (path === '/api/admin/users') {
+          const query = new URL(route.request().url()).searchParams
+          const pageSize = Number(query.get('pageSize') ?? 25)
+          const pageNumber = Number(query.get('page') ?? 1)
+          const matching = users.filter(
+            (user) =>
+              !query.get('search') ||
+              [user.displayName, user.twitchLogin].some((value) =>
+                value.toLowerCase().includes(query.get('search')!.toLowerCase()),
+              ),
+          )
+          return route.fulfill({
+            json: {
+              items: matching.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+              page: pageNumber,
+              pageSize,
+              totalCount: matching.length,
+              summary: { totalUsers: 3, loggedInUsers: 2, newUsers: 0 },
+            },
+          })
+        }
         if (path.endsWith('/roles')) {
           saves++
           if (path.includes('user-1'))
@@ -279,30 +300,64 @@ for (const width of [320, 390, 768, 1440]) {
     const owner = row('Owner'),
       first = row('First player'),
       second = row('Second player with a long display name')
+    await owner.getByRole('button', { name: 'Manage roles for Owner' }).click()
+    let editor = page.getByRole('dialog')
     await expect(
-      owner.getByRole('checkbox', { name: 'Super administrator', exact: true }),
+      editor.getByRole('checkbox', { name: 'Super administrator', exact: true }),
     ).toBeDisabled()
-    await first.getByRole('checkbox', { name: 'Moderator', exact: true }).check()
-    await second.getByRole('checkbox', { name: 'Super administrator', exact: true }).check()
-    await expect(second.getByRole('checkbox', { name: 'Administrator', exact: true })).toBeChecked()
+    await editor.getByRole('button', { name: 'Close', exact: true }).click()
+    await page.getByRole('textbox', { name: 'Name or Twitch login' }).fill('First player')
+    await first.getByRole('button', { name: 'Manage roles for First player' }).click()
+    editor = page.getByRole('dialog')
+    await editor.getByRole('checkbox', { name: 'Moderator', exact: true }).check()
     await page.setViewportSize({ width: width < 900 ? 1440 : 390, height: 1000 })
-    await expect(first.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
-    await expect(
-      second.getByRole('checkbox', { name: 'Super administrator', exact: true }),
-    ).toBeChecked()
+    await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
     await page.setViewportSize({ width, height: 1000 })
-    await first.getByRole('button', { name: 'Save roles', exact: true }).click()
-    await expect(first.getByRole('button', { name: 'Save roles', exact: true })).toBeDisabled()
-    await second.getByRole('button', { name: 'Save roles', exact: true }).click()
-    await expect(second.getByRole('alert')).toBeVisible()
+    await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
+    let confirmation = page.getByRole('dialog', { name: 'Change roles for First player?' })
+    await expect(confirmation).toBeVisible()
+    expect(saves).toBe(0)
+    await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
+    await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
+    await page.screenshot({
+      path: info.outputPath('role-save-confirmation.png'),
+      animations: 'disabled',
+    })
+    await confirmation.getByRole('button', { name: 'Confirm changes', exact: true }).click()
+    await expect(
+      confirmation.getByRole('button', { name: 'Confirm changes', exact: true }),
+    ).toBeDisabled()
+    await expect(confirmation.getByRole('button', { name: 'Cancel', exact: true })).toBeDisabled()
     await expect.poll(() => Boolean(releaseFirst)).toBe(true)
     releaseFirst!()
-    await expect(first.getByRole('status')).toBeVisible()
+    await expect(editor).toHaveCount(0)
+    await expect(first.getByText('Moderator', { exact: true })).toBeVisible()
+    await page.getByRole('textbox', { name: 'Name or Twitch login' }).fill('Second player')
+    await second
+      .getByRole('button', { name: 'Manage roles for Second player with a long display name' })
+      .click()
+    editor = page.getByRole('dialog')
+    await editor.getByRole('checkbox', { name: 'Super administrator', exact: true }).check()
+    await expect(editor.getByRole('checkbox', { name: 'Administrator', exact: true })).toBeChecked()
+    await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
+    await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeDisabled()
+    await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
+    confirmation = page.getByRole('dialog', {
+      name: 'Change roles for Second player with a long display name?',
+    })
+    expect(saves).toBe(1)
+    await confirmation.getByRole('button', { name: 'Confirm changes', exact: true }).click()
+    await expect(confirmation.getByRole('alert')).toBeVisible()
+    await page.screenshot({ path: info.outputPath('role-save-error.png'), animations: 'disabled' })
+    await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(
-      second.getByRole('checkbox', { name: 'Super administrator', exact: true }),
+      editor.getByRole('checkbox', { name: 'Super administrator', exact: true }),
     ).toBeChecked()
-    await second.getByRole('button', { name: 'Save roles', exact: true }).click()
-    await expect(second.getByRole('status')).toBeVisible()
+    await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
+    await confirmation.getByRole('button', { name: 'Confirm changes', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    await expect(second.getByText('Super administrator', { exact: true })).toBeVisible()
     expect(saves).toBe(3)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({

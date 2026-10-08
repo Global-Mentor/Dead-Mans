@@ -23,6 +23,9 @@ public static class AppMessages
         public const string RoleAdministrationInvalidRequest =
             "Only moderator, administrator, and super administrator roles can be assigned.";
         public const string RoleAdministrationUserNotFound = "User was not found.";
+        public const string UserAccessInvalidRequest = "An explicit account access state is required.";
+        public const string SelfBlockProtected = "You cannot block your own account.";
+        public const string PermanentSuperAdminAccessProtected = "The permanent super administrator cannot be blocked.";
         public const string PermanentSuperAdminProtected =
             "The permanent super administrator role cannot be removed.";
         public const string NoActiveOrFinishedGame = "No active or finished game was found.";
@@ -240,6 +243,7 @@ public static class AppMessages
         public const string ApiClientHeaderRequired = "auth.api_client_header_required";
         public const string RoleAdministrationInvalidRequest = "role_administration.invalid_request";
         public const string RoleAdministrationUserNotFound = "role_administration.user_not_found";
+        public const string SelfBlockProtected = "role_administration.self_block_protected";
         public const string PermanentSuperAdminProtected =
             "role_administration.permanent_superadmin_protected";
         public const string GameBoardCellNotFound = "game_board.cell_not_found";

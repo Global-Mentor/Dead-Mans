@@ -32,7 +32,9 @@ public static partial class ApiContractMapper
                 .Where(role => role.HasValue)
                 .Select(role => role!.Value)
                 .ToArray(),
-            user.IsPermanentSuperAdmin
+            user.IsPermanentSuperAdmin,
+            user.CreatedAtUtc,
+            user.LastLoginAtUtc
         );
     }
 
@@ -42,7 +44,8 @@ public static partial class ApiContractMapper
             page.Items.Select(ToDto).ToArray(),
             page.Page,
             page.PageSize,
-            page.TotalCount
+            page.TotalCount,
+            new RoleAdministrationSummaryDto(page.Summary.TotalUsers, page.Summary.LoggedInUsers, page.Summary.NewUsers)
         );
     }
 
