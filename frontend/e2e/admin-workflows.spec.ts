@@ -787,3 +787,105 @@ test('question selection keeps a large catalogue stable while a save is pending'
   ).toBe(0)
   await mutations.dispose()
 })
+
+for (const viewport of [
+  { width: 390, height: 900 },
+  { width: 768, height: 900 },
+  { width: 1440, height: 900 },
+  { width: 390, height: 500 },
+]) {
+  test(
+    'catalogue filters, preview and bounded scrolling at ' + viewport.width + 'x' + viewport.height,
+    async ({ page }, info) => {
+      await page.setViewportSize(viewport)
+      const server = await mockAdmin(page)
+      server.questions[11]!.isEnabled = false
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      for (const kind of ['questions', 'modifiers']) {
+        let reads = 0
+        page.on('request', (request) => {
+          if (new URL(request.url()).pathname === '/api/game/' + kind + '/catalog') reads++
+        })
+        await page.goto('/panel/catalog-' + kind)
+        // The region is the sole scrolling list on each catalogue.
+        const list = page.locator('[role="region"][tabindex="0"]')
+        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+        const search = page.getByRole('textbox').first()
+        const top = (await search.boundingBox())!.y
+        await list.evaluate((element) => {
+          element.scrollTop = element.scrollHeight
+        })
+        await expect(list.locator('article').last()).toBeInViewport()
+        expect((await search.boundingBox())!.y).toBe(top)
+        expect(
+          await page.evaluate(
+            () =>
+              document.documentElement.scrollHeight <= innerHeight &&
+              document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true)
+        const readsBefore = reads
+        await search.fill('nothing matches')
+        await expect(list.locator('article')).toHaveCount(0)
+        await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
+        await expect(search).toHaveValue('')
+        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+        await page.getByRole('combobox', { name: /^Categories/ }).click()
+        await page
+          .getByRole('option', { name: kind === 'questions' ? /^Geography/ : /^Before the round/ })
+          .click()
+        await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 3)
+        if (kind === 'questions') {
+          await page.getByRole('combobox', { name: /^Availability/ }).click()
+          await page.getByRole('option', { name: 'globally disabled', exact: true }).click()
+          await expect(list.locator('article')).toHaveCount(1)
+        }
+        expect(reads).toBe(readsBefore)
+        await list
+          .getByRole('button', { name: /^Preview:/ })
+          .first()
+          .click()
+        const dialog = page.getByRole('dialog')
+        await expect(dialog).toBeVisible()
+        if (kind === 'questions') {
+          await expect(dialog.getByText('Warsaw', { exact: true })).toBeVisible()
+          await expect(dialog.getByText('Correct answer', { exact: true })).toBeVisible()
+        } else
+          await expect(
+            dialog.getByText(
+              'A long instruction for the host and the active team. Complete the round without changing equipment.',
+              { exact: true },
+            ),
+          ).toBeVisible()
+        await page.keyboard.press('Escape')
+        await expect(dialog).toHaveCount(0)
+        await page.screenshot({
+          path: info.outputPath('catalog-' + kind + '.png'),
+          animations: 'disabled',
+        })
+      }
+      expect(errors).toEqual([])
+    },
+  )
+}
+
+test('catalogue deletion errors keep the selected record and confirmation open', async ({
+  page,
+}) => {
+  await mockAdmin(page)
+  for (const kind of ['questions', 'modifiers']) {
+    await page.goto('/panel/catalog-' + kind)
+    const list = page.locator('[role="region"][tabindex="0"]')
+    await list.getByRole('button', { name: 'Delete', exact: true }).first().click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(
+      dialog.getByText('The operation could not be completed. Please try again.', { exact: true }),
+    ).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Delete', exact: true })).toBeEnabled()
+    await expect(list.locator('article')).toHaveCount(kind === 'questions' ? 12 : 9)
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+  }
+})

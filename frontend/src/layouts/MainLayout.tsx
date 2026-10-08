@@ -16,6 +16,8 @@ import {
   gameQuizRoute,
   gameTeamQueueRoute,
   roleAdministrationRoute,
+  catalogModifiersRoute,
+  catalogQuestionsRoute,
 } from '../routes/app-routes.ts'
 import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 import { ModifierCatalogRealtimeSync } from '../features/modifier-history/ModifierCatalogRealtimeSync.tsx'
@@ -65,6 +67,8 @@ function MainLayoutContent() {
     gameHistoryRoute.fullPath,
     modifierHistoryRoute.fullPath,
     roleAdministrationRoute.fullPath,
+    catalogModifiersRoute.fullPath,
+    catalogQuestionsRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
     !isAdministration &&

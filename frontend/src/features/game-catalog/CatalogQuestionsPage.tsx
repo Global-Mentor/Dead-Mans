@@ -91,7 +91,6 @@ export function CatalogQuestionsPage() {
     try {
       await confirmDelete()
     } catch (error) {
-      cancelDelete()
       showResolvedError(error)
     }
   }
@@ -101,7 +100,6 @@ export function CatalogQuestionsPage() {
     try {
       await confirmDeleteCategory()
     } catch (error) {
-      cancelDeleteCategory()
       showResolvedError(error)
     }
   }
@@ -126,6 +124,7 @@ export function CatalogQuestionsPage() {
       return
     }
 
+    clearListError()
     requestDeleteCategory(selectedCategory)
   }
 
@@ -183,72 +182,87 @@ export function CatalogQuestionsPage() {
   }
 
   return (
-    <PageShell sx={{ maxWidth: 'none', width: '100%' }}>
-      {listError ? (
-        <InlineNotice severity="error" sx={{ mb: 2 }} onClose={clearListError}>
-          <Stack spacing={1}>
-            <Typography variant="body2">{listError}</Typography>
-            {importReport?.errorMessage ? (
-              <>
+    <PageShell
+      sx={{
+        maxWidth: 1440,
+        width: '100%',
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+      }}
+    >
+      {(listError && !deleteTarget && !deleteCategoryTarget) ||
+      successMessage ||
+      importReport?.skippedQuestions.length ? (
+        <Box sx={{ flexShrink: 0, maxHeight: '30%', overflowY: 'auto' }}>
+          {listError ? (
+            <InlineNotice severity="error" sx={{ mb: 2 }} onClose={clearListError}>
+              <Stack spacing={1}>
+                <Typography variant="body2">{listError}</Typography>
+                {importReport?.errorMessage ? (
+                  <>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('gameCatalog.questions.importErrorDescription')}
+                    </Typography>
+                    <AppButton
+                      size="small"
+                      tone="secondary"
+                      sx={{ alignSelf: 'flex-start' }}
+                      onClick={() => downloadQuestionImportFailureReport(importReport)}
+                    >
+                      {t('gameCatalog.questions.downloadImportReport')}
+                    </AppButton>
+                  </>
+                ) : null}
+              </Stack>
+            </InlineNotice>
+          ) : null}
+
+          {successMessage ? (
+            <InlineNotice severity="success" sx={{ mb: 2 }} onClose={clearSuccessMessage}>
+              {successMessage}
+            </InlineNotice>
+          ) : null}
+
+          {importReport && importReport.skippedQuestions.length > 0 ? (
+            <InlineNotice severity="warning" sx={{ mb: 2 }} onClose={() => setImportReport(null)}>
+              <Stack spacing={1}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1}
+                  sx={{ alignItems: { xs: 'flex-start', sm: 'center' } }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {t('gameCatalog.questions.importSkippedTitle')}
+                  </Typography>
+                  <AppButton
+                    size="small"
+                    tone="secondary"
+                    onClick={() => downloadQuestionImportFailureReport(importReport)}
+                  >
+                    {t('gameCatalog.questions.downloadImportReport')}
+                  </AppButton>
+                </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  {t('gameCatalog.questions.importErrorDescription')}
+                  {t('gameCatalog.questions.importSkippedDescription')}
                 </Typography>
-                <AppButton
-                  size="small"
-                  tone="secondary"
-                  sx={{ alignSelf: 'flex-start' }}
-                  onClick={() => downloadQuestionImportFailureReport(importReport)}
-                >
-                  {t('gameCatalog.questions.downloadImportReport')}
-                </AppButton>
-              </>
-            ) : null}
-          </Stack>
-        </InlineNotice>
+                <Stack spacing={0.5}>
+                  {importReport.skippedQuestions.map((warning) => (
+                    <Typography
+                      key={`${warning.rowNumber}:${warning.questionText ?? ''}:${warning.reason}`}
+                      variant="body2"
+                    >
+                      {formatSkippedQuestionWarning(warning, t)}
+                    </Typography>
+                  ))}
+                </Stack>
+              </Stack>
+            </InlineNotice>
+          ) : null}
+        </Box>
       ) : null}
-
-      {successMessage ? (
-        <InlineNotice severity="success" sx={{ mb: 2 }} onClose={clearSuccessMessage}>
-          {successMessage}
-        </InlineNotice>
-      ) : null}
-
-      {importReport && importReport.skippedQuestions.length > 0 ? (
-        <InlineNotice severity="warning" sx={{ mb: 2 }} onClose={() => setImportReport(null)}>
-          <Stack spacing={1}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={1}
-              sx={{ alignItems: { xs: 'flex-start', sm: 'center' } }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {t('gameCatalog.questions.importSkippedTitle')}
-              </Typography>
-              <AppButton
-                size="small"
-                tone="secondary"
-                onClick={() => downloadQuestionImportFailureReport(importReport)}
-              >
-                {t('gameCatalog.questions.downloadImportReport')}
-              </AppButton>
-            </Stack>
-            <Typography variant="body2" color="text.secondary">
-              {t('gameCatalog.questions.importSkippedDescription')}
-            </Typography>
-            <Stack spacing={0.5}>
-              {importReport.skippedQuestions.map((warning) => (
-                <Typography
-                  key={`${warning.rowNumber}:${warning.questionText ?? ''}:${warning.reason}`}
-                  variant="body2"
-                >
-                  {formatSkippedQuestionWarning(warning, t)}
-                </Typography>
-              ))}
-            </Stack>
-          </Stack>
-        </InlineNotice>
-      ) : null}
-
       <FilePickerInput
         ref={importInputRef}
         accept=".json,.jsonc,application/json"
@@ -260,6 +274,8 @@ export function CatalogQuestionsPage() {
         tools={
           <Box sx={{ minWidth: 0 }}>
             <QuestionCatalogMenu
+              search={search}
+              onSearchChange={setSearch}
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               canAddQuestion={canAddQuestion}
@@ -284,16 +300,23 @@ export function CatalogQuestionsPage() {
           </Box>
         }
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, minHeight: 0, flex: 1, display: 'flex' }}>
           <QuestionCatalogList
+            onRetry={() => void catalogQuery.refetch()}
             search={search}
             selectedCategory={selectedCategory}
             questions={catalogQuery.data ?? []}
             isLoading={catalogQuery.isLoading}
             isError={catalogQuery.isError}
-            onSearchChange={setSearch}
+            onResetFilters={() => {
+              setSearch('')
+              setSelectedCategoryId(null)
+            }}
             onEdit={openEdit}
-            onDelete={requestDelete}
+            onDelete={(question) => {
+              clearListError()
+              requestDelete(question)
+            }}
           />
         </Box>
       </CatalogWorkspace>
@@ -317,6 +340,7 @@ export function CatalogQuestionsPage() {
         onSubmit={submitCategory}
       />
       <ConfirmDialog
+        errorMessage={listError}
         open={deleteTarget !== null}
         title={t('gameCatalog.questions.deleteTitle')}
         description={t('gameCatalog.questions.deleteConfirm')}
@@ -328,6 +352,7 @@ export function CatalogQuestionsPage() {
         onConfirm={() => void handleConfirmDelete()}
       />
       <ConfirmDialog
+        errorMessage={listError}
         open={deleteCategoryTarget !== null}
         title={t('gameCatalog.questions.deleteCategoryTitle')}
         description={t('gameCatalog.questions.deleteCategoryConfirm', {

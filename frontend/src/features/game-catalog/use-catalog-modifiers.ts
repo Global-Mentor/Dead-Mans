@@ -7,13 +7,13 @@ import type {
 } from '../../shared/api/contracts/index.ts'
 import {
   gameModifierCatalogQueryOptions,
+  deriveModifierRoundSummaryMeta,
+  matchesModifierSearch,
   modifierCategoryCodes,
   modifierRoundSummaryTypes,
   type ModifierCategoryCode,
   type ModifierRoundSummaryType,
 } from '../game-modifiers/index.ts'
-import { deriveModifierRoundSummaryMeta } from '../game-modifiers/model/modifier-round-summary.ts'
-import { matchesModifierSearch } from '../game-modifiers/model/modifier-search.ts'
 import {
   createGameModifierMutationOptions,
   deleteGameModifierMutationOptions,

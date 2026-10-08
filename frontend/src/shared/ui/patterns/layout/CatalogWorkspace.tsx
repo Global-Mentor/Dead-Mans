@@ -1,8 +1,7 @@
-import { Box, useMediaQuery, useTheme } from '@mui/material'
-import { useState, type ReactNode } from 'react'
-import { NativeDisclosure } from './NativeDisclosure.tsx'
+import { Box } from '@mui/material'
+import type { ReactNode } from 'react'
 
-/** Catalogue tools remain reachable before a long result list on phones. */
+/** Bounded catalogue: tools stay above independently scrolling results. */
 export function CatalogWorkspace({
   toolsLabel,
   tools,
@@ -12,30 +11,29 @@ export function CatalogWorkspace({
   tools: ReactNode
   children: ReactNode
 }) {
-  const theme = useTheme()
-  const compact = useMediaQuery(theme.breakpoints.down('lg'))
-  const [toolsOpen, setToolsOpen] = useState(false)
   return (
     <Box
       sx={{
-        display: 'grid',
-        gap: 2,
-        alignItems: 'start',
-        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) minmax(320px, 360px)' },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+        flex: '1 1 0%',
+        minHeight: 0,
+        minWidth: 0,
       }}
     >
-      <Box sx={{ minWidth: 0, gridColumn: { lg: 2 }, gridRow: { lg: 1 } }}>
-        <NativeDisclosure
-          summary={toolsLabel}
-          pinned={!compact}
-          open={toolsOpen}
-          onExpandedChange={setToolsOpen}
-          data-testid="catalog-tools"
-        >
-          {tools}
-        </NativeDisclosure>
+      <Box
+        role="group"
+        aria-label={toolsLabel}
+        sx={{ flexShrink: 0, maxHeight: '45%', overflowY: 'auto', scrollbarWidth: 'thin' }}
+      >
+        {tools}
       </Box>
-      <Box sx={{ minWidth: 0, gridColumn: { lg: 1 }, gridRow: { lg: 1 } }}>{children}</Box>
+      <Box
+        sx={{ flex: '1 1 0%', minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
+      >
+        {children}
+      </Box>
     </Box>
   )
 }

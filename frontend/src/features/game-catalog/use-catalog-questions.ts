@@ -32,12 +32,7 @@ export function useCatalogQuestions() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const catalogQuery = useQuery(
-    gameQuestionCatalogQueryOptions({
-      search,
-      ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
-    }),
-  )
+  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions())
   const categoriesQuery = useQuery(questionCategoryQueryOptions())
   const createMutation = useMutation(createGameQuestionMutationOptions(queryClient))
   const updateMutation = useMutation(updateGameQuestionMutationOptions(queryClient))

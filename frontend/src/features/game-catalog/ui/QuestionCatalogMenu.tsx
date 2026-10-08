@@ -1,16 +1,20 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
+import { useState, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCategoryItem } from '../../../shared/api/contracts/index.ts'
 import {
   AppButton,
-  AsyncSection,
-  DisclosureSection,
+  ActionMenu,
+  ActionMenuItem,
   InlineNotice,
   SectionCard,
   SectionHeader,
-  SelectionTile,
+  FormSelect,
+  FormTextField,
 } from '../../../shared/ui/index.ts'
 interface QuestionCatalogMenuProps {
+  search: string
+  onSearchChange: (search: string) => void
   categories: readonly GameQuestionCategoryItem[]
   selectedCategoryId: string | null
   canAddQuestion: boolean
@@ -30,6 +34,8 @@ interface QuestionCatalogMenuProps {
 }
 
 export function QuestionCatalogMenu({
+  search,
+  onSearchChange,
   categories,
   selectedCategoryId,
   canAddQuestion,
@@ -48,118 +54,126 @@ export function QuestionCatalogMenu({
   onDeleteCategory,
 }: QuestionCatalogMenuProps) {
   const { t } = useTranslation()
+  const [menu, setMenu] = useState<{ anchor: HTMLElement; kind: 'import' | 'categories' } | null>(
+    null,
+  )
+  const menuId = useId()
+  const run = (action: () => void) => {
+    setMenu(null)
+    action()
+  }
 
   return (
     <SectionCard sx={{ height: '100%' }}>
-      <SectionHeader
-        title={t('gameCatalog.questions.menuTitle')}
-        description={t('gameCatalog.questions.menuDescription')}
-      />
+      <SectionHeader headingLevel="h1" title={t('gameCatalog.questions.title')} />
 
       <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-        <Stack spacing={1}>
-          <AppButton fullWidth onClick={onCreateQuestion} disabled={!canAddQuestion}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'minmax(0,1fr)',
+              md: 'minmax(0,1fr) minmax(180px,260px) auto',
+            },
+            gap: 1,
+            alignItems: 'center',
+          }}
+        >
+          <FormTextField
+            label={t('gameCatalog.questions.searchLabel')}
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+          <FormSelect
+            label={t('common.entities.categories')}
+            value={selectedCategoryId ?? '__all__'}
+            onChange={(value) => onSelectCategory(value === '__all__' ? null : value)}
+            options={[
+              { value: '__all__', label: t('common.filters.allCategories') },
+              ...categories.map((category) => ({
+                value: category.id,
+                label: category.name + ' (' + category.questionCount + ')',
+              })),
+            ]}
+            disabled={isCategoriesLoading && !categories.length}
+          />
+          <AppButton onClick={onCreateQuestion} disabled={!canAddQuestion}>
             {t('gameCatalog.questions.add')}
           </AppButton>
-
-          <DisclosureSection
-            panelId="catalog-question-import-panel"
-            title={t('gameCatalog.questions.importGroupTitle')}
-            description={t('gameCatalog.questions.importGroupDescription')}
-            toggleLabels={{
-              expand: t('gameCatalog.questions.importGroupExpand'),
-              collapse: t('gameCatalog.questions.importGroupCollapse'),
-            }}
-          >
-            <AppButton
-              fullWidth
-              tone="secondary"
-              onClick={onDownloadTemplate}
-              disabled={isDownloadingTemplate}
-            >
-              {t('gameCatalog.questions.downloadTemplate')}
-            </AppButton>
-            <AppButton
-              fullWidth
-              tone="secondary"
-              onClick={onUploadQuestions}
-              disabled={isImportingQuestions}
-            >
-              {t('gameCatalog.questions.importJson')}
-            </AppButton>
-          </DisclosureSection>
-
-          <DisclosureSection
-            panelId="catalog-question-category-panel"
-            title={t('common.entities.categories')}
-            description={t('gameCatalog.questions.categoryGroupDescription')}
-            toggleLabels={{
-              expand: t('gameCatalog.questions.categoryGroupExpand'),
-              collapse: t('gameCatalog.questions.categoryGroupCollapse'),
-            }}
-          >
-            <AppButton fullWidth tone="secondary" onClick={onCreateCategory}>
-              {t('gameCatalog.questions.addCategory')}
-            </AppButton>
-            <AppButton
-              fullWidth
-              tone="secondary"
-              onClick={onRenameCategory}
-              disabled={!canRenameCategory}
-            >
-              {t('gameCatalog.questions.renameCategory')}
-            </AppButton>
-            <AppButton
-              fullWidth
-              tone="dangerSecondary"
-              onClick={onDeleteCategory}
-              disabled={!canDeleteCategory}
-            >
-              {t('gameCatalog.questions.deleteCategory')}
-            </AppButton>
-            {!canAddQuestion ? (
-              <InlineNotice severity="warning">
-                {t('gameCatalog.questions.noCategories')}
-              </InlineNotice>
-            ) : null}
-          </DisclosureSection>
-        </Stack>
-
-        <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            {t('common.entities.categories')}
-          </Typography>
-          <Stack spacing={1}>
-            <SelectionTile
-              selected={selectedCategoryId === null}
-              onClick={() => onSelectCategory(null)}
-              title={t('common.filters.allCategories')}
-            />
-
-            <AsyncSection
-              isLoading={isCategoriesLoading}
-              isError={isCategoriesError}
-              isEmpty={categories.length === 0}
-              loadingMessage={t('gameCatalog.questions.loadingCategories')}
-              errorMessage={t('gameCatalog.questions.errorCategories')}
-              emptyMessage={t('gameCatalog.questions.emptyCategories')}
-            >
-              <Stack spacing={1}>
-                {categories.map((category) => (
-                  <SelectionTile
-                    key={category.id}
-                    selected={selectedCategoryId === category.id}
-                    onClick={() => onSelectCategory(category.id)}
-                    title={category.name}
-                    description={t('gameCatalog.questions.categoryCount', {
-                      count: category.questionCount,
-                    })}
-                  />
-                ))}
-              </Stack>
-            </AsyncSection>
-          </Stack>
         </Box>
+        {isCategoriesError ? (
+          <InlineNotice severity="error">{t('gameCatalog.questions.errorCategories')}</InlineNotice>
+        ) : null}
+        <Stack direction="row" gap={1} flexWrap="wrap">
+          <AppButton
+            size="small"
+            tone="secondary"
+            aria-label={t('gameCatalog.questions.importGroupExpand')}
+            aria-haspopup="menu"
+            aria-expanded={menu?.kind === 'import'}
+            aria-controls={menu?.kind === 'import' ? menuId : undefined}
+            onClick={(event) => setMenu({ anchor: event.currentTarget, kind: 'import' })}
+          >
+            {t('gameCatalog.questions.importGroupTitle')}
+          </AppButton>
+          <AppButton
+            size="small"
+            tone="secondary"
+            aria-label={t('gameCatalog.questions.categoryGroupExpand')}
+            aria-haspopup="menu"
+            aria-expanded={menu?.kind === 'categories'}
+            aria-controls={menu?.kind === 'categories' ? menuId : undefined}
+            onClick={(event) => setMenu({ anchor: event.currentTarget, kind: 'categories' })}
+          >
+            {t('common.entities.categories')}
+          </AppButton>
+        </Stack>
+        {!canAddQuestion && !isCategoriesLoading ? (
+          <InlineNotice severity="warning">{t('gameCatalog.questions.noCategories')}</InlineNotice>
+        ) : null}
+        <ActionMenu
+          id={menuId}
+          open={menu !== null}
+          anchorEl={menu?.anchor ?? null}
+          onClose={() => setMenu(null)}
+        >
+          {menu?.kind === 'import'
+            ? [
+                <ActionMenuItem
+                  key="download"
+                  disabled={isDownloadingTemplate}
+                  onClick={() => run(onDownloadTemplate)}
+                >
+                  {t('gameCatalog.questions.downloadTemplate')}
+                </ActionMenuItem>,
+                <ActionMenuItem
+                  key="upload"
+                  disabled={isImportingQuestions}
+                  onClick={() => run(onUploadQuestions)}
+                >
+                  {t('gameCatalog.questions.importJson')}
+                </ActionMenuItem>,
+              ]
+            : [
+                <ActionMenuItem key="create" onClick={() => run(onCreateCategory)}>
+                  {t('gameCatalog.questions.addCategory')}
+                </ActionMenuItem>,
+                <ActionMenuItem
+                  key="rename"
+                  disabled={!canRenameCategory}
+                  onClick={() => run(onRenameCategory)}
+                >
+                  {t('gameCatalog.questions.renameCategory')}
+                </ActionMenuItem>,
+                <ActionMenuItem
+                  key="delete"
+                  disabled={!canDeleteCategory}
+                  onClick={() => run(onDeleteCategory)}
+                >
+                  {t('gameCatalog.questions.deleteCategory')}
+                </ActionMenuItem>,
+              ]}
+        </ActionMenu>
       </Stack>
     </SectionCard>
   )

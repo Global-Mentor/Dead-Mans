@@ -233,7 +233,8 @@ test('catalog answer editing preserves variants and validates duplicates under p
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).toHaveCount(0)
   await page.setViewportSize({ width: 390, height: 844 })
-  const answerChip = page.getByText(`Answer: ${longAnswer}`, { exact: true })
+  await page.getByRole('button', { name: 'Preview: Capital?', exact: true }).click()
+  const answerChip = page.getByRole('dialog').getByText(longAnswer, { exact: true })
   await expect(answerChip).toBeVisible()
   expect(await answerChip.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
     true,

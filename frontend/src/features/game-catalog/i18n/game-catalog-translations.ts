@@ -1,5 +1,15 @@
 const translations = {
   en: {
+    workspace: {
+      preview: 'Preview',
+      previewItem: 'Preview: {{name}}',
+      results: 'Shown: {{count}} of {{total}}',
+      status: 'Availability',
+      all: 'All questions',
+      enabled: 'Enabled',
+      retry: 'Retry',
+      reset: 'Reset filters',
+    },
     actions: {
       edit: 'Edit',
       view: 'View',
@@ -517,6 +527,16 @@ const translations = {
     },
   },
   ru: {
+    workspace: {
+      preview: 'Предпросмотр',
+      previewItem: 'Предпросмотр: {{name}}',
+      results: 'Показано: {{count}} из {{total}}',
+      status: 'Доступность',
+      all: 'Все вопросы',
+      enabled: 'Включены',
+      retry: 'Повторить',
+      reset: 'Сбросить фильтры',
+    },
     actions: {
       edit: 'Изменить',
       view: 'Просмотр',
@@ -1042,6 +1062,16 @@ const translations = {
     },
   },
   uk: {
+    workspace: {
+      preview: 'Попередній перегляд',
+      previewItem: 'Перегляд: {{name}}',
+      results: 'Показано: {{count}} із {{total}}',
+      status: 'Доступність',
+      all: 'Усі запитання',
+      enabled: 'Увімкнені',
+      retry: 'Повторити',
+      reset: 'Скинути фільтри',
+    },
     actions: {
       edit: 'Редагувати',
       view: 'Переглянути',
@@ -1559,6 +1589,16 @@ const translations = {
     },
   },
   pl: {
+    workspace: {
+      preview: 'Podgląd',
+      previewItem: 'Podgląd: {{name}}',
+      results: 'Wyświetlono: {{count}} z {{total}}',
+      status: 'Dostępność',
+      all: 'Wszystkie pytania',
+      enabled: 'Włączone',
+      retry: 'Ponów',
+      reset: 'Wyczyść filtry',
+    },
     actions: {
       edit: 'Edytuj',
       view: 'Wyświetl',

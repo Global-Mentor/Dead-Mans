@@ -112,7 +112,7 @@ describe('CatalogQuestionsPage', () => {
     renderWithAppProviders(<CatalogQuestionsPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Развернуть импорт из JSON' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Загрузить JSON' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Загрузить JSON' }))
     const input = document.querySelector('input[type="file"]')
     expect(input).not.toBeNull()
 
