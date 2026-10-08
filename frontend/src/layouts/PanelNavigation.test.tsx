@@ -466,8 +466,8 @@ describe('PanelNavigation', () => {
     for (const label of [
       'Настройка доски',
       'Команды',
-      'Модификаторы текущей игры',
-      'Вопросы текущей игры',
+      'Модификаторы для игры',
+      'Вопросы для игры',
       'Каталог модификаторов',
       'Каталог вопросов',
     ]) {
@@ -536,11 +536,11 @@ describe('PanelNavigation', () => {
       'aria-disabled',
       'true',
     )
-    expect(screen.getByRole('menuitem', { name: 'Модификаторы текущей игры' })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: 'Модификаторы для игры' })).toHaveAttribute(
       'aria-disabled',
       'true',
     )
-    expect(screen.getByRole('menuitem', { name: 'Вопросы текущей игры' })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: 'Вопросы для игры' })).toHaveAttribute(
       'aria-disabled',
       'true',
     )

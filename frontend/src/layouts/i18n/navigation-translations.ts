@@ -77,10 +77,10 @@ const translations = {
         label: 'Board setup',
       },
       adminModifiers: {
-        label: 'Current game modifiers',
+        label: 'Modifiers for the game',
       },
       adminQuestions: {
-        label: 'Current game questions',
+        label: 'Questions for the game',
       },
       catalogModifiers: {
         label: 'Modifier catalog',
@@ -172,10 +172,10 @@ const translations = {
         label: 'Настройка доски',
       },
       adminModifiers: {
-        label: 'Модификаторы текущей игры',
+        label: 'Модификаторы для игры',
       },
       adminQuestions: {
-        label: 'Вопросы текущей игры',
+        label: 'Вопросы для игры',
       },
       catalogModifiers: {
         label: 'Каталог модификаторов',
@@ -267,10 +267,10 @@ const translations = {
         label: 'Налаштування дошки',
       },
       adminModifiers: {
-        label: 'Модифікатори поточної гри',
+        label: 'Модифікатори для гри',
       },
       adminQuestions: {
-        label: 'Питання поточної гри',
+        label: 'Питання для гри',
       },
       catalogModifiers: {
         label: 'Каталог модифікаторів',
@@ -362,10 +362,10 @@ const translations = {
         label: 'Konfiguracja planszy',
       },
       adminModifiers: {
-        label: 'Modyfikatory bieżącej gry',
+        label: 'Modyfikatory do gry',
       },
       adminQuestions: {
-        label: 'Pytania bieżącej gry',
+        label: 'Pytania do gry',
       },
       catalogModifiers: {
         label: 'Katalog modyfikatorów',

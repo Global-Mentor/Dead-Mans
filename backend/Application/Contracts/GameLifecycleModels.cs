@@ -8,7 +8,8 @@ public sealed record DraftGameLifecycleContext(
     short MaxPlayersPerTeam
 );
 
-public sealed record OpenGameRegistrationInput(Guid GameId, int ExpectedVersion);
+public sealed record OpenGameRegistrationInput(
+    Guid GameId, int ExpectedVersion, bool AllowWithoutModifiers = false, bool AllowWithoutQuestions = false);
 
 public enum GameLifecycleErrorCode
 {
@@ -20,6 +21,9 @@ public enum GameLifecycleErrorCode
     GameNotReady,
     ModifierVersionBindingMissing,
     QuestionsUnavailable,
+    CellMediaRequired,
+    EmptyModifiersNotAcknowledged,
+    EmptyQuestionsNotAcknowledged,
     GameNotActive,
     NoTeamSlots,
     InvalidTeamSizeLimits,

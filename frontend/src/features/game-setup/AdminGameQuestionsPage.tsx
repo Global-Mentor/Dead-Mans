@@ -10,6 +10,8 @@ export function AdminGameQuestionsPage() {
   const { t } = useTranslation()
   const {
     draft,
+    snapshot,
+    isSaving,
     isLoading,
     isError,
     syncStatus,
@@ -59,9 +61,21 @@ export function AdminGameQuestionsPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell
+      sx={{
+        width: '100%',
+        maxWidth: 1440,
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+      }}
+    >
       <GameSetupQuestionsSection
+        key={snapshot?.gameId}
         draft={draft}
+        isSaving={isSaving}
         onToggle={toggleQuestion}
         onBulkSetEnabled={setQuestionsEnabled}
         onDurationChange={setQuizAnswerDuration}

@@ -40,6 +40,7 @@ export function useOpenGameRegistration(onBusyChange: (busy: boolean) => void) {
     currentGame,
     isOpening: mutation.isPending,
     openRegistration: mutation.mutate,
+    resetError: mutation.reset,
     errorKey: mutation.error ? getPublicationErrorKey(mutation.error) : null,
   }
 }
@@ -48,6 +49,11 @@ function getPublicationErrorKey(error: Error) {
   if (error instanceof ApiError) {
     const details = error.details
     const code = details && typeof details === 'object' && 'code' in details ? details.code : null
+    if (code === API_ERROR_CODES.gameLifecycleCellMediaRequired) return 'media' as const
+    if (code === API_ERROR_CODES.gameLifecycleEmptyModifiersNotAcknowledged)
+      return 'emptyModifiers' as const
+    if (code === API_ERROR_CODES.gameLifecycleEmptyQuestionsNotAcknowledged)
+      return 'emptyQuestions' as const
     if (code === API_ERROR_CODES.gameSetupStaleVersion) return 'stale' as const
     if (code === API_ERROR_CODES.gameLifecycleCurrentAlreadyExists) return 'currentGame' as const
     if (code === API_ERROR_CODES.gameLifecycleInvalidTeamSizeLimits) return 'teamSize' as const

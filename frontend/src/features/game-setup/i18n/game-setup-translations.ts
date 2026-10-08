@@ -1,16 +1,22 @@
 const translations = {
   en: {
     registration: {
-      title: 'Open registration',
-      description: 'Publish the saved draft so players can create teams and join the game.',
-      summary: 'Cards: {{cards}} · Modifiers: {{modifiers}} · Questions: {{questions}}',
-      questionsOptional:
-        'Quiz questions are optional. You can open registration and start the game without them.',
+      title: 'Game readiness',
+      mediaLabel: 'Cards with media',
+      modifiersLabel: 'Modifiers',
+      questionsLabel: 'Questions',
+      answerDuration: 'Answer time',
+      durationSeconds: '{{count}} s',
+      missingMedia: 'Add media to every card. Cards without media: {{count}}.',
+      emptyContentWarning:
+        'Some game content has not been selected. Confirm each exception to continue.',
+      allowWithoutModifiers: 'I agree to run this game without modifiers',
+      allowWithoutQuestions: 'I agree to run this game without questions',
       open: 'Open registration',
       confirmTitle: 'Publish the game?',
       confirmDescription:
-        'Open registration for “{{title}}”? The saved board, modifiers and questions will be fixed for this game. Draft editing will close; the game itself starts later, after teams are confirmed.',
-      confirm: 'Publish and open registration',
+        'Open registration for “{{title}}”? The board, modifiers and questions will be locked. The game starts after teams are confirmed.',
+      confirm: 'Open registration',
       cancel: 'Cancel',
       retry: 'Check again',
       blockers: {
@@ -25,6 +31,9 @@ const translations = {
           'Finish editing the active field and wait for auto-save before opening registration.',
       },
       errors: {
+        media: 'Every card must have media. Review the board and try again.',
+        emptyModifiers: 'Select modifiers or confirm running the game without them.',
+        emptyQuestions: 'Select questions or confirm running the game without them.',
         stale: 'The draft changed after you reviewed it. Reload and review the latest version.',
         currentGame: 'Another game is already ready or active. Finish it first.',
         teamSize: 'The team size limits are invalid.',
@@ -54,7 +63,9 @@ const translations = {
       replace: 'Replace',
       uploading: 'Uploading...',
       removing: 'Removing...',
-      uploadPrompt: 'Click or drag an image here',
+      uploadPrompt: 'Use Upload or drag an image here',
+      previewTitle: 'Image preview',
+      previewAction: 'Preview image',
       dropPrompt: 'Release to upload',
       errors: {
         invalidType: 'Only PNG, JPEG, WebP, and GIF images are allowed.',
@@ -67,33 +78,38 @@ const translations = {
       },
     },
     cellPriceLabel: 'Card value',
-    persistenceHint:
-      'All admins share one draft in the database. Text fields save when they lose focus. Selections and layout changes save immediately. Images upload to storage immediately. Other admins see updates in real time via SignalR.',
     modifiers: {
-      title: 'Available modifiers for this game',
-      description:
-        'Choose which global modifiers can be activated during this game. The list is shared for all admins.',
+      enableVisible: 'Enable visible',
+      disableVisible: 'Disable visible',
+      enabledCount: 'Selected for this game: {{count}}',
+      toggleLabel: 'Include {{name}} in the game',
+      title: 'Modifier selection',
       loading: 'Loading modifier catalog...',
       error: 'Failed to load modifier catalog.',
       empty: 'Modifier catalog is empty.',
     },
     questions: {
-      title: 'Question management',
-      description:
-        'Manage global question availability and categories before selecting questions for the game.',
-      searchLabel: 'Search by question/answer',
-      enableCategory: 'Enable category',
-      disableCategory: 'Disable category',
-      loading: 'Loading question catalog...',
-      error: 'Failed to load question catalog.',
-      empty: 'No questions match current filters.',
-      meta: 'Category: {{category}} · Reward: {{reward}} · Asked: {{asked}} · Correct: {{correct}}',
-      enabledDescription:
-        'Select questions for this game. Globally disabled questions are hidden and removed from drafts.',
-      enabledCount: 'Enabled for this game: {{count}}',
+      title: 'Question selection',
+      searchLabel: 'Search questions and answers',
+      loading: 'Loading questions...',
+      error: 'Could not load questions.',
+      empty: 'There are no enabled questions in the catalogue.',
+      emptyFiltered: 'No questions match these filters.',
+      enabledCount: 'Selected for this game: {{count}}',
       answerDuration: 'Answer time (seconds)',
+      durationError: 'Enter a whole number from 5 to 3600 seconds.',
       enableVisible: 'Enable visible',
       disableVisible: 'Disable visible',
+      selectionLabel: 'Selection',
+      selectionAll: 'All questions',
+      selectionSelected: 'Selected',
+      selectionUnselected: 'Not selected',
+      preview: 'View answers',
+      previewTitle: 'Question and answers',
+      correctAnswer: 'Correct answer',
+      reward: 'Reward: {{count}}',
+      rowMeta: '{{category}} · Reward: {{count}}',
+      resetFilters: 'Reset filters',
     },
     reloadFromServer: 'Reload',
     remoteChangeNotice:
@@ -113,15 +129,9 @@ const translations = {
     saveFailed: 'Failed to save game setup. Please try again.',
     resetFailed: 'Failed to reset game setup. Please try again.',
     boardTitle: 'Game board',
-    boardDescription:
-      'Row and column labels are titles only and do not set card values. New labels can contain up to 24 characters and wrap onto multiple lines. Text fields save when you leave them.',
     settingsSidebar: {
-      overline: 'Setup',
-      title: 'Game settings',
-      description:
-        'Game name and board size. Text fields save when they lose focus; layout changes and images save immediately.',
       boardSizeLabel: 'Current size',
-      boardSizeValue: '{{rows}} rows × {{columns}} columns',
+      boardSizeValue: '{{rows}} × {{columns}}',
       manageLayout: 'Rows and columns…',
       resetDraft: 'Reset draft',
     },
@@ -134,8 +144,6 @@ const translations = {
     },
     layoutDialog: {
       title: 'Rows and columns',
-      description:
-        'Choose an action, target, and position. Changes save to the shared draft after you confirm.',
       actionLabel: 'Action',
       actionAdd: 'Add',
       axisLabel: 'Target',
@@ -151,17 +159,10 @@ const translations = {
       removeRowTarget: 'Row {{position}} ({{label}})',
       removeColumnTarget: 'Column {{position}} ({{label}})',
       limitReached: 'This action is not available for the current board size.',
-      review: 'Review',
-      confirm: 'Confirm',
-      confirmAddRow: 'Add a new row: {{target}}?',
-      confirmAddColumn: 'Add a new column: {{target}}?',
       confirmRemoveRow:
         'Remove {{target}}? After the draft syncs, cards in this row and their uploaded images will be deleted from the server.',
       confirmRemoveColumn:
         'Remove {{target}}? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
-    },
-    emptyPanel: {
-      description: 'No draft game in the database yet. Click the board area to create one.',
     },
     createDialog: {
       promptTitle: 'No draft game yet',
@@ -179,17 +180,22 @@ const translations = {
   },
   ru: {
     registration: {
-      title: 'Открытие регистрации',
-      description:
-        'Опубликуйте сохранённый черновик, чтобы игроки могли создавать команды и подавать заявки.',
-      summary: 'Карточек: {{cards}} · Модификаторов: {{modifiers}} · Вопросов: {{questions}}',
-      questionsOptional:
-        'Вопросы викторины необязательны. Без них можно открыть регистрацию и начать игру.',
+      title: 'Готовность игры',
+      mediaLabel: 'Карточки с медиа',
+      modifiersLabel: 'Модификаторы',
+      questionsLabel: 'Вопросы',
+      answerDuration: 'Время на ответ',
+      durationSeconds: '{{count}} сек.',
+      missingMedia: 'Добавьте медиа в каждую карточку. Без медиа: {{count}}.',
+      emptyContentWarning:
+        'Для игры выбрано не всё содержимое. Подтвердите каждое исключение, чтобы продолжить.',
+      allowWithoutModifiers: 'Я согласен запустить игру без модификаторов',
+      allowWithoutQuestions: 'Я согласен запустить игру без вопросов',
       open: 'Открыть регистрацию',
       confirmTitle: 'Опубликовать игру?',
       confirmDescription:
-        'Открыть регистрацию на «{{title}}»? Сохранённое поле, модификаторы и вопросы будут зафиксированы для этой игры. Редактирование черновика закроется; сама игра начнётся позже, после подтверждения команд.',
-      confirm: 'Опубликовать и открыть регистрацию',
+        'Открыть регистрацию на «{{title}}»? После этого доску, модификаторы и вопросы изменить нельзя. Игра начнётся после подтверждения команд.',
+      confirm: 'Открыть регистрацию',
       cancel: 'Отмена',
       retry: 'Проверить снова',
       blockers: {
@@ -204,6 +210,9 @@ const translations = {
           'Завершите редактирование активного поля и дождитесь автосохранения перед открытием регистрации.',
       },
       errors: {
+        media: 'В каждой карточке должно быть медиа. Проверьте доску и повторите попытку.',
+        emptyModifiers: 'Выберите модификаторы или подтвердите запуск без них.',
+        emptyQuestions: 'Выберите вопросы или подтвердите запуск без них.',
         stale: 'Черновик изменился после проверки. Загрузите и проверьте актуальную версию.',
         currentGame: 'Другая игра уже готова или запущена. Сначала завершите её.',
         teamSize: 'Некорректные ограничения размера команды.',
@@ -233,7 +242,9 @@ const translations = {
       replace: 'Заменить',
       uploading: 'Загрузка...',
       removing: 'Удаление...',
-      uploadPrompt: 'Нажмите или перетащите изображение',
+      uploadPrompt: 'Перетащите изображение или нажмите «Загрузить»',
+      previewTitle: 'Предпросмотр изображения',
+      previewAction: 'Открыть изображение',
       dropPrompt: 'Отпустите для загрузки',
       errors: {
         invalidType: 'Допустимы только изображения PNG, JPEG, WebP и GIF.',
@@ -247,33 +258,38 @@ const translations = {
       },
     },
     cellPriceLabel: 'Стоимость карточки',
-    persistenceHint:
-      'Все администраторы работают с одним черновиком в базе. Текстовые поля сохраняются после потери фокуса, а выборы и изменения размера поля - сразу. Изображения сразу уходят в storage. Изменения других админов приходят по SignalR в реальном времени.',
     modifiers: {
-      title: 'Доступные модификаторы для этой игры',
-      description:
-        'Выберите, какие глобальные модификаторы можно будет активировать во время игры. Список общий для всех администраторов.',
+      enableVisible: 'Включить видимые',
+      disableVisible: 'Отключить видимые',
+      enabledCount: 'Выбрано для игры: {{count}}',
+      toggleLabel: 'Включить в игру: {{name}}',
+      title: 'Подключение модификаторов',
       loading: 'Загрузка каталога модификаторов...',
       error: 'Не удалось загрузить каталог модификаторов.',
       empty: 'Каталог модификаторов пуст.',
     },
     questions: {
-      title: 'Управление вопросами',
-      description:
-        'Управляйте доступностью вопросов и категориями общего каталога перед выбором вопросов для игры.',
-      searchLabel: 'Поиск по вопросу/ответу',
-      enableCategory: 'Включить категорию',
-      disableCategory: 'Отключить категорию',
-      loading: 'Загрузка каталога вопросов...',
-      error: 'Не удалось загрузить каталог вопросов.',
-      empty: 'По выбранным фильтрам вопросов нет.',
-      meta: 'Категория: {{category}} · Награда: {{reward}} · Задано: {{asked}} · Верно: {{correct}}',
-      enabledDescription:
-        'Выберите вопросы для игры. Глобально отключённые вопросы скрыты и удаляются из черновиков.',
-      enabledCount: 'Включено для этой игры: {{count}}',
+      title: 'Выбор вопросов',
+      searchLabel: 'Поиск по вопросам и ответам',
+      loading: 'Загрузка вопросов...',
+      error: 'Не удалось загрузить вопросы.',
+      empty: 'В каталоге пока нет включённых вопросов.',
+      emptyFiltered: 'По этим фильтрам вопросы не найдены.',
+      enabledCount: 'Выбрано для игры: {{count}}',
       answerDuration: 'Время на ответ (секунды)',
+      durationError: 'Введите целое число от 5 до 3600 секунд.',
       enableVisible: 'Включить видимые',
       disableVisible: 'Отключить видимые',
+      selectionLabel: 'Выбор для игры',
+      selectionAll: 'Все вопросы',
+      selectionSelected: 'Выбранные',
+      selectionUnselected: 'Не выбранные',
+      preview: 'Посмотреть ответы',
+      previewTitle: 'Вопрос и ответы',
+      correctAnswer: 'Правильный ответ',
+      reward: 'Награда: {{count}}',
+      rowMeta: '{{category}} · Награда: {{count}}',
+      resetFilters: 'Сбросить фильтры',
     },
     reloadFromServer: 'Обновить',
     remoteChangeNotice:
@@ -293,15 +309,9 @@ const translations = {
     saveFailed: 'Не удалось сохранить настройку игры. Попробуйте ещё раз.',
     resetFailed: 'Не удалось сбросить настройку игры. Попробуйте ещё раз.',
     boardTitle: 'Игровая таблица',
-    boardDescription:
-      'Подписи строк и колонок - только заголовки и не задают стоимость. Новая подпись может содержать до 24 символов и переносится на несколько строк. Текстовые поля сохраняются после выхода из них.',
     settingsSidebar: {
-      overline: 'Настройка',
-      title: 'Настройки игры',
-      description:
-        'Название и размер таблицы. Текстовые поля сохраняются после потери фокуса, а размер и изображения - сразу.',
       boardSizeLabel: 'Текущий размер',
-      boardSizeValue: '{{rows}} строк × {{columns}} колонок',
+      boardSizeValue: '{{rows}} × {{columns}}',
       manageLayout: 'Строки и колонки…',
       resetDraft: 'Сбросить черновик',
     },
@@ -314,8 +324,6 @@ const translations = {
     },
     layoutDialog: {
       title: 'Строки и колонки',
-      description:
-        'Выберите действие, объект и позицию. После подтверждения изменения сохраняются в общий черновик.',
       actionLabel: 'Действие',
       actionAdd: 'Добавить',
       axisLabel: 'Объект',
@@ -331,17 +339,10 @@ const translations = {
       removeRowTarget: 'Строка {{position}} ({{label}})',
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Это действие недоступно для текущего размера таблицы.',
-      review: 'Проверить',
-      confirm: 'Подтвердить',
-      confirmAddRow: 'Добавить новую строку: {{target}}?',
-      confirmAddColumn: 'Добавить новую колонку: {{target}}?',
       confirmRemoveRow:
         'Удалить {{target}}? После синхронизации черновика карточки в этой строке и их изображения будут удалены с сервера.',
       confirmRemoveColumn:
         'Удалить {{target}}? После синхронизации черновика карточки в этой колонке и их изображения будут удалены с сервера.',
-    },
-    emptyPanel: {
-      description: 'В базе пока нет черновика. Нажмите на область доски, чтобы создать игру.',
     },
     createDialog: {
       promptTitle: 'Черновика пока нет',
@@ -359,17 +360,22 @@ const translations = {
   },
   uk: {
     registration: {
-      title: 'Відкриття реєстрації',
-      description:
-        'Опублікуйте збережену чернетку, щоб гравці могли створювати команди й подавати заявки.',
-      summary: 'Карток: {{cards}} · Модифікаторів: {{modifiers}} · Запитань: {{questions}}',
-      questionsOptional:
-        'Запитання вікторини необов’язкові. Без них можна відкрити реєстрацію й почати гру.',
+      title: 'Готовність гри',
+      mediaLabel: 'Картки з медіа',
+      modifiersLabel: 'Модифікатори',
+      questionsLabel: 'Запитання',
+      answerDuration: 'Час на відповідь',
+      durationSeconds: '{{count}} с',
+      missingMedia: 'Додайте медіа до кожної картки. Без медіа: {{count}}.',
+      emptyContentWarning:
+        'Для гри вибрано не весь вміст. Підтвердьте кожен виняток, щоб продовжити.',
+      allowWithoutModifiers: 'Я погоджуюся запустити гру без модифікаторів',
+      allowWithoutQuestions: 'Я погоджуюся запустити гру без запитань',
       open: 'Відкрити реєстрацію',
       confirmTitle: 'Опублікувати гру?',
       confirmDescription:
-        'Відкрити реєстрацію на «{{title}}»? Збережене поле, модифікатори й запитання буде зафіксовано для цієї гри. Редагування чернетки закриється; сама гра почнеться пізніше, після підтвердження команд.',
-      confirm: 'Опублікувати й відкрити реєстрацію',
+        'Відкрити реєстрацію на «{{title}}»? Після цього дошку, модифікатори й запитання змінити не можна. Гра почнеться після підтвердження команд.',
+      confirm: 'Відкрити реєстрацію',
       cancel: 'Скасувати',
       retry: 'Перевірити знову',
       blockers: {
@@ -383,6 +389,9 @@ const translations = {
           'Завершіть редагування активного поля й дочекайтеся автозбереження перед відкриттям реєстрації.',
       },
       errors: {
+        media: 'У кожній картці має бути медіа. Перевірте дошку та повторіть спробу.',
+        emptyModifiers: 'Виберіть модифікатори або підтвердьте запуск без них.',
+        emptyQuestions: 'Виберіть запитання або підтвердьте запуск без них.',
         stale: 'Чернетка змінилася після перевірки. Завантажте й перевірте актуальну версію.',
         currentGame: 'Інша гра вже готова або запущена. Спочатку завершіть її.',
         teamSize: 'Некоректні обмеження розміру команди.',
@@ -412,7 +421,9 @@ const translations = {
       replace: 'Замінити',
       uploading: 'Завантаження...',
       removing: 'Видалення...',
-      uploadPrompt: 'Натисніть або перетягніть зображення',
+      uploadPrompt: 'Перетягніть зображення або натисніть «Завантажити»',
+      previewTitle: 'Перегляд зображення',
+      previewAction: 'Відкрити зображення',
       dropPrompt: 'Відпустіть для завантаження',
       errors: {
         invalidType: 'Дозволені лише зображення PNG, JPEG, WebP та GIF.',
@@ -426,33 +437,38 @@ const translations = {
       },
     },
     cellPriceLabel: 'Вартість картки',
-    persistenceHint:
-      'Усі адміністратори працюють з однією чернеткою в базі. Текстові поля зберігаються після втрати фокуса, а вибір і зміни розміру поля - одразу. Зображення одразу потрапляють у storage. Зміни інших адмінів надходять через SignalR.',
     modifiers: {
-      title: 'Доступні модифікатори для цієї гри',
-      description:
-        'Оберіть, які глобальні модифікатори можна буде активувати під час гри. Список спільний для всіх адміністраторів.',
+      enableVisible: 'Увімкнути видимі',
+      disableVisible: 'Вимкнути видимі',
+      enabledCount: 'Вибрано для гри: {{count}}',
+      toggleLabel: 'Додати до гри: {{name}}',
+      title: 'Підключення модифікаторів',
       loading: 'Завантаження каталогу модифікаторів...',
       error: 'Не вдалося завантажити каталог модифікаторів.',
       empty: 'Каталог модифікаторів порожній.',
     },
     questions: {
-      title: 'Керування питаннями',
-      description:
-        'Керуйте доступністю питань і категоріями глобального каталогу перед вибором питань для гри.',
-      searchLabel: 'Пошук за питанням/відповіддю',
-      enableCategory: 'Увімкнути категорію',
-      disableCategory: 'Вимкнути категорію',
-      loading: 'Завантаження каталогу питань...',
-      error: 'Не вдалося завантажити каталог питань.',
-      empty: 'За поточними фільтрами питань немає.',
-      meta: 'Категорія: {{category}} · Нагорода: {{reward}} · Поставлено: {{asked}} · Вірно: {{correct}}',
-      enabledDescription:
-        'Виберіть питання для гри. Глобально вимкнені питання приховані та видаляються з чернеток.',
-      enabledCount: 'Увімкнено для цієї гри: {{count}}',
+      title: 'Вибір запитань',
+      searchLabel: 'Пошук за запитаннями та відповідями',
+      loading: 'Завантаження запитань...',
+      error: 'Не вдалося завантажити запитання.',
+      empty: 'У каталозі поки немає ввімкнених запитань.',
+      emptyFiltered: 'За цими фільтрами запитань не знайдено.',
+      enabledCount: 'Вибрано для гри: {{count}}',
       answerDuration: 'Час на відповідь (секунди)',
+      durationError: 'Введіть ціле число від 5 до 3600 секунд.',
       enableVisible: 'Увімкнути видимі',
       disableVisible: 'Вимкнути видимі',
+      selectionLabel: 'Вибір для гри',
+      selectionAll: 'Усі запитання',
+      selectionSelected: 'Вибрані',
+      selectionUnselected: 'Не вибрані',
+      preview: 'Переглянути відповіді',
+      previewTitle: 'Запитання та відповіді',
+      correctAnswer: 'Правильна відповідь',
+      reward: 'Нагорода: {{count}}',
+      rowMeta: '{{category}} · Нагорода: {{count}}',
+      resetFilters: 'Скинути фільтри',
     },
     reloadFromServer: 'Оновити',
     remoteChangeNotice:
@@ -473,15 +489,9 @@ const translations = {
     saveFailed: 'Не вдалося зберегти налаштування гри. Спробуйте ще раз.',
     resetFailed: 'Не вдалося скинути налаштування гри. Спробуйте ще раз.',
     boardTitle: 'Ігрова таблиця',
-    boardDescription:
-      'Підписи рядків і колонок - лише заголовки й не задають вартість. Новий підпис може містити до 24 символів і переноситься на кілька рядків. Текстові поля зберігаються після виходу з них.',
     settingsSidebar: {
-      overline: 'Налаштування',
-      title: 'Налаштування гри',
-      description:
-        'Назва та розмір таблиці. Текстові поля зберігаються після втрати фокуса, а розмір і зображення - одразу.',
       boardSizeLabel: 'Поточний розмір',
-      boardSizeValue: '{{rows}} рядків × {{columns}} колонок',
+      boardSizeValue: '{{rows}} × {{columns}}',
       manageLayout: 'Рядки та колонки…',
       resetDraft: 'Скинути чернетку',
     },
@@ -494,8 +504,6 @@ const translations = {
     },
     layoutDialog: {
       title: 'Рядки та колонки',
-      description:
-        'Оберіть дію, об’єкт і позицію. Після підтвердження зміни зберігаються в спільну чернетку.',
       actionLabel: 'Дія',
       actionAdd: 'Додати',
       axisLabel: 'Об’єкт',
@@ -511,17 +519,10 @@ const translations = {
       removeRowTarget: 'Рядок {{position}} ({{label}})',
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Ця дія недоступна для поточного розміру таблиці.',
-      review: 'Перевірити',
-      confirm: 'Підтвердити',
-      confirmAddRow: 'Додати новий рядок: {{target}}?',
-      confirmAddColumn: 'Додати нову колонку: {{target}}?',
       confirmRemoveRow:
         'Видалити {{target}}? Після синхронізації чернетки картки в цьому рядку та їхні зображення будуть видалені з сервера.',
       confirmRemoveColumn:
         'Видалити {{target}}? Після синхронізації чернетки картки в цій колонці та їхні зображення будуть видалені з сервера.',
-    },
-    emptyPanel: {
-      description: 'У базі поки немає чернетки. Натисніть на область дошки, щоб створити гру.',
     },
     createDialog: {
       promptTitle: 'Чернетки поки немає',
@@ -539,17 +540,22 @@ const translations = {
   },
   pl: {
     registration: {
-      title: 'Otwarcie zapisów',
-      description:
-        'Opublikuj zapisany szkic, aby gracze mogli tworzyć drużyny i zgłaszać się do gry.',
-      summary: 'Karty: {{cards}} · Modyfikatory: {{modifiers}} · Pytania: {{questions}}',
-      questionsOptional:
-        'Pytania quizowe są opcjonalne. Bez nich można otworzyć zapisy i rozpocząć grę.',
+      title: 'Gotowość gry',
+      mediaLabel: 'Karty z mediami',
+      modifiersLabel: 'Modyfikatory',
+      questionsLabel: 'Pytania',
+      answerDuration: 'Czas na odpowiedź',
+      durationSeconds: '{{count}} s',
+      missingMedia: 'Dodaj media do każdej karty. Bez mediów: {{count}}.',
+      emptyContentWarning:
+        'Nie wybrano całej zawartości gry. Potwierdź każdy wyjątek, aby kontynuować.',
+      allowWithoutModifiers: 'Zgadzam się uruchomić grę bez modyfikatorów',
+      allowWithoutQuestions: 'Zgadzam się uruchomić grę bez pytań',
       open: 'Otwórz zapisy',
       confirmTitle: 'Opublikować grę?',
       confirmDescription:
-        'Otworzyć zapisy do „{{title}}”? Zapisana plansza, modyfikatory i pytania zostaną utrwalone dla tej gry. Edycja szkicu zostanie zamknięta; gra rozpocznie się później, po zatwierdzeniu drużyn.',
-      confirm: 'Opublikuj i otwórz zapisy',
+        'Otworzyć rejestrację do gry „{{title}}”? Plansza, modyfikatory i pytania zostaną zablokowane. Gra rozpocznie się po zatwierdzeniu drużyn.',
+      confirm: 'Otwórz rejestrację',
       cancel: 'Anuluj',
       retry: 'Sprawdź ponownie',
       blockers: {
@@ -561,6 +567,9 @@ const translations = {
         unsaved: 'Zakończ edycję aktywnego pola i poczekaj na autozapis przed otwarciem zapisów.',
       },
       errors: {
+        media: 'Każda karta musi mieć media. Sprawdź planszę i spróbuj ponownie.',
+        emptyModifiers: 'Wybierz modyfikatory lub potwierdź uruchomienie bez nich.',
+        emptyQuestions: 'Wybierz pytania lub potwierdź uruchomienie bez nich.',
         stale: 'Szkic zmienił się po sprawdzeniu. Wczytaj i sprawdź aktualną wersję.',
         currentGame: 'Inna gra jest już gotowa lub trwa. Najpierw ją zakończ.',
         teamSize: 'Limity wielkości drużyny są nieprawidłowe.',
@@ -590,7 +599,9 @@ const translations = {
       replace: 'Zamień',
       uploading: 'Przesyłanie...',
       removing: 'Usuwanie...',
-      uploadPrompt: 'Kliknij lub przeciągnij obraz',
+      uploadPrompt: 'Przeciągnij obraz lub kliknij „Prześlij”',
+      previewTitle: 'Podgląd obrazu',
+      previewAction: 'Otwórz obraz',
       dropPrompt: 'Puść, aby przesłać',
       errors: {
         invalidType: 'Dozwolone są tylko obrazy PNG, JPEG, WebP i GIF.',
@@ -604,33 +615,38 @@ const translations = {
       },
     },
     cellPriceLabel: 'Wartość karty',
-    persistenceHint:
-      'Wszyscy administratorzy korzystają z jednego szkicu w bazie. Pola tekstowe zapisują się po utracie fokusu, a wybory i zmiany rozmiaru planszy - od razu. Obrazy trafiają od razu do storage. Zmiany innych adminów przychodzą na żywo przez SignalR.',
     modifiers: {
-      title: 'Dostępne modyfikatory dla tej gry',
-      description:
-        'Wybierz, które globalne modyfikatory będzie można aktywować podczas tej gry. Lista jest wspólna dla wszystkich administratorów.',
+      enableVisible: 'Włącz widoczne',
+      disableVisible: 'Wyłącz widoczne',
+      enabledCount: 'Wybrano do gry: {{count}}',
+      toggleLabel: 'Dodaj do gry: {{name}}',
+      title: 'Dobór modyfikatorów',
       loading: 'Ładowanie katalogu modyfikatorów...',
       error: 'Nie udało się załadować katalogu modyfikatorów.',
       empty: 'Katalog modyfikatorów jest pusty.',
     },
     questions: {
-      title: 'Zarządzanie pytaniami',
-      description:
-        'Zarządzaj dostępnością pytań i kategoriami katalogu globalnego przed wyborem pytań do gry.',
-      searchLabel: 'Szukaj po pytaniu/odpowiedzi',
-      enableCategory: 'Włącz kategorię',
-      disableCategory: 'Wyłącz kategorię',
-      loading: 'Ładowanie katalogu pytań...',
-      error: 'Nie udało się załadować katalogu pytań.',
-      empty: 'Brak pytań dla bieżących filtrów.',
-      meta: 'Kategoria: {{category}} · Nagroda: {{reward}} · Zadane: {{asked}} · Poprawne: {{correct}}',
-      enabledDescription:
-        'Wybierz pytania do gry. Globalnie wyłączone pytania są ukryte i usuwane ze szkiców.',
-      enabledCount: 'Włączono dla tej gry: {{count}}',
+      title: 'Wybór pytań',
+      searchLabel: 'Szukaj w pytaniach i odpowiedziach',
+      loading: 'Ładowanie pytań...',
+      error: 'Nie udało się załadować pytań.',
+      empty: 'W katalogu nie ma jeszcze włączonych pytań.',
+      emptyFiltered: 'Żadne pytania nie pasują do tych filtrów.',
+      enabledCount: 'Wybrano do gry: {{count}}',
       answerDuration: 'Czas na odpowiedź (sekundy)',
+      durationError: 'Wpisz liczbę całkowitą od 5 do 3600 sekund.',
       enableVisible: 'Włącz widoczne',
       disableVisible: 'Wyłącz widoczne',
+      selectionLabel: 'Wybór do gry',
+      selectionAll: 'Wszystkie pytania',
+      selectionSelected: 'Wybrane',
+      selectionUnselected: 'Niewybrane',
+      preview: 'Zobacz odpowiedzi',
+      previewTitle: 'Pytanie i odpowiedzi',
+      correctAnswer: 'Poprawna odpowiedź',
+      reward: 'Nagroda: {{count}}',
+      rowMeta: '{{category}} · Nagroda: {{count}}',
+      resetFilters: 'Wyczyść filtry',
     },
     reloadFromServer: 'Odśwież',
     remoteChangeNotice:
@@ -651,15 +667,9 @@ const translations = {
     saveFailed: 'Nie udało się zapisać konfiguracji gry. Spróbuj ponownie.',
     resetFailed: 'Nie udało się zresetować konfiguracji gry. Spróbuj ponownie.',
     boardTitle: 'Plansza gry',
-    boardDescription:
-      'Etykiety wierszy i kolumn są tylko nagłówkami i nie określają wartości. Nowa etykieta może mieć do 24 znaków i zawija się na kilka wierszy. Pola tekstowe zapisują się po ich opuszczeniu.',
     settingsSidebar: {
-      overline: 'Konfiguracja',
-      title: 'Ustawienia gry',
-      description:
-        'Nazwa i rozmiar planszy. Pola tekstowe zapisują się po utracie fokusu, a rozmiar i obrazy - od razu.',
       boardSizeLabel: 'Aktualny rozmiar',
-      boardSizeValue: '{{rows}} wierszy × {{columns}} kolumn',
+      boardSizeValue: '{{rows}} × {{columns}}',
       manageLayout: 'Wiersze i kolumny…',
       resetDraft: 'Zresetuj szkic',
     },
@@ -672,8 +682,6 @@ const translations = {
     },
     layoutDialog: {
       title: 'Wiersze i kolumny',
-      description:
-        'Wybierz czynność, obiekt i pozycję. Po potwierdzeniu zmiany zapisują się do wspólnego szkicu.',
       actionLabel: 'Czynność',
       actionAdd: 'Dodaj',
       axisLabel: 'Obiekt',
@@ -689,17 +697,10 @@ const translations = {
       removeRowTarget: 'Wiersz {{position}} ({{label}})',
       removeColumnTarget: 'Kolumna {{position}} ({{label}})',
       limitReached: 'Ta czynność jest niedostępna dla bieżącego rozmiaru planszy.',
-      review: 'Sprawdź',
-      confirm: 'Potwierdź',
-      confirmAddRow: 'Dodać nowy wiersz: {{target}}?',
-      confirmAddColumn: 'Dodać nową kolumnę: {{target}}?',
       confirmRemoveRow:
         'Usunąć {{target}}? Po synchronizacji szkicu karty w tym wierszu i ich obrazy zostaną usunięte z serwera.',
       confirmRemoveColumn:
         'Usunąć {{target}}? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
-    },
-    emptyPanel: {
-      description: 'W bazie nie ma jeszcze szkicu. Kliknij obszar planszy, aby utworzyć grę.',
     },
     createDialog: {
       promptTitle: 'Brak szkicu gry',

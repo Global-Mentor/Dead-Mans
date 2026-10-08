@@ -29,6 +29,8 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
     public async Task<GameLifecycleResult> OpenRegistrationAsync(
         Guid draftGameId,
         int? expectedVersion = null,
+        bool allowWithoutModifiers = false,
+        bool allowWithoutQuestions = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -75,6 +77,19 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
         if (draft.MinPlayersPerTeam < 1 || draft.MinPlayersPerTeam > draft.MaxPlayersPerTeam)
         {
             return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.InvalidTeamSizeLimits);
+        }
+
+        if (!await HasMediaForEveryCellAsync(draft.Id, cancellationToken))
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.CellMediaRequired);
+        }
+        if (!allowWithoutModifiers && !await _dbContext.GameEnabledModifiers.AnyAsync(item => item.GameId == draft.Id, cancellationToken))
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.EmptyModifiersNotAcknowledged);
+        }
+        if (!allowWithoutQuestions && !await _dbContext.GameEnabledQuestions.AnyAsync(item => item.GameId == draft.Id, cancellationToken))
+        {
+            return new GameLifecycleResult(false, draft.Id, GameLifecycleErrorCode.EmptyQuestionsNotAcknowledged);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -235,6 +250,11 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             return new GameLifecycleResult(false, ready.Id, GameLifecycleErrorCode.GameNotReady);
         }
 
+        if (!await HasMediaForEveryCellAsync(readyGameId, cancellationToken))
+        {
+            return new GameLifecycleResult(false, ready.Id, GameLifecycleErrorCode.CellMediaRequired);
+        }
+
         var validationError = await ValidateGameCanStartAsync(readyGameId, cancellationToken);
         if (validationError != GameLifecycleErrorCode.None)
         {
@@ -371,6 +391,13 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             """,
             cancellationToken
         );
+    }
+
+    private async Task<bool> HasMediaForEveryCellAsync(Guid gameId, CancellationToken cancellationToken)
+    {
+        var cells = _dbContext.BoardCells.Where(cell => cell.Board.GameId == gameId);
+        return await cells.AnyAsync(cancellationToken)
+            && !await cells.AnyAsync(cell => !cell.MediaLinks.Any(), cancellationToken);
     }
 
     private async Task<GameLifecycleErrorCode> ValidateGameCanStartAsync(

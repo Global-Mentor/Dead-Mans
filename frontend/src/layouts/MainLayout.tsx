@@ -6,6 +6,9 @@ import { featureTranslationBundles as translations } from '../locales/feature-lo
 import {
   getPanelRouteByPath,
   gameBoardRoute,
+  gameSetupRoute,
+  adminModifiersRoute,
+  adminQuestionsRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
   modifierHistoryRoute,
@@ -54,6 +57,9 @@ function MainLayoutContent() {
   const { pathname } = useLocation()
   const isAdministration = getPanelRouteByPath(pathname)?.group === 'admin'
   const boundedWorkspace = [
+    adminModifiersRoute.fullPath,
+    adminQuestionsRoute.fullPath,
+    gameSetupRoute.fullPath,
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,
     gameHistoryRoute.fullPath,

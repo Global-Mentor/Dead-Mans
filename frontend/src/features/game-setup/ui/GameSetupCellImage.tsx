@@ -1,7 +1,13 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { useId, useRef, useState, type DragEvent } from 'react'
+import { useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, BusyIndicator, FilePickerInput, ImageFrame } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  BusyIndicator,
+  FilePickerInput,
+  ImageFrame,
+  SurfaceButton,
+} from '../../../shared/ui/index.ts'
 import type { GameSetupCellMediaPhase } from '../model/game-setup-cell-media-display.ts'
 import {
   dataTransferHasImageFiles,
@@ -12,7 +18,7 @@ import {
   createSetupCellDropzoneSx,
   setupCellBusyOverlaySx,
   setupCellDragOverlaySx,
-  setupCellImageLabelSx,
+  setupCellImageAreaSx,
   setupCellMediaActionsSx,
 } from '../theme/cell-image-sx.ts'
 
@@ -25,6 +31,7 @@ interface GameSetupCellImageProps {
   canManageMedia: boolean
   isBusy: boolean
   onUpload: (cellId: string | undefined, file: File) => void
+  onPreview: () => void
   onDelete: (cellId: string | undefined) => void
 }
 
@@ -38,9 +45,9 @@ export function GameSetupCellImage({
   isBusy,
   onUpload,
   onDelete,
+  onPreview,
 }: GameSetupCellImageProps) {
   const { t } = useTranslation()
-  const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const dragDepthRef = useRef(0)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -132,36 +139,29 @@ export function GameSetupCellImage({
       onDrop={handleDrop}
       sx={createSetupCellDropzoneSx({ showDragOver })}
     >
-      <Box
-        component="label"
-        htmlFor={canManageMedia && !isBusy ? inputId : undefined}
-        sx={[
-          setupCellImageLabelSx,
-          {
-            cursor: canManageMedia && !isBusy ? 'pointer' : 'default',
-          },
-        ]}
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest('[data-cell-media-action]')) {
-            event.preventDefault()
-          }
-        }}
-      >
+      <Box sx={setupCellImageAreaSx}>
         {showImage && imageUrl ? (
-          <ImageFrame
-            key={imageKey ?? imageUrl}
-            src={imageUrl}
-            alt={alt}
-            fit="cover"
-            loadingLabel={t('common.media.loading')}
-            errorLabel={t('common.media.error')}
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              height: '100%',
-              opacity: isBusy || showDragOver ? 0 : 1,
-            }}
-          />
+          <SurfaceButton
+            aria-label={t('gameSetup.cellMedia.previewAction')}
+            disabled={isBusy}
+            onClick={onPreview}
+            sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+          >
+            <ImageFrame
+              key={imageKey ?? imageUrl}
+              src={imageUrl}
+              alt={alt}
+              fit="cover"
+              loadingLabel={t('common.media.loading')}
+              errorLabel={t('common.media.error')}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                height: '100%',
+                opacity: isBusy || showDragOver ? 0 : 1,
+              }}
+            />
+          </SurfaceButton>
         ) : (
           <>
             <Typography variant="caption" sx={{ px: 1 }}>
@@ -176,13 +176,12 @@ export function GameSetupCellImage({
                 spacing={0.5}
                 justifyContent="center"
                 sx={{ position: 'relative', zIndex: 4 }}
-                data-cell-media-action
               >
                 <AppButton
                   size="small"
+                  labelAlignment="capHeight"
                   disabled={isBusy}
                   onClick={openFilePicker}
-                  data-cell-media-action
                 >
                   {t('gameSetup.cellMedia.upload')}
                 </AppButton>
@@ -212,14 +211,13 @@ export function GameSetupCellImage({
       </Box>
 
       {canManageMedia && showImage ? (
-        <Stack
-          direction="row"
-          spacing={0.5}
-          justifyContent="center"
-          sx={setupCellMediaActionsSx}
-          data-cell-media-action
-        >
-          <AppButton size="small" disabled={isBusy} onClick={openFilePicker} data-cell-media-action>
+        <Stack direction="row" spacing={0.5} justifyContent="center" sx={setupCellMediaActionsSx}>
+          <AppButton
+            size="small"
+            labelAlignment="capHeight"
+            disabled={isBusy}
+            onClick={openFilePicker}
+          >
             {showImage && phase !== 'deleting'
               ? t('gameSetup.cellMedia.replace')
               : t('gameSetup.cellMedia.upload')}
@@ -227,10 +225,10 @@ export function GameSetupCellImage({
           {showImage && phase !== 'deleting' ? (
             <AppButton
               size="small"
-              tone="ghost"
+              tone="danger"
+              labelAlignment="capHeight"
               disabled={isBusy}
               onClick={() => onDelete(cellId)}
-              data-cell-media-action
             >
               {t('common.actions.remove')}
             </AppButton>
@@ -240,7 +238,7 @@ export function GameSetupCellImage({
 
       <FilePickerInput
         ref={inputRef}
-        id={inputId}
+        disabled={!canManageMedia || isBusy}
         accept={GAME_SETUP_CELL_MEDIA_ALLOWED_MIME_TYPES.join(',')}
         onChange={(event) => {
           const file = event.target.files?.[0]

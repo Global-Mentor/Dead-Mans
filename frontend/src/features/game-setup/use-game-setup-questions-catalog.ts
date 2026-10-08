@@ -7,29 +7,39 @@ export function useGameSetupQuestionsCatalog() {
   const { i18n } = useTranslation()
   const locale = i18n.resolvedLanguage
   const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-
-  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions({ search, includeDisabled: false }))
-
+  const [activeCategory, setActiveCategory] = useState('all')
+  const catalogQuery = useQuery(
+    gameQuestionCatalogQueryOptions({ search: '', includeDisabled: false }),
+  )
   const questions = useMemo(
     () => (catalogQuery.data ?? []).filter((question) => question.isEnabled),
     [catalogQuery.data],
   )
-
-  const categories = useMemo(() => {
-    return Array.from(new Set(questions.map((question) => question.categoryName))).sort((a, b) =>
-      a.localeCompare(b, locale),
-    )
-  }, [locale, questions])
-
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          questions.map((question) => [
+            question.categoryId,
+            {
+              value: question.categoryId,
+              label: question.categoryName,
+            },
+          ]),
+        ).values(),
+      ).sort((a, b) => a.label.localeCompare(b.label, locale)),
+    [locale, questions],
+  )
   const filteredQuestions = useMemo(() => {
-    if (!activeCategory) {
-      return questions
-    }
-
-    return questions.filter((question) => question.categoryName === activeCategory)
-  }, [activeCategory, questions])
-
+    const needle = search.trim().toLocaleLowerCase(locale)
+    return questions.filter(
+      (question) =>
+        (activeCategory === 'all' || question.categoryId === activeCategory) &&
+        [question.text, ...question.options.map((option) => option.text)].some((text) =>
+          text.toLocaleLowerCase(locale).includes(needle),
+        ),
+    )
+  }, [activeCategory, locale, questions, search])
   return {
     search,
     setSearch,

@@ -1,13 +1,7 @@
 import { Box } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  InlineNotice,
-  PageShell,
-  PageStatePanel,
-  SectionCard,
-  SectionHeader,
-} from '../../shared/ui/index.ts'
+import { PageShell, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
 import { GameSetupBoardNotices } from './ui/GameSetupBoardNotices.tsx'
 import { GameSetupEmptyState } from './ui/GameSetupEmptyState.tsx'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
@@ -80,16 +74,32 @@ export function GameSetupPage() {
   }
 
   return (
-    <Box component="fieldset" disabled={isPublishing} sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}>
-      <PageShell variant="split">
+    <Box
+      component="fieldset"
+      aria-label={t('gameSetup.title')}
+      disabled={isPublishing}
+      sx={{ border: 0, m: 0, p: 0, minWidth: 0, minHeight: 0, flex: '1 1 0%', display: 'flex' }}
+    >
+      <PageShell variant="split" sx={{ width: '100%', overflow: 'hidden' }}>
         <GameSetupSettingsSidebar
           draft={draft}
           onDraftChange={updateDraft}
           onDraftCommit={commitDraft}
           onLayoutChange={applyLayoutChange}
           isResetting={isResetting}
+          isBusy={isSaving || hasPendingMedia || isPublishing}
           onReset={deleteDraft}
+          status={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
         >
+          <GameSetupBoardNotices
+            remoteChangeNotice={remoteChangeNotice}
+            onDismissRemoteChange={dismissRemoteChangeNotice}
+            onReloadFromServer={() => void reloadFromServer()}
+            saveErrorMessage={saveErrorMessage}
+            resetErrorMessage={resetErrorMessage}
+            cellMediaErrorKey={cellMediaErrorKey}
+            onDismissCellMediaError={dismissCellMediaError}
+          />
           <GameSetupRegistrationPanel
             key={`${snapshot.gameId}:${snapshot.version}`}
             snapshot={snapshot}
@@ -104,35 +114,19 @@ export function GameSetupPage() {
         </GameSetupSettingsSidebar>
 
         <SectionCard
+          role="region"
+          aria-label={t('gameSetup.boardTitle')}
+          tabIndex={0}
           sx={{
             flex: 1,
             minWidth: 0,
+            minHeight: 0,
+            overflow: 'auto',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          <SectionHeader
-            headingLevel="h1"
-            title={t('gameSetup.boardTitle')}
-            description={t('gameSetup.boardDescription')}
-            actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
-          />
-
-          <InlineNotice severity="info" sx={{ mt: 2 }}>
-            {t('gameSetup.persistenceHint')}
-          </InlineNotice>
-
-          <GameSetupBoardNotices
-            remoteChangeNotice={remoteChangeNotice}
-            onDismissRemoteChange={dismissRemoteChangeNotice}
-            onReloadFromServer={() => void reloadFromServer()}
-            saveErrorMessage={saveErrorMessage}
-            resetErrorMessage={resetErrorMessage}
-            cellMediaErrorKey={cellMediaErrorKey}
-            onDismissCellMediaError={dismissCellMediaError}
-          />
-
-          <Box sx={{ mt: 3, flex: 1, minHeight: 0 }}>
+          <Box>
             <GameSetupGrid
               snapshot={snapshot}
               draft={draft}

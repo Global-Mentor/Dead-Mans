@@ -18,7 +18,11 @@ const gameSetupApiClient =
     >
   >()
 
-export function openDraftGameRegistration(input: { gameId: string; expectedVersion: number }) {
+type OpenRegistrationRequest = NonNullable<
+  paths['/game/lifecycle/open-registration']['post']['requestBody']
+>['content']['application/json']
+
+export function openDraftGameRegistration(input: OpenRegistrationRequest) {
   return unwrapOpenApiData(
     gameSetupApiClient.POST('/game/lifecycle/open-registration', { body: input }),
   )

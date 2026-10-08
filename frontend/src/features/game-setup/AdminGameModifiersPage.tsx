@@ -21,6 +21,8 @@ export function AdminGameModifiersPage() {
     draftRemovedNotice,
     reloadFromServer,
     toggleModifier,
+    setModifiersEnabled,
+    isSaving,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -56,10 +58,22 @@ export function AdminGameModifiersPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell
+      sx={{
+        width: '100%',
+        maxWidth: 1200,
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+      }}
+    >
       <GameSetupModifiersSection
         draft={draft}
         onToggle={toggleModifier}
+        onBulkSetEnabled={setModifiersEnabled}
+        isSaving={isSaving}
         actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
 

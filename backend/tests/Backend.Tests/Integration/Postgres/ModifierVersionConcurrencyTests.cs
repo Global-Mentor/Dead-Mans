@@ -502,7 +502,8 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             NullLogger<DbGameLifecyclePersistence>.Instance,
             TimeProvider.System
         );
-        var publication = await lifecycle.OpenRegistrationAsync(gameId);
+        await PublicationTestData.AddMediaAsync(db, gameId);
+        var publication = await lifecycle.OpenRegistrationAsync(gameId, allowWithoutQuestions: true);
         Assert.True(publication.Success);
         return new GameFixture(gameId, userId, buyerId, teamId, boardId, cellId);
     }

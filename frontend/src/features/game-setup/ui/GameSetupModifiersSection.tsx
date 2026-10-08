@@ -1,176 +1,215 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ModifierCatalogRow } from '../../../shared/game-ui/index.ts'
 import {
+  AppButton,
   AsyncSection,
-  CheckboxGroup,
-  ChoiceLabel,
   FormCheckbox,
   FormTextField,
-  ItemCard,
   SectionCard,
   SectionHeader,
-  StatusBadge,
+  FormSelect,
 } from '../../../shared/ui/index.ts'
 import {
+  deriveModifierRoundSummaryMeta,
   gameModifierCatalogQueryOptions,
+  matchesModifierSearch,
   modifierCategoryCodes,
+  type ModifierCategoryCode,
 } from '../../game-modifiers/index.ts'
-import { deriveModifierRoundSummaryMeta } from '../../game-modifiers/model/modifier-round-summary.ts'
-import { matchesModifierSearch } from '../../game-modifiers/model/modifier-search.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
+import { GameSetupModifierPreview } from './GameSetupModifierPreview.tsx'
+
 interface GameSetupModifiersSectionProps {
   draft: GameSetupDraftState
   onToggle: (modifierId: string, enabled: boolean) => void
+  onBulkSetEnabled: (modifierIds: readonly string[], enabled: boolean) => void
+  isSaving: boolean
   actions?: ReactNode
 }
 
 export function GameSetupModifiersSection({
   draft,
   onToggle,
+  onBulkSetEnabled,
+  isSaving,
   actions,
 }: GameSetupModifiersSectionProps) {
   const { t, i18n } = useTranslation()
-  const locale = i18n.resolvedLanguage
   const catalogQuery = useQuery(gameModifierCatalogQueryOptions)
   const [search, setSearch] = useState('')
-  const categoryLabels = {
-    preparation: t('common.modifiers.categories.preparation'),
-    round: t('common.modifiers.categories.round'),
-    result: t('common.modifiers.categories.result'),
-  } as const
+  const [category, setCategory] = useState<ModifierCategoryCode | 'all'>('all')
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const filteredModifiers = useMemo(
     () =>
-      (catalogQuery.data ?? []).filter((modifier) =>
-        matchesModifierSearch(
-          modifier,
-          search,
-          [
-            t(`gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`),
-            t(
-              `gameCatalog.modifiers.roundSummaryType.${deriveModifierRoundSummaryMeta(modifier).type}`,
-            ),
-            t(`common.modifiers.categories.${modifier.category}`),
-            modifier.behaviorV2.requiresHostMonitoring
-              ? t('gameCatalog.modifiers.hostControlBadge')
-              : '',
-          ],
-          locale,
-        ),
+      (catalogQuery.data ?? []).filter(
+        (modifier) =>
+          (category === 'all' || modifier.category === category) &&
+          matchesModifierSearch(
+            modifier,
+            search,
+            [
+              t(`gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`),
+              t(
+                `gameCatalog.modifiers.roundSummaryType.${deriveModifierRoundSummaryMeta(modifier).type}`,
+              ),
+              t(`common.modifiers.categories.${modifier.category}`),
+              modifier.behaviorV2.requiresHostMonitoring
+                ? t('gameCatalog.modifiers.hostControlBadge')
+                : '',
+            ],
+            i18n.resolvedLanguage,
+          ),
       ),
-    [catalogQuery.data, locale, search, t],
+    [catalogQuery.data, category, search, t, i18n.resolvedLanguage],
   )
-  const groupedModifiers = useMemo(
-    () =>
-      modifierCategoryCodes
-        .map((category) => ({
-          category,
-          items: filteredModifiers.filter((modifier) => modifier.category === category),
-        }))
-        .filter((group) => group.items.length > 0),
-    [filteredModifiers],
-  )
+  const enabledIds = new Set(draft.enabledModifierIds)
+  const visibleIds = filteredModifiers.map((modifier) => modifier.id)
+  const preview = catalogQuery.data?.find((modifier) => modifier.id === previewId) ?? null
+  const hasFilters = search.trim().length > 0 || category !== 'all'
 
   return (
-    <SectionCard>
-      <SectionHeader
-        headingLevel="h1"
-        title={t('gameSetup.modifiers.title')}
-        description={t('gameSetup.modifiers.description')}
-        actions={actions}
-      />
-      <AsyncSection
-        isLoading={catalogQuery.isLoading}
-        isError={catalogQuery.isError}
-        hasData={catalogQuery.data != null}
-        isEmpty={!catalogQuery.isLoading && !catalogQuery.isError && groupedModifiers.length === 0}
-        loadingMessage={t('gameSetup.modifiers.loading')}
-        errorMessage={t('gameSetup.modifiers.error')}
-        emptyMessage={
-          search.trim().length > 0
-            ? t('common.modifiers.emptySearch')
-            : t('gameSetup.modifiers.empty')
-        }
-      >
-        <Stack spacing={1.5} sx={{ mt: 1 }}>
+    <SectionCard
+      sx={{
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <Box sx={{ flexShrink: 0, maxHeight: '65%', overflowY: 'auto' }}>
+        <SectionHeader
+          headingLevel="h1"
+          title={t('gameSetup.modifiers.title')}
+          actions={
+            <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                {t('gameSetup.modifiers.enabledCount', { count: draft.enabledModifierIds.length })}
+              </Typography>
+              {actions}
+            </Stack>
+          }
+        />
+        <Stack spacing={1.5} sx={{ mt: 1.5, p: 0.5 }}>
           <FormTextField
             value={search}
             label={t('common.modifiers.searchLabel')}
             onChange={(event) => setSearch(event.target.value)}
           />
-
-          {groupedModifiers.map((group) => (
-            <Box key={group.category}>
-              <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
-                {categoryLabels[group.category]}
-              </Typography>
-
-              <CheckboxGroup>
-                {group.items.map((modifier) => {
-                  const checked = draft.enabledModifierIds.includes(modifier.id)
-                  const roundSummaryMeta = deriveModifierRoundSummaryMeta(modifier)
-
-                  return (
-                    <ItemCard key={modifier.id} emphasis={checked ? 'selected' : 'none'}>
-                      <ChoiceLabel
-                        control={
-                          <FormCheckbox
-                            checked={checked}
-                            onChange={(event) => onToggle(modifier.id, event.target.checked)}
-                          />
-                        }
-                        label={`${modifier.name} (${modifier.activationCost})`}
-                      />
-
-                      <Stack
-                        direction="row"
-                        spacing={0.75}
-                        flexWrap="wrap"
-                        useFlexGap
-                        sx={{ ml: 4.5, mt: 0.35 }}
-                      >
-                        <StatusBadge
-                          size="small"
-                          variant="outlined"
-                          label={t(
-                            `gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`,
-                          )}
-                        />
-                        <StatusBadge
-                          size="small"
-                          color={roundSummaryMeta.includeInRoundSummary ? 'secondary' : 'default'}
-                          variant="outlined"
-                          label={t(
-                            `gameCatalog.modifiers.roundSummaryType.${roundSummaryMeta.type}`,
-                          )}
-                        />
-                        {modifier.behaviorV2.requiresHostMonitoring ? (
-                          <StatusBadge
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            label={t('gameCatalog.modifiers.hostControlBadge')}
-                          />
-                        ) : null}
-                      </Stack>
-
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ ml: 4.5, mt: 0.6, display: 'block', whiteSpace: 'pre-line' }}
-                      >
-                        {modifier.description}
-                      </Typography>
-                    </ItemCard>
-                  )
-                })}
-              </CheckboxGroup>
-            </Box>
-          ))}
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            gap={1.5}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+          >
+            <FormSelect
+              label={t('common.entities.categories')}
+              value={category}
+              onChange={setCategory}
+              options={[
+                { value: 'all', label: t('common.filters.allCategories') },
+                ...modifierCategoryCodes.map((value) => ({
+                  value,
+                  label: t(`common.modifiers.categories.${value}`),
+                })),
+              ]}
+              sx={{ flex: '1 1 auto', minWidth: 0 }}
+            />
+            <Stack
+              direction="row"
+              gap={1}
+              useFlexGap
+              flexWrap="wrap"
+              alignItems="center"
+              sx={{ flexShrink: 0 }}
+            >
+              <AppButton
+                tone="secondary"
+                framePlacement="inset"
+                disabled={isSaving || !visibleIds.some((id) => !enabledIds.has(id))}
+                onClick={() => onBulkSetEnabled(visibleIds, true)}
+              >
+                {t('gameSetup.modifiers.enableVisible')}
+              </AppButton>
+              <AppButton
+                tone="danger"
+                framePlacement="inset"
+                disabled={isSaving || !visibleIds.some((id) => enabledIds.has(id))}
+                onClick={() => onBulkSetEnabled(visibleIds, false)}
+              >
+                {t('gameSetup.modifiers.disableVisible')}
+              </AppButton>
+            </Stack>
+          </Stack>
         </Stack>
-      </AsyncSection>
+      </Box>
+      <Box
+        role="region"
+        aria-label={t('gameSetup.modifiers.title')}
+        tabIndex={0}
+        sx={{
+          flex: '1 1 0%',
+          minHeight: 0,
+          mt: 1.5,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+        }}
+      >
+        <AsyncSection
+          isLoading={catalogQuery.isLoading}
+          isError={catalogQuery.isError}
+          hasData={catalogQuery.data != null}
+          isEmpty={filteredModifiers.length === 0}
+          loadingMessage={t('gameSetup.modifiers.loading')}
+          errorMessage={t('gameSetup.modifiers.error')}
+          emptyMessage={
+            hasFilters ? t('common.modifiers.emptySearch') : t('gameSetup.modifiers.empty')
+          }
+          retryAction={
+            <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
+              {t('gameSetup.registration.retry')}
+            </AppButton>
+          }
+        >
+          <Box
+            component="ul"
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1,
+              m: 0,
+              p: 0,
+            }}
+          >
+            {filteredModifiers.map((modifier) => (
+              <ModifierCatalogRow
+                key={modifier.id}
+                name={modifier.name}
+                emoji={modifier.iconEmoji}
+                cost={modifier.activationCost}
+                onDetails={() => setPreviewId(modifier.id)}
+                actions={
+                  <FormCheckbox
+                    checked={enabledIds.has(modifier.id)}
+                    disabled={isSaving}
+                    inputProps={{
+                      'aria-label': t('gameSetup.modifiers.toggleLabel', { name: modifier.name }),
+                    }}
+                    onChange={(event) => onToggle(modifier.id, event.target.checked)}
+                  />
+                }
+              />
+            ))}
+          </Box>
+        </AsyncSection>
+      </Box>
+      <GameSetupModifierPreview
+        modifier={preview}
+        catalog={catalogQuery.data ?? []}
+        onClose={() => setPreviewId(null)}
+      />
     </SectionCard>
   )
 }

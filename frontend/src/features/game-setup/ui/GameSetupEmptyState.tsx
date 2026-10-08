@@ -1,7 +1,5 @@
-import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { InlineNotice, PageShell, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
-import { gameSetupSidebarPaperSx } from '../theme/layout-sx.ts'
 import { CreateGameSetupPanel } from './CreateGameSetupPanel.tsx'
 
 interface GameSetupEmptyStateProps {
@@ -20,19 +18,7 @@ export function GameSetupEmptyState({
   const { t } = useTranslation()
 
   return (
-    <PageShell variant="split">
-      <SectionCard surface="accented" sx={gameSetupSidebarPaperSx}>
-        <Typography variant="overline" color="text.secondary">
-          {t('gameSetup.settingsSidebar.overline')}
-        </Typography>
-        <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
-          {t('gameSetup.settingsSidebar.title')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {t('gameSetup.emptyPanel.description')}
-        </Typography>
-      </SectionCard>
-
+    <PageShell>
       <SectionCard
         sx={{
           flex: 1,

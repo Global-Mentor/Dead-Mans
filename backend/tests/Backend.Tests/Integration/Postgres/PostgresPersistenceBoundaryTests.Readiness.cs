@@ -2,6 +2,7 @@ using backend.Application.Contracts;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using backend.Infrastructure.Persistence;
+using Backend.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -184,6 +185,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
             });
         }
         await db.SaveChangesAsync();
+        await PublicationTestData.AddMediaAsync(db, game.Id);
         game.Status = GameStatusValue.Ready;
         game.ReadyAtUtc = now;
         await db.SaveChangesAsync();

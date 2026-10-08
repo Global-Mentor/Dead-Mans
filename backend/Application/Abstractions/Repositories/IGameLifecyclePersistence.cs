@@ -7,6 +7,8 @@ public interface IGameLifecyclePersistence
     Task<GameLifecycleResult> OpenRegistrationAsync(
         Guid draftGameId,
         int? expectedVersion = null,
+        bool allowWithoutModifiers = false,
+        bool allowWithoutQuestions = false,
         CancellationToken cancellationToken = default
     );
 

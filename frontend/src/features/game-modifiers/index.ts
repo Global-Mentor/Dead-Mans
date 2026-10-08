@@ -19,3 +19,6 @@ export {
   type ModifierRoundSummaryType,
 } from './model/modifier-round-summary.ts'
 export { AdminModifierTool } from './AdminModifierPanel.tsx'
+
+export { matchesModifierSearch } from './model/modifier-search.ts'
+export { deriveModifierRoundSummaryMeta } from './model/modifier-round-summary.ts'

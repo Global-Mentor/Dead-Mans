@@ -15,6 +15,16 @@ Each transition checks the expected round version and records an audit entry. Th
 older round-start API also requires `preparing`, so it cannot skip ordering or
 preparation. An active quiz question prevents opening or reopening modifier ordering.
 
+## Publication readiness
+
+Opening registration requires media attached to every board cell; card titles remain optional.
+The publication request defaults both `allowWithoutModifiers` and `allowWithoutQuestions` to
+`false`. Each empty selection requires its own explicit consent. The UI collects those consents
+in the publication confirmation and resets them when it is reopened or the reviewed draft version
+changes. The server rechecks media and selected content under the publication lock before
+changing state. A failed check leaves the draft editable. Media is checked again at game start,
+including for older ready games. Published content remains immutable.
+
 ## Publication freeze at ready
 
 `draft → ready` is the publication boundary because a ready game is already visible to users.

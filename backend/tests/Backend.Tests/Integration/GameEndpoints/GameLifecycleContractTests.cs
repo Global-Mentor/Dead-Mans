@@ -61,7 +61,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         );
         Assert.Equal(HttpStatusCode.Created, setupResponse.StatusCode);
 
-        var response = await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        var response = await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<GameLifecycleStateDto>();
@@ -80,7 +80,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         );
         Assert.Equal(HttpStatusCode.Created, setupResponse.StatusCode);
 
-        var openResponse = await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        var openResponse = await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
 
@@ -117,7 +117,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             adminId
         );
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Active round"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
         await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
 
@@ -419,7 +419,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             adminId
         );
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Archive me"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
         await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
         var board = await adminClient.GetFromJsonAsync<GameBoardSnapshotDto>("/api/game");
@@ -494,7 +494,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         await ClearGamesAsync();
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("No teams"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
 
         var response = await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
 
@@ -511,7 +511,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         await ClearGamesAsync();
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Forming team"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1, slotIndex: 1);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Forming, memberCount: 1, slotIndex: 2);
 
@@ -530,7 +530,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         await ClearGamesAsync();
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Pending invite"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         var teamId = await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
         await SeedPendingInvitationForReadyGameAsync(teamId);
 
@@ -549,7 +549,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         await ClearGamesAsync();
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Disband request"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         await SeedTeamForReadyGameAsync(
             TeamStatusValue.Confirmed,
             memberCount: 1,
@@ -571,7 +571,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         await ClearGamesAsync();
         using var adminClient = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         await adminClient.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Invalid roster"));
-        await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, adminClient);
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 0);
 
         var response = await adminClient.PostAsync("/api/game/lifecycle/start", content: null);
@@ -596,7 +596,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
             }
         );
 
-        var response = await adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        var response = await adminClient.PostAsync("/api/game/lifecycle/open-registration", null);
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
@@ -617,8 +617,14 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         );
         Assert.Equal(HttpStatusCode.Created, setupResponse.StatusCode);
 
-        var firstOpen = adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
-        var secondOpen = adminClient.PostAsync("/api/game/lifecycle/open-registration", content: null);
+        var draft = (await setupResponse.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            await PublicationTestData.AddMediaAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(), Guid.Parse(draft.GameId));
+        }
+        var request = new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version, true, true);
+        var firstOpen = adminClient.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
+        var secondOpen = adminClient.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
 
         var responses = await Task.WhenAll(firstOpen, secondOpen);
         var statuses = responses.Select(response => response.StatusCode).ToArray();
@@ -652,10 +658,14 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var created = await admin.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("No quiz required"));
         var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
         Assert.Empty(draft.EnabledQuestionIds);
+        using (var mediaScope = _factory.Services.CreateScope())
+        {
+            await PublicationTestData.AddMediaAsync(mediaScope.ServiceProvider.GetRequiredService<ApplicationDbContext>(), Guid.Parse(draft.GameId));
+        }
         var draftEventsBefore = events.DraftChanges;
 
         var opened = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration",
-            new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+            new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version, true, true));
         Assert.Equal(HttpStatusCode.OK, opened.StatusCode);
         Assert.Equal(draftEventsBefore + 1, events.DraftChanges);
         Assert.Contains(events.Lifecycle, e => e.GameId == Guid.Parse(draft.GameId) && e.Status == GameStatusValue.Ready && e.BoardVersion == draft.Version);
@@ -680,6 +690,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var draft = (await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>())!;
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await PublicationTestData.AddMediaAsync(db, Guid.Parse(draft.GameId));
         var catalog = new backend.Infrastructure.Persistence.DbGameQuestionRepository(db, TimeProvider.System);
         var category = await catalog.CreateCategoryAsync("Publication");
         await catalog.CreateQuestionAsync(new CreateGameQuestionInput(
@@ -716,7 +727,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         question.DeletedAtUtc = deleted ? DateTime.UtcNow : null;
         await db.SaveChangesAsync();
 
-        var request = new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version);
+        var request = new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version, true, true);
         var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", request);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -781,7 +792,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.Games.Add(new Game { Id = Guid.NewGuid(), Title = "Current game", Status = currentStatus, CreatedAtUtc = DateTime.UtcNow });
         await db.SaveChangesAsync();
-        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version, true, true));
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(AppMessages.ErrorCodes.GameLifecycleCurrentAlreadyExists, (await response.Content.ReadFromJsonAsync<ErrorResponse>())!.Code);
     }
@@ -801,7 +812,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         game.MinPlayersPerTeam = min;
         game.MaxPlayersPerTeam = max;
         await db.SaveChangesAsync();
-        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version));
+        var response = await admin.PostAsJsonAsync("/api/game/lifecycle/open-registration", new OpenGameRegistrationRequestDto(Guid.Parse(draft.GameId), draft.Version, true, true));
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(AppMessages.ErrorCodes.GameLifecycleInvalidTeamSizeLimits, (await response.Content.ReadFromJsonAsync<ErrorResponse>())!.Code);
     }
@@ -875,7 +886,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         Assert.Equal(HttpStatusCode.Created, setup.StatusCode);
         Assert.Equal(
             HttpStatusCode.OK,
-            (await client.PostAsync("/api/game/lifecycle/open-registration", null)).StatusCode
+            (await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, client)).StatusCode
         );
         await SeedTeamForReadyGameAsync(TeamStatusValue.Confirmed, memberCount: 1);
         Assert.Equal(

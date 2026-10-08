@@ -2923,7 +2923,7 @@ paths:
   /game/lifecycle/open-registration:
     post:
       operationId: openGameRegistration
-      description: Opens registration for the saved draft. Quiz questions are optional. Send the reviewed game ID and version to reject stale or replaced drafts; an empty body remains supported for existing clients.
+      description: Opens registration for the saved draft. Every cell requires media. Empty modifier and question selections each require explicit consent. Send the reviewed game ID and version to reject stale or replaced drafts. An empty body does not acknowledge missing content.
       security:
         - cookieAuth: []
       requestBody:
@@ -2940,6 +2940,14 @@ paths:
                 expectedVersion:
                   type: integer
                   minimum: 1
+                allowWithoutModifiers:
+                  type: boolean
+                  default: false
+                  description: Explicit consent to publish this draft without modifiers.
+                allowWithoutQuestions:
+                  type: boolean
+                  default: false
+                  description: Explicit consent to publish this draft without quiz questions.
       responses:
         '400':
           description: Invalid publication request
@@ -7934,6 +7942,9 @@ components:
             - game_lifecycle.game_not_ready
             - game_lifecycle.game_not_active
             - game_lifecycle.registration_slots_required
+            - game_lifecycle.cell_media_required
+            - game_lifecycle.empty_modifiers_not_acknowledged
+            - game_lifecycle.empty_questions_not_acknowledged
             - game_lifecycle.questions_unavailable
             - game_lifecycle.invalid_team_size_limits
             - game_lifecycle.no_confirmed_teams

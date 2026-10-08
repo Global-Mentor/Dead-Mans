@@ -1,4 +1,7 @@
 export const API_ERROR_CODES = {
+  gameLifecycleCellMediaRequired: 'game_lifecycle.cell_media_required',
+  gameLifecycleEmptyModifiersNotAcknowledged: 'game_lifecycle.empty_modifiers_not_acknowledged',
+  gameLifecycleEmptyQuestionsNotAcknowledged: 'game_lifecycle.empty_questions_not_acknowledged',
   gameRegistrationTeamNameTaken: 'game_registration.team_name_taken',
   gameRegistrationDisbandRequestNotOwned: 'game_registration.disband_request_not_owned',
   invalidGameSetupTitle: 'game_setup.invalid_title',

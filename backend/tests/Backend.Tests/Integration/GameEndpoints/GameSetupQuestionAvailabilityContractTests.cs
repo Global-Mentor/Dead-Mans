@@ -101,7 +101,7 @@ public sealed class GameSetupQuestionAvailabilityContractTests(TestWebApplicatio
         var question = await CreateQuestionAsync(admin, "Published question");
         var draft = await CreateDraftAsync(admin);
         Assert.Equal(HttpStatusCode.OK, (await admin.PutAsJsonAsync("/api/game/setup", Update(draft, [question.QuestionId]))).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await admin.PostAsync("/api/game/lifecycle/open-registration", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PublicationTestData.OpenPreparedDraftAsync(factory.Services, admin)).StatusCode);
 
         Assert.Equal(HttpStatusCode.NoContent, (await admin.PatchAsJsonAsync(
             $"/api/game/questions/{question.QuestionId}/enabled", new { isEnabled = false })).StatusCode);

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../../i18n.ts'
 import { renderWithAppProviders } from '../../../test/render-with-app-providers.tsx'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
@@ -30,9 +31,19 @@ const snapshot: GameSetupSnapshot = {
   cols: 1,
   rowLabels: ['100'],
   colLabels: ['A'],
-  cells: [{ id: 'cell-1', row: 0, col: 0, title: 'Card', cost: 100, isOpened: false, media: null }],
-  enabledModifierIds: [],
-  enabledQuestionIds: [],
+  cells: [
+    {
+      id: 'cell-1',
+      row: 0,
+      col: 0,
+      title: '',
+      cost: 100,
+      isOpened: false,
+      media: [{ id: 'media-1', url: '/card.png', mimeType: 'image/png' }],
+    },
+  ],
+  enabledModifierIds: ['modifier-1'],
+  enabledQuestionIds: ['question-1'],
 }
 const defaultProps = {
   snapshot,
@@ -55,7 +66,9 @@ function renderPanel(overrides: Partial<typeof defaultProps> = {}, currentStatus
   const invalidate = vi.spyOn(client, 'invalidateQueries').mockResolvedValue(undefined)
   renderWithAppProviders(
     <QueryClientProvider client={client}>
-      <GameSetupRegistrationPanel {...defaultProps} {...overrides} />
+      <MemoryRouter>
+        <GameSetupRegistrationPanel {...defaultProps} {...overrides} />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
   return { invalidate, client }
@@ -71,14 +84,69 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('GameSetupRegistrationPanel', () => {
-  it('publishes the reviewed draft without quiz questions only after confirmation and refreshes shared state', async () => {
+  it('blocks missing media even when optional content is empty', async () => {
+    renderPanel({
+      snapshot: {
+        ...snapshot,
+        cells: [{ ...snapshot.cells[0]!, media: [] }],
+        enabledModifierIds: [],
+        enabledQuestionIds: [],
+      },
+    })
+    expect(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true })).toBeDisabled()
+    expect(screen.queryByText(/Без медиа: 1/)).not.toBeInTheDocument()
+    fireEvent.mouseOver(
+      screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }).parentElement!,
+    )
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/Без медиа: 1/)
+  })
+  it('requires both separate consents and resets them when the dialog is reopened', async () => {
+    renderPanel({ snapshot: { ...snapshot, enabledModifierIds: [], enabledQuestionIds: [] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
+    const confirm = screen.getByRole('button', { name: 'Открыть регистрацию' })
+    expect(confirm).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /без модификаторов/ }))
+    expect(confirm).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /без вопросов/ }))
+    expect(confirm).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
+    expect(screen.getByRole('button', { name: 'Открыть регистрацию' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /без модификаторов/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /без вопросов/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию' }))
+    await waitFor(() => expect(mocks.open).toHaveBeenCalledOnce())
+    expect(mocks.open.mock.calls[0]?.[0]).toEqual({
+      gameId: 'draft-1',
+      expectedVersion: 7,
+      allowWithoutModifiers: true,
+      allowWithoutQuestions: true,
+    })
+  })
+  it('retains consent and dialog on publication failure for retry', async () => {
+    mocks.open.mockRejectedValue(new Error('offline'))
+    renderPanel({ snapshot: { ...snapshot, enabledQuestionIds: [] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
+    expect(screen.queryByRole('checkbox', { name: /без модификаторов/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: /без вопросов/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию' }))
+    expect(await screen.findByText(/Не удалось открыть регистрацию/)).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: /без вопросов/ })).toBeChecked()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+  it('publishes the complete reviewed draft with optional card titles only after confirmation', async () => {
     const { invalidate } = renderPanel()
-    expect(screen.getByText(/Вопросы викторины необязательны/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
     expect(mocks.open).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Опубликовать и открыть регистрацию' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию' }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/panel/team-registrations'))
-    expect(mocks.open.mock.calls[0]?.[0]).toEqual({ gameId: 'draft-1', expectedVersion: 7 })
+    expect(mocks.open.mock.calls[0]?.[0]).toEqual({
+      gameId: 'draft-1',
+      expectedVersion: 7,
+      allowWithoutModifiers: false,
+      allowWithoutQuestions: false,
+    })
     for (const queryKey of [
       ['gameSetup', 'draftSnapshot'],
       ['gameBoard', 'currentSnapshot'],
@@ -98,10 +166,25 @@ describe('GameSetupRegistrationPanel', () => {
       expect(mocks.open).not.toHaveBeenCalled()
     },
   )
-  it.each(['ready', 'active'])('blocks another current game in %s', (status) => {
+  it.each(['ready', 'active'])('blocks another current game in %s', async (status) => {
     renderPanel({}, status)
     expect(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true })).toBeDisabled()
-    expect(screen.getByText(/Уже идёт регистрация или игра/)).toBeInTheDocument()
+    expect(screen.queryByText(/Уже идёт регистрация или игра/)).not.toBeInTheDocument()
+    fireEvent.mouseOver(
+      screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }).parentElement!,
+    )
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/Уже идёт регистрация или игра/)
+  })
+  it('prioritizes missing media over an existing current game', async () => {
+    renderPanel(
+      { snapshot: { ...snapshot, cells: [{ ...snapshot.cells[0]!, media: [] }] } },
+      'ready',
+    )
+    fireEvent.mouseOver(
+      screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }).parentElement!,
+    )
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/Без медиа: 1/)
+    expect(screen.queryByText(/Уже идёт регистрация или игра/)).not.toBeInTheDocument()
   })
   it('does not expose publication to moderators', () => {
     mocks.roles = ['moderator']
@@ -114,7 +197,7 @@ describe('GameSetupRegistrationPanel', () => {
     )
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: 'Опубликовать и открыть регистрацию' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию' }))
     expect(await screen.findByText(/Черновик изменился после проверки/)).toBeInTheDocument()
     expect(mocks.navigate).not.toHaveBeenCalled()
     expect(defaultProps.onBusyChange).toHaveBeenLastCalledWith(false)
@@ -130,7 +213,7 @@ describe('GameSetupRegistrationPanel', () => {
     )
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: 'Опубликовать и открыть регистрацию' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию' }))
     expect(await screen.findByText(/Выбранный вопрос отключён или удалён/)).toBeInTheDocument()
     expect(mocks.navigate).not.toHaveBeenCalled()
     expect(defaultProps.onBusyChange).toHaveBeenLastCalledWith(false)
@@ -145,7 +228,7 @@ describe('GameSetupRegistrationPanel', () => {
     )
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Открыть регистрацию', exact: true }))
-    const confirm = screen.getByRole('button', { name: 'Опубликовать и открыть регистрацию' })
+    const confirm = screen.getByRole('button', { name: 'Открыть регистрацию' })
     fireEvent.click(confirm)
     fireEvent.click(confirm)
     await waitFor(() => expect(mocks.open).toHaveBeenCalledTimes(1))
@@ -162,9 +245,7 @@ describe('GameSetupRegistrationPanel', () => {
     })
     const dialog = within(screen.getByRole('dialog'))
     await waitFor(() =>
-      expect(
-        dialog.getByRole('button', { name: 'Опубликовать и открыть регистрацию' }),
-      ).toBeDisabled(),
+      expect(dialog.getByRole('button', { name: 'Открыть регистрацию' })).toBeDisabled(),
     )
     expect(dialog.getByText(/Уже идёт регистрация или игра/)).toBeInTheDocument()
     expect(mocks.open).not.toHaveBeenCalled()

@@ -32,7 +32,7 @@ export function createSetupCellDropzoneSx({
   })
 }
 
-export const setupCellImageLabelSx: SystemStyleObject<Theme> = {
+export const setupCellImageAreaSx: SystemStyleObject<Theme> = {
   position: 'absolute',
   inset: 0,
   display: 'flex',

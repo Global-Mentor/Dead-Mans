@@ -32,7 +32,7 @@ public sealed class GameLifecycleController : ControllerBase
         [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] OpenGameRegistrationRequestDto? request,
         CancellationToken cancellationToken)
     {
-        var input = request is null ? null : new OpenGameRegistrationInput(request.GameId, request.ExpectedVersion);
+        var input = request is null ? null : new OpenGameRegistrationInput(request.GameId, request.ExpectedVersion, request.AllowWithoutModifiers, request.AllowWithoutQuestions);
         var result = await _lifecycleService.OpenRegistrationAsync(input, cancellationToken);
         return ToActionResult(result, GameLifecycleStatuses.Ready);
     }

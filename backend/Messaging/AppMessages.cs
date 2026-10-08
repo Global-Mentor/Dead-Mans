@@ -83,6 +83,9 @@ public static class AppMessages
         public const string GameArchiveNotAllowed =
             "Only a fully finished game can be archived.";
         public const string GameLifecycleGameNotFound = "Requested game was not found.";
+        public const string GameLifecycleCellMediaRequired = "Every board cell must have a media file before publication or start.";
+        public const string GameLifecycleEmptyModifiersNotAcknowledged = "Explicit consent is required to publish without modifiers.";
+        public const string GameLifecycleEmptyQuestionsNotAcknowledged = "Explicit consent is required to publish without quiz questions.";
         public const string GameLifecycleQuestionsUnavailable =
             "A selected question is disabled or deleted. Enable it in the catalog or remove it from the draft before publishing.";
         public const string GameFinishRoundInProgress =
@@ -277,6 +280,9 @@ public static class AppMessages
             "game_lifecycle.current_already_exists";
         public const string GameLifecycleActiveAlreadyExists = "game_lifecycle.active_already_exists";
         public const string GameLifecycleGameNotReady = "game_lifecycle.game_not_ready";
+        public const string GameLifecycleCellMediaRequired = "game_lifecycle.cell_media_required";
+        public const string GameLifecycleEmptyModifiersNotAcknowledged = "game_lifecycle.empty_modifiers_not_acknowledged";
+        public const string GameLifecycleEmptyQuestionsNotAcknowledged = "game_lifecycle.empty_questions_not_acknowledged";
         public const string GameLifecycleQuestionsUnavailable = "game_lifecycle.questions_unavailable";
         public const string GameLifecycleGameNotActive = "game_lifecycle.game_not_active";
         public const string GameLifecycleRegistrationSlotsRequired =

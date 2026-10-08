@@ -84,7 +84,7 @@ const panelPages = {
   'admin-modifiers': lazyPanelPage(
     () => import('../features/game-setup/AdminGameModifiersPage.tsx'),
     'AdminGameModifiersPage',
-    [translations.gameSetup, translations.gameCatalog],
+    [translations.gameSetup, translations.gameCatalog, translations.gameModifiers],
   ),
   'admin-questions': lazyPanelPage(
     () => import('../features/game-setup/AdminGameQuestionsPage.tsx'),

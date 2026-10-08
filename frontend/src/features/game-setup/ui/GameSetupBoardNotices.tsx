@@ -36,7 +36,7 @@ export function GameSetupBoardNotices({
   }
 
   return (
-    <Stack spacing={2} sx={{ mt: 2 }}>
+    <Stack spacing={1}>
       {remoteChangeNotice ? (
         <InlineNotice
           severity="warning"

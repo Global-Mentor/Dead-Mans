@@ -1,7 +1,13 @@
-import { Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, AppDialog, FormSelect, InlineNotice } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AppDialog,
+  ConfirmDialog,
+  FormSelect,
+  InlineNotice,
+} from '../../../shared/ui/index.ts'
 import {
   applyGameSetupBoardLayoutChange,
   canApplyBoardLayoutChange,
@@ -26,9 +32,9 @@ export function GameSetupBoardLayoutDialog({
   onApply,
 }: GameSetupBoardLayoutDialogProps) {
   const { t } = useTranslation()
-  const [action, setAction] = useState<BoardLayoutAction>('add')
+  const [action, setAction] = useState<BoardLayoutAction>('remove')
   const [axis, setAxis] = useState<BoardLayoutAxis>('row')
-  const [positionIndex, setPositionIndex] = useState(0)
+  const [positionIndex, setPositionIndex] = useState(-1)
   const [confirmStep, setConfirmStep] = useState(false)
 
   const positionIndexes = useMemo(
@@ -40,18 +46,20 @@ export function GameSetupBoardLayoutDialog({
   const count = axis === 'row' ? draft.rowLabels.length : draft.colLabels.length
   const selectedPositionIndex = positionIndexes.includes(positionIndex)
     ? positionIndex
-    : (positionIndexes[0] ?? 0)
+    : action === 'add'
+      ? count
+      : Math.max(0, count - 1)
 
   const handleClose = () => {
-    setAction('add')
+    setAction('remove')
     setAxis('row')
-    setPositionIndex(0)
+    setPositionIndex(-1)
     setConfirmStep(false)
     onClose()
   }
 
   const handlePrimaryClick = () => {
-    if (!confirmStep) {
+    if (action === 'remove' && !confirmStep) {
       setConfirmStep(true)
       return
     }
@@ -94,45 +102,40 @@ export function GameSetupBoardLayoutDialog({
   }
 
   const confirmationKey =
-    action === 'add'
-      ? axis === 'row'
-        ? 'gameSetup.layoutDialog.confirmAddRow'
-        : 'gameSetup.layoutDialog.confirmAddColumn'
-      : axis === 'row'
-        ? 'gameSetup.layoutDialog.confirmRemoveRow'
-        : 'gameSetup.layoutDialog.confirmRemoveColumn'
+    axis === 'row'
+      ? 'gameSetup.layoutDialog.confirmRemoveRow'
+      : 'gameSetup.layoutDialog.confirmRemoveColumn'
 
   return (
-    <AppDialog
-      open={open}
-      onClose={handleClose}
-      title={t('gameSetup.layoutDialog.title')}
-      actions={
-        <>
-          <AppButton tone="ghost" onClick={confirmStep ? () => setConfirmStep(false) : handleClose}>
-            {confirmStep ? t('common.actions.back') : t('common.actions.cancel')}
-          </AppButton>
-          <AppButton
-            tone={action === 'remove' ? 'danger' : 'primary'}
-            disabled={!canApply || positionIndexes.length === 0}
-            onClick={handlePrimaryClick}
-          >
-            {confirmStep ? t('gameSetup.layoutDialog.confirm') : t('gameSetup.layoutDialog.review')}
-          </AppButton>
-        </>
-      }
-    >
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {t('gameSetup.layoutDialog.description')}
-      </Typography>
-
-      {!confirmStep ? (
+    <>
+      <AppDialog
+        open={open && !confirmStep}
+        onClose={handleClose}
+        title={t('gameSetup.layoutDialog.title')}
+        actions={
+          <>
+            <AppButton tone="ghost" onClick={handleClose}>
+              {t('common.actions.cancel')}
+            </AppButton>
+            <AppButton
+              tone={action === 'remove' ? 'danger' : 'primary'}
+              disabled={!canApply || positionIndexes.length === 0}
+              onClick={handlePrimaryClick}
+            >
+              {action === 'add'
+                ? t('gameSetup.layoutDialog.actionAdd')
+                : t('common.actions.remove')}
+            </AppButton>
+          </>
+        }
+      >
         <Stack spacing={2}>
           <FormSelect
             label={t('gameSetup.layoutDialog.actionLabel')}
             value={action}
             onChange={(nextAction) => {
               setAction(nextAction)
+              setPositionIndex(-1)
               setConfirmStep(false)
             }}
             options={[
@@ -146,6 +149,7 @@ export function GameSetupBoardLayoutDialog({
             value={axis}
             onChange={(nextAxis) => {
               setAxis(nextAxis)
+              setPositionIndex(-1)
               setConfirmStep(false)
             }}
             options={[
@@ -174,13 +178,18 @@ export function GameSetupBoardLayoutDialog({
             </InlineNotice>
           ) : null}
         </Stack>
-      ) : (
-        <InlineNotice severity="warning">
-          {t(confirmationKey, {
-            target: getPositionLabel(selectedPositionIndex),
-          })}
-        </InlineNotice>
-      )}
-    </AppDialog>
+      </AppDialog>
+      <ConfirmDialog
+        open={open && confirmStep}
+        title={t('gameSetup.layoutDialog.title')}
+        description={t(confirmationKey, { target: getPositionLabel(selectedPositionIndex) })}
+        confirmLabel={t('common.actions.remove')}
+        cancelLabel={t('common.actions.back')}
+        confirmTone="danger"
+        confirmDisabled={!canApply}
+        onClose={() => setConfirmStep(false)}
+        onConfirm={handlePrimaryClick}
+      />
+    </>
   )
 }

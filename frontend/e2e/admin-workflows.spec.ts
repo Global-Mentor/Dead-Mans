@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-async function mockAdmin(page: Page) {
+async function mockAdmin(page: Page, roles = ['viewer', 'admin']) {
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'en'))
   await page.routeWebSocket(/\/hubs\//, (socket) =>
     socket.onMessage((message) => {
@@ -20,6 +20,7 @@ async function mockAdmin(page: Page) {
     reward: 10,
     priority: 0,
     isEnabled: true,
+    twitchCompatible: true,
     askedTotalCount: 2,
     submissionTotalCount: 5,
     correctSubmissionTotalCount: 3,
@@ -28,7 +29,7 @@ async function mockAdmin(page: Page) {
   }))
   const modifiers = Array.from({ length: 9 }, (_, i) => ({
     id: `modifier-${i}`,
-    category: 'round',
+    category: ['preparation', 'round', 'result'][i % 3],
     name: `Night watch ${i + 1}`,
     description:
       'A long instruction for the host and the active team. Complete the round without changing equipment.',
@@ -76,6 +77,7 @@ async function mockAdmin(page: Page) {
     quizAnswerDurationSeconds: 60,
   }
   let writes = 0
+  let refuseSave = false
   await page.route(
     (url) =>
       url.pathname === '/auth/me' ||
@@ -88,7 +90,7 @@ async function mockAdmin(page: Page) {
           json: {
             userId: 'abf3680b-ac92-43ce-8c4f-c542f806e520',
             displayName: 'Administrator',
-            roles: ['viewer', 'admin'],
+            roles,
           },
         })
       if (path.includes('/negotiate'))
@@ -103,6 +105,7 @@ async function mockAdmin(page: Page) {
       if (path === '/api/game/setup') {
         if (route.request().method() === 'PUT') {
           writes++
+          if (refuseSave) return route.fulfill({ status: 503, json: { code: 'test.save_refused' } })
           const request = route.request().postDataJSON()
           setup = {
             ...setup,
@@ -135,7 +138,16 @@ async function mockAdmin(page: Page) {
       return route.fulfill({ status: 204 })
     },
   )
-  return { writes: () => writes }
+  return {
+    questions,
+    questionIds: () => setup.enabledQuestionIds,
+    duration: () => setup.quizAnswerDurationSeconds,
+    writes: () => writes,
+    enabledIds: () => setup.enabledModifierIds,
+    refuseSave: (value: boolean) => {
+      refuseSave = value
+    },
+  }
 }
 
 for (const width of [320, 390, 768, 1440]) {
@@ -166,7 +178,7 @@ for (const width of [320, 390, 768, 1440]) {
         ).toBeVisible()
       } else if (path === 'admin-modifiers') {
         await expect(
-          page.getByRole('checkbox', { name: 'Night watch 1 (3)', exact: true }),
+          page.getByRole('checkbox', { name: 'Include Night watch 1 in the game', exact: true }),
         ).toBeChecked()
       } else {
         await expect(page.getByText('Night watch 1', { exact: true })).toBeVisible()
@@ -367,3 +379,411 @@ for (const width of [320, 390, 768, 1440]) {
     })
   })
 }
+
+for (const width of [390, 768, 1440]) {
+  test(
+    'modifier selection filters, bulk changes and preview at ' + width + 'px',
+    async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      const server = await mockAdmin(page)
+      await page.goto('/panel/admin-modifiers')
+      const search = page.getByRole('textbox')
+      await expect(page.getByRole('checkbox')).toHaveCount(9)
+      await page.evaluate(() => document.fonts.ready)
+      await page.screenshot({
+        path: info.outputPath('modifier-selection.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      await page.getByRole('combobox', { name: /^Categories/ }).click()
+      await page.getByRole('option', { name: 'Before the round', exact: true }).click()
+      await expect(page.getByRole('checkbox')).toHaveCount(3)
+      await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+      await expect.poll(server.writes).toBe(1)
+      await expect.poll(server.enabledIds).toEqual(['modifier-0', 'modifier-3', 'modifier-6'])
+      await expect(page.getByRole('button', { name: 'Enable visible', exact: true })).toBeDisabled()
+      await search.fill('Night watch 4')
+      await expect(page.getByRole('checkbox')).toHaveCount(1)
+      await page.getByRole('button', { name: 'Disable visible', exact: true }).click()
+      await expect.poll(server.writes).toBe(2)
+      await expect.poll(server.enabledIds).toEqual(['modifier-0', 'modifier-6'])
+      await search.fill('no matching modifier')
+      await expect(page.getByRole('checkbox')).toHaveCount(0)
+      await expect(search).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Enable visible', exact: true })).toBeDisabled()
+      await expect(
+        page.getByRole('button', { name: 'Disable visible', exact: true }),
+      ).toBeDisabled()
+      await search.fill('')
+      await page.getByRole('combobox', { name: /^Categories/ }).click()
+      await page.getByRole('option', { name: 'All categories', exact: true }).click()
+      const first = page.getByRole('listitem', { name: 'Night watch 1', exact: true })
+      await expect(first.getByRole('checkbox')).toBeChecked()
+      const details = first.getByRole('button', { name: 'Details', exact: true })
+      await details.click()
+      const dialog = page.getByRole('dialog')
+      await expect(
+        dialog.getByText(
+          'A long instruction for the host and the active team. Complete the round without changing equipment.',
+        ),
+      ).toBeVisible()
+      await page.screenshot({
+        path: info.outputPath('modifier-preview.png'),
+        animations: 'disabled',
+      })
+      await page.keyboard.press('Escape')
+      await expect(details).toBeFocused()
+      expect(server.writes()).toBe(2)
+      expect(errors).toEqual([])
+    },
+  )
+}
+
+test('failed modifier bulk save retains selection and can be saved on the next change', async ({
+  page,
+}) => {
+  const server = await mockAdmin(page)
+  await page.goto('/panel/admin-modifiers')
+  await expect(page.getByRole('checkbox')).toHaveCount(9)
+  server.refuseSave(true)
+  await page.getByRole('combobox', { name: /^Categories/ }).click()
+  await page.getByRole('option', { name: 'Before the round', exact: true }).click()
+  await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+  await expect(page.getByText('Failed to save game setup. Please try again.')).toBeVisible()
+  await expect(
+    page.getByRole('checkbox', { name: 'Include Night watch 4 in the game', exact: true }),
+  ).toBeChecked()
+  expect(server.enabledIds()).toEqual(['modifier-0'])
+  server.refuseSave(false)
+  await page
+    .getByRole('checkbox', { name: 'Include Night watch 7 in the game', exact: true })
+    .uncheck()
+  await expect.poll(server.enabledIds).toEqual(['modifier-0', 'modifier-3'])
+  expect(server.writes()).toBe(2)
+})
+
+for (const viewport of [
+  { width: 390, height: 900 },
+  { width: 768, height: 900 },
+  { width: 1440, height: 900 },
+  { width: 390, height: 500 },
+]) {
+  test(
+    'modifier list owns scrolling at ' + viewport.width + 'x' + viewport.height,
+    async ({ page }) => {
+      await page.setViewportSize(viewport)
+      await mockAdmin(page)
+      await page.goto('/panel/admin-modifiers')
+      await expect(page.getByRole('checkbox')).toHaveCount(9)
+      const panel = page.getByRole('region', { name: 'Modifier selection', exact: true })
+      const search = page.getByRole('textbox')
+      const searchY = (await search.boundingBox())!.y
+      const canScroll = await panel.evaluate(
+        (element) => element.scrollHeight > element.clientHeight,
+      )
+      expect(canScroll).toBe(viewport.width < 1440)
+      await panel.evaluate((element) => {
+        element.scrollTop = element.scrollHeight
+      })
+      expect((await search.boundingBox())!.y).toBe(searchY)
+      await expect(
+        page.getByRole('checkbox', { name: 'Include Night watch 9 in the game', exact: true }),
+      ).toBeInViewport()
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+        true,
+      )
+      await search.fill('Night watch 1')
+      await expect(page.getByRole('checkbox')).toHaveCount(1)
+      expect(await panel.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(
+        true,
+      )
+      await search.fill('not found')
+      await expect(page.getByRole('checkbox')).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+        true,
+      )
+    },
+  )
+}
+
+for (const width of [390, 768, 1440]) {
+  test(
+    'question selection filters, duration and preview at ' + width + 'px',
+    async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      let catalogRequests = 0
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/api/game/questions/catalog') catalogRequests++
+      })
+      const server = await mockAdmin(page)
+      server.questions[1]!.categoryId = 'history'
+      server.questions[1]!.categoryName = 'History'
+      server.questions[11]!.isEnabled = false
+      await page.goto('/panel/admin-questions')
+      const search = page.getByRole('textbox', { name: 'Search questions and answers' })
+      const duration = page.getByRole('textbox', { name: 'Answer time (seconds)' })
+      const panel = page.getByRole('region', { name: 'Question selection', exact: true })
+      await expect(panel.getByRole('checkbox')).toHaveCount(11)
+      await page.evaluate(() => document.fonts.ready)
+      const fieldEdges = await search.evaluate((element) => {
+        const rect = element.closest('.MuiFormControl-root')!.getBoundingClientRect()
+        return { left: rect.left }
+      })
+      const durationRight = await duration.evaluate(
+        (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().right,
+      )
+      const rows = await panel.getByRole('listitem').evaluateAll((elements) =>
+        elements.slice(0, 2).map((element) => {
+          const rect = element.getBoundingClientRect()
+          return { left: rect.left, right: rect.right }
+        }),
+      )
+      expect(Math.abs(rows[0]!.left - fieldEdges.left)).toBeLessThanOrEqual(1)
+      expect(Math.abs(rows[width === 1440 ? 1 : 0]!.right - durationRight)).toBeLessThanOrEqual(1)
+      if (width === 1440)
+        expect(Math.abs((rows[0]!.right + rows[1]!.left) / 2 - width / 2)).toBeLessThanOrEqual(1)
+      const fullyVisibleRows = await panel.evaluate((element) => {
+        const bounds = element.getBoundingClientRect()
+        return Array.from(element.querySelectorAll('li')).filter((row) => {
+          const rect = row.getBoundingClientRect()
+          return rect.top >= bounds.top && rect.bottom <= bounds.bottom
+        }).length
+      })
+      expect(fullyVisibleRows).toBeGreaterThanOrEqual(width === 1440 ? 10 : width === 768 ? 6 : 3)
+      const previewBounds = await panel
+        .getByRole('button', { name: 'View answers', exact: true })
+        .first()
+        .boundingBox()
+      expect(previewBounds!.height).toBeGreaterThanOrEqual(44)
+      expect(previewBounds!.width).toBeGreaterThanOrEqual(44)
+      await page.screenshot({
+        path: info.outputPath('question-selection.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <= innerWidth &&
+            document.documentElement.scrollHeight <= innerHeight,
+        ),
+      ).toBe(true)
+      const searchY = (await search.boundingBox())!.y
+      await panel.evaluate((element) => {
+        element.scrollTop = element.scrollHeight
+      })
+      expect((await search.boundingBox())!.y).toBe(searchY)
+      await expect(panel.getByRole('checkbox').last()).toBeInViewport()
+      await duration.fill('4')
+      await duration.press('Tab')
+      await expect(page.getByText('Enter a whole number from 5 to 3600 seconds.')).toBeVisible()
+      expect(server.writes()).toBe(0)
+      await page.getByRole('combobox', { name: /^Categories/ }).click()
+      await page.getByRole('option', { name: 'History', exact: true }).click()
+      await expect(panel.getByRole('checkbox')).toHaveCount(1)
+      const requestsBeforeSearch = catalogRequests
+      await search.fill('no matching answer')
+      await expect(panel.getByRole('checkbox')).toHaveCount(0)
+      await search.fill('Warsaw')
+      await expect(panel.getByRole('checkbox')).toHaveCount(1)
+      expect(catalogRequests).toBe(requestsBeforeSearch)
+      await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+      await expect.poll(server.questionIds).toEqual(['question-0', 'question-1'])
+      expect(server.duration()).toBe(60)
+      await expect(duration).toHaveValue('4')
+      await expect(duration).toBeEnabled()
+      await duration.fill('90')
+      await duration.press('Enter')
+      await expect.poll(server.duration).toBe(90)
+      await expect.poll(server.writes).toBe(2)
+      await page.getByRole('combobox', { name: /^Selection/ }).click()
+      await page.getByRole('option', { name: 'Selected', exact: true }).click()
+      await page.getByRole('button', { name: 'Disable visible', exact: true }).click()
+      await expect.poll(server.questionIds).toEqual(['question-0'])
+      await expect(panel.getByRole('checkbox')).toHaveCount(0)
+      await expect(search).toHaveValue('Warsaw')
+      await page.getByRole('combobox', { name: /^Categories/ }).click()
+      await expect(page.getByRole('option', { name: 'Geography', exact: true })).toBeVisible()
+      await expect(page.getByRole('option', { name: 'History', exact: true })).toBeVisible()
+      await page.keyboard.press('Escape')
+      await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
+      await expect(panel.getByRole('checkbox')).toHaveCount(11)
+      const details = panel.getByRole('button', { name: 'View answers', exact: true }).first()
+      await details.click()
+      const dialog = page.getByRole('dialog', { name: 'Question and answers' })
+      await expect(dialog.getByText('Warsaw', { exact: true })).toBeVisible()
+      await expect(dialog.getByText('Krakow', { exact: true })).toBeVisible()
+      await expect(dialog.getByText('Correct answer', { exact: true })).toBeVisible()
+      await page.screenshot({
+        path: info.outputPath('question-preview.png'),
+        animations: 'disabled',
+      })
+      await page.keyboard.press('Escape')
+      await expect(details).toBeFocused()
+      expect(server.writes()).toBe(3)
+      expect(errors).toEqual([])
+    },
+  )
+}
+
+test('question selection preserves failed changes and retries on the next edit', async ({
+  page,
+}) => {
+  const server = await mockAdmin(page)
+  await page.goto('/panel/admin-questions')
+  await expect(page.getByRole('checkbox')).toHaveCount(12)
+  server.refuseSave(true)
+  await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+  await expect(page.getByText('Failed to save game setup. Please try again.')).toBeVisible()
+  await expect(page.getByRole('checkbox').last()).toBeChecked()
+  expect(server.questionIds()).toEqual(['question-0'])
+  server.refuseSave(false)
+  await page.getByRole('checkbox').last().uncheck()
+  await expect.poll(() => server.questionIds().length).toBe(11)
+  expect(server.questionIds()).not.toContain('question-11')
+  expect(server.writes()).toBe(2)
+})
+
+for (const width of [320, 390, 768, 1440]) {
+  test(
+    'question tools and results remain reachable in a short window at ' + width,
+    async ({ page }) => {
+      await page.setViewportSize({ width, height: 500 })
+      await mockAdmin(page)
+      await page.goto('/panel/admin-questions')
+      const panel = page.getByRole('region', { name: 'Question selection', exact: true })
+      await expect(panel.getByRole('checkbox')).toHaveCount(12)
+      await page.getByRole('combobox', { name: /^Selection/ }).click()
+      await page.getByRole('option', { name: 'Not selected', exact: true }).click()
+      await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+      await expect(panel.getByRole('checkbox')).toHaveCount(0)
+      await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
+      await panel.getByRole('checkbox').last().scrollIntoViewIfNeeded()
+      await expect(panel.getByRole('checkbox').last()).toBeInViewport()
+      await panel.getByRole('button', { name: 'View answers' }).last().click()
+      await expect(page.getByRole('dialog', { name: 'Question and answers' })).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollHeight <= innerHeight &&
+            document.documentElement.scrollWidth <= innerWidth &&
+            scrollY === 0,
+        ),
+      ).toBe(true)
+      await page.setViewportSize({ width: width === 1440 ? 390 : 1440, height: 700 })
+      await expect(panel.getByRole('checkbox')).toHaveCount(12)
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              document.documentElement.scrollHeight <= innerHeight &&
+              document.documentElement.scrollWidth <= innerWidth,
+          ),
+        )
+        .toBe(true)
+    },
+  )
+}
+
+test('board readiness shows the saved question duration', async ({ page }, info) => {
+  const server = await mockAdmin(page)
+  await page.goto('/panel/admin-questions')
+  const duration = page.getByRole('textbox', { name: 'Answer time (seconds)' })
+  await duration.fill('90')
+  await duration.press('Tab')
+  await expect.poll(server.duration).toBe(90)
+  await page.goto('/panel/game-setup')
+  await expect(page.getByText('Answer time', { exact: true })).toBeVisible()
+  await expect(page.getByText('90 s', { exact: true })).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath('board-question-duration.png'),
+    animations: 'disabled',
+  })
+})
+
+for (const width of [390, 1440]) {
+  test('game management petal is absent on administrative routes at ' + width, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockAdmin(page, ['viewer', 'admin', 'superadmin'])
+    const petal = page.getByRole('button', { name: 'Game administration', exact: true })
+    await page.goto('/panel/game-board')
+    await expect(petal).toBeVisible()
+    for (const path of [
+      'role-administration',
+      'catalog-questions',
+      'catalog-modifiers',
+      'team-registrations',
+      'admin-questions',
+      'admin-modifiers',
+      'game-setup',
+    ]) {
+      await page.goto('/panel/' + path)
+      await expect(page).toHaveURL('/panel/' + path)
+      await expect(page.getByRole('main')).toBeVisible()
+      if (path === 'role-administration')
+        await expect(page.getByRole('textbox', { name: 'Name or Twitch login' })).toBeVisible()
+      else await expect(page.getByRole('heading').first()).toBeVisible()
+      await expect(petal).toHaveCount(0)
+    }
+    await page.goto('/panel/game-board')
+    await expect(petal).toBeVisible()
+  })
+}
+
+test('question selection keeps a large catalogue stable while a save is pending', async ({
+  page,
+}) => {
+  const server = await mockAdmin(page)
+  const seed = server.questions[0]!
+  for (let i = 12; i < 500; i++)
+    server.questions.push({ ...seed, questionId: 'question-' + i, text: 'Question ' + (i + 1) })
+  let releaseSave: (() => void) | undefined
+  await page.route('**/api/game/setup', async (route) => {
+    if (route.request().method() === 'PUT')
+      await new Promise<void>((resolve) => {
+        releaseSave = resolve
+      })
+    await route.fallback()
+  })
+  await page.goto('/panel/admin-questions')
+  const panel = page.getByRole('region', { name: 'Question selection', exact: true })
+  await expect(panel.getByRole('checkbox')).toHaveCount(500)
+  await page.evaluate(() => document.fonts.ready)
+  const mutations = await panel.evaluateHandle((element) => {
+    const state = {
+      count: 0,
+      observer: new MutationObserver((records) => {
+        state.count += records.length
+      }),
+    }
+    for (const row of Array.from(element.querySelectorAll('li')).slice(1))
+      state.observer.observe(row, { subtree: true, attributes: true, childList: true })
+    return state
+  })
+  const first = panel.getByRole('checkbox').first()
+  await first.uncheck()
+  await expect(first).not.toBeChecked()
+  await expect.poll(() => Boolean(releaseSave)).toBe(true)
+  await expect(panel.getByRole('checkbox').nth(1)).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Enable visible', exact: true })).toBeDisabled()
+  releaseSave!()
+  await expect(first).toBeEnabled()
+  expect(server.writes()).toBe(1)
+  expect(server.questionIds()).toEqual([])
+  expect(
+    await mutations.evaluate((state) => {
+      state.observer.disconnect()
+      return state.count
+    }),
+  ).toBe(0)
+  await mutations.dispose()
+})

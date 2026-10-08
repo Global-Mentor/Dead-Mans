@@ -83,8 +83,8 @@ for (const viewport of [
     for (const label of [
       'Board setup',
       'Teams',
-      'Current game modifiers',
-      'Current game questions',
+      'Modifiers for the game',
+      'Questions for the game',
       'Modifier catalog',
       'Question catalog',
     ]) {
