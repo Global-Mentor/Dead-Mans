@@ -1,5 +1,9 @@
 const translations = {
   en: {
+    teamFallback: 'Your team',
+    teamRejectedItemDescription:
+      'The administrator declined your team’s participation. Its roster has closed and you are no longer a member.',
+    teamRejectedItemTitle: 'Team “{{team}}” was not admitted to the game',
     brandMark: 'DM',
     menu: 'Menu',
     openNavigation: 'Open navigation',
@@ -94,6 +98,10 @@ const translations = {
     },
   },
   ru: {
+    teamFallback: 'Ваша команда',
+    teamRejectedItemDescription:
+      'Администратор отказал команде в участии. Состав закрыт, вы больше не состоите в этой команде.',
+    teamRejectedItemTitle: 'Команда «{{team}}» не допущена к игре',
     brandMark: 'DM',
     menu: 'Меню',
     openNavigation: 'Открыть навигацию',
@@ -189,6 +197,10 @@ const translations = {
     },
   },
   uk: {
+    teamFallback: 'Ваша команда',
+    teamRejectedItemDescription:
+      'Адміністратор відмовив команді в участі. Склад закрито, ви більше не входите до цієї команди.',
+    teamRejectedItemTitle: 'Команду «{{team}}» не допущено до гри',
     brandMark: 'DM',
     menu: 'Меню',
     openNavigation: 'Відкрити навігацію',
@@ -284,6 +296,10 @@ const translations = {
     },
   },
   pl: {
+    teamFallback: 'Twoja drużyna',
+    teamRejectedItemDescription:
+      'Administrator odmówił drużynie udziału. Skład został zamknięty i nie jesteś już jego członkiem.',
+    teamRejectedItemTitle: 'Drużyna „{{team}}” nie została dopuszczona do gry',
     brandMark: 'DM',
     menu: 'Menu',
     openNavigation: 'Otwórz nawigację',

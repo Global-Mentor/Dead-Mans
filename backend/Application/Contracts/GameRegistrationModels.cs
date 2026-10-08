@@ -163,6 +163,7 @@ public enum GameRegistrationErrorCode
     TeamNameTaken,
     TeamNameRequired,
     TeamNotFull,
+    TeamNotReady,
     DisbandRequestNotOwned,
     OperationFailed,
 }

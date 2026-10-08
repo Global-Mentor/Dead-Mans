@@ -303,6 +303,29 @@ describe('PanelNavigation', () => {
     }
   })
 
+  it('shows persistent refusal notifications and links to the application', () => {
+    renderNavigation(
+      { id: 'viewer-1', displayName: 'Player', roles: ['viewer'] },
+      '/panel/game-board',
+      createDraftSnapshot(),
+      null,
+      null,
+      'ready',
+      [
+        {
+          notificationId: 'refused',
+          type: 'team_rejected',
+          createdAtUtc: '2026-10-08T12:00:00Z',
+          teamName: 'Ночной дозор',
+        },
+      ],
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть уведомления' }))
+    const item = screen.getByRole('menuitem', { name: /Команда «Ночной дозор» не допущена к игре/ })
+    expect(item).toHaveAttribute('href', '/panel/game-application')
+    expect(item).toHaveTextContent('Администратор отказал команде в участии.')
+  })
+
   it('shows modifier cancellation notifications for players', () => {
     renderNavigation(
       {

@@ -98,9 +98,11 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var result = reject
             ? await repository.PersistRejectTeamAsync(seeded.GameId, seeded.UserId, team.Id)
             : await repository.PersistDisbandTeamAsync(seeded.GameId, seeded.UserId, team.Id);
-        Assert.True(result.Success);
+        Assert.Equal(!reject, result.Success);
+        if (reject) Assert.Equal(GameRegistrationErrorCode.TeamNotReady, result.Error);
         await using var verifyDb = _database.CreateDbContext();
-        Assert.NotNull((await verifyDb.GameTeamMembers.SingleAsync(member => member.TeamId == team.Id)).LeftAtUtc);
+        Assert.Equal(!reject, (await verifyDb.GameTeamMembers.SingleAsync(member => member.TeamId == team.Id)).LeftAtUtc.HasValue);
+        Assert.Empty(await verifyDb.GameUserNotifications.ToListAsync());
         Assert.Equal(TeamStatusValue.Confirmed, (await verifyDb.GameTeams.SingleAsync(team => team.Id == seeded.TeamId)).Status);
     }
 }

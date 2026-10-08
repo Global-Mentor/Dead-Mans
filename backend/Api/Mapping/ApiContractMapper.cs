@@ -120,7 +120,8 @@ public static partial class ApiContractMapper
             notification.CreatedAtUtc,
             notification.ModifierName,
             notification.ActorDisplayName,
-            notification.QuizPointsDelta
+            notification.QuizPointsDelta,
+            notification.TeamName
         );
     }
 

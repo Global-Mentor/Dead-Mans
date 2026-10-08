@@ -324,6 +324,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
             ? TeamStatusValue.Confirmed
             : TeamStatusValue.Forming;
         var team = CreateTeam(game.Id, slot.Id, now, status, recruitmentOpen);
+        if (operation == "reject") { game.MaxPlayersPerTeam = 1; team.Name = "Ready team"; }
         if (status == TeamStatusValue.Confirmed)
         {
             team.ConfirmedAtUtc = now;
@@ -341,7 +342,8 @@ public sealed partial class PostgresPersistenceBoundaryTests
             GameId = game.Id,
             TeamId = team.Id,
             UserId = player.Id,
-            JoinedAtUtc = now
+            JoinedAtUtc = now,
+            ReadyAtUtc = operation == "reject" ? now : null
         };
         var invitation = new GameTeamInvitation
         {
@@ -363,7 +365,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         {
             db.Add(membership);
         }
-        if (operation != "leave")
+        if (operation != "leave" && operation != "reject")
         {
             db.Add(invitation);
         }
@@ -427,7 +429,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
             Assert.True(historicalMember.LeftAtUtc >= historicalMember.JoinedAtUtc);
         }
         Assert.False(await verifyDb.GameTeamMembers.AnyAsync(member => member.TeamId == team.Id && member.LeftAtUtc == null));
-        if (operation != "leave")
+        if (operation != "leave" && operation != "reject")
         {
             var cancelledInvitation = await verifyDb.GameTeamInvitations.SingleAsync(candidate => candidate.Id == invitation.Id);
             Assert.Equal(TeamInvitationStatusValue.Cancelled, cancelledInvitation.Status);

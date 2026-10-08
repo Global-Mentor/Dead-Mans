@@ -84,6 +84,18 @@ after a failed request, allowing a retry; it closes only after success or cancel
 
 Admins and superadmins can create empty teams beyond the initial slot count in ready and active games. Automatic placement reuses an available slot or creates a new reserved slot at the end of the queue. Slot and team creation share the game roster lock and transaction, including concurrent requests. Moderators still need an available public slot or an explicitly selected available slot; clients cannot grant themselves overflow permission. Reserved overflow slots do not increase public self-registration capacity. Explicit occupied or invalid slot requests still fail.
 
+## Refusal of admission
+
+Staff rejection applies only to a named, full forming team with every active member ready and no
+pending invitations. The persistence operation locks the game and team and rechecks lifecycle,
+readiness and opened-card history. A refused team becomes rejected, closes active memberships and
+releases its queue place. Each active member receives one persistent team_rejected notification in
+the same transaction; a failed refusal creates no notifications. RegistrationChanged resynchronizes
+both registration and unread notifications. Reconnect also reloads unread notifications.
+Disbanding remains available to forming or confirmed teams before participation and does not send
+an admission-refusal message. Refusal is a team decision, not an account ban.
+
+
 ## Registration API
 
 - `GET /api/game/registration` - snapshot for the ready game

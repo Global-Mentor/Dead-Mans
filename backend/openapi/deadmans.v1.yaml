@@ -3672,7 +3672,7 @@ paths:
             format: uuid
       responses:
         '204':
-          description: Team rejected and removed
+          description: Ready forming team rejected; active members receive persistent refusal notifications
         '401':
           description: Not authenticated
           content:
@@ -5790,6 +5790,7 @@ components:
           items:
             $ref: '#/components/schemas/GameModifierAdminPlayerDto'
     GameUserNotificationDto:
+      description: Persistent user notification. team_rejected includes the rejected team name.
       type: object
       required:
         - notificationId
@@ -5814,6 +5815,9 @@ components:
           type: integer
           nullable: true
           minimum: 0
+        teamName:
+          type: string
+          nullable: true
     AdminActivateGameModifierRequestDto:
       type: object
       required: [modifierId, targetUserId]
@@ -7989,6 +7993,7 @@ components:
             - game_registration.team_name_taken
             - game_registration.team_name_required
             - game_registration.team_not_full
+            - game_registration.team_not_ready
             - game_registration.disband_request_not_owned
             - game_registration.operation_failed
             - game_modifier.game_not_active

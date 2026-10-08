@@ -3,6 +3,7 @@ namespace backend.Application.Contracts;
 public static class GameNotificationTypes
 {
     public const string ModifierCancelled = "modifier_cancelled";
+    public const string TeamRejected = "team_rejected";
 }
 
 public sealed record GameUserNotification(
@@ -11,7 +12,8 @@ public sealed record GameUserNotification(
     DateTime CreatedAtUtc,
     string? ModifierName,
     string? ActorDisplayName,
-    int? QuizPointsDelta
+    int? QuizPointsDelta,
+    string? TeamName = null
 );
 
 public sealed record GameUserNotificationCreatedEvent(

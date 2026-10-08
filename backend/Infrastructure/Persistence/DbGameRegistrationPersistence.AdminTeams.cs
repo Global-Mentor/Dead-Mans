@@ -368,52 +368,71 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         await using var transaction = _dbContext.Database.IsRelational()
             ? await BeginRosterChangeAsync(gameId, cancellationToken)
             : null;
+        if (transaction is not null)
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM game_teams WHERE id = {teamId} FOR UPDATE", cancellationToken);
 
-        var team = await _dbContext.GameTeams
-            .FirstOrDefaultAsync(candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
+        var game = await _dbContext.Games.AsNoTracking().FirstOrDefaultAsync(
+            candidate => candidate.Id == gameId && !candidate.IsDeleted, cancellationToken);
+        if (game is null || (game.Status != GameStatusValue.Ready && game.Status != GameStatusValue.Active))
+            return Fail<bool>(GameRegistrationErrorCode.GameNotInReady);
+        var team = await _dbContext.GameTeams.FirstOrDefaultAsync(
+            candidate => candidate.Id == teamId && candidate.GameId == gameId, cancellationToken);
         if (team is null)
-        {
             return Fail<bool>(GameRegistrationErrorCode.TeamNotFound);
-        }
-
+        if (transaction is not null)
+            await _dbContext.Entry(team).ReloadAsync(cancellationToken);
         if (team.Status != TeamStatusValue.Forming)
-        {
             return Fail<bool>(GameRegistrationErrorCode.TeamNotJoinable);
-        }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        if (game.ActiveTeamId == teamId || await _dbContext.GameRounds.AnyAsync(
+                round => round.GameId == gameId && round.TeamId == teamId
+                    && round.Status != GameRoundStatusValue.Completed && round.Status != GameRoundStatusValue.Cancelled,
+                cancellationToken))
+            return Fail<bool>(GameRegistrationErrorCode.TeamActiveInGame);
+        if (team.IsPlayed || await _dbContext.GameRounds.AnyAsync(
+                round => round.GameId == gameId && round.TeamId == teamId, cancellationToken))
+            return Fail<bool>(GameRegistrationErrorCode.TeamAlreadyPlayed);
+
         var members = await _dbContext.GameTeamMembers
             .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
             .ToListAsync(cancellationToken);
+        if (transaction is not null)
+            foreach (var member in members)
+                await _dbContext.Entry(member).ReloadAsync(cancellationToken);
+        if (TeamNameValue.Normalize(team.Name) is null || members.Count != game.MaxPlayersPerTeam
+            || members.Any(member => member.LeftAtUtc.HasValue || !member.ReadyAtUtc.HasValue)
+            || await _dbContext.GameTeamInvitations.AnyAsync(
+                invite => invite.TeamId == teamId && invite.Status == TeamInvitationStatusValue.Pending, cancellationToken))
+            return Fail<bool>(GameRegistrationErrorCode.TeamNotReady);
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         foreach (var member in members)
         {
+            _dbContext.GameUserNotifications.Add(new backend.Data.Entities.GameUserNotification
+            {
+                Id = Guid.NewGuid(),
+                UserId = member.UserId,
+                GameId = gameId,
+                Type = GameNotificationTypes.TeamRejected,
+                SchemaVersion = 1,
+                PayloadJson = System.Text.Json.JsonSerializer.Serialize(new { teamName = team.Name }),
+                DeduplicationKey = $"team_rejected:{teamId:N}",
+                CreatedAtUtc = utcNow
+            });
             member.ReadyAtUtc = null;
             member.LeftAtUtc = utcNow;
         }
-
         team.Status = TeamStatusValue.Rejected;
         team.RecruitmentOpen = false;
         team.RejectedAtUtc = utcNow;
         team.RejectedByUserId = adminUserId;
         team.UpdatedAtUtc = utcNow;
-
         await CancelPendingTeamInvitationsAsync(team.Id, utcNow, cancellationToken);
-
         await _dbContext.SaveChangesAsync(cancellationToken);
-
         if (transaction is not null)
-        {
             await transaction.CommitAsync(cancellationToken);
-        }
-
-        _logger.LogInformation(
-            "Team {TeamId} rejected by admin {AdminUserId}.",
-            teamId,
-            adminUserId
-        );
-
+        _logger.LogInformation("Team {TeamId} rejected by admin {AdminUserId}.", teamId, adminUserId);
         return new GameRegistrationResult<bool>(true, true, GameRegistrationErrorCode.None);
     }
-
-
 }

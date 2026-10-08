@@ -139,6 +139,12 @@ public sealed class DbGameNotificationRepository : IGameNotificationRepository
             }
         }
 
+        if (row.Type == GameNotificationTypes.TeamRejected && row.SchemaVersion == 1)
+        {
+            var payload = JsonSerializer.Deserialize<TeamRejectedNotificationPayload>(row.PayloadJson, NotificationJsonOptions);
+            if (payload is not null)
+                return new GameUserNotification(row.Id, row.Type, row.CreatedAtUtc, null, null, null, payload.TeamName);
+        }
         return new GameUserNotification(row.Id, row.Type, row.CreatedAtUtc, null, null, null);
     }
 
@@ -149,6 +155,8 @@ public sealed class DbGameNotificationRepository : IGameNotificationRepository
         string PayloadJson,
         DateTime CreatedAtUtc
     );
+
+    private sealed record TeamRejectedNotificationPayload(string TeamName);
 
     private sealed record ModifierCancelledNotificationPayload(
         Guid ModifierActivationId,

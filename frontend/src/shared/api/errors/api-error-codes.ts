@@ -23,6 +23,7 @@ export const API_ERROR_CODES = {
   gameRegistrationInvalidTeamName: 'game_registration.invalid_team_name',
   gameRegistrationTeamNameRequired: 'game_registration.team_name_required',
   gameRegistrationTeamNotFull: 'game_registration.team_not_full',
+  gameRegistrationTeamNotReady: 'game_registration.team_not_ready',
   gameRegistrationOperationFailed: 'game_registration.operation_failed',
   gameBoardActiveTeamRequired: 'game_board.active_team_required',
   gameBoardActiveTeamRoundInProgress: 'game_board.active_team_round_in_progress',

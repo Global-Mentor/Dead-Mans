@@ -104,6 +104,11 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamNameRequired,
                 AppMessages.ErrorCodes.GameRegistrationTeamNameRequired
             ),
+            GameRegistrationErrorCode.TeamNotReady => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNotReady,
+                AppMessages.ErrorCodes.GameRegistrationTeamNotReady
+            ),
             GameRegistrationErrorCode.TeamNotFull => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationTeamNotFull,

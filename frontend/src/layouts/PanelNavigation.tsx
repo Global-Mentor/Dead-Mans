@@ -274,7 +274,11 @@ export function PanelNavigation() {
                       <ActionMenuItem
                         key={`game-notification-${notification.notificationId}`}
                         component={RouterLink}
-                        to={gameModifiersRoute.fullPath}
+                        to={
+                          notification.type === 'team_rejected'
+                            ? gameApplicationRoute.fullPath
+                            : gameModifiersRoute.fullPath
+                        }
                         onClick={closeNotificationMenu}
                         sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}
                       >
@@ -361,9 +365,17 @@ function GameNotificationRealtimeSync() {
       }
 
       connection.on(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
+      connection.on(
+        realtimeHubs.gameBoard.events.registrationChanged,
+        handleUserNotificationCreated,
+      )
 
       return () => {
         connection.off(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
+        connection.off(
+          realtimeHubs.gameBoard.events.registrationChanged,
+          handleUserNotificationCreated,
+        )
       }
     },
     [syncNotifications],
@@ -381,6 +393,10 @@ function GameNotificationRealtimeSync() {
 
 function getGameNotificationTitle(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
+    case 'team_rejected':
+      return t('navigation.teamRejectedItemTitle', {
+        team: notification.teamName ?? t('navigation.teamFallback'),
+      })
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemTitle', {
         modifier: notification.modifierName ?? t('navigation.modifierFallback'),
@@ -392,6 +408,8 @@ function getGameNotificationTitle(t: TFunction, notification: GameUserNotificati
 
 function getGameNotificationDescription(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
+    case 'team_rejected':
+      return t('navigation.teamRejectedItemDescription')
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemDescription', {
         player: notification.actorDisplayName ?? t('navigation.someone'),
