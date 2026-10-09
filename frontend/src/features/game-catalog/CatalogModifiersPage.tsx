@@ -1,4 +1,4 @@
-import { Box, Stack, useMediaQuery, useTheme } from '@mui/material'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../shared/api/contracts/index.ts'
@@ -7,6 +7,7 @@ import {
   AppDialog,
   AsyncSection,
   ConfirmDialog,
+  CatalogWorkspace,
   PageShell,
   SectionCard,
   SectionHeader,
@@ -24,7 +25,7 @@ export function CatalogModifiersPage() {
   const wide = useMediaQuery(theme.breakpoints.up('lg'))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [sort, setSort] = useState<ModifierCatalogSort>('name')
+  const [sort, setSort] = useState<ModifierCatalogSort>('cost')
   const {
     search,
     setSearch,
@@ -35,6 +36,9 @@ export function CatalogModifiersPage() {
     setSelectedRoundSummaryType,
     roundSummaryCounts,
     catalogQuery,
+    isArchive,
+    modifierLookup,
+    activeModifiers,
     filteredModifiers,
     dialog,
     openCreate,
@@ -97,41 +101,58 @@ export function CatalogModifiersPage() {
   const details = selected ? (
     <ModifierCatalogDetails
       modifier={selected}
-      modifiers={catalogQuery.data ?? []}
+      modifiers={modifierLookup}
+      isArchived={isArchive}
       onEdit={editModifier}
       onDelete={deleteModifier}
     />
   ) : null
 
   return (
-    <PageShell sx={{ maxWidth: 1600, width: '100%', px: 0, pb: 0 }}>
-      <Stack gap={2}>
-        <SectionCard>
-          <SectionHeader
-            headingLevel="h1"
-            title={t('gameCatalog.modifiers.title')}
-            description={t('gameCatalog.modifiers.catalog.description')}
-            actions={
-              <AppButton tone="primary" onClick={openCreate}>
-                {t('gameCatalog.modifiers.add')}
-              </AppButton>
-            }
-          />
-          <ModifierCatalogFilters
-            search={search}
-            onSearchChange={setSearch}
-            category={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            categoryCounts={categoryCounts}
-            summaryType={selectedRoundSummaryType}
-            onSummaryTypeChange={setSelectedRoundSummaryType}
-            summaryCounts={roundSummaryCounts}
-            sort={sort}
-            onSortChange={setSort}
-            hasFilters={hasFilters}
-            onReset={resetFilters}
-          />
-        </SectionCard>
+    <PageShell
+      sx={{
+        maxWidth: 1600,
+        width: '100%',
+        px: { xs: 0, sm: 0, md: 0 },
+        pb: { xs: 0, sm: 0, md: 0 },
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <CatalogWorkspace
+        toolsLabel={t('gameCatalog.modifiers.catalog.filters', {
+          count: Number(selectedCategory !== null) + Number(selectedRoundSummaryType !== null),
+        })}
+        tools={
+          <SectionCard>
+            <SectionHeader
+              headingLevel="h1"
+              title={t('gameCatalog.modifiers.title')}
+              actions={
+                <AppButton tone="primary" onClick={openCreate}>
+                  {t('gameCatalog.modifiers.add')}
+                </AppButton>
+              }
+            />
+            <ModifierCatalogFilters
+              search={search}
+              onSearchChange={setSearch}
+              category={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              categoryCounts={categoryCounts}
+              summaryType={selectedRoundSummaryType}
+              onSummaryTypeChange={setSelectedRoundSummaryType}
+              summaryCounts={roundSummaryCounts}
+              sort={sort}
+              onSortChange={setSort}
+              hasFilters={hasFilters}
+              onReset={resetFilters}
+            />
+          </SectionCard>
+        }
+      >
         <AsyncSection
           isLoading={catalogQuery.isLoading}
           isError={catalogQuery.isError}
@@ -142,7 +163,9 @@ export function CatalogModifiersPage() {
           emptyMessage={t(
             hasFilters && (catalogQuery.data?.length ?? 0) > 0
               ? 'common.modifiers.emptySearch'
-              : 'gameCatalog.modifiers.empty',
+              : isArchive
+                ? 'gameCatalog.modifiers.catalog.archiveEmpty'
+                : 'gameCatalog.modifiers.empty',
           )}
           retryAction={
             <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
@@ -154,7 +177,9 @@ export function CatalogModifiersPage() {
             sx={{
               display: 'grid',
               gap: 2,
-              alignItems: 'start',
+              flex: '1 1 0%',
+              minHeight: 0,
+              gridTemplateRows: 'minmax(0, 1fr)',
               gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
             }}
           >
@@ -172,10 +197,10 @@ export function CatalogModifiersPage() {
                 tabIndex={0}
                 sx={{
                   minWidth: 0,
-                  maxHeight: 'min(800px, 72dvh)',
+                  minHeight: 0,
+                  height: '100%',
                   overflowY: 'auto',
-                  position: 'sticky',
-                  top: 16,
+                  overscrollBehaviorY: 'contain',
                 }}
               >
                 {details}
@@ -183,7 +208,7 @@ export function CatalogModifiersPage() {
             ) : null}
           </Box>
         </AsyncSection>
-      </Stack>
+      </CatalogWorkspace>
       <AppDialog
         open={!wide && previewOpen && selected !== null && dialog === null && deleteTarget === null}
         onClose={() => setPreviewOpen(false)}
@@ -201,7 +226,7 @@ export function CatalogModifiersPage() {
         open={dialog !== null}
         mode={dialog?.mode ?? 'create'}
         initial={dialog?.mode === 'edit' ? dialog.modifier : undefined}
-        modifiers={catalogQuery.data ?? []}
+        modifiers={activeModifiers}
         isBusy={isSaving}
         isReadOnly={dialog?.mode === 'edit' && dialog.modifier.isLockedByActiveGame}
         hasStaleConflict={hasStaleConflict}

@@ -1,31 +1,40 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
 import { modifierHistoryRoute } from '../../../routes/app-routes.ts'
-import { ModifierIconTile } from '../../../shared/game-ui/index.ts'
+import {
+  ModifierIconTile,
+  RoundBriefingPanel,
+  RoundBriefingDivider,
+} from '../../../shared/game-ui/index.ts'
 import {
   AppButton,
   AppLinkButton,
   DetailBlock,
   InlineNotice,
+  HelpTooltip,
   Metric,
   SectionDivider,
-  StatusBadge,
+  SectionHeader,
 } from '../../../shared/ui/index.ts'
 import { deriveModifierRoundSummaryMeta } from '../../game-modifiers/index.ts'
 
 export function ModifierCatalogDetails({
   modifier,
   modifiers,
+  isArchived = false,
   onEdit,
   onDelete,
 }: {
   modifier: GameModifierDefinition
   modifiers: readonly GameModifierDefinition[]
+  isArchived?: boolean
   onEdit: (modifier: GameModifierDefinition) => void
   onDelete: (modifier: GameModifierDefinition) => void
 }) {
   const { t, i18n } = useTranslation()
+  const [deleteHelpId, setDeleteHelpId] = useState<string | null>(null)
   const number = (value: number) => new Intl.NumberFormat(i18n.resolvedLanguage).format(value)
   const limit = modifier.activationLimit.count
   const summary = deriveModifierRoundSummaryMeta(modifier)
@@ -50,57 +59,117 @@ export function ModifierCatalogDetails({
         </Box>
       </Stack>
       <Stack direction="row" gap={1} flexWrap="wrap">
-        <AppButton tone="primary" onClick={() => onEdit(modifier)}>
-          {t(
-            modifier.isLockedByActiveGame ? 'gameCatalog.actions.view' : 'gameCatalog.actions.edit',
-          )}
-        </AppButton>
+        {!isArchived ? (
+          <AppButton tone="primary" onClick={() => onEdit(modifier)}>
+            {t(
+              modifier.isLockedByActiveGame
+                ? 'gameCatalog.actions.view'
+                : 'gameCatalog.actions.edit',
+            )}
+          </AppButton>
+        ) : null}
         <AppLinkButton
           tone="secondary"
           to={`${modifierHistoryRoute.fullPath}?modifierId=${modifier.id}`}
         >
           {t('gameCatalog.actions.history')}
         </AppLinkButton>
+        {!isArchived ? (
+          <HelpTooltip
+            open={modifier.isLockedByActiveGame && deleteHelpId === modifier.id}
+            onOpen={() => setDeleteHelpId(modifier.id)}
+            onClose={() => setDeleteHelpId(null)}
+            title={
+              modifier.isLockedByActiveGame ? t('gameCatalog.modifiers.contentLockedReason') : ''
+            }
+            describeChild
+            arrow
+          >
+            <Box
+              component="span"
+              tabIndex={modifier.isLockedByActiveGame ? 0 : undefined}
+              onTouchStart={() => {
+                if (modifier.isLockedByActiveGame) setDeleteHelpId(modifier.id)
+              }}
+              aria-label={
+                modifier.isLockedByActiveGame ? t('gameCatalog.actions.delete') : undefined
+              }
+              sx={{ display: 'inline-flex' }}
+            >
+              <AppButton
+                tone="danger"
+                disabled={modifier.isLockedByActiveGame}
+                onClick={() => onDelete(modifier)}
+              >
+                {t('gameCatalog.actions.delete')}
+              </AppButton>
+            </Box>
+          </HelpTooltip>
+        ) : null}
       </Stack>
-      {modifier.isLockedByActiveGame ? (
-        <InlineNotice severity="warning" appearance="inline">
-          {t('gameCatalog.modifiers.contentLockedReason')}
+      {isArchived ? (
+        <InlineNotice severity="info">
+          {t('gameCatalog.modifiers.catalog.archivedReason')}
         </InlineNotice>
       ) : null}
-      <SectionDivider />
-      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-        {modifier.description}
-      </Typography>
-      {modifier.normalizedTags.length > 0 ? (
-        <Stack direction="row" gap={0.75} flexWrap="wrap">
-          {modifier.normalizedTags.map((tag) => (
-            <StatusBadge key={tag} size="small" label={tag} />
-          ))}
-        </Stack>
-      ) : null}
-      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-        <Metric
-          appearance="summary"
-          density="compact"
-          label={t('gameCatalog.modifiers.fields.activationCost')}
-          value={number(modifier.activationCost)}
-        />
-        <Metric
-          appearance="summary"
-          density="compact"
-          label={t('gameCatalog.modifiers.fields.activationLimitCount')}
-          value={limit == null ? t('gameCatalog.modifiers.unlimited') : number(limit)}
-        />
-      </Box>
+      <RoundBriefingPanel
+        component="section"
+        aria-label={t('gameCatalog.modifiers.catalog.activationTitle')}
+        sx={{ px: 1.5, py: 0.75 }}
+      >
+        <Box
+          sx={{
+            display: 'grid',
+            columnGap: 1,
+            rowGap: 0.75,
+            gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+          }}
+        >
+          <Metric
+            appearance="summary"
+            density="compact"
+            emphasis="label"
+            label={t('gameCatalog.modifiers.fields.activationCost')}
+            value={number(modifier.activationCost)}
+          />
+          <SectionDivider orientation="vertical" flexItem />
+          <Metric
+            appearance="summary"
+            density="compact"
+            emphasis="label"
+            label={t('gameCatalog.modifiers.fields.activationLimitCount')}
+            value={limit == null ? t('gameCatalog.modifiers.unlimited') : number(limit)}
+          />
+          <RoundBriefingDivider sx={{ gridColumn: '1 / -1' }} />
+          <Box sx={{ gridColumn: '1 / -1', minWidth: 0 }}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              emphasis="label"
+              label={t('gameCatalog.modifiers.fields.conflicts')}
+              value={
+                conflicts.length
+                  ? conflicts.join(', ')
+                  : t('gameCatalog.modifiers.catalog.noConflicts')
+              }
+            />
+          </Box>
+        </Box>
+      </RoundBriefingPanel>
       <DetailBlock>
         <Typography component="h3" variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
-          {t('gameCatalog.modifiers.fields.ruleText')}
+          {t('gameCatalog.modifiers.catalog.fullDescription')}
         </Typography>
         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-          {modifier.behaviorV2.rule}
+          {modifier.description}
         </Typography>
       </DetailBlock>
-      <Stack gap={1}>
+      <Stack component="section" gap={1} sx={{ mt: 1 }}>
+        <SectionHeader
+          headingLevel="h3"
+          textAlign="center"
+          title={t('gameCatalog.modifiers.catalog.behaviorTitle')}
+        />
         <Metric
           appearance="row"
           density="compact"
@@ -123,32 +192,7 @@ export function ModifierCatalogDetails({
               : 'gameCatalog.common.no',
           )}
         />
-        {modifier.activationCommand ? (
-          <Metric
-            appearance="row"
-            density="compact"
-            label={t('gameCatalog.modifiers.fields.activationCommand')}
-            value={modifier.activationCommand}
-          />
-        ) : null}
       </Stack>
-      {conflicts.length > 0 ? (
-        <DetailBlock>
-          <Typography component="h3" variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
-            {t('gameCatalog.modifiers.fields.conflicts')}
-          </Typography>
-          <Typography variant="body2">{conflicts.join(', ')}</Typography>
-        </DetailBlock>
-      ) : null}
-      <SectionDivider />
-      <AppButton
-        tone="dangerSecondary"
-        disabled={modifier.isLockedByActiveGame}
-        onClick={() => onDelete(modifier)}
-        sx={{ alignSelf: 'start' }}
-      >
-        {t('gameCatalog.actions.delete')}
-      </AppButton>
     </Stack>
   )
 }

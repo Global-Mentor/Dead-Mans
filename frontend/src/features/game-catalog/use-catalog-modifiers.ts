@@ -19,13 +19,19 @@ import {
   deleteGameModifierMutationOptions,
   updateGameModifierMutationOptions,
 } from './api/catalog-modifiers-mutations.ts'
+import { archivedModifierCatalogQueryOptions } from './api/catalog-modifiers-queries.ts'
 import { isModifierRevisionStaleError } from './model/catalog-error.ts'
 
 type ModifierDialogState =
   { mode: 'create'; modifier: undefined } | { mode: 'edit'; modifier: GameModifierDefinition }
 
-function matchesCategory(modifier: GameModifierDefinition, category: ModifierCategoryCode | null) {
-  if (!category) {
+export type ModifierCatalogCategory = ModifierCategoryCode | 'archived'
+
+function matchesCategory(
+  modifier: GameModifierDefinition,
+  category: ModifierCatalogCategory | null,
+) {
+  if (!category || category === 'archived') {
     return true
   }
 
@@ -48,24 +54,31 @@ export function useCatalogModifiers() {
   const locale = i18n.resolvedLanguage
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<ModifierCategoryCode | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<ModifierCatalogCategory | null>(null)
   const [selectedRoundSummaryType, setSelectedRoundSummaryType] =
     useState<ModifierRoundSummaryType | null>(null)
-  const catalogQuery = useQuery(gameModifierCatalogQueryOptions)
+  const liveCatalogQuery = useQuery(gameModifierCatalogQueryOptions)
+  const isArchive = selectedCategory === 'archived'
+  const archiveQuery = useQuery({ ...archivedModifierCatalogQueryOptions, enabled: isArchive })
+  const catalogQuery = isArchive ? archiveQuery : liveCatalogQuery
+  const modifierLookup = useMemo(
+    () => [...(liveCatalogQuery.data ?? []), ...(archiveQuery.data ?? [])],
+    [liveCatalogQuery.data, archiveQuery.data],
+  )
   const categoryCounts = useMemo(() => {
     const counts = Object.fromEntries(modifierCategoryCodes.map((type) => [type, 0])) as Record<
       ModifierCategoryCode,
       number
     >
 
-    for (const modifier of catalogQuery.data ?? []) {
+    for (const modifier of liveCatalogQuery.data ?? []) {
       if (modifier.category in counts) {
         counts[modifier.category as ModifierCategoryCode] += 1
       }
     }
 
     return counts
-  }, [catalogQuery.data])
+  }, [liveCatalogQuery.data])
   const roundSummaryCounts = useMemo(() => {
     const counts = Object.fromEntries(modifierRoundSummaryTypes.map((type) => [type, 0])) as Record<
       ModifierRoundSummaryType,
@@ -122,6 +135,7 @@ export function useCatalogModifiers() {
     setDialog({ mode: 'create', modifier: undefined })
   }
   const openEdit = (modifier: GameModifierDefinition) => {
+    if (isArchive) return
     resetStale()
     setDialog({ mode: 'edit', modifier })
   }
@@ -168,7 +182,9 @@ export function useCatalogModifiers() {
     setStaleLatest(latestCatalog.find((item) => item.id === dialog.modifier.id) ?? null)
   }
 
-  const requestDelete = (modifier: GameModifierDefinition) => setDeleteTarget(modifier)
+  const requestDelete = (modifier: GameModifierDefinition) => {
+    if (!isArchive) setDeleteTarget(modifier)
+  }
   const cancelDelete = () => setDeleteTarget(null)
   const confirmDelete = async () => {
     if (!deleteTarget) {
@@ -191,6 +207,9 @@ export function useCatalogModifiers() {
     setSelectedRoundSummaryType,
     roundSummaryCounts,
     catalogQuery,
+    isArchive,
+    modifierLookup,
+    activeModifiers: liveCatalogQuery.data ?? [],
     filteredModifiers,
     dialog,
     openCreate,

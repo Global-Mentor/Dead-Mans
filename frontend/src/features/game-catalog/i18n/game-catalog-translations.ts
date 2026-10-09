@@ -49,11 +49,16 @@ const translations = {
     modifiers: {
       title: 'Modifier catalog',
       catalog: {
-        description: 'Find a modifier and select it to view its rules or make changes.',
+        noConflicts: 'None',
+        activationTitle: 'Activation',
+        fullDescription: 'Full description:',
+        behaviorTitle: 'Modifier behavior',
+        archived: 'Archived',
+        archiveEmpty: 'No archived modifiers.',
+        archivedReason:
+          'This modifier is archived. Its last revision is available for viewing and in history.',
         details: 'Modifier details',
-        selectHint: 'Select a modifier to view its details.',
         results: '{{count}} of {{total}}',
-        cost: 'Cost',
         filters: 'Filters ({{count}})',
         sort: 'Sort by',
         sortName: 'Name',
@@ -588,12 +593,16 @@ const translations = {
     modifiers: {
       title: 'Каталог модификаторов',
       catalog: {
-        description:
-          'Найдите модификатор и выберите его, чтобы посмотреть правила или внести изменения.',
+        noConflicts: 'Нет',
+        activationTitle: 'Активация',
+        fullDescription: 'Полное описание:',
+        behaviorTitle: 'Поведение модификатора',
+        archived: 'Архивные',
+        archiveEmpty: 'Архивных модификаторов нет.',
+        archivedReason:
+          'Модификатор архивирован. Его последняя редакция доступна для просмотра и в истории.',
         details: 'Карточка модификатора',
-        selectHint: 'Выберите модификатор, чтобы открыть его карточку.',
         results: '{{count}} из {{total}}',
-        cost: 'Стоимость',
         filters: 'Фильтры ({{count}})',
         sort: 'Сортировка',
         sortName: 'По названию',
@@ -1136,12 +1145,16 @@ const translations = {
     modifiers: {
       title: 'Каталог модифікаторів',
       catalog: {
-        description:
-          'Знайдіть модифікатор і виберіть його, щоб переглянути правила або внести зміни.',
+        noConflicts: 'Немає',
+        activationTitle: 'Активація',
+        fullDescription: 'Повний опис:',
+        behaviorTitle: 'Поведінка модифікатора',
+        archived: 'Архівні',
+        archiveEmpty: 'Архівних модифікаторів немає.',
+        archivedReason:
+          'Модифікатор архівовано. Його остання редакція доступна для перегляду та в історії.',
         details: 'Картка модифікатора',
-        selectHint: 'Виберіть модифікатор, щоб відкрити його картку.',
         results: '{{count}} з {{total}}',
-        cost: 'Вартість',
         filters: 'Фільтри ({{count}})',
         sort: 'Сортування',
         sortName: 'За назвою',
@@ -1676,11 +1689,16 @@ const translations = {
     modifiers: {
       title: 'Katalog modyfikatorów',
       catalog: {
-        description: 'Znajdź i wybierz modyfikator, aby zobaczyć zasady lub wprowadzić zmiany.',
+        noConflicts: 'Brak',
+        activationTitle: 'Aktywacja',
+        fullDescription: 'Pełny opis:',
+        behaviorTitle: 'Działanie modyfikatora',
+        archived: 'Archiwalne',
+        archiveEmpty: 'Brak archiwalnych modyfikatorów.',
+        archivedReason:
+          'Modyfikator jest zarchiwizowany. Jego ostatnia wersja jest dostępna do podglądu i w historii.',
         details: 'Szczegóły modyfikatora',
-        selectHint: 'Wybierz modyfikator, aby zobaczyć jego szczegóły.',
         results: '{{count}} z {{total}}',
-        cost: 'Koszt',
         filters: 'Filtry ({{count}})',
         sort: 'Sortowanie',
         sortName: 'Nazwa',

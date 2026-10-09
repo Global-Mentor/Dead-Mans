@@ -100,8 +100,10 @@ volume grows, and PostgreSQL regression tests assert the revision index plan.
 
 `GET /api/game/modifiers/catalog` returns only current, non-archived definitions by default.
 The explicit `archived=true` query returns only archived definitions, with their last current
-revision and retained conflict references. The two scopes never mix; archived content remains excluded from setup and runtime selection.
-Only `admin` may create, edit, or archive. History is available to every
+revision and retained conflict references. The two scopes never mix. The administrative
+catalogue requests the archive only after its archive category is selected; archived content
+is read-only and remains excluded from setup and runtime selection. Only `admin` may create,
+edit, or archive. History is available to every
 authenticated role. All ids and `(modifierId, revision)` pairs are validated server-side;
 unknown or mismatched values return `404 game_modifier_not_found`.
 

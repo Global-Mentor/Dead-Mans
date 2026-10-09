@@ -972,7 +972,11 @@ for (const width of [320, 390, 768, 1440]) {
       await page.reload()
       await row.click()
       await expect(details.getByRole('button', { name: 'Удалить', exact: true })).toBeDisabled()
-      await expect(details.getByText(/Его содержимое доступно только для просмотра/)).toBeVisible()
+      await expect(details.getByText(/Его содержимое доступно только для просмотра/)).toHaveCount(0)
+      await details.getByRole('button', { name: 'Удалить', exact: true }).locator('..').hover()
+      await expect(page.getByRole('tooltip')).toContainText(
+        'Его содержимое доступно только для просмотра',
+      )
       await details.getByRole('button', { name: 'Просмотр', exact: true }).click()
       await expect(
         page.getByRole('dialog').getByRole('button', { name: 'Сохранить', exact: true }),

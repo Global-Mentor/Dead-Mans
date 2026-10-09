@@ -5,9 +5,10 @@ import { AppButton, FormSelect, FormTextField, NativeDisclosure } from '../../..
 import {
   modifierCategoryCodes,
   modifierRoundSummaryTypes,
-  type ModifierCategoryCode,
   type ModifierRoundSummaryType,
 } from '../../game-modifiers/index.ts'
+
+import type { ModifierCatalogCategory } from '../use-catalog-modifiers.ts'
 
 export type ModifierCatalogSort = 'name' | 'cost'
 
@@ -27,9 +28,9 @@ export function ModifierCatalogFilters({
 }: {
   search: string
   onSearchChange: (value: string) => void
-  category: ModifierCategoryCode | null
-  onCategoryChange: (value: ModifierCategoryCode | null) => void
-  categoryCounts: Record<ModifierCategoryCode, number>
+  category: ModifierCatalogCategory | null
+  onCategoryChange: (value: ModifierCatalogCategory | null) => void
+  categoryCounts: Record<Exclude<ModifierCatalogCategory, 'archived'>, number>
   summaryType: ModifierRoundSummaryType | null
   onSummaryTypeChange: (value: ModifierRoundSummaryType | null) => void
   summaryCounts: Record<ModifierRoundSummaryType, number>
@@ -84,12 +85,13 @@ export function ModifierCatalogFilters({
             },
           }}
         >
-          <FormSelect<ModifierCategoryCode | 'all'>
+          <FormSelect<ModifierCatalogCategory | 'all'>
             label={t('common.entities.categories')}
             value={category ?? 'all'}
             onChange={(value) => onCategoryChange(value === 'all' ? null : value)}
             options={[
               { value: 'all', label: t('common.filters.allCategories') },
+              { value: 'archived', label: t('gameCatalog.modifiers.catalog.archived') },
               ...modifierCategoryCodes.map((value) => ({
                 value,
                 label: `${t(`common.modifiers.categories.${value}`)} (${number(categoryCounts[value])})`,
