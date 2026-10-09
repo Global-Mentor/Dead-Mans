@@ -1248,3 +1248,50 @@ for (const width of [390, 1440]) {
     await expect(editor.getByRole('button', { name: '⚡ Адреналин', exact: true })).toBeVisible()
   })
 }
+
+for (const action of ['create', 'edit', 'delete'] as const) {
+  test(`confirmed modifier ${action} survives a failed catalog refresh`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const server = await mockCatalog(page, 'ru')
+    await page.goto('/panel/catalog-modifiers')
+    const list = page.getByTestId('modifier-catalog-list')
+    const originalName = 'Без права на ошибку'
+    const savedName = 'Сохранённое правило'
+    await expect(list.getByRole('button', { name: originalName, exact: true })).toBeVisible()
+    if (action === 'create') {
+      await page.getByRole('button', { name: 'Добавить модификатор', exact: true }).click()
+    } else {
+      await list.getByRole('button', { name: originalName, exact: true }).click()
+      await page
+        .getByTestId('modifier-catalog-details')
+        .getByRole('button', { name: action === 'edit' ? 'Изменить' : 'Удалить', exact: true })
+        .click()
+    }
+    if (action === 'delete') {
+      const confirm = page.getByRole('dialog').getByRole('button', { name: 'Удалить', exact: true })
+      await confirm.click()
+      await expect.poll(server.deletes).toBe(1)
+      await expect(confirm).toBeEnabled()
+      server.setFailure(true)
+      await confirm.click()
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await expect(list.getByRole('button', { name: originalName, exact: true })).toHaveCount(0)
+    } else {
+      const editor = page.getByRole('dialog')
+      await editor.getByRole('textbox', { name: 'Название', exact: true }).fill(savedName)
+      await editor
+        .getByRole('textbox', { name: 'Описание', exact: true })
+        .fill('Полное описание правила.')
+      await editor.getByRole('button', { name: 'Далее', exact: true }).click()
+      await editor.getByRole('spinbutton', { name: 'Стоимость активации', exact: true }).fill('0')
+      await editor.getByRole('button', { name: 'Далее', exact: true }).click()
+      if (action === 'edit')
+        await editor.getByRole('textbox', { name: /^Что изменилось/ }).fill('Уточнено правило.')
+      server.setFailure(true)
+      await editor.getByRole('button', { name: 'Сохранить', exact: true }).click()
+      await expect(editor).toHaveCount(0)
+      await expect(list.getByRole('button', { name: savedName, exact: true })).toBeVisible()
+      expect(server.saves).toHaveLength(1)
+    }
+  })
+}
