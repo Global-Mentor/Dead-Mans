@@ -265,11 +265,6 @@ export function RoundActiveModifiers({
                             if (!round) return null
                             return (
                               <Box key={unit.key}>
-                                {!descriptions.includes(unit.rule) ? (
-                                  <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
-                                    {unit.rule}
-                                  </Typography>
-                                ) : null}
                                 <Typography variant="caption" color="text.secondary">
                                   {t(`gameModifiers.runtime.performer.${unit.performer}`)} ·{' '}
                                   <RoundRuntimeClock

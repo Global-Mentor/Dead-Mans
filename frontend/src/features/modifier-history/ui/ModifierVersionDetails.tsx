@@ -140,7 +140,7 @@ export function ModifierVersionDetails({
                   ) : null}
                 </DetailBlock>
                 {item.changedFields
-                  .filter((field) => field !== 'normalizedTags')
+                  .filter((field) => field !== 'normalizedTags' && field !== 'activationCommand')
                   .map((field) => {
                     const title = t('modifierHistory.fields.' + field, { defaultValue: field })
                     const content = (
@@ -233,7 +233,6 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
         ? t('modifierHistory.unlimited')
         : String(item.activationLimit.count),
     ],
-    [t('modifierHistory.command'), item.activationCommand ?? '-'],
   ]
   return (
     <Stack gap={1.25}>
@@ -319,7 +318,7 @@ function formatDiffValue(
     const other = new Map(counterpart ? flattenObject(counterpart.behaviorV2) : [])
     return (
       [...new Set([...own.keys(), ...other.keys()])]
-        .filter((key) => own.get(key) !== other.get(key))
+        .filter((key) => key !== 'rule' && own.get(key) !== other.get(key))
         .map((key) => behaviorFieldLabel(key, t) + ': ' + (own.get(key) ?? '-'))
         .join('\n') || '-'
     )
@@ -330,7 +329,6 @@ function formatDiffValue(
     description: item.description,
     category: item.category,
     iconEmoji: item.iconEmoji,
-    activationCommand: item.activationCommand,
     activationCost: item.activationCost,
     activationLimit: item.activationLimit.count ?? t('modifierHistory.unlimited'),
     compatibility:

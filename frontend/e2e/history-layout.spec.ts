@@ -432,9 +432,17 @@ for (const width of [390, 768, 1440, 2560]) {
         .locator('details')
         .filter({ has: page.locator('summary').filter({ hasText: /^Поведение$/ }) })
       await behavior.locator('summary').click()
+      await expect(behavior).toHaveAttribute('open', '')
+      await expect(behavior.getByRole('group', { name: 'Условия', exact: true })).toBeVisible()
+      await expect(
+        page.getByText(
+          'Дополнительное правило для активной команды. Итог определяется результатом раунда.',
+          { exact: true },
+        ),
+      ).toBeVisible()
       await expect(
         page.getByText('Не менять оружие во время раунда.', { exact: true }),
-      ).toBeVisible()
+      ).toHaveCount(0)
       await assertBounded(page, width, height)
       await page.getByRole('tab', { name: 'Связанные игры', exact: true }).click()
       await expect(
@@ -501,6 +509,15 @@ for (const width of [390, 768, 1440]) {
       await search.fill('Модификатор 2')
       await picker.getByRole('button', { name: /^⚓ Модификатор 2 Редакция/ }).click()
       await expect(page).toHaveURL(/modifierId=modifier-1&revision=10/)
+      const configuration = page.getByRole('tabpanel', { name: 'Конфигурация', exact: true })
+      await expect(configuration).toContainText(
+        'Дополнительное правило для активной команды. Итог определяется результатом раунда.',
+      )
+      await expect(configuration.getByText('!rule', { exact: true })).toHaveCount(0)
+      await configuration.getByRole('button', { name: 'Поведение', exact: true }).click()
+      await expect(
+        configuration.getByText('Не менять оружие во время раунда.', { exact: true }),
+      ).toHaveCount(0)
       await assertBounded(page, width, 900)
     },
   )

@@ -24,6 +24,7 @@ describe('ModifierRuntimePanel', () => {
 
     expect(screen.getByText('Мониторинг ведущего')).toBeInTheDocument()
     expect(screen.getByText('Использовать только обманки.')).toBeInTheDocument()
+    expect(screen.queryByText('Старое краткое правило.')).not.toBeInTheDocument()
     expect(screen.getByText('Активаций: ×2')).toBeInTheDocument()
     expect(screen.getByText('Осталось 3:00')).toBeInTheDocument()
     expect(screen.getByText('Время может устареть')).toBeInTheDocument()
@@ -83,7 +84,7 @@ function createResult(id: string): GameRoundDetails['modifierResults'][number] {
       phase: 'round',
       performer: 'activeTeam',
       requiresHostMonitoring: true,
-      rule: 'Использовать только обманки.',
+      rule: 'Старое краткое правило.',
       stackingPolicy: 'aggregateParameters',
       durationSecondsPerActivation: 120,
     },

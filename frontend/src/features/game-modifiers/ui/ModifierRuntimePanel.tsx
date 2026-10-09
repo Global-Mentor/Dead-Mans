@@ -111,8 +111,12 @@ export function ModifierRuntimePanel({
                       />
                     ) : null}
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {unit.rule}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {unit.description}
                   </Typography>
                   <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap>
                     <StatusBadge

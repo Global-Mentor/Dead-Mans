@@ -441,7 +441,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
                           phase: 'round',
                           performer: 'activeTeam',
                           requiresHostMonitoring: true,
-                          rule: 'Играть без лечения.',
+                          rule: 'Старое краткое правило.',
                           stackingPolicy: 'aggregateParameters',
                           durationSecondsPerActivation: 120,
                         },
@@ -1067,6 +1067,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         }
         await modifiers.getByRole('button', { name: /Жажда/ }).click()
         await expect(modifiers).toContainText('Играть без лечения.')
+        await expect(modifiers.getByText('Старое краткое правило.', { exact: true })).toHaveCount(0)
         await expect(modifiers).toContainText('Внимание ведущего')
         await modifiers.getByRole('button', { name: /Жажда/ }).click()
       }

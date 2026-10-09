@@ -9,7 +9,7 @@ interface ModifierRuntimeUnit {
   key: string
   modifierId: string
   modifierName: string
-  rule: string
+  description: string
   performer: 'activeTeam' | 'mentor'
   requiresHostMonitoring: boolean
   activationCount: number
@@ -46,7 +46,7 @@ export function buildModifierRuntimeUnits(round: GameRoundDetails): ModifierRunt
       key,
       modifierId: result.modifierId,
       modifierName: result.modifierName,
-      rule: behavior.rule,
+      description: result.modifierDescription,
       performer: behavior.performer,
       requiresHostMonitoring: behavior.requiresHostMonitoring,
       activationCount: 1,

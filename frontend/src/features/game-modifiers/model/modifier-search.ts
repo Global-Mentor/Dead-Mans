@@ -12,14 +12,11 @@ export function buildModifierSearchText(
     modifier.description,
     modifier.behaviorV2.kind,
     modifier.behaviorV2.performer,
-    modifier.behaviorV2.rule,
     modifier.behaviorV2.formulaReference?.code ?? '',
     modifier.behaviorV2.formulaReference?.parameters.type ?? '',
     modifier.category,
     modifier.iconEmoji ?? '',
-    modifier.activationCommand ?? '',
     roundSummaryMeta.type,
-    ...modifier.normalizedTags,
     ...extraTerms,
   ]
 

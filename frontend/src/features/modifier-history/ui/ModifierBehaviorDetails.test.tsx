@@ -21,9 +21,9 @@ const rule: ModifierVersionDetail['behaviorV2'] = {
   formulaReference: null,
 }
 
-it('separates a saved rule, conditions, activations and resolution with readable values', () => {
+it('shows saved behavior settings without separate rule text', () => {
   renderWithAppProviders(<ModifierBehaviorDetails behavior={rule} />)
-  expect(screen.getByText('Не менять оружие.')).toBeVisible()
+  expect(screen.queryByText('Не менять оружие.')).not.toBeInTheDocument()
   const conditions = within(screen.getByRole('group', { name: 'Условия', exact: true }))
   expect(conditions.getByRole('group', { name: 'Исполнитель' })).toHaveTextContent('Команда')
   expect(conditions.getByRole('group', { name: 'Контроль ведущего' })).toHaveTextContent(

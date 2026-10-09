@@ -26,6 +26,7 @@ describe('modifier runtime', () => {
       expect(buildModifierRuntimeUnits(round)).toEqual([
         expect.objectContaining({
           modifierName,
+          description: 'Use decoys for the whole window.',
           activationCount: 2,
           durationSeconds: expectedDurationSeconds,
           requiresHostMonitoring: true,
@@ -138,7 +139,7 @@ function createResult(
       phase: 'round',
       performer: 'activeTeam',
       requiresHostMonitoring: true,
-      rule: 'Use decoys for the whole window.',
+      rule: 'Legacy short rule.',
       stackingPolicy: 'aggregateParameters',
       durationSecondsPerActivation,
     },
