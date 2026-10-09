@@ -98,8 +98,10 @@ archive/timestamp/id and revision/id indexes back stable keyset traversal. Query
 catalog history, timeline, detail, conflicts, and related games remain constant as revision
 volume grows, and PostgreSQL regression tests assert the revision index plan.
 
-The existing `GET /api/game/modifiers/catalog` still returns only current, non-archived
-definitions. Only `admin` may create, edit, or archive. History is available to every
+`GET /api/game/modifiers/catalog` returns only current, non-archived definitions by default.
+The explicit `archived=true` query returns only archived definitions, with their last current
+revision and retained conflict references. The two scopes never mix; archived content remains excluded from setup and runtime selection.
+Only `admin` may create, edit, or archive. History is available to every
 authenticated role. All ids and `(modifierId, revision)` pairs are validated server-side;
 unknown or mismatched values return `404 game_modifier_not_found`.
 

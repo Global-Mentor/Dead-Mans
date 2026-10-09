@@ -306,8 +306,14 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             .Where(x => x.Id == ModifierId)
             .Select(x => x.IsArchived)
             .SingleAsync());
-        Assert.DoesNotContain(await new DbGameModifierRepository(assertDb, TimeProvider.System).GetCatalogAsync(),
-            modifier => modifier.Id == ModifierId);
+        var catalogRepository = new DbGameModifierRepository(assertDb, TimeProvider.System);
+        var currentCatalog = await catalogRepository.GetCatalogAsync();
+        var archivedCatalog = await catalogRepository.GetCatalogAsync(archived: true);
+        Assert.DoesNotContain(currentCatalog, modifier => modifier.Id == ModifierId);
+        var archivedModifier = Assert.Single(archivedCatalog, modifier => modifier.Id == ModifierId);
+        Assert.Equal(editedName, archivedModifier.Name);
+        Assert.Equal(before.Revision + 1, archivedModifier.Revision);
+        Assert.DoesNotContain(archivedCatalog, archived => currentCatalog.Any(current => current.Id == archived.Id));
         Assert.Equal(2, await assertDb.GameEnabledModifiers.AsNoTracking()
             .CountAsync(x => (x.GameId == first.GameId || x.GameId == second.GameId)
                 && x.ModifierId == ModifierId));

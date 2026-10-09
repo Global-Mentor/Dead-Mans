@@ -13,11 +13,14 @@ namespace backend.Controllers;
 public sealed partial class GameModifierController
 {
     [HttpGet("catalog")]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IReadOnlyList<GameModifierDefinitionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetCatalog(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCatalog(
+        [FromQuery] bool archived = false,
+        CancellationToken cancellationToken = default)
     {
-        var catalog = await _gameModifierService.GetCatalogAsync(cancellationToken);
+        var catalog = await _gameModifierService.GetCatalogAsync(archived, cancellationToken);
         return Ok(catalog.Select(x => x.ToDto()).ToArray());
     }
 

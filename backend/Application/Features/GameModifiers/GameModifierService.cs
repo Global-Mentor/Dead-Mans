@@ -30,10 +30,11 @@ public sealed partial class GameModifierService : IGameModifierService
     }
 
     public Task<IReadOnlyList<GameModifierDefinition>> GetCatalogAsync(
+        bool archived = false,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.GetCatalogAsync(cancellationToken);
+        return _repository.GetCatalogAsync(archived, cancellationToken);
     }
 
     public Task<GetGameModifierStateResult> GetStateAsync(

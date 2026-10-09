@@ -356,9 +356,15 @@ paths:
       operationId: getGameModifierCatalog
       security:
         - cookieAuth: []
+      parameters:
+        - name: archived
+          in: query
+          description: Return only archived definitions when true; otherwise return only current non-archived definitions.
+          schema: { type: boolean, default: false }
       responses:
+        '400': { $ref: '#/components/responses/BadRequest' }
         '200':
-          description: Global catalog of supported game modifiers
+          description: Current modifier definitions for the explicitly selected archive scope
           content:
             application/json:
               schema:

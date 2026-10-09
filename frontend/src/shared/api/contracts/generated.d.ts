@@ -3775,14 +3775,17 @@ export interface operations {
     };
     getGameModifierCatalog: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Return only archived definitions when true; otherwise return only current non-archived definitions. */
+                archived?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Global catalog of supported game modifiers */
+            /** @description Current modifier definitions for the explicitly selected archive scope */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3791,6 +3794,7 @@ export interface operations {
                     "application/json": components["schemas"]["GameModifierDefinitionDto"][];
                 };
             };
+            400: components["responses"]["BadRequest"];
             /** @description Not authenticated */
             401: {
                 headers: {

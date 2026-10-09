@@ -993,6 +993,17 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             "/api/game/modifiers/catalog"
         );
         Assert.DoesNotContain(catalog!, x => x.Id == created.Id);
+        var archivedCatalog = await viewerClient.GetFromJsonAsync<IReadOnlyList<GameModifierDefinitionDto>>(
+            "/api/game/modifiers/catalog?archived=true"
+        );
+        var archivedDefinition = Assert.Single(archivedCatalog!, x => x.Id == created.Id);
+        Assert.Equal(2, archivedDefinition.Revision);
+        Assert.Equal(name + " v2", archivedDefinition.Name);
+        Assert.DoesNotContain(archivedCatalog!, x => catalog!.Any(active => active.Id == x.Id));
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await viewerClient.GetAsync("/api/game/modifiers/catalog?archived=invalid")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await _client.GetAsync("/api/game/modifiers/catalog?archived=true")).StatusCode);
         var history = await viewerClient.GetFromJsonAsync<
             ModifierHistoryPageDto<ModifierHistorySummaryDto>
         >($"/api/game/modifiers/history?status=archived&search={Uri.EscapeDataString(name)}");

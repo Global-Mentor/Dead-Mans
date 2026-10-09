@@ -16,11 +16,12 @@ internal sealed class ModifierCatalogReadProjection
     }
 
     public async Task<IReadOnlyList<GameModifierDefinition>> LoadAsync(
+        bool archived,
         CancellationToken cancellationToken)
     {
         var rows = await _dbContext.ModifierDefinitions
             .AsNoTracking()
-            .Where(x => !x.IsArchived && x.CurrentVersionId != null)
+            .Where(x => x.IsArchived == archived && x.CurrentVersionId != null)
             .Select(x => new { ModifierId = x.Id, Version = x.CurrentVersion! })
             .OrderBy(x => x.Version.ActivationCost)
             .ThenBy(x => x.Version.Name)
@@ -43,7 +44,7 @@ internal sealed class ModifierCatalogReadProjection
         var conflictRows = await _dbContext.ModifierDefinitionVersionConflicts
             .AsNoTracking()
             .Where(x => versionIds.Contains(x.ModifierVersionId)
-                && modifierIds.Contains(x.ConflictingModifierId))
+                && (archived || modifierIds.Contains(x.ConflictingModifierId)))
             .Select(x => new { x.ModifierVersionId, x.ConflictingModifierId })
             .ToArrayAsync(cancellationToken);
         var conflictsByModifierId = conflictRows
