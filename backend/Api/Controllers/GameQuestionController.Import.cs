@@ -15,6 +15,9 @@ namespace backend.Controllers;
 
 public sealed partial class GameQuestionController
 {
+    // The file limit excludes multipart boundaries and headers.
+    private const long MaxImportRequestBytes = GameQuestionImportLimits.MaxUploadBytes + 64 * 1024;
+
     [HttpGet("import-template")]
     [Authorize(Roles = AuthRoleCodes.Admin)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -37,7 +40,7 @@ public sealed partial class GameQuestionController
     [HttpPost("import")]
     [Authorize(Roles = AuthRoleCodes.Admin)]
     [RequestFormLimits(MultipartBodyLengthLimit = GameQuestionImportLimits.MaxUploadBytes)]
-    [RequestSizeLimit(GameQuestionImportLimits.MaxUploadBytes)]
+    [RequestSizeLimit(MaxImportRequestBytes)]
     [ProducesResponseType(typeof(ImportGameQuestionsResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -152,6 +155,8 @@ public sealed partial class GameQuestionController
                     "  // Шаблон JSONC для массового импорта вопросов.",
                     "  // Обязательные поля: text, reward и options.",
                     "  // В options должно быть от 2 до 10 уникальных вариантов и ровно один isCorrect: true.",
+                    "  // Все сообщения для Twitch должны помещаться в 500 символов. Максимум: 5 МБ и 10000 вопросов в файле.",
+                    "  // Повторный импорт без externalCode создаёт новые вопросы; одинаковые коды пропускаются.",
                     $"  // Если categoryId не указан, вопрос попадёт в категорию \"{QuestionCatalogDefaults.UncategorizedCategoryName}\".",
                     "  // Если isEnabled не указан, вопрос будет загружен выключенным.",
                     "  // Если priority не указан, будет использовано значение 0.",
@@ -162,6 +167,7 @@ public sealed partial class GameQuestionController
                     "  // Описание полей:",
                     "  // - categoryId: необязательный Guid категории. Список доступных Guid указан ниже.",
                     "  // - text: текст вопроса, который увидит ведущий или игрок.",
+                    "  // - externalCode: необязательный уникальный код вопроса, не длиннее 64 символов.",
                     "  // - options: варианты ответа; у ровно одного варианта isCorrect должен быть true.",
                     "  // - reward: количество очков за правильный ответ.",
                     "  // - isEnabled: станет ли вопрос доступен для выбора в играх сразу после импорта.",
@@ -180,6 +186,8 @@ public sealed partial class GameQuestionController
                     "  // JSONC template for bulk question import.",
                     "  // Required fields: text, reward, and options.",
                     "  // Options must contain 2-10 unique values and exactly one isCorrect: true.",
+                    "  // All Twitch messages must fit within 500 characters. Maximum: 5 MB and 10000 questions per file.",
+                    "  // Reimporting questions without externalCode creates new questions; duplicate codes are skipped.",
                     $"  // If categoryId is omitted, the question is assigned to \"{QuestionCatalogDefaults.UncategorizedCategoryName}\".",
                     "  // If isEnabled is omitted, the question is imported as disabled.",
                     "  // If priority is omitted, the default value is 0.",
@@ -190,6 +198,7 @@ public sealed partial class GameQuestionController
                     "  // Field guide:",
                     "  // - categoryId: optional category Guid. The available Guid values are listed below.",
                     "  // - text: question text shown to the host or players.",
+                    "  // - externalCode: optional unique question code, no longer than 64 characters.",
                     "  // - options: answer choices; exactly one option must have isCorrect set to true.",
                     "  // - reward: points awarded for a correct answer.",
                     "  // - isEnabled: whether the question becomes selectable for games immediately after import.",

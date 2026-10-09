@@ -15,6 +15,10 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         await EnsureFallbackCategoryAsync(cancellationToken);
 
         var categoryIds = inputs.Select(input => input.Question.CategoryId).Distinct().ToArray();
@@ -45,34 +49,53 @@ public sealed partial class DbGameQuestionRepository
             .Select(input => input.Question.ExternalCode!)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        var existingExternalCodes = requestedExternalCodes.Length == 0
-            ? Array.Empty<string>()
-            : await _dbContext.QuestionDefinitions
-                .AsNoTracking()
-                .Where(question => requestedExternalCodes.Contains(question.ExternalCode))
-                .Select(question => question.ExternalCode)
-                .ToArrayAsync(cancellationToken);
-        var existingExternalCodeSet = existingExternalCodes.ToHashSet(StringComparer.Ordinal);
-
-        var allKnownCodes = new HashSet<string>(requestedExternalCodes, StringComparer.Ordinal);
+        // CITEXT follows PostgreSQL's locale, including Unicode case mappings that
+        // differ from .NET OrdinalIgnoreCase. Resolve file and stored identities alike.
+        var identities = _dbContext.Database.IsRelational() && requestedExternalCodes.Length > 0
+            ? await _dbContext.Database.SqlQuery<ImportCodeIdentity>($"""
+                SELECT code AS "Code", lower(code)::text AS "Key",
+                    EXISTS (SELECT 1 FROM question_definitions WHERE external_code = code::citext) AS "Exists"
+                FROM unnest({requestedExternalCodes}) AS codes(code)
+                """).ToArrayAsync(cancellationToken)
+            : requestedExternalCodes.Select(code => new ImportCodeIdentity
+            {
+                Code = code,
+                Key = code.ToUpperInvariant(),
+                Exists = false
+            }).ToArray();
+        if (!_dbContext.Database.IsRelational())
+        {
+            var storedCodes = await _dbContext.QuestionDefinitions.AsNoTracking()
+                .Select(question => question.ExternalCode).ToArrayAsync(cancellationToken);
+            var existing = storedCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var identity in identities) identity.Exists = existing.Contains(identity.Code);
+        }
+        var identitiesByCode = identities.ToDictionary(identity => identity.Code, StringComparer.Ordinal);
+        var seenCodeKeys = new HashSet<string>(StringComparer.Ordinal);
+        var allKnownCodes = new HashSet<string>(requestedExternalCodes, StringComparer.OrdinalIgnoreCase);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var entities = new List<QuestionDefinition>(validInputs.Length);
 
         foreach (var input in validInputs)
         {
-            if (!string.IsNullOrWhiteSpace(input.Question.ExternalCode)
-                && existingExternalCodeSet.Contains(input.Question.ExternalCode))
+            if (!string.IsNullOrWhiteSpace(input.Question.ExternalCode))
             {
-                skipped.Add(
-                    new ImportGameQuestionSkippedItem(
+                var identity = identitiesByCode[input.Question.ExternalCode];
+                var duplicateInFile = !seenCodeKeys.Add(identity.Key);
+                if (duplicateInFile || identity.Exists)
+                {
+                    skipped.Add(new ImportGameQuestionSkippedItem(
                         input.RowNumber,
                         input.QuestionText,
-                        AppMessages.ErrorCodes.GameQuestionImportDuplicateCodeExisting,
-                        $"External code '{input.Question.ExternalCode}' already exists.",
-                        input.SourceQuestion
-                    )
-                );
-                continue;
+                        duplicateInFile
+                            ? AppMessages.ErrorCodes.GameQuestionImportDuplicateCodeInFile
+                            : AppMessages.ErrorCodes.GameQuestionImportDuplicateCodeExisting,
+                        duplicateInFile
+                            ? $"External code '{input.Question.ExternalCode}' is duplicated inside the import file."
+                            : $"External code '{input.Question.ExternalCode}' already exists.",
+                        input.SourceQuestion));
+                    continue;
+                }
             }
 
             var externalCode = input.Question.ExternalCode;
@@ -111,7 +134,18 @@ public sealed partial class DbGameQuestionRepository
 
         _dbContext.QuestionDefinitions.AddRange(entities);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         return new ImportGameQuestionsResult(entities.Count, skipped.OrderBy(item => item.RowNumber).ToArray());
+    }
+
+    private sealed class ImportCodeIdentity
+    {
+        public string Code { get; init; } = string.Empty;
+        public string Key { get; init; } = string.Empty;
+        public bool Exists { get; set; }
     }
 }

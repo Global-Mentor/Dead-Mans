@@ -18,6 +18,10 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
+        if (input.Text?.Contains('\0') == true)
+        {
+            return false;
+        }
         var text = TwitchQuizMessageFormatter.Normalize(input.Text ?? string.Empty);
         var externalCode = (input.ExternalCode ?? string.Empty).Trim();
         if (!TryNormalizeOptions(input.Options, out var options)
@@ -25,6 +29,7 @@ internal static class GameQuestionValidator
             || text.Length is 0 or > MaxTextLength
             || input.Reward < 0
             || externalCode.Length > MaxExternalCodeLength
+            || externalCode.Contains('\0')
             || !TwitchQuizMessageFormatter.FormatForValidation(
                 text, options.Select(x => x.Text).ToArray(), 3600, input.Reward).IsCompatible)
         {
@@ -46,6 +51,10 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
+        if (input.Text?.Contains('\0') == true)
+        {
+            return false;
+        }
         var text = TwitchQuizMessageFormatter.Normalize(input.Text ?? string.Empty);
         if (!TryNormalizeOptions(input.Options, out var options)
             || input.CategoryId == Guid.Empty
@@ -77,7 +86,7 @@ internal static class GameQuestionValidator
         var correctCount = 0;
         foreach (var option in options)
         {
-            if (option is null)
+            if (option is null || option.Text?.Contains('\0') == true)
             {
                 return false;
             }

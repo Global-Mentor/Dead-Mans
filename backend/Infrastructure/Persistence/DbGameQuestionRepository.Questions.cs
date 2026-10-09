@@ -78,6 +78,10 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
         var externalCode = string.IsNullOrWhiteSpace(input.ExternalCode)
             ? GenerateExternalCode()
             : input.ExternalCode.Trim();
@@ -114,7 +118,12 @@ public sealed partial class DbGameQuestionRepository
 
         _dbContext.QuestionDefinitions.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return await LoadCatalogItemAsync(entity.Id, cancellationToken);
+        var created = await LoadCatalogItemAsync(entity.Id, cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+        return created;
     }
 
     public async Task<GameQuestionCatalogItem?> UpdateQuestionAsync(
