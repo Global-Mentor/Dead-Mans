@@ -9,7 +9,7 @@ import {
   HelpTooltip,
   StatusBadge,
 } from '../../shared/ui/index.ts'
-import { highestRole } from './role-hierarchy.ts'
+import { highestRole } from '../../shared/auth/role-hierarchy.ts'
 import type { UserFilters } from './api/role-administration-api.ts'
 
 export function UsersTable({

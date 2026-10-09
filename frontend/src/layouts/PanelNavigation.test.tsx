@@ -459,15 +459,29 @@ describe('PanelNavigation', () => {
 
     const profileMenu = screen.getByRole('dialog', { name: 'Профиль' })
     expect(within(profileMenu).getByText('Профиль')).toBeInTheDocument()
-    expect(within(profileMenu).getByText('Роли доступа')).toBeInTheDocument()
+    expect(within(profileMenu).getByText('Роль доступа')).toBeInTheDocument()
     expect(within(profileMenu).getByText('Администратор')).toBeInTheDocument()
-    expect(within(profileMenu).getByText('Участник')).toBeInTheDocument()
+    expect(within(profileMenu).queryByText('Участник')).not.toBeInTheDocument()
     expect(
       within(profileMenu).getByRole('combobox', { name: 'Язык интерфейса' }),
     ).toBeInTheDocument()
     expect(within(profileMenu).getByRole('button', { name: 'Выйти' })).toBeInTheDocument()
     expect(within(profileMenu).queryByText('Настройка доски')).not.toBeInTheDocument()
     expect(within(profileMenu).queryByText('Команды')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    { roles: ['viewer', 'moderator', 'admin', 'superadmin'], highest: 'Суперадминистратор' },
+    { roles: ['moderator', 'viewer'], highest: 'Модератор' },
+    { roles: ['viewer'], highest: 'Участник' },
+  ] as const)('shows only the highest profile role for $roles', ({ roles, highest }) => {
+    renderNavigation({ id: 'profile-user', displayName: 'Profile User', roles: [...roles] })
+    fireEvent.click(screen.getByRole('button', { name: /Profile User/ }))
+    const profile = screen.getByRole('dialog', { name: 'Профиль' })
+    expect(within(profile).getByText(highest)).toBeInTheDocument()
+    for (const label of ['Суперадминистратор', 'Администратор', 'Модератор', 'Участник']) {
+      if (label !== highest) expect(within(profile).queryByText(label)).not.toBeInTheDocument()
+    }
   })
 
   it('collects every available admin form in one administration dropdown', () => {

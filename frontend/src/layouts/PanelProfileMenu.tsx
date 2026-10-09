@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { AuthContextValue, AuthUser } from '../shared/auth/auth-context.ts'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
+import { highestRole } from '../shared/auth/role-hierarchy.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
@@ -31,6 +32,7 @@ function roleColor(role: AuthRole): 'warning' | 'info' | 'default' {
 export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const role = highestRole(user.roles)
   const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null)
   const closeProfile = () => setProfileAnchor(null)
 
@@ -109,7 +111,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
             <OrnamentDivider />
             <Box>
               <Typography variant="caption" color="text.secondary">
-                {t('navigation.accessRoles')}
+                {t('navigation.accessRole')}
               </Typography>
               <Stack
                 direction="row"
@@ -119,16 +121,13 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
                 flexWrap="wrap"
                 sx={{ mt: 0.75 }}
               >
-                {user.roles.map((role) => (
-                  <StatusBadge
-                    key={role}
-                    size="small"
-                    density="compact"
-                    color={roleColor(role)}
-                    variant="outlined"
-                    label={t(`navigation.roles.${role}`)}
-                  />
-                ))}
+                <StatusBadge
+                  size="small"
+                  density="compact"
+                  color={roleColor(role)}
+                  variant="outlined"
+                  label={t(`navigation.roles.${role}`)}
+                />
               </Stack>
             </Box>
           </Stack>

@@ -17,7 +17,7 @@ const translations = {
       system: 'System',
     },
     profile: 'Profile',
-    accessRoles: 'Access roles',
+    accessRole: 'Access role',
     uiStateGallery: {
       title: 'Interface components',
       description: 'Development preview of shared interface states.',
@@ -115,7 +115,7 @@ const translations = {
       system: 'Система',
     },
     profile: 'Профиль',
-    accessRoles: 'Роли доступа',
+    accessRole: 'Роль доступа',
     uiStateGallery: {
       title: 'Компоненты интерфейса',
       description: 'Служебный просмотр общих состояний интерфейса.',
@@ -214,7 +214,7 @@ const translations = {
       system: 'Система',
     },
     profile: 'Профіль',
-    accessRoles: 'Ролі доступу',
+    accessRole: 'Роль доступу',
     uiStateGallery: {
       title: 'Компоненти інтерфейсу',
       description: 'Службовий перегляд спільних станів інтерфейсу.',
@@ -313,7 +313,7 @@ const translations = {
       system: 'System',
     },
     profile: 'Profil',
-    accessRoles: 'Role dostępu',
+    accessRole: 'Rola dostępu',
     uiStateGallery: {
       title: 'Komponenty interfejsu',
       description: 'Deweloperski podgląd wspólnych stanów interfejsu.',

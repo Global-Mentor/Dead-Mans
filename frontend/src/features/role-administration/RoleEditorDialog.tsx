@@ -18,7 +18,7 @@ import {
   InlineNotice,
   useDirtyClose,
 } from '../../shared/ui/index.ts'
-import { highestRole } from './role-hierarchy.ts'
+import { highestRole } from '../../shared/auth/role-hierarchy.ts'
 import {
   roleAdministrationQueryKeys,
   updateRoleAdministrationUserRoles,

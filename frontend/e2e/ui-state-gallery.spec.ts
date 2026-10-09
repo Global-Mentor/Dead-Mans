@@ -95,9 +95,9 @@ for (const viewport of [
 
     await page.getByRole('button', { name: 'Gallery' }).click()
     const profileDialog = page.getByRole('dialog', { name: 'Profile', exact: true })
-    await expect(profileDialog.getByText('Access roles')).toBeVisible()
+    await expect(profileDialog.getByText('Access role')).toBeVisible()
     await expect(profileDialog.getByText('Administrator')).toBeVisible()
-    await expect(profileDialog.getByText('Participant')).toBeVisible()
+    await expect(profileDialog.getByText('Participant')).toHaveCount(0)
     await expect(profileDialog.getByRole('combobox', { name: 'Interface language' })).toBeVisible()
     await expect(profileDialog.getByRole('button', { name: 'Log out' })).toBeVisible()
     await page.keyboard.press('Escape')
