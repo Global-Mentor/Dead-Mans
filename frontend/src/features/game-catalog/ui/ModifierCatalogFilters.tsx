@@ -119,7 +119,7 @@ export function ModifierCatalogFilters({
               { value: 'cost', label: t('gameCatalog.modifiers.catalog.sortCost') },
             ]}
           />
-          <AppButton tone="ghost" disabled={!hasFilters} onClick={onReset}>
+          <AppButton tone="secondary" disabled={!hasFilters} onClick={onReset}>
             {t('gameCatalog.modifiers.catalog.resetFilters')}
           </AppButton>
         </Box>

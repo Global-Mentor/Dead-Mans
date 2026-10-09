@@ -6,6 +6,7 @@ import { SectionCard } from '../../primitives/surfaces/SectionCard.tsx'
 /** A bounded list with persistent tools and a keyboard-accessible scrolling region. */
 export function ListPanel({
   title,
+  textAlign = 'left',
   showHeader = true,
   summary,
   tools,
@@ -15,6 +16,7 @@ export function ListPanel({
   'data-testid': testId,
 }: {
   title: string
+  textAlign?: 'left' | 'center'
   showHeader?: boolean
   summary?: ReactNode
   tools?: ReactNode
@@ -34,11 +36,46 @@ export function ListPanel({
         sx={{ flexShrink: 0, pb: 1.5, minHeight: headerMinHeight, justifyContent: 'center' }}
       >
         {showHeader ? (
-          <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-            <Typography id={titleId} component="h2" variant="h6" sx={{ overflowWrap: 'anywhere' }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+            sx={
+              textAlign === 'center'
+                ? {
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: 'minmax(0, 1fr)',
+                      sm: 'minmax(0, 1fr) minmax(0, 3fr) minmax(0, 1fr)',
+                    },
+                  }
+                : undefined
+            }
+          >
+            <Typography
+              id={titleId}
+              component="h2"
+              variant="h6"
+              sx={{
+                overflowWrap: 'anywhere',
+                textAlign,
+                ...(textAlign === 'center' ? { gridColumn: { xs: 1, sm: 2 } } : {}),
+              }}
+            >
               {title}
             </Typography>
-            {summary}
+            {summary ? (
+              <Box
+                sx={
+                  textAlign === 'center'
+                    ? { gridColumn: { xs: 1, sm: 3 }, justifySelf: { xs: 'center', sm: 'end' } }
+                    : undefined
+                }
+              >
+                {summary}
+              </Box>
+            ) : null}
           </Stack>
         ) : null}
         {tools}

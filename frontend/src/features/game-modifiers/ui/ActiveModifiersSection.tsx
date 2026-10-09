@@ -47,6 +47,7 @@ export function ActiveModifiersSection({
     <ListPanel
       data-testid="active-modifiers-section"
       title={t('gameModifiers.activeTitle')}
+      textAlign="center"
       headerMinHeight="var(--modifier-panel-header-height)"
       summary={
         <StatusBadge

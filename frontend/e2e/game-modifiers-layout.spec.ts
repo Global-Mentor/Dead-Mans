@@ -412,6 +412,17 @@ for (const size of [
     const availableBounds = await available.boundingBox()
     expect(Math.abs(availableBounds!.width - activeBounds!.width)).toBeLessThanOrEqual(1)
     const active = page.getByTestId('active-modifiers-section')
+    const activeTitle = active.getByRole('heading', { level: 2 })
+    await expect(activeTitle).toHaveCSS('text-align', 'center')
+    const activeTitleBounds = await activeTitle.boundingBox()
+    expect(
+      Math.abs(
+        activeTitleBounds!.x +
+          activeTitleBounds!.width / 2 -
+          activeBounds!.x -
+          activeBounds!.width / 2,
+      ),
+    ).toBeLessThanOrEqual(1)
     const availableCategory = await available
       .getByRole('heading', { level: 3, name: 'Перед раундом', exact: true })
       .boundingBox()

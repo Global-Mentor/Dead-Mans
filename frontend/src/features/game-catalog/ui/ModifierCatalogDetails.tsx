@@ -168,6 +168,7 @@ export function ModifierCatalogDetails({
         <SectionHeader
           headingLevel="h3"
           textAlign="center"
+          headingSize="small"
           title={t('gameCatalog.modifiers.catalog.behaviorTitle')}
         />
         <Metric
