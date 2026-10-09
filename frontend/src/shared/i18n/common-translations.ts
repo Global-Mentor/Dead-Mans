@@ -86,7 +86,7 @@ const translations = {
     discardChanges: {
       title: 'Отменить несохранённые изменения?',
       description: 'Введённые изменения будут потеряны.',
-      confirm: 'Отменить изменения',
+      confirm: 'Сбросить',
     },
     actions: {
       increaseValue: 'Увеличить: {{field}}',

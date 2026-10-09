@@ -1,10 +1,9 @@
-import { Stack } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import type { Control } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type { DefaultTranslation } from '../../../locales/index.ts'
 import { ActionMenuItem, ControlledFormTextField, FieldWithHelp } from '../../../shared/ui/index.ts'
 import { modifierKinds, type ModifierFormValues } from '../model/modifier-form-schema.ts'
-import { ModifierTagField } from './modifier-form-fields.tsx'
 
 export function ModifierCardStep({
   control,
@@ -18,7 +17,11 @@ export function ModifierCardStep({
     t(`gameCatalog.modifiers.wizard.help.${field}`)
   return (
     <Stack spacing={1.5}>
-      <FieldWithHelp label={t('gameCatalog.modifiers.wizard.kind')} help={help('kind')}>
+      <FieldWithHelp
+        helpAlign="center"
+        label={t('gameCatalog.modifiers.wizard.kind')}
+        help={help('kind')}
+      >
         <ControlledFormTextField
           control={control}
           name="kind"
@@ -33,15 +36,40 @@ export function ModifierCardStep({
           ))}
         </ControlledFormTextField>
       </FieldWithHelp>
-      <FieldWithHelp label={t('gameCatalog.modifiers.fields.name')} help={help('name')}>
-        <ControlledFormTextField
-          control={control}
-          name="name"
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.5,
+          gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 3fr) minmax(0, 1fr)' },
+        }}
+      >
+        <FieldWithHelp
+          helpAlign="center"
           label={t('gameCatalog.modifiers.fields.name')}
-          disabled={disabled}
-        />
-      </FieldWithHelp>
+          help={help('name')}
+        >
+          <ControlledFormTextField
+            control={control}
+            name="name"
+            label={t('gameCatalog.modifiers.fields.name')}
+            disabled={disabled}
+          />
+        </FieldWithHelp>
+        <FieldWithHelp
+          helpAlign="center"
+          label={t('gameCatalog.modifiers.fields.iconEmoji')}
+          help={help('iconEmoji')}
+        >
+          <ControlledFormTextField
+            control={control}
+            name="iconEmoji"
+            label={t('gameCatalog.modifiers.fields.iconEmoji')}
+            disabled={disabled}
+          />
+        </FieldWithHelp>
+      </Box>
       <FieldWithHelp
+        helpAlign="center"
         label={t('gameCatalog.modifiers.fields.description')}
         help={help('description')}
       >
@@ -53,17 +81,6 @@ export function ModifierCardStep({
           minRows={3}
           disabled={disabled}
         />
-      </FieldWithHelp>
-      <FieldWithHelp label={t('gameCatalog.modifiers.fields.iconEmoji')} help={help('iconEmoji')}>
-        <ControlledFormTextField
-          control={control}
-          name="iconEmoji"
-          label={t('gameCatalog.modifiers.fields.iconEmoji')}
-          disabled={disabled}
-        />
-      </FieldWithHelp>
-      <FieldWithHelp label={t('gameCatalog.modifiers.wizard.tags')} help={help('tags')}>
-        <ModifierTagField control={control} disabled={disabled} />
       </FieldWithHelp>
     </Stack>
   )

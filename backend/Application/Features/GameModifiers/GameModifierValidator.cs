@@ -50,7 +50,7 @@ internal static class GameModifierValidator
         }
 
         var changeNote = NormalizeChangeNote(input.ChangeNote);
-        if (changeNote?.Length > MaxChangeNoteLength)
+        if (changeNote is null || changeNote.Length > MaxChangeNoteLength)
         {
             return false;
         }

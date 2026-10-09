@@ -2166,7 +2166,8 @@ export interface components {
             normalizedTags?: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             expectedRevision: number;
-            changeNote?: string | null;
+            /** @description Required edit comment; must contain non-whitespace text after trimming. */
+            changeNote: string;
         };
         ModifierHistorySummaryDto: {
             /** Format: uuid */

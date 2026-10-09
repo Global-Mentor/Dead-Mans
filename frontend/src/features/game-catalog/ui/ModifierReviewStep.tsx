@@ -1,26 +1,41 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import type { GameModifierDraftPreview } from '../../../shared/api/contracts/index.ts'
+import { RoundBriefingPanel, RoundBriefingDivider } from '../../../shared/game-ui/index.ts'
+import type {
+  GameModifierDraftPreview,
+  GameModifierDefinition,
+} from '../../../shared/api/contracts/index.ts'
 import {
   AppButton,
   InlineNotice,
   ItemCard,
-  StatusBadge,
+  Metric,
+  SectionDivider,
   TaskProgress,
 } from '../../../shared/ui/index.ts'
 export function ModifierReviewStep({
   preview,
+  activationCost,
+  activationLimitCount,
+  conflictingModifierIds,
+  modifiers,
   isLoading,
   error,
   onRetry,
 }: {
+  activationCost: string
+  activationLimitCount: string
+  conflictingModifierIds: readonly string[]
+  modifiers: readonly GameModifierDefinition[]
   preview: GameModifierDraftPreview | null
   isLoading: boolean
   error: string | null
   onRetry: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const number = (value: string) =>
+    new Intl.NumberFormat(i18n.resolvedLanguage).format(Number(value))
   if (isLoading) {
     return <TaskProgress aria-label={t('gameCatalog.modifiers.wizard.previewLoading')} />
   }
@@ -38,6 +53,14 @@ export function ModifierReviewStep({
       </InlineNotice>
     )
   }
+  const conflicts = conflictingModifierIds.map((id) => {
+    const modifier = modifiers.find((item) => item.id === id)
+    return modifier
+      ? modifier.iconEmoji
+        ? `${modifier.iconEmoji} ${modifier.name}`
+        : modifier.name
+      : id
+  })
   const localizedExample = {
     ...preview.example,
     resolutionExample: formatResolutionExample(preview.example.resolutionExample, t),
@@ -45,30 +68,97 @@ export function ModifierReviewStep({
 
   return (
     <Stack spacing={1.5}>
-      <ItemCard>
-        <Typography variant="overline">{t('gameCatalog.modifiers.wizard.playerView')}</Typography>
-        <Typography variant="h6">
-          {preview.iconEmoji ? `${preview.iconEmoji} ` : ''}
-          {preview.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-          {preview.description}
-        </Typography>
-        <Stack direction="row" gap={0.75} flexWrap="wrap" sx={{ mt: 1 }}>
-          {preview.normalizedTags.map((tag) => (
-            <StatusBadge key={tag} label={tag} size="small" />
-          ))}
-        </Stack>
-      </ItemCard>
-      <ItemCard>
-        <Typography variant="overline">{t('gameCatalog.modifiers.wizard.hostView')}</Typography>
-        <Typography variant="body2">{preview.behaviorV2.rule}</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-          {t('gameCatalog.modifiers.wizard.commandPreview', {
-            command: preview.activationCommand,
-          })}
-        </Typography>
-      </ItemCard>
+      <RoundBriefingPanel
+        component="section"
+        aria-label={t('gameCatalog.modifiers.catalog.activationTitle')}
+        sx={{ px: 1.5, py: 0.75 }}
+      >
+        <Box
+          sx={{
+            display: 'grid',
+            columnGap: 1,
+            rowGap: 0.75,
+            gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+          }}
+        >
+          <Metric
+            appearance="summary"
+            density="compact"
+            emphasis="label"
+            label={t('gameCatalog.modifiers.fields.activationCost')}
+            value={number(activationCost)}
+          />
+          <SectionDivider orientation="vertical" flexItem />
+          <Metric
+            appearance="summary"
+            density="compact"
+            emphasis="label"
+            label={t('gameCatalog.modifiers.fields.activationLimitCount')}
+            value={
+              activationLimitCount.trim()
+                ? number(activationLimitCount)
+                : t('gameCatalog.modifiers.unlimited')
+            }
+          />
+          <RoundBriefingDivider sx={{ gridColumn: '1 / -1' }} />
+          <Box sx={{ gridColumn: '1 / -1', minWidth: 0 }}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              emphasis="label"
+              label={t('gameCatalog.modifiers.fields.conflicts')}
+              value={
+                conflicts.length
+                  ? conflicts.join(', ')
+                  : t('gameCatalog.modifiers.catalog.noConflicts')
+              }
+            />
+          </Box>
+        </Box>
+      </RoundBriefingPanel>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.5,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+          alignItems: 'start',
+          overflowWrap: 'anywhere',
+        }}
+      >
+        <ItemCard>
+          <Stack sx={{ textAlign: 'center' }}>
+            <Typography component="h3" variant="overline">
+              {t('gameCatalog.modifiers.wizard.playerView')}
+            </Typography>
+            <Typography component="div" variant="h6">
+              {preview.iconEmoji ? `${preview.iconEmoji} ` : ''}
+              {preview.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+              {preview.description}
+            </Typography>
+          </Stack>
+        </ItemCard>
+        <ItemCard>
+          <Typography component="h3" variant="overline" textAlign="center">
+            {t('gameCatalog.modifiers.wizard.hostView')}
+          </Typography>
+          <Stack gap={1} sx={{ mb: 1.5 }}>
+            <Metric
+              appearance="row"
+              density="compact"
+              label={t('gameCatalog.modifiers.fields.category')}
+              value={t(`common.modifiers.categories.${preview.behaviorV2.phase}`)}
+            />
+            <Metric
+              appearance="row"
+              density="compact"
+              label={t('gameCatalog.modifiers.wizard.performer')}
+              value={t(`gameCatalog.modifiers.wizard.performers.${preview.behaviorV2.performer}`)}
+            />
+          </Stack>
+        </ItemCard>
+      </Box>
       <InlineNotice severity="success">
         <Typography variant="subtitle2">
           {t('gameCatalog.modifiers.wizard.exampleTitle')}

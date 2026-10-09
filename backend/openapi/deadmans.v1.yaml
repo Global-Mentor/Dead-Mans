@@ -5465,7 +5465,7 @@ components:
     UpdateGameModifierRequestDto:
       type: object
       required:
-        [name, description, category, activationCost, activationLimit, behaviorV2, expectedRevision]
+        [name, description, category, activationCost, activationLimit, behaviorV2, expectedRevision, changeNote]
       properties:
         name:
           type: string
@@ -5510,8 +5510,9 @@ components:
           minimum: 1
         changeNote:
           type: string
-          nullable: true
+          minLength: 1
           maxLength: 500
+          description: Required edit comment; must contain non-whitespace text after trimming.
     ModifierHistorySummaryDto:
       type: object
       required: [modifierId, currentRevision, name, category, activationCost, isArchived, createdAtUtc, versionCount, gamesCount, activationsCount]

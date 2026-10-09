@@ -596,10 +596,7 @@ test('switching teams protects an unfinished name and selects the requested team
     .getByTestId('admin-slot-3')
     .getByRole('button', { name: 'Управление: Команда 3', exact: true })
     .click()
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Отменить изменения', exact: true })
-    .click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Сбросить', exact: true }).click()
   await expect(
     page.getByTestId('admin-team-details').getByRole('heading', { name: 'Команда 3', exact: true }),
   ).toBeVisible()

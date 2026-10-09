@@ -1,13 +1,10 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import type { Control, UseFormSetValue } from 'react-hook-form'
 import { Controller, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type { DefaultTranslation } from '../../../locales/index.ts'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
 import {
-  AppAccordion,
-  AppAccordionDetails,
-  AppAccordionSummary,
   ChoiceCard,
   ChoiceGroup,
   ControlledFormTextField,
@@ -40,11 +37,8 @@ export function ModifierActivationStep({
   const durationEnabled = useWatch({ control, name: 'durationEnabled' })
   return (
     <Stack spacing={1.5}>
-      <FormSection
-        title={t('gameCatalog.modifiers.wizard.sections.behavior')}
-        description={t('gameCatalog.modifiers.wizard.sections.behaviorDescription')}
-      >
-        <FieldWithHelp label={t('gameCatalog.modifiers.wizard.phase')} help={help('phase')}>
+      <FormSection title={t('gameCatalog.modifiers.wizard.sections.behavior')}>
+        <Stack gap={2}>
           <Controller
             control={control}
             name="phase"
@@ -56,23 +50,39 @@ export function ModifierActivationStep({
                 label={<>{t('gameCatalog.modifiers.wizard.phase')}</>}
                 helperText={fieldState.error?.message}
               >
-                <ChoiceGroup {...field} sx={{ mt: 0.75, gap: 0.75 }}>
-                  {modifierPhases.map((phase) => (
-                    <ChoiceCard
-                      key={phase}
-                      value={phase}
-                      selected={field.value === phase}
-                      disabled={disabled}
-                      title={t(`gameCatalog.modifiers.wizard.phases.${phase}`)}
-                      description={t(`gameCatalog.modifiers.wizard.phaseDescriptions.${phase}`)}
-                    />
-                  ))}
-                </ChoiceGroup>
+                <Stack sx={{ mt: 0.75 }}>
+                  <FieldWithHelp
+                    helpAlign="center"
+                    label={t('gameCatalog.modifiers.wizard.phase')}
+                    help={help('phase')}
+                  >
+                    <ChoiceGroup
+                      {...field}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+                        gap: 0.75,
+                      }}
+                    >
+                      {modifierPhases.map((phase) => (
+                        <ChoiceCard
+                          density="compact"
+                          textAlign="center"
+                          descriptionPlacement="tooltip"
+                          key={phase}
+                          value={phase}
+                          selected={field.value === phase}
+                          disabled={disabled}
+                          title={t(`gameCatalog.modifiers.wizard.phases.${phase}`)}
+                          description={t(`gameCatalog.modifiers.wizard.phaseDescriptions.${phase}`)}
+                        />
+                      ))}
+                    </ChoiceGroup>
+                  </FieldWithHelp>
+                </Stack>
               </FieldGroup>
             )}
           />
-        </FieldWithHelp>
-        <FieldWithHelp label={t('gameCatalog.modifiers.wizard.performer')} help={help('performer')}>
           <Controller
             control={control}
             name="performer"
@@ -84,46 +94,41 @@ export function ModifierActivationStep({
                 label={<>{t('gameCatalog.modifiers.wizard.performer')}</>}
                 helperText={fieldState.error?.message}
               >
-                <ChoiceGroup
-                  {...field}
-                  sx={{
-                    mt: 0.75,
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 0.75,
-                  }}
-                >
-                  {(['activeTeam', 'mentor'] as const).map((performer) => (
-                    <ChoiceCard
-                      key={performer}
-                      value={performer}
-                      selected={field.value === performer}
-                      disabled={disabled}
-                      title={t(`gameCatalog.modifiers.wizard.performers.${performer}`)}
-                      description={t(
-                        `gameCatalog.modifiers.wizard.performerDescriptions.${performer}`,
-                      )}
-                    />
-                  ))}
-                </ChoiceGroup>
+                <Stack sx={{ mt: 0.75 }}>
+                  <FieldWithHelp
+                    helpAlign="center"
+                    label={t('gameCatalog.modifiers.wizard.performer')}
+                    help={help('performer')}
+                  >
+                    <ChoiceGroup
+                      {...field}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 0.75,
+                      }}
+                    >
+                      {(['activeTeam', 'mentor'] as const).map((performer) => (
+                        <ChoiceCard
+                          density="compact"
+                          textAlign="center"
+                          descriptionPlacement="tooltip"
+                          key={performer}
+                          value={performer}
+                          selected={field.value === performer}
+                          disabled={disabled}
+                          title={t(`gameCatalog.modifiers.wizard.performers.${performer}`)}
+                          description={t(
+                            `gameCatalog.modifiers.wizard.performerDescriptions.${performer}`,
+                          )}
+                        />
+                      ))}
+                    </ChoiceGroup>
+                  </FieldWithHelp>
+                </Stack>
               </FieldGroup>
             )}
           />
-        </FieldWithHelp>
-        <FieldWithHelp label={t('gameCatalog.modifiers.wizard.rule')} help={help('rule')}>
-          <ControlledFormTextField
-            control={control}
-            name="rule"
-            label={t('gameCatalog.modifiers.wizard.rule')}
-            multiline
-            minRows={3}
-            disabled={disabled}
-          />
-        </FieldWithHelp>
-        <FieldWithHelp
-          label={t('gameCatalog.modifiers.wizard.requiresHostMonitoring')}
-          help={help('requiresHostMonitoring')}
-        >
           <Controller
             control={control}
             name="requiresHostMonitoring"
@@ -133,39 +138,44 @@ export function ModifierActivationStep({
                 fullWidth
                 label={<>{t('gameCatalog.modifiers.wizard.requiresHostMonitoring')}</>}
               >
-                <ChoiceGroup
-                  value={field.value ? 'yes' : 'no'}
-                  onChange={(_, value) => field.onChange(value === 'yes')}
-                  sx={{
-                    mt: 0.75,
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 0.75,
-                  }}
-                >
-                  {(['yes', 'no'] as const).map((answer) => (
-                    <ChoiceCard
-                      key={answer}
-                      value={answer}
-                      selected={field.value === (answer === 'yes')}
-                      disabled={disabled}
-                      title={t(`gameCatalog.modifiers.wizard.monitoringAnswers.${answer}`)}
-                      description={t(
-                        `gameCatalog.modifiers.wizard.monitoringDescriptions.${answer}`,
-                      )}
-                    />
-                  ))}
-                </ChoiceGroup>
+                <Stack sx={{ mt: 0.75 }}>
+                  <FieldWithHelp
+                    helpAlign="center"
+                    label={t('gameCatalog.modifiers.wizard.requiresHostMonitoring')}
+                    help={help('requiresHostMonitoring')}
+                  >
+                    <ChoiceGroup
+                      value={field.value ? 'yes' : 'no'}
+                      onChange={(_, value) => field.onChange(value === 'yes')}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 0.75,
+                      }}
+                    >
+                      {(['yes', 'no'] as const).map((answer) => (
+                        <ChoiceCard
+                          density="compact"
+                          textAlign="center"
+                          descriptionPlacement="tooltip"
+                          key={answer}
+                          value={answer}
+                          selected={field.value === (answer === 'yes')}
+                          disabled={disabled}
+                          title={t(`gameCatalog.modifiers.wizard.monitoringAnswers.${answer}`)}
+                          description={t(
+                            `gameCatalog.modifiers.wizard.monitoringDescriptions.${answer}`,
+                          )}
+                        />
+                      ))}
+                    </ChoiceGroup>
+                  </FieldWithHelp>
+                </Stack>
               </FieldGroup>
             )}
           />
-        </FieldWithHelp>
-        {kind === 'rule' ? (
-          <>
-            <FieldWithHelp
-              label={t('gameCatalog.modifiers.wizard.durationQuestion')}
-              help={help('durationSeconds')}
-            >
+          {kind === 'rule' ? (
+            <>
               <Controller
                 control={control}
                 name="durationEnabled"
@@ -175,131 +185,124 @@ export function ModifierActivationStep({
                     fullWidth
                     label={<>{t('gameCatalog.modifiers.wizard.durationQuestion')}</>}
                   >
-                    <ChoiceGroup
-                      value={field.value ? 'yes' : 'no'}
-                      onChange={(_, value) => {
-                        const enabled = value === 'yes'
-                        field.onChange(enabled)
-                        if (!enabled) {
-                          setValue('durationSeconds', '', { shouldDirty: true })
-                        }
-                      }}
-                      sx={{
-                        mt: 0.75,
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                        gap: 0.75,
-                      }}
-                    >
-                      {(['yes', 'no'] as const).map((answer) => (
-                        <ChoiceCard
-                          key={answer}
-                          value={answer}
-                          selected={field.value === (answer === 'yes')}
-                          disabled={disabled}
-                          title={t(`gameCatalog.modifiers.wizard.durationAnswers.${answer}`)}
-                          description={t(
-                            `gameCatalog.modifiers.wizard.durationDescriptions.${answer}`,
-                          )}
-                        />
-                      ))}
-                    </ChoiceGroup>
+                    <Stack sx={{ mt: 0.75 }}>
+                      <FieldWithHelp
+                        helpAlign="center"
+                        label={t('gameCatalog.modifiers.wizard.durationQuestion')}
+                        help={help('durationSeconds')}
+                      >
+                        <ChoiceGroup
+                          value={field.value ? 'yes' : 'no'}
+                          onChange={(_, value) => {
+                            const enabled = value === 'yes'
+                            field.onChange(enabled)
+                            if (!enabled) {
+                              setValue('durationSeconds', '', { shouldDirty: true })
+                            }
+                          }}
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 0.75,
+                          }}
+                        >
+                          {(['yes', 'no'] as const).map((answer) => (
+                            <ChoiceCard
+                              density="compact"
+                              textAlign="center"
+                              descriptionPlacement="tooltip"
+                              key={answer}
+                              value={answer}
+                              selected={field.value === (answer === 'yes')}
+                              disabled={disabled}
+                              title={t(`gameCatalog.modifiers.wizard.durationAnswers.${answer}`)}
+                              description={t(
+                                `gameCatalog.modifiers.wizard.durationDescriptions.${answer}`,
+                              )}
+                            />
+                          ))}
+                        </ChoiceGroup>
+                      </FieldWithHelp>
+                    </Stack>
                   </FieldGroup>
                 )}
               />
-            </FieldWithHelp>
-            {durationEnabled ? (
-              <FieldWithHelp
-                label={t('gameCatalog.modifiers.fields.durationSeconds')}
-                help={help('durationSeconds')}
-              >
-                <ControlledFormTextField
-                  control={control}
-                  name="durationSeconds"
-                  type="number"
+              {durationEnabled ? (
+                <FieldWithHelp
+                  helpAlign="center"
                   label={t('gameCatalog.modifiers.fields.durationSeconds')}
-                  disabled={disabled}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <FieldAdornment position="end">
-                          {t('gameCatalog.modifiers.wizard.units.seconds')}
-                        </FieldAdornment>
-                      ),
-                    },
-                  }}
-                />
-              </FieldWithHelp>
-            ) : null}
-          </>
-        ) : null}
+                  help={help('durationSeconds')}
+                >
+                  <ControlledFormTextField
+                    control={control}
+                    name="durationSeconds"
+                    type="number"
+                    label={t('gameCatalog.modifiers.fields.durationSeconds')}
+                    disabled={disabled}
+                    slotProps={{
+                      htmlInput: { min: 1, step: 1 },
+                      input: {
+                        endAdornment: (
+                          <FieldAdornment position="end">
+                            {t('gameCatalog.modifiers.wizard.units.seconds')}
+                          </FieldAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                </FieldWithHelp>
+              ) : null}
+            </>
+          ) : null}
+        </Stack>
       </FormSection>
 
-      <FormSection
-        title={t('gameCatalog.modifiers.wizard.sections.activation')}
-        description={t('gameCatalog.modifiers.wizard.sections.activationDescription')}
-      >
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-          <FieldWithHelp
-            label={t('gameCatalog.modifiers.fields.activationCost')}
-            help={help('activationCost')}
-          >
-            <ControlledFormTextField
-              control={control}
-              name="activationCost"
-              type="number"
-              label={t('gameCatalog.modifiers.fields.activationCost')}
-              disabled={disabled}
-            />
-          </FieldWithHelp>
-          <FieldWithHelp
-            label={t('gameCatalog.modifiers.fields.activationLimitCount')}
-            help={help('activationLimitCount')}
-          >
-            <ControlledFormTextField
-              control={control}
-              name="activationLimitCount"
-              type="number"
-              label={t('gameCatalog.modifiers.fields.activationLimitCount')}
-              helperText={t('gameCatalog.modifiers.fields.limitHint')}
-              disabled={disabled}
-            />
-          </FieldWithHelp>
-        </Stack>
-        <FieldWithHelp label={t('gameCatalog.modifiers.fields.conflicts')} help={help('conflicts')}>
-          <ModifierConflictField
-            control={control}
-            currentModifierId={initial?.id}
-            disabled={disabled}
-            modifiers={modifiers}
-          />
-        </FieldWithHelp>
-        <AppAccordion surface="inset">
-          <AppAccordionSummary>
-            <Box>
-              <Typography variant="subtitle2">
-                {t('gameCatalog.modifiers.wizard.advancedSettings')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('gameCatalog.modifiers.wizard.advancedSettingsDescription')}
-              </Typography>
-            </Box>
-          </AppAccordionSummary>
-          <AppAccordionDetails>
+      <FormSection title={t('gameCatalog.modifiers.wizard.sections.activation')}>
+        <Stack gap={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <FieldWithHelp
-              label={t('gameCatalog.modifiers.fields.activationCommand')}
-              help={help('activationCommand')}
+              helpAlign="center"
+              label={t('gameCatalog.modifiers.fields.activationCost')}
+              help={help('activationCost')}
             >
               <ControlledFormTextField
                 control={control}
-                name="activationCommand"
-                label={t('gameCatalog.modifiers.fields.activationCommand')}
-                helperText={t('gameCatalog.modifiers.wizard.commandHint')}
+                name="activationCost"
+                type="number"
+                label={t('gameCatalog.modifiers.fields.activationCost')}
                 disabled={disabled}
+                slotProps={{ htmlInput: { min: 0, step: 1 } }}
               />
             </FieldWithHelp>
-          </AppAccordionDetails>
-        </AppAccordion>
+            <FieldWithHelp
+              helpAlign="center"
+              label={t('gameCatalog.modifiers.fields.activationLimitCount')}
+              help={help('activationLimitCount')}
+            >
+              <ControlledFormTextField
+                control={control}
+                name="activationLimitCount"
+                type="number"
+                label={t('gameCatalog.modifiers.fields.activationLimitCount')}
+                disabled={disabled}
+                slotProps={{ htmlInput: { min: 1, step: 1 } }}
+              />
+            </FieldWithHelp>
+          </Stack>
+          <FieldWithHelp
+            helpAlign="center"
+            label={t('gameCatalog.modifiers.fields.conflicts')}
+            help={help('conflicts')}
+          >
+            <ModifierConflictField
+              control={control}
+              currentModifierId={initial?.id}
+              initialConflictingModifierIds={initial?.conflictingModifierIds ?? []}
+              disabled={disabled}
+              modifiers={modifiers}
+            />
+          </FieldWithHelp>
+        </Stack>
       </FormSection>
     </Stack>
   )

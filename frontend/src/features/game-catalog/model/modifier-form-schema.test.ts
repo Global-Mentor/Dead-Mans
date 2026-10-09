@@ -7,13 +7,20 @@ import {
   toModifierRequest,
 } from './modifier-form-schema.ts'
 
-const messages = { required: 'required', number: 'number', limit: 'limit', tags: 'tags' }
+const messages = {
+  required: 'required',
+  number: 'number',
+  positiveInteger: 'positive',
+  payout: 'payout',
+  limit: 'limit',
+  tags: 'tags',
+}
 const scoring = () => ({
   ...createDefaultModifierFormValues(),
   kind: 'scoring' as const,
   name: 'Modifier',
   description: 'Description',
-  rule: 'Apply the effect.',
+  activationCost: '0',
   measurementDomain: 'event' as const,
   eventMeasurementMode: 'count' as const,
   eventInputLabel: 'Successful actions',
@@ -22,6 +29,113 @@ const scoring = () => ({
 })
 
 describe('modifier wizard model', () => {
+  it('starts with empty text and amount inputs instead of examples', () => {
+    expect(createDefaultModifierFormValues()).toMatchObject({
+      name: '',
+      description: '',
+      iconEmoji: '',
+      activationCost: '',
+      durationSeconds: '',
+      activationLimitCount: '',
+      eventInputLabel: '',
+      eventsPerActivation: '',
+      payoutValue: '',
+      zeroCountPenaltyPoints: '',
+    })
+  })
+
+  it.each([
+    ['activationCost', '-1', false],
+    ['activationCost', '0', true],
+    ['activationCost', '1', true],
+    ['activationCost', '0.5', false],
+    ['activationLimitCount', '-1', false],
+    ['activationLimitCount', '0', false],
+    ['activationLimitCount', '1', true],
+    ['activationLimitCount', '', true],
+    ['durationSeconds', '-1', false],
+    ['durationSeconds', '0', false],
+    ['durationSeconds', '1', true],
+    ['durationSeconds', '', false],
+  ])('validates %s=%s with an enabled timer', (field, value, valid) => {
+    const draft = {
+      ...scoring(),
+      kind: 'rule',
+      durationEnabled: true,
+      durationSeconds: '1',
+      [field]: value,
+    }
+    expect(createModifierFormSchema(messages).safeParse(draft).success).toBe(valid)
+  })
+
+  it.each(['', ' ', '\t\n'])('requires a non-blank comment for edits: %j', (changeNote) => {
+    const draft = { ...scoring(), changeNote }
+    expect(createModifierFormSchema(messages).safeParse(draft).success).toBe(true)
+    const parsed = createModifierFormSchema(messages, 'edit').safeParse(draft)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      expect(parsed.error.issues).toContainEqual(
+        expect.objectContaining({ path: ['changeNote'], message: messages.required }),
+      )
+    }
+  })
+
+  it('trims an edit comment and enforces its 500-character limit', () => {
+    const schema = createModifierFormSchema(messages, 'edit')
+    expect(schema.parse({ ...scoring(), changeNote: '  Updated cost.  ' }).changeNote).toBe(
+      'Updated cost.',
+    )
+    expect(schema.safeParse({ ...scoring(), changeNote: 'x'.repeat(500) }).success).toBe(true)
+    expect(schema.safeParse({ ...scoring(), changeNote: 'x'.repeat(501) }).success).toBe(false)
+  })
+
+  it('requires an explicit positive event maximum and payout', () => {
+    const draft = { ...scoring(), eventMaximumKind: 'activations' }
+    const schema = createModifierFormSchema(messages)
+    for (const eventsPerActivation of ['', '-1', '0']) {
+      expect(schema.safeParse({ ...draft, eventsPerActivation }).success).toBe(false)
+    }
+    expect(schema.safeParse({ ...draft, eventsPerActivation: '1' }).success).toBe(true)
+    expect(schema.safeParse({ ...scoring(), payoutValue: '' }).success).toBe(false)
+  })
+
+  it('ignores retired inputs when their settings are switched off', () => {
+    const schema = createModifierFormSchema(messages)
+    expect(
+      schema.safeParse({
+        ...scoring(),
+        kind: 'rule',
+        durationEnabled: false,
+        durationSeconds: '-1',
+        eventsPerActivation: '-1',
+        payoutValue: 'invalid',
+        zeroCountPenaltyPoints: '-1',
+      }).success,
+    ).toBe(true)
+    expect(
+      schema.safeParse({
+        ...scoring(),
+        eventMaximumKind: 'none',
+        eventsPerActivation: '-1',
+        zeroCountPenaltyPoints: '-1',
+      }).success,
+    ).toBe(true)
+  })
+
+  it('uses the full description as the compatibility rule and treats an empty penalty as zero', () => {
+    const request = toModifierRequest({
+      ...scoring(),
+      description: ' Full explanation. ',
+      payoutKind: 'killValueIncrease',
+      payoutValue: '1',
+    })
+    expect(request.description).toBe('Full explanation.')
+    expect(request.behaviorV2.rule).toBe(request.description)
+    expect(request.behaviorV2.formulaReference?.parameters).toMatchObject({
+      zeroCountPenaltyPoints: 0,
+    })
+  })
+
   it('normalizes tags with NFKC, collapsed whitespace and first-value casing', () => {
     expect(normalizeModifierTags(['  Бой   вблизи ', 'БОЙ ВБЛИЗИ', 'ＡＢＣ', 'ABC'])).toEqual([
       'Бой вблизи',
@@ -143,7 +257,16 @@ describe('modifier wizard model', () => {
         },
       },
     } satisfies GameModifierDefinition
-    const request = toModifierRequest(createDefaultModifierFormValues(initial))
+    const draft = createDefaultModifierFormValues(initial)
+    expect(draft).toMatchObject({
+      name: initial.name,
+      description: initial.description,
+      activationCost: String(initial.activationCost),
+      activationCommand: initial.activationCommand ?? '',
+    })
+    const request = toModifierRequest(draft)
+    expect(request.activationCommand).toBe(initial.activationCommand)
+    expect(request.behaviorV2.rule).toBe(initial.description)
     expect(request.behaviorV2).toMatchObject({
       resolution: { type: 'boolean' },
       formulaReference: { code: 'bonus_kills_per_unit', parameters: { bonusKillsPerUnit: 1 } },
@@ -182,7 +305,16 @@ describe('modifier wizard model', () => {
       },
     } satisfies GameModifierDefinition
 
-    const request = toModifierRequest(createDefaultModifierFormValues(initial))
+    const draft = createDefaultModifierFormValues(initial)
+    expect(draft).toMatchObject({
+      name: initial.name,
+      description: initial.description,
+      activationCost: String(initial.activationCost),
+      activationCommand: initial.activationCommand ?? '',
+    })
+    const request = toModifierRequest(draft)
+    expect(request.activationCommand).toBe(initial.activationCommand)
+    expect(request.behaviorV2.rule).toBe(initial.description)
 
     expect(request.behaviorV2).toMatchObject({
       resolution: {

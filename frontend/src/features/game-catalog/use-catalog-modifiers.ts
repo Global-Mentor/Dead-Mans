@@ -161,7 +161,7 @@ export function useCatalogModifiers() {
             normalizedTags: request.normalizedTags ?? [],
             behaviorV2: request.behaviorV2,
             expectedRevision: dialog.modifier.revision,
-            changeNote: request.changeNote ?? null,
+            changeNote: request.changeNote?.trim() ?? '',
           },
         })
       } catch (error) {

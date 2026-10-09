@@ -45,6 +45,8 @@ const translations = {
       limit: 'Leave empty or enter a positive whole number.',
       formula: 'Enter a valid formula expression.',
       tags: 'Use at most five unique tags, up to 32 characters each.',
+      positiveInteger: 'Enter a whole number of at least 1.',
+      payout: 'Enter a nonzero number; points must be whole numbers.',
     },
     modifiers: {
       title: 'Modifier catalog',
@@ -93,6 +95,7 @@ const translations = {
       unlimited: 'unlimited',
       createTitle: 'New modifier',
       editTitle: 'Edit modifier',
+      viewTitle: 'View modifier',
       deleteTitle: 'Remove modifier',
       deleteConfirm:
         'Archive "{{name}}" permanently? It will disappear from future games and cannot be restored, while history remains available.',
@@ -107,13 +110,14 @@ const translations = {
         activationLimitCount: 'Activation limit',
         limitHint: 'Leave empty for unlimited.',
         conflicts: 'Conflicts',
-        conflictsHint: 'Modifiers that cannot be active together with this one.',
+        availableConflicts: 'Available',
+        lockedConflicts: 'In an active game',
+        conflictLocked: 'In an active game. Conflicts can be changed after it ends.',
         iconEmoji: 'Icon (emoji)',
-        activationCommand: 'Activation command',
         changeNote: 'What changed',
-        changeNoteHint: 'Optional audit note, up to 500 characters.',
+        changeNoteHint:
+          'Required for edits. Explain what changed; this comment is saved in the revision history. Up to 500 characters.',
         durationSeconds: 'Duration, seconds',
-        ruleText: 'Short rule text',
         perKillBonus: 'Points per kill',
         failurePenaltyPoints: 'Failure penalty',
         killDeltaMode: 'Kill counter mode',
@@ -161,12 +165,17 @@ const translations = {
       },
       wizard: {
         step: 'Step {{current}} of {{total}}',
-        steps: { 0: 'Card', 1: 'Conditions and activation', 2: 'Result calculation', 3: 'Review' },
+        steps: {
+          '0': 'Card',
+          '1': 'Conditions and activation',
+          '2': 'Result calculation',
+          '3': 'Review',
+        },
         stepDescriptions: {
-          0: 'Describe the modifier exactly as players will see it in the catalog.',
-          1: 'Choose who follows the rule, when it applies, its price, limits, and conflicts.',
-          2: 'Choose what is counted first, then define what every counted unit adds.',
-          3: 'Review the player and host cards and verify the calculated example before saving.',
+          '0': 'Describe the modifier exactly as players will see it in the catalog.',
+          '1': 'Choose who follows the rule, when it applies, its price, limits, and conflicts.',
+          '2': 'Choose what is counted first, then define what every counted unit adds.',
+          '3': 'Review the player and host cards and verify the calculated example before saving.',
         },
         sections: {
           behavior: 'How the rule works',
@@ -177,22 +186,9 @@ const translations = {
             'These settings define price, purchase limits, and compatibility with other modifiers.',
         },
         kind: 'What does this modifier do?',
-        kinds: { rule: 'Rule without score changes', scoring: 'Affects the round result' },
-        tags: 'Search tags',
-        tagsHint: 'Choose suggestions or enter up to five custom tags.',
-        suggestedTags: {
-          combat: 'combat',
-          mentor: 'mentor',
-          movement: 'movement',
-          equipment: 'equipment',
-          communication: 'communication',
-          revival: 'revival',
-          environment: 'environment',
-          restriction: 'restriction',
-          weapon: 'weapon',
-          bonus: 'bonus',
-          penalty: 'penalty',
-          timer: 'timer',
+        kinds: {
+          rule: 'Rule without score changes',
+          scoring: 'Affects the round result',
         },
         phase: 'When does the modifier apply?',
         phases: {
@@ -206,141 +202,63 @@ const translations = {
           result: 'The result is recorded after gameplay ends.',
         },
         performer: 'Who must fulfil the condition?',
-        performers: { activeTeam: 'Team', mentor: 'Host' },
+        performers: {
+          activeTeam: 'Team',
+          mentor: 'Host',
+        },
         performerDescriptions: {
           activeTeam: 'The action or restriction applies to the active team.',
           mentor: 'The host performs the action and the result counts for the team.',
         },
-        rule: 'Rule for the team and host',
-        requiresHostMonitoring: 'Does the host need to verify the result manually?',
-        monitoringAnswers: { yes: 'Yes, verify it', no: 'No, calculate automatically' },
+        requiresHostMonitoring: 'Does the host need to monitor the round?',
+        monitoringAnswers: {
+          yes: 'Yes, monitoring is needed',
+          no: 'No extra monitoring',
+        },
         monitoringDescriptions: {
-          yes: 'The host confirms fulfilment or enters the result after gameplay.',
-          no: 'The application reads the required round metrics automatically.',
+          yes: 'Marks the modifier for host observation during the round. Result input is configured separately.',
+          no: 'Removes the monitoring flag. Any manually configured result input still needs to be completed.',
         },
         durationQuestion: 'Is there a time limit?',
-        durationAnswers: { yes: 'Yes, use a timer', no: 'No time limit' },
+        durationAnswers: {
+          yes: 'Yes, use a timer',
+          no: 'No time limit',
+        },
         durationDescriptions: {
           yes: 'Every activation adds a separate time interval.',
           no: 'The rule applies without a countdown.',
         },
-        durationHint: 'Optional. Leave empty when there is no timer.',
-        commandHint: 'Leave empty to generate a command from the modifier name.',
-        advancedSettings: 'Advanced settings',
-        advancedSettingsDescription: 'The activation command is usually generated automatically.',
-        reward: 'What changes',
-        rewards: { points: 'Points', bonusKills: 'Bonus kills' },
-        resolution: 'How the fact is recorded',
-        resolutions: {
-          automaticRoundMetric: 'Automatically from round metrics',
-          boolean: 'Host selects succeeded / not succeeded',
-          nonNegativeCount: 'Host enters a non-negative count',
-        },
-        formula: 'Calculation preset',
-        formulaHint: 'Only presets compatible with the selected result are shown.',
-        impactGuideTitle: 'No hand-written formulas',
-        impactGuideDescription:
-          'Choose the matching scenario. The form configures the reward and the data the host must provide.',
-        formulaConfigTitle: 'Configured automatically',
-        formulaConfig: 'Result: {{reward}}. Recorded as: {{resolution}}.',
-        impactTargetQuestion: 'What does the modifier add to the result?',
-        impactTargetHint: 'Choose the result first. The calculation method comes next.',
-        impactTargets: {
-          points: {
-            title: 'Points',
-            description: 'Changes the round score without changing the kill count.',
-          },
-          bonusKills: {
-            title: 'Additional kills',
-            description: 'Adds virtual kills before the card score is calculated.',
-          },
-        },
-        impactMethodQuestions: {
-          points: 'How are the extra points awarded?',
-          bonusKills: 'How is the number of additional kills determined?',
-        },
-        formulas: {
-          growing_kill_value: 'For every team kill',
-          bonus_kill_on_condition: 'Once when a condition succeeds',
-          bonus_kills_by_count: 'Based on a counted event',
-          window_kill_bonus_points: 'Only for qualifying kills',
-        },
-        formulaDescriptions: {
-          growing_kill_value:
-            'The application reads the total kill count automatically. Suitable for mechanics such as Thirst.',
-          bonus_kill_on_condition:
-            'The host selects Fulfilled or Not fulfilled. Success grants a fixed kill bonus.',
-          bonus_kills_by_count:
-            'The host enters a trigger count. Every trigger adds the configured number of kills.',
-          window_kill_bonus_points:
-            'The host enters the qualifying kill count. Each grants a percentage of the card value.',
-        },
-        impactSettingsTitle: 'Configure the result',
-        impactSettings: {
-          growing_kill_value:
-            'Increase the card value for every kill and optionally apply a penalty when there are no kills.',
-          bonus_kill_on_condition:
-            'Set the number of kills granted when the host confirms the condition.',
-          bonus_kills_by_count: 'Set the number of kills added by every event entered by the host.',
-          window_kill_bonus_points:
-            'Set the percentage of card value awarded for every qualifying kill.',
-        },
-        units: { points: 'points', kills: 'kills', seconds: 'sec.' },
-        calculationExampleTitle: 'How this is calculated',
-        calculationExamples: {
-          growing_kill_value:
-            'The card is worth {{cardValue}} points and the team gets {{killsCount}} kills.\nNew value: {{cardValue}} + {{killsCount}} × {{increment}} = {{increasedCardValue}}.\nResult: {{increasedCardValue}} × {{killsCount}} = {{result}} points. With zero kills, the penalty is {{penalty}} points.',
-          bonus_kill_on_condition:
-            'The card is worth {{cardValue}} points, the team gets {{killsCount}} kills, and fulfils the condition.\nCounted kills: {{killsCount}} + {{bonus}} = {{resultUnits}}.\nResult: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} points.',
-          bonus_kills_by_count:
-            'The card is worth {{cardValue}} points and the team gets {{killsCount}} kills. The host enters {{inputCount}} events.\nBonus: {{inputCount}} × {{perUnit}} = {{bonus}} kills.\nResult: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} points.',
-          window_kill_bonus_points:
-            'The card is worth {{cardValue}} points and the team gets {{killsCount}} kills, including {{inputCount}} qualifying kills.\nBonus: {{inputCount}} × {{cardValue}} × {{percent}}% = {{bonus}} points.\nResult: {{killsCount}} × {{cardValue}} + {{bonus}} = {{result}} points.',
-        },
-        parameters: {
-          incrementPointsPerKill: 'Value increase per kill',
-          zeroKillPenaltyPoints: 'Penalty when there are no kills',
-          successBonusKills: 'Bonus kills on success',
-          bonusKillsPerUnit: 'Bonus kills per unit',
-          bonusRate: 'Card value percentage per kill',
+        units: {
+          points: 'points',
+          kills: 'kills',
+          seconds: 'sec.',
         },
         help: {
-          kind: 'Choose a rule for restrictions that do not change the score. Choose round impact when points or kills must change.',
-          name: 'Shown to players and hosts in the catalog and round history.',
+          kind: 'Choose a rule for restrictions that do not change the score. Choose round impact to configure points or bonus kills; an extra calculation step will appear.',
+          name: 'Shown to players and hosts in the catalog, purchases and round history. Renaming does not change the calculation.',
           description:
-            'Player-facing explanation of what happens after purchase. Keep every important condition visible here.',
-          iconEmoji: 'Shown next to the name to make the modifier easier to recognize.',
-          tags: 'Used only for search and filtering. They do not affect rules or scoring.',
+            'The full explanation shown to players and hosts. Include the action, conditions and consequences. Text does not calculate points; configure the calculation in the following steps.',
+          iconEmoji:
+            'Optional icon shown beside the name. It helps identify the modifier and does not affect gameplay or points.',
           phase:
-            'Controls whether the modifier applies during preparation, gameplay, or round results.',
-          performer: 'Defines who performs the action: the active team or the host.',
-          rule: 'Exact host and team instruction used to monitor the modifier and resolve the round.',
+            'Indicates when to follow the description: before gameplay, during gameplay or when reviewing results. This choice does not change the calculation formula.',
+          performer:
+            'The active team or the host performs the described action. Points and bonus kills still belong to the active team.',
           requiresHostMonitoring:
-            'Adds a manual-monitoring marker. Enable it when the application cannot verify the condition itself.',
+            'Marks the modifier for host monitoring during the round. This does not change the selected calculation or make manual result inputs automatic.',
           durationSeconds:
-            'Duration of one activation. Every additional activation adds the same interval.',
-          activationCost: 'Quiz points deducted from the buyer for every activation.',
+            'Whole seconds, at least 1, for one activation. The countdown starts with gameplay; repeated activations of the rule add their durations. Without a timer, there is no countdown.',
+          activationCost:
+            'Whole quiz points charged to the buyer for each purchase. Minimum 0; 0 means free. This does not set the points earned by the team.',
           activationLimitCount:
-            'Maximum activations of this modifier in one round. Leave empty for no limit.',
+            'Total purchases of this modifier allowed in one round across all players. Enter a whole number of at least 1, or leave empty for no limit.',
           conflicts:
-            'If a selected modifier is already active in the round, this one cannot be purchased, and vice versa.',
-          activationCommand:
-            'Command used to order the modifier. Leave empty to generate it from the name.',
-          formulaCode:
-            'The preset defines the reward, host input, and calculation. Choose by gameplay meaning, not technical wording.',
-          incrementPointsPerKill:
-            'How many points one activation adds to kill value for every kill made.',
-          zeroKillPenaltyPoints: 'Points deducted by each activation when the team makes no kills.',
-          successBonusKills: 'Bonus kills added when the host marks the condition as successful.',
-          bonusKillsPerUnit: 'Bonus kills granted for every trigger counted by the host.',
-          bonusRate: 'Percentage of card value per qualifying kill, for example 75%.',
+            'Selected modifiers cannot be active together with this one in the same round. Buying either blocks the other; an empty list imposes no conflicts. Modifiers in an active game are unavailable until it ends.',
           eventInputLabel:
-            'This becomes the label of the field the host fills in at round results.',
+            'The label shown to the host for a manual count or yes/no result. State which event must be counted or checked. The label itself does not calculate the result.',
         },
         measurement: {
           title: '1. What is counted',
-          description:
-            'First define the source of the calculation. It does not decide the reward yet.',
           question: 'What triggers the modifier?',
           domains: {
             kills: {
@@ -380,7 +298,6 @@ const translations = {
             },
           },
           inputLabel: 'What should the host enter?',
-          inputLabelHint: 'Write a concrete label, for example “Successful shots by the host”.',
           maximumQuestion: 'Should the count be limited by activations?',
           maximumKinds: {
             none: {
@@ -394,12 +311,10 @@ const translations = {
           },
           eventsPerActivation: 'Maximum events per activation',
           eventsPerActivationHint:
-            'For Lucky Shot this is 1: six activations allow at most six successful shots.',
+            'A whole number of at least 1. The maximum accepted count equals this value multiplied by the number of activations.',
         },
         payout: {
           title: '2. What each counted unit gives',
-          description:
-            'The same effect can be attached to kills, an arbitrary event, a condition, or an activation.',
           question: 'Choose the effect',
           kinds: {
             fixedPoints: {
@@ -426,20 +341,23 @@ const translations = {
             killValueIncrease: 'Kill-value increase per unit',
           },
           valueHints: {
-            fixedPoints: 'A negative value can be used as a penalty.',
-            cardPercent: 'For example, 75 adds 75%; −25 deducts 25% of card value.',
-            bonusKills: 'A positive whole number.',
-            killValueIncrease: 'A positive whole number of points.',
+            fixedPoints:
+              'Nonzero whole points per unit. The result is added to the team score; negative values deduct points.',
+            cardPercent:
+              'Nonzero percentage of the card value per unit. Positive values add points; negative values deduct them. Decimals are allowed.',
+            bonusKills:
+              'Whole bonus kills per unit, at least 1. They increase the kill count used to calculate the card score.',
+            killValueIncrease:
+              'Whole points per unit, at least 1. Each unit increases the value of every team kill by this amount.',
           },
           zeroCountPenalty: 'Penalty when the source count is zero',
-          zeroCountPenaltyHint: 'Set 0 when no separate penalty is needed.',
-          summary: 'Source: {{source}}. Effect: {{effect}} ({{value}} per unit).',
+          zeroCountPenaltyHint:
+            'Nonnegative whole points deducted when the source count is zero. Leave empty or enter 0 for no separate penalty.',
         },
         previewLoading: 'Building modifier preview',
         previewError: 'The authoritative preview could not be built.',
         playerView: 'Player view',
         hostView: 'Host view',
-        commandPreview: 'Activation command: {{command}}',
         exampleTitle: 'Authoritative example',
         exampleResolution: {
           completed: 'rule completed',
@@ -589,6 +507,8 @@ const translations = {
       limit: 'Оставьте пустым или введите целое положительное число.',
       formula: 'Введите корректное выражение формулы.',
       tags: 'Не больше пяти уникальных тегов длиной до 32 символов каждый.',
+      positiveInteger: 'Введите целое число не меньше 1.',
+      payout: 'Введите число, отличное от нуля. Количество очков должно быть целым.',
     },
     modifiers: {
       title: 'Каталог модификаторов',
@@ -637,6 +557,7 @@ const translations = {
       unlimited: 'без лимита',
       createTitle: 'Новый модификатор',
       editTitle: 'Редактирование модификатора',
+      viewTitle: 'Просмотр модификатора',
       deleteTitle: 'Удалить модификатор',
       deleteConfirm:
         'Необратимо архивировать «{{name}}»? Он исчезнет из будущих игр, но сохранится в истории. Восстановление недоступно.',
@@ -651,13 +572,14 @@ const translations = {
         activationLimitCount: 'Лимит активаций',
         limitHint: 'Оставьте пустым, чтобы без лимита.',
         conflicts: 'Конфликты',
-        conflictsHint: 'Модификаторы, которые не могут быть активны вместе с этим.',
+        availableConflicts: 'Доступные',
+        lockedConflicts: 'В активной игре',
+        conflictLocked: 'В активной игре. Конфликты можно изменить после её завершения.',
         iconEmoji: 'Иконка (эмодзи)',
-        activationCommand: 'Команда активации',
         changeNote: 'Что изменилось',
-        changeNoteHint: 'Необязательный комментарий до 500 символов.',
+        changeNoteHint:
+          'Обязательно при редактировании. Опишите изменения: комментарий сохранится в истории редакции. До 500 символов.',
         durationSeconds: 'Длительность, секунд',
-        ruleText: 'Короткое правило',
         perKillBonus: 'Очки за убийство',
         failurePenaltyPoints: 'Штраф за провал',
         killDeltaMode: 'Режим счётчика убийств',
@@ -706,16 +628,16 @@ const translations = {
       wizard: {
         step: 'Шаг {{current}} из {{total}}',
         steps: {
-          0: 'Карточка',
-          1: 'Условия и активация',
-          2: 'Расчёт результата',
-          3: 'Проверка',
+          '0': 'Карточка',
+          '1': 'Условия и активация',
+          '2': 'Расчёт результата',
+          '3': 'Проверка',
         },
         stepDescriptions: {
-          0: 'Опишите модификатор так, как его увидит игрок в каталоге.',
-          1: 'Укажите, кто и когда выполняет правило, сколько стоит активация и с чем она несовместима.',
-          2: 'Сначала выберите, что мы считаем, а затем - что даёт каждая учтённая единица.',
-          3: 'Сверьте карточки игрока и ведущего и проверьте расчётный пример перед сохранением.',
+          '0': 'Опишите модификатор так, как его увидит игрок в каталоге.',
+          '1': 'Укажите, кто и когда выполняет правило, сколько стоит активация и с чем она несовместима.',
+          '2': 'Сначала выберите, что мы считаем, а затем - что даёт каждая учтённая единица.',
+          '3': 'Сверьте карточки игрока и ведущего и проверьте расчётный пример перед сохранением.',
         },
         sections: {
           behavior: 'Как работает правило',
@@ -726,22 +648,9 @@ const translations = {
             'Эти настройки определяют цену, количество покупок и сочетание с другими модификаторами.',
         },
         kind: 'Что делает модификатор?',
-        kinds: { rule: 'Правило без изменения счёта', scoring: 'Влияет на итог раунда' },
-        tags: 'Теги для поиска',
-        tagsHint: 'Выберите подсказки или введите до пяти собственных тегов.',
-        suggestedTags: {
-          combat: 'бой',
-          mentor: 'ментор',
-          movement: 'движение',
-          equipment: 'снаряжение',
-          communication: 'коммуникация',
-          revival: 'оживление',
-          environment: 'окружение',
-          restriction: 'ограничение',
-          weapon: 'оружие',
-          bonus: 'бонус',
-          penalty: 'штраф',
-          timer: 'таймер',
+        kinds: {
+          rule: 'Правило без изменения счёта',
+          scoring: 'Влияет на итог раунда',
         },
         phase: 'В какой момент действует модификатор?',
         phases: {
@@ -755,144 +664,63 @@ const translations = {
           result: 'Результат фиксируется после завершения игры.',
         },
         performer: 'Кто должен выполнить условие?',
-        performers: { activeTeam: 'Команда', mentor: 'Ведущий' },
+        performers: {
+          activeTeam: 'Команда',
+          mentor: 'Ведущий',
+        },
         performerDescriptions: {
           activeTeam: 'Действие или ограничение относится к активной команде.',
           mentor: 'Действие выполняет ведущий, а результат учитывается для команды.',
         },
-        rule: 'Правило для команды и ведущего',
-        requiresHostMonitoring: 'Нужно ли ведущему вручную проверить выполнение?',
-        monitoringAnswers: { yes: 'Да, нужно проверить', no: 'Нет, всё считается автоматически' },
+        requiresHostMonitoring: 'Нужно ли наблюдение ведущего во время раунда?',
+        monitoringAnswers: {
+          yes: 'Да, нужно наблюдение',
+          no: 'Без дополнительного наблюдения',
+        },
         monitoringDescriptions: {
-          yes: 'Ведущий подтвердит выполнение или введёт результат после игры.',
-          no: 'Приложение получит необходимые показатели раунда автоматически.',
+          yes: 'Помечает модификатор для наблюдения ведущего во время раунда. Ввод результата настраивается отдельно.',
+          no: 'Убирает отметку о наблюдении. Настроенные ручные поля результата всё равно нужно заполнить.',
         },
         durationQuestion: 'Есть ли ограничение по времени?',
-        durationAnswers: { yes: 'Да, есть таймер', no: 'Нет ограничения' },
+        durationAnswers: {
+          yes: 'Да, есть таймер',
+          no: 'Нет ограничения',
+        },
         durationDescriptions: {
           yes: 'Каждая активация добавляет отдельный интервал времени.',
           no: 'Правило действует без обратного отсчёта.',
         },
-        durationHint: 'Необязательно. Оставьте пустым, если таймера нет.',
-        commandHint: 'Оставьте пустым - команда сформируется из названия.',
-        advancedSettings: 'Дополнительные настройки',
-        advancedSettingsDescription: 'Команда активации обычно создаётся автоматически.',
-        reward: 'Что изменяется',
-        rewards: { points: 'Очки', bonusKills: 'Бонусные убийства' },
-        resolution: 'Как фиксируется факт',
-        resolutions: {
-          automaticRoundMetric: 'Автоматически из показателей раунда',
-          boolean: 'Ведущий выбирает «Удалось / Не удалось»',
-          nonNegativeCount: 'Ведущий вводит неотрицательное количество',
-        },
-        formula: 'Способ расчёта',
-        formulaHint: 'Показаны только совместимые встроенные способы.',
-        impactGuideTitle: 'Никаких формул вручную',
-        impactGuideDescription:
-          'Выберите подходящий сценарий. Форма сама настроит, что начисляется и какие данные должен ввести ведущий.',
-        formulaConfigTitle: 'Будет настроено автоматически',
-        formulaConfig: 'Результат: {{reward}}. Факт фиксируется: {{resolution}}.',
-        impactTargetQuestion: 'Что модификатор добавляет к результату?',
-        impactTargetHint: 'Сначала выберите результат. Способ расчёта появится следующим вопросом.',
-        impactTargets: {
-          points: {
-            title: 'Очки',
-            description: 'Меняется сумма очков за раунд, но не количество убийств.',
-          },
-          bonusKills: {
-            title: 'Дополнительные убийства',
-            description: 'К фактическим убийствам добавляются виртуальные перед расчётом карточки.',
-          },
-        },
-        impactMethodQuestions: {
-          points: 'Как начисляются дополнительные очки?',
-          bonusKills: 'Как определяется количество дополнительных убийств?',
-        },
-        formulas: {
-          growing_kill_value: 'За все убийства команды',
-          bonus_kill_on_condition: 'Один раз, если условие выполнено',
-          bonus_kills_by_count: 'По количеству событий',
-          window_kill_bonus_points: 'Только за подходящие убийства',
-        },
-        formulaDescriptions: {
-          growing_kill_value:
-            'Приложение само возьмёт общее количество убийств. Подходит для механики вроде «Жажды».',
-          bonus_kill_on_condition:
-            'Ведущий ответит «Выполнено / Не выполнено». При успехе команда получит фиксированный бонус.',
-          bonus_kills_by_count:
-            'Ведущий введёт число срабатываний, а каждое добавит заданное количество убийств.',
-          window_kill_bonus_points:
-            'Ведущий введёт количество подходящих убийств. Каждое принесёт процент стоимости карточки.',
-        },
-        impactSettingsTitle: 'Настройте результат',
-        impactSettings: {
-          growing_kill_value:
-            'За каждое убийство повышаем стоимость карточки; при нуле убийств можно применить штраф.',
-          bonus_kill_on_condition:
-            'Укажите, сколько убийств получит команда, если ведущий подтвердит выполнение условия.',
-          bonus_kills_by_count:
-            'Укажите, сколько убийств добавляет каждое событие, введённое ведущим.',
-          window_kill_bonus_points:
-            'Укажите, какой процент стоимости карточки приносит каждое подходящее убийство.',
-        },
-        units: { points: 'очков', kills: 'убийств', seconds: 'сек.' },
-        calculationExampleTitle: 'Как это будет считаться',
-        calculationExamples: {
-          growing_kill_value:
-            'Карточка стоит {{cardValue}} очков, команда сделала {{killsCount}} убийства.\nНовая стоимость: {{cardValue}} + {{killsCount}} × {{increment}} = {{increasedCardValue}}.\nИтог: {{increasedCardValue}} × {{killsCount}} = {{result}} очков. При нуле убийств штраф составит {{penalty}} очков.',
-          bonus_kill_on_condition:
-            'Карточка стоит {{cardValue}} очков, команда сделала {{killsCount}} убийства и выполнила условие.\nУчитываемые убийства: {{killsCount}} + {{bonus}} = {{resultUnits}}.\nИтог: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} очков.',
-          bonus_kills_by_count:
-            'Карточка стоит {{cardValue}} очков, команда сделала {{killsCount}} убийства. Ведущий ввёл {{inputCount}} события.\nБонус: {{inputCount}} × {{perUnit}} = {{bonus}} убийства.\nИтог: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} очков.',
-          window_kill_bonus_points:
-            'Карточка стоит {{cardValue}} очков, команда сделала {{killsCount}} убийства, из них {{inputCount}} подходят под условие.\nБонус: {{inputCount}} × {{cardValue}} × {{percent}}% = {{bonus}} очков.\nИтог: {{killsCount}} × {{cardValue}} + {{bonus}} = {{result}} очков.',
-        },
-        parameters: {
-          incrementPointsPerKill: 'Рост стоимости за убийство',
-          zeroKillPenaltyPoints: 'Штраф при отсутствии убийств',
-          successBonusKills: 'Бонусных убийств при успехе',
-          bonusKillsPerUnit: 'Бонусных убийств за единицу',
-          bonusRate: 'Процент стоимости карточки за убийство',
+        units: {
+          points: 'очков',
+          kills: 'убийств',
+          seconds: 'сек.',
         },
         help: {
-          kind: 'Выберите правило, если модификатор только ограничивает действия. Выберите влияние на итог, если он меняет очки или число убийств.',
-          name: 'Отображается игрокам, ведущему, в каталоге и истории раундов.',
+          kind: 'Выберите правило для ограничений без изменения счёта. Выберите влияние на итог, чтобы настроить очки или бонусные убийства: появится дополнительный шаг расчёта.',
+          name: 'Отображается игрокам и ведущему в каталоге, покупках и истории раундов. Переименование не меняет расчёт результата.',
           description:
-            'Публичное объяснение для игрока: что произойдёт после покупки. Не прячьте здесь важные условия.',
-          iconEmoji: 'Показывается рядом с названием и помогает быстро найти модификатор.',
-          tags: 'Используются только для поиска и фильтрации. На расчёт и правила не влияют.',
+            'Полное объяснение для игрока и ведущего. Укажите действие, условия и последствия. Текст сам не начисляет очки: расчёт настраивается на следующих шагах.',
+          iconEmoji:
+            'Необязательная иконка рядом с названием. Помогает узнавать модификатор и не влияет на игру или очки.',
           phase:
-            'Определяет, когда правило применяется: до старта карточки, во время игры или при подведении итогов.',
-          performer: 'Указывает, кто выполняет действие: активная команда или ведущий.',
-          rule: 'Точная инструкция для ведущего и команды. По ней ведущий контролирует выполнение и закрывает раунд.',
+            'Указывает, когда выполнять описанные условия: до начала игры, во время игры или при подведении итогов. Выбор этапа не меняет формулу расчёта.',
+          performer:
+            'Описанное действие выполняет активная команда или ведущий. Очки и бонусные убийства в обоих случаях получает активная команда.',
           requiresHostMonitoring:
-            'Добавляет отметку о ручном контроле. Включайте, если приложение не может проверить условие самостоятельно.',
+            'Помечает модификатор как требующий наблюдения ведущего во время раунда. Не меняет способ расчёта и не делает ручной ввод результатов автоматическим.',
           durationSeconds:
-            'Время действия одной активации. Каждая дополнительная активация добавляет ещё такой же интервал.',
-          activationCost: 'Столько очков викторины списывается у игрока при каждой покупке.',
+            'Целое число секунд, не меньше 1, на одну активацию. Отсчёт начинается со стартом игры; повторные активации правила складывают длительности. Без таймера отсчёта нет.',
+          activationCost:
+            'Целое число очков викторины, списываемых у покупателя за каждую активацию. Минимум 0: ноль означает бесплатную покупку. Это не размер награды команды.',
           activationLimitCount:
-            'Максимальное число активаций этого модификатора в одном раунде. Пустое поле снимает лимит.',
+            'Общее число покупок этого модификатора за один раунд всеми игроками. Укажите целое число от 1 или оставьте поле пустым для покупок без лимита.',
           conflicts:
-            'Если выбранный модификатор уже активен в раунде, купить этот будет нельзя - и наоборот.',
-          activationCommand:
-            'Команда, которой игрок заказывает модификатор. Если оставить пустой, она создастся из названия.',
-          formulaCode:
-            'Готовый сценарий определяет результат, ввод ведущего и формулу. Выбирайте по смыслу правила, а не по техническому названию.',
-          incrementPointsPerKill:
-            'На сколько очков одна активация увеличивает стоимость убийства за каждое сделанное убийство.',
-          zeroKillPenaltyPoints:
-            'Сколько очков снимает каждая активация, если команда не сделала ни одного убийства.',
-          successBonusKills:
-            'Сколько бонусных убийств добавить, когда ведущий отмечает условие выполненным.',
-          bonusKillsPerUnit:
-            'Сколько бонусных убийств даёт каждое срабатывание, введённое ведущим.',
-          bonusRate: 'Процент стоимости карточки за одно подходящее убийство: например, 75%.',
+            'Выбранные модификаторы не могут действовать вместе с этим в одном раунде. Покупка любого блокирует другой. Пустой список не вводит конфликтов. Модификаторы из активной игры недоступны до её завершения.',
           eventInputLabel:
-            'Это название поля, которое ведущий увидит при подведении итогов раунда.',
+            'Подпись поля, в котором ведущий вводит количество событий или отмечает «да/нет». Напишите, что считать или проверять. Подпись сама не рассчитывает результат.',
         },
         measurement: {
           title: '1. Что считаем',
-          description: 'Сначала определите источник расчёта. Награду выберем отдельно.',
           question: 'От чего срабатывает модификатор?',
           domains: {
             kills: {
@@ -932,7 +760,6 @@ const translations = {
             },
           },
           inputLabel: 'Что должен ввести ведущий?',
-          inputLabelHint: 'Напишите конкретно, например: «Успешные убийства ведущего».',
           maximumQuestion: 'Ограничить количество числом активаций?',
           maximumKinds: {
             none: {
@@ -946,12 +773,10 @@ const translations = {
           },
           eventsPerActivation: 'Максимум событий на одну активацию',
           eventsPerActivationHint:
-            'Для Lucky Shot это 1: шесть активаций допускают максимум шесть успешных выстрелов.',
+            'Целое число не меньше 1. Максимальный итоговый счётчик равен этому числу, умноженному на количество активаций.',
         },
         payout: {
           title: '2. Что даёт каждая единица',
-          description:
-            'Один и тот же эффект можно связать с убийствами, произвольным событием, условием или активацией.',
           question: 'Выберите эффект',
           kinds: {
             fixedPoints: {
@@ -979,20 +804,23 @@ const translations = {
             killValueIncrease: 'Рост стоимости убийства за единицу',
           },
           valueHints: {
-            fixedPoints: 'Отрицательное значение можно использовать как штраф.',
-            cardPercent: 'Например, 75 добавит 75%, а −25 вычтет 25% стоимости карточки.',
-            bonusKills: 'Положительное целое число.',
-            killValueIncrease: 'Положительное целое количество очков.',
+            fixedPoints:
+              'Целое число очков за единицу, кроме 0. Итог добавляется к счёту команды; отрицательное значение вычитает очки.',
+            cardPercent:
+              'Процент стоимости карточки за единицу, кроме 0. Положительный добавляет очки, отрицательный вычитает. Допускаются дробные значения.',
+            bonusKills:
+              'Целое число бонусных убийств за единицу, не меньше 1. Увеличивает счётчик убийств, используемый для расчёта очков карточки.',
+            killValueIncrease:
+              'Целое число очков за единицу, не меньше 1. Каждая единица повышает стоимость всех убийств команды на указанное значение.',
           },
           zeroCountPenalty: 'Штраф, если источник равен нулю',
-          zeroCountPenaltyHint: 'Укажите 0, если отдельный штраф не нужен.',
-          summary: 'Источник: {{source}}. Эффект: {{effect}} ({{value}} за единицу).',
+          zeroCountPenaltyHint:
+            'Целое число очков от 0, вычитаемых, если источник равен нулю. Пустое поле или 0 означает отсутствие отдельного штрафа.',
         },
         previewLoading: 'Формируем предпросмотр модификатора',
         previewError: 'Не удалось построить авторитетный предпросмотр.',
         playerView: 'Карточка игрока',
         hostView: 'Карточка ведущего',
-        commandPreview: 'Команда активации: {{command}}',
         exampleTitle: 'Проверочный пример',
         exampleResolution: {
           completed: 'правило выполнено',
@@ -1141,6 +969,8 @@ const translations = {
       limit: 'Залиште порожнім або введіть ціле додатне число.',
       formula: 'Введіть коректний вираз формули.',
       tags: 'Не більше п’яти унікальних тегів довжиною до 32 символів кожен.',
+      positiveInteger: 'Введіть ціле число не менше 1.',
+      payout: 'Введіть число, відмінне від нуля. Кількість очок має бути цілою.',
     },
     modifiers: {
       title: 'Каталог модифікаторів',
@@ -1189,6 +1019,7 @@ const translations = {
       unlimited: 'без ліміту',
       createTitle: 'Новий модифікатор',
       editTitle: 'Редагування модифікатора',
+      viewTitle: 'Перегляд модифікатора',
       deleteTitle: 'Видалити модифікатор',
       deleteConfirm:
         'Незворотно архівувати «{{name}}»? Він зникне з майбутніх ігор, але залишиться в історії. Відновлення недоступне.',
@@ -1203,13 +1034,14 @@ const translations = {
         activationLimitCount: 'Ліміт активацій',
         limitHint: 'Залиште порожнім, щоб без ліміту.',
         conflicts: 'Конфлікти',
-        conflictsHint: 'Модифікатори, які не можуть бути активні разом із цим.',
+        availableConflicts: 'Доступні',
+        lockedConflicts: 'В активній грі',
+        conflictLocked: 'В активній грі. Конфлікти можна змінити після її завершення.',
         iconEmoji: 'Іконка (емодзі)',
-        activationCommand: 'Команда активації',
         changeNote: 'Що змінилося',
-        changeNoteHint: 'Необов’язковий коментар до 500 символів.',
+        changeNoteHint:
+          'Обов’язково під час редагування. Опишіть зміни: коментар збережеться в історії редакції. До 500 символів.',
         durationSeconds: 'Тривалість, секунд',
-        ruleText: 'Коротке правило',
         perKillBonus: 'Очки за вбивство',
         failurePenaltyPoints: 'Штраф за провал',
         killDeltaMode: 'Режим лічильника вбивств',
@@ -1258,16 +1090,16 @@ const translations = {
       wizard: {
         step: 'Крок {{current}} з {{total}}',
         steps: {
-          0: 'Картка',
-          1: 'Умови й активація',
-          2: 'Розрахунок результату',
-          3: 'Перевірка',
+          '0': 'Картка',
+          '1': 'Умови й активація',
+          '2': 'Розрахунок результату',
+          '3': 'Перевірка',
         },
         stepDescriptions: {
-          0: 'Опишіть модифікатор так, як його побачить гравець у каталозі.',
-          1: 'Вкажіть, хто й коли виконує правило, скільки коштує активація та з чим вона несумісна.',
-          2: 'Спочатку оберіть, що рахуємо, а потім - що дає кожна врахована одиниця.',
-          3: 'Звірте картки гравця й ведучого та перевірте розрахунковий приклад перед збереженням.',
+          '0': 'Опишіть модифікатор так, як його побачить гравець у каталозі.',
+          '1': 'Вкажіть, хто й коли виконує правило, скільки коштує активація та з чим вона несумісна.',
+          '2': 'Спочатку оберіть, що рахуємо, а потім - що дає кожна врахована одиниця.',
+          '3': 'Звірте картки гравця й ведучого та перевірте розрахунковий приклад перед збереженням.',
         },
         sections: {
           behavior: 'Як працює правило',
@@ -1277,22 +1109,9 @@ const translations = {
             'Ці налаштування визначають ціну, кількість покупок і сумісність з іншими модифікаторами.',
         },
         kind: 'Що робить модифікатор?',
-        kinds: { rule: 'Правило без зміни рахунку', scoring: 'Впливає на підсумок раунду' },
-        tags: 'Теги для пошуку',
-        tagsHint: 'Оберіть підказки або введіть до п’яти власних тегів.',
-        suggestedTags: {
-          combat: 'бій',
-          mentor: 'ментор',
-          movement: 'рух',
-          equipment: 'спорядження',
-          communication: 'комунікація',
-          revival: 'оживлення',
-          environment: 'оточення',
-          restriction: 'обмеження',
-          weapon: 'зброя',
-          bonus: 'бонус',
-          penalty: 'штраф',
-          timer: 'таймер',
+        kinds: {
+          rule: 'Правило без зміни рахунку',
+          scoring: 'Впливає на підсумок раунду',
         },
         phase: 'Коли діє модифікатор?',
         phases: {
@@ -1306,139 +1125,63 @@ const translations = {
           result: 'Результат фіксується після завершення гри.',
         },
         performer: 'Хто має виконати умову?',
-        performers: { activeTeam: 'Команда', mentor: 'Ведучий' },
+        performers: {
+          activeTeam: 'Команда',
+          mentor: 'Ведучий',
+        },
         performerDescriptions: {
           activeTeam: 'Дія або обмеження стосується активної команди.',
           mentor: 'Дію виконує ведучий, а результат зараховується команді.',
         },
-        rule: 'Правило для команди та ведучого',
-        requiresHostMonitoring: 'Чи має ведучий перевірити виконання вручну?',
-        monitoringAnswers: { yes: 'Так, потрібно перевірити', no: 'Ні, рахувати автоматично' },
+        requiresHostMonitoring: 'Чи потрібне спостереження ведучого під час раунду?',
+        monitoringAnswers: {
+          yes: 'Так, потрібне спостереження',
+          no: 'Без додаткового спостереження',
+        },
         monitoringDescriptions: {
-          yes: 'Ведучий підтвердить виконання або введе результат після гри.',
-          no: 'Застосунок отримає потрібні показники раунду автоматично.',
+          yes: 'Позначає модифікатор для спостереження ведучого під час раунду. Введення результату налаштовується окремо.',
+          no: 'Прибирає позначку спостереження. Налаштовані ручні поля результату все одно потрібно заповнити.',
         },
         durationQuestion: 'Чи є обмеження за часом?',
-        durationAnswers: { yes: 'Так, є таймер', no: 'Немає обмеження' },
+        durationAnswers: {
+          yes: 'Так, є таймер',
+          no: 'Немає обмеження',
+        },
         durationDescriptions: {
           yes: 'Кожна активація додає окремий часовий інтервал.',
           no: 'Правило діє без зворотного відліку.',
         },
-        durationHint: 'Необов’язково. Залиште порожнім, якщо таймера немає.',
-        commandHint: 'Залиште порожнім - команда сформується з назви.',
-        advancedSettings: 'Додаткові налаштування',
-        advancedSettingsDescription: 'Команда активації зазвичай створюється автоматично.',
-        reward: 'Що змінюється',
-        rewards: { points: 'Очки', bonusKills: 'Бонусні вбивства' },
-        resolution: 'Як фіксується факт',
-        resolutions: {
-          automaticRoundMetric: 'Автоматично з показників раунду',
-          boolean: 'Ведучий обирає «Вдалося / Не вдалося»',
-          nonNegativeCount: 'Ведучий вводить невід’ємну кількість',
-        },
-        formula: 'Спосіб розрахунку',
-        formulaHint: 'Показано лише сумісні вбудовані способи.',
-        impactGuideTitle: 'Жодних формул вручну',
-        impactGuideDescription:
-          'Оберіть відповідний сценарій. Форма сама налаштує результат і дані, які має ввести ведучий.',
-        formulaConfigTitle: 'Буде налаштовано автоматично',
-        formulaConfig: 'Результат: {{reward}}. Факт фіксується: {{resolution}}.',
-        impactTargetQuestion: 'Що модифікатор додає до результату?',
-        impactTargetHint: 'Спочатку оберіть результат. Спосіб розрахунку з’явиться далі.',
-        impactTargets: {
-          points: {
-            title: 'Очки',
-            description: 'Змінюється сума очок за раунд, але не кількість убивств.',
-          },
-          bonusKills: {
-            title: 'Додаткові вбивства',
-            description: 'До фактичних убивств додаються віртуальні перед розрахунком картки.',
-          },
-        },
-        impactMethodQuestions: {
-          points: 'Як нараховуються додаткові очки?',
-          bonusKills: 'Як визначається кількість додаткових убивств?',
-        },
-        formulas: {
-          growing_kill_value: 'За всі вбивства команди',
-          bonus_kill_on_condition: 'Один раз, якщо умову виконано',
-          bonus_kills_by_count: 'За кількістю подій',
-          window_kill_bonus_points: 'Лише за відповідні вбивства',
-        },
-        formulaDescriptions: {
-          growing_kill_value:
-            'Застосунок сам отримає загальну кількість убивств. Підходить для механіки на кшталт «Спраги».',
-          bonus_kill_on_condition:
-            'Ведучий обере «Виконано / Не виконано». За успіх команда отримає фіксований бонус.',
-          bonus_kills_by_count:
-            'Ведучий введе кількість спрацювань, а кожне додасть задану кількість убивств.',
-          window_kill_bonus_points:
-            'Ведучий введе кількість відповідних убивств. Кожне принесе відсоток вартості картки.',
-        },
-        impactSettingsTitle: 'Налаштуйте результат',
-        impactSettings: {
-          growing_kill_value:
-            'За кожне вбивство підвищуємо вартість картки; за нуль убивств можна застосувати штраф.',
-          bonus_kill_on_condition:
-            'Укажіть кількість убивств, яку отримає команда після підтвердження умови.',
-          bonus_kills_by_count: 'Укажіть, скільки вбивств додає кожна введена ведучим подія.',
-          window_kill_bonus_points:
-            'Укажіть відсоток вартості картки за кожне відповідне вбивство.',
-        },
-        units: { points: 'очок', kills: 'убивств', seconds: 'сек.' },
-        calculationExampleTitle: 'Як це буде розраховано',
-        calculationExamples: {
-          growing_kill_value:
-            'Картка коштує {{cardValue}} очок, команда зробила {{killsCount}} вбивства.\nНова вартість: {{cardValue}} + {{killsCount}} × {{increment}} = {{increasedCardValue}}.\nРезультат: {{increasedCardValue}} × {{killsCount}} = {{result}} очок. За нуль убивств штраф становить {{penalty}} очок.',
-          bonus_kill_on_condition:
-            'Картка коштує {{cardValue}} очок, команда зробила {{killsCount}} вбивства й виконала умову.\nЗараховані вбивства: {{killsCount}} + {{bonus}} = {{resultUnits}}.\nРезультат: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} очок.',
-          bonus_kills_by_count:
-            'Картка коштує {{cardValue}} очок, команда зробила {{killsCount}} вбивства. Ведучий увів {{inputCount}} події.\nБонус: {{inputCount}} × {{perUnit}} = {{bonus}} вбивства.\nРезультат: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} очок.',
-          window_kill_bonus_points:
-            'Картка коштує {{cardValue}} очок, команда зробила {{killsCount}} вбивства, з них {{inputCount}} відповідають умові.\nБонус: {{inputCount}} × {{cardValue}} × {{percent}}% = {{bonus}} очок.\nРезультат: {{killsCount}} × {{cardValue}} + {{bonus}} = {{result}} очок.',
-        },
-        parameters: {
-          incrementPointsPerKill: 'Зростання вартості за вбивство',
-          zeroKillPenaltyPoints: 'Штраф за відсутності вбивств',
-          successBonusKills: 'Бонусних вбивств при успіху',
-          bonusKillsPerUnit: 'Бонусних вбивств за одиницю',
-          bonusRate: 'Відсоток вартості картки за вбивство',
+        units: {
+          points: 'очок',
+          kills: 'убивств',
+          seconds: 'сек.',
         },
         help: {
-          kind: 'Оберіть правило, якщо модифікатор лише обмежує дії. Оберіть вплив на підсумок, якщо він змінює очки або вбивства.',
-          name: 'Відображається гравцям і ведучому в каталозі та історії раундів.',
+          kind: 'Виберіть правило для обмежень без зміни рахунку. Виберіть вплив на підсумок для очок або бонусних убивств: з’явиться додатковий крок розрахунку.',
+          name: 'Показується гравцям і ведучому в каталозі, покупках та історії раундів. Перейменування не змінює розрахунок.',
           description:
-            'Публічне пояснення для гравця: що станеться після купівлі. Не приховуйте тут важливі умови.',
-          iconEmoji: 'Показується поруч із назвою та допомагає швидко впізнати модифікатор.',
-          tags: 'Використовуються лише для пошуку й фільтрації. На правила та підрахунок не впливають.',
-          phase: 'Визначає, коли діє правило: під час підготовки, гри або підбиття підсумків.',
-          performer: 'Вказує, хто виконує дію: активна команда або ведучий.',
-          rule: 'Точна інструкція для ведучого й команди, за якою контролюється виконання.',
+            'Повне пояснення для гравця й ведучого. Вкажіть дію, умови та наслідки. Текст сам не нараховує очки: розрахунок налаштовується на наступних кроках.',
+          iconEmoji:
+            'Необов’язкова іконка біля назви. Допомагає впізнати модифікатор і не впливає на гру чи очки.',
+          phase:
+            'Вказує, коли виконувати описані умови: до початку гри, під час гри чи підбиття підсумків. Вибір етапу не змінює формулу розрахунку.',
+          performer:
+            'Описану дію виконує активна команда або ведучий. Очки та бонусні вбивства в обох випадках отримує активна команда.',
           requiresHostMonitoring:
-            'Додає позначку ручного контролю. Увімкніть, якщо застосунок не може перевірити умову самостійно.',
+            'Позначає модифікатор для спостереження ведучого під час раунду. Не змінює спосіб розрахунку та не робить ручне введення результатів автоматичним.',
           durationSeconds:
-            'Тривалість однієї активації. Кожна додаткова активація додає такий самий інтервал.',
-          activationCost: 'Стільки очок вікторини списується з гравця за кожну активацію.',
+            'Ціла кількість секунд, щонайменше 1, на одну активацію. Відлік починається зі стартом гри; повторні активації правила додають тривалість. Без таймера відліку немає.',
+          activationCost:
+            'Цілі очки вікторини, що списуються з покупця за кожну активацію. Мінімум 0: нуль означає безкоштовну покупку. Це не розмір нагороди команди.',
           activationLimitCount:
-            'Максимальна кількість активацій у межах одного раунду. Порожнє поле знімає ліміт.',
+            'Загальна кількість покупок цього модифікатора за раунд усіма гравцями. Введіть ціле число від 1 або залиште поле порожнім для покупок без ліміту.',
           conflicts:
-            'Якщо обраний модифікатор уже активний у раунді, цей купити не можна - і навпаки.',
-          activationCommand:
-            'Команда для замовлення модифікатора. Якщо залишити порожньою, вона створиться з назви.',
-          formulaCode:
-            'Готовий сценарій визначає результат, ввід ведучого та формулу. Обирайте за змістом правила.',
-          incrementPointsPerKill:
-            'На скільки очок одна активація збільшує вартість вбивства за кожне зроблене вбивство.',
-          zeroKillPenaltyPoints:
-            'Скільки очок знімає кожна активація, якщо команда не зробила жодного вбивства.',
-          successBonusKills: 'Скільки бонусних вбивств додати, коли ведучий відмічає успіх.',
-          bonusKillsPerUnit: 'Скільки бонусних вбивств дає кожне спрацювання, введене ведучим.',
-          bonusRate: 'Відсоток вартості картки за одне відповідне вбивство, наприклад 75%.',
-          eventInputLabel: 'Назва поля, яке ведучий побачить під час підбиття підсумків.',
+            'Вибрані модифікатори не можуть діяти разом із цим у раунді. Купівля будь-якого блокує інший. Порожній список не задає конфліктів. Модифікатори з активної гри недоступні до її завершення.',
+          eventInputLabel:
+            'Підпис поля, де ведучий вводить кількість подій чи відповідає «так/ні». Вкажіть, що рахувати або перевіряти. Підпис сам не обчислює результат.',
         },
         measurement: {
           title: '1. Що рахуємо',
-          description: 'Спочатку визначте джерело розрахунку. Нагорода налаштовується окремо.',
           question: 'Від чого спрацьовує модифікатор?',
           domains: {
             kills: {
@@ -1477,7 +1220,6 @@ const translations = {
             },
           },
           inputLabel: 'Що має ввести ведучий?',
-          inputLabelHint: 'Напишіть конкретну назву поля.',
           maximumQuestion: 'Обмежити кількість активаціями?',
           maximumKinds: {
             none: {
@@ -1491,12 +1233,10 @@ const translations = {
           },
           eventsPerActivation: 'Максимум подій на активацію',
           eventsPerActivationHint:
-            'Для Lucky Shot це 1: шість активацій дозволяють максимум шість успішних пострілів.',
+            'Ціле число не менше 1. Максимальний підсумковий лічильник дорівнює цьому числу, помноженому на кількість активацій.',
         },
         payout: {
           title: '2. Що дає кожна одиниця',
-          description:
-            'Ефект можна пов’язати з убивствами, довільною подією, умовою або активацією.',
           question: 'Оберіть ефект',
           kinds: {
             fixedPoints: {
@@ -1523,20 +1263,23 @@ const translations = {
             killValueIncrease: 'Зростання вартості за одиницю',
           },
           valueHints: {
-            fixedPoints: 'Від’ємне значення можна використати як штраф.',
-            cardPercent: 'Наприклад, 75 додасть 75%, а −25 відніме 25% вартості картки.',
-            bonusKills: 'Додатне ціле число.',
-            killValueIncrease: 'Додатне ціле число очок.',
+            fixedPoints:
+              'Ціле число очок за одиницю, крім 0. Результат додається до рахунку команди; від’ємне значення віднімає очки.',
+            cardPercent:
+              'Відсоток вартості картки за одиницю, крім 0. Додатний додає очки, від’ємний віднімає. Дозволені дробові значення.',
+            bonusKills:
+              'Ціле число бонусних вбивств за одиницю, не менше 1. Збільшує лічильник вбивств для розрахунку очок картки.',
+            killValueIncrease:
+              'Ціле число очок за одиницю, не менше 1. Кожна одиниця підвищує вартість усіх вбивств команди на це значення.',
           },
           zeroCountPenalty: 'Штраф, якщо джерело дорівнює нулю',
-          zeroCountPenaltyHint: 'Вкажіть 0, якщо окремий штраф не потрібен.',
-          summary: 'Джерело: {{source}}. Ефект: {{effect}} ({{value}} за одиницю).',
+          zeroCountPenaltyHint:
+            'Ціла кількість очок від 0, які віднімаються, якщо джерело дорівнює нулю. Порожнє поле або 0 означає відсутність окремого штрафу.',
         },
         previewLoading: 'Формуємо попередній перегляд модифікатора',
         previewError: 'Не вдалося побудувати авторитетний попередній перегляд.',
         playerView: 'Картка гравця',
         hostView: 'Картка ведучого',
-        commandPreview: 'Команда активації: {{command}}',
         exampleTitle: 'Перевірочний приклад',
         exampleResolution: {
           completed: 'правило виконано',
@@ -1685,6 +1428,8 @@ const translations = {
       limit: 'Pozostaw puste lub podaj dodatnią liczbę całkowitą.',
       formula: 'Podaj poprawne wyrażenie formuły.',
       tags: 'Użyj maksymalnie pięciu unikalnych tagów po 32 znaki.',
+      positiveInteger: 'Wpisz liczbę całkowitą nie mniejszą niż 1.',
+      payout: 'Wpisz liczbę różną od zera. Liczba punktów musi być całkowita.',
     },
     modifiers: {
       title: 'Katalog modyfikatorów',
@@ -1733,6 +1478,7 @@ const translations = {
       unlimited: 'bez limitu',
       createTitle: 'Nowy modyfikator',
       editTitle: 'Edycja modyfikatora',
+      viewTitle: 'Podgląd modyfikatora',
       deleteTitle: 'Usuń modyfikator',
       deleteConfirm:
         'Nieodwracalnie zarchiwizować „{{name}}”? Zniknie z przyszłych gier, pozostając w historii. Przywracanie nie jest dostępne.',
@@ -1747,13 +1493,14 @@ const translations = {
         activationLimitCount: 'Limit aktywacji',
         limitHint: 'Pozostaw puste, aby bez limitu.',
         conflicts: 'Konflikty',
-        conflictsHint: 'Modyfikatory, które nie mogą być aktywne razem z tym.',
+        availableConflicts: 'Dostępne',
+        lockedConflicts: 'W aktywnej grze',
+        conflictLocked: 'W aktywnej grze. Konflikty można zmienić po jej zakończeniu.',
         iconEmoji: 'Ikona (emoji)',
-        activationCommand: 'Komenda aktywacji',
         changeNote: 'Co się zmieniło',
-        changeNoteHint: 'Opcjonalny komentarz audytowy, maksymalnie 500 znaków.',
+        changeNoteHint:
+          'Wymagany przy edycji. Opisz zmiany: komentarz zostanie zapisany w historii wersji. Maksymalnie 500 znaków.',
         durationSeconds: 'Czas trwania, sekundy',
-        ruleText: 'Krótkie zasady',
         perKillBonus: 'Punkty za zabójstwo',
         failurePenaltyPoints: 'Kara za porażkę',
         killDeltaMode: 'Tryb licznika zabójstw',
@@ -1802,16 +1549,16 @@ const translations = {
       wizard: {
         step: 'Krok {{current}} z {{total}}',
         steps: {
-          0: 'Karta',
-          1: 'Warunki i aktywacja',
-          2: 'Obliczenie wyniku',
-          3: 'Sprawdzenie',
+          '0': 'Karta',
+          '1': 'Warunki i aktywacja',
+          '2': 'Obliczenie wyniku',
+          '3': 'Sprawdzenie',
         },
         stepDescriptions: {
-          0: 'Opisz modyfikator dokładnie tak, jak zobaczy go gracz w katalogu.',
-          1: 'Określ, kto i kiedy wykonuje regułę, koszt aktywacji, limit oraz konflikty.',
-          2: 'Najpierw wybierz, co liczymy, a potem określ efekt każdej jednostki.',
-          3: 'Sprawdź karty gracza i prowadzącego oraz przykład obliczenia przed zapisem.',
+          '0': 'Opisz modyfikator dokładnie tak, jak zobaczy go gracz w katalogu.',
+          '1': 'Określ, kto i kiedy wykonuje regułę, koszt aktywacji, limit oraz konflikty.',
+          '2': 'Najpierw wybierz, co liczymy, a potem określ efekt każdej jednostki.',
+          '3': 'Sprawdź karty gracza i prowadzącego oraz przykład obliczenia przed zapisem.',
         },
         sections: {
           behavior: 'Jak działa reguła',
@@ -1822,22 +1569,9 @@ const translations = {
             'Te ustawienia określają cenę, limit zakupów i zgodność z innymi modyfikatorami.',
         },
         kind: 'Co robi ten modyfikator?',
-        kinds: { rule: 'Reguła bez zmiany wyniku', scoring: 'Wpływa na wynik rundy' },
-        tags: 'Tagi wyszukiwania',
-        tagsHint: 'Wybierz podpowiedzi lub wpisz do pięciu własnych tagów.',
-        suggestedTags: {
-          combat: 'walka',
-          mentor: 'mentor',
-          movement: 'ruch',
-          equipment: 'wyposażenie',
-          communication: 'komunikacja',
-          revival: 'wskrzeszenie',
-          environment: 'otoczenie',
-          restriction: 'ograniczenie',
-          weapon: 'broń',
-          bonus: 'premia',
-          penalty: 'kara',
-          timer: 'timer',
+        kinds: {
+          rule: 'Reguła bez zmiany wyniku',
+          scoring: 'Wpływa na wynik rundy',
         },
         phase: 'Kiedy działa modyfikator?',
         phases: {
@@ -1851,142 +1585,63 @@ const translations = {
           result: 'Wynik jest zapisywany po zakończeniu gry.',
         },
         performer: 'Kto musi spełnić warunek?',
-        performers: { activeTeam: 'Drużyna', mentor: 'Prowadzący' },
+        performers: {
+          activeTeam: 'Drużyna',
+          mentor: 'Prowadzący',
+        },
         performerDescriptions: {
           activeTeam: 'Działanie lub ograniczenie dotyczy aktywnej drużyny.',
           mentor: 'Działanie wykonuje prowadzący, a wynik jest zaliczany drużynie.',
         },
-        rule: 'Reguła dla drużyny i prowadzącego',
-        requiresHostMonitoring: 'Czy prowadzący musi ręcznie sprawdzić wykonanie?',
-        monitoringAnswers: { yes: 'Tak, trzeba sprawdzić', no: 'Nie, oblicz automatycznie' },
+        requiresHostMonitoring: 'Czy prowadzący musi obserwować rundę?',
+        monitoringAnswers: {
+          yes: 'Tak, obserwacja jest potrzebna',
+          no: 'Bez dodatkowej obserwacji',
+        },
         monitoringDescriptions: {
-          yes: 'Prowadzący potwierdzi wykonanie lub wpisze wynik po grze.',
-          no: 'Aplikacja automatycznie pobierze potrzebne dane rundy.',
+          yes: 'Oznacza modyfikator do obserwacji przez prowadzącego podczas rundy. Wprowadzanie wyniku ustawia się osobno.',
+          no: 'Usuwa oznaczenie obserwacji. Skonfigurowane ręczne pola wyniku nadal trzeba wypełnić.',
         },
         durationQuestion: 'Czy obowiązuje limit czasu?',
-        durationAnswers: { yes: 'Tak, użyj timera', no: 'Bez limitu czasu' },
+        durationAnswers: {
+          yes: 'Tak, użyj timera',
+          no: 'Bez limitu czasu',
+        },
         durationDescriptions: {
           yes: 'Każda aktywacja dodaje osobny przedział czasu.',
           no: 'Reguła działa bez odliczania.',
         },
-        durationHint: 'Opcjonalnie. Pozostaw puste, jeśli nie ma timera.',
-        commandHint: 'Pozostaw puste, aby wygenerować komendę z nazwy.',
-        advancedSettings: 'Ustawienia dodatkowe',
-        advancedSettingsDescription: 'Komenda aktywacji jest zwykle generowana automatycznie.',
-        reward: 'Co się zmienia',
-        rewards: { points: 'Punkty', bonusKills: 'Dodatkowe zabójstwa' },
-        resolution: 'Jak zapisywany jest fakt',
-        resolutions: {
-          automaticRoundMetric: 'Automatycznie z danych rundy',
-          boolean: 'Prowadzący wybiera udało się / nie udało się',
-          nonNegativeCount: 'Prowadzący wpisuje nieujemną liczbę',
-        },
-        formula: 'Sposób obliczania',
-        formulaHint: 'Pokazane są tylko zgodne wbudowane sposoby.',
-        impactGuideTitle: 'Bez ręcznego pisania formuł',
-        impactGuideDescription:
-          'Wybierz odpowiedni scenariusz. Formularz sam ustawi wynik i dane wymagane od prowadzącego.',
-        formulaConfigTitle: 'Ustawione automatycznie',
-        formulaConfig: 'Wynik: {{reward}}. Sposób zapisu: {{resolution}}.',
-        impactTargetQuestion: 'Co modyfikator dodaje do wyniku?',
-        impactTargetHint: 'Najpierw wybierz wynik. Sposób obliczania pojawi się dalej.',
-        impactTargets: {
-          points: {
-            title: 'Punkty',
-            description: 'Zmienia wynik punktowy rundy, ale nie liczbę zabójstw.',
-          },
-          bonusKills: {
-            title: 'Dodatkowe zabójstwa',
-            description: 'Dodaje wirtualne zabójstwa przed obliczeniem wartości karty.',
-          },
-        },
-        impactMethodQuestions: {
-          points: 'Jak przyznawane są dodatkowe punkty?',
-          bonusKills: 'Jak ustalana jest liczba dodatkowych zabójstw?',
-        },
-        formulas: {
-          growing_kill_value: 'Za wszystkie zabójstwa drużyny',
-          bonus_kill_on_condition: 'Raz po spełnieniu warunku',
-          bonus_kills_by_count: 'Według liczby zdarzeń',
-          window_kill_bonus_points: 'Tylko za pasujące zabójstwa',
-        },
-        formulaDescriptions: {
-          growing_kill_value:
-            'Aplikacja automatycznie pobierze łączną liczbę zabójstw. Pasuje do mechaniki takiej jak Pragnienie.',
-          bonus_kill_on_condition:
-            'Prowadzący wybierze „Spełniono / Nie spełniono”. Sukces daje stałą premię.',
-          bonus_kills_by_count:
-            'Prowadzący wpisze liczbę zdarzeń, a każde doda ustaloną liczbę zabójstw.',
-          window_kill_bonus_points:
-            'Prowadzący wpisze pasujące zabójstwa. Każde daje procent wartości karty.',
-        },
-        impactSettingsTitle: 'Skonfiguruj wynik',
-        impactSettings: {
-          growing_kill_value:
-            'Zwiększaj wartość karty za każde zabójstwo i opcjonalnie nalicz karę przy zerze.',
-          bonus_kill_on_condition:
-            'Ustaw liczbę zabójstw przyznawaną po potwierdzeniu warunku przez prowadzącego.',
-          bonus_kills_by_count:
-            'Ustaw liczbę zabójstw dodawaną przez każde zdarzenie wpisane przez prowadzącego.',
-          window_kill_bonus_points:
-            'Ustaw procent wartości karty przyznawany za każde pasujące zabójstwo.',
-        },
-        units: { points: 'pkt', kills: 'zabójstw', seconds: 'sek.' },
-        calculationExampleTitle: 'Jak zostanie to obliczone',
-        calculationExamples: {
-          growing_kill_value:
-            'Karta jest warta {{cardValue}} punktów, a drużyna zdobyła {{killsCount}} zabójstwa.\nNowa wartość: {{cardValue}} + {{killsCount}} × {{increment}} = {{increasedCardValue}}.\nWynik: {{increasedCardValue}} × {{killsCount}} = {{result}} punktów. Przy zerze zabójstw kara wynosi {{penalty}} punktów.',
-          bonus_kill_on_condition:
-            'Karta jest warta {{cardValue}} punktów, drużyna zdobyła {{killsCount}} zabójstwa i spełniła warunek.\nZaliczone zabójstwa: {{killsCount}} + {{bonus}} = {{resultUnits}}.\nWynik: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} punktów.',
-          bonus_kills_by_count:
-            'Karta jest warta {{cardValue}} punktów, a drużyna zdobyła {{killsCount}} zabójstwa. Prowadzący wpisał {{inputCount}} zdarzenia.\nPremia: {{inputCount}} × {{perUnit}} = {{bonus}} zabójstwa.\nWynik: ({{killsCount}} + {{bonus}}) × {{cardValue}} = {{result}} punktów.',
-          window_kill_bonus_points:
-            'Karta jest warta {{cardValue}} punktów, drużyna zdobyła {{killsCount}} zabójstwa, z czego {{inputCount}} pasują do warunku.\nPremia: {{inputCount}} × {{cardValue}} × {{percent}}% = {{bonus}} punktów.\nWynik: {{killsCount}} × {{cardValue}} + {{bonus}} = {{result}} punktów.',
-        },
-        parameters: {
-          incrementPointsPerKill: 'Wzrost wartości za zabójstwo',
-          zeroKillPenaltyPoints: 'Kara za brak zabójstw',
-          successBonusKills: 'Dodatkowe zabójstwa przy sukcesie',
-          bonusKillsPerUnit: 'Dodatkowe zabójstwa na jednostkę',
-          bonusRate: 'Procent wartości karty za zabójstwo',
+        units: {
+          points: 'pkt',
+          kills: 'zabójstw',
+          seconds: 'sek.',
         },
         help: {
-          kind: 'Wybierz regułę dla ograniczeń bez zmiany wyniku. Wybierz wpływ na rundę, gdy zmieniają się punkty lub zabójstwa.',
-          name: 'Widoczna dla graczy i prowadzącego w katalogu oraz historii rund.',
+          kind: 'Wybierz regułę dla ograniczeń bez zmiany wyniku. Wybierz wpływ na wynik, aby ustawić punkty lub dodatkowe zabójstwa; pojawi się osobny krok obliczeń.',
+          name: 'Widoczna dla graczy i prowadzącego w katalogu, zakupach i historii rund. Zmiana nazwy nie zmienia obliczeń.',
           description:
-            'Publiczne wyjaśnienie dla gracza: co stanie się po zakupie. Umieść tu wszystkie ważne warunki.',
-          iconEmoji: 'Wyświetlana obok nazwy i ułatwia szybkie rozpoznanie modyfikatora.',
-          tags: 'Służą tylko do wyszukiwania i filtrowania. Nie wpływają na reguły ani punktację.',
+            'Pełne wyjaśnienie dla gracza i prowadzącego. Opisz działanie, warunki i skutki. Tekst nie nalicza punktów; obliczenia ustawisz w kolejnych krokach.',
+          iconEmoji:
+            'Opcjonalna ikona przy nazwie. Pomaga rozpoznać modyfikator i nie wpływa na grę ani punkty.',
           phase:
-            'Określa, czy reguła działa podczas przygotowania, rozgrywki czy podsumowania rundy.',
-          performer: 'Określa, kto wykonuje działanie: aktywna drużyna czy prowadzący.',
-          rule: 'Dokładna instrukcja dla prowadzącego i drużyny używana do kontroli wykonania.',
+            'Wskazuje, kiedy wykonać opisane warunki: przed grą, podczas gry lub przy podsumowaniu. Wybór etapu nie zmienia wzoru obliczeń.',
+          performer:
+            'Opisaną czynność wykonuje aktywna drużyna lub prowadzący. Punkty i dodatkowe zabójstwa w obu przypadkach otrzymuje aktywna drużyna.',
           requiresHostMonitoring:
-            'Dodaje oznaczenie ręcznej kontroli. Włącz, gdy aplikacja nie może sama sprawdzić warunku.',
+            'Oznacza modyfikator wymagający obserwacji prowadzącego w rundzie. Nie zmienia obliczeń ani nie automatyzuje ręcznego wprowadzania wyników.',
           durationSeconds:
-            'Czas jednej aktywacji. Każda kolejna aktywacja dodaje taki sam przedział.',
-          activationCost: 'Tyle punktów quizu jest odejmowane kupującemu przy każdej aktywacji.',
+            'Całkowita liczba sekund, co najmniej 1, na aktywację. Odliczanie rusza ze startem gry; kolejne aktywacje reguły sumują czas. Bez timera nie ma odliczania.',
+          activationCost:
+            'Całkowite punkty quizu pobierane od kupującego za każdą aktywację. Minimum 0; zero oznacza bezpłatny zakup. To nie jest nagroda drużyny.',
           activationLimitCount:
-            'Maksymalna liczba aktywacji w jednej rundzie. Puste pole oznacza brak limitu.',
+            'Łączna liczba zakupów tego modyfikatora w rundzie przez wszystkich graczy. Wpisz liczbę całkowitą od 1 lub pozostaw puste pole, aby nie ustawiać limitu.',
           conflicts:
-            'Jeśli wybrany modyfikator jest już aktywny w rundzie, tego nie można kupić - i odwrotnie.',
-          activationCommand:
-            'Komenda służąca do zamówienia modyfikatora. Puste pole wygeneruje ją z nazwy.',
-          formulaCode:
-            'Gotowy scenariusz określa wynik, dane prowadzącego i obliczenie. Wybieraj według sensu reguły.',
-          incrementPointsPerKill:
-            'O ile punktów jedna aktywacja zwiększa wartość zabójstwa za każde wykonane zabójstwo.',
-          zeroKillPenaltyPoints:
-            'Ile punktów odejmuje każda aktywacja, gdy drużyna nie wykona żadnego zabójstwa.',
-          successBonusKills: 'Liczba dodatkowych zabójstw po oznaczeniu warunku jako spełnionego.',
-          bonusKillsPerUnit:
-            'Liczba dodatkowych zabójstw za każde uruchomienie wpisane przez prowadzącego.',
-          bonusRate: 'Procent wartości karty za pasujące zabójstwo, na przykład 75%.',
-          eventInputLabel: 'Etykieta pola widocznego dla prowadzącego podczas podsumowania rundy.',
+            'Wybrane modyfikatory nie mogą działać razem z tym w jednej rundzie. Zakup jednego blokuje drugi. Pusta lista nie tworzy konfliktów. Modyfikatory z aktywnej gry są niedostępne do jej zakończenia.',
+          eventInputLabel:
+            'Etykieta pola, w którym prowadzący wpisuje liczbę zdarzeń lub odpowiada tak/nie. Określ, co liczyć lub sprawdzać. Etykieta sama nie oblicza wyniku.',
         },
         measurement: {
           title: '1. Co liczymy',
-          description: 'Najpierw określ źródło obliczeń. Efekt wybierzesz osobno.',
           question: 'Co uruchamia modyfikator?',
           domains: {
             kills: {
@@ -2025,7 +1680,6 @@ const translations = {
             },
           },
           inputLabel: 'Co ma wpisać prowadzący?',
-          inputLabelHint: 'Podaj konkretną nazwę pola.',
           maximumQuestion: 'Ograniczyć liczbę aktywacjami?',
           maximumKinds: {
             none: {
@@ -2039,11 +1693,10 @@ const translations = {
           },
           eventsPerActivation: 'Maksimum zdarzeń na aktywację',
           eventsPerActivationHint:
-            'Dla Lucky Shot to 1: sześć aktywacji pozwala na maksymalnie sześć udanych strzałów.',
+            'Liczba całkowita nie mniejsza niż 1. Maksymalny wynik to ta liczba pomnożona przez liczbę aktywacji.',
         },
         payout: {
           title: '2. Co daje każda jednostka',
-          description: 'Efekt można powiązać z zabójstwami, zdarzeniem, warunkiem lub aktywacją.',
           question: 'Wybierz efekt',
           kinds: {
             fixedPoints: {
@@ -2070,20 +1723,23 @@ const translations = {
             killValueIncrease: 'Wzrost wartości na jednostkę',
           },
           valueHints: {
-            fixedPoints: 'Wartość ujemna może być karą.',
-            cardPercent: 'Na przykład 75 dodaje 75%, a −25 odejmuje 25% wartości karty.',
-            bonusKills: 'Dodatnia liczba całkowita.',
-            killValueIncrease: 'Dodatnia liczba całkowita punktów.',
+            fixedPoints:
+              'Całkowita liczba punktów za jednostkę, różna od 0. Wynik jest dodawany do wyniku drużyny; liczba ujemna odejmuje punkty.',
+            cardPercent:
+              'Procent wartości karty za jednostkę, różny od 0. Dodatni dodaje punkty, ujemny odejmuje. Dozwolone są ułamki.',
+            bonusKills:
+              'Całkowita liczba dodatkowych zabójstw za jednostkę, co najmniej 1. Zwiększa licznik zabójstw używany do obliczania punktów karty.',
+            killValueIncrease:
+              'Całkowita liczba punktów za jednostkę, co najmniej 1. Każda jednostka zwiększa wartość wszystkich zabójstw drużyny o tę liczbę.',
           },
           zeroCountPenalty: 'Kara, gdy licznik źródła wynosi zero',
-          zeroCountPenaltyHint: 'Ustaw 0, jeśli osobna kara nie jest potrzebna.',
-          summary: 'Źródło: {{source}}. Efekt: {{effect}} ({{value}} na jednostkę).',
+          zeroCountPenaltyHint:
+            'Całkowita liczba punktów od 0 odejmowanych, gdy źródło wynosi zero. Puste pole lub 0 oznacza brak osobnej kary.',
         },
         previewLoading: 'Tworzenie podglądu modyfikatora',
         previewError: 'Nie udało się utworzyć wiarygodnego podglądu.',
         playerView: 'Widok gracza',
         hostView: 'Widok prowadzącego',
-        commandPreview: 'Komenda aktywacji: {{command}}',
         exampleTitle: 'Przykład kontrolny',
         exampleResolution: {
           completed: 'zasada wykonana',

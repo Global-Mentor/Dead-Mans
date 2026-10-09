@@ -17,27 +17,6 @@ export const modifierPayoutKinds = [
   'bonusKills',
   'killValueIncrease',
 ] as const
-export const modifierPayoutDefaultValues = {
-  fixedPoints: '10',
-  cardPercent: '75',
-  bonusKills: '1',
-  killValueIncrease: '5',
-} satisfies Record<(typeof modifierPayoutKinds)[number], string>
-
-export const suggestedModifierTags = [
-  'combat',
-  'mentor',
-  'movement',
-  'equipment',
-  'communication',
-  'revival',
-  'environment',
-  'restriction',
-  'weapon',
-  'bonus',
-  'penalty',
-  'timer',
-] as const
 
 function graphemeLength(value: string) {
   return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value)].length
@@ -60,12 +39,17 @@ export function normalizeModifierTags(values: readonly string[]) {
 interface ModifierFormSchemaMessages {
   required: string
   number: string
+  positiveInteger: string
+  payout: string
   limit: string
   tags: string
 }
 const numericText = /^-?\d+([.,]\d+)?$/
 
-export function createModifierFormSchema(messages: ModifierFormSchemaMessages) {
+export function createModifierFormSchema(
+  messages: ModifierFormSchemaMessages,
+  mode: 'create' | 'edit' = 'create',
+) {
   return z
     .object({
       kind: z.enum(modifierKinds),
@@ -77,32 +61,55 @@ export function createModifierFormSchema(messages: ModifierFormSchemaMessages) {
       activationLimitCount: z.string().regex(/^([1-9]\d*)?$/, messages.limit),
       phase: z.enum(modifierPhases),
       performer: z.enum(modifierPerformers),
-      rule: z.string().trim().min(1, messages.required).max(2000, messages.required),
       requiresHostMonitoring: z.boolean(),
       durationEnabled: z.boolean(),
-      durationSeconds: z.string().regex(/^([1-9]\d*)?$/, messages.limit),
+      durationSeconds: z.string(),
       conflictingModifierIds: z.array(z.string()),
       activationCommand: z.string().max(128),
-      changeNote: z.string().max(500, messages.required),
+      changeNote: z
+        .string()
+        .trim()
+        .min(mode === 'edit' ? 1 : 0, messages.required)
+        .max(500, messages.required),
       measurementDomain: z.enum(modifierMeasurementDomains).nullable(),
       killMeasurementMode: z.enum(modifierKillMeasurementModes),
       eventMeasurementMode: z.enum(modifierEventMeasurementModes),
       eventInputLabel: z.string().trim().max(128, messages.required),
       eventMaximumKind: z.enum(modifierEventMaximumKinds),
-      eventsPerActivation: z.string().regex(/^[1-9]\d*$/, messages.limit),
+      eventsPerActivation: z.string(),
       payoutKind: z.enum(modifierPayoutKinds).nullable(),
-      payoutValue: z.string().regex(numericText, messages.number),
-      zeroCountPenaltyPoints: z.string().regex(/^\d+$/, messages.number),
+      payoutValue: z.string(),
+      zeroCountPenaltyPoints: z.string(),
     })
     .superRefine((values, context) => {
       const tags = normalizeModifierTags(values.tags)
       if (tags.length > 5 || tags.some((tag) => graphemeLength(tag) > 32)) {
         context.addIssue({ code: 'custom', path: ['tags'], message: messages.tags })
       }
-      if (values.kind === 'rule' && values.durationEnabled && values.durationSeconds === '') {
-        context.addIssue({ code: 'custom', path: ['durationSeconds'], message: messages.required })
+      if (
+        values.kind === 'rule' &&
+        values.durationEnabled &&
+        !/^[1-9]\d*$/.test(values.durationSeconds)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['durationSeconds'],
+          message: values.durationSeconds === '' ? messages.required : messages.positiveInteger,
+        })
       }
       if (values.kind !== 'scoring') return
+      if (
+        values.measurementDomain === 'event' &&
+        values.eventMeasurementMode === 'count' &&
+        values.eventMaximumKind === 'activations' &&
+        !/^[1-9]\d*$/.test(values.eventsPerActivation)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['eventsPerActivation'],
+          message: values.eventsPerActivation === '' ? messages.required : messages.positiveInteger,
+        })
+      }
       if (values.measurementDomain === null) {
         context.addIssue({
           code: 'custom',
@@ -120,18 +127,39 @@ export function createModifierFormSchema(messages: ModifierFormSchemaMessages) {
       if (needsInputLabel && values.eventInputLabel.trim() === '') {
         context.addIssue({ code: 'custom', path: ['eventInputLabel'], message: messages.required })
       }
+      if (values.payoutValue && !numericText.test(values.payoutValue)) {
+        context.addIssue({ code: 'custom', path: ['payoutValue'], message: messages.payout })
+      }
+      if (
+        values.payoutKind === 'killValueIncrease' &&
+        !/^\d*$/.test(values.zeroCountPenaltyPoints)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['zeroCountPenaltyPoints'],
+          message: messages.number,
+        })
+      }
       const payout = Number.parseFloat(values.payoutValue.replace(',', '.'))
       if (!Number.isFinite(payout) || payout === 0) {
-        context.addIssue({ code: 'custom', path: ['payoutValue'], message: messages.number })
+        context.addIssue({
+          code: 'custom',
+          path: ['payoutValue'],
+          message: values.payoutValue === '' ? messages.required : messages.payout,
+        })
       }
       if (values.payoutKind === 'fixedPoints' && !Number.isInteger(payout)) {
-        context.addIssue({ code: 'custom', path: ['payoutValue'], message: messages.limit })
+        context.addIssue({ code: 'custom', path: ['payoutValue'], message: messages.payout })
       }
       if (
         (values.payoutKind === 'bonusKills' || values.payoutKind === 'killValueIncrease') &&
         (!Number.isInteger(payout) || payout < 1)
       ) {
-        context.addIssue({ code: 'custom', path: ['payoutValue'], message: messages.limit })
+        context.addIssue({
+          code: 'custom',
+          path: ['payoutValue'],
+          message: messages.positiveInteger,
+        })
       }
     })
 }
@@ -147,7 +175,7 @@ function inferMeasurement(resolution: Resolution | undefined, formula: Formula |
     eventMeasurementMode: 'count' as const,
     eventInputLabel: '',
     eventMaximumKind: 'none' as const,
-    eventsPerActivation: '1',
+    eventsPerActivation: '',
   }
   if (!resolution || resolution.type === 'ruleStatus') return defaults
   if (resolution.type === 'nonNegativeCount' && formula?.code === 'window_kill_bonus_points') {
@@ -189,27 +217,27 @@ function inferPayout(formula: Formula | undefined) {
   const parameters = formula?.parameters
   const fallback = {
     payoutKind: null as (typeof modifierPayoutKinds)[number] | null,
-    payoutValue: modifierPayoutDefaultValues.bonusKills,
-    zeroCountPenaltyPoints: '0',
+    payoutValue: '',
+    zeroCountPenaltyPoints: '',
   }
   if (!parameters) return fallback
   if (parameters.type === 'fixedPointsPerUnit')
     return {
       payoutKind: 'fixedPoints' as const,
       payoutValue: String(parameters.pointsPerUnit),
-      zeroCountPenaltyPoints: '0',
+      zeroCountPenaltyPoints: '',
     }
   if (parameters.type === 'cardPercentPerUnit')
     return {
       payoutKind: 'cardPercent' as const,
       payoutValue: String(parameters.rate * 100),
-      zeroCountPenaltyPoints: '0',
+      zeroCountPenaltyPoints: '',
     }
   if (parameters.type === 'bonusKillsPerUnit')
     return {
       payoutKind: 'bonusKills' as const,
       payoutValue: String(parameters.bonusKillsPerUnit),
-      zeroCountPenaltyPoints: '0',
+      zeroCountPenaltyPoints: '',
     }
   if (parameters.type === 'killValueIncreasePerUnit')
     return {
@@ -227,18 +255,18 @@ function inferPayout(formula: Formula | undefined) {
     return {
       payoutKind: 'cardPercent' as const,
       payoutValue: String(parameters.bonusRate * 100),
-      zeroCountPenaltyPoints: '0',
+      zeroCountPenaltyPoints: '',
     }
   if (parameters.type === 'bonusKillOnCondition')
     return {
       payoutKind: 'bonusKills' as const,
       payoutValue: String(parameters.successBonusKills),
-      zeroCountPenaltyPoints: '0',
+      zeroCountPenaltyPoints: '',
     }
   return {
     payoutKind: 'bonusKills' as const,
     payoutValue: String(parameters.bonusKillsPerUnit),
-    zeroCountPenaltyPoints: '0',
+    zeroCountPenaltyPoints: '',
   }
 }
 
@@ -252,12 +280,11 @@ export function createDefaultModifierFormValues(
     description: initial?.description ?? '',
     iconEmoji: initial?.iconEmoji ?? '',
     tags: initial?.normalizedTags ?? [],
-    activationCost: String(initial?.activationCost ?? 0),
+    activationCost: initial ? String(initial.activationCost) : '',
     activationLimitCount:
       initial?.activationLimit.count == null ? '' : String(initial.activationLimit.count),
     phase: behavior?.phase ?? 'round',
     performer: behavior?.performer ?? 'activeTeam',
-    rule: behavior?.rule ?? '',
     requiresHostMonitoring: behavior?.requiresHostMonitoring ?? false,
     durationEnabled: behavior?.durationSecondsPerActivation != null,
     durationSeconds:
@@ -287,7 +314,7 @@ function buildBehavior(values: ModifierFormValues) {
       phase: values.phase,
       performer: values.performer,
       requiresHostMonitoring: values.requiresHostMonitoring,
-      rule: values.rule.trim(),
+      rule: values.description.trim(),
       stackingPolicy: 'aggregateParameters' as const,
       resolution: { type: 'ruleStatus' as const },
       reward: 'none' as const,
@@ -348,7 +375,7 @@ function buildBehavior(values: ModifierFormValues) {
               parameters: {
                 type: 'killValueIncreasePerUnit' as const,
                 incrementPointsPerUnit: amount,
-                zeroCountPenaltyPoints: Number.parseInt(values.zeroCountPenaltyPoints, 10),
+                zeroCountPenaltyPoints: Number.parseInt(values.zeroCountPenaltyPoints || '0', 10),
               },
             }
   return {
@@ -357,7 +384,7 @@ function buildBehavior(values: ModifierFormValues) {
     phase: values.phase,
     performer: values.performer,
     requiresHostMonitoring: values.requiresHostMonitoring,
-    rule: values.rule.trim(),
+    rule: values.description.trim(),
     stackingPolicy: 'independentInstances' as const,
     resolution,
     reward: values.payoutKind === 'bonusKills' ? ('bonusKills' as const) : ('points' as const),

@@ -1021,6 +1021,51 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ModifierUpdate_RequiresCommentWithoutChangingHistoryOnRejection()
+    {
+        var publisher = new RecordingGameBoardEventsPublisher();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher: publisher);
+        var name = $"Required comment {Guid.NewGuid():N}";
+        var createResponse = await adminClient.PostAsJsonAsync(
+            "/api/game/modifiers", CreateRuleOnlyModifierRequest(name));
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<GameModifierDefinitionDto>();
+        Assert.NotNull(created);
+        var path = $"/api/game/modifiers/{created.Id}";
+
+        foreach (var comment in new string?[] { null, "", " \t\r\n " })
+        {
+            var response = await adminClient.PutAsJsonAsync(
+                path, CreateRuleOnlyUpdateRequest(name + " edited", 1, comment));
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(AppMessages.ErrorCodes.GameModifierInvalidRequest,
+                (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Code);
+        }
+
+        var missingComment = JsonSerializer.SerializeToNode(
+            CreateRuleOnlyUpdateRequest(name + " edited", 1))!.AsObject();
+        missingComment.Remove(nameof(UpdateGameModifierRequestDto.ChangeNote));
+        var missingResponse = await adminClient.PutAsJsonAsync(path, missingComment);
+        Assert.Equal(HttpStatusCode.BadRequest, missingResponse.StatusCode);
+        var before = await adminClient.GetFromJsonAsync<ModifierVersionDetailDto>($"{path}/versions/1");
+        Assert.NotNull(before);
+        Assert.True(before.IsCurrent);
+        Assert.Equal(name, before.Name);
+        Assert.Null(before.ChangeNote);
+        var versions = await adminClient.GetFromJsonAsync<ModifierHistoryPageDto<ModifierVersionSummaryDto>>(
+            $"{path}/versions");
+        Assert.Single(versions!.Items);
+        Assert.Single(publisher.PublishedModifierCatalogChangedEvents);
+
+        var validResponse = await adminClient.PutAsJsonAsync(
+            path, CreateRuleOnlyUpdateRequest(name + " edited", 1, "  Corrected the name.  "));
+        Assert.Equal(HttpStatusCode.OK, validResponse.StatusCode);
+        Assert.Equal(2, (await validResponse.Content.ReadFromJsonAsync<GameModifierDefinitionDto>())?.Revision);
+        var revision = await adminClient.GetFromJsonAsync<ModifierVersionDetailDto>($"{path}/versions/2");
+        Assert.Equal("Corrected the name.", revision?.ChangeNote);
+    }
+
+    [Fact]
     public async Task CompatibilityUpdate_CreatesSymmetricCascadeRevisions()
     {
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
@@ -1276,7 +1321,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
         var updateResponse = await adminClient.PutAsJsonAsync(
             $"/api/game/modifiers/{ModifierDefinitionSeedIds.Chirik}",
-            CreateRuleOnlyModifierRequest("Чирик") with
+            CreateRuleOnlyUpdateRequest("Чирик", 1, "Configured conflicts") with
             {
                 ConflictingModifierIds = [ModifierDefinitionSeedIds.Feyerverk.ToString()]
             }
@@ -1340,7 +1385,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
 
         var unlockedUpdateResponse = await adminClient.PutAsJsonAsync(
             $"/api/game/modifiers/{ModifierDefinitionSeedIds.Feyerverk}",
-            CreateRuleOnlyModifierRequest("Unlocked modifier")
+            CreateRuleOnlyUpdateRequest("Unlocked modifier", 1, "Updated unlocked modifier")
         );
         Assert.Equal(HttpStatusCode.OK, unlockedUpdateResponse.StatusCode);
     }
@@ -3951,7 +3996,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     private static UpdateGameModifierRequestDto CreateRuleOnlyUpdateRequest(
         string name,
         int expectedRevision,
-        string? changeNote = null,
+        string? changeNote = "Updated modifier settings",
         string[]? conflictingModifierIds = null
     ) =>
         new(

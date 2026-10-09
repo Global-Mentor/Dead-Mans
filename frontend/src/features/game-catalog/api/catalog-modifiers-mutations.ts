@@ -3,6 +3,7 @@ import type {
   CreateGameModifierRequest,
   UpdateGameModifierRequest,
 } from '../../../shared/api/contracts/index.ts'
+import { isModifierCompatibilityLockedError } from '../model/catalog-error.ts'
 import { gameModifierCatalogQueryOptions } from '../../game-modifiers/index.ts'
 import {
   createGameModifier,
@@ -18,6 +19,9 @@ export function createGameModifierMutationOptions(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: (request: CreateGameModifierRequest) => createGameModifier(request),
     onSuccess: () => invalidateModifierCatalog(queryClient),
+    onError: (error) => {
+      if (isModifierCompatibilityLockedError(error)) return invalidateModifierCatalog(queryClient)
+    },
   })
 }
 
@@ -31,6 +35,9 @@ export function updateGameModifierMutationOptions(queryClient: QueryClient) {
       request: UpdateGameModifierRequest
     }) => updateGameModifier(modifierId, request),
     onSuccess: () => invalidateModifierCatalog(queryClient),
+    onError: (error) => {
+      if (isModifierCompatibilityLockedError(error)) return invalidateModifierCatalog(queryClient)
+    },
   })
 }
 

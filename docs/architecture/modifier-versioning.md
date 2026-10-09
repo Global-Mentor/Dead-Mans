@@ -36,6 +36,9 @@ bindings, and every referenced conflict target.
 
 - A meaningful normalized edit inserts revision `N + 1`; a no-op returns the current
   revision without inserting or publishing.
+- User edits require a non-blank `changeNote`, trimmed to at most 500 characters.
+  Creation and automatic compatibility cascades may omit the note. The note explains
+  an edit but does not itself count as a content change or create a revision.
 - Update and archive require `expectedRevision`; stale writers receive
   `409 game_modifier_revision_stale`.
 - Compatibility is symmetric. A change inserts the initiating `edited` revision and a
@@ -139,3 +142,7 @@ The release gate is the backend suite (including real PostgreSQL migration, trig
 query-count, plan, and race tests), generated HTTP/realtime transports, frontend check, both
 Windows launchers, and the v1/game-1 -> v2/game-2 smoke path. Do not deploy when any part of
 that gate is red.
+
+## Modifier editor presentation
+
+The UI uses only the full definition or pinned snapshot description. Separate rule text and activation commands are not exposed in forms, review or history. Existing database columns, API fields and immutable revisions remain intact. New editor revisions mirror the full description into the required behavior rule field; hidden activation commands are preserved on edit. New text and amount inputs have no example values. Cost is a nonnegative integer; enabled duration and numeric activation limits are positive integers. Blank activation limits remain unlimited.

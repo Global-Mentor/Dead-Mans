@@ -80,14 +80,13 @@ describe('ModifierFormDialog', () => {
     fillCard()
     fireEvent.click(screen.getByRole('button', { name: 'Далее' }))
 
-    const ruleField = await screen.findByRole('textbox', {
-      name: 'Правило для команды и ведущего',
-    })
-    expect(screen.getByText('Шаг 2 из 3')).toBeInTheDocument()
+    await screen.findByText('Шаг 2 из 3')
     expect(
-      screen.getByRole('radio', { name: /Ведущий.*результат учитывается/i }),
-    ).toBeInTheDocument()
-    fireEvent.change(ruleField, { target: { value: 'Выполнить правило.' } })
+      screen.queryByRole('textbox', { name: /Правило|Команда активации/ }),
+    ).not.toBeInTheDocument()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Стоимость активации' }), {
+      target: { value: '0' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Далее' }))
 
     await waitFor(() => expect(apiMocks.previewGameModifier).toHaveBeenCalledTimes(1))
@@ -103,10 +102,10 @@ describe('ModifierFormDialog', () => {
     fillCard()
     fireEvent.click(screen.getByRole('button', { name: 'Далее' }))
 
-    fireEvent.change(
-      await screen.findByRole('textbox', { name: 'Правило для команды и ведущего' }),
-      { target: { value: 'Начислить бонус.' } },
-    )
+    await screen.findByRole('spinbutton', { name: 'Стоимость активации' })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Стоимость активации' }), {
+      target: { value: '0' },
+    })
     expect(
       screen.queryByRole('spinbutton', { name: 'Длительность, секунд' }),
     ).not.toBeInTheDocument()
@@ -115,13 +114,15 @@ describe('ModifierFormDialog', () => {
     expect(await screen.findByText('От чего срабатывает модификатор?')).toBeInTheDocument()
     expect(apiMocks.previewGameModifier).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole('radio', { name: /Убийства команды.*все убийства/i }))
-    fireEvent.click(screen.getByRole('radio', { name: /Только подходящие убийства.*вручную/i }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Убийства команды' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Только подходящие убийства' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Что должен ввести ведущий?' }), {
       target: { value: 'Убийства до восстановления здоровья' },
     })
     fireEvent.click(screen.getByRole('radio', { name: /Процент стоимости карточки/i }))
-    expect(screen.getByRole('spinbutton', { name: 'Процент карточки за единицу' })).toHaveValue(75)
+    expect(screen.getByRole('spinbutton', { name: 'Процент карточки за единицу' })).toHaveValue(
+      null,
+    )
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Процент карточки за единицу' }), {
       target: { value: '75' },
     })
@@ -154,11 +155,11 @@ describe('ModifierFormDialog', () => {
     expect(
       screen.getByRole('button', { name: /Название.*Отображается игрокам/i }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Описание.*Полное объяснение/i })).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Описание.*Публичное объяснение/i }),
+      screen.getByRole('button', { name: /Иконка.*Необязательная иконка/i }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Иконка.*Показывается рядом/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Теги.*Используются только/i })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /Теги/ })).not.toBeInTheDocument()
   })
 
   it('uses a full-screen dialog on a mobile viewport', () => {
@@ -193,7 +194,7 @@ describe('ModifierFormDialog', () => {
       name: 'Отменить несохранённые изменения?',
     })
     expect(onClose).not.toHaveBeenCalled()
-    fireEvent.click(within(confirmation).getByRole('button', { name: 'Отменить изменения' }))
+    fireEvent.click(within(confirmation).getByRole('button', { name: 'Сбросить' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -210,9 +211,69 @@ describe('ModifierFormDialog', () => {
       />,
     )
 
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Просмотр модификатора')
     expect(screen.getByRole('textbox', { name: 'Название' })).toBeDisabled()
     expect(screen.getByText(/доступно только для просмотра/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Сохранить' })).not.toBeInTheDocument()
+  })
+
+  it('prevents duplicate preview requests and closing while reviewing the draft', async () => {
+    const preview = await apiMocks.previewGameModifier()
+    apiMocks.previewGameModifier.mockClear()
+    let finishPreview!: (value: typeof preview) => void
+    apiMocks.previewGameModifier.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishPreview = resolve
+        }),
+    )
+    const onClose = renderDialog()
+    fillCard()
+    fireEvent.click(screen.getByRole('button', { name: 'Далее' }))
+    await screen.findByRole('spinbutton', { name: 'Стоимость активации' })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Стоимость активации' }), {
+      target: { value: '0' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Далее' }))
+    await waitFor(() => expect(apiMocks.previewGameModifier).toHaveBeenCalledTimes(1))
+    expect(screen.getByRole('button', { name: 'Назад' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Отмена' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
+    fireEvent.submit(document.getElementById('catalog-modifier-wizard-form')!)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape', code: 'Escape' })
+    expect(apiMocks.previewGameModifier).toHaveBeenCalledTimes(1)
+    expect(onClose).not.toHaveBeenCalled()
+    finishPreview(preview)
+    expect(await screen.findByText('Карточка игрока')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Сохранить' })).toBeEnabled()
+  })
+
+  it('keeps the draft and shows a retryable error when loading the latest revision fails', async () => {
+    const onLoadLatest = vi.fn().mockRejectedValue(new Error('private diagnostic'))
+    renderWithAppProviders(
+      <ModifierFormDialog
+        open
+        mode="edit"
+        modifiers={[]}
+        isBusy={false}
+        hasStaleConflict
+        onLoadLatest={onLoadLatest}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    )
+    const name = screen.getByRole('textbox', { name: 'Название' })
+    fireEvent.change(name, { target: { value: 'Несохранённое правило' } })
+    const load = screen.getByRole('button', { name: 'Загрузить актуальную для сравнения' })
+    fireEvent.click(load)
+    await waitFor(() => expect(screen.getByRole('alert')).toBeVisible())
+    expect(name).toHaveValue('Несохранённое правило')
+    expect(screen.queryByText('private diagnostic')).not.toBeInTheDocument()
+    expect(load).toBeEnabled()
+    onLoadLatest.mockResolvedValue(undefined)
+    fireEvent.click(load)
+    await waitFor(() => expect(onLoadLatest).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
   })
 
   it('preserves the local draft and offers the latest revision after a stale conflict', async () => {
