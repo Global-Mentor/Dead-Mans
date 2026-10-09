@@ -1,5 +1,5 @@
 import { Popover, styled, type PopoverProps } from '@mui/material'
-import { popoverPanelSx } from './popover-panel-sx.ts'
+import { popoverPanelSx } from '../../../theme/dropdown-sx.ts'
 
 const Panel = styled(Popover)(({ theme }) => ({
   '& .MuiPopover-paper': {

@@ -5,6 +5,7 @@ import { createContext, forwardRef, useContext } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
 import type { FormTextFieldProps } from '../fields/FormTextField.tsx'
+import { dropdownPaperSx } from '../../../theme/dropdown-sx.ts'
 import { FormTextField } from '../fields/FormTextField.tsx'
 
 interface FormSelectOption<TValue extends string | number> {
@@ -19,7 +20,28 @@ const OptionsContext = createContext<readonly FormSelectOption<string | number>[
 const OptionsSelect = forwardRef<HTMLDivElement, SelectProps>(function OptionsSelect(props, ref) {
   const options = useContext(OptionsContext)
   return (
-    <Select {...props} ref={ref}>
+    <Select
+      {...props}
+      ref={ref}
+      MenuProps={{
+        ...props.MenuProps,
+        slotProps: {
+          ...props.MenuProps?.slotProps,
+          paper: (ownerState) => {
+            const supplied = props.MenuProps?.slotProps?.paper
+            const resolved = typeof supplied === 'function' ? supplied(ownerState) : supplied
+            return {
+              ...resolved,
+              sx: mergeSx(
+                (theme) => ({ ...dropdownPaperSx(theme), position: 'absolute' }),
+                props.MenuProps?.PaperProps?.sx,
+                resolved?.sx,
+              ),
+            }
+          },
+        },
+      }}
+    >
       {props.native
         ? options.map((option) => (
             <option key={String(option.value)} value={option.value}>
