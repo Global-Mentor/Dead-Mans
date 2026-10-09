@@ -330,8 +330,9 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
     await page.setViewportSize({ width, height: 1000 })
     await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
-    let confirmation = page.getByRole('dialog', { name: 'Change roles for First player?' })
+    let confirmation = page.getByRole('dialog', { name: 'Change user roles?' })
     await expect(confirmation).toBeVisible()
+    await expect(confirmation.getByText('First player', { exact: true })).toBeVisible()
     expect(saves).toBe(0)
     await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeChecked()
@@ -360,7 +361,7 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(editor.getByRole('checkbox', { name: 'Moderator', exact: true })).toBeDisabled()
     await editor.getByRole('button', { name: 'Save roles', exact: true }).click()
     confirmation = page.getByRole('dialog', {
-      name: 'Change roles for Second player with a long display name?',
+      name: 'Change user roles?',
     })
     expect(saves).toBe(1)
     await confirmation.getByRole('button', { name: 'Confirm changes', exact: true }).click()

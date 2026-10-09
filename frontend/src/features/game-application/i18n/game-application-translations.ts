@@ -237,7 +237,7 @@ const translations = {
       removePlayer: 'Remove',
       removePlayerConfirmTitle: 'Remove player from team?',
       removePlayerConfirmDescription:
-        '{{player}} will be removed from team #{{slot}} and become available again. An empty team is automatically disbanded.',
+        'Remove this player from team #{{slot}}? They will become available again. An empty team is automatically disbanded.',
       removePlayerConfirmCancel: 'Keep player',
       removePlayerConfirmAction: 'Remove player',
       disbandRequestedChip: 'Disband requested',
@@ -519,7 +519,7 @@ const translations = {
       removePlayer: 'Исключить',
       removePlayerConfirmTitle: 'Исключить игрока из команды?',
       removePlayerConfirmDescription:
-        '{{player}} будет убран из команды #{{slot}} и снова станет свободным игроком. Пустая команда автоматически распускается.',
+        'Убрать игрока из команды #{{slot}}? Он снова станет свободным игроком. Пустая команда автоматически распускается.',
       removePlayerConfirmCancel: 'Оставить игрока',
       removePlayerConfirmAction: 'Исключить игрока',
       disbandRequestedChip: 'Запрос на роспуск',
@@ -800,7 +800,7 @@ const translations = {
       removePlayer: 'Виключити',
       removePlayerConfirmTitle: 'Виключити гравця з команди?',
       removePlayerConfirmDescription:
-        '{{player}} буде прибраний з команди #{{slot}} і знову стане вільним гравцем. Порожня команда автоматично розформовується.',
+        'Прибрати гравця з команди #{{slot}}? Він знову стане вільним гравцем. Порожня команда автоматично розформовується.',
       removePlayerConfirmCancel: 'Залишити гравця',
       removePlayerConfirmAction: 'Виключити гравця',
       disbandRequestedChip: 'Запит на розформування',
@@ -1086,7 +1086,7 @@ const translations = {
       removePlayer: 'Usuń',
       removePlayerConfirmTitle: 'Usunąć gracza z drużyny?',
       removePlayerConfirmDescription:
-        '{{player}} zostanie usunięty z drużyny #{{slot}} i znów będzie wolnym graczem. Pusta drużyna zostanie automatycznie rozwiązana.',
+        'Usunąć tego gracza z drużyny #{{slot}}? Znów będzie wolnym graczem. Pusta drużyna zostanie automatycznie rozwiązana.',
       removePlayerConfirmCancel: 'Zostaw gracza',
       removePlayerConfirmAction: 'Usuń gracza',
       disbandRequestedChip: 'Prośba o rozwiązanie',

@@ -136,7 +136,7 @@ describe('RoleAdministrationPage', () => {
     const block = await screen.findByRole('button', { name: 'Заблокировать: Игрок' })
     expect(screen.getByRole('button', { name: 'Заблокировать: Владелец' })).toBeDisabled()
     fireEvent.click(block)
-    const dialog = screen.getByRole('dialog', { name: 'Заблокировать Игрок?' })
+    const dialog = screen.getByRole('dialog', { name: 'Заблокировать пользователя?' })
     expect(api.updateAccess).not.toHaveBeenCalled()
     api.getUsers.mockRejectedValueOnce(new Error('offline'))
     api.updateAccess.mockResolvedValueOnce({ ...data.items[1], isActive: false })
@@ -151,7 +151,7 @@ describe('RoleAdministrationPage', () => {
         ?.items[1]?.isActive,
     ).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: 'Разблокировать: Игрок' }))
-    const unblock = screen.getByRole('dialog', { name: 'Разблокировать Игрок?' })
+    const unblock = screen.getByRole('dialog', { name: 'Разблокировать пользователя?' })
     api.getUsers.mockResolvedValue(data)
     api.updateAccess.mockResolvedValueOnce(data.items[1])
     fireEvent.click(within(unblock).getByRole('button', { name: 'Разблокировать', exact: true }))
@@ -166,7 +166,7 @@ describe('RoleAdministrationPage', () => {
   it('retains the access confirmation on failure and disables closing during retry', async () => {
     renderPage()
     fireEvent.click(await screen.findByRole('button', { name: 'Заблокировать: Игрок' }))
-    const dialog = screen.getByRole('dialog', { name: 'Заблокировать Игрок?' })
+    const dialog = screen.getByRole('dialog', { name: 'Заблокировать пользователя?' })
     api.updateAccess.mockRejectedValueOnce(new Error('offline'))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Заблокировать', exact: true }))
     await within(dialog).findByRole('alert')
@@ -233,7 +233,7 @@ describe('RoleAdministrationPage', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'Сохранить роли' }))
     expect(api.updateRoles).not.toHaveBeenCalled()
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Изменить роли пользователя Игрок?' })).getByRole(
+      within(screen.getByRole('dialog', { name: 'Изменить роли пользователя?' })).getByRole(
         'button',
         { name: 'Подтвердить изменения' },
       ),
@@ -251,7 +251,7 @@ describe('RoleAdministrationPage', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'Сохранить роли' }))
     expect(api.updateRoles).not.toHaveBeenCalled()
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Изменить роли пользователя Игрок?' })).getByRole(
+      within(screen.getByRole('dialog', { name: 'Изменить роли пользователя?' })).getByRole(
         'button',
         { name: 'Подтвердить изменения' },
       ),
@@ -272,8 +272,9 @@ describe('RoleAdministrationPage', () => {
     await client.invalidateQueries({ queryKey: ['role-administration-users'] })
     expect(within(editor).getByRole('checkbox', { name: 'Модератор' })).toBeChecked()
     fireEvent.click(within(editor).getByRole('button', { name: 'Сохранить роли' }))
-    let confirmation = screen.getByRole('dialog', { name: 'Изменить роли пользователя Игрок?' })
+    let confirmation = screen.getByRole('dialog', { name: 'Изменить роли пользователя?' })
     expect(api.updateRoles).not.toHaveBeenCalled()
+    expect(within(confirmation).getByText('Игрок', { exact: true })).toBeInTheDocument()
     expect(
       within(confirmation).getByText('Текущие роли: Участник. Новые роли: Участник, Модератор.'),
     ).toBeInTheDocument()
@@ -283,7 +284,7 @@ describe('RoleAdministrationPage', () => {
     expect(api.updateRoles).not.toHaveBeenCalled()
     api.updateRoles.mockRejectedValueOnce(new Error('offline'))
     fireEvent.click(within(editor).getByRole('button', { name: 'Сохранить роли' }))
-    confirmation = screen.getByRole('dialog', { name: 'Изменить роли пользователя Игрок?' })
+    confirmation = screen.getByRole('dialog', { name: 'Изменить роли пользователя?' })
     fireEvent.click(within(confirmation).getByRole('button', { name: 'Подтвердить изменения' }))
     await within(confirmation).findByRole('alert')
     let finish: (value: unknown) => void = () => {}

@@ -198,7 +198,7 @@ const translations = {
     manualQuizAwardInsufficientPoints: 'The deduction exceeds the player’s available balance.',
     manualQuizAwardConfirmTitle: 'Confirm quiz point adjustment?',
     manualQuizAwardConfirmDescription:
-      '{{operation}} {{player}}: {{sign}}{{points}}. Balance: {{before}} → {{after}}. Reason: {{reason}}',
+      '{{operation}}: {{sign}}{{points}}. Balance: {{before}} → {{after}}. Reason: {{reason}}',
     manualQuizAwardConfirmAction: 'Confirm',
     managementRoundTitle: 'Round',
     managementRoundIdleDescription: 'No round is running right now.',
@@ -415,7 +415,7 @@ const translations = {
     openConfirmTitle: 'Open card?',
     openPending: 'Opening',
     openConfirmDescription:
-      'Open “{{title}}” for {{cost}} points? The card will become visible and the modifier-ordering phase will begin.',
+      'Open this card for {{cost}} points? The card will become visible and the modifier-ordering phase will begin.',
     openSuccess: 'Card opened.',
     openActiveTeamRequired: 'Select the active team before opening cards.',
     openForbidden: 'Only administrators can open cards.',
@@ -643,7 +643,7 @@ const translations = {
     manualQuizAwardInsufficientPoints: 'Нельзя вычесть больше доступного баланса игрока.',
     manualQuizAwardConfirmTitle: 'Подтвердить корректировку очков?',
     manualQuizAwardConfirmDescription:
-      '{{operation}} игроку {{player}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
+      '{{operation}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
     manualQuizAwardConfirmAction: 'Подтвердить',
     managementRoundTitle: 'Раунд',
     managementRoundIdleDescription: 'Сейчас нет запущенного раунда.',
@@ -864,7 +864,7 @@ const translations = {
     openConfirmTitle: 'Открыть карточку?',
     openPending: 'Открываем',
     openConfirmDescription:
-      'Открыть «{{title}}» стоимостью {{cost}} очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
+      'Открыть карточку стоимостью {{cost}} очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
     openSuccess: 'Карточка открыта.',
     openActiveTeamRequired: 'Выберите активную команду, прежде чем открывать карточки.',
     openForbidden: 'Открывать карточки может только администратор.',
@@ -1090,7 +1090,7 @@ const translations = {
     manualQuizAwardInsufficientPoints: 'Не можна відняти більше доступного балансу гравця.',
     manualQuizAwardConfirmTitle: 'Підтвердити коригування очок?',
     manualQuizAwardConfirmDescription:
-      '{{operation}} гравцю {{player}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
+      '{{operation}}: {{sign}}{{points}}. Баланс: {{before}} → {{after}}. Причина: {{reason}}',
     manualQuizAwardConfirmAction: 'Підтвердити',
     managementRoundTitle: 'Раунд',
     managementRoundIdleDescription: 'Зараз немає запущеного раунду.',
@@ -1310,7 +1310,7 @@ const translations = {
     openConfirmTitle: 'Відкрити картку?',
     openPending: 'Відкриваємо',
     openConfirmDescription:
-      'Відкрити «{{title}}» вартістю {{cost}} очк.? Картка стане видимою, і почнеться фаза замовлення модифікаторів.',
+      'Відкрити картку вартістю {{cost}} очк.? Картка стане видимою, і почнеться фаза замовлення модифікаторів.',
     openSuccess: 'Картку відкрито.',
     openActiveTeamRequired: 'Оберіть активну команду, перш ніж відкривати картки.',
     openForbidden: 'Відкривати картки може лише адміністратор.',
@@ -1538,7 +1538,7 @@ const translations = {
     manualQuizAwardInsufficientPoints: 'Nie można odjąć więcej niż dostępne saldo gracza.',
     manualQuizAwardConfirmTitle: 'Potwierdzić korektę punktów?',
     manualQuizAwardConfirmDescription:
-      '{{operation}} graczowi {{player}}: {{sign}}{{points}}. Saldo: {{before}} → {{after}}. Powód: {{reason}}',
+      '{{operation}}: {{sign}}{{points}}. Saldo: {{before}} → {{after}}. Powód: {{reason}}',
     manualQuizAwardConfirmAction: 'Potwierdź',
     managementRoundTitle: 'Runda',
     managementRoundIdleDescription: 'Nie ma teraz uruchomionej rundy.',
@@ -1758,7 +1758,7 @@ const translations = {
     openConfirmTitle: 'Otworzyć kartę?',
     openPending: 'Otwieranie',
     openConfirmDescription:
-      'Otworzyć „{{title}}” za {{cost}} pkt? Karta stanie się widoczna i rozpocznie się faza zamawiania modyfikatorów.',
+      'Otworzyć tę kartę za {{cost}} pkt? Karta stanie się widoczna i rozpocznie się faza zamawiania modyfikatorów.',
     openSuccess: 'Karta została otwarta.',
     openActiveTeamRequired: 'Wybierz aktywną drużynę przed otwieraniem kart.',
     openForbidden: 'Tylko administrator może otwierać karty.',

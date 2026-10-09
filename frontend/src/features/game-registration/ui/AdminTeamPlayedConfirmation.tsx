@@ -1,8 +1,7 @@
-import { Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { ConfirmDialog, SectionCard } from '../../../shared/ui/index.ts'
+import { ConfirmDialog } from '../../../shared/ui/index.ts'
 import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
 
 export function AdminTeamPlayedConfirmation({
@@ -25,18 +24,10 @@ export function AdminTeamPlayedConfirmation({
           ? 'teamRegistrations.markPlayedConfirmTitle'
           : 'teamRegistrations.resetPlayedConfirmTitle',
       )}
-      description={
-        <Stack gap={2} sx={{ mb: error ? 2 : 0 }}>
-          <SectionCard surface="inset" sx={{ p: 1.5 }}>
-            <Typography textAlign="center" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-              {team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
-            </Typography>
-          </SectionCard>
-          <Typography textAlign="center">
-            {t(isPlayed ? 'teamRegistrations.markPlayedHint' : 'teamRegistrations.resetPlayedHint')}
-          </Typography>
-        </Stack>
-      }
+      description={t(
+        isPlayed ? 'teamRegistrations.markPlayedHint' : 'teamRegistrations.resetPlayedHint',
+      )}
+      subject={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
       errorMessage={error}
       cancelLabel={t('common.actions.cancel')}
       confirmLabel={t(

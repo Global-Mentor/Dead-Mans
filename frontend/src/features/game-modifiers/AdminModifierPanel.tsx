@@ -317,13 +317,8 @@ export function AdminModifierTool() {
       <ConfirmDialog
         open={stopTarget != null}
         title={t('gameModifiers.adminPanel.emergencyDisableConfirmTitle')}
-        description={
-          stopTarget
-            ? t('gameModifiers.adminPanel.emergencyDisableConfirmDescription', {
-                modifier: stopTarget.modifierName,
-              })
-            : ''
-        }
+        description={t('gameModifiers.adminPanel.emergencyDisableConfirmDescription')}
+        subject={stopTarget?.modifierName}
         confirmDisabled={
           !stopTarget ||
           stopTarget.gameId !== currentGameId ||
@@ -361,10 +356,10 @@ export function AdminModifierTool() {
       <ConfirmDialog
         open={isCancelConfirmOpen}
         title={t('gameModifiers.adminPanel.cancelConfirmTitle')}
+        subject={cancelTarget?.modifierName}
         description={
           cancelTarget
             ? t('gameModifiers.adminPanel.cancelConfirmDescription', {
-                modifier: cancelTarget.modifierName,
                 player: cancelTarget.activatedByDisplayName,
                 cost: cancelTarget.activationCost,
               })

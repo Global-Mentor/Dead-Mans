@@ -185,8 +185,8 @@ export function GameBoardPage() {
         title={t('gameBoard.openConfirmTitle')}
         description={t('gameBoard.openConfirmDescription', {
           cost: pendingCell?.cost ?? 0,
-          title: pendingCell?.title || t('gameBoard.cellLabel'),
         })}
+        subject={pendingCell?.title || t('gameBoard.cellLabel')}
         errorMessage={confirmationError}
         cancelLabel={t('common.actions.cancel')}
         confirmLabel={t(isSubmitting ? 'gameBoard.openPending' : 'common.actions.open')}

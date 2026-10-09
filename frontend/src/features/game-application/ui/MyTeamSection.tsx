@@ -410,6 +410,7 @@ export function MyTeamSection({
               ? 'gameApplication.leaveTeamConfirmTitle'
               : 'gameApplication.requestDisbandConfirmTitle',
         )}
+        subject={team.name}
         description={t(
           confirmation === 'cancel'
             ? 'gameApplication.cancelDisbandConfirmDescription'

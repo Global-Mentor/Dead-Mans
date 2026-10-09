@@ -15,7 +15,7 @@ const translations = {
       open: 'Open registration',
       confirmTitle: 'Publish the game?',
       confirmDescription:
-        'Open registration for “{{title}}”? The board, modifiers and questions will be locked. The game starts after teams are confirmed.',
+        'Open registration for this game? The board, modifiers and questions will be locked. The game starts after teams are confirmed.',
       confirm: 'Open registration',
       cancel: 'Cancel',
       retry: 'Check again',
@@ -160,9 +160,9 @@ const translations = {
       removeColumnTarget: 'Column {{position}} ({{label}})',
       limitReached: 'This action is not available for the current board size.',
       confirmRemoveRow:
-        'Remove {{target}}? After the draft syncs, cards in this row and their uploaded images will be deleted from the server.',
+        'Remove this row? After the draft syncs, cards in this row and their uploaded images will be deleted from the server.',
       confirmRemoveColumn:
-        'Remove {{target}}? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
+        'Remove this column? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
     },
     createDialog: {
       promptTitle: 'No draft game yet',
@@ -194,7 +194,7 @@ const translations = {
       open: 'Открыть регистрацию',
       confirmTitle: 'Опубликовать игру?',
       confirmDescription:
-        'Открыть регистрацию на «{{title}}»? После этого доску, модификаторы и вопросы изменить нельзя. Игра начнётся после подтверждения команд.',
+        'Открыть регистрацию на игру? После этого доску, модификаторы и вопросы изменить нельзя. Игра начнётся после подтверждения команд.',
       confirm: 'Открыть регистрацию',
       cancel: 'Отмена',
       retry: 'Проверить снова',
@@ -340,9 +340,9 @@ const translations = {
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Это действие недоступно для текущего размера таблицы.',
       confirmRemoveRow:
-        'Удалить {{target}}? После синхронизации черновика карточки в этой строке и их изображения будут удалены с сервера.',
+        'Удалить строку? После синхронизации черновика карточки в этой строке и их изображения будут удалены с сервера.',
       confirmRemoveColumn:
-        'Удалить {{target}}? После синхронизации черновика карточки в этой колонке и их изображения будут удалены с сервера.',
+        'Удалить колонку? После синхронизации черновика карточки в этой колонке и их изображения будут удалены с сервера.',
     },
     createDialog: {
       promptTitle: 'Черновика пока нет',
@@ -374,7 +374,7 @@ const translations = {
       open: 'Відкрити реєстрацію',
       confirmTitle: 'Опублікувати гру?',
       confirmDescription:
-        'Відкрити реєстрацію на «{{title}}»? Після цього дошку, модифікатори й запитання змінити не можна. Гра почнеться після підтвердження команд.',
+        'Відкрити реєстрацію на гру? Після цього дошку, модифікатори й запитання змінити не можна. Гра почнеться після підтвердження команд.',
       confirm: 'Відкрити реєстрацію',
       cancel: 'Скасувати',
       retry: 'Перевірити знову',
@@ -520,9 +520,9 @@ const translations = {
       removeColumnTarget: 'Колонка {{position}} ({{label}})',
       limitReached: 'Ця дія недоступна для поточного розміру таблиці.',
       confirmRemoveRow:
-        'Видалити {{target}}? Після синхронізації чернетки картки в цьому рядку та їхні зображення будуть видалені з сервера.',
+        'Видалити рядок? Після синхронізації чернетки картки в цьому рядку та їхні зображення будуть видалені з сервера.',
       confirmRemoveColumn:
-        'Видалити {{target}}? Після синхронізації чернетки картки в цій колонці та їхні зображення будуть видалені з сервера.',
+        'Видалити колонку? Після синхронізації чернетки картки в цій колонці та їхні зображення будуть видалені з сервера.',
     },
     createDialog: {
       promptTitle: 'Чернетки поки немає',
@@ -554,7 +554,7 @@ const translations = {
       open: 'Otwórz zapisy',
       confirmTitle: 'Opublikować grę?',
       confirmDescription:
-        'Otworzyć rejestrację do gry „{{title}}”? Plansza, modyfikatory i pytania zostaną zablokowane. Gra rozpocznie się po zatwierdzeniu drużyn.',
+        'Otworzyć rejestrację do tej gry? Plansza, modyfikatory i pytania zostaną zablokowane. Gra rozpocznie się po zatwierdzeniu drużyn.',
       confirm: 'Otwórz rejestrację',
       cancel: 'Anuluj',
       retry: 'Sprawdź ponownie',
@@ -698,9 +698,9 @@ const translations = {
       removeColumnTarget: 'Kolumna {{position}} ({{label}})',
       limitReached: 'Ta czynność jest niedostępna dla bieżącego rozmiaru planszy.',
       confirmRemoveRow:
-        'Usunąć {{target}}? Po synchronizacji szkicu karty w tym wierszu i ich obrazy zostaną usunięte z serwera.',
+        'Usunąć ten wiersz? Po synchronizacji szkicu karty w tym wierszu i ich obrazy zostaną usunięte z serwera.',
       confirmRemoveColumn:
-        'Usunąć {{target}}? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
+        'Usunąć tę kolumnę? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
     },
     createDialog: {
       promptTitle: 'Brak szkicu gry',

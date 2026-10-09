@@ -155,7 +155,8 @@ export function RoleEditorDialog({
       </AppDialog>
       <ConfirmDialog
         open={pendingRoles !== null}
-        title={t('roleAdministration.confirmRolesTitle', { name: user.displayName })}
+        title={t('roleAdministration.confirmRolesTitle')}
+        subject={user.displayName}
         description={t('roleAdministration.confirmRolesDescription', {
           before: user.roles.map((role) => t(`navigation.roles.${role}`)).join(', '),
           after: (['viewer', ...(pendingRoles ?? selectedRoles)] as const)

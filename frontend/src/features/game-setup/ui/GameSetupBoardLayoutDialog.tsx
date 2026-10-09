@@ -182,7 +182,8 @@ export function GameSetupBoardLayoutDialog({
       <ConfirmDialog
         open={open && confirmStep}
         title={t('gameSetup.layoutDialog.title')}
-        description={t(confirmationKey, { target: getPositionLabel(selectedPositionIndex) })}
+        description={t(confirmationKey)}
+        subject={getPositionLabel(selectedPositionIndex)}
         confirmLabel={t('common.actions.remove')}
         cancelLabel={t('common.actions.back')}
         confirmTone="danger"

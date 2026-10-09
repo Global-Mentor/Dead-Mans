@@ -88,7 +88,9 @@ export function AppDialog({
           {description}
         </Typography>
       ) : description ? (
-        <div id={descriptionId}>{description}</div>
+        <Box id={descriptionId} sx={{ textAlign: 'center', overflowWrap: 'anywhere' }}>
+          {description}
+        </Box>
       ) : null}
       {children}
     </>

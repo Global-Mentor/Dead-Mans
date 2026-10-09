@@ -1,4 +1,3 @@
-import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
 import { ConfirmDialog } from '../../../shared/ui/index.ts'
@@ -28,14 +27,8 @@ export function AdminTeamRejectionConfirmation({
     <ConfirmDialog
       open={team !== null}
       title={t('teamRegistrations.rejectTitle')}
-      description={
-        <Stack gap={2}>
-          <Typography textAlign="center" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-            {team?.name}
-          </Typography>
-          <Typography textAlign="center">{t('teamRegistrations.rejectEffects')}</Typography>
-        </Stack>
-      }
+      description={t('teamRegistrations.rejectEffects')}
+      subject={team?.name}
       errorMessage={
         error || (team && !allowed && !busy ? t('teamRegistrations.rejectReadyHint') : null)
       }

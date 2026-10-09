@@ -1,8 +1,8 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import type { Dispatch, SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { ConfirmDialog, DiscardChangesDialog, SectionCard } from '../../../shared/ui/index.ts'
+import { ConfirmDialog, DiscardChangesDialog } from '../../../shared/ui/index.ts'
 import { canConfirmAdminTeam } from '../model/admin-team-readiness.ts'
 import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
 
@@ -74,14 +74,8 @@ export function AdminRegistrationConfirmations({
       <ConfirmDialog
         open={pendingConfirmTeam !== null}
         title={t('teamRegistrations.confirmTitle')}
-        description={
-          <Stack gap={2}>
-            <Typography textAlign="center" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-              {pendingConfirmTeam?.name}
-            </Typography>
-            <Typography textAlign="center">{t('teamRegistrations.canConfirm')}</Typography>
-          </Stack>
-        }
+        description={t('teamRegistrations.canConfirm')}
+        subject={pendingConfirmTeam?.name}
         errorMessage={
           dialogError ||
           (pendingConfirmTeam &&
@@ -107,14 +101,10 @@ export function AdminRegistrationConfirmations({
       <ConfirmDialog
         open={pendingUnconfirmTeam !== null}
         title={t('teamRegistrations.unconfirmTitle')}
-        description={
-          <Stack gap={2} sx={{ mb: dialogError ? 2 : 0 }}>
-            <Typography textAlign="center" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-              {pendingUnconfirmTeam?.name ||
-                t('common.teamWithSlot', { slot: pendingUnconfirmTeam?.teamSlotIndex ?? '-' })}
-            </Typography>
-            <Typography textAlign="center">{t('teamRegistrations.unconfirmHint')}</Typography>
-          </Stack>
+        description={t('teamRegistrations.unconfirmHint')}
+        subject={
+          pendingUnconfirmTeam?.name ||
+          t('common.teamWithSlot', { slot: pendingUnconfirmTeam?.teamSlotIndex ?? '-' })
         }
         errorMessage={dialogError}
         cancelLabel={t('common.actions.cancel')}
@@ -154,26 +144,16 @@ export function AdminRegistrationConfirmations({
         }}
         isBusy={pendingDisbandTeam ? isDisbandingTeam(pendingDisbandTeam.teamId) : false}
         title={t('gameApplication.adminPanel.disbandConfirmTitle')}
-        description={
-          <Stack gap={2} sx={{ mb: dialogError ? 2 : 0 }}>
-            <SectionCard surface="inset" sx={{ p: 1.5 }}>
-              <Stack gap={0.5}>
-                <Typography textAlign="center">
-                  {t('teamRegistrations.teamNameLabel')}:{' '}
-                  <Box component="span" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-                    {pendingDisbandTeam?.name ||
-                      t('common.teamWithSlot', { slot: pendingDisbandTeam?.teamSlotIndex ?? '-' })}
-                  </Box>
-                </Typography>
-                <Typography textAlign="center">
-                  {t('teamRegistrations.playersCountLabel')}:{' '}
-                  <Box component="span" sx={{ fontWeight: 700 }}>
-                    {pendingDisbandTeam?.members.length ?? 0}
-                  </Box>
-                </Typography>
-              </Stack>
-            </SectionCard>
-            <Typography textAlign="center">{t('teamRegistrations.disbandEffects')}</Typography>
+        description={t('teamRegistrations.disbandEffects')}
+        subject={
+          <Stack gap={0.5}>
+            <span>
+              {pendingDisbandTeam?.name ||
+                t('common.teamWithSlot', { slot: pendingDisbandTeam?.teamSlotIndex ?? '-' })}
+            </span>
+            <Typography variant="body2">
+              {t('teamRegistrations.playersCountLabel')}: {pendingDisbandTeam?.members.length ?? 0}
+            </Typography>
           </Stack>
         }
         cancelLabel={t('gameApplication.adminPanel.disbandConfirmCancel')}
@@ -200,8 +180,8 @@ export function AdminRegistrationConfirmations({
             : false
         }
         title={t('gameApplication.adminPanel.removePlayerConfirmTitle')}
+        subject={pendingRemovePlayer?.player.displayName ?? t('gameApplication.unknownPlayer')}
         description={t('gameApplication.adminPanel.removePlayerConfirmDescription', {
-          player: pendingRemovePlayer?.player.displayName ?? t('gameApplication.unknownPlayer'),
           slot: pendingRemovePlayer?.teamSlotIndex ?? '-',
         })}
         cancelLabel={t('gameApplication.adminPanel.removePlayerConfirmCancel')}

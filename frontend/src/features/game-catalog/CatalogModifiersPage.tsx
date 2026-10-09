@@ -238,7 +238,8 @@ export function CatalogModifiersPage() {
       <ConfirmDialog
         open={deleteTarget !== null}
         title={t('gameCatalog.modifiers.deleteTitle')}
-        description={t('gameCatalog.modifiers.deleteConfirm', { name: deleteTarget?.name ?? '' })}
+        description={t('gameCatalog.modifiers.deleteConfirm')}
+        subject={deleteTarget?.name}
         errorMessage={listError}
         confirmLabel={t('gameCatalog.actions.delete')}
         cancelLabel={t('common.actions.cancel')}

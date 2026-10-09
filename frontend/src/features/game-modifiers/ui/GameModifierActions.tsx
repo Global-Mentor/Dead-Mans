@@ -1,4 +1,3 @@
-import { Stack, Typography } from '@mui/material'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +24,7 @@ type ActionTarget = {
 type ConfirmationContent = {
   kind: ActionTarget['kind'] | null
   description: string
+  subject: string
   errorMessage: string | null
   unavailable: boolean
 }
@@ -92,12 +92,13 @@ export function GameModifierActions({
     selected?.kind === 'activate' ? activation.errorMessage : cancel.isError ? cancelMessage : null
   const content: ConfirmationContent = closingContent ?? {
     kind: target?.kind ?? null,
+    subject: target?.name ?? '',
     description: target
       ? t(
           target.kind === 'activate'
             ? 'gameModifiers.activationConfirmDescription'
             : 'gameModifiers.selfCancelConfirmDescription',
-          { modifier: target.name, cost: target.cost },
+          { cost: target.cost },
         )
       : '',
     errorMessage,
@@ -142,17 +143,9 @@ export function GameModifierActions({
             ? 'gameModifiers.selfCancelConfirmTitle'
             : 'gameModifiers.activationConfirmTitle',
         )}
-        description={
-          <Stack spacing={1} sx={{ textAlign: 'center', maxWidth: 500, mx: 'auto' }}>
-            <Typography variant="body1">{content.description}</Typography>
-            {content.errorMessage ? (
-              <InlineNotice severity="error">{content.errorMessage}</InlineNotice>
-            ) : null}
-            {content.unavailable && !content.errorMessage ? (
-              <InlineNotice severity="warning">{t('gameModifiers.actionUnavailable')}</InlineNotice>
-            ) : null}
-          </Stack>
-        }
+        description={content.description}
+        subject={content.subject}
+        errorMessage={content.errorMessage}
         confirmLabel={t(
           content.kind === 'cancel'
             ? 'gameModifiers.selfCancelAction'
@@ -176,7 +169,11 @@ export function GameModifierActions({
           setClosingContent({ ...content, errorMessage: null, unavailable: false })
           setConfirmationOpen(false)
         }}
-      />
+      >
+        {content.unavailable && !content.errorMessage ? (
+          <InlineNotice severity="warning">{t('gameModifiers.actionUnavailable')}</InlineNotice>
+        ) : null}
+      </ConfirmDialog>
       <AppToast
         message={confirmationOpen ? null : activation.toastMessage}
         onClose={activation.dismissToast}

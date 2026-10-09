@@ -170,9 +170,10 @@ function RegistrationPanelContent({
       <ConfirmDialog
         open={isConfirmOpen}
         title={t('gameSetup.registration.confirmTitle')}
-        description={
+        description={t('gameSetup.registration.confirmDescription')}
+        subject={snapshot.title}
+        children={
           <Stack spacing={2} ref={confirmationContent} tabIndex={-1}>
-            <span>{t('gameSetup.registration.confirmDescription', { title: snapshot.title })}</span>
             {missingModifiers || missingQuestions ? (
               <InlineNotice severity="warning">
                 {t('gameSetup.registration.emptyContentWarning')}

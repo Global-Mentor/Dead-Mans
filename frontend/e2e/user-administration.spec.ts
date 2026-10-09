@@ -313,8 +313,9 @@ for (const width of [390, 768, 1440]) {
     const row = page.getByRole('row', { name: 'Игрок 01', exact: true })
     await expect(row).toBeVisible()
     await row.getByRole('button', { name: 'Заблокировать: Игрок 01', exact: true }).click()
-    const confirmation = page.getByRole('dialog', { name: 'Заблокировать Игрок 01?' })
+    const confirmation = page.getByRole('dialog', { name: 'Заблокировать пользователя?' })
     await expect(confirmation).toBeVisible()
+    await expect(confirmation.getByText('Игрок 01', { exact: true })).toBeVisible()
     await page.screenshot({
       path: info.outputPath('block-confirmation.png'),
       animations: 'disabled',
@@ -327,7 +328,7 @@ for (const width of [390, 768, 1440]) {
     await expect(row.getByText('Заблокирован', { exact: true })).toBeVisible()
     await row.getByRole('button', { name: 'Разблокировать: Игрок 01', exact: true }).click()
     await page
-      .getByRole('dialog', { name: 'Разблокировать Игрок 01?' })
+      .getByRole('dialog', { name: 'Разблокировать пользователя?' })
       .getByRole('button', { name: 'Разблокировать', exact: true })
       .click()
     await expect(row.getByText('Разрешён', { exact: true })).toBeVisible()

@@ -1265,11 +1265,11 @@ for (const width of [390, 768, 1440]) {
     await expect(modifiers).toBeVisible()
     await modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }).click()
     const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
-    const description = confirmation.getByText(
-      'Активировать «Защитный знак» за 1 очк. викторины?',
-      { exact: true },
-    )
+    const description = confirmation.getByText('Активировать модификатор за 1 очк. викторины?', {
+      exact: true,
+    })
     await expect(description).toHaveCSS('text-align', 'center')
+    await expect(confirmation.getByText('Защитный знак', { exact: true })).toBeVisible()
     await expect(confirmation.getByRole('button', { name: 'Отмена', exact: true })).toBeVisible()
     await expect(
       confirmation.getByRole('button', { name: 'Не активировать', exact: true }),
@@ -1318,7 +1318,8 @@ for (const width of [390, 768, 1440]) {
             }
             const text = element.textContent ?? ''
             samples.push(
-              text.includes('Активировать «Защитный знак» за 1 очк. викторины?') &&
+              text.includes('Активировать модификатор за 1 очк. викторины?') &&
+                text.includes('Защитный знак') &&
                 !text.includes('Действие больше недоступно.'),
             )
             requestAnimationFrame(sample)

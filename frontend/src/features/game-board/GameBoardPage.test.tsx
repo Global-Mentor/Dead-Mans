@@ -559,7 +559,7 @@ describe('GameBoardPage', () => {
 
     expect(
       screen.getByText(
-        'Открыть «Босс» стоимостью 500 очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
+        'Открыть карточку стоимостью 500 очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/ряд|колонка/i)).not.toBeInTheDocument()

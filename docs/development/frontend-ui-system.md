@@ -148,7 +148,8 @@ An explicit destructive confirmation:
 <ConfirmDialog
   open={confirmOpen}
   title={t("teams.removeTitle")}
-  description={t("teams.removeDescription", { name: team.name })}
+  description={t("teams.removeDescription")}
+  subject={team.name}
   confirmLabel={t("teams.remove")}
   cancelLabel={t("common.actions.cancel")}
   confirmTone="danger"
@@ -238,3 +239,5 @@ The architecture check also rejects local corner-radius recipes in features, lay
 ## Dropdowns and entity confirmations
 
 - Action menus, form-select popups and searchable combobox lists share the JSON-import menu surface, separators, typography and hover/focus treatment through the theme dropdown styles. Selected options remain visibly marked, disabled options remain unavailable, and lists retain their original menu/listbox roles, keyboard selection and focus restoration. Navigation tree menus retain their group branches. Native select mode remains available where explicitly requested.
+
+- ConfirmDialog centers its action description and accepts a separate subject, rendered beneath it in an emphasized text surface. Identify renamed objects as old name → new name. Use the supplementary content slot for warnings and acknowledgment controls after the subject, preserving error handling and busy guards. Other informational AppDialog descriptions are centered without altering form layout.

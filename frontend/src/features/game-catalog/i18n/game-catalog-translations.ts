@@ -98,7 +98,7 @@ const translations = {
       viewTitle: 'View modifier',
       deleteTitle: 'Remove modifier',
       deleteConfirm:
-        'Archive "{{name}}" permanently? It will disappear from future games and cannot be restored, while history remains available.',
+        'Archive this modifier permanently? It will disappear from future games and cannot be restored, while history remains available.',
       fields: {
         name: 'Name',
         description: 'Description',
@@ -560,7 +560,7 @@ const translations = {
       viewTitle: 'Просмотр модификатора',
       deleteTitle: 'Удалить модификатор',
       deleteConfirm:
-        'Необратимо архивировать «{{name}}»? Он исчезнет из будущих игр, но сохранится в истории. Восстановление недоступно.',
+        'Необратимо архивировать модификатор? Он исчезнет из будущих игр, но сохранится в истории. Восстановление недоступно.',
       fields: {
         name: 'Название',
         description: 'Описание',
@@ -1022,7 +1022,7 @@ const translations = {
       viewTitle: 'Перегляд модифікатора',
       deleteTitle: 'Видалити модифікатор',
       deleteConfirm:
-        'Незворотно архівувати «{{name}}»? Він зникне з майбутніх ігор, але залишиться в історії. Відновлення недоступне.',
+        'Незворотно архівувати модифікатор? Він зникне з майбутніх ігор, але залишиться в історії. Відновлення недоступне.',
       fields: {
         name: 'Назва',
         description: 'Опис',
@@ -1481,7 +1481,7 @@ const translations = {
       viewTitle: 'Podgląd modyfikatora',
       deleteTitle: 'Usuń modyfikator',
       deleteConfirm:
-        'Nieodwracalnie zarchiwizować „{{name}}”? Zniknie z przyszłych gier, pozostając w historii. Przywracanie nie jest dostępne.',
+        'Nieodwracalnie zarchiwizować ten modyfikator? Zniknie z przyszłych gier, pozostając w historii. Przywracanie nie jest dostępne.',
       fields: {
         name: 'Nazwa',
         description: 'Opis',

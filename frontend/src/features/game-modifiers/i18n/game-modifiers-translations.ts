@@ -63,13 +63,13 @@ const translations = {
     activateCompactAction: 'Activate',
     activationLabel: 'Activate {{modifier}}',
     activationConfirmTitle: 'Activate this modifier?',
-    activationConfirmDescription: 'Activate {{modifier}} for {{cost}} quiz points?',
+    activationConfirmDescription: 'Activate this modifier for {{cost}} quiz points?',
 
     activateSuccess: 'Modifier activated.',
     selfCancelAction: 'Cancel purchase and refund',
     selfCancelConfirmTitle: 'Cancel your modifier purchase?',
     selfCancelConfirmDescription:
-      '{{modifier}} will be cancelled and {{cost}} quiz points will be refunded. This is available only while ordering is open.',
+      'Cancel this modifier and refund {{cost}} quiz points? This is available only while ordering is open.',
     selfCancelSuccess: 'Purchase cancelled and quiz points refunded.',
     selfCancelFailed: 'Could not cancel the purchase. Refresh the round and try again.',
     actionUnavailable: 'This action is no longer available. Refresh the modifiers and try again.',
@@ -154,7 +154,7 @@ const translations = {
       emergencyDisabledNotice: 'New activations are already disabled for this game.',
       emergencyDisableConfirmTitle: 'Disable new activations?',
       emergencyDisableConfirmDescription:
-        '“{{modifier}}” will no longer accept new activations in this game. Existing activations and history will remain unchanged.',
+        'Disable new activations of this modifier in this game? Existing activations and history will remain unchanged.',
 
       cancelReasonLabel: 'Audit reason',
       cancelHint:
@@ -162,7 +162,7 @@ const translations = {
       cancelAction: 'Undo and refund',
       cancelConfirmTitle: 'Undo this activation?',
       cancelConfirmDescription:
-        '{{modifier}} activated by {{player}} will be removed and {{cost}} quiz points will be refunded.',
+        'Remove this modifier activated by {{player}} and refund {{cost}} quiz points?',
       cancelConfirmCancel: 'Keep activation',
 
       cancelSuccess: 'Modifier activation removed and quiz points refunded.',
@@ -268,13 +268,13 @@ const translations = {
     activateCompactAction: 'Активировать',
     activationLabel: 'Активировать {{modifier}}',
     activationConfirmTitle: 'Активировать этот модификатор?',
-    activationConfirmDescription: 'Активировать «{{modifier}}» за {{cost}} очк. викторины?',
+    activationConfirmDescription: 'Активировать модификатор за {{cost}} очк. викторины?',
 
     activateSuccess: 'Модификатор активирован.',
     selfCancelAction: 'Отменить покупку и вернуть очки',
     selfCancelConfirmTitle: 'Отменить покупку модификатора?',
     selfCancelConfirmDescription:
-      '«{{modifier}}» будет отменён, а {{cost}} очк. викторины вернутся. Это доступно только пока заказ открыт.',
+      'Отменить модификатор и вернуть {{cost}} очк. викторины? Это доступно только пока заказ открыт.',
     selfCancelSuccess: 'Покупка отменена, очки викторины возвращены.',
     selfCancelFailed: 'Не удалось отменить покупку. Обновите раунд и попробуйте снова.',
     actionUnavailable: 'Действие больше недоступно. Обновите модификаторы и попробуйте снова.',
@@ -359,7 +359,7 @@ const translations = {
       emergencyDisabledNotice: 'Новые активации уже отключены для этой игры.',
       emergencyDisableConfirmTitle: 'Отключить новые активации?',
       emergencyDisableConfirmDescription:
-        '«{{modifier}}» больше нельзя будет активировать в этой игре. Существующие активации и история не изменятся.',
+        'Отключить новые активации модификатора в этой игре? Существующие активации и история не изменятся.',
 
       cancelReasonLabel: 'Причина отмены',
       cancelHint:
@@ -367,7 +367,7 @@ const translations = {
       cancelAction: 'Отменить и вернуть очки',
       cancelConfirmTitle: 'Отменить эту активацию?',
       cancelConfirmDescription:
-        'Модификатор «{{modifier}}», активированный игроком {{player}}, будет удалён, а {{cost}} очк. викторины вернутся.',
+        'Удалить модификатор, активированный игроком {{player}}, и вернуть {{cost}} очк. викторины?',
       cancelConfirmCancel: 'Оставить активацию',
 
       cancelSuccess: 'Активация удалена, очки возвращены.',
@@ -473,13 +473,13 @@ const translations = {
     activateCompactAction: 'Активувати',
     activationLabel: 'Активувати {{modifier}}',
     activationConfirmTitle: 'Активувати цей модифікатор?',
-    activationConfirmDescription: 'Активувати «{{modifier}}» за {{cost}} очк. вікторини?',
+    activationConfirmDescription: 'Активувати модифікатор за {{cost}} очк. вікторини?',
 
     activateSuccess: 'Модифікатор активовано.',
     selfCancelAction: 'Скасувати покупку й повернути очки',
     selfCancelConfirmTitle: 'Скасувати покупку модифікатора?',
     selfCancelConfirmDescription:
-      '«{{modifier}}» буде скасовано, а {{cost}} очк. вікторини повернуться. Це доступно лише поки замовлення відкрите.',
+      'Скасувати модифікатор і повернути {{cost}} очк. вікторини? Це доступно лише поки замовлення відкрите.',
     selfCancelSuccess: 'Покупку скасовано, очки вікторини повернено.',
     selfCancelFailed: 'Не вдалося скасувати покупку. Оновіть раунд і спробуйте знову.',
     actionUnavailable: 'Дія більше недоступна. Оновіть модифікатори та спробуйте знову.',
@@ -564,7 +564,7 @@ const translations = {
       emergencyDisabledNotice: 'Нові активації вже вимкнено для цієї гри.',
       emergencyDisableConfirmTitle: 'Вимкнути нові активації?',
       emergencyDisableConfirmDescription:
-        '«{{modifier}}» більше не можна буде активувати в цій грі. Наявні активації та історія не зміняться.',
+        'Вимкнути нові активації модифікатора в цій грі? Наявні активації та історія не зміняться.',
 
       cancelReasonLabel: 'Причина скасування',
       cancelHint:
@@ -572,7 +572,7 @@ const translations = {
       cancelAction: 'Скасувати й повернути очки',
       cancelConfirmTitle: 'Скасувати цю активацію?',
       cancelConfirmDescription:
-        'Модифікатор «{{modifier}}», активований гравцем {{player}}, буде видалено, а {{cost}} очк. вікторини повернуться.',
+        'Видалити модифікатор, активований гравцем {{player}}, і повернути {{cost}} очк. вікторини?',
       cancelConfirmCancel: 'Залишити активацію',
 
       cancelSuccess: 'Активацію видалено, очки повернуто.',
@@ -678,13 +678,13 @@ const translations = {
     activateCompactAction: 'Aktywuj',
     activationLabel: 'Aktywuj {{modifier}}',
     activationConfirmTitle: 'Aktywować ten modyfikator?',
-    activationConfirmDescription: 'Aktywować „{{modifier}}” za {{cost}} punktów quizowych?',
+    activationConfirmDescription: 'Aktywować ten modyfikator za {{cost}} punktów quizowych?',
 
     activateSuccess: 'Modyfikator aktywowany.',
     selfCancelAction: 'Cofnij zakup i zwróć punkty',
     selfCancelConfirmTitle: 'Cofnąć zakup modyfikatora?',
     selfCancelConfirmDescription:
-      '„{{modifier}}” zostanie cofnięty, a {{cost}} punktów quizowych zwrócone. Jest to możliwe tylko przy otwartym zamawianiu.',
+      'Cofnąć ten modyfikator i zwrócić {{cost}} punktów quizowych? Jest to możliwe tylko przy otwartym zamawianiu.',
     selfCancelSuccess: 'Zakup cofnięty, a punkty quizowe zwrócone.',
     selfCancelFailed: 'Nie udało się cofnąć zakupu. Odśwież rundę i spróbuj ponownie.',
     actionUnavailable: 'Ta akcja nie jest już dostępna. Odśwież modyfikatory i spróbuj ponownie.',
@@ -769,7 +769,7 @@ const translations = {
       emergencyDisabledNotice: 'Nowe aktywacje są już wyłączone w tej grze.',
       emergencyDisableConfirmTitle: 'Wyłączyć nowe aktywacje?',
       emergencyDisableConfirmDescription:
-        'Modyfikatora „{{modifier}}” nie będzie można ponownie aktywować w tej grze. Istniejące aktywacje i historia pozostaną bez zmian.',
+        'Wyłączyć nowe aktywacje tego modyfikatora w tej grze? Istniejące aktywacje i historia pozostaną bez zmian.',
 
       cancelReasonLabel: 'Powód cofnięcia',
       cancelHint:
@@ -777,7 +777,7 @@ const translations = {
       cancelAction: 'Cofnij i zwróć punkty',
       cancelConfirmTitle: 'Cofnąć tę aktywację?',
       cancelConfirmDescription:
-        'Modyfikator „{{modifier}}” aktywowany przez {{player}} zostanie usunięty, a {{cost}} pkt wróci do puli.',
+        'Usunąć ten modyfikator aktywowany przez {{player}} i zwrócić {{cost}} punktów quizowych?',
       cancelConfirmCancel: 'Zostaw aktywację',
 
       cancelSuccess: 'Aktywacja usunięta, punkty zwrócone.',

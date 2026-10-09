@@ -4,7 +4,7 @@ const translations = {
     mobileCreated: 'Created',
     mobileLastLogin: 'Sign-in',
     actions: 'Actions',
-    confirmRolesTitle: 'Change roles for {{name}}?',
+    confirmRolesTitle: 'Change user roles?',
     confirmRolesDescription: 'Current roles: {{before}}. New roles: {{after}}.',
     confirmRolesAction: 'Confirm changes',
     title: 'User roles',
@@ -63,8 +63,8 @@ const translations = {
     unblock: 'Unblock',
     blockFor: 'Block {{name}}',
     unblockFor: 'Unblock {{name}}',
-    blockTitle: 'Block {{name}}?',
-    unblockTitle: 'Unblock {{name}}?',
+    blockTitle: 'Block user?',
+    unblockTitle: 'Unblock user?',
     blockDescription:
       'The user will lose application access. Existing sessions will be rejected on their next request. Roles and history will be preserved.',
     unblockDescription:
@@ -79,7 +79,7 @@ const translations = {
     mobileCreated: 'Создан',
     mobileLastLogin: 'Вход',
     actions: 'Действия',
-    confirmRolesTitle: 'Изменить роли пользователя {{name}}?',
+    confirmRolesTitle: 'Изменить роли пользователя?',
     confirmRolesDescription: 'Текущие роли: {{before}}. Новые роли: {{after}}.',
     confirmRolesAction: 'Подтвердить изменения',
     title: 'Роли пользователей',
@@ -138,8 +138,8 @@ const translations = {
     unblock: 'Разблокировать',
     blockFor: 'Заблокировать: {{name}}',
     unblockFor: 'Разблокировать: {{name}}',
-    blockTitle: 'Заблокировать {{name}}?',
-    unblockTitle: 'Разблокировать {{name}}?',
+    blockTitle: 'Заблокировать пользователя?',
+    unblockTitle: 'Разблокировать пользователя?',
     blockDescription:
       'Пользователь потеряет доступ к приложению. Текущие сессии будут отклонены при следующем запросе. Роли и история сохранятся.',
     unblockDescription:
@@ -154,7 +154,7 @@ const translations = {
     mobileCreated: 'Створено',
     mobileLastLogin: 'Вхід',
     actions: 'Дії',
-    confirmRolesTitle: 'Змінити ролі користувача {{name}}?',
+    confirmRolesTitle: 'Змінити ролі користувача?',
     confirmRolesDescription: 'Поточні ролі: {{before}}. Нові ролі: {{after}}.',
     confirmRolesAction: 'Підтвердити зміни',
     title: 'Ролі користувачів',
@@ -213,8 +213,8 @@ const translations = {
     unblock: 'Розблокувати',
     blockFor: 'Заблокувати: {{name}}',
     unblockFor: 'Розблокувати: {{name}}',
-    blockTitle: 'Заблокувати {{name}}?',
-    unblockTitle: 'Розблокувати {{name}}?',
+    blockTitle: 'Заблокувати користувача?',
+    unblockTitle: 'Розблокувати користувача?',
     blockDescription:
       'Користувач втратить доступ до застосунку. Поточні сесії буде відхилено під час наступного запиту. Ролі та історія збережуться.',
     unblockDescription:
@@ -229,7 +229,7 @@ const translations = {
     mobileCreated: 'Dodano',
     mobileLastLogin: 'Logowanie',
     actions: 'Działania',
-    confirmRolesTitle: 'Zmienić role użytkownika {{name}}?',
+    confirmRolesTitle: 'Zmienić role użytkownika?',
     confirmRolesDescription: 'Obecne role: {{before}}. Nowe role: {{after}}.',
     confirmRolesAction: 'Potwierdź zmiany',
     title: 'Role użytkowników',
@@ -287,8 +287,8 @@ const translations = {
     unblock: 'Odblokuj',
     blockFor: 'Zablokuj: {{name}}',
     unblockFor: 'Odblokuj: {{name}}',
-    blockTitle: 'Zablokować {{name}}?',
-    unblockTitle: 'Odblokować {{name}}?',
+    blockTitle: 'Zablokować użytkownika?',
+    unblockTitle: 'Odblokować użytkownika?',
     blockDescription:
       'Użytkownik straci dostęp do aplikacji. Bieżące sesje zostaną odrzucone przy następnym żądaniu. Role i historia zostaną zachowane.',
     unblockDescription:

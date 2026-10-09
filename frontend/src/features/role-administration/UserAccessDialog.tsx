@@ -53,10 +53,8 @@ export function UserAccessDialog({
   return (
     <ConfirmDialog
       open
-      title={t(
-        user.isActive ? 'roleAdministration.blockTitle' : 'roleAdministration.unblockTitle',
-        { name: user.displayName },
-      )}
+      title={t(user.isActive ? 'roleAdministration.blockTitle' : 'roleAdministration.unblockTitle')}
+      subject={user.displayName}
       description={t(
         user.isActive
           ? 'roleAdministration.blockDescription'

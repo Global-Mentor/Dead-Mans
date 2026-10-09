@@ -176,13 +176,13 @@ export function ManualQuizAwardControl({
       <ConfirmDialog
         open={isConfirmationOpen}
         title={t('gameBoard.manualQuizAwardConfirmTitle')}
+        subject={selectedPlayer?.displayName}
         description={t('gameBoard.manualQuizAwardConfirmDescription', {
           operation: t(
             operationType === 'award'
               ? 'gameBoard.manualQuizAwardOperationAward'
               : 'gameBoard.manualQuizAwardOperationDeduct',
           ),
-          player: selectedPlayer?.displayName ?? '',
           sign: pointsDelta >= 0 ? '+' : '−',
           points: Math.abs(pointsNumber),
           before: selectedPlayer?.availableQuizPoints ?? 0,
