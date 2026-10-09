@@ -131,7 +131,7 @@ function QueueList({
               py: 0.5,
               borderBottom: '1px solid',
               borderColor: 'divider',
-              '&:first-child': { borderTop: '1px solid', borderTopColor: 'divider' },
+              '&:first-of-type': { borderTop: '1px solid', borderTopColor: 'divider' },
               ...(own
                 ? {
                     borderLeft: '3px solid',

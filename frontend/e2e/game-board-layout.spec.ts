@@ -2741,8 +2741,19 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
                 : 1080
     await page.setViewportSize({ width, height })
     const writes = await mockGame(page)
+    const unsafeSelectors: string[] = []
+    page.on('console', (message) => {
+      if (message.text().includes('potentially unsafe when doing server-side rendering'))
+        unsafeSelectors.push(message.text())
+    })
     await page.goto('/panel/game-board')
     await expect(page.getByRole('heading', { name: 'Последняя охота' })).toBeVisible()
+    await page.getByRole('button', { name: 'Администрирование', exact: true }).click()
+    await expect(
+      page.getByRole('menuitem', { name: 'Каталог вопросов', exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    expect(unsafeSelectors).toEqual([])
     await expect(page.getByRole('progressbar')).toHaveCount(0)
     const region = page.getByRole('region', { name: 'Последняя охота' })
     // The queue precedes the board on narrow screens; the card field stays near the top on desktop.

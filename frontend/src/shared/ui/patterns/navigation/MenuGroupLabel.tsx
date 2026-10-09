@@ -20,7 +20,7 @@ export const MenuGroupLabel = Object.assign(
           fontSize: 12,
           fontWeight: 600,
           lineHeight: 1.5,
-          '&:not(:first-child)': { marginTop: theme.spacing(0.5) },
+          '&:not(:first-of-type)': { marginTop: theme.spacing(0.5) },
           ...(appearance === 'tree'
             ? {
                 position: 'relative',
