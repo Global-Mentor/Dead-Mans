@@ -1,6 +1,7 @@
 import { z } from '../../../shared/validation/zod.ts'
 import { normalizeQuestionAnswer, trimQuestionAnswer } from './question-answer-normalize.ts'
 
+export const maxQuestionReward = 2147483647
 export const maxQuestionAnswers = 10
 export const minQuestionAnswers = 2
 
@@ -50,8 +51,17 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
           context.addIssue({ code: z.ZodIssueCode.custom, message: messages.correctAnswer })
         }
       }),
-    reward: z.string().regex(/^\d+$/, messages.number),
-    priority: z.string().regex(/^-?\d+$/, messages.number),
+    reward: z
+      .string()
+      .regex(/^\d+$/, messages.number)
+      .refine((value) => Number(value) <= maxQuestionReward, messages.number),
+    priority: z
+      .string()
+      .regex(/^-?\d+$/, messages.number)
+      .refine(
+        (value) => Number(value) >= -2147483648 && Number(value) <= 2147483647,
+        messages.number,
+      ),
     isEnabled: z.boolean(),
   })
 }

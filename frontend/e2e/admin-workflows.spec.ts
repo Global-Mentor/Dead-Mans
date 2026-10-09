@@ -171,6 +171,10 @@ for (const width of [320, 390, 768, 1440]) {
         await name.fill('Night watch · reviewed')
         await name.press('Tab')
         await expect.poll(server.writes).toBeGreaterThan(0)
+      } else if (path === 'catalog-questions') {
+        await expect(
+          page.getByTestId('question-catalog-list').getByRole('button').first(),
+        ).toBeVisible()
       } else if (path.includes('questions')) {
         await expect(
           page.getByText('Question 1: a deliberately long description for a readable catalogue', {
@@ -196,7 +200,11 @@ for (const width of [320, 390, 768, 1440]) {
         animations: 'disabled',
       })
       if (path === 'catalog-questions') {
-        await page.getByRole('button', { name: 'Edit', exact: true }).first().click()
+        await page.getByTestId('question-catalog-list').getByRole('button').first().click()
+        await page
+          .getByTestId('question-catalog-details')
+          .getByRole('button', { name: 'Edit', exact: true })
+          .click()
         const dialog = page.getByRole('dialog').first()
         await dialog.getByRole('textbox', { name: /^Question\s*\*?$/ }).fill('Unsaved question')
         await page.keyboard.press('Escape')
@@ -209,6 +217,12 @@ for (const width of [320, 390, 768, 1440]) {
           'Unsaved question',
         )
         await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+        const saveConfirmation = page.getByRole('dialog', {
+          name: 'Save question changes',
+          exact: true,
+        })
+        await expect(saveConfirmation.getByText('Unsaved question', { exact: true })).toBeVisible()
+        await saveConfirmation.getByRole('button', { name: 'Save', exact: true }).click()
         await expect(dialog.getByRole('alert')).toBeVisible()
         await expect(dialog.getByRole('textbox', { name: /^Question\s*\*?$/ })).toHaveValue(
           'Unsaved question',
@@ -813,16 +827,13 @@ for (const viewport of [
           if (new URL(request.url()).pathname === '/api/game/' + kind + '/catalog') reads++
         })
         await page.goto('/panel/catalog-' + kind)
-        const list =
-          kind === 'questions'
-            ? page.locator('[role="region"][tabindex="0"]')
-            : page.getByTestId('modifier-catalog-list')
-        await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(
-          kind === 'questions' ? 12 : 9,
+        const list = page.getByTestId(
+          kind === 'questions' ? 'question-catalog-list' : 'modifier-catalog-list',
         )
+        await expect(list.locator('li')).toHaveCount(kind === 'questions' ? 12 : 9)
         const search = page.getByRole('textbox').first()
         const top = (await search.boundingBox())!.y
-        const scrollRegion = kind === 'questions' ? list : list.getByRole('region')
+        const scrollRegion = list.getByRole('region')
         if (kind === 'questions' || viewport.width >= 1200) {
           await scrollRegion.evaluate((element) => {
             element.scrollTop = element.scrollHeight
@@ -830,7 +841,7 @@ for (const viewport of [
         } else {
           await list.locator('li').last().scrollIntoViewIfNeeded()
         }
-        await expect(list.locator(kind === 'questions' ? 'article' : 'li').last()).toBeInViewport()
+        await expect(list.locator('li').last()).toBeInViewport()
         if (kind === 'questions' || viewport.width >= 1200) {
           expect((await search.boundingBox())!.y).toBe(top)
         }
@@ -845,35 +856,33 @@ for (const viewport of [
         ).toBe(true)
         const readsBefore = reads
         await search.fill('nothing matches')
-        await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(0)
-        if (kind === 'modifiers' && viewport.width < 600) {
+        await expect(list.locator('li')).toHaveCount(0)
+        if (viewport.width < 600) {
           await page.getByRole('button', { name: 'Filters (0)', exact: true }).click()
         }
         await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
         await expect(search).toHaveValue('')
-        await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(
-          kind === 'questions' ? 12 : 9,
-        )
+        await expect(list.locator('li')).toHaveCount(kind === 'questions' ? 12 : 9)
         await page.getByRole('combobox', { name: /^Categories/ }).click()
         await page
           .getByRole('option', { name: kind === 'questions' ? /^Geography/ : /^Before the round/ })
           .click()
-        await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(
-          kind === 'questions' ? 12 : 3,
-        )
+        await expect(list.locator('li')).toHaveCount(kind === 'questions' ? 12 : 3)
         if (kind === 'questions') {
           await page.getByRole('combobox', { name: /^Availability/ }).click()
-          await page.getByRole('option', { name: 'globally disabled', exact: true }).click()
-          await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(1)
+          await page.getByRole('option', { name: 'Disabled', exact: true }).click()
+          await expect(list.locator('li')).toHaveCount(1)
         }
         expect(reads).toBe(readsBefore)
         await list
-          .getByRole('button', { name: kind === 'questions' ? /^Preview:/ : /^Night watch/ })
+          .getByRole('button', { name: kind === 'questions' ? /^Question / : /^Night watch/ })
           .first()
           .click()
         const dialog =
-          kind === 'modifiers' && viewport.width >= 1200
-            ? page.getByTestId('modifier-catalog-details')
+          viewport.width >= 1200
+            ? page.getByTestId(
+                kind === 'questions' ? 'question-catalog-details' : 'modifier-catalog-details',
+              )
             : page.getByRole('dialog')
         await expect(dialog).toBeVisible()
         if (kind === 'questions') {
@@ -886,7 +895,7 @@ for (const viewport of [
               { exact: true },
             ),
           ).toBeVisible()
-        if (kind === 'questions' || viewport.width < 1200) {
+        if (viewport.width < 1200) {
           await page.keyboard.press('Escape')
           await expect(dialog).toHaveCount(0)
         }
@@ -906,11 +915,12 @@ test('catalogue deletion errors keep the selected record and confirmation open',
   await mockAdmin(page)
   for (const kind of ['questions', 'modifiers']) {
     await page.goto('/panel/catalog-' + kind)
-    const list =
-      kind === 'questions'
-        ? page.locator('[role="region"][tabindex="0"]')
-        : page.getByTestId('modifier-catalog-list')
-    const actions = kind === 'questions' ? list : page.getByTestId('modifier-catalog-details')
+    const list = page.getByTestId(
+      kind === 'questions' ? 'question-catalog-list' : 'modifier-catalog-list',
+    )
+    const actions = page.getByTestId(
+      kind === 'questions' ? 'question-catalog-details' : 'modifier-catalog-details',
+    )
     await actions.getByRole('button', { name: 'Delete', exact: true }).first().click()
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
@@ -918,9 +928,7 @@ test('catalogue deletion errors keep the selected record and confirmation open',
       dialog.getByText('The operation could not be completed. Please try again.', { exact: true }),
     ).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Delete', exact: true })).toBeEnabled()
-    await expect(list.locator(kind === 'questions' ? 'article' : 'li')).toHaveCount(
-      kind === 'questions' ? 12 : 9,
-    )
+    await expect(list.locator('li')).toHaveCount(kind === 'questions' ? 12 : 9)
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(dialog).toHaveCount(0)
   }

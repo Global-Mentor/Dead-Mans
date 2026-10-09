@@ -214,6 +214,10 @@ test('catalog answer editing preserves variants and validates duplicates under p
   await dialog.getByRole('textbox', { name: 'Incorrect option 2', exact: true }).fill('Berlin')
   await dialog.getByRole('button', { name: 'Remove incorrect option 1', exact: true }).click()
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  const saveConfirmation = page.getByRole('dialog', { name: 'Save question changes', exact: true })
+  await expect(saveConfirmation.getByText('Capital?', { exact: true })).toBeVisible()
+  expect(saved).toHaveLength(0)
+  await saveConfirmation.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).toHaveCount(0)
   expect(saved).toEqual([
     expect.objectContaining({
@@ -228,12 +232,13 @@ test('catalog answer editing preserves variants and validates duplicates under p
   await expect(
     dialog.getByRole('textbox', { name: 'Incorrect option 1', exact: true }),
   ).toHaveValue('Berlin')
-  const longAnswer = 'a'.repeat(500)
+  const longAnswer = 'a'.repeat(450)
   await dialog.getByRole('textbox', { name: 'Incorrect option 1', exact: true }).fill(longAnswer)
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await saveConfirmation.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).toHaveCount(0)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Preview: Capital?', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Question details', exact: true })).toBeVisible()
   const answerChip = page.getByRole('dialog').getByText(longAnswer, { exact: true })
   await expect(answerChip).toBeVisible()
   expect(await answerChip.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(

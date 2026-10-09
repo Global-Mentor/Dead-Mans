@@ -42,6 +42,9 @@ describe('QuestionFormDialog', () => {
       })
     }
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByText('Add this question to the catalog?')
+    expect(onSubmit).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
     expect(onSubmit.mock.calls[0]?.[0].options).toEqual([
       { text: 'Warsaw', isCorrect: true },
@@ -73,6 +76,15 @@ describe('QuestionFormDialog', () => {
     expect(screen.getByLabelText(/^Correct answer\s*\*?$/)).toHaveValue('Warsaw')
     expect(screen.getByLabelText('Incorrect option 1')).toHaveValue('Krakow')
     expect(screen.getByLabelText('Incorrect option 2')).toHaveValue('Gdansk')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByText('Save the changes to this question?')
+    expect(onSubmit).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() =>
+      expect(screen.queryByText('Save the changes to this question?')).not.toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByText('Save the changes to this question?')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
     expect(
@@ -122,4 +134,40 @@ describe('QuestionFormDialog', () => {
     for (const button of screen.getAllByRole('button', { name: /Remove incorrect option/ }))
       expect(button).toBeDisabled()
   })
+})
+
+it('uses the selected category for creation and retains an unsaved draft across same-record refresh', async () => {
+  const onSubmit = vi.fn().mockRejectedValue(new Error('offline'))
+  const props = {
+    open: true,
+    mode: 'create' as const,
+    categories: [category, { ...category, id: 'science', name: 'Science' }],
+    defaultCategoryId: 'science',
+    isBusy: false,
+    onClose: vi.fn(),
+    onSubmit,
+  }
+  const { rerender } = renderWithAppProviders(<QuestionFormDialog {...props} />)
+  expect(screen.getByRole('combobox', { name: /Category/ })).toHaveTextContent('Science')
+  fireEvent.change(screen.getByLabelText(/^Question\s*\*?$/), {
+    target: { value: 'Draft question' },
+  })
+  fireEvent.change(screen.getByLabelText(/^Correct answer\s*\*?$/), {
+    target: { value: 'Correct' },
+  })
+  for (let number = 1; number <= 3; number++)
+    fireEvent.change(screen.getByLabelText('Incorrect option ' + number), {
+      target: { value: 'Wrong ' + number },
+    })
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await screen.findByText('Add this question to the catalog?')
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
+  await waitFor(() =>
+    expect(screen.getByRole('combobox', { name: /Category/ })).toHaveTextContent('Science'),
+  )
+  expect(screen.getByLabelText(/^Question\s*\*?$/)).toHaveValue('Draft question')
+  rerender(<QuestionFormDialog {...props} categories={[...props.categories]} />)
+  expect(screen.getByLabelText(/^Question\s*\*?$/)).toHaveValue('Draft question')
+  expect(screen.getByRole('combobox', { name: /Category/ })).toHaveTextContent('Science')
 })

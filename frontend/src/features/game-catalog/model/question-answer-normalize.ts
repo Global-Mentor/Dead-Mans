@@ -8,10 +8,15 @@ export function normalizeQuestionAnswer(value: string): string {
   const ye = String.fromCodePoint(0x0435)
   // .NET uses simple invariant casing, without final-sigma context or the
   // multi-character expansion of U+0130 performed by JavaScript string casing.
-  const input = Array.from(trimQuestionAnswer(value), (character) => {
-    const lower = character.toLowerCase()
-    return Array.from(lower).length === 1 ? lower : character
-  })
+  const input = Array.from(
+    trimQuestionAnswer(value)
+      .replace(/[\u2013\u2014]/g, '-')
+      .normalize('NFC'),
+    (character) => {
+      const lower = character.toLowerCase()
+      return Array.from(lower).length === 1 ? lower : character
+    },
+  )
     .join('')
     .replaceAll(yo, ye)
   if (input.length === 0) {
@@ -41,8 +46,8 @@ function isWhiteSpace(character: string): boolean {
   return /\p{White_Space}/u.test(character)
 }
 
-export function getQuestionDisplayOptions(question: {
-  options: readonly { text: string; isCorrect: boolean; sortOrder: number }[]
-}) {
+export function getQuestionDisplayOptions<
+  T extends { text: string; isCorrect: boolean; sortOrder: number },
+>(question: { options: readonly T[] }) {
   return [...question.options].sort((left, right) => left.sortOrder - right.sortOrder)
 }

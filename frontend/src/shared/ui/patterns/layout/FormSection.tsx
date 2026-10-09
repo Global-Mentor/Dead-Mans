@@ -8,6 +8,8 @@ import { SectionCard } from '../../primitives/surfaces/SectionCard.tsx'
 interface FormSectionProps {
   title: string
   description?: string
+  headingSize?: 'standard' | 'small'
+  textAlign?: 'left' | 'center'
   action?: ReactNode
   controls?: ReactNode
   children: ReactNode
@@ -18,6 +20,8 @@ interface FormSectionProps {
 export function FormSection({
   title,
   description,
+  textAlign = 'left',
+  headingSize = 'standard',
   action,
   controls,
   children,
@@ -43,10 +47,16 @@ export function FormSection({
         sx,
       )}
     >
-      <SectionHeader headingId={headingId} title={title} actions={action} />
+      <SectionHeader
+        headingId={headingId}
+        title={title}
+        actions={action}
+        textAlign={textAlign}
+        headingSize={headingSize}
+      />
       <Stack spacing={1.5} sx={{ minWidth: 0 }}>
         {description ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign }}>
             {description}
           </Typography>
         ) : null}

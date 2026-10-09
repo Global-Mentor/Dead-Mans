@@ -7,3 +7,5 @@ export {
   updateGameQuestionMutationOptions,
   deleteGameQuestionMutationOptions,
 } from './api/game-question-mutation-options.ts'
+
+export { previewTwitchQuizMessages } from './api/game-questions-api.ts'

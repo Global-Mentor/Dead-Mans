@@ -7,6 +7,7 @@ interface SectionHeaderProps {
   actions?: ReactNode
   textAlign?: 'left' | 'center'
   headingLevel?: 'h1' | 'h2' | 'h3'
+  headingSize?: 'standard' | 'small'
   headingId?: string
 }
 
@@ -16,6 +17,7 @@ export function SectionHeader({
   actions,
   textAlign = 'left',
   headingLevel = 'h2',
+  headingSize = 'standard',
   headingId,
 }: SectionHeaderProps) {
   return (
@@ -27,9 +29,14 @@ export function SectionHeader({
         justifyContent={textAlign === 'center' ? 'center' : 'space-between'}
         flexWrap="wrap"
         useFlexGap
-        sx={{ minHeight: 44 }}
+        sx={{ minHeight: headingSize === 'small' ? 0 : 44 }}
       >
-        <Typography id={headingId} component={headingLevel} variant="h5" sx={{ fontSize: 28 }}>
+        <Typography
+          id={headingId}
+          component={headingLevel}
+          variant={headingSize === 'small' ? 'h6' : 'h5'}
+          sx={headingSize === 'standard' ? { fontSize: 28 } : undefined}
+        >
           {title}
         </Typography>
         {actions}

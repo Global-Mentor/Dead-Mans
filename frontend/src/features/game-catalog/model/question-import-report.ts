@@ -42,7 +42,7 @@ function resolveSkippedQuestionReason(item: ImportGameQuestionSkippedItem, t: TF
         return t('gameCatalog.questions.importReasons.duplicateCodeExisting')
       }
 
-      return item.reason
+      return t('gameCatalog.questions.importReasons.unknown')
   }
 }
 

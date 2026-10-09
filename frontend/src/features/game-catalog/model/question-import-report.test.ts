@@ -49,7 +49,7 @@ describe('question-import-report', () => {
       '#2 - What is the safe code?: The question code already exists in the catalog.',
     )
     expect(formatSkippedQuestionWarning(secondQuestion!, i18n.t.bind(i18n))).toBe(
-      '#5: Required fields are missing or invalid. Each question must include text, answer, and a non-negative reward.',
+      '#5: Check the question text, non-negative reward and 2-10 unique options with exactly one correct answer. Twitch messages must fit within 500 characters.',
     )
   })
 
@@ -68,8 +68,23 @@ describe('question-import-report', () => {
     )
 
     expect(warning).toBe(
-      '#1 - Какой ник у стримера?: Не заполнены обязательные поля или в них есть ошибка. У вопроса должны быть текст, ответ и неотрицательная награда.',
+      '#1 - Какой ник у стримера?: Проверьте текст вопроса, неотрицательную награду и 2-10 уникальных вариантов с одним правильным ответом. Сообщения для Twitch должны помещаться в 500 символов.',
     )
+  })
+
+  it.each(['en', 'ru', 'uk', 'pl'])('localizes unexpected reasons in %s', async (locale) => {
+    await i18n.changeLanguage(locale)
+    const warning = formatSkippedQuestionWarning(
+      {
+        rowNumber: 1,
+        questionText: null,
+        reasonCode: 'unexpected_code',
+        reason: 'Internal database diagnostic',
+      } as unknown as ImportGameQuestionSkippedItem,
+      i18n.t.bind(i18n),
+    )
+    expect(warning).toBe(`#1: ${i18n.t('gameCatalog.questions.importReasons.unknown')}`)
+    expect(warning).not.toContain('Internal database diagnostic')
   })
 
   it('builds a JSON report with skipped question details and source file metadata', () => {
