@@ -84,10 +84,6 @@ public sealed partial class DbGameBoardRepository
                     )
                 )
                 .ToArrayAsync(cancellationToken);
-            var quizAnswerDurationSeconds = await _dbContext.Games.AsNoTracking()
-                .Where(x => x.Id == selectedBoard.GameId)
-                .Select(x => x.QuizAnswerDurationSeconds)
-                .SingleAsync(cancellationToken);
 
             _logger.LogDebug(
                 AppMessages.Logs.GameBoardSnapshotResolved,
@@ -111,7 +107,7 @@ public sealed partial class DbGameBoardRepository
                 activeModifiers,
                 selectedBoard.ActiveTeamId?.ToString(),
                 Array.Empty<string>(),
-                quizAnswerDurationSeconds
+                selectedBoard.QuizAnswerDurationSeconds
             );
         }
         catch (Exception ex)
@@ -138,6 +134,7 @@ public sealed partial class DbGameBoardRepository
                     game.Description,
                     game.Status,
                     game.ActiveTeamId,
+                    game.QuizAnswerDurationSeconds,
                     board.Version,
                     board.Rows,
                     board.Cols,
@@ -162,6 +159,7 @@ public sealed partial class DbGameBoardRepository
                         row.Description,
                         row.Status,
                         row.ActiveTeamId,
+                        row.QuizAnswerDurationSeconds,
                         row.Version,
                         row.Rows,
                         row.Cols,
@@ -183,6 +181,7 @@ public sealed partial class DbGameBoardRepository
                     row.Description,
                     row.Status,
                     row.ActiveTeamId,
+                    row.QuizAnswerDurationSeconds,
                     row.Version,
                     row.Rows,
                     row.Cols,
@@ -203,6 +202,7 @@ public sealed partial class DbGameBoardRepository
         string? Description,
         string Status,
         Guid? ActiveTeamId,
+        int QuizAnswerDurationSeconds,
         int Version,
         int Rows,
         int Cols,

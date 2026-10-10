@@ -43,11 +43,12 @@ public sealed partial class DbGameQuestionRepository
             query = query.Where(x => x.IsEnabled);
         }
 
-        return await query
+        var items = await query
             .OrderBy(x => x.CategoryDefinition!.Name)
             .ThenBy(x => x.Priority)
             .Select(ToCatalogItemSelector())
             .ToArrayAsync(cancellationToken);
+        return items.Select(item => item.ToCatalogItem()).ToArray();
     }
 
     public async Task<bool> QuestionIdsAvailableAsync(
@@ -73,11 +74,12 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken
     )
     {
-        return await _dbContext.QuestionDefinitions
+        var item = await _dbContext.QuestionDefinitions
             .AsNoTracking()
             .Where(x => x.Id == questionId && !x.IsDeleted)
             .Select(ToCatalogItemSelector())
             .FirstOrDefaultAsync(cancellationToken);
+        return item?.ToCatalogItem();
     }
 
     private static string GenerateExternalCode()
@@ -85,11 +87,11 @@ public sealed partial class DbGameQuestionRepository
         return $"q_{Guid.NewGuid():N}"[..10];
     }
 
-    private static Expression<Func<QuestionDefinition, GameQuestionCatalogItem>>
+    private static Expression<Func<QuestionDefinition, CatalogItemRow>>
         ToCatalogItemSelector()
     {
         return x =>
-            new GameQuestionCatalogItem(
+            new CatalogItemRow(
                 x.Id,
                 x.ExternalCode,
                 x.CategoryId,
@@ -112,19 +114,36 @@ public sealed partial class DbGameQuestionRepository
                     .SelectMany(session => session.Submissions).Count(),
                 x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
                     .SelectMany(session => session.Submissions).Count(submission => submission.IsCorrect),
-                x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
-                    .SelectMany(session => session.Submissions).Any()
-                    ? 100m * x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
-                        .SelectMany(session => session.Submissions)
-                        .Count(submission => submission.IsCorrect)
-                        / x.AskedInQuizQuestionSessions.Where(session => session.Status == GameQuizQuestionSessionStatusValue.Closed)
-                            .SelectMany(session => session.Submissions).Count()
-                    : 0m,
                 x.AskedInQuizQuestionSessions
                     .OrderByDescending(session => session.AskedAtUtc)
                     .Select(session => (DateTime?)session.AskedAtUtc)
                     .FirstOrDefault()
             );
+    }
+
+    private sealed record CatalogItemRow(
+        Guid QuestionId,
+        string QuestionCode,
+        Guid CategoryId,
+        string CategoryName,
+        string Text,
+        IReadOnlyList<GameQuestionOption> Options,
+        int Reward,
+        int Priority,
+        bool IsEnabled,
+        int AskedTotalCount,
+        int SubmissionTotalCount,
+        int CorrectSubmissionTotalCount,
+        DateTime? LastAskedAtUtc
+    )
+    {
+        public GameQuestionCatalogItem ToCatalogItem() => new(
+            QuestionId, QuestionCode, CategoryId, CategoryName, Text, Options,
+            Reward, Priority, IsEnabled, AskedTotalCount, SubmissionTotalCount,
+            CorrectSubmissionTotalCount,
+            SubmissionTotalCount == 0 ? 0m : 100m * CorrectSubmissionTotalCount / SubmissionTotalCount,
+            LastAskedAtUtc
+        );
     }
 
     private static string NormalizeFilter(string? value)
