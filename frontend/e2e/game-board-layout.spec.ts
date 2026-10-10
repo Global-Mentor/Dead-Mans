@@ -228,6 +228,41 @@ test('returning to a cached board stays usable during its refresh', async ({ pag
   releaseSnapshot()
 })
 
+for (const status of ['ready', 'active'] as const) {
+  for (const width of [390, 768, 1440]) {
+    test(`empty ${status} team queue keeps its game and refreshes at ${width}px`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.clock.install()
+      await mockGame(page, status, 'viewer')
+      let empty = true
+      await page.route('**/api/game/team-queue', (route) =>
+        empty
+          ? route.fulfill({
+              json: {
+                gameId: board.gameId,
+                teams: [],
+                summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+              },
+            })
+          : route.fallback(),
+      )
+      await page.goto('/panel/game-team-queue')
+      const queue = page.getByTestId('team-queue-panel')
+      await expect(queue.getByRole('heading', { name: 'Не отыграли' })).toBeVisible()
+      await expect(queue.getByRole('heading', { name: 'Отыгравшие' })).toBeVisible()
+      await expect(queue.getByRole('article')).toHaveCount(0)
+      await expect(queue.getByRole('button', { name: 'Повторить' })).toHaveCount(0)
+      await page.screenshot({ path: info.outputPath('empty-queue.png') })
+      empty = false
+      await page.clock.fastForward(5_001)
+      await expect(queue.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+      await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toBeVisible()
+    })
+  }
+}
+
 async function mockGame(
   page: Page,
   status: 'active' | 'ready' | 'finished' = 'active',

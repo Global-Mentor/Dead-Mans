@@ -710,6 +710,49 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Null(queueItem.FinalScore);
     }
 
+    [Theory]
+    [InlineData(GameStatusValue.Ready)]
+    [InlineData(GameStatusValue.Active)]
+    public async Task GetTeamQueue_WithoutConfirmedTeams_PreservesCurrentGameId(string status)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var gameId = Guid.NewGuid();
+        db.Games.Add(new Game
+        {
+            Id = gameId,
+            Title = "Empty queue",
+            Status = status,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+        using var viewer = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+
+        var response = await viewer.GetAsync("/api/game/team-queue");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var queue = await response.Content.ReadFromJsonAsync<GameTeamQueueResultDto>();
+        Assert.NotNull(queue);
+        Assert.Equal(gameId.ToString(), queue.GameId);
+        Assert.Empty(queue.Teams);
+        Assert.Equal(0, queue.Summary.TotalTeams);
+        Assert.Equal(0, queue.Summary.PlayedTeams);
+        Assert.Equal(0, queue.Summary.RemainingTeams);
+    }
+
+    [Fact]
+    public async Task GetTeamQueue_WithoutCurrentGame_ReturnsNullGameId()
+    {
+        using var viewer = CreateAuthenticatedClient([AuthRoleCodes.Viewer]);
+        var response = await viewer.GetAsync("/api/game/team-queue");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var queue = await response.Content.ReadFromJsonAsync<GameTeamQueueResultDto>();
+        Assert.NotNull(queue);
+        Assert.Null(queue.GameId);
+        Assert.Empty(queue.Teams);
+        Assert.Equal(0, queue.Summary.TotalTeams);
+    }
+
     [Fact]
     public async Task SetActiveTeam_WhenTeamMarkedPlayed_ReturnsConflict()
     {

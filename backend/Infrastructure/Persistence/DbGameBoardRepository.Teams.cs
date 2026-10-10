@@ -26,7 +26,7 @@ public sealed partial class DbGameBoardRepository
 
         if (!currentGameId.HasValue)
         {
-            return EmptyTeamQueueResult();
+            return EmptyTeamQueueResult(null);
         }
 
         var rosters = await _dbContext.LoadConfirmedTeamRostersAsync(
@@ -35,7 +35,7 @@ public sealed partial class DbGameBoardRepository
         );
         if (rosters.Count == 0)
         {
-            return EmptyTeamQueueResult();
+            return EmptyTeamQueueResult(currentGameId.Value);
         }
 
         var completedRounds = await _dbContext.GameRounds
@@ -94,10 +94,10 @@ public sealed partial class DbGameBoardRepository
         );
     }
 
-    private static GameTeamQueueResult EmptyTeamQueueResult()
+    private static GameTeamQueueResult EmptyTeamQueueResult(Guid? gameId)
     {
         return new GameTeamQueueResult(
-            null,
+            gameId?.ToString(),
             new GameTeamQueueSummary(0, 0, 0),
             Array.Empty<GameTeamQueueItem>()
         );

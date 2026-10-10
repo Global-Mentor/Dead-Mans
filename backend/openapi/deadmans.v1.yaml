@@ -5085,6 +5085,7 @@ components:
         - teams
       properties:
         gameId:
+          description: Current active or ready game ID, including when its queue is empty. Null only when no current game exists.
           type: string
           format: uuid
           nullable: true

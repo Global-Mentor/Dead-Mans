@@ -1959,7 +1959,10 @@ export interface components {
             remainingTeams: number;
         };
         GameTeamQueueResultDto: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Current active or ready game ID, including when its queue is empty. Null only when no current game exists.
+             */
             gameId: string | null;
             summary: components["schemas"]["GameTeamQueueSummaryDto"];
             teams: components["schemas"]["GameTeamQueueItemDto"][];
