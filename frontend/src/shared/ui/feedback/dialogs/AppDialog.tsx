@@ -80,7 +80,6 @@ export function AppDialog({
             maxWidth: 500,
             mx: 'auto',
             mb: children ? 2 : 0,
-            lineHeight: 1.65,
             textAlign: 'center',
             textWrap: 'wrap',
           }}
@@ -109,15 +108,12 @@ export function AppDialog({
       <DialogTitle
         sx={{
           position: 'relative',
-          px: { xs: 2.5, sm: 4 },
-          pt: { xs: 2.75, sm: 3.25 },
-          pb: { xs: 2.25, sm: 2.5 },
+          px: 2,
+          py: 1.5,
           borderBottom: '1px solid',
           borderColor: alpha(huntPalette.amber, 0.38),
           color: 'primary.light',
-          fontSize: { xs: '1.55rem', sm: '1.8rem' },
-          lineHeight: 1.15,
-          letterSpacing: '0.01em',
+          typography: 'h3',
           textAlign: 'center',
           overflowWrap: 'anywhere',
           '&::after': {
@@ -152,12 +148,8 @@ export function AppDialog({
             ...(height === 'viewport'
               ? { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0 }
               : {}),
-            px: { xs: 1.5, sm: 2.5 },
-            py: isStandaloneMessage
-              ? 3.5
-              : contentDensity === 'compact'
-                ? { xs: 1.25, sm: 1.75 }
-                : { xs: 2.75, sm: 3.25 },
+            px: 1.5,
+            py: isStandaloneMessage ? 2 : contentDensity === 'compact' ? 1.25 : 1.5,
           }}
         >
           {content}
@@ -173,9 +165,9 @@ export function AppDialog({
               sm: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             },
             alignItems: 'stretch',
-            gap: 1.25,
-            px: { xs: 2.5, sm: 4 },
-            py: { xs: 2.25, sm: 2.75 },
+            gap: 1,
+            px: 1.5,
+            py: 1.5,
             backgroundColor: alpha(huntPalette.soot, 0.2),
           }}
         >

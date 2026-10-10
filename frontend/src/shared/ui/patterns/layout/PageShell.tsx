@@ -17,7 +17,6 @@ function resolveVariantSx(variant: PageShellVariant): SxProps<Theme> {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        px: { xs: 1, sm: 2 },
       }
     case 'split':
       return setupSplitLayoutSx

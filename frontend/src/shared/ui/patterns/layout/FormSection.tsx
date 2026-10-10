@@ -39,8 +39,7 @@ export function FormSection({
         {
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
-          p: { xs: 1.5, sm: 2 },
+          gap: 1.5,
           minWidth: 0,
           containerType: 'inline-size',
         },

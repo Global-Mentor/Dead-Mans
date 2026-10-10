@@ -287,7 +287,7 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(details.getByRole('heading', { name: 'Адреналин', exact: true })).toBeVisible()
     await expect(
       details.getByRole('heading', { name: 'Поведение модификатора', exact: true }),
-    ).toHaveCSS('font-size', '20px')
+    ).toHaveCSS('font-size', '18px')
     await expect(details.getByText('без лимита', { exact: true })).toBeVisible()
     const activation = details.getByRole('region', { name: 'Активация', exact: true })
     await expect(activation.getByRole('group', { name: 'Конфликты', exact: true })).toContainText(
@@ -315,7 +315,7 @@ for (const width of [320, 390, 768, 1440]) {
       await expect(details.getByRole('heading', { name: 'Адреналин', exact: true })).toBeVisible()
       await expect(
         details.getByRole('heading', { name: 'Поведение модификатора', exact: true }),
-      ).toHaveCSS('font-size', '20px')
+      ).toHaveCSS('font-size', '18px')
       await details.getByRole('button', { name: 'Изменить', exact: true }).click()
       await expect(editor.getByRole('textbox', { name: /^Название/ })).toHaveValue('Адреналин')
     }

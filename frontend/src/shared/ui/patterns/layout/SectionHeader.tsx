@@ -21,7 +21,7 @@ export function SectionHeader({
   headingId,
 }: SectionHeaderProps) {
   return (
-    <Stack component="header" sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+    <Stack component="header" sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
       <Stack
         direction="row"
         spacing={1}
@@ -29,13 +29,11 @@ export function SectionHeader({
         justifyContent={textAlign === 'center' ? 'center' : 'space-between'}
         flexWrap="wrap"
         useFlexGap
-        sx={{ minHeight: headingSize === 'small' ? 0 : 44 }}
       >
         <Typography
           id={headingId}
           component={headingLevel}
-          variant={headingSize === 'small' ? 'h6' : 'h5'}
-          sx={headingSize === 'standard' ? { fontSize: 28 } : undefined}
+          variant={headingSize === 'small' ? 'h6' : headingLevel === 'h1' ? 'h3' : 'h5'}
         >
           {title}
         </Typography>

@@ -53,7 +53,7 @@ export function ModifierVersionDetails({
           minHeight: 0,
           overflowY: 'auto',
           overscrollBehaviorY: 'contain',
-          scrollbarGutter: 'stable',
+          scrollbarGutter: 'stable both-edges',
           containerType: 'inline-size',
         }}
       >

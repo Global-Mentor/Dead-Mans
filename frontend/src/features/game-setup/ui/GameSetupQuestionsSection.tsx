@@ -91,6 +91,7 @@ export function GameSetupQuestionsSection({
         <Stack spacing={1} sx={{ mt: 1, p: 0.5 }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} alignItems="flex-start">
             <FormTextField
+              density="compact"
               value={search}
               label={t('gameSetup.questions.searchLabel')}
               onChange={(event) => setSearch(event.target.value)}
@@ -110,6 +111,7 @@ export function GameSetupQuestionsSection({
           >
             <Stack direction="row" gap={1} sx={{ flex: 1, minWidth: 0 }}>
               <FormSelect
+                density="compact"
                 label={t('common.entities.categories')}
                 value={activeCategory}
                 onChange={setActiveCategory}
@@ -120,6 +122,7 @@ export function GameSetupQuestionsSection({
                 sx={{ flex: 1, minWidth: 0 }}
               />
               <FormSelect
+                density="compact"
                 label={t('gameSetup.questions.selectionLabel')}
                 value={selection}
                 onChange={setSelection}
@@ -140,6 +143,7 @@ export function GameSetupQuestionsSection({
               }}
             >
               <AppButton
+                size="small"
                 tone="secondary"
                 framePlacement="inset"
                 disabled={isSaving || !visibleIds.some((id) => !enabledIds.has(id))}
@@ -148,6 +152,7 @@ export function GameSetupQuestionsSection({
                 {t('gameSetup.questions.enableVisible')}
               </AppButton>
               <AppButton
+                size="small"
                 tone="danger"
                 framePlacement="inset"
                 disabled={isSaving || !visibleIds.some((id) => enabledIds.has(id))}

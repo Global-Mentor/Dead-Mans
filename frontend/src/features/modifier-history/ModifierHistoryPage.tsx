@@ -104,9 +104,6 @@ export function ModifierHistoryPage() {
         maxWidth: 1800,
         width: '100%',
         mx: 'auto',
-        p: 0,
-        px: { xs: 0, md: 0 },
-        pb: { xs: 0, md: 0 },
         flex: 1,
         minHeight: 0,
         display: 'flex',
@@ -122,6 +119,7 @@ export function ModifierHistoryPage() {
         tools={
           <Stack gap={1}>
             <FormTextField
+              density="compact"
               label={t('modifierHistory.search')}
               value={search}
               onChange={(event) => {
@@ -140,6 +138,7 @@ export function ModifierHistoryPage() {
               fullWidth
             />
             <FormSelect
+              density="compact"
               label={t('modifierHistory.filter')}
               value={filter}
               onChange={(value) =>

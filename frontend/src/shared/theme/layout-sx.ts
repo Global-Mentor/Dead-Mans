@@ -1,11 +1,17 @@
 import type { SxProps, Theme } from '@mui/material'
-import { uiTokens } from './tokens.ts'
+
+export const scrollRegionSx = {
+  overflowY: 'auto',
+  overscrollBehaviorY: 'contain',
+  scrollbarGutter: 'stable both-edges',
+  scrollbarWidth: 'thin',
+} as const
 
 export const pageShellSx: SxProps<Theme> = {
   maxWidth: 1100,
   mx: 'auto',
-  px: uiTokens.spacing.page,
-  pb: uiTokens.spacing.page,
+  width: '100%',
+  minWidth: 0,
 }
 
 export const setupSplitLayoutSx: SxProps<Theme> = {

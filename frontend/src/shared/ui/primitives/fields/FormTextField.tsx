@@ -2,6 +2,7 @@ import type { OutlinedTextFieldProps, SxProps, Theme } from '@mui/material'
 import { TextField } from '@mui/material'
 import { useId, useState } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
+import { uiTokens } from '../../../theme/tokens.ts'
 import { HelpTooltip } from '../../feedback/help/HelpTooltip.tsx'
 
 type FormFieldDensity = 'standard' | 'compact'
@@ -24,9 +25,28 @@ function resolveFieldSx(
 
   return {
     '& .MuiInputBase-input': {
-      ...(density === 'compact' ? { py: 0.3, fontSize: 12 } : {}),
+      ...(density === 'compact'
+        ? { py: 0.75, fontSize: uiTokens.type.secondary, lineHeight: 1.5 }
+        : {}),
       ...(textAlign === 'center' ? { textAlign: 'center', fontWeight: 600 } : {}),
     },
+    ...(density === 'compact'
+      ? {
+          '& .MuiInputBase-root': { minHeight: uiTokens.control.height.compact },
+          '& .MuiInputLabel-root': {
+            fontSize: uiTokens.type.secondary,
+            '&:not(.MuiInputLabel-shrink)': { transform: 'translate(14px, 7px) scale(1)' },
+            '&.MuiInputLabel-shrink': { fontSize: uiTokens.type.body },
+          },
+          '@media (pointer: coarse)': {
+            '& .MuiInputBase-root': { minHeight: uiTokens.control.height.standard },
+            '& .MuiInputBase-input, & .MuiInputLabel-root': { fontSize: uiTokens.type.body },
+            '& .MuiInputLabel-root:not(.MuiInputLabel-shrink)': {
+              transform: 'translate(14px, 11px) scale(1)',
+            },
+          },
+        }
+      : {}),
   }
 }
 

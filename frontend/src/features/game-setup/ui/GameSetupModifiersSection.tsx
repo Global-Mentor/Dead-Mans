@@ -4,9 +4,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModifierCatalogRow } from '../../../shared/game-ui/index.ts'
 import {
+  FormCheckbox,
   AppButton,
   AsyncSection,
-  FormCheckbox,
   FormTextField,
   SectionCard,
   SectionHeader,
@@ -80,7 +80,16 @@ export function GameSetupModifiersSection({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ flexShrink: 0, maxHeight: '65%', overflowY: 'auto' }}>
+      <Box
+        sx={{
+          flexShrink: 0,
+          maxHeight: '65%',
+          overflowY: 'auto',
+          scrollbarGutter: 'stable both-edges',
+          scrollbarWidth: 'thin',
+          mx: -1,
+        }}
+      >
         <SectionHeader
           headingLevel="h1"
           title={t('gameSetup.modifiers.title')}
@@ -95,6 +104,7 @@ export function GameSetupModifiersSection({
         />
         <Stack spacing={1.5} sx={{ mt: 1.5, p: 0.5 }}>
           <FormTextField
+            density="compact"
             value={search}
             label={t('common.modifiers.searchLabel')}
             onChange={(event) => setSearch(event.target.value)}
@@ -105,6 +115,7 @@ export function GameSetupModifiersSection({
             alignItems={{ xs: 'stretch', md: 'center' }}
           >
             <FormSelect
+              density="compact"
               label={t('common.entities.categories')}
               value={category}
               onChange={setCategory}
@@ -126,6 +137,7 @@ export function GameSetupModifiersSection({
               sx={{ flexShrink: 0 }}
             >
               <AppButton
+                size="small"
                 tone="secondary"
                 framePlacement="inset"
                 disabled={isSaving || !visibleIds.some((id) => !enabledIds.has(id))}
@@ -134,6 +146,7 @@ export function GameSetupModifiersSection({
                 {t('gameSetup.modifiers.enableVisible')}
               </AppButton>
               <AppButton
+                size="small"
                 tone="danger"
                 framePlacement="inset"
                 disabled={isSaving || !visibleIds.some((id) => enabledIds.has(id))}
@@ -155,6 +168,10 @@ export function GameSetupModifiersSection({
           mt: 1.5,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
+          scrollbarGutter: 'stable both-edges',
+          scrollbarWidth: 'thin',
+          mx: -1,
+          px: 0.5,
         }}
       >
         <AsyncSection
@@ -173,35 +190,36 @@ export function GameSetupModifiersSection({
             </AppButton>
           }
         >
-          <Box
-            component="ul"
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
-              gap: 1,
-              m: 0,
-              p: 0,
-            }}
-          >
-            {filteredModifiers.map((modifier) => (
-              <ModifierCatalogRow
-                key={modifier.id}
-                name={modifier.name}
-                emoji={modifier.iconEmoji}
-                cost={modifier.activationCost}
-                onDetails={() => setPreviewId(modifier.id)}
-                actions={
-                  <FormCheckbox
-                    checked={enabledIds.has(modifier.id)}
-                    disabled={isSaving}
-                    inputProps={{
-                      'aria-label': t('gameSetup.modifiers.toggleLabel', { name: modifier.name }),
-                    }}
-                    onChange={(event) => onToggle(modifier.id, event.target.checked)}
-                  />
-                }
-              />
-            ))}
+          <Box component="fieldset" disabled={isSaving} sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}>
+            <Box
+              component="ul"
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
+                gap: 1,
+                m: 0,
+                p: 0,
+              }}
+            >
+              {filteredModifiers.map((modifier) => (
+                <ModifierCatalogRow
+                  key={modifier.id}
+                  name={modifier.name}
+                  emoji={modifier.iconEmoji}
+                  cost={modifier.activationCost}
+                  onDetails={() => setPreviewId(modifier.id)}
+                  selection={
+                    <FormCheckbox
+                      checked={enabledIds.has(modifier.id)}
+                      inputProps={{
+                        'aria-label': t('gameSetup.modifiers.toggleLabel', { name: modifier.name }),
+                      }}
+                      onChange={(event) => onToggle(modifier.id, event.target.checked)}
+                    />
+                  }
+                />
+              ))}
+            </Box>
           </Box>
         </AsyncSection>
       </Box>

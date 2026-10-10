@@ -67,12 +67,10 @@ export function TeamSummary({
           >
             <Typography
               component="h3"
-              variant="h6"
+              variant="h5"
               sx={{
                 minWidth: 0,
                 flex: nameAction ? 1 : undefined,
-                fontSize: 24,
-                lineHeight: 1.15,
                 overflowWrap: 'anywhere',
                 color: emphasizeName ? 'primary.light' : 'inherit',
               }}

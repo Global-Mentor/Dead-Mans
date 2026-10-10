@@ -7,11 +7,20 @@ export const huntTypography = {
 } as const
 
 export const uiTokens = {
+  type: {
+    metadata: '0.75rem',
+    secondary: '0.875rem',
+    body: '1rem',
+    subheading: '1.125rem',
+    section: '1.25rem',
+    heading: '1.5rem',
+    display: '2rem',
+  },
   spacing: {
-    section: 2,
+    section: 1.5,
     page: {
-      xs: 2,
-      md: 3,
+      xs: 1.5,
+      sm: 2,
     },
   },
   control: {
@@ -22,7 +31,7 @@ export const uiTokens = {
     },
   },
   navigation: {
-    fontSize: 14.4,
+    fontSize: 14,
     menuItemHeight: 28,
   },
   texture: {

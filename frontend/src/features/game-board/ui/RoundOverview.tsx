@@ -90,8 +90,8 @@ export function RoundOverview({
       data-testid="current-round-overview"
       sx={{
         position: 'relative',
-        '--round-header-height': { xs: '200px', lg: '128px' },
-        '@media (max-width:359px)': { '--round-header-height': '240px' },
+        '--round-header-height': { xs: '160px', lg: '112px' },
+        '@media (max-width:359px)': { '--round-header-height': '192px' },
       }}
     >
       <Typography
@@ -116,7 +116,7 @@ export function RoundOverview({
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr)',
           gridTemplateAreas: '"cardMedia" "details"',
-          gap: 2,
+          gap: 1.5,
           alignItems: 'start',
           '@media (min-width:768px)': {
             height: 'max(680px, calc(100dvh - 128px))',
@@ -161,7 +161,7 @@ export function RoundOverview({
                 variant="body2"
                 color="text.secondary"
                 fontWeight={700}
-                sx={{ textAlign: 'center', fontSize: 16 }}
+                sx={{ textAlign: 'center' }}
               >
                 {t('gameBoard.currentRoundScreen.phaseLabel')}
               </Typography>
@@ -175,14 +175,12 @@ export function RoundOverview({
               <Typography
                 data-testid="round-phase-value"
                 component="p"
-                variant="h6"
+                variant="h3"
                 color="text.primary"
                 fontWeight={700}
                 aria-live="polite"
                 aria-atomic="true"
                 sx={{
-                  fontSize: 28,
-                  lineHeight: 1.15,
                   overflowWrap: 'anywhere',
                 }}
               >

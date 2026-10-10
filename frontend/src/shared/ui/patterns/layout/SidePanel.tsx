@@ -92,7 +92,10 @@ export function SidePanel({
             <Typography
               component="h2"
               variant="h6"
-              sx={{ ...sidePanelTitleSx, ...(headerDensity === 'compact' ? { fontSize: 22 } : {}) }}
+              sx={{
+                ...sidePanelTitleSx,
+                ...(headerDensity === 'compact' ? { typography: 'h5' } : {}),
+              }}
             >
               {title}
             </Typography>
@@ -117,12 +120,12 @@ export function SidePanel({
             overflowX: 'hidden',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
-            px: contentDensity === 'compact' ? { xs: 1, sm: 1.5 } : { xs: 2, sm: 2.5 },
-            pt: contentDensity === 'compact' ? 1 : 2,
+            px: contentDensity === 'compact' ? 1 : 1.5,
+            pt: contentDensity === 'compact' ? 1 : 1.5,
             pb:
               contentDensity === 'compact'
                 ? 'max(8px, env(safe-area-inset-bottom))'
-                : 'max(20px, env(safe-area-inset-bottom))',
+                : 'max(12px, env(safe-area-inset-bottom))',
           }}
         >
           {children}

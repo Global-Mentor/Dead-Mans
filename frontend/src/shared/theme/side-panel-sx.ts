@@ -16,9 +16,9 @@ export function sidePanelPaperSx(theme: Theme) {
 export function sidePanelHeaderSx(theme: Theme) {
   return {
     position: 'relative',
-    px: { xs: 2, sm: 2.5 },
-    pt: 'max(16px, env(safe-area-inset-top))',
-    pb: 2,
+    px: 1.5,
+    pt: 'max(12px, env(safe-area-inset-top))',
+    pb: 1.5,
     '&::after': {
       content: '""',
       position: 'absolute',
@@ -35,9 +35,9 @@ export const sidePanelTitleSx = {
   minWidth: 0,
   overflowWrap: 'anywhere',
   color: 'text.primary',
-  fontSize: 28,
+  fontSize: uiTokens.type.heading,
   fontWeight: 600,
-  letterSpacing: '-0.02em',
+  lineHeight: 1.25,
 } as const
 
 export function sidePanelCloseSx(theme: Theme) {

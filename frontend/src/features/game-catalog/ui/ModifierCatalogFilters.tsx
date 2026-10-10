@@ -47,7 +47,7 @@ export function ModifierCatalogFilters({
   return (
     <Box
       sx={{
-        mt: 2,
+        mt: 1.5,
         display: 'grid',
         gap: 1.25,
         alignItems: 'start',
@@ -58,6 +58,7 @@ export function ModifierCatalogFilters({
       }}
     >
       <FormTextField
+        density="compact"
         value={search}
         label={t('common.modifiers.searchLabel')}
         onChange={(event) => onSearchChange(event.target.value)}
@@ -86,6 +87,7 @@ export function ModifierCatalogFilters({
           }}
         >
           <FormSelect<ModifierCatalogCategory | 'all'>
+            density="compact"
             label={t('common.entities.categories')}
             value={category ?? 'all'}
             onChange={(value) => onCategoryChange(value === 'all' ? null : value)}
@@ -99,6 +101,7 @@ export function ModifierCatalogFilters({
             ]}
           />
           <FormSelect<ModifierRoundSummaryType | 'all'>
+            density="compact"
             label={t('gameCatalog.modifiers.roundSummaryTitle')}
             value={summaryType ?? 'all'}
             onChange={(value) => onSummaryTypeChange(value === 'all' ? null : value)}
@@ -111,6 +114,7 @@ export function ModifierCatalogFilters({
             ]}
           />
           <FormSelect
+            density="compact"
             label={t('gameCatalog.modifiers.catalog.sort')}
             value={sort}
             onChange={onSortChange}
@@ -119,7 +123,7 @@ export function ModifierCatalogFilters({
               { value: 'cost', label: t('gameCatalog.modifiers.catalog.sortCost') },
             ]}
           />
-          <AppButton tone="secondary" disabled={!hasFilters} onClick={onReset}>
+          <AppButton size="small" tone="secondary" disabled={!hasFilters} onClick={onReset}>
             {t('gameCatalog.modifiers.catalog.resetFilters')}
           </AppButton>
         </Box>

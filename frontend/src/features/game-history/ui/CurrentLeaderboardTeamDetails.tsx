@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
@@ -75,10 +76,7 @@ export function CurrentLeaderboardTeamDetails({
         </Typography>
       }
     >
-      <Stack
-        spacing={1.15}
-        sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
-      >
+      <Stack spacing={1.15} sx={{ minHeight: 0, ...scrollRegionSx }}>
         <ItemCard>
           <TeamBriefing
             name={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}

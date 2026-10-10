@@ -65,7 +65,7 @@ export function TabOption({
                 px: density === 'compact' ? 0.75 : 1,
                 py: 0.75,
                 textTransform: 'none',
-                fontSize: density === 'compact' ? 14 : 16,
+                fontSize: density === 'compact' ? uiTokens.type.secondary : uiTokens.type.body,
                 lineHeight: 1.3,
                 border: `1px solid ${alpha(theme.palette.primary.main, 0.24)}`,
                 borderRadius: 0,
@@ -84,7 +84,7 @@ export function TabOption({
                 minWidth: 64,
                 maxWidth: 'min(76vw, 240px)',
                 textTransform: 'none',
-                fontSize: 'clamp(0.78rem, 3.8vw, 0.9rem)',
+                fontSize: uiTokens.type.secondary,
               }
             : {}),
         }),

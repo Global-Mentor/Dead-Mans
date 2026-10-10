@@ -74,8 +74,6 @@ export function RoleAdministrationPage() {
       sx={{
         maxWidth: 'none',
         width: '100%',
-        px: { xs: 0, sm: 0, md: 0 },
-        pb: { xs: 0, sm: 0, md: 0 },
         flex: 1,
         minHeight: 0,
         display: 'flex',

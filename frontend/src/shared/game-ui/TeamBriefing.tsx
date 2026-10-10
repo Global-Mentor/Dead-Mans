@@ -34,7 +34,7 @@ export function TeamBriefing({
           variant="h5"
           fontWeight={700}
           color="text.primary"
-          sx={{ m: 0, maxWidth: '100%', fontSize: 26, lineHeight: 1.1, flexShrink: 0 }}
+          sx={{ m: 0, maxWidth: '100%', flexShrink: 0 }}
         >
           {name}
         </Typography>

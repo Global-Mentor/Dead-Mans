@@ -92,6 +92,7 @@ export function AdminTeamActions({
         }}
       >
         <HelpTooltip
+          placement="top"
           title={
             forming
               ? confirmHint
@@ -127,7 +128,7 @@ export function AdminTeamActions({
             </AppButton>
           </Box>
         </HelpTooltip>
-        <HelpTooltip title={playedHint} describeChild arrow>
+        <HelpTooltip title={playedHint} placement="top" describeChild arrow>
           <Box
             component="span"
             sx={{ display: 'flex', minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}

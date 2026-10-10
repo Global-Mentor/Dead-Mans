@@ -36,7 +36,7 @@ export const buttonOverrides: Components<Theme> = {
       root: {
         borderRadius: appThemeBorderRadius,
         minHeight: uiTokens.control.height.standard,
-        paddingInline: 18,
+        paddingInline: 14,
         transition:
           'background-color 120ms ease, border-color 120ms ease, color 120ms ease, filter 120ms ease',
         '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
@@ -61,8 +61,9 @@ export const buttonOverrides: Components<Theme> = {
       },
       sizeSmall: {
         minHeight: uiTokens.control.height.compact,
-        paddingInline: 14,
-        fontSize: '0.875rem',
+        paddingInline: 10,
+        fontSize: uiTokens.type.secondary,
+        '@media (pointer: coarse)': { minHeight: uiTokens.control.height.standard },
       },
       sizeLarge: {
         minHeight: uiTokens.control.height.large,

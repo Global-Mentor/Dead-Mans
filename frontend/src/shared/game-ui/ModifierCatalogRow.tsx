@@ -13,6 +13,7 @@ export function ModifierCatalogRow({
   activationsCount = 0,
   showActivationsCount = false,
   isActive = false,
+  selection,
   actions,
   onDetails,
   metadata,
@@ -25,6 +26,7 @@ export function ModifierCatalogRow({
   activationsCount?: number
   showActivationsCount?: boolean
   isActive?: boolean
+  selection?: ReactNode
   actions?: ReactNode
   onDetails?: (() => void) | undefined
   metadata?: ReactNode
@@ -64,7 +66,8 @@ export function ModifierCatalogRow({
             ...(limit != null ? { '@container (max-width:319px)': { gridColumn: '1 / -1' } } : {}),
           }}
         >
-          <ModifierIconTile emoji={emoji} size="large" />
+          {selection}
+          <ModifierIconTile emoji={emoji} size={selection ? 'standard' : 'large'} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               component="h4"

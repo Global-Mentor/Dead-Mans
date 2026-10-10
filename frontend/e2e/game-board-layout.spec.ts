@@ -525,7 +525,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     await expect(phaseLabel).toHaveText('Этап раунда:')
     await expect(phaseLabel).toHaveCSS('text-align', 'center')
     await expect(overview.getByRole('link', { name: 'Вернуться к доске' })).toHaveCount(0)
-    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '28px')
+    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '24px')
     await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-weight', '700')
     const labelStyles = await Promise.all(
       [cardSummary.locator('dt').first(), cardSummary.locator('dt').last()].map((label) =>
@@ -587,7 +587,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         const labelRect = label.getBoundingClientRect()
         return [labelRect.top - headerRect.top, headerRect.bottom - labelRect.bottom]
       })
-      for (const gap of labelSpacing) expect(gap).toBeCloseTo(12, 0)
+      for (const gap of labelSpacing) expect(gap).toBeCloseTo(8, 0)
       expect(await geometry()).toEqual(initialGeometry)
       if (width >= 768) {
         const widths = await Promise.all(
@@ -624,7 +624,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     activeTeamId = 'team-one'
     update()
     await expect(team).toContainText('Ночные странники')
-    await expect(team.locator('h3')).toHaveCSS('font-size', '26px')
+    await expect(team.locator('h3')).toHaveCSS('font-size', '20px')
     expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).not.toBe(
       'none',
     )
@@ -2838,7 +2838,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       const statusSize = await page
         .getByTestId('game-board-status-title')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
-      expect(statusSize).toBe(20)
+      expect(statusSize).toBe(18)
     }
     if (width >= 1200) {
       expect(
@@ -2987,6 +2987,7 @@ for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       await page.goto('/panel/game-team-queue')
       const panel = page.getByTestId('team-queue-panel')
+      await expect(panel.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '18px')
       const active = panel.getByRole('article', { name: 'Ночные странники' })
       const personal = panel.getByRole('article', { name: 'Последний рубеж' })
       await expect(active.getByText('Играет', { exact: true })).toBeVisible()
@@ -3057,8 +3058,8 @@ for (const width of [320, 390, 768, 1440]) {
       if (width >= 600) {
         expect(sections[0]!.width).toBeCloseTo(sections[1]!.width, 0)
         expect(sections[0]!.top).toBe(sections[1]!.top)
-        expect(sections[0]!.bottom).toBeCloseTo(876, 0)
-        expect(sections[1]!.bottom).toBeCloseTo(876, 0)
+        expect(sections[0]!.bottom).toBeCloseTo(884, 0)
+        expect(sections[1]!.bottom).toBeCloseTo(884, 0)
       }
       const input = panel.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
       await input.fill('стрелок')

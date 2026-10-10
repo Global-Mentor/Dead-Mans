@@ -57,7 +57,7 @@ export function PanelTrigger({
                 tabSize === 'compact'
                   ? uiTokens.control.height.compact
                   : uiTokens.control.height.standard,
-              fontSize: '0.9rem',
+              fontSize: uiTokens.type.secondary,
               ...edgeTabSx(theme, side, tabSize),
             }
           : placement === 'inline'

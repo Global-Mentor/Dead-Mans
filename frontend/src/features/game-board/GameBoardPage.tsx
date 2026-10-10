@@ -92,7 +92,6 @@ export function GameBoardPage() {
       sx={{
         width: '100%',
         minWidth: 0,
-        px: 0,
         flexDirection: 'column',
         justifyContent: 'flex-start',
       }}

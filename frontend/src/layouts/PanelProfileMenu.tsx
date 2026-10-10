@@ -70,7 +70,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
             backgroundColor: alpha(theme.palette.primary.main, 0.14),
             border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
             color: 'primary.light',
-            fontSize: 13.5,
+            fontSize: theme.typography.body2.fontSize,
             fontWeight: 700,
           })}
         >
@@ -80,7 +80,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           variant="body2"
           fontWeight={700}
           noWrap
-          sx={{ display: { xs: 'none', xl: 'block' }, fontSize: 14.4 }}
+          sx={{ display: { xs: 'none', xl: 'block' } }}
         >
           {user.displayName}
         </Typography>

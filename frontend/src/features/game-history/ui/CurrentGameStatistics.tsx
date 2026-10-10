@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
@@ -123,7 +124,7 @@ export function CurrentGameStatistics({
         role="region"
         aria-label={t('gameHistory.statistics.title')}
         tabIndex={0}
-        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
+        sx={{ flex: 1, minHeight: 0, ...scrollRegionSx }}
       >
         <Stack spacing={1}>
           <Typography variant="body2" color="text.secondary" textAlign="center">

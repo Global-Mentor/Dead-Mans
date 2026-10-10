@@ -1,9 +1,32 @@
 import { expect, test, type Page } from '@playwright/test'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
+import { recordDensity } from './density-metrics.ts'
 
 const longTeamName = 'Команда исследователей заброшенного порта'
 const longCardTitle = 'Последний бой за сокровища затонувшего корабля'
 const longParticipantName = 'ОченьДлинныйНикИгрокаБезПробелов'
+
+test.describe('compact filters on touch screens', () => {
+  test.use({ hasTouch: true })
+
+  test('keep readable text and touch targets without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await mockModifiers(page)
+    await page.goto('/panel/game-modifiers')
+    const available = page.getByTestId('available-modifiers-section')
+    await expect(available).toBeVisible()
+    for (const field of await available.locator('.MuiInputBase-root').all()) {
+      expect((await field.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+      await expect(field.locator('.MuiInputBase-input')).toHaveCSS('font-size', '16px')
+    }
+    const details = available.getByRole('button', { name: 'Подробнее', exact: true }).first()
+    expect((await details.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    await available.getByRole('combobox', { name: 'Этап действия' }).click()
+    await page.getByRole('option', { name: 'Перед раундом', exact: true }).click()
+    await expect(available.getByRole('listitem')).toHaveCount(6)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  })
+})
 
 async function expectEqualSummaryCells(page: Page) {
   const cells = [
@@ -167,7 +190,11 @@ for (const width of [390, 768, 1440]) {
     await stopHeader.locator('span[tabindex="0"]').hover()
     const stopHelp = page.getByRole('tooltip').filter({ hasText: 'Запрещает всем игрокам' })
     await expect(stopHelp).toBeVisible()
-    await expect(stopHelp).toHaveAttribute('data-popper-placement', width >= 768 ? 'left' : 'top')
+    // This last section is near the viewport bottom; readable help flips above it.
+    await expect(stopHelp).toHaveAttribute('data-popper-placement', 'top')
+    const helpBounds = (await stopHelp.boundingBox())!
+    expect(helpBounds.y).toBeGreaterThanOrEqual(0)
+    expect(helpBounds.y + helpBounds.height).toBeLessThanOrEqual(844)
     await stopHeader.click()
     const stopping = panel.getByRole('region', { name: 'Остановить модификатор' })
     await stopping.getByRole('combobox', { name: 'Модификатор', exact: true }).click()
@@ -400,6 +427,21 @@ for (const size of [
       0,
     )
     await expect(available).toBeVisible()
+    const clippedLabels = await available.locator('label').evaluateAll((labels) =>
+      labels
+        .filter((label) => {
+          const bounds = label.getBoundingClientRect()
+          for (let parent = label.parentElement; parent; parent = parent.parentElement) {
+            if (!['auto', 'scroll', 'hidden', 'clip'].includes(getComputedStyle(parent).overflowY))
+              continue
+            const frame = parent.getBoundingClientRect()
+            if (bounds.top < frame.top - 1 || bounds.bottom > frame.bottom + 1) return true
+          }
+          return false
+        })
+        .map((label) => label.textContent),
+    )
+    expect(clippedLabels).toEqual([])
     await expect(available.getByRole('heading', { level: 2 })).toHaveCount(0)
     await expect(available.getByText('18 модификаторов', { exact: true })).toHaveCount(0)
     await expect(
@@ -413,6 +455,11 @@ for (const size of [
     expect(Math.abs(availableBounds!.width - activeBounds!.width)).toBeLessThanOrEqual(1)
     const active = page.getByTestId('active-modifiers-section')
     const activeTitle = active.getByRole('heading', { level: 2 })
+    await expect(activeTitle).toHaveCSS('font-size', '18px')
+    for (const field of await available.locator('.MuiInputBase-root').all()) {
+      expect((await field.boundingBox())!.height).toBe(36)
+      await expect(field.locator('.MuiInputBase-input')).toHaveCSS('font-size', '14px')
+    }
     await expect(activeTitle).toHaveCSS('text-align', 'center')
     const activeTitleBounds = await activeTitle.boundingBox()
     expect(
@@ -430,6 +477,11 @@ for (const size of [
       .getByRole('heading', { level: 3, name: 'Перед раундом', exact: true })
       .boundingBox()
     expect(Math.abs(availableCategory!.y - activeCategory!.y)).toBeLessThanOrEqual(1)
+    const activeGroupHeader = await active
+      .locator('[data-modifier-group-heading]')
+      .first()
+      .boundingBox()
+    expect(activeGroupHeader!.y - activeBounds!.y).toBeLessThanOrEqual(64)
     const availableRow = await available
       .getByRole('listitem', { name: 'Модификатор 1', exact: true })
       .boundingBox()
@@ -446,6 +498,7 @@ for (const size of [
       .evaluateAll((surfaces) => surfaces.map((surface) => getComputedStyle(surface).borderRadius))
     expect(corners.length).toBeGreaterThan(0)
     expect(corners.every((radius) => radius === '0px')).toBe(true)
+    await recordDensity(page, testInfo, 'modifiers')
     await page.screenshot({ path: testInfo.outputPath('modifiers.png') })
     const search = page.getByRole('textbox', { name: 'Поиск модификаторов' })
     await search.fill('Нет такого модификатора')

@@ -596,12 +596,14 @@ test('form choices match the import menu and keep keyboard selection and focus',
   await expect(trigger).toBeFocused()
   const category = page.getByRole('combobox', { name: 'Категории' })
   const fieldBox = (await category.boundingBox())!
+  const anchorWidth = await category.evaluate((element) => element.parentElement!.clientWidth)
   await category.click()
   const list = page.getByRole('listbox')
   await expect(list).toBeVisible()
   await expect(list.locator('..')).toHaveCSS('opacity', '1')
   const popupBox = (await list.locator('..').boundingBox())!
-  expect(popupBox.width).toBeGreaterThanOrEqual(fieldBox.width)
+  // MUI sizes the menu against the anchor's integer clientWidth.
+  expect(popupBox.width).toBeGreaterThanOrEqual(anchorWidth)
   expect(popupBox.width).toBeLessThan(fieldBox.width + 100)
   expect(Math.abs(popupBox.x - fieldBox.x)).toBeLessThan(8)
   expect(

@@ -119,7 +119,6 @@ export function GameQuizPage() {
         maxWidth: 1440,
         width: { xs: '100%', md: canAdmin ? 'calc(100% - 72px)' : '100%' },
         mx: 'auto',
-        p: { xs: 0, md: 0 },
       }}
     >
       {twitchPanel ? (

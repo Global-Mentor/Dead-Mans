@@ -41,6 +41,7 @@ export function QuestionCatalogFilters({
   return (
     <Box sx={{ display: 'grid', gap: 1.25, mt: 1.5 }}>
       <FormTextField
+        density="compact"
         label={t('gameCatalog.questions.searchLabel')}
         value={search}
         placeholder={t('gameCatalog.questions.catalog.searchHint')}
@@ -67,6 +68,7 @@ export function QuestionCatalogFilters({
           }}
         >
           <FormSelect
+            density="compact"
             label={t('common.entities.categories')}
             value={categoryId ?? '__all__'}
             onChange={(value) => onCategoryChange(value === '__all__' ? null : value)}
@@ -80,6 +82,7 @@ export function QuestionCatalogFilters({
             ]}
           />
           <FormSelect<QuestionCatalogStatus>
+            density="compact"
             label={t('gameCatalog.workspace.status')}
             value={status}
             onChange={onStatusChange}
@@ -90,6 +93,7 @@ export function QuestionCatalogFilters({
             ]}
           />
           <FormSelect<QuestionCatalogSort>
+            density="compact"
             label={t('gameCatalog.questions.catalog.sort')}
             value={sort}
             onChange={onSortChange}
@@ -102,7 +106,7 @@ export function QuestionCatalogFilters({
               { value: 'leastAsked', label: t('gameCatalog.questions.catalog.sortLeastAsked') },
             ]}
           />
-          <AppButton tone="secondary" disabled={!hasFilters} onClick={onReset}>
+          <AppButton size="small" tone="secondary" disabled={!hasFilters} onClick={onReset}>
             {t('gameCatalog.workspace.reset')}
           </AppButton>
         </Box>

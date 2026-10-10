@@ -125,7 +125,7 @@ export function AdminTeamPlayerDialog({
             minHeight: 0,
             overflowY: 'auto',
             overscrollBehavior: 'contain',
-            scrollbarGutter: 'stable',
+            scrollbarGutter: 'stable both-edges',
           }}
         >
           <Stack component="ul" gap={0.5} sx={{ m: 0, p: 0, listStyle: 'none' }}>

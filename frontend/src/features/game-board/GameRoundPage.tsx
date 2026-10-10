@@ -70,8 +70,6 @@ export function GameRoundPage() {
         minWidth: 0,
         maxWidth: { xs: '100%', md: 'calc((100dvh - 128px) * 1.55)' },
         mx: 'auto',
-        px: { xs: 0, md: 0 },
-        pb: { xs: 0, md: 0 },
       }}
     >
       <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>

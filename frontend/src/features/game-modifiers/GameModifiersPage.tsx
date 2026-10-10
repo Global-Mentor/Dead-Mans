@@ -182,9 +182,10 @@ export function GameModifiersPage() {
             maxWidth: 1440,
             width: { xs: '100%', md: hasAdminPanel ? 'calc(100% - 72px)' : '100%' },
             mx: 'auto',
-            p: { xs: 0, md: 0 },
             maxHeight: 'var(--modifier-page-height)',
             overflowY: 'auto',
+            scrollbarGutter: 'stable both-edges',
+            scrollbarWidth: 'thin',
             minHeight: 0,
           }}
         >
@@ -251,12 +252,12 @@ export function GameModifiersPage() {
                   display: 'grid',
                   gridTemplateAreas: '"panel"',
                   gridTemplateColumns: 'minmax(0, 1fr)',
-                  gap: 2,
+                  gap: 1.5,
                   alignItems: 'start',
                   '--modifier-panel-header-height': '0px',
                   '@media (min-width: 1000px)': {
                     '--modifier-panel-header-height':
-                      'calc(var(--modifier-tools-height, 56px) + 12px)',
+                      'calc(var(--modifier-tools-height, 36px) + 16px)',
                     gridTemplateAreas: '"available active"',
                     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   },
@@ -275,8 +276,9 @@ export function GameModifiersPage() {
                 >
                   <AvailableModifiersSection
                     tools={
-                      <Stack ref={toolsRef} direction={{ xs: 'column', sm: 'row' }} gap={1.25}>
+                      <Stack ref={toolsRef} direction={{ xs: 'column', sm: 'row' }} gap={1}>
                         <FormTextField
+                          density="compact"
                           value={search}
                           label={t('common.modifiers.searchLabel')}
                           onChange={(event) => setSearch(event.target.value)}
@@ -298,6 +300,7 @@ export function GameModifiersPage() {
                           }}
                         />
                         <FormSelect
+                          density="compact"
                           value={category}
                           label={t('gameModifiers.categoryFilter')}
                           onChange={setCategory}
@@ -308,7 +311,7 @@ export function GameModifiersPage() {
                               label: t(`common.modifiers.categories.${value}`),
                             })),
                           ]}
-                          sx={{ width: { xs: '100%', sm: 210 }, flexShrink: 0 }}
+                          sx={{ width: { xs: '100%', sm: 180 }, flexShrink: 0 }}
                         />
                       </Stack>
                     }

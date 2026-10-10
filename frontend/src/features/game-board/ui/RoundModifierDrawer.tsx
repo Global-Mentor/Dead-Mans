@@ -67,13 +67,7 @@ export function RoundModifierDrawer({
               gap={1}
               sx={{ minWidth: 0 }}
             >
-              <Typography
-                component="p"
-                variant="body1"
-                color="primary.light"
-                fontWeight={700}
-                sx={{ fontSize: 18 }}
-              >
+              <Typography component="p" variant="h6" color="primary.light" fontWeight={700}>
                 {t('gameBoard.currentRoundScreen.drawerPointsLabel')}
               </Typography>
               <Typography component="p" variant="caption" color="text.secondary" fontWeight={400}>

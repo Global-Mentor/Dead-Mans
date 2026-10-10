@@ -88,7 +88,7 @@ export function TeamHeading({
         fontWeight={700}
         sx={{
           minWidth: 0,
-          ...(prominent ? { m: 0, fontSize: 26, lineHeight: 1.1 } : {}),
+          ...(prominent ? { m: 0 } : {}),
           textAlign: alignment,
           ...(alignment === 'center' ? { gridColumn: 2 } : {}),
         }}

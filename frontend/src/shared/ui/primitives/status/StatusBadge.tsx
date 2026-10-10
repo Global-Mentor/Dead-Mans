@@ -42,7 +42,7 @@ export function StatusBadge({
             }
           : undefined,
         density === 'compact'
-          ? { '& .MuiChip-label': { px: 1, fontSize: '0.73rem', fontWeight: 600 } }
+          ? { '& .MuiChip-label': { px: 1, fontSize: uiTokens.type.metadata, fontWeight: 600 } }
           : undefined,
         density === 'tight'
           ? {
@@ -51,7 +51,7 @@ export function StatusBadge({
               '& .MuiChip-label': {
                 px: 0.5,
                 py: 0,
-                fontSize: '0.73rem',
+                fontSize: uiTokens.type.metadata,
                 lineHeight: 1.25,
                 fontWeight: 600,
               },
@@ -72,7 +72,7 @@ export function StatusBadge({
               '& .MuiChip-label': {
                 px: 1,
                 py: 0.375,
-                fontSize: '1rem',
+                fontSize: uiTokens.type.body,
                 lineHeight: 1.2,
                 fontWeight: 800,
                 fontVariantNumeric: 'tabular-nums',
@@ -100,7 +100,7 @@ export function StatusBadge({
               '& .MuiChip-label': {
                 px: 1,
                 py: 0.75,
-                fontSize: '1.125rem',
+                fontSize: uiTokens.type.subheading,
                 lineHeight: 1.25,
                 fontWeight: 700,
               },

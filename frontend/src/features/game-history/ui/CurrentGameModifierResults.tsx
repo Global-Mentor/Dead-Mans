@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { modifierHistoryRoute } from '../../../routes/app-routes.ts'
@@ -111,7 +112,7 @@ export function CurrentGameModifierResults({
         role="region"
         aria-label={t('gameHistory.modifierSummary.title')}
         tabIndex={0}
-        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
+        sx={{ flex: 1, minHeight: 0, ...scrollRegionSx }}
       >
         <Stack spacing={1}>
           <Box

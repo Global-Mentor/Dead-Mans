@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectPanelPageInsets } from './layout-assertions.ts'
+import { recordDensity } from './density-metrics.ts'
 
 async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en') {
   await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), locale)
@@ -191,6 +193,8 @@ for (const width of [320, 390, 768, 1440]) {
         ).toBeVisible()
       }
       await page.evaluate(() => document.fonts.ready)
+      await expectPanelPageInsets(page)
+      await recordDensity(page, info, path)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       )
@@ -505,7 +509,7 @@ for (const viewport of [
       const canScroll = await panel.evaluate(
         (element) => element.scrollHeight > element.clientHeight,
       )
-      expect(canScroll).toBe(viewport.width < 1440)
+      expect(canScroll).toBe(viewport.height < 900)
       await panel.evaluate((element) => {
         element.scrollTop = element.scrollHeight
       })

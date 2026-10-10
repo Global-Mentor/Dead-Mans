@@ -31,18 +31,18 @@ export function AuthLandingPage() {
       >
         <LanguageSwitcher />
       </Box>
-      <SectionCard sx={[(theme) => huntAuthCardSx(theme), { px: { xs: 4, sm: 6 }, py: 5 }]}>
-        <Stack spacing={3}>
+      <SectionCard sx={[(theme) => huntAuthCardSx(theme), { p: 3 }]}>
+        <Stack spacing={2}>
           <Box>
             <Typography variant="overline" sx={huntOverlineSx}>
               {t('auth.subtitle')}
             </Typography>
             <Typography
-              variant="h3"
+              component="h1"
+              variant="h2"
               sx={{
                 ...huntBrassTitleSx,
                 mt: 1,
-                fontSize: { xs: '1.75rem', sm: '2.2rem' },
               }}
             >
               {t('appTitle')}

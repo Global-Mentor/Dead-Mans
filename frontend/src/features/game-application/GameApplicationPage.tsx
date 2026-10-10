@@ -118,7 +118,7 @@ export function GameApplicationPage() {
             flexWrap="wrap"
             useFlexGap
           >
-            <Typography component="h1" variant="h3" sx={{ fontSize: { xs: 32, sm: 38 } }}>
+            <Typography component="h1" variant="h3">
               {t('gameApplication.title')}
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>

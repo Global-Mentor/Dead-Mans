@@ -29,12 +29,14 @@ export function AdminRegistrationToolbar({
       }}
     >
       <FormTextField
+        density="compact"
         label={t('teamRegistrations.search')}
         value={search}
         onChange={(event) => onSearch(event.target.value)}
         sx={{ gridColumn: { xs: '1 / -1', md: 'auto' }, minWidth: 0 }}
       />
       <FormSelect
+        density="compact"
         label={t('teamRegistrations.status')}
         value={status}
         onChange={onStatus}
@@ -52,6 +54,7 @@ export function AdminRegistrationToolbar({
         ]}
       />
       <AppButton
+        size="small"
         framePlacement="inset"
         tone="secondary"
         onClick={onReset}

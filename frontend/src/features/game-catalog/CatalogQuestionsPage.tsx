@@ -194,8 +194,6 @@ export function CatalogQuestionsPage() {
     <PageShell
       sx={{
         maxWidth: 1600,
-        px: { xs: 0, sm: 0, md: 0 },
-        pb: { xs: 0, sm: 0, md: 0 },
         width: '100%',
         flex: '1 1 0%',
         minHeight: 0,

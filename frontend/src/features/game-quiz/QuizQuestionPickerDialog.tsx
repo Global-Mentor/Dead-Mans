@@ -127,6 +127,7 @@ export function QuizQuestionPickerDialog({
         ) : null}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <FormTextField
+            density="compact"
             autoFocus
             inputRef={searchRef}
             fullWidth
@@ -143,6 +144,7 @@ export function QuizQuestionPickerDialog({
             }}
           />
           <FormSelect
+            density="compact"
             size="small"
             label={t('gameQuiz.questionCategoryLabel')}
             value={category}
@@ -196,7 +198,7 @@ export function QuizQuestionPickerDialog({
               flex: 1,
               minHeight: 0,
               overflowY: 'auto',
-              scrollbarGutter: 'stable',
+              scrollbarGutter: 'stable both-edges',
             }}
           >
             {visibleQuestions.length === 0 ? (

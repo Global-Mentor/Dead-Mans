@@ -99,7 +99,7 @@ export function RoundActiveModifiers({
           component="h2"
           variant="h6"
           fontWeight={700}
-          sx={{ flex: 1, fontSize: 20, lineHeight: 1.2, minWidth: 0, overflowWrap: 'anywhere' }}
+          sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}
         >
           {t('gameBoard.currentRoundScreen.modifiers')}
         </Typography>

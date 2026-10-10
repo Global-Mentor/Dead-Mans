@@ -100,11 +100,11 @@ function MainLayoutContent() {
         sx={{
           flexGrow: 1,
           ...(boundedWorkspace ? { flex: '1 1 0%', minHeight: 0 } : {}),
-          py: { xs: 2, sm: 3 },
-          px: { xs: 2, sm: 3 },
+          p: uiTokens.spacing.page,
           pb: {
-            xs: hasManagementPanel ? 10 : uiTokens.spacing.page.md,
-            md: uiTokens.spacing.page.md,
+            xs: hasManagementPanel ? 10 : uiTokens.spacing.page.xs,
+            sm: hasManagementPanel ? 10 : uiTokens.spacing.page.sm,
+            md: uiTokens.spacing.page.sm,
           },
           display: 'flex',
           flexDirection: 'column',

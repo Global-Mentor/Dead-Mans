@@ -122,9 +122,6 @@ export function GameHistoryPage({
         maxWidth: 1800,
         width: '100%',
         mx: 'auto',
-        p: { xs: 0, md: 0 },
-        px: { xs: 0, md: 0 },
-        pb: { xs: 0, md: 0 },
         flex: 1,
         minHeight: 0,
         display: 'flex',
@@ -232,6 +229,7 @@ export function GameHistoryPage({
               onPickerOpenChange={setPickerOpen}
               tools={
                 <FormTextField
+                  density="compact"
                   label={t('gameHistory.searchGames')}
                   value={search}
                   onChange={(event) => {

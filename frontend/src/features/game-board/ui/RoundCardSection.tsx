@@ -72,13 +72,7 @@ export function RoundCardSection({
               textAlign: 'center',
             }}
           >
-            <Typography
-              component="dt"
-              variant="body1"
-              color="primary.light"
-              fontWeight={700}
-              sx={{ fontSize: 20, lineHeight: 1.2 }}
-            >
+            <Typography component="dt" variant="h6" color="primary.light" fontWeight={700}>
               {t('gameBoard.currentRoundScreen.cardLabel')}
             </Typography>
             <Typography
@@ -89,8 +83,6 @@ export function RoundCardSection({
               textAlign="center"
               sx={{
                 m: 0,
-                fontSize: 16,
-                lineHeight: 1.2,
               }}
             >
               {round ? categoryName || '-' : t('gameBoard.currentRoundScreen.waiting')}
@@ -109,13 +101,7 @@ export function RoundCardSection({
               textAlign: 'center',
             }}
           >
-            <Typography
-              component="dt"
-              variant="body1"
-              color="primary.light"
-              fontWeight={700}
-              sx={{ fontSize: 20, lineHeight: 1.2 }}
-            >
+            <Typography component="dt" variant="h6" color="primary.light" fontWeight={700}>
               {t('gameBoard.currentRoundScreen.costLabel')}
             </Typography>
             <Typography
@@ -124,7 +110,7 @@ export function RoundCardSection({
               fontWeight={400}
               color="text.secondary"
               textAlign="center"
-              sx={{ m: 0, fontSize: 16, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}
+              sx={{ m: 0, fontVariantNumeric: 'tabular-nums' }}
             >
               {round ? t('gameBoard.costLabel', { cost: round.baseScore }) : '-'}
             </Typography>

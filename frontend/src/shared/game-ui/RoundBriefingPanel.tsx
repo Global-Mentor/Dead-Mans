@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { OrnamentDivider as RoundBriefingDivider, SectionCard } from '../ui/index.ts'
 import { cornerFrameSx } from '../theme/corner-frame-sx.ts'
 import { mergeSx } from '../theme/merge-sx.ts'
+import { uiTokens } from '../theme/tokens.ts'
 
 export { RoundBriefingDivider }
 
@@ -24,7 +25,7 @@ export function RoundBriefingPanel({
       sx={mergeSx(
         (theme) => ({
           minWidth: 0,
-          p: header ? 0 : 2,
+          p: header ? 0 : uiTokens.spacing.section,
           ...(header ? { display: 'flex', flexDirection: 'column' } : {}),
           ...cornerFrameSx(theme),
           boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.12)}, inset 0 -1px 0 ${alpha(theme.palette.common.black, 0.32)}`,
@@ -34,11 +35,11 @@ export function RoundBriefingPanel({
     >
       {header ? (
         <>
-          <Box sx={{ px: 2, py: 1.5, flexShrink: 0 }}>{header}</Box>
-          <RoundBriefingDivider sx={{ width: 'calc(100% - 32px)', mx: 2 }} />
+          <Box sx={{ px: uiTokens.spacing.section, py: 1, flexShrink: 0 }}>{header}</Box>
+          <RoundBriefingDivider sx={{ width: 'auto', mx: uiTokens.spacing.section }} />
           <Box
             sx={(theme) => ({
-              px: 2,
+              px: uiTokens.spacing.section,
               py: 1,
               flex: 1,
               minHeight: 0,
