@@ -19,27 +19,36 @@ const QUIZ_EVENTS = [
 export function GameQuizRealtimeSync() {
   const queryClient = useQueryClient()
 
-  const syncQuizState = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey }),
-      queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
-      queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
-      queryClient.invalidateQueries({
-        queryKey: manualGameQuizAwardPlayersQueryOptions.queryKey,
-      }),
-    ])
-  }, [queryClient])
+  const syncQuizState = useCallback(
+    async (includeSharedState = false) => {
+      await Promise.all([
+        ...(includeSharedState
+          ? [
+              queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey }),
+              queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+            ]
+          : []),
+        queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
+        queryClient.invalidateQueries({
+          queryKey: manualGameQuizAwardPlayersQueryOptions.queryKey,
+        }),
+      ])
+    },
+    [queryClient],
+  )
 
   const registerEventHandlers = useCallback(
     (connection: HubConnection) => {
-      const handleQuizStateChanged = () => {
-        void syncQuizState()
-      }
-
-      for (const event of QUIZ_EVENTS) connection.on(event, handleQuizStateChanged)
+      const handlers = QUIZ_EVENTS.map((event) => {
+        // Board events already refresh the shared snapshot/history in GameBoardRealtimeSync.
+        const handler = () =>
+          void syncQuizState(event === realtimeHubs.gameBoard.events.quizStateChanged)
+        connection.on(event, handler)
+        return { event, handler }
+      })
 
       return () => {
-        for (const event of QUIZ_EVENTS) connection.off(event, handleQuizStateChanged)
+        for (const { event, handler } of handlers) connection.off(event, handler)
       }
     },
     [syncQuizState],
@@ -48,7 +57,12 @@ export function GameQuizRealtimeSync() {
   useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game quiz',
-    onConnected: syncQuizState,
+    onConnected: useCallback(async () => {
+      await Promise.all([
+        syncQuizState(),
+        queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+      ])
+    }, [queryClient, syncQuizState]),
     registerEventHandlers,
   })
 

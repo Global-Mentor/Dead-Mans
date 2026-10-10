@@ -94,13 +94,10 @@ export function GameBoardRealtimeSync() {
           currentGameBoardQueryOptions.queryKey,
           (current) => {
             const patchResult = applyModifierActivatedEvent(current, event)
-            if (patchResult.requiresResync) {
-              void syncFromServerIfNewer()
-            }
-
             return patchResult.nextSnapshot ?? null
           },
         )
+        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
       }
 
       const handleModifierCancelled = (event: ModifierActivationCancelledEvent) => {
@@ -112,13 +109,10 @@ export function GameBoardRealtimeSync() {
           currentGameBoardQueryOptions.queryKey,
           (current) => {
             const patchResult = applyModifierActivationCancelledEvent(current, event)
-            if (patchResult.requiresResync) {
-              void syncFromServerIfNewer()
-            }
-
             return patchResult.nextSnapshot ?? null
           },
         )
+        void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
       }
 
       const handleGameLifecycleChanged = (event: GameLifecycleChangedEvent) => {
