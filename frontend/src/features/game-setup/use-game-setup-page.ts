@@ -75,20 +75,28 @@ export function useGameSetupPage() {
     save.resetToSaved()
   }
 
-  const setModifiersEnabled = (modifierIds: readonly string[], enabled: boolean) => {
-    updateDraftAndSave((current) => {
-      const currentIds = current.enabledModifierIds
-      const targets = new Set(modifierIds)
-      const nextIds = enabled
-        ? [...new Set([...currentIds, ...modifierIds])]
-        : currentIds.filter((id) => !targets.has(id))
+  const setModifiersEnabled = useCallback(
+    (modifierIds: readonly string[], enabled: boolean) => {
+      updateDraftAndSave((current) => {
+        const currentIds = current.enabledModifierIds
+        const targets = new Set(modifierIds)
+        const nextIds = enabled
+          ? [...new Set([...currentIds, ...modifierIds])]
+          : currentIds.filter((id) => !targets.has(id))
 
-      return {
-        ...current,
-        enabledModifierIds: nextIds,
-      }
-    })
-  }
+        return {
+          ...current,
+          enabledModifierIds: nextIds,
+        }
+      })
+    },
+    [updateDraftAndSave],
+  )
+
+  const toggleModifier = useCallback(
+    (modifierId: string, enabled: boolean) => setModifiersEnabled([modifierId], enabled),
+    [setModifiersEnabled],
+  )
 
   const toggleQuestion = useCallback(
     (questionId: string, enabled: boolean) => {
@@ -148,8 +156,7 @@ export function useGameSetupPage() {
     reloadFromServer,
     createDraft,
     deleteDraft,
-    toggleModifier: (modifierId: string, enabled: boolean) =>
-      setModifiersEnabled([modifierId], enabled),
+    toggleModifier,
     setModifiersEnabled,
     toggleQuestion,
     setQuestionsEnabled,

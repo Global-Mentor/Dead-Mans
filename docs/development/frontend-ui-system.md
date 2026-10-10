@@ -45,7 +45,7 @@ Search/filter toolbars use the existing compact field density: 36px controls and
 
 Panel page insets belong to `MainLayout`: 12px below 600px and 16px from 600px on all edges. The mobile management controls reserve their additional bottom space. `PageShell` owns width, centering and composition without adding a second inset; the application reference retains its explicit inner inset. Viewport-sized panels read the actual main bottom inset instead of assuming 24px. Independently scrolling centered lists reserve stable thin scrollbar gutters on both edges, and paired tools/results use matching horizontal insets. Short standings tables retain their full row width without an empty scrollbar strip.
 
-The shared modifier row places its optional selection control beside the name and keeps the details action on the right, avoiding a second action row. A native disabled fieldset blocks list interaction during a save.
+Draft modifier rows use stable selection/preview callbacks and memoization, matching draft questions. The shared modifier row places its optional selection control beside the name and keeps the details action on the right, avoiding a second action row. A native disabled fieldset blocks list interaction during a save without rerendering every row.
 
 | Owner                              | Responsibility                                                                                                       |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |

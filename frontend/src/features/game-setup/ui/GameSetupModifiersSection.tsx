@@ -2,9 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ModifierCatalogRow } from '../../../shared/game-ui/index.ts'
 import {
-  FormCheckbox,
   AppButton,
   AsyncSection,
   FormTextField,
@@ -21,6 +19,7 @@ import {
 } from '../../game-modifiers/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { GameSetupModifierPreview } from './GameSetupModifierPreview.tsx'
+import { GameSetupModifierRow } from './GameSetupModifierRow.tsx'
 
 interface GameSetupModifiersSectionProps {
   draft: GameSetupDraftState
@@ -202,21 +201,12 @@ export function GameSetupModifiersSection({
               }}
             >
               {filteredModifiers.map((modifier) => (
-                <ModifierCatalogRow
+                <GameSetupModifierRow
                   key={modifier.id}
-                  name={modifier.name}
-                  emoji={modifier.iconEmoji}
-                  cost={modifier.activationCost}
-                  onDetails={() => setPreviewId(modifier.id)}
-                  selection={
-                    <FormCheckbox
-                      checked={enabledIds.has(modifier.id)}
-                      inputProps={{
-                        'aria-label': t('gameSetup.modifiers.toggleLabel', { name: modifier.name }),
-                      }}
-                      onChange={(event) => onToggle(modifier.id, event.target.checked)}
-                    />
-                  }
+                  modifier={modifier}
+                  selected={enabledIds.has(modifier.id)}
+                  onPreview={setPreviewId}
+                  onToggle={onToggle}
                 />
               ))}
             </Box>
