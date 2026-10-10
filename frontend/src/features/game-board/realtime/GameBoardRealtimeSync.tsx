@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import type {
@@ -33,19 +33,37 @@ const MODIFIER_AVAILABILITY_CHANGED_EVENT =
 
 export function GameBoardRealtimeSync() {
   const queryClient = useQueryClient()
+  const resyncRequest = useRef(0)
+
+  useEffect(
+    () => () => {
+      resyncRequest.current += 1
+    },
+    [],
+  )
 
   const syncFromServerIfNewer = useCallback(async () => {
+    const request = ++resyncRequest.current
+    const requestedGameId = queryClient.getQueryData<GameBoardSnapshot | null>(
+      currentGameBoardQueryOptions.queryKey,
+    )?.gameId
     const freshSnapshot = await fetchCurrentGameBoardSnapshot().catch((error) => {
       logger.warn('Game board realtime resync failed', error)
       return null
     })
-    if (!freshSnapshot) {
+    if (!freshSnapshot || request !== resyncRequest.current) {
       return
     }
 
     queryClient.setQueryData<GameBoardSnapshot | null>(
       currentGameBoardQueryOptions.queryKey,
-      (current) => selectNewerGameBoardSnapshot(current, freshSnapshot),
+      (current) => {
+        // A response started before a game switch must not restore the previous game.
+        if (current?.gameId !== requestedGameId && current?.gameId !== freshSnapshot.gameId) {
+          return current
+        }
+        return selectNewerGameBoardSnapshot(current, freshSnapshot)
+      },
     )
   }, [queryClient])
 

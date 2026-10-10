@@ -214,6 +214,12 @@ describe('game board realtime model', () => {
     expect(selectNewerGameBoardSnapshot(undefined, newer)).toBe(newer)
     expect(selectNewerGameBoardSnapshot(snapshot, newer)).toBe(newer)
     expect(selectNewerGameBoardSnapshot(snapshot, older)).toBe(snapshot)
+    expect(selectNewerGameBoardSnapshot(snapshot, { ...snapshot })).toBe(snapshot)
+  })
+
+  it('accepts another game independently of its board version', () => {
+    const anotherGame = { ...snapshot, gameId: 'game-2', version: 1 }
+    expect(selectNewerGameBoardSnapshot(snapshot, anotherGame)).toBe(anotherGame)
   })
 
   it('ignores an out-of-order invalidation after a newer event was applied', () => {

@@ -28,7 +28,7 @@ export function selectNewerGameBoardSnapshot(
   current: GameBoardSnapshot | null | undefined,
   incoming: GameBoardSnapshot,
 ): GameBoardSnapshot {
-  if (!current) {
+  if (!current || current.gameId !== incoming.gameId) {
     return incoming
   }
 

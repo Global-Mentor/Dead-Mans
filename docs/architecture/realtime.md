@@ -31,6 +31,11 @@ After a successful DB write, SignalR publish is **best-effort** (`RealtimePublis
 `GET /api/game` returns `204 No Content` when no active, ready or finished board is
 available. Clients render the normal empty state; a missing board is not an HTTP error.
 
+Board versions are comparable only within the same game. A reconnect resync can
+replace the cached game with another game even when its version is lower. Responses
+from superseded resyncs or a previous cached game identity must not restore stale
+state; same-game resyncs preserve any newer event already applied to the cache.
+
 `gameLifecycleChanged` is emitted only after a successful game-finalization commit and
 contains `gameId`, terminal `status`, the incremented `boardVersion` and
 `occurredAtUtc`. Consumers invalidate completion-sensitive queries and resync from HTTP;
