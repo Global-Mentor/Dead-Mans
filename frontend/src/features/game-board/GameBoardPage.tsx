@@ -65,22 +65,32 @@ export function GameBoardPage() {
   const previewPlayResult = useCardPlayResult(data?.gameId ?? null, previewCell)
   const boardCellResults = useGameBoardCellResults(data?.gameId ?? null, data?.cells ?? [])
   if (isLoading)
-    return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} />
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t('gameBoard.title')}
+        message={t('gameBoard.loading')}
+        showSpinner
+      />
+    )
   if (isError || data === undefined)
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameBoard.title')}
         message={t('gameBoard.errorLoading')}
         tone="error"
         actions={
-          <AppButton onClick={retry} loading={isRefreshing}>
+          <AppButton tone="secondary" onClick={retry} loading={isRefreshing}>
             {t('common.actions.retry')}
           </AppButton>
         }
       />
     )
   if (data === null)
-    return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.empty')} />
+    return (
+      <PageStatePanel variant="page" title={t('gameBoard.title')} message={t('gameBoard.empty')} />
+    )
 
   const snapshot = data
   const rowLabelColumnWidth = getBoardRowLabelColumnWidth(snapshot.rowLabels)

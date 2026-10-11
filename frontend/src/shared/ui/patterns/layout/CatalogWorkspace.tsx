@@ -11,6 +11,7 @@ export function CatalogWorkspace({
   tools: ReactNode
   children: ReactNode
 }) {
+  const hasResults = children != null && children !== false
   return (
     <Box
       sx={{
@@ -25,15 +26,28 @@ export function CatalogWorkspace({
       <Box
         role="group"
         aria-label={toolsLabel}
-        sx={{ flexShrink: 0, maxHeight: '45%', overflowY: 'auto', scrollbarWidth: 'thin' }}
+        sx={{
+          flexShrink: 0,
+          maxHeight: hasResults ? '45%' : '100%',
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+        }}
       >
         {tools}
       </Box>
-      <Box
-        sx={{ flex: '1 1 0%', minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}
-      >
-        {children}
-      </Box>
+      {hasResults ? (
+        <Box
+          sx={{
+            flex: '1 1 0%',
+            minHeight: 0,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {children}
+        </Box>
+      ) : null}
     </Box>
   )
 }

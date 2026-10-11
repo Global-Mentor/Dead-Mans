@@ -9,10 +9,12 @@ import {
   InlineNotice,
   SectionCard,
   SectionHeader,
+  PageStatePanel,
 } from '../../../shared/ui/index.ts'
 
 interface QuestionCatalogMenuProps {
   children: ReactNode
+  catalogState?: { message: string; isLoading: boolean; isError: boolean; retry: () => void }
   canAddQuestion: boolean
   isCategoriesLoading: boolean
   isCategoriesError: boolean
@@ -27,6 +29,7 @@ interface QuestionCatalogMenuProps {
 
 export function QuestionCatalogMenu({
   children,
+  catalogState,
   canAddQuestion,
   isCategoriesLoading,
   isCategoriesError,
@@ -45,40 +48,41 @@ export function QuestionCatalogMenu({
     setMenu(null)
     action()
   }
-  return (
-    <SectionCard>
-      <SectionHeader
-        headingLevel="h1"
-        title={t('gameCatalog.questions.title')}
-        actions={
-          <Stack direction="row" gap={1} flexWrap="wrap">
-            <AppButton tone="primary" onClick={onCreateQuestion} disabled={!canAddQuestion}>
-              {t('gameCatalog.questions.add')}
-            </AppButton>
-            <HelpTooltip title={t('gameCatalog.questions.importGroupDescription')}>
-              <AppButton
-                tone="secondary"
-                endIcon={
-                  <SvgIcon fontSize="small">
-                    <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  </SvgIcon>
-                }
-                loading={isImportingQuestions || isDownloadingTemplate}
-                aria-label={t('gameCatalog.questions.importGroupExpand')}
-                aria-haspopup="menu"
-                aria-expanded={menu !== null}
-                aria-controls={menu !== null ? menuId : undefined}
-                onClick={(event) => setMenu(event.currentTarget)}
-              >
-                {t('gameCatalog.questions.importGroupTitle')}
-              </AppButton>
-            </HelpTooltip>
-            <AppButton tone="secondary" onClick={onManageCategories}>
-              {t('gameCatalog.questions.categoryManagement')}
-            </AppButton>
-          </Stack>
-        }
-      />
+  const actions = (
+    <Stack direction="row" gap={1} flexWrap="wrap">
+      <AppButton tone="primary" onClick={onCreateQuestion} disabled={!canAddQuestion}>
+        {t('gameCatalog.questions.add')}
+      </AppButton>
+      <HelpTooltip title={t('gameCatalog.questions.importGroupDescription')}>
+        <AppButton
+          tone="secondary"
+          endIcon={
+            <SvgIcon fontSize="small">
+              <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </SvgIcon>
+          }
+          loading={isImportingQuestions || isDownloadingTemplate}
+          aria-label={t('gameCatalog.questions.importGroupExpand')}
+          aria-haspopup="menu"
+          aria-expanded={menu !== null}
+          aria-controls={menu !== null ? menuId : undefined}
+          onClick={(event) => setMenu(event.currentTarget)}
+        >
+          {t('gameCatalog.questions.importGroupTitle')}
+        </AppButton>
+      </HelpTooltip>
+      <AppButton tone="secondary" onClick={onManageCategories}>
+        {t('gameCatalog.questions.categoryManagement')}
+      </AppButton>
+      {catalogState?.isError ? (
+        <AppButton tone="secondary" onClick={catalogState.retry}>
+          {t('common.actions.retry')}
+        </AppButton>
+      ) : null}
+    </Stack>
+  )
+  const content = (
+    <>
       {children}
       {isCategoriesError ? (
         <InlineNotice
@@ -121,6 +125,26 @@ export function QuestionCatalogMenu({
           {t('gameCatalog.questions.importJson')}
         </ActionMenuItem>
       </ActionMenu>
+    </>
+  )
+  if (catalogState) {
+    return (
+      <PageStatePanel
+        headingLevel="h1"
+        title={t('gameCatalog.questions.title')}
+        message={catalogState.message}
+        showSpinner={catalogState.isLoading}
+        tone={catalogState.isError ? 'error' : 'default'}
+        actions={actions}
+      >
+        {content}
+      </PageStatePanel>
+    )
+  }
+  return (
+    <SectionCard>
+      <SectionHeader headingLevel="h1" title={t('gameCatalog.questions.title')} actions={actions} />
+      {content}
     </SectionCard>
   )
 }

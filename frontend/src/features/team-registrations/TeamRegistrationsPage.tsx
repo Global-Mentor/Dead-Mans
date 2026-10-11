@@ -35,6 +35,7 @@ export function TeamRegistrationsPage() {
   if (adminSnapshotQuery.isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('teamRegistrations.title')}
         message={t('teamRegistrations.loading')}
         showSpinner
@@ -45,6 +46,7 @@ export function TeamRegistrationsPage() {
   if (adminSnapshotQuery.isError && !adminSnapshotQuery.data) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('teamRegistrations.title')}
         message={t('teamRegistrations.errorLoading')}
         tone="error"
@@ -59,22 +61,11 @@ export function TeamRegistrationsPage() {
 
   if (adminSnapshotQuery.data == null) {
     return (
-      <PageShell
-        sx={{
-          maxWidth: 1440,
-          width: '100%',
-          flex: '1 1 0%',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1,
-        }}
-      >
-        <PageStatePanel
-          title={t('teamRegistrations.title')}
-          message={t('teamRegistrations.notOpen')}
-        />
-      </PageShell>
+      <PageStatePanel
+        variant="page"
+        title={t('teamRegistrations.title')}
+        message={t('teamRegistrations.notOpen')}
+      />
     )
   }
 

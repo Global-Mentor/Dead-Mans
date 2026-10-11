@@ -165,9 +165,6 @@ const translations = {
         'Remove this column? After the draft syncs, cards in this column and their uploaded images will be deleted from the server.',
     },
     createDialog: {
-      promptTitle: 'No draft game yet',
-      promptDescription:
-        'There is no game in setup right now. Start creation when you are ready - other admins will see the same draft.',
       startCreate: 'Create game',
       title: 'Name the new game',
       detailsDescription: 'Enter a title for the draft. It will be created with a starter board.',
@@ -345,9 +342,6 @@ const translations = {
         'Удалить колонку? После синхронизации черновика карточки в этой колонке и их изображения будут удалены с сервера.',
     },
     createDialog: {
-      promptTitle: 'Черновика пока нет',
-      promptDescription:
-        'Сейчас нет игры в настройке. Начните создание, когда будете готовы - у всех админов будет один и тот же черновик.',
       startCreate: 'Создать игру',
       title: 'Название новой игры',
       detailsDescription: 'Введите название черновика. Будет создана таблица-заготовка.',
@@ -525,9 +519,6 @@ const translations = {
         'Видалити колонку? Після синхронізації чернетки картки в цій колонці та їхні зображення будуть видалені з сервера.',
     },
     createDialog: {
-      promptTitle: 'Чернетки поки немає',
-      promptDescription:
-        'Зараз немає гри в налаштуванні. Почніть створення, коли будете готові - у всіх адмінів буде одна й та сама чернетка.',
       startCreate: 'Створити гру',
       title: 'Назва нової гри',
       detailsDescription: 'Введіть назву чернетки. Буде створено таблицю-заготовку.',
@@ -703,9 +694,6 @@ const translations = {
         'Usunąć tę kolumnę? Po synchronizacji szkicu karty w tej kolumnie i ich obrazy zostaną usunięte z serwera.',
     },
     createDialog: {
-      promptTitle: 'Brak szkicu gry',
-      promptDescription:
-        'Obecnie nie ma gry w konfiguracji. Rozpocznij tworzenie, gdy będziesz gotowy - wszyscy administratorzy zobaczą ten sam szkic.',
       startCreate: 'Utwórz grę',
       title: 'Nazwa nowej gry',
       detailsDescription: 'Wpisz nazwę szkicu. Zostanie utworzona tabela startowa.',

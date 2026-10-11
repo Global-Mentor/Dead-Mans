@@ -186,7 +186,9 @@ describe('ModifierHistoryPage', () => {
   it('shows an empty archive without requesting a modifier', async () => {
     vi.mocked(fetchModifierHistory).mockResolvedValueOnce({ items: [], nextCursor: null })
     renderHistory('/panel/modifier-history')
-    expect(await screen.findByText('По фильтрам ничего не найдено.')).toBeVisible()
+    expect(
+      await screen.findByText('Модификаторы ещё не добавлены. Здесь будут показаны их редакции.'),
+    ).toBeVisible()
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
   })
 

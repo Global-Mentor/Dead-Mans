@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PageShell, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
+import { AppButton, PageShell, PageStatePanel, SectionCard } from '../../shared/ui/index.ts'
 import { GameSetupBoardNotices } from './ui/GameSetupBoardNotices.tsx'
 import { GameSetupEmptyState } from './ui/GameSetupEmptyState.tsx'
 import { GameSetupGrid } from './ui/GameSetupGrid.tsx'
@@ -18,6 +18,7 @@ export function GameSetupPage() {
     draft,
     isLoading,
     isError,
+    retryLoad,
     isDirty,
     syncStatus,
     remoteChangeNotice,
@@ -46,16 +47,27 @@ export function GameSetupPage() {
 
   if (isLoading) {
     return (
-      <PageStatePanel title={t('gameSetup.title')} message={t('gameSetup.loading')} showSpinner />
+      <PageStatePanel
+        variant="page"
+        title={t('gameSetup.title')}
+        message={t('gameSetup.loading')}
+        showSpinner
+      />
     )
   }
 
   if (isError) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameSetup.title')}
         message={t('gameSetup.errorLoading')}
         tone="error"
+        actions={
+          <AppButton tone="secondary" onClick={() => void retryLoad()}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
       />
     )
   }
@@ -63,6 +75,7 @@ export function GameSetupPage() {
   if (!snapshot || !draft) {
     return (
       <GameSetupEmptyState
+        title={t('navigation.items.gameSetup.label')}
         draftRemovedNotice={draftRemovedNotice}
         onDismissDraftRemovedNotice={dismissDraftRemovedNotice}
         isCreating={isCreating}

@@ -110,7 +110,8 @@ const translations = {
       'This block shows the current game in real time and updates as soon as round results are recorded.',
     loadingCurrentGame: 'Loading the current game leaderboard...',
     errorCurrentGame: 'Failed to load the current game leaderboard.',
-    currentGameMissing: 'There is no active game right now.',
+    currentGameMissing:
+      'There is no current game yet. Team results will appear after the game starts.',
     currentRoundsMissing:
       'No completed rounds yet. The leaderboard will appear after the first result is recorded.',
     completedGamesTitle: 'Completed games history',
@@ -119,7 +120,8 @@ const translations = {
     completedGamesListTitle: 'Finished games',
     completedGamesListDescription:
       'Select a finished game to inspect its leaderboard, modifiers, and round details.',
-    completedGamesEmpty: 'There are no finished games yet.',
+    completedGamesEmpty:
+      'There are no finished games yet. History will appear after the first game finishes.',
     completedGameSelectPrompt: 'Choose a finished game from the list to view its history.',
     finalResultTitle: 'Official final result',
     finalResultMeta: 'Finished by {{admin}} · {{date}}',
@@ -417,7 +419,7 @@ const translations = {
       'Этот блок показывает текущую игру вживую и обновляется сразу после подведения итогов раунда.',
     loadingCurrentGame: 'Загрузка рейтинга текущей игры...',
     errorCurrentGame: 'Не удалось загрузить рейтинг текущей игры.',
-    currentGameMissing: 'Сейчас нет активной игры.',
+    currentGameMissing: 'Текущей игры пока нет. Результаты команд появятся после начала игры.',
     currentRoundsMissing:
       'Завершенных раундов пока нет. Лидерборд появится после первого подведения итогов.',
     completedGamesTitle: 'История завершённых игр',
@@ -426,7 +428,7 @@ const translations = {
     completedGamesListTitle: 'Завершённые игры',
     completedGamesListDescription:
       'Выберите завершённую игру, чтобы посмотреть её рейтинг, модификаторы и детали раундов.',
-    completedGamesEmpty: 'Завершённых игр пока нет.',
+    completedGamesEmpty: 'Завершённых игр пока нет. История появится после завершения первой игры.',
     completedGameSelectPrompt: 'Выберите завершённую игру из списка, чтобы посмотреть её историю.',
     finalResultTitle: 'Официальный итог игры',
     finalResultMeta: 'Завершил: {{admin}} · {{date}}',
@@ -723,7 +725,7 @@ const translations = {
       'Цей блок показує поточну гру наживо й оновлюється одразу після підбиття підсумків раунду.',
     loadingCurrentGame: 'Завантаження рейтингу поточної гри...',
     errorCurrentGame: 'Не вдалося завантажити рейтинг поточної гри.',
-    currentGameMissing: 'Зараз немає активної гри.',
+    currentGameMissing: 'Поточної гри поки немає. Результати команд з’являться після початку гри.',
     currentRoundsMissing:
       'Завершених раундів поки немає. Лідерборд зʼявиться після першого підбиття підсумків.',
     completedGamesTitle: 'Історія завершених ігор',
@@ -732,7 +734,8 @@ const translations = {
     completedGamesListTitle: 'Завершені ігри',
     completedGamesListDescription:
       'Виберіть завершену гру, щоб переглянути її рейтинг, модифікатори та деталі раундів.',
-    completedGamesEmpty: 'Завершених ігор поки немає.',
+    completedGamesEmpty:
+      'Завершених ігор поки немає. Історія з’явиться після завершення першої гри.',
     completedGameSelectPrompt: 'Виберіть завершену гру зі списку, щоб переглянути її історію.',
     finalResultTitle: 'Офіційний підсумок гри',
     finalResultMeta: 'Завершив: {{admin}} · {{date}}',
@@ -1029,7 +1032,8 @@ const translations = {
       'Ten blok pokazuje bieżącą grę w czasie rzeczywistym i odświeża się od razu po zapisaniu wyniku rundy.',
     loadingCurrentGame: 'Ładowanie rankingu bieżącej gry...',
     errorCurrentGame: 'Nie udało się załadować rankingu bieżącej gry.',
-    currentGameMissing: 'Nie ma teraz aktywnej gry.',
+    currentGameMissing:
+      'Nie ma jeszcze bieżącej gry. Wyniki drużyn pojawią się po rozpoczęciu gry.',
     currentRoundsMissing:
       'Nie ma jeszcze ukończonych rund. Ranking pojawi się po pierwszym podsumowaniu.',
     completedGamesTitle: 'Historia zakończonych gier',
@@ -1038,7 +1042,8 @@ const translations = {
     completedGamesListTitle: 'Zakończone gry',
     completedGamesListDescription:
       'Wybierz zakończoną grę, aby zobaczyć jej ranking, modyfikatory i szczegóły rund.',
-    completedGamesEmpty: 'Nie ma jeszcze zakończonych gier.',
+    completedGamesEmpty:
+      'Nie ma jeszcze zakończonych gier. Historia pojawi się po zakończeniu pierwszej gry.',
     completedGameSelectPrompt: 'Wybierz zakończoną grę z listy, aby zobaczyć jej historię.',
     finalResultTitle: 'Oficjalny wynik końcowy',
     finalResultMeta: 'Zakończył(a): {{admin}} · {{date}}',

@@ -48,6 +48,7 @@ export function GameApplicationPage() {
   if (snapshotQuery.isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameApplication.title')}
         message={t('gameApplication.loading')}
         showSpinner
@@ -58,6 +59,7 @@ export function GameApplicationPage() {
   if (snapshotQuery.isError) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameApplication.title')}
         message={t('gameApplication.errorLoading')}
         tone="error"
@@ -76,7 +78,11 @@ export function GameApplicationPage() {
 
   if (snapshotQuery.data == null) {
     return (
-      <PageStatePanel title={t('gameApplication.title')} message={t('gameApplication.notOpen')} />
+      <PageStatePanel
+        variant="page"
+        title={t('gameApplication.title')}
+        message={t('gameApplication.notOpen')}
+      />
     )
   }
 

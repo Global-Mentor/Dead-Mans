@@ -70,7 +70,11 @@ for (const intent of ['hover', 'focus'] as const) {
     page.on('request', (request) => requests.push(new URL(request.url()).pathname))
     await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
     await page.goto(`${origin}/panel/game-board`)
-    await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+    await expect(
+      page.getByText(
+        'No game has been published yet. The board will appear when registration opens.',
+      ),
+    ).toBeVisible()
     const destination = /\/GameTeamQueuePage-[^/]+\.js$/
     expect(requests.some((path) => destination.test(path))).toBe(false)
     const link = page.locator('a[href="/panel/game-team-queue"]:visible')
@@ -100,7 +104,11 @@ test('navigation retries a failed speculative chunk load after connectivity retu
     } else await route.fallback()
   })
   await page.goto(`${origin}/panel/game-board`)
-  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+  await expect(
+    page.getByText(
+      'No game has been published yet. The board will appear when registration opens.',
+    ),
+  ).toBeVisible()
   const link = page.locator('a[href="/panel/game-team-queue"]:visible')
   const failed = page.waitForEvent('requestfailed', (request) =>
     request.url().includes('/GameTeamQueuePage-'),
@@ -397,18 +405,30 @@ test('a shared hub reconnects after an abnormal close and refreshes an empty boa
     }
   })
   await page.goto(`${origin}/panel/game-board`)
-  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+  await expect(
+    page.getByText(
+      'No game has been published yet. The board will appear when registration opens.',
+    ),
+  ).toBeVisible()
   await expect.poll(() => sockets.length).toBe(1)
   const beforeReconnect = boardRequests
   published = true
   await sockets[0]!.close({ code: 1006 })
   await expect.poll(() => sockets.length).toBe(2)
   await expect.poll(() => boardRequests).toBeGreaterThan(beforeReconnect)
-  await expect(page.getByText('No current game board is available yet.')).toHaveCount(0)
+  await expect(
+    page.getByText(
+      'No game has been published yet. The board will appear when registration opens.',
+    ),
+  ).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Reconnected game', exact: true })).toBeVisible()
   published = false
   await sockets[1]!.close({ code: 1006 })
   await expect.poll(() => sockets.length).toBe(3)
-  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+  await expect(
+    page.getByText(
+      'No game has been published yet. The board will appear when registration opens.',
+    ),
+  ).toBeVisible()
   expect(failures).toEqual([])
 })

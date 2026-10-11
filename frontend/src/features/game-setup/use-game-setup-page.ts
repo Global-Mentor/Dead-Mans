@@ -144,6 +144,7 @@ export function useGameSetupPage() {
     draft: draft.draft,
     isLoading: draft.isLoading,
     isError: draft.isError,
+    retryLoad: draft.retryLoad,
     isDirty: draft.isDirty,
     syncStatus: save.syncStatus,
     remoteChangeNotice: draft.remoteChangeNotice,

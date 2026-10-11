@@ -97,20 +97,31 @@ export function GameQuizPage() {
     ) : null
   if ((!hasData && (isLoading || isError)) || snapshotQuery.data === null) {
     return (
-      <Stack spacing={2}>
-        {twitchPanel}
-        <PageStatePanel
-          title={t('gameQuiz.title')}
-          message={t(
-            isLoading ? 'gameQuiz.loading' : isError ? 'gameQuiz.errorLoading' : 'gameQuiz.noGame',
-          )}
-          showSpinner={isLoading}
-          tone={isError ? 'error' : 'default'}
-          actions={
-            isError ? <AppButton onClick={retry}>{t('common.actions.retry')}</AppButton> : undefined
-          }
-        />
-      </Stack>
+      <PageShell variant="state">
+        <Stack spacing={1.5}>
+          <PageStatePanel
+            headingLevel="h1"
+            title={t('gameQuiz.title')}
+            message={t(
+              isLoading
+                ? 'gameQuiz.loading'
+                : isError
+                  ? 'gameQuiz.errorLoading'
+                  : 'gameQuiz.noGame',
+            )}
+            showSpinner={isLoading}
+            tone={isError ? 'error' : 'default'}
+            actions={
+              isError ? (
+                <AppButton tone="secondary" onClick={retry}>
+                  {t('common.actions.retry')}
+                </AppButton>
+              ) : undefined
+            }
+          />
+          {twitchPanel}
+        </Stack>
+      </PageShell>
     )
   }
   return (

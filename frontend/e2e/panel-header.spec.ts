@@ -79,7 +79,9 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
     for (let index = 1; index < boxes.length; index++) {
       expect(boxes[index].x).toBeGreaterThanOrEqual(boxes[index - 1].x + boxes[index - 1].width - 1)
     }
-    await expect(page.getByText('Игровое поле сейчас недоступно.')).toBeVisible()
+    await expect(
+      page.getByText('Игра пока не опубликована. Поле появится после открытия регистрации.'),
+    ).toBeVisible()
     await header.screenshot({
       path: `../.tmp/header-design/header-${width}.png`,
       animations: 'disabled',

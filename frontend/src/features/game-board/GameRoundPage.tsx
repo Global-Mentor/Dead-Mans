@@ -36,6 +36,7 @@ export function GameRoundPage() {
   if (snapshotQuery.isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.loading')}
         showSpinner
@@ -45,16 +46,22 @@ export function GameRoundPage() {
   if (snapshotQuery.isError && !snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.errorLoading')}
         tone="error"
-        actions={<AppButton onClick={retry}>{t('common.actions.retry')}</AppButton>}
+        actions={
+          <AppButton tone="secondary" onClick={retry}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
       />
     )
   }
   if (!snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.empty')}
       />

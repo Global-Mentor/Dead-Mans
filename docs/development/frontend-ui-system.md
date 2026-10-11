@@ -145,6 +145,8 @@ Compact image upload/replace/remove buttons opt into `AppButton.labelAlignment="
 
 `PageStatePanel` gives loading, empty and error states a common surface. Standalone page states use `variant="page"`: `PageShell variant="state"` centers a 720px maximum width, the title is a semantic `h1` on the 24px page-title scale, supporting text is 14px, and actions wrap below the explanation. The default `section` variant stays inside an existing workspace; its optional `headingLevel` defaults to `h6`. Loading retains the same title and alignment, with a progress indicator beside the message. Initial errors expose retry where supported. Optional children hold creation forms or related notices without nesting another state surface.
 
+Every panel route uses this composition when the entire page lacks its required data. Empty catalogues keep add/import/category actions and omit unusable search/filter controls. The modifier archive stays reachable even when the live catalogue has no entries. Filtered workspaces retain their tools and use `AsyncSection stateVariant="panel"` for empty results; ordinary inline sections keep the existing default. Standings without a current game and history without finished games show the common state instead of a picker or selection prompt. Draft selection pages retain their own title and link to board setup. Verify consistency by comparing all panel routes together at 390, 768 and 1440px, including title scale, width and placement; isolated screenshots and passing text assertions do not establish visual consistency.
+
 ## Examples
 
 An ordinary form (the caller owns validation, values and save state):

@@ -11,6 +11,7 @@ import {
   FormTextField,
   Metric,
   PageShell,
+  PageStatePanel,
   SelectionRow,
   StatusBadge,
 } from '../../shared/ui/index.ts'
@@ -20,7 +21,7 @@ import {
   modifierVersionQueryOptions,
   modifierVersionsQueryOptions,
 } from './api/modifier-history-queries.ts'
-import { HistoryWorkspace, RoundBriefingPanel } from '../../shared/game-ui/index.ts'
+import { HistoryWorkspace } from '../../shared/game-ui/index.ts'
 import { ModifierRelatedGames } from './ui/ModifierRelatedGames.tsx'
 import { ModifierVersionDetails } from './ui/ModifierVersionDetails.tsx'
 
@@ -98,6 +99,31 @@ export function ModifierHistoryPage() {
       return next
     })
 
+  if (!modifierId && !search && filter === 'all' && historyItems.length === 0) {
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t('modifierHistory.title')}
+        message={t(
+          history.isLoading
+            ? 'modifierHistory.loading'
+            : history.isError
+              ? 'modifierHistory.error'
+              : 'modifierHistory.noHistory',
+        )}
+        showSpinner={history.isLoading}
+        tone={history.isError ? 'error' : 'default'}
+        actions={
+          history.isError ? (
+            <AppButton tone="secondary" onClick={() => void history.refetch()}>
+              {t('common.actions.retry')}
+            </AppButton>
+          ) : undefined
+        }
+      />
+    )
+  }
+
   return (
     <PageShell
       sx={{
@@ -160,6 +186,7 @@ export function ModifierHistoryPage() {
         }
         records={
           <AsyncSection
+            stateVariant="panel"
             isLoading={history.isLoading}
             isError={history.isError}
             hasData={history.data != null}
@@ -212,13 +239,14 @@ export function ModifierHistoryPage() {
         }
       >
         {!modifierId ? (
-          <RoundBriefingPanel sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('modifierHistory.choose')}
-            </Typography>
-          </RoundBriefingPanel>
+          <PageStatePanel
+            message={t(
+              historyItems.length === 0 ? 'modifierHistory.empty' : 'modifierHistory.choose',
+            )}
+          />
         ) : (
           <AsyncSection
+            stateVariant="panel"
             isLoading={revision === 0 ? versions.isLoading : detail.isLoading}
             isError={revision === 0 ? versions.isError : detail.isError}
             hasData={detail.data != null}
@@ -287,6 +315,7 @@ export function ModifierHistoryPage() {
                 }
                 revisions={
                   <AsyncSection
+                    stateVariant="panel"
                     isLoading={versions.isLoading}
                     isError={versions.isError}
                     retryAction={
@@ -368,6 +397,7 @@ export function ModifierHistoryPage() {
                 }
                 games={
                   <AsyncSection
+                    stateVariant="panel"
                     isLoading={revision === 0 || games.isLoading}
                     isError={games.isError}
                     retryAction={

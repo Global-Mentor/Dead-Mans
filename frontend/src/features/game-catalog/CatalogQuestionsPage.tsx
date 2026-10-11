@@ -115,6 +115,23 @@ export function CatalogQuestionsPage() {
     selectedCategoryId !== null ||
     status !== 'all' ||
     sort !== 'category'
+  const isEmptyCatalog = questions?.length === 0 && !hasFilters && !catalogQuery.isError
+  const showCatalogState =
+    isEmptyCatalog || (questions == null && (catalogQuery.isLoading || catalogQuery.isError))
+  const catalogState = showCatalogState
+    ? {
+        message: t(
+          catalogQuery.isLoading
+            ? 'gameCatalog.questions.loading'
+            : catalogQuery.isError
+              ? 'gameCatalog.questions.error'
+              : 'gameCatalog.questions.empty',
+        ),
+        isLoading: catalogQuery.isLoading,
+        isError: catalogQuery.isError,
+        retry: () => void catalogQuery.refetch(),
+      }
+    : null
   const resetFilters = () => {
     setSearch('')
     setSelectedCategoryId(null)
@@ -192,8 +209,10 @@ export function CatalogQuestionsPage() {
 
   return (
     <PageShell
+      variant={showCatalogState ? 'state' : 'standard'}
       sx={{
-        maxWidth: 1600,
+        ...(showCatalogState ? {} : { maxWidth: 1600 }),
+        mx: 'auto',
         width: '100%',
         flex: '1 1 0%',
         minHeight: 0,
@@ -221,6 +240,7 @@ export function CatalogQuestionsPage() {
         tools={
           <Box sx={{ minWidth: 0 }}>
             <QuestionCatalogMenu
+              {...(catalogState ? { catalogState } : {})}
               canAddQuestion={canAddQuestion}
               isCategoriesLoading={categoriesQuery.isLoading}
               isCategoriesError={categoriesQuery.isError}
@@ -232,73 +252,78 @@ export function CatalogQuestionsPage() {
               onManageCategories={openCategoryManagement}
               onRetryCategories={() => void categoriesQuery.refetch()}
             >
-              <QuestionCatalogFilters
-                search={search}
-                onSearchChange={setSearch}
-                categories={categories}
-                categoryId={selectedCategoryId}
-                onCategoryChange={setSelectedCategoryId}
-                status={status}
-                onStatusChange={setStatus}
-                sort={sort}
-                onSortChange={setSort}
-                hasFilters={hasFilters}
-                onReset={resetFilters}
-                loadingCategories={categoriesQuery.isLoading}
-              />
+              {!showCatalogState ? (
+                <QuestionCatalogFilters
+                  search={search}
+                  onSearchChange={setSearch}
+                  categories={categories}
+                  categoryId={selectedCategoryId}
+                  onCategoryChange={setSelectedCategoryId}
+                  status={status}
+                  onStatusChange={setStatus}
+                  sort={sort}
+                  onSortChange={setSort}
+                  hasFilters={hasFilters}
+                  onReset={resetFilters}
+                  loadingCategories={categoriesQuery.isLoading}
+                />
+              ) : null}
             </QuestionCatalogMenu>
           </Box>
         }
       >
-        <AsyncSection
-          isLoading={catalogQuery.isLoading}
-          isError={catalogQuery.isError}
-          hasData={catalogQuery.data != null}
-          isEmpty={(questions?.length ?? 0) === 0}
-          loadingMessage={t('gameCatalog.questions.loading')}
-          errorMessage={t('gameCatalog.questions.error')}
-          emptyMessage={t('gameCatalog.questions.empty')}
-          retryAction={
-            <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
-              {t('common.actions.retry')}
-            </AppButton>
-          }
-        >
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              flex: '1 1 0%',
-              minHeight: 0,
-              gridTemplateRows: 'minmax(0, 1fr)',
-              gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
-            }}
+        {!showCatalogState ? (
+          <AsyncSection
+            stateVariant="panel"
+            isLoading={catalogQuery.isLoading}
+            isError={catalogQuery.isError}
+            hasData={catalogQuery.data != null}
+            isEmpty={(questions?.length ?? 0) === 0}
+            loadingMessage={t('gameCatalog.questions.loading')}
+            errorMessage={t('gameCatalog.questions.error')}
+            emptyMessage={t('gameCatalog.questions.empty')}
+            retryAction={
+              <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
+                {t('common.actions.retry')}
+              </AppButton>
+            }
           >
-            <QuestionCatalogList
-              questions={visible}
-              totalCount={questions?.length ?? 0}
-              selectedId={wide ? (selected?.questionId ?? null) : null}
-              onSelect={selectQuestion}
-            />
-            {wide && selected ? (
-              <SectionCard
-                component="section"
-                role="region"
-                aria-label={t('gameCatalog.questions.catalog.details')}
-                tabIndex={0}
-                sx={{
-                  minWidth: 0,
-                  minHeight: 0,
-                  height: '100%',
-                  overflowY: 'auto',
-                  overscrollBehaviorY: 'contain',
-                }}
-              >
-                {details}
-              </SectionCard>
-            ) : null}
-          </Box>
-        </AsyncSection>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                flex: '1 1 0%',
+                minHeight: 0,
+                gridTemplateRows: 'minmax(0, 1fr)',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
+              }}
+            >
+              <QuestionCatalogList
+                questions={visible}
+                totalCount={questions?.length ?? 0}
+                selectedId={wide ? (selected?.questionId ?? null) : null}
+                onSelect={selectQuestion}
+              />
+              {wide && selected ? (
+                <SectionCard
+                  component="section"
+                  role="region"
+                  aria-label={t('gameCatalog.questions.catalog.details')}
+                  tabIndex={0}
+                  sx={{
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: '100%',
+                    overflowY: 'auto',
+                    overscrollBehaviorY: 'contain',
+                  }}
+                >
+                  {details}
+                </SectionCard>
+              ) : null}
+            </Box>
+          </AsyncSection>
+        ) : null}
       </CatalogWorkspace>
 
       <AppDialog

@@ -138,6 +138,7 @@ export function GameModifiersPage() {
   if (stateQuery.isLoading || (stateQuery.isError && !state) || isEmpty) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('common.entities.modifiers')}
         message={t(
           stateQuery.isLoading
@@ -150,7 +151,7 @@ export function GameModifiersPage() {
         tone={stateQuery.isError ? 'error' : 'default'}
         actions={
           stateQuery.isError ? (
-            <AppButton onClick={() => void stateQuery.refetch()}>
+            <AppButton tone="secondary" onClick={() => void stateQuery.refetch()}>
               {t('common.actions.retry')}
             </AppButton>
           ) : undefined

@@ -336,7 +336,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText('Загрузка игрового поля...')).toBeInTheDocument()
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toBeVisible()
 
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isError: true }))
@@ -346,7 +346,9 @@ describe('GameBoardPage', () => {
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ data: null }))
     renderBoard()
-    expect(screen.getByText('Игровое поле сейчас недоступно.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Игра пока не опубликована. Поле появится после открытия регистрации.'),
+    ).toBeInTheDocument()
   })
 
   it('keeps labeled controls and the current step visible without a menu', () => {

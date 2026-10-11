@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { InlineNotice, PageShell, SectionCard, SectionHeader } from '../../../shared/ui/index.ts'
+import { gameSetupRoute } from '../../../routes/app-routes.ts'
+import { AppLinkButton, InlineNotice, PageStatePanel } from '../../../shared/ui/index.ts'
 import { CreateGameSetupPanel } from './CreateGameSetupPanel.tsx'
 
 interface GameSetupEmptyStateProps {
+  title: string
   draftRemovedNotice: boolean
   onDismissDraftRemovedNotice: () => void
   isCreating?: boolean
@@ -10,6 +12,7 @@ interface GameSetupEmptyStateProps {
 }
 
 export function GameSetupEmptyState({
+  title,
   draftRemovedNotice,
   onDismissDraftRemovedNotice,
   isCreating = false,
@@ -18,31 +21,20 @@ export function GameSetupEmptyState({
   const { t } = useTranslation()
 
   return (
-    <PageShell>
-      <SectionCard
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <SectionHeader
-          headingLevel="h1"
-          title={t('gameSetup.boardTitle')}
-          description={t('gameSetup.empty')}
-        />
+    <PageStatePanel variant="page" title={title} message={t('gameSetup.empty')}>
+      {draftRemovedNotice ? (
+        <InlineNotice severity="warning" onClose={onDismissDraftRemovedNotice}>
+          {t('gameSetup.draftRemovedNotice')}
+        </InlineNotice>
+      ) : null}
 
-        {draftRemovedNotice ? (
-          <InlineNotice severity="warning" sx={{ mt: 2 }} onClose={onDismissDraftRemovedNotice}>
-            {t('gameSetup.draftRemovedNotice')}
-          </InlineNotice>
-        ) : null}
-
-        {onCreate != null ? (
-          <CreateGameSetupPanel isSubmitting={isCreating} onCreate={onCreate} />
-        ) : null}
-      </SectionCard>
-    </PageShell>
+      {onCreate != null ? (
+        <CreateGameSetupPanel isSubmitting={isCreating} onCreate={onCreate} />
+      ) : (
+        <AppLinkButton to={gameSetupRoute.fullPath} sx={{ alignSelf: 'flex-start' }}>
+          {t('navigation.items.gameSetup.label')}
+        </AppLinkButton>
+      )}
+    </PageStatePanel>
   )
 }

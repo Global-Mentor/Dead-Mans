@@ -104,6 +104,16 @@ async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en')
             availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text'] }],
           },
         })
+      if (path === '/api/admin/users')
+        return route.fulfill({
+          json: {
+            items: [],
+            page: 1,
+            pageSize: Number(new URL(route.request().url()).searchParams.get('pageSize') ?? 1),
+            totalCount: 0,
+            summary: { totalUsers: 0, loggedInUsers: 0, newUsers: 0 },
+          },
+        })
       if (path === '/api/game/setup') {
         if (route.request().method() === 'PUT') {
           writes++
@@ -753,8 +763,11 @@ for (const width of [390, 1440]) {
       await expect(page).toHaveURL('/panel/' + path)
       await expect(page.getByRole('main')).toBeVisible()
       if (path === 'role-administration')
-        await expect(page.getByRole('textbox', { name: 'Name or Twitch login' })).toBeVisible()
+        await expect(
+          page.getByRole('heading', { level: 1, name: 'User roles', exact: true }),
+        ).toBeVisible()
       else await expect(page.getByRole('heading').first()).toBeVisible()
+      await expect(page.getByRole('main')).not.toContainText('Could not refresh users.')
       await expect(petal).toHaveCount(0)
     }
     await page.goto('/panel/game-board')

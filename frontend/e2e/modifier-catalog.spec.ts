@@ -58,14 +58,14 @@ const catalog: GameModifierDefinition[] = names.map((name, index) => ({
   },
 }))
 
-async function mockCatalog(page: Page, language = 'en') {
+async function mockCatalog(page: Page, language = 'en', initialItems = catalog) {
   await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), language)
   await page.routeWebSocket(/\/hubs\//, (socket) =>
     socket.onMessage((message) => {
       if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
     }),
   )
-  let items = [...catalog]
+  let items = [...initialItems]
   const archivedItems: GameModifierDefinition[] = [
     {
       ...catalog[1]!,
@@ -723,6 +723,36 @@ for (const width of [390, 1440]) {
     await expect(list.getByRole('button')).toHaveCount(12)
     await expect(list.getByRole('button', { name: /^Архив/ })).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+for (const width of [390, 1440]) {
+  test(`archive remains reachable when the live catalogue is empty at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const server = await mockCatalog(page, 'ru', [])
+    await page.goto('/panel/catalog-modifiers')
+    const emptyState = page.getByTestId('page-state-panel')
+    await expect(emptyState).toContainText('Модификаторов пока нет.')
+    expect(server.archiveRequests()).toBe(0)
+    await emptyState.getByRole('button', { name: 'Архивные', exact: true }).click()
+    const list = page.getByTestId('modifier-catalog-list')
+    await expect(list.getByRole('button')).toHaveCount(2)
+    expect(server.archiveRequests()).toBeGreaterThan(0)
+    await list.getByRole('button', { name: 'Архивное правило', exact: true }).click()
+    const details = page.getByTestId('modifier-catalog-details')
+    await expect(details.getByText(/Модификатор архивирован/)).toBeVisible()
+    await expect(details.getByRole('button', { name: /Изменить|Удалить/ })).toHaveCount(0)
+    if (width < 1200) await page.keyboard.press('Escape')
+    if (width < 600)
+      await page
+        .getByTestId('modifier-catalog-filters')
+        .getByRole('button', { name: 'Фильтры (1)' })
+        .click()
+    await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
+    await expect(emptyState).toContainText('Модификаторов пока нет.')
+    await expect(emptyState.getByRole('button', { name: 'Архивные', exact: true })).toBeVisible()
   })
 }
 

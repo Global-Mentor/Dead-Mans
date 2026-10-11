@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/index.ts'
-import { ListPanel, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
+import { ListPanel, PageStatePanel, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
 
 export function QuestionCatalogList({
   questions,
@@ -18,6 +18,20 @@ export function QuestionCatalogList({
   const { t, i18n } = useTranslation()
   const prefix = useId()
   const number = new Intl.NumberFormat(i18n.resolvedLanguage).format
+  if (questions.length === 0) {
+    return (
+      <Box data-testid="question-catalog-list" sx={{ minWidth: 0 }}>
+        <PageStatePanel
+          headingLevel="h2"
+          title={t('gameCatalog.questions.catalog.list')}
+          message={t('gameCatalog.workspace.results', {
+            count: number(0),
+            total: number(totalCount),
+          })}
+        />
+      </Box>
+    )
+  }
   return (
     <ListPanel
       title={t('gameCatalog.questions.catalog.list')}

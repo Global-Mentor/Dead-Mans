@@ -27,6 +27,7 @@ export function GameTeamQueuePage() {
   if (snapshotQuery.isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameBoard.teamQueueTitle')}
         message={t('gameBoard.teamQueueLoading')}
         showSpinner
@@ -36,11 +37,12 @@ export function GameTeamQueuePage() {
   if (snapshotQuery.isError && !snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameBoard.teamQueueTitle')}
         message={t('gameBoard.errorLoading')}
         tone="error"
         actions={
-          <AppButton onClick={() => void snapshotQuery.refetch()}>
+          <AppButton tone="secondary" onClick={() => void snapshotQuery.refetch()}>
             {t('common.actions.retry')}
           </AppButton>
         }
@@ -50,6 +52,7 @@ export function GameTeamQueuePage() {
   if (!snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameBoard.teamQueueTitle')}
         message={t('gameBoard.teamQueueNoGame')}
       />

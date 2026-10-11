@@ -9,6 +9,7 @@ import {
   ConfirmDialog,
   CatalogWorkspace,
   PageShell,
+  PageStatePanel,
   SectionCard,
   SectionHeader,
 } from '../../shared/ui/index.ts'
@@ -71,6 +72,10 @@ export function CatalogModifiersPage() {
   const selected = modifiers.find((item) => item.id === selectedId) ?? modifiers[0] ?? null
   const hasFilters =
     search.trim().length > 0 || selectedCategory !== null || selectedRoundSummaryType !== null
+  const isEmptyCatalog = catalogQuery.data?.length === 0 && !hasFilters && !catalogQuery.isError
+  const showCatalogState =
+    isEmptyCatalog ||
+    (!hasFilters && catalogQuery.data == null && (catalogQuery.isLoading || catalogQuery.isError))
   const resetFilters = () => {
     setSearch('')
     setSelectedCategory(null)
@@ -110,8 +115,10 @@ export function CatalogModifiersPage() {
 
   return (
     <PageShell
+      variant={showCatalogState ? 'state' : 'standard'}
       sx={{
-        maxWidth: 1600,
+        ...(showCatalogState ? {} : { maxWidth: 1600 }),
+        mx: 'auto',
         width: '100%',
         flex: '1 1 0%',
         minHeight: 0,
@@ -119,94 +126,126 @@ export function CatalogModifiersPage() {
         flexDirection: 'column',
       }}
     >
-      <CatalogWorkspace
-        toolsLabel={t('gameCatalog.modifiers.catalog.filters', {
-          count: Number(selectedCategory !== null) + Number(selectedRoundSummaryType !== null),
-        })}
-        tools={
-          <SectionCard>
-            <SectionHeader
-              headingLevel="h1"
-              title={t('gameCatalog.modifiers.title')}
-              actions={
-                <AppButton tone="primary" onClick={openCreate}>
-                  {t('gameCatalog.modifiers.add')}
-                </AppButton>
-              }
-            />
-            <ModifierCatalogFilters
-              search={search}
-              onSearchChange={setSearch}
-              category={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              categoryCounts={categoryCounts}
-              summaryType={selectedRoundSummaryType}
-              onSummaryTypeChange={setSelectedRoundSummaryType}
-              summaryCounts={roundSummaryCounts}
-              sort={sort}
-              onSortChange={setSort}
-              hasFilters={hasFilters}
-              onReset={resetFilters}
-            />
-          </SectionCard>
-        }
-      >
-        <AsyncSection
-          isLoading={catalogQuery.isLoading}
-          isError={catalogQuery.isError}
-          hasData={catalogQuery.data != null}
-          isEmpty={modifiers.length === 0}
-          loadingMessage={t('gameCatalog.modifiers.loading')}
-          errorMessage={t('gameCatalog.modifiers.error')}
-          emptyMessage={t(
-            hasFilters && (catalogQuery.data?.length ?? 0) > 0
-              ? 'common.modifiers.emptySearch'
-              : isArchive
-                ? 'gameCatalog.modifiers.catalog.archiveEmpty'
+      {showCatalogState ? (
+        <PageStatePanel
+          headingLevel="h1"
+          title={t('gameCatalog.modifiers.title')}
+          message={t(
+            catalogQuery.isLoading
+              ? 'gameCatalog.modifiers.loading'
+              : catalogQuery.isError
+                ? 'gameCatalog.modifiers.error'
                 : 'gameCatalog.modifiers.empty',
           )}
-          retryAction={
-            <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
-              {t('common.actions.retry')}
-            </AppButton>
+          showSpinner={catalogQuery.isLoading}
+          tone={catalogQuery.isError ? 'error' : 'default'}
+          actions={
+            <>
+              <AppButton tone="primary" onClick={openCreate}>
+                {t('gameCatalog.modifiers.add')}
+              </AppButton>
+              <AppButton tone="secondary" onClick={() => setSelectedCategory('archived')}>
+                {t('gameCatalog.modifiers.catalog.archived')}
+              </AppButton>
+              {catalogQuery.isError ? (
+                <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
+                  {t('common.actions.retry')}
+                </AppButton>
+              ) : null}
+            </>
+          }
+        />
+      ) : (
+        <CatalogWorkspace
+          toolsLabel={t('gameCatalog.modifiers.catalog.filters', {
+            count: Number(selectedCategory !== null) + Number(selectedRoundSummaryType !== null),
+          })}
+          tools={
+            <SectionCard>
+              <SectionHeader
+                headingLevel="h1"
+                title={t('gameCatalog.modifiers.title')}
+                actions={
+                  <AppButton tone="primary" onClick={openCreate}>
+                    {t('gameCatalog.modifiers.add')}
+                  </AppButton>
+                }
+              />
+              <ModifierCatalogFilters
+                search={search}
+                onSearchChange={setSearch}
+                category={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                categoryCounts={categoryCounts}
+                summaryType={selectedRoundSummaryType}
+                onSummaryTypeChange={setSelectedRoundSummaryType}
+                summaryCounts={roundSummaryCounts}
+                sort={sort}
+                onSortChange={setSort}
+                hasFilters={hasFilters}
+                onReset={resetFilters}
+              />
+            </SectionCard>
           }
         >
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              flex: '1 1 0%',
-              minHeight: 0,
-              gridTemplateRows: 'minmax(0, 1fr)',
-              gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
-            }}
+          <AsyncSection
+            stateVariant="panel"
+            isLoading={catalogQuery.isLoading}
+            isError={catalogQuery.isError}
+            hasData={catalogQuery.data != null}
+            isEmpty={modifiers.length === 0}
+            loadingMessage={t('gameCatalog.modifiers.loading')}
+            errorMessage={t('gameCatalog.modifiers.error')}
+            emptyMessage={t(
+              hasFilters && (catalogQuery.data?.length ?? 0) > 0
+                ? 'common.modifiers.emptySearch'
+                : isArchive
+                  ? 'gameCatalog.modifiers.catalog.archiveEmpty'
+                  : 'gameCatalog.modifiers.empty',
+            )}
+            retryAction={
+              <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
+                {t('common.actions.retry')}
+              </AppButton>
+            }
           >
-            <ModifierCatalogList
-              modifiers={modifiers}
-              totalCount={catalogQuery.data?.length ?? 0}
-              selectedId={wide ? (selected?.id ?? null) : null}
-              onSelect={selectModifier}
-            />
-            {wide ? (
-              <SectionCard
-                component="section"
-                role="region"
-                aria-label={t('gameCatalog.modifiers.catalog.details')}
-                tabIndex={0}
-                sx={{
-                  minWidth: 0,
-                  minHeight: 0,
-                  height: '100%',
-                  overflowY: 'auto',
-                  overscrollBehaviorY: 'contain',
-                }}
-              >
-                {details}
-              </SectionCard>
-            ) : null}
-          </Box>
-        </AsyncSection>
-      </CatalogWorkspace>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                flex: '1 1 0%',
+                minHeight: 0,
+                gridTemplateRows: 'minmax(0, 1fr)',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 1fr)' },
+              }}
+            >
+              <ModifierCatalogList
+                modifiers={modifiers}
+                totalCount={catalogQuery.data?.length ?? 0}
+                selectedId={wide ? (selected?.id ?? null) : null}
+                onSelect={selectModifier}
+              />
+              {wide ? (
+                <SectionCard
+                  component="section"
+                  role="region"
+                  aria-label={t('gameCatalog.modifiers.catalog.details')}
+                  tabIndex={0}
+                  sx={{
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: '100%',
+                    overflowY: 'auto',
+                    overscrollBehaviorY: 'contain',
+                  }}
+                >
+                  {details}
+                </SectionCard>
+              ) : null}
+            </Box>
+          </AsyncSection>
+        </CatalogWorkspace>
+      )}
       <AppDialog
         open={!wide && previewOpen && selected !== null && dialog === null && deleteTarget === null}
         onClose={() => setPreviewOpen(false)}

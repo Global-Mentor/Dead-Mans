@@ -173,6 +173,7 @@ export function useGameSetupDraft() {
     snapshotDraftKey,
     isLoading: draftQuery.isLoading,
     isError: draftQuery.isError,
+    retryLoad: draftQuery.refetch,
     isEmpty: draftQuery.data?.snapshot === null,
     isDirty,
     remoteChangeNotice,

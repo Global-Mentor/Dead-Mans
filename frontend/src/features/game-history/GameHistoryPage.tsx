@@ -15,6 +15,7 @@ import {
   AsyncSection,
   FormTextField,
   PageShell,
+  PageStatePanel,
   SectionCard,
   SectionHeader,
   SelectionTile,
@@ -115,6 +116,47 @@ export function GameHistoryPage({
     activeBoard === 'realtime' && currentGameQuery.data
       ? (currentGameDetails?.gameTitle ?? currentGameQuery.data.title)
       : null
+
+  if (
+    !isBoardSwitcherVisible &&
+    ((activeBoard === 'realtime' && currentGameId === null) ||
+      (activeBoard === 'history' && completedGames.length === 0))
+  ) {
+    const isCurrent = activeBoard === 'realtime'
+    const query = isCurrent ? currentGameQuery : gamesQuery
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t(
+          isCurrent
+            ? 'navigation.items.gameLeaderboard.label'
+            : 'navigation.items.gameHistory.label',
+        )}
+        message={t(
+          query.isLoading
+            ? isCurrent
+              ? 'gameHistory.loadingCurrentGame'
+              : 'gameHistory.loadingGames'
+            : query.isError
+              ? isCurrent
+                ? 'gameHistory.errorCurrentGame'
+                : 'gameHistory.errorGames'
+              : isCurrent
+                ? 'gameHistory.currentGameMissing'
+                : 'gameHistory.completedGamesEmpty',
+        )}
+        showSpinner={query.isLoading}
+        tone={query.isError ? 'error' : 'default'}
+        actions={
+          query.isError ? (
+            <AppButton tone="secondary" onClick={() => void query.refetch()}>
+              {t('common.actions.retry')}
+            </AppButton>
+          ) : undefined
+        }
+      />
+    )
+  }
 
   return (
     <PageShell

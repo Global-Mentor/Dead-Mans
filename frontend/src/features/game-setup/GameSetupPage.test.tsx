@@ -32,6 +32,7 @@ function createPageController(overrides: Record<string, unknown> = {}) {
     commitDraft: vi.fn(),
     applyLayoutChange: vi.fn(),
     reloadFromServer: vi.fn(),
+    retryLoad: vi.fn(),
     createDraft: vi.fn(),
     deleteDraft: vi.fn(),
     isCreating: false,

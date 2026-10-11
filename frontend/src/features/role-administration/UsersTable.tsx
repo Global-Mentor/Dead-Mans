@@ -7,6 +7,7 @@ import {
   DataTableCell,
   DataTableRow,
   HelpTooltip,
+  PageStatePanel,
   StatusBadge,
 } from '../../shared/ui/index.ts'
 import { highestRole } from '../../shared/auth/role-hierarchy.ts'
@@ -96,9 +97,7 @@ export function UsersTable({
             colSpan={6}
             sx={{ gridColumn: '1 / -1', py: { xs: 2, md: 3 } }}
           >
-            <Typography variant="body2" color="text.secondary">
-              {t('roleAdministration.empty')}
-            </Typography>
+            <PageStatePanel message={t('roleAdministration.empty')} />
           </DataTableCell>
         </DataTableRow>
       ) : null}

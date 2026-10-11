@@ -73,7 +73,9 @@ test('board progress position is stable when entering from another tab', async (
   expect([...new Set(visibleSamples.map((sample) => sample.width))]).toHaveLength(1)
 })
 
-test('first board request leaves navigation available without a spinner', async ({ page }) => {
+test('first board request keeps navigation available beside an inline loading indicator', async ({
+  page,
+}) => {
   await mockGame(page, 'active', 'viewer')
   let releaseSnapshot = () => {}
   const snapshotGate = new Promise<void>((resolve) => {
@@ -86,7 +88,7 @@ test('first board request leaves navigation available without a spinner', async 
 
   await page.goto('/panel/game-board')
   await expect(page.getByTestId('page-state-panel')).toContainText('Загрузка игрового поля')
-  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await expect(page.getByTestId('page-state-panel').getByRole('progressbar')).toHaveCount(1)
   await page.getByRole('link', { name: 'Очередь команд' }).click()
   await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
   releaseSnapshot()

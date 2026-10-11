@@ -3,7 +3,14 @@ import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RoleAdministrationUser } from '../../shared/api/contracts/index.ts'
-import { AsyncSection, PagePagination, PageShell, SectionCard } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  AsyncSection,
+  PagePagination,
+  PageShell,
+  PageStatePanel,
+  SectionCard,
+} from '../../shared/ui/index.ts'
 import {
   roleAdministrationUsersQueryOptions,
   type UserFilters as Filters,
@@ -69,6 +76,41 @@ export function RoleAdministrationPage() {
   }
   const selectedUser =
     data?.items.find((user) => user.userId === editingUser?.userId) ?? editingUser
+  if (!data && (usersQuery.isPending || usersQuery.isError)) {
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t('roleAdministration.title')}
+        message={t(
+          usersQuery.isError ? 'roleAdministration.errorLoading' : 'roleAdministration.loading',
+        )}
+        showSpinner={usersQuery.isPending}
+        tone={usersQuery.isError ? 'error' : 'default'}
+        actions={
+          usersQuery.isError ? (
+            <AppButton tone="secondary" onClick={() => void usersQuery.refetch()}>
+              {t('common.actions.retry')}
+            </AppButton>
+          ) : undefined
+        }
+      />
+    )
+  }
+  if (
+    data?.summary.totalUsers === 0 &&
+    !search &&
+    filters.isActive === undefined &&
+    filters.hasLoggedIn === undefined &&
+    !usersQuery.isError
+  ) {
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t('roleAdministration.title')}
+        message={t('roleAdministration.noUsers')}
+      />
+    )
+  }
   return (
     <PageShell
       sx={{
@@ -93,6 +135,7 @@ export function RoleAdministrationPage() {
         </Stack>
         <Box ref={tableRegionRef} sx={{ flex: 1, minHeight: 0 }}>
           <AsyncSection
+            stateVariant="panel"
             isLoading={usersQuery.isPending}
             isError={usersQuery.isError}
             hasData={Boolean(data)}
@@ -100,6 +143,11 @@ export function RoleAdministrationPage() {
             loadingMessage={t('roleAdministration.loading')}
             errorMessage={t('roleAdministration.errorLoading')}
             emptyMessage={t('roleAdministration.empty')}
+            retryAction={
+              <AppButton tone="secondary" onClick={() => void usersQuery.refetch()}>
+                {t('common.actions.retry')}
+              </AppButton>
+            }
           >
             {data ? (
               <SectionCard

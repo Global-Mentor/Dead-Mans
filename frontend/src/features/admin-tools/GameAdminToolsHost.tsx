@@ -95,6 +95,7 @@ export function GameAdminToolsPanel({
           />
         ) : (
           <PageStatePanel
+            headingLevel="h3"
             title={t('adminTools.gameTool')}
             message={t(
               isError || isRefreshError
