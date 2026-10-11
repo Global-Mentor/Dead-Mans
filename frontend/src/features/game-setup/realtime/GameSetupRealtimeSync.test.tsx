@@ -6,6 +6,7 @@ import type { SignalrHubSubscriptionOptions } from '../../../shared/realtime/sig
 import { gameQuestionCatalogQueryOptions } from '../../game-questions/index.ts'
 import { gameSetupDraftQueryOptions } from '../api/game-setup-queries.ts'
 import { GameSetupRealtimeSync } from './GameSetupRealtimeSync.tsx'
+import { createLoadedDraftState } from '../model/game-setup-query-state.ts'
 
 const mocks = vi.hoisted(() => ({ subscribe: vi.fn(), fetchDraft: vi.fn() }))
 vi.mock('../../../shared/realtime/index.ts', async (importOriginal) => ({
@@ -17,6 +18,71 @@ vi.mock('../api/game-setup-api.ts', () => ({ fetchDraftGameSetupSnapshot: mocks.
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+})
+
+it('resumes request ordering from the cached draft after leaving and returning to setup', async () => {
+  const client = new QueryClient()
+  client.setQueryData(gameSetupDraftQueryOptions.queryKey, createLoadedDraftState(null, 42))
+  mocks.fetchDraft.mockResolvedValue(null)
+  render(
+    <QueryClientProvider client={client}>
+      <GameSetupRealtimeSync />
+    </QueryClientProvider>,
+  )
+  await act(async () => {
+    await mocks.subscribe.mock.calls[0][0].onConnected()
+  })
+  expect(client.getQueryData(gameSetupDraftQueryOptions.queryKey)).toMatchObject({ requestId: 43 })
+  client.clear()
+})
+
+it('does not write a response after its setup page has unmounted', async () => {
+  const client = new QueryClient()
+  let finish: ((value: null) => void) | undefined
+  mocks.fetchDraft.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+  )
+  const view = render(
+    <QueryClientProvider client={client}>
+      <GameSetupRealtimeSync />
+    </QueryClientProvider>,
+  )
+  const request = mocks.subscribe.mock.calls[0][0].onConnected()
+  view.unmount()
+  finish?.(null)
+  await request
+  expect(client.getQueryData(gameSetupDraftQueryOptions.queryKey)).toBeUndefined()
+  client.clear()
+})
+
+it('ignores a slower response after a newer resync has completed', async () => {
+  const client = new QueryClient()
+  let finish: ((value: null) => void) | undefined
+  mocks.fetchDraft
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    .mockResolvedValueOnce(null)
+  render(
+    <QueryClientProvider client={client}>
+      <GameSetupRealtimeSync />
+    </QueryClientProvider>,
+  )
+  const sync = mocks.subscribe.mock.calls[0][0].onConnected
+  const earlier = sync()
+  await sync()
+  const current = client.getQueryData(gameSetupDraftQueryOptions.queryKey)
+  finish?.(null)
+  await earlier
+  expect(client.getQueryData(gameSetupDraftQueryOptions.queryKey)).toBe(current)
+  expect(current).toMatchObject({ requestId: 2 })
+  client.clear()
 })
 
 it.each(['event', 'reconnect'])(

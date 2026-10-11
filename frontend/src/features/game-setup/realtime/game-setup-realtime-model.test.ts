@@ -19,6 +19,11 @@ const snapshot: GameSetupSnapshot = {
 }
 
 describe('game setup realtime model', () => {
+  it('accepts a different game with a lower version', () => {
+    const current = createLoadedDraftState({ ...snapshot, version: 100 }, 1)
+    const next = createLoadedDraftState({ ...snapshot, gameId: 'game-2', version: 1 }, 2)
+    expect(selectNewerGameSetupState(current, next)).toBe(next)
+  })
   it('accepts initial, removed and equally new server states', () => {
     const current = createLoadedDraftState(snapshot)
     const removed = createLoadedDraftState(null)

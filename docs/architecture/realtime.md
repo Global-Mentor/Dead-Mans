@@ -63,5 +63,7 @@ not wait for subscribers' HTTP resyncs, so a slow request cannot block connectio
 Events received during a refresh request cause a trailing refresh after it completes,
 instead of cancelling and restarting it for every event. There is no timer debounce;
 inactive queries are invalidated without eager fetching. Existing polling fallbacks remain.
+Setup resyncs preserve request ordering across remounts, discard responses after unmount
+or game replacement, and compare versions only within the same game.
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

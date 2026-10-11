@@ -8,7 +8,11 @@ export function selectNewerGameSetupState(
     return current
   }
 
-  if (!current?.snapshot || !incoming.snapshot) {
+  if (
+    !current?.snapshot ||
+    !incoming.snapshot ||
+    current.snapshot.gameId !== incoming.snapshot.gameId
+  ) {
     return incoming
   }
 
