@@ -21,23 +21,23 @@ public sealed class BaseModifierSeedMigrationTests : IClassFixture<PostgresTestD
         var expected = new[]
         {
             new ExpectedModifier(ModifierDefinitionSeedIds.Chirik, BuiltInModifierBehaviorCatalog.Chirik,
-                "Чирик", "💰", "!активировать чирик", 3, 5),
+                "Черепаха", "🐢", "!активировать черепаха", 2, 5),
             new ExpectedModifier(ModifierDefinitionSeedIds.Zhazhda, BuiltInModifierBehaviorCatalog.Zhazhda,
-                "Жажда", "💉", "!активировать жажда", 3, 2),
+                "Жажда", "🩸", "!активировать жажда", 3, 2),
             new ExpectedModifier(ModifierDefinitionSeedIds.Rashodnik, BuiltInModifierBehaviorCatalog.Rashodnik,
-                "Расходник", "🎯", "!активировать расходник", 4, 4),
+                "Расходник", "📦", "!активировать расходник", 4, 4),
             new ExpectedModifier(ModifierDefinitionSeedIds.Trupy, BuiltInModifierBehaviorCatalog.Trupy,
-                "Трупы", "🔥", "!активировать трупы", 4, 1),
+                "Трупы", "🪦", "!активировать трупы", 4, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Navyki, BuiltInModifierBehaviorCatalog.Navyki,
                 "Навыки", "⚙️", "!активировать навыки", 4, 5),
             new ExpectedModifier(ModifierDefinitionSeedIds.Patron, BuiltInModifierBehaviorCatalog.Patron,
-                "Патрон", "🔫", "!активировать патрон", 4, 1),
+                "Первая пуля", "🔫", "!активировать первая пуля", 4, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Prokaznik, BuiltInModifierBehaviorCatalog.Prokaznik,
-                "Проказник", "🙊", "!активировать проказник", 6, 2),
+                "Проказник", "🙊", "!активировать проказник", 6, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Diareya, BuiltInModifierBehaviorCatalog.Diareya,
                 "Диарея", "💩", "!активировать диарея", 7, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Mentorbait, BuiltInModifierBehaviorCatalog.Mentorbait,
-                "Менторбайт", "📣", "!активировать менторбайт", 8, 1),
+                "Провокация", "📣", "!активировать провокация", 8, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Kep, BuiltInModifierBehaviorCatalog.Kep,
                 "Кэп", "🔇", "!активировать кэп", 10, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Feyerverk, BuiltInModifierBehaviorCatalog.Feyerverk,
@@ -45,7 +45,7 @@ public sealed class BaseModifierSeedMigrationTests : IClassFixture<PostgresTestD
             new ExpectedModifier(ModifierDefinitionSeedIds.Krysa, BuiltInModifierBehaviorCatalog.Krysa,
                 "Крыса", "🐀", "!активировать крыса", 12, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Shot, BuiltInModifierBehaviorCatalog.Shot,
-                "Шот", "🥠", "!активировать шот", 13, null),
+                "Шот", "🥠", "!активировать шот", 13, 4),
             new ExpectedModifier(ModifierDefinitionSeedIds.Podem, BuiltInModifierBehaviorCatalog.Podem,
                 "Подъём", "☠️", "!активировать подъём", 14, 1),
             new ExpectedModifier(ModifierDefinitionSeedIds.Hard75, BuiltInModifierBehaviorCatalog.Hard75,
@@ -80,14 +80,25 @@ public sealed class BaseModifierSeedMigrationTests : IClassFixture<PostgresTestD
             Assert.Equal(["created"], version.ChangedFields);
 
             var builtIn = BuiltInModifierBehaviorCatalog.Get(item.BehaviorCode);
-            Assert.Equal(builtIn.NormalizedTags, version.NormalizedTags);
+            Assert.Equal(builtIn.Phase.ToString().ToLowerInvariant(), version.Category);
             Assert.Equal(
-                ModifierBehaviorV2Json.Serialize(builtIn.Behavior),
+                ModifierBehaviorV2Json.Serialize(builtIn),
                 ModifierBehaviorV2Json.Serialize(
                     ModifierBehaviorV2Json.Deserialize(version.BehaviorV2Json)
                 )
             );
+
+            Assert.DoesNotContain("ментор", version.Name, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ментор", version.Description, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ментор", version.ActivationCommand!, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ментор", builtIn.Rule, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Ведущего убивать", version.Description, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Ведущего убивать", builtIn.Rule, StringComparison.OrdinalIgnoreCase);
         }
+
+        var turtle = definitions[ModifierDefinitionSeedIds.Chirik].CurrentVersion!;
+        Assert.Contains("Длительность всех активаций складывается", turtle.Description);
+        Assert.Contains("(пример: 2 активации - 120 секунд)", turtle.Description);
 
         AssertConflicts(definitions, ModifierDefinitionSeedIds.Prokaznik,
             ModifierDefinitionSeedIds.Mentorbait,
@@ -96,15 +107,21 @@ public sealed class BaseModifierSeedMigrationTests : IClassFixture<PostgresTestD
         AssertConflicts(definitions, ModifierDefinitionSeedIds.Mentorbait,
             ModifierDefinitionSeedIds.Prokaznik,
             ModifierDefinitionSeedIds.Krysa);
+        AssertConflicts(definitions, ModifierDefinitionSeedIds.Feyerverk,
+            ModifierDefinitionSeedIds.Krysa,
+            ModifierDefinitionSeedIds.Shot);
         AssertConflicts(definitions, ModifierDefinitionSeedIds.Krysa,
             ModifierDefinitionSeedIds.Prokaznik,
-            ModifierDefinitionSeedIds.Mentorbait);
+            ModifierDefinitionSeedIds.Mentorbait,
+            ModifierDefinitionSeedIds.Feyerverk);
         AssertConflicts(definitions, ModifierDefinitionSeedIds.Shot,
-            ModifierDefinitionSeedIds.Prokaznik);
+            ModifierDefinitionSeedIds.Prokaznik,
+            ModifierDefinitionSeedIds.Feyerverk);
 
         foreach (var definition in definitions.Values.Where(definition =>
                      definition.Id != ModifierDefinitionSeedIds.Prokaznik
                      && definition.Id != ModifierDefinitionSeedIds.Mentorbait
+                     && definition.Id != ModifierDefinitionSeedIds.Feyerverk
                      && definition.Id != ModifierDefinitionSeedIds.Krysa
                      && definition.Id != ModifierDefinitionSeedIds.Shot))
         {

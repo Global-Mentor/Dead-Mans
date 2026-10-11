@@ -158,7 +158,6 @@ export function useCatalogModifiers() {
             conflictingModifierIds: request.conflictingModifierIds ?? [],
             iconEmoji: request.iconEmoji ?? null,
             activationCommand: request.activationCommand ?? null,
-            normalizedTags: request.normalizedTags ?? [],
             behaviorV2: request.behaviorV2,
             expectedRevision: dialog.modifier.revision,
             changeNote: request.changeNote?.trim() ?? '',

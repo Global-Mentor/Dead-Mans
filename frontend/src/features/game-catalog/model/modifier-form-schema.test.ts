@@ -3,7 +3,6 @@ import type { GameModifierDefinition } from '../../../shared/api/contracts/index
 import {
   createDefaultModifierFormValues,
   createModifierFormSchema,
-  normalizeModifierTags,
   toModifierRequest,
 } from './modifier-form-schema.ts'
 
@@ -13,7 +12,6 @@ const messages = {
   positiveInteger: 'positive',
   payout: 'payout',
   limit: 'limit',
-  tags: 'tags',
 }
 const scoring = () => ({
   ...createDefaultModifierFormValues(),
@@ -136,13 +134,6 @@ describe('modifier wizard model', () => {
     })
   })
 
-  it('normalizes tags with NFKC, collapsed whitespace and first-value casing', () => {
-    expect(normalizeModifierTags(['  Бой   вблизи ', 'БОЙ ВБЛИЗИ', 'ＡＢＣ', 'ABC'])).toEqual([
-      'Бой вблизи',
-      'ABC',
-    ])
-  })
-
   it('requires a source, payout and a concrete manual-input label', () => {
     const schema = createModifierFormSchema(messages)
     expect(schema.safeParse({ ...scoring(), eventInputLabel: '' }).success).toBe(false)
@@ -239,7 +230,6 @@ describe('modifier wizard model', () => {
       activationCommand: '!shot',
       isLockedByActiveGame: false,
       revision: 4,
-      normalizedTags: ['weapon'],
       behaviorV2: {
         schemaVersion: 2,
         kind: 'scoring',
@@ -286,7 +276,6 @@ describe('modifier wizard model', () => {
       activationCommand: null,
       isLockedByActiveGame: false,
       revision: 1,
-      normalizedTags: [],
       behaviorV2: {
         schemaVersion: 2,
         kind: 'scoring',

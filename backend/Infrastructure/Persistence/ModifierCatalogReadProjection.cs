@@ -68,7 +68,6 @@ internal sealed class ModifierCatalogReadProjection
                 row.Version.ActivationCommand,
                 lockedModifierIds.Contains(row.ModifierId),
                 row.Version.Revision,
-                row.Version.NormalizedTags,
                 ModifierBehaviorV2Json.Deserialize(row.Version.BehaviorV2Json)))
             .ToArray();
     }

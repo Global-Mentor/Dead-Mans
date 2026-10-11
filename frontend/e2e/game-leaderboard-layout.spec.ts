@@ -159,7 +159,6 @@ function createSnapshot(name: string, successfulActivationsCount: number) {
     activationCommand: null,
     activationCost: 2,
     activationLimit: null,
-    normalizedTags: [],
     behaviorV2: modifierBehavior,
     conflicts: [],
     successfulActivationsCount,

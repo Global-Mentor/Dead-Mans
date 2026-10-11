@@ -20,7 +20,6 @@ beforeEach(() => {
     description: 'Описание правила',
     iconEmoji: null,
     activationCommand: '!активировать новое правило',
-    normalizedTags: ['бой'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',

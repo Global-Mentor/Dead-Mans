@@ -99,7 +99,6 @@ public sealed partial class GameModifierService
                 normalized.Description,
                 normalized.IconEmoji,
                 normalized.ActivationCommand!,
-                normalized.NormalizedTags ?? [],
                 normalized.BehaviorV2,
                 new GameModifierDraftExample(
                     100,

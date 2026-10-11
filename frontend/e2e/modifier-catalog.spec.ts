@@ -35,7 +35,6 @@ const catalog: GameModifierDefinition[] = names.map((name, index) => ({
   activationCommand: `!modifier${index + 1}`,
   isLockedByActiveGame: index === 2,
   revision: 1,
-  normalizedTags: ['испытание', 'команда'],
   behaviorV2: {
     schemaVersion: 2,
     kind: index % 2 === 0 ? 'scoring' : 'rule',
@@ -122,7 +121,6 @@ async function mockCatalog(page: Page, language = 'en', initialItems = catalog) 
           name: request.name,
           description: request.description,
           iconEmoji: request.iconEmoji,
-          normalizedTags: request.normalizedTags ?? [],
           activationCommand: request.activationCommand ?? '!modifier',
           behaviorV2: request.behaviorV2,
           example: {
@@ -156,7 +154,6 @@ async function mockCatalog(page: Page, language = 'en', initialItems = catalog) 
         const created: GameModifierDefinition = {
           ...catalog[0]!,
           ...request,
-          normalizedTags: request.normalizedTags ?? [],
           activationCommand: request.activationCommand ?? null,
           id: '00000000-0000-4000-8000-000000000099',
           revision: 1,
@@ -173,7 +170,6 @@ async function mockCatalog(page: Page, language = 'en', initialItems = catalog) 
         const updated: GameModifierDefinition = {
           ...previous,
           ...request,
-          normalizedTags: request.normalizedTags ?? [],
           activationCommand: request.activationCommand ?? null,
           revision: previous.revision + 1,
         }

@@ -7,13 +7,13 @@ history, authorization, and retention.
 
 `modifier_definitions` is the stable aggregate root. Its `id` never changes and its
 `current_version_id` points to the current immutable row. Archive state and definition
-creation/archive audit live on the root. It deliberately has no name, price, behavior, tags,
+creation/archive audit live on the root. It deliberately has no name, price, behavior,
 compatibility, revision, or other mutable content columns: the current version is the only
 catalog source of truth.
 
 `modifier_definition_versions` stores every normalized content save. `(modifier_id,
 revision)` is unique and revision is positive. Every row contains the complete name,
-description, category, emoji, command, price, limit, tags, typed `BehaviorV2`, author id,
+description, category, emoji, command, price, limit, typed `BehaviorV2`, author id,
 author-name snapshot, timestamp, optional 500-character note, semantic `changed_fields`,
 change type, and optional cascade source. PostgreSQL triggers reject `UPDATE` and `DELETE`;
 `ApplicationDbContext` rejects the same state transitions before SQL is generated.
@@ -128,8 +128,10 @@ history, and detail queries and then refetch the source of truth.
 
 The first public database is created by `20260908003848_ProductionBaseline`; there is no
 modifier data backfill and no compatibility reader. The baseline seeds no modifier definitions.
-Definitions are created through the supported catalog workflow, every content save starts or
-advances immutable revision history, and `draft -> ready` pins the selected set.
+`20260923123000_SeedBaseModifierCatalog` adds the 15 base definitions with their initial
+immutable revisions and symmetric conflicts. Additional definitions are created through the
+supported catalog workflow, every content save starts or advances immutable revision history,
+and `draft -> ready` pins the selected set.
 
 Before the first deployment the database may be dropped and rebuilt from this baseline. After
 deployment, the baseline is immutable and every change uses a new forward migration. Rollback of
@@ -144,5 +146,13 @@ Windows launchers, and the v1/game-1 -> v2/game-2 smoke path. Do not deploy when
 that gate is red.
 
 ## Modifier editor presentation
+
+Modifier tags are retired. Current models, HTTP contracts, forms and search do not carry tags.
+The removal migration drops their catalog and result-snapshot columns without creating revisions
+or changing game results. Older migrations retain their original schema; the historical
+`normalizedTags` changed-field marker remains valid but is hidden from revision presentation.
+
+Base modifier names, descriptions and rules refer to the host as "ведущий".
+Stable identifiers and the existing `mentor` transport value are independent of this wording.
 
 The UI uses only the full definition or pinned snapshot description. Separate rule text and activation commands are not exposed in forms, review or history. Existing database columns, API fields and immutable revisions remain intact. New editor revisions mirror the full description into the required behavior rule field; hidden activation commands are preserved on edit. New text and amount inputs have no example values. Cost is a nonnegative integer; enabled duration and numeric activation limits are positive integers. Blank activation limits remain unlimited.

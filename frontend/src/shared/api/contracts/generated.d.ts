@@ -2139,7 +2139,6 @@ export interface components {
             isLockedByActiveGame: boolean;
             /** Format: int32 */
             revision: number;
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
         };
         CreateGameModifierRequestDto: {
@@ -2152,7 +2151,6 @@ export interface components {
             conflictingModifierIds?: string[];
             iconEmoji?: string | null;
             activationCommand?: string | null;
-            normalizedTags?: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             changeNote?: string | null;
         };
@@ -2166,7 +2164,6 @@ export interface components {
             conflictingModifierIds?: string[];
             iconEmoji?: string | null;
             activationCommand?: string | null;
-            normalizedTags?: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             expectedRevision: number;
             /** @description Required edit comment; must contain non-whitespace text after trimming. */
@@ -2222,7 +2219,6 @@ export interface components {
             activationCommand?: string | null;
             activationCost: number;
             activationLimit: components["schemas"]["GameModifierActivationLimitDto"];
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             conflicts: components["schemas"]["ModifierConflictSnapshotDto"][];
             isCurrent: boolean;
@@ -2268,7 +2264,6 @@ export interface components {
             description: string;
             iconEmoji?: string | null;
             activationCommand: string;
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             example: components["schemas"]["GameModifierDraftExampleDto"];
         };
@@ -3004,7 +2999,6 @@ export interface components {
             activationCommand?: string | null;
             activationCost: number;
             activationLimit: components["schemas"]["GameModifierActivationLimitDto"];
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             conflicts: components["schemas"]["ModifierConflictSnapshotDto"][];
             successfulActivationsCount: number;

@@ -32,8 +32,6 @@ public class GameModifierActivation
 
     public string? ActivationCommandSnapshot { get; set; }
 
-    public string[] NormalizedTagsSnapshot { get; set; } = [];
-
     public string BehaviorV2SnapshotJson { get; set; } = string.Empty;
 
     public DateTime ActivatedAtUtc { get; set; }

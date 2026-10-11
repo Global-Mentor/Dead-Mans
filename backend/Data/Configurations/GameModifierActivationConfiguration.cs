@@ -70,7 +70,6 @@ public class GameModifierActivationConfiguration : IEntityTypeConfiguration<Game
         builder.Property(x => x.ModifierCategorySnapshot).HasMaxLength(32).IsRequired();
         builder.Property(x => x.ModifierIconEmojiSnapshot).HasMaxLength(16);
         builder.Property(x => x.ActivationCommandSnapshot).HasMaxLength(128);
-        builder.Property(x => x.NormalizedTagsSnapshot).HasColumnType("text[]").IsRequired();
         builder.Property(x => x.BehaviorV2SnapshotJson).HasColumnType("jsonb").IsRequired();
         builder.Property(x => x.ActivatedAtUtc).IsRequired();
         builder.Property(x => x.ActivatedByUserId).IsRequired();

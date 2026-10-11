@@ -39,7 +39,6 @@ function createAvailability(
       iconEmoji: '🔥',
       activationCommand: null,
       revision: 1,
-      normalizedTags: [],
       behaviorV2: {
         schemaVersion: 2,
         kind: 'rule',

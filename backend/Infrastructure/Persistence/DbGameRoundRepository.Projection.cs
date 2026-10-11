@@ -202,7 +202,6 @@ public sealed partial class DbGameRoundRepository
                         ModifierDescriptionSnapshot = x.ModifierDescriptionSnapshot,
                         DefinitionRevisionSnapshot = x.DefinitionRevisionSnapshot,
                         ModifierActivationCommandSnapshot = x.ActivationCommandSnapshot,
-                        ModifierNormalizedTagsSnapshot = x.NormalizedTagsSnapshot.ToArray(),
                         ModifierBehaviorV2SnapshotJson = ResolveBehaviorSnapshotJson(x),
                         ResolutionGroupId = resolutionGroupIds.GetValueOrDefault(x.ModifierId),
                         ResolutionKind = ResolveResolutionKind(ResolveBehaviorSnapshotJson(x)),

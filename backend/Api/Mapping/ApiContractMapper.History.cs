@@ -176,8 +176,7 @@ public static partial class ApiContractMapper
     public static GameHistoryModifierSnapshotDto ToDto(this GameHistoryModifierSnapshot item) => new(
         item.ModifierId.ToString(), item.VersionId.ToString(), item.Revision, item.Name,
         item.Description, item.Category, item.IconEmoji, item.ActivationCommand,
-        item.ActivationCost, item.ActivationLimit.ToDto(), item.NormalizedTags,
-        item.BehaviorV2.ToDto(), item.Conflicts.Select(x => new ModifierConflictSnapshotDto(
+        item.ActivationCost, item.ActivationLimit.ToDto(), item.BehaviorV2.ToDto(), item.Conflicts.Select(x => new ModifierConflictSnapshotDto(
             x.ModifierId.ToString(), x.Name)).ToArray(), item.SuccessfulActivationsCount,
         item.CancelledActivationsCount, item.ResultsCount, item.IsEmergencyDisabled,
         item.EmergencyDisabledAtUtc);

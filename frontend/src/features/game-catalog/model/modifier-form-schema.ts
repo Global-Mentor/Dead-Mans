@@ -18,31 +18,12 @@ export const modifierPayoutKinds = [
   'killValueIncrease',
 ] as const
 
-function graphemeLength(value: string) {
-  return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value)].length
-}
-
-export function normalizeModifierTags(values: readonly string[]) {
-  const normalized: string[] = []
-  const keys = new Set<string>()
-  for (const value of values) {
-    const display = value.normalize('NFKC').trim().replace(/\s+/gu, ' ')
-    const key = display.toLowerCase()
-    if (display !== '' && !keys.has(key)) {
-      keys.add(key)
-      normalized.push(display)
-    }
-  }
-  return normalized
-}
-
 interface ModifierFormSchemaMessages {
   required: string
   number: string
   positiveInteger: string
   payout: string
   limit: string
-  tags: string
 }
 const numericText = /^-?\d+([.,]\d+)?$/
 
@@ -56,7 +37,6 @@ export function createModifierFormSchema(
       name: z.string().trim().min(1, messages.required).max(128, messages.required),
       description: z.string().trim().min(1, messages.required).max(2000, messages.required),
       iconEmoji: z.string().max(16),
-      tags: z.array(z.string()),
       activationCost: z.string().regex(/^\d+$/, messages.number),
       activationLimitCount: z.string().regex(/^([1-9]\d*)?$/, messages.limit),
       phase: z.enum(modifierPhases),
@@ -82,10 +62,6 @@ export function createModifierFormSchema(
       zeroCountPenaltyPoints: z.string(),
     })
     .superRefine((values, context) => {
-      const tags = normalizeModifierTags(values.tags)
-      if (tags.length > 5 || tags.some((tag) => graphemeLength(tag) > 32)) {
-        context.addIssue({ code: 'custom', path: ['tags'], message: messages.tags })
-      }
       if (
         values.kind === 'rule' &&
         values.durationEnabled &&
@@ -279,7 +255,6 @@ export function createDefaultModifierFormValues(
     name: initial?.name ?? '',
     description: initial?.description ?? '',
     iconEmoji: initial?.iconEmoji ?? '',
-    tags: initial?.normalizedTags ?? [],
     activationCost: initial ? String(initial.activationCost) : '',
     activationLimitCount:
       initial?.activationLimit.count == null ? '' : String(initial.activationLimit.count),
@@ -402,7 +377,6 @@ export function toModifierRequest(values: ModifierFormValues): CreateGameModifie
     conflictingModifierIds: values.conflictingModifierIds,
     iconEmoji: values.iconEmoji.trim() || null,
     activationCommand: values.activationCommand.trim() || null,
-    normalizedTags: normalizeModifierTags(values.tags),
     behaviorV2: buildBehavior(values),
     changeNote: values.changeNote.trim() || null,
   }

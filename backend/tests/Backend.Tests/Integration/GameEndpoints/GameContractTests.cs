@@ -928,7 +928,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(2, chirik.BehaviorV2.SchemaVersion);
         Assert.Equal("rule", chirik.BehaviorV2.Kind);
         Assert.IsType<GameModifierRuleStatusResolutionDto>(chirik.BehaviorV2.Resolution);
-        Assert.Contains("таймер", chirik.NormalizedTags);
     }
 
     [Fact]
@@ -1233,7 +1232,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 [],
                 null,
                 null,
-                ["Тест", " правило ", "тест"],
                 new GameModifierBehaviorV2Dto(
                     2,
                     "rule",
@@ -1255,7 +1253,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.True(Guid.TryParse(payload.Id, out _));
         Assert.Equal("Fresh modifier", payload.Name);
         Assert.Equal(1, payload.Revision);
-        Assert.Equal(["Тест", "правило"], payload.NormalizedTags);
         Assert.Equal("!активировать fresh modifier", payload.ActivationCommand);
         Assert.Equal("Typed rule contract.", payload.BehaviorV2.Rule);
     }
@@ -1294,7 +1291,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             [],
             "💧",
             null,
-            ["  Бой   вблизи ", "БОЙ ВБЛИЗИ", "Бонус"],
             new GameModifierBehaviorV2Dto(
                 2,
                 "scoring",
@@ -1319,7 +1315,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         var preview = await response.Content.ReadFromJsonAsync<GameModifierDraftPreviewDto>();
         Assert.NotNull(preview);
         Assert.Equal("Thirst preview", preview.Name);
-        Assert.Equal(["Бой вблизи", "Бонус"], preview.NormalizedTags);
         Assert.Equal("!активировать thirst preview", preview.ActivationCommand);
         Assert.Equal(100, preview.Example.CardValue);
         Assert.Equal(3, preview.Example.KillsCount);
@@ -1327,16 +1322,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(0, preview.Example.BonusKillsDelta);
         Assert.Equal(445, preview.Example.FinalScore);
 
-        var tooManyTagsResponse = await adminClient.PostAsJsonAsync(
-            "/api/game/modifiers/preview",
-            request with { NormalizedTags = ["a", "b", "c", "d", "e", "f"] }
-        );
-        var tooLongTagResponse = await adminClient.PostAsJsonAsync(
-            "/api/game/modifiers/preview",
-            request with { NormalizedTags = [string.Concat(Enumerable.Repeat("👨‍👩‍👧‍👦", 33))] }
-        );
-        Assert.Equal(HttpStatusCode.BadRequest, tooManyTagsResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, tooLongTagResponse.StatusCode);
     }
 
     [Fact]
@@ -3795,13 +3780,11 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         await dbContext.SaveChangesAsync();
 
         ModifierBehaviorV2 Behavior(string code) =>
-            BuiltInModifierBehaviorCatalog.Get(code).Behavior;
+            BuiltInModifierBehaviorCatalog.Get(code);
         await TestModifierVersionFactory.AddAsync(dbContext,
         [
             new(ModifierDefinitionSeedIds.Chirik, "Чирик", "Test", "round", 3, 5,
-                Behavior(BuiltInModifierBehaviorCatalog.Chirik),
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)
-                    .NormalizedTags.ToArray()),
+                Behavior(BuiltInModifierBehaviorCatalog.Chirik)),
             new(ModifierDefinitionSeedIds.Zhazhda, "Жажда", "Test", "result", 3, 2,
                 Behavior(BuiltInModifierBehaviorCatalog.Zhazhda)),
             new(ModifierDefinitionSeedIds.Prokaznik, "Проказник", "Test", "round", 6, 2,
@@ -3916,7 +3899,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 GameModifierCategories.Round,
                 3,
                 1,
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior),
+                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)),
             now);
 
         dbContext.GameEnabledModifiers.Add(
@@ -3942,8 +3925,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 ModifierNameSnapshot = "Applied modifier",
                 ModifierDescriptionSnapshot = "Used in round",
                 ModifierCategorySnapshot = GameModifierCategories.Round,
-                NormalizedTagsSnapshot = ["test"],
-                BehaviorV2SnapshotJson = ModifierBehaviorV2Json.Serialize(BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior),
+                BehaviorV2SnapshotJson = ModifierBehaviorV2Json.Serialize(BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)),
                 ActivatedAtUtc = now.AddMinutes(-35),
                 Status = GameModifierActivationStatusValue.Consumed,
                 ArchivedAtUtc = now.AddMinutes(-20)
@@ -4032,7 +4014,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             [],
             null,
             null,
-            null,
             CreateRuleBehaviorDto()
         );
 
@@ -4049,7 +4030,6 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             5,
             new GameModifierActivationLimitDto(1),
             conflictingModifierIds ?? [],
-            null,
             null,
             null,
             CreateRuleBehaviorDto(),

@@ -519,7 +519,6 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
               conflictingModifierIds: [],
               activationCommand: null,
               revision: 1,
-              normalizedTags: [],
               behaviorV2: {
                 schemaVersion: 2,
                 kind: 'rule',
@@ -1241,7 +1240,6 @@ for (const width of [390, 768, 1440]) {
       iconEmoji: '🛡️',
       activationCommand: null,
       revision: 1,
-      normalizedTags: [],
       behaviorV2: {
         schemaVersion: 2,
         kind: 'rule',
@@ -1531,7 +1529,6 @@ for (const { width, height } of [
               iconEmoji: ['🛡️', '💧', '🎯', '📖', '⌛'][index % 5],
               activationCommand: null,
               revision: 1,
-              normalizedTags: [],
               behaviorV2: {
                 schemaVersion: 2,
                 kind: 'rule',

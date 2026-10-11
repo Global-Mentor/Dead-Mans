@@ -67,7 +67,6 @@ vi.mock('./api/modifier-history-api.ts', () => ({
     activationCommand: '!архив',
     activationCost: revision === 1 ? 4 : 9,
     activationLimit: { count: 2 },
-    normalizedTags: ['история'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',

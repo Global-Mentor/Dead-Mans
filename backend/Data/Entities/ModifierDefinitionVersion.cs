@@ -12,7 +12,6 @@ public class ModifierDefinitionVersion
     public string? ActivationCommand { get; set; }
     public int ActivationCost { get; set; }
     public int? MaxActivationsPerRound { get; set; }
-    public string[] NormalizedTags { get; set; } = [];
     public string BehaviorV2Json { get; set; } = string.Empty;
     public DateTime CreatedAtUtc { get; set; }
     public Guid? CreatedByUserId { get; set; }

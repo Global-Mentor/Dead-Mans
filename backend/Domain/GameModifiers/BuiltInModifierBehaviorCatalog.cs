@@ -1,10 +1,5 @@
 namespace backend.Domain.GameModifiers;
 
-public sealed record BuiltInModifierBehavior(
-    IReadOnlyList<string> NormalizedTags,
-    ModifierBehaviorV2 Behavior
-);
-
 public static class BuiltInModifierBehaviorCatalog
 {
     public const string Chirik = "chirik";
@@ -23,111 +18,101 @@ public static class BuiltInModifierBehaviorCatalog
     public const string Podem = "podem";
     public const string Hard75 = "hard75";
 
-    private static readonly Dictionary<string, BuiltInModifierBehavior> Items =
-        new Dictionary<string, BuiltInModifierBehavior>(StringComparer.Ordinal)
+    private static readonly Dictionary<string, ModifierBehaviorV2> Items =
+        new Dictionary<string, ModifierBehaviorV2>(StringComparer.Ordinal)
         {
             [Chirik] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.ActiveTeam,
                 false,
-                "Первые 60 секунд за каждую активацию разрешено перемещаться только на корточках.",
-                ["движение", "приседание", "таймер"],
+                "С начала миссии все участники команды должны перемещаться только на корточках в течение 60 секунд за каждую активацию. Длительность всех активаций складывается (пример: 2 активации - 120 секунд).",
                 60
             ),
             [Rashodnik] = Rule(
                 ModifierPhase.Preparation,
                 ModifierPerformer.ActiveTeam,
                 false,
-                "Команда может заменить один расходник на свой выбор за каждую активацию.",
-                ["снаряжение", "расходники", "замена"]
+                "За каждую активацию каждый участник команды может заменить один расходник на другой по своему выбору или добавить один расходник в свободный слот."
             ),
             [Trupy] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.ActiveTeam,
                 true,
-                "Запрещено сжигать трупы весь раунд.",
-                ["трупы", "огонь", "запрет"]
+                "В течение всей миссии участникам команды запрещено сжигать тела убитых охотников."
             ),
             [Navyki] = Rule(
                 ModifierPhase.Preparation,
                 ModifierPerformer.ActiveTeam,
                 true,
-                "Внешний лимит навыков уменьшается на 20% за активацию, но не более чем на 100%.",
-                ["навыки", "подготовка", "ограничение"]
+                "По умолчанию доступно 10 очков навыков. Каждая активация уменьшает количество доступных очков навыков на 2 очка. Снижения от всех активаций складываются."
             ),
             [Diareya] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.ActiveTeam,
                 true,
-                "При упоминании или обнаружении туалета игрок обязан зайти в него, если врага нет в поле зрения.",
-                ["окружение", "туалет", "триггер"]
+                "Если команда проходит мимо туалета или любой участник команды либо ведущий упоминает конкретный туалет, один участник команды обязан зайти в этот туалет. Команда сама выбирает, кто пойдёт. Требование не действует, если в поле зрения есть враг."
             ),
             [Kep] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.ActiveTeam,
                 true,
-                "Пользоваться голосовым чатом может только капитан.",
-                ["коммуникация", "капитан", "голос"]
+                "Команда выбирает капитана. В течение всей миссии из участников команды говорить может только капитан. Ведущий может помогать команде информацией."
             ),
             [Podem] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.ActiveTeam,
                 true,
-                "Нельзя поднимать союзника, пока команда не убила врага.",
-                ["оживление", "союзник", "условие"]
+                "После каждого падения союзника команда должна совершить новое убийство вражеского охотника, прежде чем поднять этого союзника."
             ),
             [Prokaznik] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.Mentor,
                 true,
-                "Ментор с обманками и полтергейстом мешает команде 300 секунд за активацию; его нельзя убить или поднять.",
-                ["ментор", "помеха", "обманки", "полтергейст", "таймер"],
+                "Ведущий в роли проказника мешает команде в течение 5 минут, используя все виды обманок и навык «Полтергейст».",
                 300
             ),
             [Mentorbait] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.Mentor,
                 true,
-                "Ментор с набором шумелок действует 300 секунд; его можно убить, но нельзя поднять.",
-                ["ментор", "шум", "приманка", "таймер"],
+                "Игроки могут использовать ведущего в роли приманки в течение 5 минут: привлекать врагов к себе или отвлекать их в другую сторону. До конца таймера ведущий должен израсходовать всё шумовое снаряжение. (Снаряжение ведущего: арбалет с шумовыми болтами, бомбы хаоса и обманки с бездымным порохом.)",
                 300
             ),
             [Feyerverk] = Rule(
                 ModifierPhase.Round,
                 ModifierPerformer.Mentor,
                 true,
-                "Ментор стреляет осветительными снарядами при старте и через 60, 120, 180 и 240 секунд; его нельзя убить или поднять.",
-                ["ментор", "сигналы", "осветительные снаряды", "таймер"],
+                "Ведущий делает 5 выстрелов осветительными снарядами в небо: первый в начале миссии, остальные с интервалом в 1 минуту.",
                 300
             ),
             [Zhazhda] = Scoring(
                 ModifierPerformer.ActiveTeam,
-                "В конце раунда за каждую активацию к стоимости одного убийства добавляется 5 × количество убийств. "
-                + "Новая стоимость умножается на количество убийств. Если убийств нет, каждая активация даёт штраф 25 очков.",
+                "Бонус за каждое убийство зависит от общего числа убийств команды в миссии: "
+                + "1 убийство - +5 очков, 2 - по 10 очков за каждое, 3 - по 15 очков за каждое и так далее. "
+                + "Например, 3 убийства дают суммарно +45 очков. "
+                + "Миссия без убийств приносит штраф 25 очков. Вторая активация удваивает бонус или штраф.",
                 new AutomaticRoundMetricResolution("killsCount"),
                 ModifierRewardKind.Points,
                 new ModifierFormulaReference(
                     ModifierFormulaCodes.KillValueIncreasePerUnit,
                     ModifierFormulaCodes.Version1,
                     new KillValueIncreasePerUnitParameters(5, 25)
-                ),
-                ["убийства", "очки", "бонус", "штраф", "риск"]
+                )
             ),
             [Patron] = Scoring(
                 ModifierPerformer.ActiveTeam,
-                "Если враг убит первой пулей не из лука, арбалета или дробовика, команда получает бонусное убийство.",
+                "Если первая пуля, выпущенная командой в миссии, убивает вражеского охотника, команда получает 1 дополнительное убийство при подсчёте результата. Модификатор не работает с луками, арбалетами и дробовиками.",
                 new BooleanResolution("Условие выполнено"),
                 ModifierRewardKind.BonusKills,
                 new ModifierFormulaReference(
                     ModifierFormulaCodes.BonusKillsPerUnit,
                     ModifierFormulaCodes.Version1,
                     new BonusKillsPerUnitParameters(1)
-                ),
-                ["оружие", "точность", "первая пуля", "исключения"]
+                )
             ),
             [Krysa] = Scoring(
                 ModifierPerformer.Mentor,
-                "Убийства ментора с полным набором ловушек считаются бонусными убийствами команды.",
+                "Ведущий действует независимо от команды и использует сигнальные ловушки, ловушки с колючей проволокой, ядовитые ловушки, капканы, два тёмных динамита и навык «Первопроходец». Все убийства, совершённые ведущим, идут в счёт команды.",
                 new NonNegativeCountResolution(
                     "Успешные убийства ведущего",
                     ModifierCountMaximumKinds.None
@@ -137,12 +122,11 @@ public static class BuiltInModifierBehaviorCatalog
                     ModifierFormulaCodes.BonusKillsPerUnit,
                     ModifierFormulaCodes.Version1,
                     new BonusKillsPerUnitParameters(1)
-                ),
-                ["ментор", "ловушки", "убийства"]
+                )
             ),
             [Shot] = Scoring(
                 ModifierPerformer.Mentor,
-                "Каждая активация даёт ментору оружие с одним выстрелом; успешный выстрел считается бонусным убийством команды.",
+                "Команда выбирает ведущему оружие. Каждая активация даёт ему 1 выстрел, который он использует по своему усмотрению. Если этот выстрел убивает врага, убийство идёт в счёт команды.",
                 new NonNegativeCountResolution(
                     "Успешные убийства ведущего",
                     ModifierCountMaximumKinds.Activations,
@@ -153,14 +137,13 @@ public static class BuiltInModifierBehaviorCatalog
                     ModifierFormulaCodes.BonusKillsPerUnit,
                     ModifierFormulaCodes.Version1,
                     new BonusKillsPerUnitParameters(1)
-                ),
-                ["ментор", "оружие", "один выстрел", "убийства"]
+                )
             ),
             [Hard75] = Scoring(
                 ModifierPerformer.ActiveTeam,
-                "Подходящие убийства до восстановления здоровья дают дополнительные 75% стоимости карточки.",
+                "Каждый участник команды начинает миссию с одной большой и одной маленькой полоской здоровья. Очки навыков, полученные за удаление полосок, тратить запрещено. Каждое убийство до восстановления полосок здоровья приносит дополнительно 75% стоимости карточки.",
                 new NonNegativeCountResolution(
-                    "Подходящие убийства до восстановления здоровья",
+                    "Убийства до восстановления полосок здоровья",
                     ModifierCountMaximumKinds.ResolvedKills
                 ),
                 ModifierRewardKind.Points,
@@ -168,60 +151,51 @@ public static class BuiltInModifierBehaviorCatalog
                     ModifierFormulaCodes.CardPercentPerUnit,
                     ModifierFormulaCodes.Version1,
                     new CardPercentPerUnitParameters(0.75m)
-                ),
-                ["здоровье", "убийства", "окно действия", "бонус"]
+                )
             )
         };
 
-    public static BuiltInModifierBehavior Get(string code) =>
+    public static ModifierBehaviorV2 Get(string code) =>
         Items.TryGetValue(code, out var item)
             ? item
             : throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown built-in modifier.");
 
-    private static BuiltInModifierBehavior Rule(
+    private static ModifierBehaviorV2 Rule(
         ModifierPhase phase,
         ModifierPerformer performer,
         bool requiresHostMonitoring,
         string rule,
-        IReadOnlyList<string> tags,
         int? durationSecondsPerActivation = null
     ) => new(
-        tags,
-        new ModifierBehaviorV2(
-            ModifierBehaviorSchemaVersions.V2,
-            ModifierBehaviorKind.Rule,
-            phase,
-            performer,
-            requiresHostMonitoring,
-            rule,
-            ModifierStackingPolicy.AggregateParameters,
-            new RuleStatusResolution(),
-            ModifierRewardKind.None,
-            null,
-            durationSecondsPerActivation
-        )
+        ModifierBehaviorSchemaVersions.V2,
+        ModifierBehaviorKind.Rule,
+        phase,
+        performer,
+        requiresHostMonitoring,
+        rule,
+        ModifierStackingPolicy.AggregateParameters,
+        new RuleStatusResolution(),
+        ModifierRewardKind.None,
+        null,
+        durationSecondsPerActivation
     );
 
-    private static BuiltInModifierBehavior Scoring(
+    private static ModifierBehaviorV2 Scoring(
         ModifierPerformer performer,
         string rule,
         ModifierResolution resolution,
         ModifierRewardKind reward,
-        ModifierFormulaReference formula,
-        IReadOnlyList<string> tags
+        ModifierFormulaReference formula
     ) => new(
-        tags,
-        new ModifierBehaviorV2(
-            ModifierBehaviorSchemaVersions.V2,
-            ModifierBehaviorKind.Scoring,
-            ModifierPhase.Result,
-            performer,
-            true,
-            rule,
-            ModifierStackingPolicy.IndependentInstances,
-            resolution,
-            reward,
-            formula
-        )
+        ModifierBehaviorSchemaVersions.V2,
+        ModifierBehaviorKind.Scoring,
+        ModifierPhase.Result,
+        performer,
+        true,
+        rule,
+        ModifierStackingPolicy.IndependentInstances,
+        resolution,
+        reward,
+        formula
     );
 }

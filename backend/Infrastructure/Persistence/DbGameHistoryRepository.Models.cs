@@ -139,7 +139,6 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         string? ActivationCommand,
         int ActivationCost,
         int? MaxActivationsPerRound,
-        string[] NormalizedTags,
         string BehaviorV2Json,
         DateTime? EmergencyDisabledAtUtc
     );

@@ -17,7 +17,7 @@ namespace Backend.Tests.Integration.Postgres;
 public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<PostgresTestDatabase>
 {
     private static readonly string RuleBehaviorJson = ModifierBehaviorV2Json.Serialize(
-        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior
+        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)
     );
 
     private readonly PostgresTestDatabase _database;
@@ -100,7 +100,7 @@ public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<Pos
                         null,
                         BuiltInModifierBehaviorCatalog.Get(
                             BuiltInModifierBehaviorCatalog.Chirik
-                        ).Behavior
+                        )
                     ),
                     fixtureNow
                 );
@@ -148,7 +148,6 @@ public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<Pos
             ModifierNameSnapshot = "Refund boundary",
             ModifierDescriptionSnapshot = "Constraint test",
             ModifierCategorySnapshot = GameModifierCategories.Round,
-            NormalizedTagsSnapshot = ["test"],
             BehaviorV2SnapshotJson = RuleBehaviorJson,
             ActivatedAtUtc = seeded.Now,
             Status = GameModifierActivationStatusValue.Cancelled,
@@ -668,7 +667,7 @@ public sealed partial class PostgresPersistenceBoundaryTests : IClassFixture<Pos
                             3,
                             BuiltInModifierBehaviorCatalog.Get(
                                 BuiltInModifierBehaviorCatalog.Chirik
-                            ).Behavior
+                            )
                         ),
                         fixtureNow
                     );

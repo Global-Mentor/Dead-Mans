@@ -70,7 +70,6 @@ const modifiers = Array.from({ length: 18 }, (_, index) => ({
     iconEmoji: index % 2 === 0 ? '⚓' : '🧭',
     activationCommand: null,
     revision: 1,
-    normalizedTags: [],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',

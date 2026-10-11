@@ -112,7 +112,6 @@ beforeEach(() => {
           iconEmoji: null,
           activationCommand: null,
           revision: 1,
-          normalizedTags: [],
           behaviorV2: {
             schemaVersion: 2,
             kind: 'rule',

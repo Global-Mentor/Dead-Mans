@@ -5372,7 +5372,6 @@ components:
         - conflictingModifierIds
         - isLockedByActiveGame
         - revision
-        - normalizedTags
         - behaviorV2
       properties:
         id:
@@ -5407,13 +5406,6 @@ components:
           type: integer
           format: int32
           minimum: 1
-        normalizedTags:
-          type: array
-          maxItems: 5
-          uniqueItems: true
-          items:
-            type: string
-            maxLength: 32
         behaviorV2:
           $ref: '#/components/schemas/GameModifierBehaviorV2'
     CreateGameModifierRequestDto:
@@ -5450,13 +5442,6 @@ components:
           type: string
           nullable: true
           maxLength: 128
-        normalizedTags:
-          type: array
-          maxItems: 5
-          uniqueItems: true
-          items:
-            type: string
-            maxLength: 32
         behaviorV2:
           $ref: '#/components/schemas/GameModifierBehaviorV2'
         changeNote:
@@ -5497,13 +5482,6 @@ components:
           type: string
           nullable: true
           maxLength: 128
-        normalizedTags:
-          type: array
-          maxItems: 5
-          uniqueItems: true
-          items:
-            type: string
-            maxLength: 32
         behaviorV2:
           $ref: '#/components/schemas/GameModifierBehaviorV2'
         expectedRevision:
@@ -5557,7 +5535,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/ModifierVersionSummaryDto'
         - type: object
-          required: [description, category, activationCost, activationLimit, normalizedTags, behaviorV2, conflicts, isCurrent, isArchived]
+          required: [description, category, activationCost, activationLimit, behaviorV2, conflicts, isCurrent, isArchived]
           properties:
             description: { type: string }
             category: { type: string, enum: [preparation, round, result] }
@@ -5565,9 +5543,6 @@ components:
             activationCommand: { type: string, nullable: true }
             activationCost: { type: integer, minimum: 0 }
             activationLimit: { $ref: '#/components/schemas/GameModifierActivationLimitDto' }
-            normalizedTags:
-              type: array
-              items: { type: string }
             behaviorV2: { $ref: '#/components/schemas/GameModifierBehaviorV2' }
             conflicts:
               type: array
@@ -5642,7 +5617,6 @@ components:
         - name
         - description
         - activationCommand
-        - normalizedTags
         - behaviorV2
         - example
       properties:
@@ -5655,13 +5629,6 @@ components:
           nullable: true
         activationCommand:
           type: string
-        normalizedTags:
-          type: array
-          maxItems: 5
-          uniqueItems: true
-          items:
-            type: string
-            maxLength: 32
         behaviorV2:
           $ref: '#/components/schemas/GameModifierBehaviorV2'
         example:
@@ -7358,7 +7325,7 @@ components:
             $ref: '#/components/schemas/GameHistoryQuizManualAwardItemDto'
     GameHistoryModifierSnapshotDto:
       type: object
-      required: [modifierId, versionId, revision, name, description, category, activationCost, activationLimit, normalizedTags, behaviorV2, conflicts, successfulActivationsCount, cancelledActivationsCount, resultsCount, isEmergencyDisabled]
+      required: [modifierId, versionId, revision, name, description, category, activationCost, activationLimit, behaviorV2, conflicts, successfulActivationsCount, cancelledActivationsCount, resultsCount, isEmergencyDisabled]
       properties:
         modifierId: { type: string, format: uuid }
         versionId: { type: string, format: uuid }
@@ -7370,9 +7337,6 @@ components:
         activationCommand: { type: string, nullable: true }
         activationCost: { type: integer, minimum: 0 }
         activationLimit: { $ref: '#/components/schemas/GameModifierActivationLimitDto' }
-        normalizedTags:
-          type: array
-          items: { type: string }
         behaviorV2: { $ref: '#/components/schemas/GameModifierBehaviorV2' }
         conflicts:
           type: array

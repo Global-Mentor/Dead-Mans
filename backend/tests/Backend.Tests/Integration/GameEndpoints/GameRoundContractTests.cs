@@ -155,14 +155,14 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 x => x.RoundId == awaitingRoundId
             );
             activation.BehaviorV2SnapshotJson = ModifierBehaviorV2Json.Serialize(
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Hard75).Behavior
+                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Hard75)
             );
             var liveDefinitionId = await mutationDb.ModifierDefinitions.Select(x => x.Id).SingleAsync();
             await TestModifierVersionFactory.AddRevisionAsync(mutationDb, liveDefinitionId, version =>
             {
                 version.Name = "Mutated live catalog name";
                 version.BehaviorV2Json = ModifierBehaviorV2Json.Serialize(
-                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior);
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik));
             });
         }
         using var client = TestAuthClientFactory.CreateClient(
@@ -769,7 +769,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             cellCost: 100
         );
         await ConfigureSeededBehaviorV2Async(
-            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior,
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda),
             revision: 7
         );
         var startResponse = await StartRoundAsync(seeded);
@@ -949,7 +949,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
     {
         var seeded = await SeedActiveGameAsync();
         await ConfigureSeededBehaviorV2Async(
-            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior,
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik),
             revision: 3
         );
         await SeedAwaitingModifiersRoundAsync(seeded);
@@ -1089,14 +1089,14 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
     {
         var seeded = await SeedActiveGameAsync();
         await ConfigureSeededBehaviorV2Async(
-            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Patron).Behavior
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Patron)
         );
         var roundId = await SeedAwaitingModifiersRoundAsync(seeded);
         await AddBehaviorV2ActivationAsync(
             seeded,
             roundId,
             "Hard75 V2",
-            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Hard75).Behavior
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Hard75)
         );
         var startResponse = await StartRoundAsync(seeded);
         var started = await startResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
@@ -1458,7 +1458,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             {
                 version.Category = GameModifierCategories.Result;
                 version.BehaviorV2Json = ModifierBehaviorV2Json.Serialize(
-                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior);
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda));
             });
         }
 
@@ -1483,7 +1483,6 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 ModifierCategorySnapshot = modifier.Category,
                 ModifierIconEmojiSnapshot = modifier.IconEmoji,
                 ActivationCommandSnapshot = modifier.ActivationCommand,
-                NormalizedTagsSnapshot = modifier.NormalizedTags.ToArray(),
                 BehaviorV2SnapshotJson = modifier.BehaviorV2Json,
                 ActivatedAtUtc = DateTime.UtcNow.AddMinutes(-9)
             }
@@ -1505,7 +1504,6 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             {
                 version.Revision = revision.Value;
             }
-            version.NormalizedTags = ["behavior-v2"];
             version.BehaviorV2Json = ModifierBehaviorV2Json.Serialize(behavior);
         });
     }
@@ -1523,8 +1521,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         var behaviorJson = ModifierBehaviorV2Json.Serialize(behavior);
         var now = DateTime.UtcNow;
         await TestModifierVersionFactory.AddAsync(dbContext, new TestModifierSpec(
-            modifierId, name, name, GameModifierCategories.Result, 1, null, behavior,
-            ["behavior-v2"]), now);
+            modifierId, name, name, GameModifierCategories.Result, 1, null, behavior), now);
         dbContext.GameModifierActivations.Add(
             new backend.Data.Entities.GameModifierActivation
             {
@@ -1539,7 +1536,6 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 ModifierNameSnapshot = name,
                 ModifierDescriptionSnapshot = name,
                 ModifierCategorySnapshot = GameModifierCategories.Result,
-                NormalizedTagsSnapshot = ["behavior-v2"],
                 BehaviorV2SnapshotJson = behaviorJson,
                 ActivatedAtUtc = now
             }
@@ -1571,7 +1567,6 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 ModifierCategorySnapshot = modifier.Category,
                 ModifierIconEmojiSnapshot = modifier.IconEmoji,
                 ActivationCommandSnapshot = modifier.ActivationCommand,
-                NormalizedTagsSnapshot = modifier.NormalizedTags.ToArray(),
                 BehaviorV2SnapshotJson = modifier.BehaviorV2Json,
                 ActivatedAtUtc = DateTime.UtcNow.AddMinutes(-9)
             }
@@ -1595,7 +1590,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             version.Name = name;
             version.Category = category;
             version.BehaviorV2Json = ModifierBehaviorV2Json.Serialize(
-                BuiltInModifierBehaviorCatalog.Get(behaviorCode).Behavior);
+                BuiltInModifierBehaviorCatalog.Get(behaviorCode));
         });
         await SetSeededCellCostAsync(dbContext, seeded, cellCost);
         await dbContext.SaveChangesAsync();
@@ -1613,7 +1608,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 version.Name = "Thirst";
                 version.Category = GameModifierCategories.Result;
                 version.BehaviorV2Json = ModifierBehaviorV2Json.Serialize(
-                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior);
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda));
             });
         }
 
@@ -1812,7 +1807,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
 
         await TestModifierVersionFactory.AddAsync(dbContext, new TestModifierSpec(
             modifierId, "Momentum", "Bonus score modifier", "round", 5, null,
-            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior), now);
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda)), now);
 
         return new SeededActiveGame(gameId, boardId, cellId, teamId, moderatorId);
     }
@@ -1906,7 +1901,6 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
                 ModifierCategorySnapshot = modifier.Category,
                 ModifierIconEmojiSnapshot = modifier.IconEmoji,
                 ActivationCommandSnapshot = modifier.ActivationCommand,
-                NormalizedTagsSnapshot = modifier.NormalizedTags.ToArray(),
                 BehaviorV2SnapshotJson = modifier.BehaviorV2Json,
                 ActivatedAtUtc = now
             }

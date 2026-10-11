@@ -147,7 +147,6 @@ internal sealed class ModifierHistoryReadProjection
             row.Version.ActivationCommand,
             row.Version.ActivationCost,
             new GameModifierActivationLimit(row.Version.MaxActivationsPerRound),
-            row.Version.NormalizedTags,
             ModifierBehaviorV2Json.Deserialize(row.Version.BehaviorV2Json),
             conflicts,
             row.Version.CreatedAtUtc,

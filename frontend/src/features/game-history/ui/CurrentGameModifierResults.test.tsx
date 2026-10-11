@@ -22,7 +22,6 @@ function snapshot(overrides: Partial<Snapshot>): Snapshot {
     activationCommand: '!история',
     activationCost: 7,
     activationLimit: { count: 2 },
-    normalizedTags: ['история'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',

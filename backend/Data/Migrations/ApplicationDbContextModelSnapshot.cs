@@ -612,11 +612,6 @@ namespace backend.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("modifier_version_id");
 
-                    b.PrimitiveCollection<string[]>("NormalizedTagsSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("normalized_tags_snapshot");
-
                     b.Property<int>("RefundAmount")
                         .HasColumnType("integer")
                         .HasColumnName("refund_amount");
@@ -1402,11 +1397,6 @@ namespace backend.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("modifier_name_snapshot");
-
-                    b.PrimitiveCollection<string[]>("ModifierNormalizedTagsSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("modifier_normalized_tags_snapshot");
 
                     b.Property<decimal?>("MultiplierApplied")
                         .HasColumnType("numeric")
@@ -2277,11 +2267,6 @@ namespace backend.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("name");
-
-                    b.PrimitiveCollection<string[]>("NormalizedTags")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("normalized_tags");
 
                     b.Property<int>("Revision")
                         .HasColumnType("integer")

@@ -42,7 +42,6 @@ async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en')
     activationCommand: '!watch',
     isLockedByActiveGame: false,
     revision: 1,
-    normalizedTags: ['team'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',

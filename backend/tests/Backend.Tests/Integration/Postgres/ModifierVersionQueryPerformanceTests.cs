@@ -38,7 +38,7 @@ public sealed class ModifierVersionQueryPerformanceTests : IClassFixture<Postgre
                     "round",
                     1,
                     1,
-                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)
                 )
             );
         }
@@ -53,7 +53,7 @@ public sealed class ModifierVersionQueryPerformanceTests : IClassFixture<Postgre
                 INSERT INTO modifier_definition_versions (
                     id, modifier_id, revision, name, description, category, icon_emoji,
                     activation_command, activation_cost, max_activations_per_round,
-                    normalized_tags, behavior_v2_json, created_at_utc,
+                    behavior_v2_json, created_at_utc,
                     created_by_user_id, created_by_display_name_snapshot, change_note,
                     change_type, changed_fields, cascade_source_modifier_id
                 )
@@ -61,7 +61,7 @@ public sealed class ModifierVersionQueryPerformanceTests : IClassFixture<Postgre
                     md5(v.modifier_id::text || ':performance:' || generated.revision::text)::uuid,
                     v.modifier_id, generated.revision, v.name || ' ' || generated.revision::text,
                     v.description, v.category, v.icon_emoji, v.activation_command,
-                    v.activation_cost, v.max_activations_per_round, v.normalized_tags,
+                    v.activation_cost, v.max_activations_per_round,
                     v.behavior_v2_json,
                     v.created_at_utc + generated.revision * INTERVAL '1 second',
                     NULL, 'Performance seed', NULL, 'edited', ARRAY['name']::text[], NULL

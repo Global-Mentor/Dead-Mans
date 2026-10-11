@@ -29,7 +29,6 @@ internal static class ModifierVersionProjector
             ActivationCommand = content.ActivationCommand,
             ActivationCost = content.ActivationCost,
             MaxActivationsPerRound = content.ActivationLimit.Count,
-            NormalizedTags = (content.NormalizedTags ?? []).ToArray(),
             BehaviorV2Json = ModifierBehaviorV2Json.Serialize(content.BehaviorV2),
             CreatedAtUtc = now,
             CreatedByUserId = actor?.UserId,
@@ -64,13 +63,13 @@ internal static class ModifierVersionProjector
             version.Name, version.Description, version.Category,
             version.ActivationCost, new GameModifierActivationLimit(version.MaxActivationsPerRound),
             conflicts, version.IconEmoji, version.ActivationCommand,
-            version.NormalizedTags, ModifierBehaviorV2Json.Deserialize(version.BehaviorV2Json),
+            ModifierBehaviorV2Json.Deserialize(version.BehaviorV2Json),
             changeNote);
 
     public static CreateGameModifierInput ContentOf(UpdateGameModifierInput input) => new(
         input.Name, input.Description, input.Category, input.ActivationCost, input.ActivationLimit,
         input.ConflictingModifierIds, input.IconEmoji, input.ActivationCommand,
-        input.NormalizedTags, input.BehaviorV2, input.ChangeNote);
+        input.BehaviorV2, input.ChangeNote);
 
     public static void ApplyCurrentProjection(
         ModifierDefinition definition,
@@ -89,7 +88,6 @@ internal static class ModifierVersionProjector
         && left.ActivationCommand == right.ActivationCommand
         && left.ActivationCost == right.ActivationCost
         && left.ActivationLimit.Count == right.ActivationLimit.Count
-        && left.NormalizedTags!.SequenceEqual(right.NormalizedTags!)
         && ModifierBehaviorV2Json.Serialize(left.BehaviorV2)
             == ModifierBehaviorV2Json.Serialize(right.BehaviorV2)
         && left.ConflictingModifierIds.Order().SequenceEqual(right.ConflictingModifierIds.Order());
@@ -112,7 +110,6 @@ internal static class ModifierVersionProjector
         Add(previous.ActivationCommand != current.ActivationCommand, "activationCommand");
         Add(previous.ActivationCost != current.ActivationCost, "activationCost");
         Add(previous.MaxActivationsPerRound != current.MaxActivationsPerRound, "activationLimit");
-        Add(!previous.NormalizedTags.SequenceEqual(current.NormalizedTags), "normalizedTags");
         Add(previous.BehaviorV2Json != current.BehaviorV2Json, "behaviorV2");
         Add(!previousConflicts.Order().SequenceEqual(currentConflicts.Order()), "compatibility");
         return fields;
@@ -135,7 +132,6 @@ internal static class ModifierVersionProjector
         Add(previous.ActivationCommand != current.ActivationCommand, "activationCommand");
         Add(previous.ActivationCost != current.ActivationCost, "activationCost");
         Add(previous.ActivationLimit.Count != current.ActivationLimit.Count, "activationLimit");
-        Add(!previous.NormalizedTags!.SequenceEqual(current.NormalizedTags!), "normalizedTags");
         Add(ModifierBehaviorV2Json.Serialize(previous.BehaviorV2)
             != ModifierBehaviorV2Json.Serialize(current.BehaviorV2), "behaviorV2");
         Add(!previous.ConflictingModifierIds.Order().SequenceEqual(

@@ -86,7 +86,6 @@ public sealed record GameModifierDefinitionDto(
     string? ActivationCommand,
     bool IsLockedByActiveGame,
     int Revision,
-    string[] NormalizedTags,
     GameModifierBehaviorV2Dto BehaviorV2
 );
 
@@ -99,7 +98,6 @@ public sealed record CreateGameModifierRequestDto(
     string[]? ConflictingModifierIds,
     string? IconEmoji,
     string? ActivationCommand,
-    string[]? NormalizedTags,
     GameModifierBehaviorV2Dto BehaviorV2,
     string? ChangeNote = null
 );
@@ -113,7 +111,6 @@ public sealed record UpdateGameModifierRequestDto(
     string[]? ConflictingModifierIds,
     string? IconEmoji,
     string? ActivationCommand,
-    string[]? NormalizedTags,
     GameModifierBehaviorV2Dto BehaviorV2,
     int ExpectedRevision = 1,
     string? ChangeNote = null
@@ -163,7 +160,6 @@ public sealed record ModifierVersionDetailDto(
     string? ActivationCommand,
     int ActivationCost,
     GameModifierActivationLimitDto ActivationLimit,
-    IReadOnlyList<string> NormalizedTags,
     GameModifierBehaviorV2Dto BehaviorV2,
     IReadOnlyList<ModifierConflictSnapshotDto> Conflicts,
     DateTime CreatedAtUtc,
@@ -210,7 +206,6 @@ public sealed record GameModifierDraftPreviewDto(
     string Description,
     string? IconEmoji,
     string ActivationCommand,
-    string[] NormalizedTags,
     GameModifierBehaviorV2Dto BehaviorV2,
     GameModifierDraftExampleDto Example
 );

@@ -85,7 +85,7 @@ const translations = {
       timerValue: '{{time}} remaining',
       performer: {
         activeTeam: 'Active team',
-        mentor: 'Mentor',
+        mentor: 'Host',
       },
       state: {
         scheduled: 'Starts with gameplay',
@@ -290,7 +290,7 @@ const translations = {
       timerValue: 'Осталось {{time}}',
       performer: {
         activeTeam: 'Активная команда',
-        mentor: 'Ментор',
+        mentor: 'Ведущий',
       },
       state: {
         scheduled: 'Стартует с началом игры',
@@ -495,7 +495,7 @@ const translations = {
       timerValue: 'Залишилось {{time}}',
       performer: {
         activeTeam: 'Активна команда',
-        mentor: 'Ментор',
+        mentor: 'Ведучий',
       },
       state: {
         scheduled: 'Стартує з початком гри',
@@ -700,7 +700,7 @@ const translations = {
       timerValue: 'Pozostało {{time}}',
       performer: {
         activeTeam: 'Aktywna drużyna',
-        mentor: 'Mentor',
+        mentor: 'Prowadzący',
       },
       state: {
         scheduled: 'Startuje z rozgrywką',

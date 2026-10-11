@@ -50,7 +50,8 @@ public sealed class ApplicationMigrationChainTests
                 "20260925145728_StartModifierOrderingPhase",
                 "20260925153554_AllowCardOpenedRoundTransition",
                 "20261008093609_AllowAdditionalAdminTeamSlots",
-                "20261008122259_AllowAdminTeamUnconfirmation"
+                "20261008122259_AllowAdminTeamUnconfirmation",
+                "20261011160156_RemoveModifierTags"
             ],
             migrations
         );
@@ -97,7 +98,7 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("20260920001406_HardenQuizSubmissionHistory", script, StringComparison.Ordinal);
         Assert.Contains("20260920180839_AddTwitchQuizIntegration", script, StringComparison.Ordinal);
         Assert.Contains("20260923123000_SeedBaseModifierCatalog", script, StringComparison.Ordinal);
-        Assert.Contains("!активировать чирик", script, StringComparison.Ordinal);
+        Assert.Contains("!активировать черепаха", script, StringComparison.Ordinal);
         Assert.Contains("twitch_quiz_publications", script, StringComparison.Ordinal);
         Assert.Contains("twitch_eventsub_receipts", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_submissions", script, StringComparison.Ordinal);

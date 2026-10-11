@@ -111,7 +111,6 @@ function snapshot(
     description: 'Pinned description',
     category: 'round',
     activationCost: 2,
-    normalizedTags: [],
     conflicts: [],
     behaviorV2: {
       schemaVersion: 2,

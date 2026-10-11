@@ -53,7 +53,7 @@ interface ModifierFormDialogProps {
 }
 
 const stepFields: Record<number, FieldPath<ModifierFormValues>[]> = {
-  0: ['kind', 'name', 'description', 'iconEmoji', 'tags'],
+  0: ['kind', 'name', 'description', 'iconEmoji'],
   1: [
     'activationCost',
     'activationLimitCount',
@@ -106,7 +106,6 @@ function ModifierFormDialogBody({
           positiveInteger: t('gameCatalog.validation.positiveInteger'),
           payout: t('gameCatalog.validation.payout'),
           limit: t('gameCatalog.validation.limit'),
-          tags: t('gameCatalog.validation.tags'),
         },
         isReadOnly ? 'create' : mode,
       ),

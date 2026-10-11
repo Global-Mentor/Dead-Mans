@@ -150,8 +150,8 @@ public sealed class ModifierCatalogUpdateTests : IClassFixture<PostgresTestDatab
         await using var db = _database.CreateDbContext();
         var created = await new DbGameModifierRepository(db, TimeProvider.System).CreateModifierAsync(
             new CreateGameModifierInput(name, "Catalog regression test", GameModifierCategories.Round,
-                1, new GameModifierActivationLimit(1), conflicts, null, "!test", [],
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior), actor);
+                1, new GameModifierActivationLimit(1), conflicts, null, "!test",
+                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)), actor);
         Assert.Equal(CreateGameModifierRepositoryStatus.Created, created.Status);
         return Assert.IsType<GameModifierDefinition>(created.Modifier);
     }
@@ -160,5 +160,5 @@ public sealed class ModifierCatalogUpdateTests : IClassFixture<PostgresTestDatab
         GameModifierDefinition definition, string name, Guid[] conflicts) =>
         new(name, definition.Description, definition.Category, definition.ActivationCost,
             definition.ActivationLimit, conflicts, definition.IconEmoji, definition.ActivationCommand,
-            definition.NormalizedTags, definition.BehaviorV2, definition.Revision);
+            definition.BehaviorV2, definition.Revision);
 }

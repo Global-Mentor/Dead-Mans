@@ -226,8 +226,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                 x.ModifierVersion.Name, x.ModifierVersion.Description,
                 x.ModifierVersion.Category, x.ModifierVersion.IconEmoji,
                 x.ModifierVersion.ActivationCommand, x.ModifierVersion.ActivationCost,
-                x.ModifierVersion.MaxActivationsPerRound, x.ModifierVersion.NormalizedTags,
-                x.ModifierVersion.BehaviorV2Json, x.EmergencyDisabledAtUtc))
+                x.ModifierVersion.MaxActivationsPerRound, x.ModifierVersion.BehaviorV2Json, x.EmergencyDisabledAtUtc))
             .ToArrayAsync(cancellationToken);
         var pinnedVersionIds = pinnedRows.Select(x => x.VersionId).ToArray();
         var pinnedConflicts = await _dbContext.ModifierDefinitionVersionConflicts.AsNoTracking()
@@ -410,8 +409,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         var modifierSnapshots = pinnedRows.Select(x => new GameHistoryModifierSnapshot(
             x.ModifierId, x.VersionId, x.Revision, x.Name, x.Description, x.Category,
             x.IconEmoji, x.ActivationCommand, x.ActivationCost,
-            new GameModifierActivationLimit(x.MaxActivationsPerRound), x.NormalizedTags,
-            ModifierBehaviorV2Json.Deserialize(x.BehaviorV2Json),
+            new GameModifierActivationLimit(x.MaxActivationsPerRound), ModifierBehaviorV2Json.Deserialize(x.BehaviorV2Json),
             conflictLookupByVersion[x.VersionId].Select(c => new ModifierConflictSnapshot(
                 c.ConflictingModifierId, c.Name)).ToArray(),
             activationCountsByVersion.GetValueOrDefault(x.VersionId),

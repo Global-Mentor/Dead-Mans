@@ -15,7 +15,6 @@ function definition(behaviorV2: GameModifierDefinition['behaviorV2']): GameModif
     activationCommand: null,
     isLockedByActiveGame: false,
     revision: 1,
-    normalizedTags: [],
     behaviorV2,
   }
 }

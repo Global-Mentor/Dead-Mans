@@ -270,7 +270,6 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
               'Дополнительное правило для активной команды. Итог определяется результатом раунда.',
             activationCommand: '!rule',
             activationLimit: { count: 3 },
-            normalizedTags: ['команда'],
             conflicts: [],
             behaviorV2: {
               schemaVersion: 2,
