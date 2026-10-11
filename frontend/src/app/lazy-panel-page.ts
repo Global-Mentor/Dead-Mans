@@ -11,7 +11,9 @@ export function lazyPanelPage<TModule extends object, TExportName extends keyof 
   exportName: TExportName,
   translations: readonly FeatureTranslationBundle[] = [],
 ) {
-  return lazy(async () => {
+  let pending: Promise<{ default: ComponentType }> | undefined
+  let speculativeLoadFailed = false
+  const load = async () => {
     const [module] = await Promise.all([loader(), registerFeatureTranslations(i18n, translations)])
     const component = module[exportName]
 
@@ -23,5 +25,31 @@ export function lazyPanelPage<TModule extends object, TExportName extends keyof 
     }
 
     return { default: component as ComponentType }
+  }
+  const loadOnce = () => {
+    pending ??= load().catch((error: unknown) => {
+      pending = undefined
+      throw error
+    })
+    return pending
+  }
+  const preload = () =>
+    loadOnce().catch((error: unknown) => {
+      speculativeLoadFailed = true
+      throw error
+    })
+  const Page = lazy(async () => {
+    try {
+      return await loadOnce()
+    } catch (error) {
+      if (speculativeLoadFailed) {
+        // Browsers can cache failed module fetches. Only recover on navigation,
+        // when the destination URL is committed; never reload on hover/focus.
+        window.location.reload()
+        return new Promise<{ default: ComponentType }>(() => {})
+      }
+      throw error
+    }
   })
+  return Object.assign(Page, { preload })
 }

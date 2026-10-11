@@ -59,6 +59,66 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
 })
 
+for (const intent of ['hover', 'focus'] as const) {
+  test(`navigation preloads the destination on ${intent} without changing the route`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const errors: string[] = []
+    const requests: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname))
+    await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+    await page.goto(`${origin}/panel/game-board`)
+    await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+    const destination = /\/GameTeamQueuePage-[^/]+\.js$/
+    expect(requests.some((path) => destination.test(path))).toBe(false)
+    const link = page.locator('a[href="/panel/game-team-queue"]:visible')
+    if (intent === 'hover') await link.hover()
+    else await link.focus()
+    await expect.poll(() => requests.filter((path) => destination.test(path)).length).toBe(1)
+    await expect(page).toHaveURL(`${origin}/panel/game-board`)
+    await link.click()
+    await expect(page.getByRole('heading', { name: 'Team queue', exact: true })).toBeVisible()
+    expect(requests.filter((path) => destination.test(path))).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+}
+
+test('navigation retries a failed speculative chunk load after connectivity returns', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+  let failNext = true
+  await page.route('**/GameTeamQueuePage-*.js', async (route) => {
+    if (failNext) {
+      failNext = false
+      await route.abort('failed')
+    } else await route.fallback()
+  })
+  await page.goto(`${origin}/panel/game-board`)
+  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
+  const link = page.locator('a[href="/panel/game-team-queue"]:visible')
+  const failed = page.waitForEvent('requestfailed', (request) =>
+    request.url().includes('/GameTeamQueuePage-'),
+  )
+  await link.hover()
+  await failed
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolveFrame) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()))
+      }),
+  )
+  await expect(page).toHaveURL(`${origin}/panel/game-board`)
+  await link.click()
+  await expect(page.getByRole('heading', { name: 'Team queue', exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test('production entry point declares a bundled favicon', async ({ page }) => {
   await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
   await page.goto(`${origin}/`)

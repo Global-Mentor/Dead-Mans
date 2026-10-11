@@ -1,9 +1,9 @@
-import type { ComponentType, LazyExoticComponent } from 'react'
+import type { ComponentType } from 'react'
 import { lazyPanelPage } from './lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import { panelRoutes, type PanelRouteDefinition } from './panel-route-metadata.ts'
 
-type PanelRoutePage = LazyExoticComponent<ComponentType>
+type PanelRoutePage = ReturnType<typeof lazyPanelPage>
 
 type PanelRouteConfigEntry = PanelRouteDefinition & {
   Page: PanelRoutePage
@@ -136,3 +136,9 @@ export const panelRouteConfig = panelRoutes.map((definition) => ({
     ? { Sync: panelSyncComponents[definition.id as keyof typeof panelSyncComponents] }
     : {}),
 })) satisfies readonly PanelRouteConfigEntry[]
+
+export async function preloadPanelRoute(pathname: string) {
+  const route = panelRouteConfig.find((candidate) => candidate.fullPath === pathname)
+  if (!route) return
+  await Promise.all([route.Page.preload(), route.Sync?.preload()])
+}

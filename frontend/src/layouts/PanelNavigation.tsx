@@ -5,7 +5,8 @@ import {
   NavigationButton,
 } from '../shared/ui/index.ts'
 import type { TFunction } from 'i18next'
-import { useCallback, useState, type MouseEvent } from 'react'
+import { useCallback, useState, type MouseEvent, type SyntheticEvent } from 'react'
+import { preloadPanelRoute } from '../app/panel-route-config.tsx'
 import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -38,6 +39,13 @@ import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
 
 const USER_NOTIFICATION_CREATED_EVENT = realtimeHubs.gameBoard.events.userNotificationCreated
+
+function preloadNavigationTarget(event: SyntheticEvent) {
+  const link = event.target instanceof Element ? event.target.closest('a[href]') : null
+  if (!(link instanceof HTMLAnchorElement) || link.origin !== window.location.origin) return
+  // Speculative loading must not surface an error before navigation; the loader can retry.
+  void preloadPanelRoute(link.pathname).catch(() => {})
+}
 
 export function PanelNavigation() {
   const { t } = useTranslation()
@@ -116,6 +124,9 @@ export function PanelNavigation() {
 
       <Box
         component="header"
+        onPointerOver={preloadNavigationTarget}
+        onFocusCapture={preloadNavigationTarget}
+        onTouchStart={preloadNavigationTarget}
         sx={(theme) => ({
           position: 'sticky',
           top: 0,
