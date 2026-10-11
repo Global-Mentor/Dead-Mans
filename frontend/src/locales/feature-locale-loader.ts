@@ -10,28 +10,44 @@ export type FeatureTranslationBundle = {
   load: () => Promise<FeatureLocaleModule>
 }
 
+const registrations = new WeakMap<i18n, Map<string, Promise<void>>>()
+
 export async function registerFeatureTranslations(
   i18nInstance: i18n,
   bundles: readonly FeatureTranslationBundle[],
 ) {
-  const modules = await Promise.all(bundles.map(({ load }) => load()))
-
-  for (const [index, module] of modules.entries()) {
-    const bundle = bundles[index]
-    if (!bundle) {
-      throw new Error(`Translation bundle at index ${index} is missing`)
-    }
-
-    for (const language of supportedLanguages) {
-      i18nInstance.addResourceBundle(
-        language,
-        'translation',
-        { [bundle.key]: module.default[language] },
-        true,
-        true,
-      )
-    }
+  let registered = registrations.get(i18nInstance)
+  if (!registered) {
+    registered = new Map()
+    registrations.set(i18nInstance, registered)
   }
+  const cache = registered
+  await Promise.all(
+    bundles.map((bundle) => {
+      let pending = cache.get(bundle.key)
+      if (!pending) {
+        pending = bundle
+          .load()
+          .then((module) => {
+            for (const language of supportedLanguages) {
+              i18nInstance.addResourceBundle(
+                language,
+                'translation',
+                { [bundle.key]: module.default[language] },
+                true,
+                true,
+              )
+            }
+          })
+          .catch((error: unknown) => {
+            cache.delete(bundle.key)
+            throw error
+          })
+        cache.set(bundle.key, pending)
+      }
+      return pending
+    }),
+  )
 }
 
 export const featureTranslationBundles = {
