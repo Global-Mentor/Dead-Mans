@@ -203,7 +203,8 @@ class ManagedSignalrHubConnection {
       }
 
       logger.info(`SignalR ${this.hub} connected`)
-      await this.notifyConnected('connected')
+      // HTTP resync must not keep the transport start locked if the socket closes.
+      void this.notifyConnected('connected')
     } catch (error) {
       if (this.disposed || isExpectedSignalrNegotiationShutdown(error)) {
         return

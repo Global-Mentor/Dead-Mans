@@ -54,4 +54,7 @@ they never apply the event as an authoritative local mutation.
 - Shared frontend lifecycle: `frontend/src/shared/realtime/SignalrConnectionProvider.tsx` owns a `SignalrConnectionManager` for the authenticated session. Subscribers share one connection per hub, with credentials, automatic reconnect, bounded retry delays, resync after reconnect and cleanup after the final subscriber leaves.
 - Feature realtime modules register only their generated event names, event payload handling and source-of-truth resync logic.
 
+Transport startup does not wait for subscribers' HTTP resyncs, so a slow request
+cannot block connection retries.
+
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.
