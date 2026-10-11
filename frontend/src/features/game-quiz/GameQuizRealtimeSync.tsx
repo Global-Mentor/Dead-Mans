@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { useCallback } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
@@ -24,14 +25,12 @@ export function GameQuizRealtimeSync() {
       await Promise.all([
         ...(includeSharedState
           ? [
-              queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey }),
-              queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+              refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey),
+              refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all),
             ]
           : []),
-        queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
-        queryClient.invalidateQueries({
-          queryKey: manualGameQuizAwardPlayersQueryOptions.queryKey,
-        }),
+        refreshRealtimeQueries(queryClient, gameQuizQueryKeys.all),
+        refreshRealtimeQueries(queryClient, manualGameQuizAwardPlayersQueryOptions.queryKey),
       ])
     },
     [queryClient],
@@ -60,7 +59,7 @@ export function GameQuizRealtimeSync() {
     onConnected: useCallback(async () => {
       await Promise.all([
         syncQuizState(),
-        queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
+        refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all),
       ])
     }, [queryClient, syncQuizState]),
     registerEventHandlers,

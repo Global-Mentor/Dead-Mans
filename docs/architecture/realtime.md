@@ -54,7 +54,14 @@ they never apply the event as an authoritative local mutation.
 - Shared frontend lifecycle: `frontend/src/shared/realtime/SignalrConnectionProvider.tsx` owns a `SignalrConnectionManager` for the authenticated session. Subscribers share one connection per hub, with credentials, automatic reconnect, bounded retry delays, resync after reconnect and cleanup after the final subscriber leaves.
 - Feature realtime modules register only their generated event names, event payload handling and source-of-truth resync logic.
 
-Transport startup does not wait for subscribers' HTTP resyncs, so a slow request
-cannot block connection retries.
+The shared layout owns board, quiz, history and modifier synchronization across panel
+routes. History and modifier pages do not install duplicate subscriptions. Setup keeps
+its separately authorized hub scoped to administrative pages. Transport startup does
+not wait for subscribers' HTTP resyncs, so a slow request cannot block connection retries.
+
+`refreshRealtimeQueries` merges same-turn refreshes for the same query key and client.
+Events received during a refresh request cause a trailing refresh after it completes,
+instead of cancelling and restarting it for every event. There is no timer debounce;
+inactive queries are invalidated without eager fetching. Existing polling fallbacks remain.
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

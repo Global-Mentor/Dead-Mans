@@ -1,6 +1,6 @@
 import type { HubConnection } from '@microsoft/signalr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render } from '@testing-library/react'
+import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSignalrHubSubscription } from '../../shared/realtime/use-signalr-hub-subscription.ts'
 import { GameQuizRealtimeSync } from './GameQuizRealtimeSync.tsx'
@@ -19,7 +19,7 @@ afterEach(() => {
 describe('quiz realtime reconciliation', () => {
   it.each(['roundStateChanged', 'modifierActivated', 'modifierActivationCancelled'])(
     'refreshes each shared query only once for %s',
-    (eventName) => {
+    async (eventName) => {
       const client = new QueryClient()
       const invalidate = vi.spyOn(client, 'invalidateQueries').mockResolvedValue()
       render(
@@ -38,7 +38,9 @@ describe('quiz realtime reconciliation', () => {
         subscription.registerEventHandlers?.(connection)
       }
       expect(handlers).toHaveLength(2)
-      for (const handler of handlers) handler()
+      await act(async () => {
+        for (const handler of handlers) handler()
+      })
       const keys = invalidate.mock.calls.map(([filter]) => JSON.stringify(filter?.queryKey))
       for (const key of [
         gameHistoryQueryKeys.all,
@@ -77,7 +79,9 @@ describe('quiz realtime reconciliation', () => {
     ])
     for (const [event, handler] of on.mock.calls as [string, () => void][]) {
       invalidate.mockClear()
-      handler()
+      await act(async () => {
+        handler()
+      })
       expect(invalidate).toHaveBeenCalledWith({ queryKey: gameQuizQueryKeys.all })
       if (event === 'quizStateChanged') {
         expect(invalidate).toHaveBeenCalledWith({ queryKey: gameHistoryQueryKeys.all })

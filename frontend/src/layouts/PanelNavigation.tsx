@@ -31,6 +31,7 @@ import {
 import type { GameUserNotification } from '../shared/api/contracts/index.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
+import { refreshRealtimeQueries } from '../shared/realtime/refresh-realtime-queries.ts'
 import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
@@ -352,7 +353,7 @@ export function PanelNavigation() {
 function GameNotificationRealtimeSync() {
   const queryClient = useQueryClient()
   const syncNotifications = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: gameNotificationQueryKeys.all })
+    await refreshRealtimeQueries(queryClient, gameNotificationQueryKeys.all)
   }, [queryClient])
 
   const registerEventHandlers = useCallback(

@@ -70,6 +70,36 @@ vi.mock('../api/game-board-data-access.ts', () => ({
 describe('GameBoardRealtimeSync', () => {
   afterEach(() => vi.clearAllMocks())
 
+  it('clears a removed board after a successful empty reconnect response', async () => {
+    mocks.fetchSnapshot.mockResolvedValueOnce(null)
+    const { client, reconnect } = renderSync()
+    await act(reconnect)
+    expect(client.getQueryData(snapshotKey)).toBeNull()
+  })
+
+  it('preserves cached data and requests a query retry after a failed reconnect resync', async () => {
+    mocks.fetchSnapshot.mockRejectedValueOnce(new Error('offline'))
+    const { client, reconnect } = renderSync()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    await act(reconnect)
+    expect(client.getQueryData(snapshotKey)).toEqual(snapshot)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: snapshotKey })
+  })
+
+  it('does not clear a replacement game when an old empty resync finishes', async () => {
+    const response = deferredSnapshot()
+    mocks.fetchSnapshot.mockReturnValueOnce(response.promise)
+    const { client, reconnect } = renderSync()
+    const incoming = { ...snapshot, gameId: 'new-game', version: 1 }
+    await act(async () => {
+      const request = reconnect()
+      client.setQueryData(snapshotKey, incoming)
+      response.resolve(null)
+      await request
+    })
+    expect(client.getQueryData(snapshotKey)).toEqual(incoming)
+  })
+
   it('replaces the old game with a lower-version game after reconnect', async () => {
     const incoming = { ...snapshot, gameId: 'new-game', version: 1 }
     mocks.fetchSnapshot.mockResolvedValueOnce(incoming)
@@ -178,7 +208,7 @@ describe('GameBoardRealtimeSync', () => {
       off: vi.fn(),
     })
 
-    act(() => {
+    await act(async () => {
       handlers.get('cellOpened')?.({ gameId: 'game-1', version: 2, cell: { id: 'cell-1' } })
     })
 

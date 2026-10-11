@@ -83,38 +83,28 @@ function createModifierActivatedEvent(
 describe('game board realtime model', () => {
   it('patches a newer cell event into the current snapshot', () => {
     const result = applyCellOpenedEvent(snapshot, createCellOpenedEvent())
-
-    expect(result.requiresResync).toBe(false)
-    expect(result.nextSnapshot?.version).toBe(3)
-    expect(result.nextSnapshot?.cells[0]).toMatchObject({
+    expect(result?.version).toBe(3)
+    expect(result?.cells[0]).toMatchObject({
       id: 'cell-1',
       title: 'Opened cell',
       state: 'open',
     })
   })
 
-  it('requests a resync when the current snapshot or event cell is missing', () => {
-    expect(applyCellOpenedEvent(null, createCellOpenedEvent())).toEqual({
-      nextSnapshot: null,
-      requiresResync: true,
-    })
+  it('preserves the cache when the current snapshot or event cell is missing', () => {
+    expect(applyCellOpenedEvent(null, createCellOpenedEvent())).toEqual(null)
 
     const event = createCellOpenedEvent({
       cell: { ...createCellOpenedEvent().cell, id: 'unknown-cell' },
     })
-    expect(applyCellOpenedEvent(snapshot, event)).toEqual({
-      nextSnapshot: snapshot,
-      requiresResync: true,
-    })
+    expect(applyCellOpenedEvent(snapshot, event)).toEqual(snapshot)
   })
 
   it('patches a newer modifier activation into the current snapshot', () => {
     const result = applyModifierActivatedEvent(snapshot, createModifierActivatedEvent())
-
-    expect(result.requiresResync).toBe(false)
-    expect(result.nextSnapshot?.version).toBe(3)
-    expect(result.nextSnapshot?.activeModifiers).toHaveLength(1)
-    expect(result.nextSnapshot?.activeModifiers[0]).toMatchObject({
+    expect(result?.version).toBe(3)
+    expect(result?.activeModifiers).toHaveLength(1)
+    expect(result?.activeModifiers[0]).toMatchObject({
       activationId: 'activation-1',
       modifierId: 'modifier-1',
       modifierName: 'Chirik',
@@ -134,10 +124,8 @@ describe('game board realtime model', () => {
         activation: createModifierActivation({ modifierName: 'Updated name' }),
       }),
     )
-
-    expect(result.requiresResync).toBe(false)
-    expect(result.nextSnapshot?.version).toBe(3)
-    expect(result.nextSnapshot?.activeModifiers).toEqual([
+    expect(result?.version).toBe(3)
+    expect(result?.activeModifiers).toEqual([
       expect.objectContaining({
         activationId: 'activation-1',
         modifierName: 'Updated name',
@@ -146,52 +134,35 @@ describe('game board realtime model', () => {
   })
 
   it('removes a cancelled modifier activation from the current snapshot', () => {
-    const withModifier = applyModifierActivatedEvent(
-      snapshot,
-      createModifierActivatedEvent(),
-    ).nextSnapshot
+    const withModifier = applyModifierActivatedEvent(snapshot, createModifierActivatedEvent())
 
     const result = applyModifierActivationCancelledEvent(withModifier, {
       gameId: snapshot.gameId,
       version: snapshot.version + 2,
       activationId: 'activation-1',
     })
-
-    expect(result.requiresResync).toBe(false)
-    expect(result.nextSnapshot?.version).toBe(4)
-    expect(result.nextSnapshot?.activeModifiers).toHaveLength(0)
+    expect(result?.version).toBe(4)
+    expect(result?.activeModifiers).toHaveLength(0)
   })
 
-  it('requests a modifier resync when there is no current snapshot', () => {
-    expect(applyModifierActivatedEvent(null, createModifierActivatedEvent())).toEqual({
-      nextSnapshot: null,
-      requiresResync: true,
-    })
+  it('preserves an empty cache when there is no current snapshot', () => {
+    expect(applyModifierActivatedEvent(null, createModifierActivatedEvent())).toEqual(null)
   })
 
   it('ignores events for another game or an already applied version', () => {
     expect(applyCellOpenedEvent(snapshot, createCellOpenedEvent({ gameId: 'other-game' }))).toEqual(
-      {
-        nextSnapshot: snapshot,
-        requiresResync: false,
-      },
+      snapshot,
     )
     expect(
       applyCellOpenedEvent(snapshot, createCellOpenedEvent({ version: snapshot.version })),
-    ).toEqual({
-      nextSnapshot: snapshot,
-      requiresResync: false,
-    })
+    ).toEqual(snapshot)
     expect(
       applyModifierActivatedEvent(snapshot, {
         gameId: 'other-game',
         version: snapshot.version + 1,
         activation: createModifierActivation(),
       }),
-    ).toEqual({
-      nextSnapshot: snapshot,
-      requiresResync: false,
-    })
+    ).toEqual(snapshot)
     expect(
       applyModifierActivationCancelledEvent(
         { ...snapshot, activeModifiers: [createModifierActivation()] },
@@ -201,10 +172,7 @@ describe('game board realtime model', () => {
           activationId: 'activation-1',
         },
       ),
-    ).toEqual({
-      nextSnapshot: { ...snapshot, activeModifiers: [createModifierActivation()] },
-      requiresResync: false,
-    })
+    ).toEqual({ ...snapshot, activeModifiers: [createModifierActivation()] })
   })
 
   it('selects only a strictly newer snapshot during a full resync', () => {
@@ -226,15 +194,13 @@ describe('game board realtime model', () => {
     const afterNewerModifierEvent = applyModifierActivatedEvent(
       snapshot,
       createModifierActivatedEvent({ version: 4 }),
-    ).nextSnapshot
+    )
 
     const result = applyCellOpenedEvent(
       afterNewerModifierEvent,
       createCellOpenedEvent({ version: 3 }),
     )
-
-    expect(result.requiresResync).toBe(false)
-    expect(result.nextSnapshot).toBe(afterNewerModifierEvent)
-    expect(result.nextSnapshot?.version).toBe(4)
+    expect(result).toBe(afterNewerModifierEvent)
+    expect(result?.version).toBe(4)
   })
 })

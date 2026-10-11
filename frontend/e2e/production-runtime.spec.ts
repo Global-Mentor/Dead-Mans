@@ -346,5 +346,9 @@ test('a shared hub reconnects after an abnormal close and refreshes an empty boa
   await expect.poll(() => boardRequests).toBeGreaterThan(beforeReconnect)
   await expect(page.getByText('No current game board is available yet.')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Reconnected game', exact: true })).toBeVisible()
+  published = false
+  await sockets[1]!.close({ code: 1006 })
+  await expect.poll(() => sockets.length).toBe(3)
+  await expect(page.getByText('No current game board is available yet.')).toBeVisible()
   expect(failures).toEqual([])
 })
