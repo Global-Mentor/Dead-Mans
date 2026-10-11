@@ -2,7 +2,11 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
-import { ModifierIconTile } from '../../../shared/game-ui/index.ts'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  ModifierIconTile,
+} from '../../../shared/game-ui/index.ts'
 import { ListPanel, LockIcon, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
 
 export function ModifierCatalogList({
@@ -87,7 +91,10 @@ export function ModifierCatalogList({
                       variant="caption"
                       color="text.secondary"
                     >
-                      {t(`common.modifiers.categories.${modifier.category}`)}
+                      {getCategoryLabel(
+                        t,
+                        getModifierCategory(modifier.category, modifier.behaviorV2.performer),
+                      )}
                     </Typography>
                   </Stack>
                 </Box>

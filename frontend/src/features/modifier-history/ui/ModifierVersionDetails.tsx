@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import type { ContentTabsSelection } from '../../../shared/ui/index.ts'
 import type { ModifierVersionDetail } from '../../../shared/api/contracts/index.ts'
 import { ModifierBehaviorDetails } from './ModifierBehaviorDetails.tsx'
-import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  RoundBriefingPanel,
+} from '../../../shared/game-ui/index.ts'
 import {
   ContentTabs,
   DetailBlock,
@@ -225,7 +229,10 @@ export function ModifierVersionDetails({
 function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }) {
   const { t } = useTranslation()
   const fields: Array<readonly [string, string]> = [
-    [t('modifierHistory.category'), t(`common.modifiers.categories.${item.category}`)],
+    [
+      t('modifierHistory.category'),
+      getCategoryLabel(t, getModifierCategory(item.category, item.behaviorV2.performer)),
+    ],
     [t('modifierHistory.cost'), String(item.activationCost)],
     [
       t('modifierHistory.limit'),

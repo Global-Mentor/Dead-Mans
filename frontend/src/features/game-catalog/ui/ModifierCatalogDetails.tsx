@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
 import { modifierHistoryRoute } from '../../../routes/app-routes.ts'
 import {
+  getModifierCategory,
+  getCategoryLabel,
   ModifierIconTile,
   RoundBriefingPanel,
   RoundBriefingDivider,
@@ -54,7 +56,10 @@ export function ModifierCatalogDetails({
             {modifier.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t(`common.modifiers.categories.${modifier.category}`)}
+            {getCategoryLabel(
+              t,
+              getModifierCategory(modifier.category, modifier.behaviorV2.performer),
+            )}
           </Typography>
         </Box>
       </Stack>
@@ -171,6 +176,14 @@ export function ModifierCatalogDetails({
           headingSize="small"
           title={t('gameCatalog.modifiers.catalog.behaviorTitle')}
         />
+        {modifier.behaviorV2.performer === 'mentor' ? (
+          <Metric
+            appearance="row"
+            density="compact"
+            label={t('gameCatalog.modifiers.fields.category')}
+            value={t(`common.modifiers.categories.${modifier.category}`)}
+          />
+        ) : null}
         <Metric
           appearance="row"
           density="compact"

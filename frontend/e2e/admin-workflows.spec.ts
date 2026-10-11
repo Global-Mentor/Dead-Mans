@@ -2,7 +2,12 @@ import { expect, test, type Page } from '@playwright/test'
 import { expectPanelPageInsets } from './layout-assertions.ts'
 import { recordDensity } from './density-metrics.ts'
 
-async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en') {
+async function mockAdmin(
+  page: Page,
+  roles = ['viewer', 'admin'],
+  locale = 'en',
+  hostPerformers = false,
+) {
   await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), locale)
   await page.routeWebSocket(/\/hubs\//, (socket) =>
     socket.onMessage((message) => {
@@ -46,7 +51,7 @@ async function mockAdmin(page: Page, roles = ['viewer', 'admin'], locale = 'en')
       schemaVersion: 2,
       kind: 'rule',
       phase: 'round',
-      performer: 'activeTeam',
+      performer: hostPerformers && i < 3 ? 'mentor' : 'activeTeam',
       requiresHostMonitoring: false,
       rule: 'Complete the challenge.',
       stackingPolicy: 'aggregateParameters',
@@ -406,6 +411,38 @@ for (const width of [320, 390, 768, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({
       path: info.outputPath('roles.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`setup host category bulk selection only enables host performers at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const server = await mockAdmin(page, ['viewer', 'admin'], 'en', true)
+    await page.goto('/panel/admin-modifiers')
+    await expect(page.getByRole('checkbox')).toHaveCount(9)
+    await page.getByRole('combobox', { name: /^Categories/ }).click()
+    await page.getByRole('option', { name: 'Host participation', exact: true }).click()
+    await expect(page.getByRole('checkbox')).toHaveCount(3)
+    await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+    await expect.poll(server.enabledIds).toEqual(['modifier-0', 'modifier-1', 'modifier-2'])
+    await page.getByRole('button', { name: 'Details', exact: true }).first().click()
+    await expect(
+      page.getByRole('dialog').getByText('Host participation', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('dialog').getByText('Before the round', { exact: true }),
+    ).toBeVisible()
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({
+      path: info.outputPath('setup-host-category.png'),
       fullPage: true,
       animations: 'disabled',
     })

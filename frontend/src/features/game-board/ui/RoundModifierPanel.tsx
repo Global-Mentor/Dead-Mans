@@ -7,6 +7,8 @@ import type {
 } from '../../../shared/api/contracts/index.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
 import {
+  getCategoryLabel,
+  getModifierCategory,
   ModifierCatalogGroup,
   ModifierCatalogRow,
   ModifierConflictNotice,
@@ -16,7 +18,6 @@ import { AppButton, AppDialog, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   groupActiveGameModifiers,
   groupAvailableGameModifiers,
-  getCategoryLabel,
   ModifierActivationControl,
   GameModifierActions,
 } from '../../game-modifiers/index.ts'
@@ -152,7 +153,15 @@ export function RoundModifierPanel({
             <Stack spacing={1.5} sx={{ pt: 1, textAlign: 'center' }}>
               <Stack direction="row" gap={0.75} justifyContent="center" flexWrap="wrap">
                 {selected ? (
-                  <StatusBadge label={getCategoryLabel(t, selected.modifier.category)} />
+                  <StatusBadge
+                    label={getCategoryLabel(
+                      t,
+                      getModifierCategory(
+                        selected.modifier.category,
+                        selected.modifier.behaviorV2.performer,
+                      ),
+                    )}
+                  />
                 ) : null}
                 <StatusBadge
                   color="warning"

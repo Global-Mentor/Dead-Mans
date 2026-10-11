@@ -62,6 +62,84 @@ function createAvailability(
 }
 
 describe('game modifier groups', () => {
+  it('separates host performers across phases without moving monitored team rules', () => {
+    const base = createAvailability().modifier
+    const items = (['preparation', 'round', 'result'] as const).flatMap((phase) => [
+      createAvailability({
+        modifier: {
+          ...base,
+          id: `team-${phase}`,
+          category: phase,
+          behaviorV2: { ...base.behaviorV2, phase, requiresHostMonitoring: true },
+        },
+      }),
+      createAvailability({
+        modifier: {
+          ...base,
+          id: `host-${phase}`,
+          category: phase,
+          behaviorV2: { ...base.behaviorV2, phase, performer: 'mentor' },
+        },
+      }),
+    ])
+    const categories = groupAvailableGameModifiers(items)
+    expect(categories.map(({ category }) => category)).toEqual([
+      'preparation',
+      'round',
+      'result',
+      'host',
+    ])
+    expect(
+      categories.slice(0, 3).map(({ items }) => items.map(({ modifier }) => modifier.id)),
+    ).toEqual([['team-preparation'], ['team-round'], ['team-result']])
+    expect(categories[3]?.items.map(({ modifier }) => modifier.id)).toEqual([
+      'host-preparation',
+      'host-result',
+      'host-round',
+    ])
+  })
+
+  it('uses saved performers for active groups even when definitions change or disappear', () => {
+    const base = createAvailability().modifier
+    const categories = groupActiveModifierCategories(
+      groupActiveGameModifiers(
+        ['saved-host', 'saved-team', 'removed-host'].map((modifierId) =>
+          createActivation({ modifierId }),
+        ),
+      ),
+      [
+        createAvailability({ modifier: { ...base, id: 'saved-host' } }),
+        createAvailability({
+          modifier: {
+            ...base,
+            id: 'saved-team',
+            behaviorV2: { ...base.behaviorV2, performer: 'mentor' },
+          },
+        }),
+      ],
+      ['saved-host', 'saved-team', 'removed-host'].map((modifierId) => ({
+        modifierId,
+        modifierCategory: 'round',
+        runtimeBehavior: {
+          phase: 'round' as const,
+          performer: modifierId === 'saved-team' ? ('activeTeam' as const) : ('mentor' as const),
+          requiresHostMonitoring: true,
+          rule: 'Saved rule',
+          stackingPolicy: 'aggregateParameters' as const,
+        },
+      })),
+    )
+    expect(
+      categories.map(({ category, items }) => ({
+        category,
+        ids: items.map(({ modifierId }) => modifierId),
+      })),
+    ).toEqual([
+      { category: 'round', ids: ['saved-team'] },
+      { category: 'host', ids: ['removed-host', 'saved-host'] },
+    ])
+  })
+
   it('keeps equally priced and named modifiers stable when activation order changes', () => {
     const activations = [
       createActivation({ modifierId: 'modifier-b', activationId: 'b' }),

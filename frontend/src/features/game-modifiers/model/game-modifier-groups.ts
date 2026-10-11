@@ -3,7 +3,11 @@ import type {
   GameModifierAvailability,
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import { modifierCategoryCodes, type ModifierCategoryCode } from './modifier-categories.ts'
+import {
+  getModifierCategory,
+  modifierCategoryCodes,
+  type ModifierCategoryCode,
+} from '../../../shared/game-ui/modifier-categories.ts'
 
 interface GroupedActiveModifier {
   modifierId: string
@@ -24,9 +28,15 @@ interface GroupedModifierActivator {
 }
 
 interface GroupedAvailableModifierCategory {
-  category: GameModifierAvailability['modifier']['category']
+  category: ModifierCategoryCode
   items: readonly GameModifierAvailability[]
 }
+
+type ModifierCategorySnapshot = Pick<
+  components['schemas']['GameRoundModifierResultDto'],
+  'modifierId' | 'modifierCategory'
+> &
+  Partial<Pick<components['schemas']['GameRoundModifierResultDto'], 'runtimeBehavior'>>
 
 export function groupActiveGameModifiers(
   activations: readonly GameModifierActivation[],
@@ -73,19 +83,18 @@ export function groupAvailableGameModifiers(
   items: readonly GameModifierAvailability[],
   locale?: string,
 ): GroupedAvailableModifierCategory[] {
-  const groups = new Map<
-    GameModifierAvailability['modifier']['category'],
-    GameModifierAvailability[]
-  >()
+  const groups = new Map<ModifierCategoryCode, GameModifierAvailability[]>()
 
   for (const item of items) {
-    const currentGroup = groups.get(item.modifier.category)
+    const category = getModifierCategory(item.modifier.category, item.modifier.behaviorV2.performer)
+    if (category === null) continue
+    const currentGroup = groups.get(category)
     if (currentGroup) {
       currentGroup.push(item)
       continue
     }
 
-    groups.set(item.modifier.category, [item])
+    groups.set(category, [item])
   }
 
   return Array.from(groups.entries())
@@ -99,17 +108,18 @@ export function groupAvailableGameModifiers(
 export function groupActiveModifierCategories(
   groups: readonly GroupedActiveModifier[],
   available: readonly GameModifierAvailability[],
-  results: readonly Pick<
-    components['schemas']['GameRoundModifierResultDto'],
-    'modifierId' | 'modifierCategory'
-  >[],
+  results: readonly ModifierCategorySnapshot[],
 ): { category: ModifierCategoryCode | null; items: GroupedActiveModifier[] }[] {
   const categories = new Map<ModifierCategoryCode | null, GroupedActiveModifier[]>()
   for (const group of groups) {
-    const saved = results.find((result) => result.modifierId === group.modifierId)?.modifierCategory
+    const saved = results.find((result) => result.modifierId === group.modifierId)
+    const definition = available.find((item) => item.modifier.id === group.modifierId)?.modifier
     const category =
-      modifierCategoryCodes.find((code) => code === saved) ??
-      available.find((item) => item.modifier.id === group.modifierId)?.modifier.category ??
+      getModifierCategory(
+        saved?.modifierCategory,
+        saved?.runtimeBehavior?.performer ?? definition?.behaviorV2.performer,
+      ) ??
+      getModifierCategory(definition?.category, definition?.behaviorV2.performer) ??
       null
     const items = categories.get(category) ?? []
     items.push(group)

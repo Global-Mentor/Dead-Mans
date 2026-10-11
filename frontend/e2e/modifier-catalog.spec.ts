@@ -232,6 +232,55 @@ async function choose(page: Page, label: string, option: string | RegExp) {
   await page.getByRole('option', { name: option }).click()
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`host participation category is exclusive across phases at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const items = catalog.map((item, index) => ({
+      ...item,
+      behaviorV2: {
+        ...item.behaviorV2,
+        performer: index < 3 ? ('mentor' as const) : ('activeTeam' as const),
+      },
+    }))
+    await mockCatalog(page, 'ru', items)
+    await page.goto('/panel/catalog-modifiers')
+    const list = page.getByTestId('modifier-catalog-list')
+    await expect(list.getByRole('button')).toHaveCount(12)
+    if (width < 600)
+      await page
+        .getByTestId('modifier-catalog-filters')
+        .getByRole('button', { name: 'Фильтры (0)' })
+        .click()
+    await choose(page, 'Категории', 'Участие ведущего (3)')
+    await expect(list.getByRole('button')).toHaveCount(3)
+    await expect(list.getByText('Участие ведущего', { exact: true })).toHaveCount(3)
+    await page.evaluate(() => document.fonts.ready)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({
+      path: info.outputPath('host-category.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await list.getByRole('button').filter({ hasText: 'Адреналин' }).click()
+    const details =
+      width < 1200 ? page.getByRole('dialog') : page.getByTestId('modifier-catalog-details')
+    await expect(details.getByText('Во время раунда', { exact: true })).toBeVisible()
+    if (width < 1200)
+      await page.getByRole('dialog').getByRole('button', { name: 'Закрыть', exact: true }).click()
+    for (const category of ['Перед раундом', 'Во время раунда', 'На итог раунда']) {
+      await choose(page, 'Категории', `${category} (3)`)
+      await expect(list.getByRole('button')).toHaveCount(3)
+      await expect(list.getByText('Участие ведущего', { exact: true })).toHaveCount(0)
+    }
+    await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
+    await expect(list.getByRole('button')).toHaveCount(12)
+  })
+}
+
 for (const width of [320, 390, 768, 1440]) {
   test(`populated catalog and selected card at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 })

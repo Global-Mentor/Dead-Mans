@@ -3,6 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  getModifierCategory,
+  getCategoryLabel,
+  modifierCategoryCodes,
+  type ModifierCategoryCode,
+} from '../../../shared/game-ui/index.ts'
+import {
   AppButton,
   AsyncSection,
   FormTextField,
@@ -14,8 +20,6 @@ import {
   deriveModifierRoundSummaryMeta,
   gameModifierCatalogQueryOptions,
   matchesModifierSearch,
-  modifierCategoryCodes,
-  type ModifierCategoryCode,
 } from '../../game-modifiers/index.ts'
 import type { GameSetupDraftState } from '../model/game-setup-draft.ts'
 import { GameSetupModifierPreview } from './GameSetupModifierPreview.tsx'
@@ -45,7 +49,8 @@ export function GameSetupModifiersSection({
     () =>
       (catalogQuery.data ?? []).filter(
         (modifier) =>
-          (category === 'all' || modifier.category === category) &&
+          (category === 'all' ||
+            getModifierCategory(modifier.category, modifier.behaviorV2.performer) === category) &&
           matchesModifierSearch(
             modifier,
             search,
@@ -54,7 +59,10 @@ export function GameSetupModifiersSection({
               t(
                 `gameCatalog.modifiers.roundSummaryType.${deriveModifierRoundSummaryMeta(modifier).type}`,
               ),
-              t(`common.modifiers.categories.${modifier.category}`),
+              getCategoryLabel(
+                t,
+                getModifierCategory(modifier.category, modifier.behaviorV2.performer),
+              ),
               modifier.behaviorV2.requiresHostMonitoring
                 ? t('gameCatalog.modifiers.hostControlBadge')
                 : '',

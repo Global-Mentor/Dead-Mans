@@ -21,12 +21,44 @@ test.describe('compact filters on touch screens', () => {
     }
     const details = available.getByRole('button', { name: 'Подробнее', exact: true }).first()
     expect((await details.boundingBox())!.height).toBeGreaterThanOrEqual(44)
-    await available.getByRole('combobox', { name: 'Этап действия' }).click()
+    await available.getByRole('combobox', { name: 'Категории' }).click()
     await page.getByRole('option', { name: 'Перед раундом', exact: true }).click()
     await expect(available.getByRole('listitem')).toHaveCount(6)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   })
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`available and active modifiers separate host participation at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockModifiers(page, { hostPerformers: true })
+    await page.goto('/panel/game-modifiers')
+    const available = page.getByTestId('available-modifiers-section')
+    const active = page.getByTestId('active-modifiers-section')
+    await expect(
+      available.getByRole('heading', { name: 'Участие ведущего', exact: true }),
+    ).toBeVisible()
+    if (width < 1000) await page.getByRole('tab', { name: 'Активные · 1' }).click()
+    await expect(
+      active.getByRole('heading', { name: 'Участие ведущего', exact: true }),
+    ).toBeVisible()
+    if (width < 1000) await page.getByRole('tab', { name: 'Каталог' }).click()
+    await available.getByRole('combobox', { name: 'Категории' }).click()
+    await page.getByRole('option', { name: 'Участие ведущего', exact: true }).click()
+    await expect(available.getByRole('listitem')).toHaveCount(3)
+    await page.evaluate(() => document.fonts.ready)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({
+      path: info.outputPath('active-host-category.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+}
 
 async function expectEqualSummaryCells(page: Page) {
   const cells = [
@@ -228,7 +260,13 @@ for (const width of [390, 768, 1440]) {
 
 async function mockModifiers(
   page: Page,
-  options: { locale?: string; role?: string; orderingOpen?: boolean; longNames?: boolean } = {},
+  options: {
+    locale?: string
+    role?: string
+    orderingOpen?: boolean
+    longNames?: boolean
+    hostPerformers?: boolean
+  } = {},
 ) {
   await page.addInitScript(
     (locale) => localStorage.setItem('i18nextLng', locale),
@@ -303,7 +341,12 @@ async function mockModifiers(
                       ...item.modifier,
                       name: 'Очень длинное название модификатора для проверки переноса строк и доступности действий',
                     }
-                  : item.modifier,
+                  : options.hostPerformers && index < 3
+                    ? {
+                        ...item.modifier,
+                        behaviorV2: { ...item.modifier.behaviorV2, performer: 'mentor' },
+                      }
+                    : item.modifier,
             })),
           },
         })
@@ -573,7 +616,7 @@ test('catalog filters and mobile tabs preserve independent active purchases and 
   await expect(cardPreview).toBeFocused()
 
   const available = page.getByTestId('available-modifiers-section')
-  const stage = available.getByRole('combobox', { name: 'Этап действия' })
+  const stage = available.getByRole('combobox', { name: 'Категории' })
   await stage.click()
   await page.getByRole('option', { name: 'Во время раунда', exact: true }).click()
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(6)
@@ -605,7 +648,7 @@ test('catalog filters and mobile tabs preserve independent active purchases and 
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(6)
   await page.screenshot({ path: info.outputPath('filtered-catalog.png'), animations: 'disabled' })
   await stage.click()
-  await page.getByRole('option', { name: 'Все этапы', exact: true }).click()
+  await page.getByRole('option', { name: 'Все категории', exact: true }).click()
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(18)
 })
 

@@ -1,7 +1,12 @@
 import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierDefinition } from '../../../shared/api/contracts/index.ts'
-import { ModifierConflictNotice, ModifierDescriptionBlock } from '../../../shared/game-ui/index.ts'
+import {
+  getCategoryLabel,
+  getModifierCategory,
+  ModifierConflictNotice,
+  ModifierDescriptionBlock,
+} from '../../../shared/game-ui/index.ts'
 import { AppButton, AppDialog, Metric, StatusBadge } from '../../../shared/ui/index.ts'
 
 interface Props {
@@ -25,6 +30,14 @@ export function GameSetupModifierPreview({ modifier, catalog, onClose }: Props) 
     >
       {modifier ? (
         <Stack spacing={1.5}>
+          {modifier.behaviorV2.performer === 'mentor' ? (
+            <StatusBadge
+              label={getCategoryLabel(
+                t,
+                getModifierCategory(modifier.category, modifier.behaviorV2.performer),
+              )}
+            />
+          ) : null}
           <Stack spacing={0}>
             <Metric
               appearance="row"

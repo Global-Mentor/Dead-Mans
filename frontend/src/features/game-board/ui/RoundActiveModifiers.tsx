@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import {
+  getCategoryLabel,
   ModifierDetailsGroup,
   ModifierDetailsItem,
   ModifierDetailsList,
@@ -22,7 +23,6 @@ import {
   formatRuntimeDuration,
   groupActiveGameModifiers,
   groupActiveModifierCategories,
-  getCategoryLabel,
 } from '../../game-modifiers/index.ts'
 
 export function RoundActiveModifiers({

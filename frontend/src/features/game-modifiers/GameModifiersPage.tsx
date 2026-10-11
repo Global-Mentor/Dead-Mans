@@ -2,6 +2,12 @@ import { Box, Stack, useMediaQuery } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  modifierCategoryCodes,
+  type ModifierCategoryCode,
+} from '../../shared/game-ui/index.ts'
 import type { GameBoardCell, GameModifierState } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import {
@@ -25,7 +31,6 @@ import {
   groupAvailableGameModifiers,
 } from './model/game-modifier-groups.ts'
 import { deriveModifierRoundSummaryMeta } from './model/modifier-round-summary.ts'
-import { modifierCategoryCodes, type ModifierCategoryCode } from './model/modifier-categories.ts'
 import { matchesModifierSearch } from './model/modifier-search.ts'
 import { ActiveModifiersSection } from './ui/ActiveModifiersSection.tsx'
 import { AvailableModifiersSection } from './ui/AvailableModifiersSection.tsx'
@@ -79,12 +84,22 @@ export function GameModifiersPage() {
     () =>
       (state?.availableModifiers ?? []).filter(
         (availability) =>
-          (category === 'all' || availability.modifier.category === category) &&
+          (category === 'all' ||
+            getModifierCategory(
+              availability.modifier.category,
+              availability.modifier.behaviorV2.performer,
+            ) === category) &&
           matchesModifierSearch(
             availability.modifier,
             search,
             [
-              t(`common.modifiers.categories.${availability.modifier.category}`),
+              getCategoryLabel(
+                t,
+                getModifierCategory(
+                  availability.modifier.category,
+                  availability.modifier.behaviorV2.performer,
+                ),
+              ),
               t(`gameCatalog.modifiers.wizard.kinds.${availability.modifier.behaviorV2.kind}`),
               t(
                 `gameCatalog.modifiers.roundSummaryType.${

@@ -1,9 +1,9 @@
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { modifierCategoryCodes } from '../../../shared/game-ui/index.ts'
 import { AppButton, FormSelect, FormTextField, NativeDisclosure } from '../../../shared/ui/index.ts'
 import {
-  modifierCategoryCodes,
   modifierRoundSummaryTypes,
   type ModifierRoundSummaryType,
 } from '../../game-modifiers/index.ts'

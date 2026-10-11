@@ -26,6 +26,18 @@ Current catalog and revision history use dedicated `AsNoTracking` read projectio
 paths use the shared modifier projector/resolver and never invent fallback values from the
 current catalog for a played game.
 
+## Display categories
+
+Catalog filters, setup selection, available and active modifier groups, and revision details
+use a shared display category. A revision with `BehaviorV2.performer = mentor` belongs to
+`host` (host participation), regardless of its phase. Host monitoring alone does not put a
+team rule in this category. Other revisions retain their preparation, round, or result category.
+
+The persisted category and behavior phase still define when the modifier applies. They are
+not replaced by the display category; host modifier details retain the phase separately.
+Played rounds use the saved runtime performer and category, and game lists use the pinned
+revision, so later catalog edits cannot move a historical modifier between groups.
+
 ## Writes and concurrency
 
 Create, edit, archive, compatibility cascade, `draft -> ready`, and `ready -> active` take the

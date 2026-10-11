@@ -13,7 +13,11 @@ import {
   StatusBadge,
   TaskProgress,
 } from '../../../shared/ui/index.ts'
-import { ModifierIconTile } from '../../../shared/game-ui/index.ts'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  ModifierIconTile,
+} from '../../../shared/game-ui/index.ts'
 import type { ModifierFormValues } from '../model/modifier-form-schema.ts'
 
 export function ModifierConflictField({
@@ -121,7 +125,10 @@ export function ModifierConflictField({
                     {option.isLockedByActiveGame ? <LockIcon fontSize="small" /> : null}
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    {t(`common.modifiers.categories.${option.category}`)}
+                    {getCategoryLabel(
+                      t,
+                      getModifierCategory(option.category, option.behaviorV2.performer),
+                    )}
                   </Typography>
                   {option.isLockedByActiveGame ? (
                     <Typography variant="caption" component="div">

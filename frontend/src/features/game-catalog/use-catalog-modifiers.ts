@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  modifierCategoryCodes,
+  type ModifierCategoryCode,
+} from '../../shared/game-ui/index.ts'
 import type {
   CreateGameModifierRequest,
   GameModifierDefinition,
@@ -9,9 +15,7 @@ import {
   gameModifierCatalogQueryOptions,
   deriveModifierRoundSummaryMeta,
   matchesModifierSearch,
-  modifierCategoryCodes,
   modifierRoundSummaryTypes,
-  type ModifierCategoryCode,
   type ModifierRoundSummaryType,
 } from '../game-modifiers/index.ts'
 import {
@@ -35,7 +39,7 @@ function matchesCategory(
     return true
   }
 
-  return modifier.category === category
+  return getModifierCategory(modifier.category, modifier.behaviorV2.performer) === category
 }
 
 function matchesRoundSummaryType(
@@ -72,9 +76,8 @@ export function useCatalogModifiers() {
     >
 
     for (const modifier of liveCatalogQuery.data ?? []) {
-      if (modifier.category in counts) {
-        counts[modifier.category as ModifierCategoryCode] += 1
-      }
+      const category = getModifierCategory(modifier.category, modifier.behaviorV2.performer)
+      if (category !== null) counts[category] += 1
     }
 
     return counts
@@ -99,7 +102,10 @@ export function useCatalogModifiers() {
             modifier,
             search,
             [
-              t(`common.modifiers.categories.${modifier.category}`),
+              getCategoryLabel(
+                t,
+                getModifierCategory(modifier.category, modifier.behaviorV2.performer),
+              ),
               t(`gameCatalog.modifiers.wizard.kinds.${modifier.behaviorV2.kind}`),
               t(
                 `gameCatalog.modifiers.roundSummaryType.${

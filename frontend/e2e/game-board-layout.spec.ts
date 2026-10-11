@@ -1488,15 +1488,15 @@ for (const { width, height } of [
     await mockGame(page, 'active', 'viewer')
     await page.setViewportSize({ width, height })
     const names = [
-      'Чирик',
+      'Черепаха',
       'Жажда',
       'Расходник',
       'Трупы',
       'Навыки',
-      'Патрон',
+      'Первая пуля',
       'Проказник',
       'Диарея',
-      'Менторбайт',
+      'Провокация',
       'Кэп',
       'Фейерверк',
       'Крыса',
@@ -1504,7 +1504,25 @@ for (const { width, height } of [
       'Подъём',
       'Хард75',
     ]
-    const costs = [3, 3, 4, 4, 4, 4, 6, 7, 8, 10, 11, 12, 13, 14, 18]
+    const costs = [2, 3, 4, 4, 4, 4, 6, 7, 8, 10, 11, 12, 13, 14, 18]
+    const phases = [
+      'round',
+      'result',
+      'preparation',
+      'round',
+      'preparation',
+      'result',
+      'round',
+      'round',
+      'round',
+      'round',
+      'round',
+      'result',
+      'result',
+      'round',
+      'result',
+    ]
+    const hostNames = ['Проказник', 'Провокация', 'Фейерверк', 'Крыса', 'Шот']
     await page.route('**/api/game/rounds/active', (route) =>
       route.fulfill({ json: activeRoundFixture }),
     )
@@ -1520,7 +1538,7 @@ for (const { width, height } of [
           availableModifiers: names.map((name, index) => ({
             modifier: {
               id: `modifier-${index}`,
-              category: index < 5 ? 'preparation' : index < 10 ? 'round' : 'result',
+              category: phases[index],
               name,
               description: `Описание модификатора «${name}».`,
               activationCost: costs[index],
@@ -1532,9 +1550,9 @@ for (const { width, height } of [
               behaviorV2: {
                 schemaVersion: 2,
                 kind: 'rule',
-                phase: 'round',
-                performer: 'activeTeam',
-                requiresHostMonitoring: false,
+                phase: phases[index],
+                performer: hostNames.includes(name) ? 'mentor' : 'activeTeam',
+                requiresHostMonitoring: true,
                 rule: 'Правило',
                 stackingPolicy: 'aggregateParameters',
                 resolution: { type: 'ruleStatus' },
@@ -1624,25 +1642,30 @@ for (const { width, height } of [
     const rowHeight = (await skill.boundingBox())!.height
     expect(rowHeight).toBeLessThanOrEqual(width >= 600 ? 56 : 94)
     const headings = list.locator('section > header')
-    await expect(headings).toHaveCount(3)
+    await expect(headings).toHaveCount(4)
     await expect(headings.first()).toHaveCSS('border-left-width', '3px')
     await expect(headings.first()).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-    for (const category of ['Перед раундом', 'Во время раунда', 'На итог раунда']) {
+    for (const [category, count] of [
+      ['Перед раундом', 2],
+      ['Во время раунда', 5],
+      ['На итог раунда', 3],
+      ['Участие ведущего', 5],
+    ] as const) {
       const group = list.getByRole('region', { name: category, exact: true })
       await expect(group).toHaveCSS('border-top-width', '1px')
       await expect(group).toHaveCSS('border-bottom-width', '1px')
-      await expect(group.getByRole('listitem')).toHaveCount(5)
+      await expect(group.getByRole('listitem')).toHaveCount(count)
     }
+    const hostGroup = list.getByRole('region', { name: 'Участие ведущего', exact: true })
+    for (const name of hostNames)
+      await expect(hostGroup.getByRole('listitem', { name, exact: true })).toHaveCount(1)
     const close = panel.getByRole('button', { name: 'Закрыть модификаторы' })
     const balanceBounds = await balance.boundingBox()
-    if (width === 1920)
-      expect(
-        await body.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
-      ).toBe(true)
+    expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
     expect(await body.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
-    await list.getByRole('listitem', { name: 'Хард75' }).scrollIntoViewIfNeeded()
+    await list.getByRole('listitem', { name: 'Шот' }).scrollIntoViewIfNeeded()
     await expect(
-      list.getByRole('listitem', { name: 'Хард75' }).getByRole('button', { name: 'Подробнее' }),
+      list.getByRole('listitem', { name: 'Шот' }).getByRole('button', { name: 'Подробнее' }),
     ).toBeInViewport()
     await expect(balance).toBeInViewport()
     await expect(close).toBeInViewport()
@@ -1652,12 +1675,12 @@ for (const { width, height } of [
       animations: 'disabled',
     })
     await list
-      .getByRole('listitem', { name: 'Чирик' })
+      .getByRole('listitem', { name: 'Черепаха' })
       .getByRole('button', { name: 'Подробнее' })
       .click()
-    const details = page.getByRole('dialog', { name: 'Чирик' })
-    await expect(details).toContainText('Описание модификатора «Чирик».')
-    await expect(details.getByText('Описание модификатора «Чирик».', { exact: true })).toHaveCSS(
+    const details = page.getByRole('dialog', { name: 'Черепаха' })
+    await expect(details).toContainText('Описание модификатора «Черепаха».')
+    await expect(details.getByText('Описание модификатора «Черепаха».', { exact: true })).toHaveCSS(
       'text-align',
       'left',
     )
@@ -1683,7 +1706,9 @@ for (const { width, height } of [
               return
             }
             if (Number(getComputedStyle(element).opacity) > 0)
-              samples.push(element.textContent?.includes('Описание модификатора «Чирик».') ?? false)
+              samples.push(
+                element.textContent?.includes('Описание модификатора «Черепаха».') ?? false,
+              )
             requestAnimationFrame(sample)
           }
           requestAnimationFrame(sample)
@@ -1695,7 +1720,7 @@ for (const { width, height } of [
     expect(closingSamples.every(Boolean)).toBe(true)
     await expect(details).not.toBeVisible()
     await expect(
-      list.getByRole('listitem', { name: 'Чирик' }).getByRole('button', { name: 'Подробнее' }),
+      list.getByRole('listitem', { name: 'Черепаха' }).getByRole('button', { name: 'Подробнее' }),
     ).toBeFocused()
     await skill.getByRole('button', { name: 'Подробнее' }).click()
     const skillDetails = page.getByRole('dialog', { name: 'Навыки', exact: true })
@@ -1703,12 +1728,20 @@ for (const { width, height } of [
     await expect(skillDetails.getByRole('status')).toHaveCount(0)
     await page.keyboard.press('Escape')
     await expect(skillDetails).not.toBeVisible()
+    await hostGroup
+      .getByRole('listitem', { name: 'Шот', exact: true })
+      .getByRole('button', { name: 'Подробнее' })
+      .click()
+    const hostDetails = page.getByRole('dialog', { name: 'Шот', exact: true })
+    await expect(hostDetails.getByText('Участие ведущего', { exact: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(hostDetails).not.toBeVisible()
     if (width === 390) {
       await page.setViewportSize({ width, height: 640 })
       expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
         true,
       )
-      const lastModifier = list.getByRole('listitem', { name: 'Хард75' })
+      const lastModifier = list.getByRole('listitem', { name: 'Шот' })
       await lastModifier.scrollIntoViewIfNeeded()
       await expect(lastModifier.getByRole('button', { name: 'Подробнее' })).toBeVisible()
       await page.setViewportSize({ width, height })
@@ -1725,6 +1758,7 @@ for (const { width, height } of [
       await page.reload()
       const longRow = page.getByRole('listitem', { name: names[1] })
       await expect(longRow).toBeVisible()
+      await longRow.scrollIntoViewIfNeeded()
       expect(await longRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true,
       )
