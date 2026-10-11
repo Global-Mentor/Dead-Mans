@@ -143,6 +143,8 @@ Compact image upload/replace/remove buttons opt into `AppButton.labelAlignment="
 
 `InlineNotice` has standard/inline appearances and an opt-in `textured` appearance using the shared subdued semantic material and compact body text and uses an alert for errors and a status for other messages. `HelpTooltip` centers its content through the owning tooltip theme and supports keyboard and touch, including controlled validation hints in `FormTextField`. Use it for explanatory hover text instead of a native `title`; omit redundant hints when the complete text is already visible. `AsyncSection` distinguishes first loading/error from refresh failure: `hasData` retains the mounted content when a refresh fails; supply `retryAction` when a retry is available.
 
+`PageStatePanel` gives loading, empty and error states a common surface. Standalone page states use `variant="page"`: `PageShell variant="state"` centers a 720px maximum width, the title is a semantic `h1` on the 24px page-title scale, supporting text is 14px, and actions wrap below the explanation. The default `section` variant stays inside an existing workspace; its optional `headingLevel` defaults to `h6`. Loading retains the same title and alignment, with a progress indicator beside the message. Initial errors expose retry where supported. Optional children hold creation forms or related notices without nesting another state surface.
+
 ## Examples
 
 An ordinary form (the caller owns validation, values and save state):

@@ -1,6 +1,7 @@
 import { Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { InlineNotice } from '../feedback/messages/InlineNotice.tsx'
+import { PageStatePanel } from '../feedback/PageStatePanel.tsx'
 
 interface AsyncSectionProps {
   isLoading: boolean
@@ -12,6 +13,7 @@ interface AsyncSectionProps {
   children: ReactNode
   hasData?: boolean
   retryAction?: ReactNode
+  stateVariant?: 'inline' | 'panel'
 }
 
 export function AsyncSection({
@@ -24,7 +26,18 @@ export function AsyncSection({
   children,
   hasData = false,
   retryAction,
+  stateVariant = 'inline',
 }: AsyncSectionProps) {
+  if (stateVariant === 'panel' && !hasData && (isLoading || isError)) {
+    return (
+      <PageStatePanel
+        message={isError ? errorMessage : loadingMessage}
+        tone={isError ? 'error' : 'default'}
+        showSpinner={isLoading && !isError}
+        actions={isError ? retryAction : undefined}
+      />
+    )
+  }
   if (isLoading && !hasData)
     return (
       <Typography role="status" variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
@@ -45,9 +58,13 @@ export function AsyncSection({
         </InlineNotice>
       ) : null}
       {isEmpty ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          {emptyMessage}
-        </Typography>
+        stateVariant === 'panel' ? (
+          <PageStatePanel message={emptyMessage} />
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+            {emptyMessage}
+          </Typography>
+        )
       ) : (
         children
       )}
