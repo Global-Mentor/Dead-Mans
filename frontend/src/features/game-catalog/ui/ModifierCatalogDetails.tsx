@@ -65,7 +65,7 @@ export function ModifierCatalogDetails({
       </Stack>
       <Stack direction="row" gap={1} flexWrap="wrap">
         {!isArchived ? (
-          <AppButton tone="primary" onClick={() => onEdit(modifier)}>
+          <AppButton tone="primary" size="small" onClick={() => onEdit(modifier)}>
             {t(
               modifier.isLockedByActiveGame
                 ? 'gameCatalog.actions.view'
@@ -75,6 +75,7 @@ export function ModifierCatalogDetails({
         ) : null}
         <AppLinkButton
           tone="secondary"
+          size="small"
           to={`${modifierHistoryRoute.fullPath}?modifierId=${modifier.id}`}
         >
           {t('gameCatalog.actions.history')}
@@ -103,6 +104,7 @@ export function ModifierCatalogDetails({
             >
               <AppButton
                 tone="danger"
+                size="small"
                 disabled={modifier.isLockedByActiveGame}
                 onClick={() => onDelete(modifier)}
               >
