@@ -66,7 +66,7 @@ export function GameBoardTeamQueue({
                 currentUserId={currentUserId}
               />
             ) : (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" align="center">
                 {t('gameBoard.progress.noWaiting')}
               </Typography>
             )}
@@ -91,7 +91,7 @@ export function GameBoardTeamQueue({
               {playedTeams.length ? (
                 playedList
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" align="center">
                   {t('gameBoard.teamQueuePlayedEmpty')}
                 </Typography>
               )}

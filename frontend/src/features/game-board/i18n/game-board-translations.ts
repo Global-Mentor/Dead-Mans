@@ -101,7 +101,7 @@ const translations = {
     flowSummary: {
       waitingForLaunch:
         'Start the game in the launch section first. After that you can assign the active team and begin the round flow.',
-      finished: 'The game is finished. To continue, create or launch a new active game.',
+      finished: 'Results are available',
       selectActiveTeam: 'Current step: choose the active team before opening the next card.',
       selectCard: 'Current step: open a card on the board for the selected team.',
       cardOpened: 'The card is open. Start modifier selection when the team is ready.',
@@ -542,7 +542,7 @@ const translations = {
     flowSummary: {
       waitingForLaunch:
         'Сначала запустите игру в секции запуска. После этого можно назначать активную команду и начинать цикл раунда.',
-      finished: 'Игра завершена. Чтобы двигаться дальше, нужна новая активная игра.',
+      finished: 'Результаты доступны',
       selectActiveTeam:
         'Текущий шаг: выберите активную команду перед открытием следующей карточки.',
       selectCard: 'Текущий шаг: откройте карточку на поле для выбранной команды.',
@@ -991,7 +991,7 @@ const translations = {
     flowSummary: {
       waitingForLaunch:
         'Спочатку запустіть гру в секції запуску. Після цього можна призначати активну команду й починати цикл раунду.',
-      finished: 'Гру завершено. Щоб рухатися далі, потрібна нова активна гра.',
+      finished: 'Результати доступні',
       selectActiveTeam: 'Поточний крок: оберіть активну команду перед відкриттям наступної картки.',
       selectCard: 'Поточний крок: відкрийте картку на полі для вибраної команди.',
       cardOpened: 'Картку відкрито. Почніть вибір модифікаторів, коли команда буде готова.',
@@ -1437,7 +1437,7 @@ const translations = {
     flowSummary: {
       waitingForLaunch:
         'Najpierw uruchom grę w sekcji startu. Dopiero potem można wybrać aktywną drużynę i rozpocząć cykl rundy.',
-      finished: 'Gra jest zakończona. Aby ruszyć dalej, potrzebna jest nowa aktywna gra.',
+      finished: 'Wyniki są dostępne',
       selectActiveTeam: 'Bieżący krok: wybierz aktywną drużynę przed otwarciem następnej karty.',
       selectCard: 'Bieżący krok: otwórz kartę na planszy dla wybranej drużyny.',
       cardOpened: 'Karta jest otwarta. Rozpocznij wybór modyfikatorów, gdy drużyna będzie gotowa.',
