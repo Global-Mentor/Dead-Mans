@@ -108,8 +108,8 @@ const translations = {
       channelDisconnected: 'Channel not connected',
       eventSubConnected: 'EventSub connected',
       eventSubDisconnected: 'EventSub not connected',
-      connectBot: 'Connect bot account',
-      connectChannel: 'Authorize channel owner',
+      connectBot: 'Connect bot',
+      connectChannel: 'Authorize channel',
       retry: 'Retry delivery',
       uncertainWarning:
         'Twitch did not confirm delivery. Retrying may send the same message again.',
@@ -228,8 +228,8 @@ const translations = {
       channelDisconnected: 'Канал не подключён',
       eventSubConnected: 'EventSub подключён',
       eventSubDisconnected: 'EventSub не подключён',
-      connectBot: 'Подключить аккаунт бота',
-      connectChannel: 'Авторизовать владельца канала',
+      connectBot: 'Подключить бота',
+      connectChannel: 'Авторизовать канал',
       retry: 'Повторить отправку',
       uncertainWarning:
         'Twitch не подтвердил доставку. При повторной отправке сообщение может появиться в чате ещё раз.',
@@ -351,8 +351,8 @@ const translations = {
       channelDisconnected: 'Канал не підключено',
       eventSubConnected: 'EventSub підключено',
       eventSubDisconnected: 'EventSub не підключено',
-      connectBot: 'Підключити акаунт бота',
-      connectChannel: 'Авторизувати власника каналу',
+      connectBot: 'Підключити бота',
+      connectChannel: 'Авторизувати канал',
       retry: 'Повторити надсилання',
       uncertainWarning:
         'Twitch не підтвердив доставку. Повторне надсилання може продублювати повідомлення в чаті.',
@@ -472,8 +472,8 @@ const translations = {
       channelDisconnected: 'Kanał niepołączony',
       eventSubConnected: 'EventSub połączony',
       eventSubDisconnected: 'EventSub niepołączony',
-      connectBot: 'Połącz konto bota',
-      connectChannel: 'Autoryzuj właściciela kanału',
+      connectBot: 'Połącz bota',
+      connectChannel: 'Autoryzuj kanał',
       retry: 'Ponów wysyłkę',
       uncertainWarning:
         'Twitch nie potwierdził dostarczenia. Ponowienie może wysłać tę samą wiadomość jeszcze raz.',

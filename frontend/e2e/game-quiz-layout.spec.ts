@@ -489,6 +489,65 @@ for (const { role, width } of [
   })
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`Twitch connection actions preserve the centered heading at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockQuiz(page)
+    let botConnected = false
+    let broadcasterConnected = false
+    await page.route('**/integrations/twitch/status', (route) =>
+      route.fulfill({
+        json: { enabled: true, botConnected, broadcasterConnected, eventSubConnected: false },
+      }),
+    )
+    for (const [bot, channel] of [
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ] as const) {
+      botConnected = bot
+      broadcasterConnected = channel
+      await page.goto('/panel/game-quiz')
+      const panel = page.getByTestId('quiz-twitch-panel')
+      const heading = panel.getByRole('heading', { name: 'Статус Twitch-бота' })
+      await expect(heading).toBeVisible()
+      await page.evaluate(() => document.fonts.ready)
+      const panelRect = (await panel.boundingBox())!
+      const titleRect = (await heading.boundingBox())!
+      expect(
+        Math.abs(titleRect.x + titleRect.width / 2 - panelRect.x - panelRect.width / 2),
+      ).toBeLessThanOrEqual(1)
+      for (const [name, connected, side] of [
+        ['Подключить бота', bot, 'left'],
+        ['Авторизовать канал', channel, 'right'],
+      ] as const) {
+        const button = panel.getByRole('button', { name, exact: true })
+        await expect(button).toHaveCount(connected ? 0 : 1)
+        if (connected) continue
+        await expect(button).toBeVisible()
+        await button.focus()
+        await expect(button).toBeFocused()
+        const rect = (await button.boundingBox())!
+        expect(
+          Math.abs(rect.y + rect.height / 2 - titleRect.y - titleRect.height / 2),
+        ).toBeLessThanOrEqual(1)
+        if (side === 'left') expect(rect.x + rect.width).toBeLessThanOrEqual(titleRect.x)
+        else expect(rect.x).toBeGreaterThanOrEqual(titleRect.x + titleRect.width)
+      }
+      expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      )
+      await panel.screenshot({
+        path: info.outputPath(`twitch-${bot}-${channel}.png`),
+        animations: 'disabled',
+      })
+    }
+  })
+}
+
 async function openQuizManagement(page: Page) {
   await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
   await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
