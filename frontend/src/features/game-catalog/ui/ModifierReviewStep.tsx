@@ -143,7 +143,7 @@ export function ModifierReviewStep({
           <Typography component="h3" variant="overline" textAlign="center">
             {t('gameCatalog.modifiers.wizard.hostView')}
           </Typography>
-          <Stack gap={1} sx={{ mb: 1.5 }}>
+          <Stack gap={0} sx={{ mb: 1.5 }}>
             <Metric
               appearance="row"
               density="compact"

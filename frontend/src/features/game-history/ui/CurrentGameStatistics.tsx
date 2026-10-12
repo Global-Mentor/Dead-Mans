@@ -43,30 +43,28 @@ export function CurrentGameStatistics({
     if (unit === 'percent') return t('gameHistory.statistics.percent', { value: number })
     return number
   }
-  const metrics = (items: readonly MetricValue[], columns: 'single' | 'pair' = 'pair') => (
+  const metric = (item: MetricValue) => (
+    <Metric
+      key={item[0]}
+      appearance="row"
+      density="compact"
+      emphasis="label"
+      label={t(`gameHistory.statistics.${item[0]}`)}
+      value={format(item)}
+      {...(item[3] ? { help: t(`gameHistory.statistics.${item[3]}`) } : {})}
+    />
+  )
+  const metrics = (items: readonly MetricValue[]) => (
     <Box
       sx={{
         display: 'grid',
         alignContent: 'start',
-        gridTemplateColumns:
-          columns === 'single'
-            ? 'minmax(0, 1fr)'
-            : { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
         columnGap: 3,
         rowGap: 0,
       }}
     >
-      {items.map((item) => (
-        <Metric
-          key={item[0]}
-          appearance="row"
-          density="compact"
-          emphasis="label"
-          label={t(`gameHistory.statistics.${item[0]}`)}
-          value={format(item)}
-          {...(item[3] ? { help: t(`gameHistory.statistics.${item[3]}`) } : {})}
-        />
-      ))}
+      {items.map(metric)}
     </Box>
   )
   const overviewColumns: readonly (readonly MetricValue[])[] = [
@@ -87,12 +85,18 @@ export function CurrentGameStatistics({
     <Box
       sx={{
         display: 'grid',
-        gap: 3,
+        columnGap: 3,
+        rowGap: 0,
         gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' },
       }}
     >
       {columns.map((items) => (
-        <Box key={items[0]?.[0]}>{metrics(items, 'single')}</Box>
+        <Box
+          key={items[0]?.[0]}
+          sx={{ display: 'grid', gridTemplateRows: 'subgrid', gridRow: 'span 2' }}
+        >
+          {items.map(metric)}
+        </Box>
       ))}
     </Box>
   )

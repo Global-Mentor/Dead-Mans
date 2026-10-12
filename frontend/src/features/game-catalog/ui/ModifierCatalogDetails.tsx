@@ -178,36 +178,38 @@ export function ModifierCatalogDetails({
           headingSize="small"
           title={t('gameCatalog.modifiers.catalog.behaviorTitle')}
         />
-        {modifier.behaviorV2.performer === 'mentor' ? (
+        <Stack gap={0}>
+          {modifier.behaviorV2.performer === 'mentor' ? (
+            <Metric
+              appearance="row"
+              density="compact"
+              label={t('gameCatalog.modifiers.fields.category')}
+              value={t(`common.modifiers.categories.${modifier.category}`)}
+            />
+          ) : null}
           <Metric
             appearance="row"
             density="compact"
-            label={t('gameCatalog.modifiers.fields.category')}
-            value={t(`common.modifiers.categories.${modifier.category}`)}
+            label={t('gameCatalog.modifiers.roundSummaryTitle')}
+            value={t(`gameCatalog.modifiers.roundSummaryType.${summary.type}`)}
           />
-        ) : null}
-        <Metric
-          appearance="row"
-          density="compact"
-          label={t('gameCatalog.modifiers.roundSummaryTitle')}
-          value={t(`gameCatalog.modifiers.roundSummaryType.${summary.type}`)}
-        />
-        <Metric
-          appearance="row"
-          density="compact"
-          label={t('gameCatalog.modifiers.wizard.performer')}
-          value={t(`gameCatalog.modifiers.wizard.performers.${modifier.behaviorV2.performer}`)}
-        />
-        <Metric
-          appearance="row"
-          density="compact"
-          label={t('gameCatalog.modifiers.fields.requiresHostControl')}
-          value={t(
-            modifier.behaviorV2.requiresHostMonitoring
-              ? 'gameCatalog.common.yes'
-              : 'gameCatalog.common.no',
-          )}
-        />
+          <Metric
+            appearance="row"
+            density="compact"
+            label={t('gameCatalog.modifiers.wizard.performer')}
+            value={t(`gameCatalog.modifiers.wizard.performers.${modifier.behaviorV2.performer}`)}
+          />
+          <Metric
+            appearance="row"
+            density="compact"
+            label={t('gameCatalog.modifiers.fields.requiresHostControl')}
+            value={t(
+              modifier.behaviorV2.requiresHostMonitoring
+                ? 'gameCatalog.common.yes'
+                : 'gameCatalog.common.no',
+            )}
+          />
+        </Stack>
       </Stack>
     </Stack>
   )

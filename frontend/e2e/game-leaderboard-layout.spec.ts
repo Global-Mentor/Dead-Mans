@@ -4,12 +4,15 @@ import { expect, test, type Locator, type Page, type WebSocketRoute } from '@pla
 async function expectMetricRows(scope: Locator) {
   const metrics = await scope.getByRole('group').evaluateAll((elements) =>
     elements.flatMap((element) => {
-      const label = element.querySelector('dt')
-      const value = element.querySelector('dd')
+      const definition = element.querySelector(':scope > div > dl')
+      const label = definition?.querySelector('dt')
+      const value = definition?.querySelector('dd')
       if (!label || !value || !element.getClientRects().length) return []
       const cell = element.getBoundingClientRect()
       const text = label.getBoundingClientRect()
       const number = value.getBoundingClientRect()
+      const content = element.firstElementChild!.getBoundingClientRect()
+      const style = getComputedStyle(element)
       return [
         {
           name: label.textContent,
@@ -20,6 +23,8 @@ async function expectMetricRows(scope: Locator) {
           valueLeft: number.left,
           valueTop: number.top,
           valueRight: number.right,
+          gapAbove: content.top - cell.top - parseFloat(style.borderTopWidth),
+          gapBelow: cell.bottom - parseFloat(style.borderBottomWidth) - content.bottom,
         },
       ]
     }),
@@ -28,6 +33,7 @@ async function expectMetricRows(scope: Locator) {
   for (const metric of metrics) {
     expect(metric.labelRight, metric.name ?? '').toBeLessThan(metric.valueLeft)
     expect(Math.abs(metric.labelTop - metric.valueTop), metric.name ?? '').toBeLessThanOrEqual(1)
+    expect(Math.abs(metric.gapAbove - metric.gapBelow), metric.name ?? '').toBeLessThanOrEqual(1)
     for (const neighbour of metrics.filter((item) => Math.abs(item.column - metric.column) < 1)) {
       expect(
         Math.abs(metric.labelLeft - neighbour.labelLeft),
@@ -42,6 +48,29 @@ async function expectMetricRows(scope: Locator) {
 }
 
 const gameId = '11111111-1111-4111-8111-111111111111'
+
+async function expectAlignedMetricRows(scope: Locator, rows: readonly (readonly number[])[]) {
+  const bounds = await scope.getByRole('group').evaluateAll((elements) =>
+    elements.flatMap((element) => {
+      if (!element.querySelector(':scope > div > dl')) return []
+      const rect = element.getBoundingClientRect()
+      const content = element.firstElementChild!.getBoundingClientRect()
+      return [
+        { top: rect.top, bottom: rect.bottom, contentCenter: content.top + content.height / 2 },
+      ]
+    }),
+  )
+  for (const indices of rows) {
+    const first = bounds[indices[0]!]
+    expect(first).toBeDefined()
+    for (const index of indices) {
+      const current = bounds[index]
+      expect(current).toBeDefined()
+      for (const edge of ['top', 'bottom', 'contentCenter'] as const)
+        expect(Math.abs(current![edge] - first![edge])).toBeLessThanOrEqual(1)
+    }
+  }
+}
 
 function createRound(teamIndex: number, roundIndex: number) {
   const score = 120 - teamIndex * 4 + roundIndex * 6
@@ -519,6 +548,20 @@ for (const width of [390, 768, 1440]) {
     }
     for (const name of ['Основные итоги', 'Результаты раундов', 'Викторина'])
       await expectMetricRows(statistics.getByRole('region', { name, exact: true }))
+    if (width >= 768) {
+      for (const name of ['Основные итоги', 'Викторина'])
+        await expectAlignedMetricRows(statistics.getByRole('region', { name, exact: true }), [
+          [0, 2, 4],
+          [1, 3, 5],
+        ])
+      await expectAlignedMetricRows(
+        statistics.getByRole('region', { name: 'Результаты раундов', exact: true }),
+        [
+          [0, 1],
+          [2, 3],
+        ],
+      )
+    }
     for (const [top, bottom] of [
       ['Сыгравших команд', 'Завершено раундов'],
       ['Всего убийств', 'Всего наград'],
@@ -868,6 +911,11 @@ for (const width of [390, 768, 1440]) {
     ).toContainText('-25 очк.')
     await expect(overview.getByRole('region', { name: 'Участие', exact: true })).toHaveCount(0)
     await expectMetricRows(overview)
+    if (width >= 768)
+      await expectAlignedMetricRows(overview, [
+        [0, 2, 4],
+        [1, 3, 5],
+      ])
     await page.screenshot({ path: testInfo.outputPath('modifier-results.png') })
     await toggle.press('Enter')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
@@ -918,13 +966,25 @@ for (const width of [390, 768, 1440]) {
 
 test('modifier results distinguish empty history from unavailable legacy revisions', async ({
   page,
-}) => {
+}, testInfo) => {
   const server = await mockLeaderboard(page, 1)
   server.clearModifiers()
   await page.goto('/panel/game-leaderboard')
   await page.getByRole('tab', { name: 'Модификаторы', exact: true }).click()
   const panel = page.getByTestId('current-game-modifier-results')
-  await expect(panel.getByText('Активаций и результатов модификаторов пока нет.')).toBeVisible()
+  const empty = panel.getByText('Активаций и результатов модификаторов пока нет.')
+  await expect(empty).toBeVisible()
+  const description = panel.getByText(
+    'Одна строка на историческую редакцию. Раскройте модификатор, чтобы посмотреть результаты и описание.',
+  )
+  const above = await description.boundingBox()
+  const below = await empty.boundingBox()
+  expect(below!.y - above!.y - above!.height).toBeCloseTo(8, 0)
+  expect(below!.x).toBeCloseTo(above!.x, 0)
+  await panel.screenshot({
+    path: testInfo.outputPath('empty-modifier-results.png'),
+    animations: 'disabled',
+  })
   await expect(panel.getByText(/Недостающие редакции/)).toHaveCount(0)
   await expect.poll(server.connectionCount).toBe(1)
   server.clearModifiers(true)

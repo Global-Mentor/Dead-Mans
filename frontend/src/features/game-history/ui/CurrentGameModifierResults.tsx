@@ -15,7 +15,6 @@ import {
   AppLinkButton,
   DetailBlock,
   InlineNotice,
-  ItemCard,
   Metric,
   StatusBadge,
 } from '../../../shared/ui/index.ts'
@@ -56,7 +55,15 @@ export function CurrentGameModifierResults({
       key={title}
       component="section"
       aria-label={t(`gameHistory.modifierResults.${title}`)}
-      sx={{ display: 'flex', flexDirection: 'column' }}
+      sx={{
+        display: 'grid',
+        gridTemplateRows: 'auto auto',
+        ...(overview
+          ? { '@media (min-width: 600px)': { gridTemplateRows: 'subgrid', gridRow: 'span 3' } }
+          : {
+              '@container (min-width: 620px)': { gridTemplateRows: 'subgrid', gridRow: 'span 3' },
+            }),
+      }}
     >
       <Typography
         component="h4"
@@ -72,12 +79,18 @@ export function CurrentGameModifierResults({
         sx={{
           display: 'grid',
           columnGap: 1.5,
-          flex: 1,
-          alignContent: 'center',
+          alignContent: 'start',
+          rowGap: 0,
           gridTemplateColumns: overview ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))',
-          ...(!overview
-            ? { '@container (min-width: 620px)': { gridTemplateColumns: 'minmax(0, 1fr)' } }
-            : {}),
+          ...(overview
+            ? { '@media (min-width: 600px)': { gridTemplateRows: 'subgrid', gridRow: 'span 2' } }
+            : {
+                '@container (min-width: 620px)': {
+                  gridTemplateColumns: 'minmax(0, 1fr)',
+                  gridTemplateRows: 'subgrid',
+                  gridRow: 'span 2',
+                },
+              }),
         }}
       >
         {counters.map(([label, value, help]) => (
@@ -119,7 +132,8 @@ export function CurrentGameModifierResults({
             data-testid="modifier-results-overview"
             sx={{
               display: 'grid',
-              gap: 1,
+              columnGap: 1,
+              rowGap: { xs: 1, sm: 0 },
               gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' },
             }}
           >
@@ -158,11 +172,9 @@ export function CurrentGameModifierResults({
             </InlineNotice>
           ) : null}
           {items.length === 0 ? (
-            <ItemCard>
-              <Typography variant="body2" color="text.secondary" textAlign="center">
-                {t('gameHistory.modifierResults.empty')}
-              </Typography>
-            </ItemCard>
+            <Typography variant="caption" color="text.secondary" textAlign="center">
+              {t('gameHistory.modifierResults.empty')}
+            </Typography>
           ) : (
             <Box data-testid="modifier-results-list">
               <ModifierDetailsList count={items.length}>
@@ -226,6 +238,7 @@ export function CurrentGameModifierResults({
                           gridTemplateColumns: 'minmax(0, 1fr)',
                           '@container (min-width: 620px)': {
                             gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                            rowGap: 0,
                           },
                         }}
                       >

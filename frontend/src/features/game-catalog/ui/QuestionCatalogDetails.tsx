@@ -161,7 +161,7 @@ export function QuestionCatalogDetails({
         density="tight"
         summary={t('gameCatalog.questions.catalog.statistics')}
       >
-        <Stack gap={0.5}>
+        <Stack gap={0}>
           <Metric
             appearance="row"
             density="compact"
