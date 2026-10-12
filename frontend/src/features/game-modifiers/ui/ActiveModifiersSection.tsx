@@ -61,7 +61,7 @@ export function ActiveModifiersSection({
       }}
     >
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" textAlign="center">
           {t('gameModifiers.activeEmpty')}
         </Typography>
       ) : (

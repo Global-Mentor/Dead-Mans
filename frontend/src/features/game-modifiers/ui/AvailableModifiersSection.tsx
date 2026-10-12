@@ -51,7 +51,7 @@ export function AvailableModifiersSection({
       }}
     >
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" textAlign="center">
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.availableEmpty')}
         </Typography>
       ) : (
