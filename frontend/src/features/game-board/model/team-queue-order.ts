@@ -8,11 +8,12 @@ interface OrderedTeamQueueItem {
 
 export function groupTeamQueueTeams(teams: readonly GameTeamQueueItem[]) {
   const indexedTeams = teams.map((team, originalIndex) => ({ team, originalIndex }))
-  const remainingTeams = indexedTeams.filter(({ team }) => !team.isPlayed)
+  const remainingTeams = indexedTeams.filter(({ team }) => !team.isPlayed).sort(compareTeamSlots)
   const playedTeams = indexedTeams
     .filter(({ team }) => team.isPlayed)
     .sort(comparePlayedTeams)
     .map((item, index) => ({ ...item, playedOrder: index + 1 }))
+    .sort(compareTeamSlots)
 
   return { remainingTeams, playedTeams }
 }
@@ -40,6 +41,12 @@ function comparePlayedTeams(left: OrderedTeamQueueItem, right: OrderedTeamQueueI
   if (leftPlayedAt !== null && rightPlayedAt === null) return -1
   if (leftPlayedAt === null && rightPlayedAt !== null) return 1
   return left.originalIndex - right.originalIndex
+}
+
+function compareTeamSlots(left: OrderedTeamQueueItem, right: OrderedTeamQueueItem) {
+  return (
+    left.team.teamSlotIndex - right.team.teamSlotIndex || left.originalIndex - right.originalIndex
+  )
 }
 
 function parseOptionalTime(value: string | null | undefined) {

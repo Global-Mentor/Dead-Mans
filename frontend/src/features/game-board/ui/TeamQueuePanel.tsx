@@ -51,7 +51,7 @@ export function TeamQueuePanel({
       ].some((value) => value.toLocaleLowerCase(i18n.resolvedLanguage).includes(query)),
   )
   const grouped = groupTeamQueueTeams(teams)
-  // Filtering keeps authoritative queue slots and historical play positions.
+  // Filtering keeps authoritative queue slot numbers.
   const matchingIds = new Set(matchingTeams.map((team) => team.teamId))
   const remaining = grouped.remainingTeams.filter(({ team }) => matchingIds.has(team.teamId))
   const played = grouped.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))

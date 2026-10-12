@@ -3012,6 +3012,41 @@ test('long team queue uses its own page and leaves the board clear', async ({ pa
 })
 
 for (const width of [390, 768, 1440]) {
+  test(`played queue keeps numeric slot order at ${width}px`, async ({ page }, info) => {
+    await mockGame(page, 'active', 'viewer')
+    await page.setViewportSize({ width, height: 900 })
+    await page.route('**/api/game/team-queue', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          teams: [10, 4, 3].map((slot, index) => ({
+            teamId: `played-${slot}`,
+            teamName: `Команда ${slot}`,
+            teamSlotIndex: slot,
+            isPlayed: true,
+            playedAtUtc: `2026-09-01T10:0${index}:00Z`,
+            finalScore: slot * 10,
+            participants: [],
+          })),
+          summary: { totalTeams: 3, playedTeams: 3, remainingTeams: 0 },
+        },
+      }),
+    )
+    await page.goto('/panel/game-team-queue')
+    const played = page.getByRole('region', { name: 'Отыгравшие', exact: true })
+    await expect(played.getByRole('article')).toHaveCount(3)
+    expect(await played.getByLabel(/Место в очереди/).allTextContents()).toEqual(['3', '4', '10'])
+    const search = page.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
+    await search.fill('Команда 4')
+    await expect(played.getByRole('article')).toHaveCount(1)
+    await search.fill('')
+    await expect(played.getByRole('article')).toHaveCount(3)
+    expect(await played.getByLabel(/Место в очереди/).allTextContents()).toEqual(['3', '4', '10'])
+    await page
+      .getByTestId('team-queue-panel')
+      .screenshot({ path: info.outputPath('numeric-queue.png'), animations: 'disabled' })
+  })
+
   test(`team queue page keeps search and play order readable at ${width}px`, async ({
     page,
   }, testInfo) => {
