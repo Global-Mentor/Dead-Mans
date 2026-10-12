@@ -8,6 +8,7 @@ interface ParticipantNamesListProps {
   direction?: 'column' | 'row'
   decorated?: boolean
   leadingMarker?: boolean
+  markerPlacement?: 'none' | 'leading' | 'paired'
   alignment?: 'start' | 'center'
   layout?: 'flow' | 'columns'
   textFlow?: 'wrap' | 'singleLine'
@@ -22,6 +23,7 @@ export function ParticipantNamesList({
   direction = 'column',
   decorated = false,
   leadingMarker = false,
+  markerPlacement = decorated ? 'paired' : leadingMarker ? 'leading' : 'none',
   alignment,
   layout = 'flow',
   textFlow = 'wrap',
@@ -79,7 +81,7 @@ export function ParticipantNamesList({
       })}
     >
       {names.map((name, index) =>
-        decorated || leadingMarker ? (
+        decorated || markerPlacement !== 'none' ? (
           <Stack
             component="li"
             key={`${name}-${index}`}
@@ -99,7 +101,7 @@ export function ParticipantNamesList({
                 : {}),
             }}
           >
-            <ParticipantDiamond />
+            {markerPlacement !== 'none' ? <ParticipantDiamond /> : null}
             <Typography
               variant={variant}
               noWrap={textFlow === 'singleLine'}
@@ -113,7 +115,7 @@ export function ParticipantNamesList({
             >
               {name}
             </Typography>
-            {decorated ? <ParticipantDiamond /> : null}
+            {markerPlacement === 'paired' ? <ParticipantDiamond /> : null}
           </Stack>
         ) : (
           <Typography

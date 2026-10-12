@@ -233,6 +233,7 @@ export function RoundOverview({
             >
               {team ? (
                 <TeamBriefing
+                  participantMarkerPlacement="none"
                   name={formatTeamNameWithFallback(
                     team.teamName,
                     t('common.teamWithSlot', { slot: team.teamSlotIndex }),

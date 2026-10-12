@@ -12,6 +12,7 @@ export function TeamBriefing({
   roster,
   leading,
   status,
+  participantMarkerPlacement = 'paired',
 }: {
   name: string
   participants: readonly string[]
@@ -19,6 +20,7 @@ export function TeamBriefing({
   roster?: ReactNode
   leading?: ReactNode
   status?: ReactNode
+  participantMarkerPlacement?: 'none' | 'leading' | 'paired'
 }) {
   return (
     <Stack
@@ -48,6 +50,7 @@ export function TeamBriefing({
             variant="body1"
             layout={participants.length === 2 ? 'flow' : 'columns'}
             decorated
+            markerPlacement={participantMarkerPlacement}
             dense
           />
         )}

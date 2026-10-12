@@ -692,7 +692,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         await team.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
       ).toBe(true)
       for (const item of await team.getByRole('listitem').all()) {
-        await expect(item.locator('[aria-hidden="true"]')).toHaveCount(2)
+        await expect(item.locator('[aria-hidden="true"]')).toHaveCount(0)
       }
       const teamSpacing = await team.evaluate((element) => {
         const name = element.querySelector('h3')!.getBoundingClientRect()

@@ -79,6 +79,7 @@ export function CurrentLeaderboardTeamDetails({
       <Stack spacing={1.15} sx={{ minHeight: 0, ...scrollRegionSx }}>
         <ItemCard>
           <TeamBriefing
+            participantMarkerPlacement="leading"
             name={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
             participants={entry.participantNames}
             emptyLabel={t('gameHistory.noParticipants')}

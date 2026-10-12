@@ -147,6 +147,7 @@ export function ModifierStatusBar({
                 direction="column"
                 dense
                 decorated
+                markerPlacement="leading"
               />
             }
           />

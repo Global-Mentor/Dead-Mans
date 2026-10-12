@@ -59,4 +59,23 @@ describe('ParticipantNamesList', () => {
       justifyContent: 'center',
     })
   })
+
+  it.each([
+    ['none', 0],
+    ['leading', 1],
+  ] as const)('uses %s markers without changing decorated typography', (markerPlacement, count) => {
+    renderWithAppProviders(
+      <ParticipantNamesList
+        names={['Player One']}
+        emptyLabel="No players"
+        decorated
+        dense
+        markerPlacement={markerPlacement}
+      />,
+    )
+    expect(screen.getByRole('listitem').querySelectorAll('[aria-hidden="true"]')).toHaveLength(
+      count,
+    )
+    expect(screen.getByText('Player One')).toHaveStyle({ fontWeight: '700', lineHeight: '1.25' })
+  })
 })
