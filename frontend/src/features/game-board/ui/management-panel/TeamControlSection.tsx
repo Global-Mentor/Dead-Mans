@@ -110,7 +110,9 @@ export function TeamControlSection({
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gridTemplateColumns: currentActiveTeam
+                    ? 'repeat(2, minmax(0, 1fr))'
+                    : 'minmax(0, 1fr)',
                   gap: 0.75,
                 }}
               >
@@ -138,10 +140,11 @@ export function TeamControlSection({
                       {t('gameBoard.managementActiveTeamClearAction')}
                     </AppButton>
                     <HelpTooltip title={t('gameBoard.teamPlayedActiveTeam')} describeChild arrow>
-                      <Box component="span" sx={{ display: 'flex' }} tabIndex={0}>
+                      <Box component="span" sx={{ display: 'flex', minWidth: 0 }} tabIndex={0}>
                         <AppButton
                           tone="secondary"
                           size="small"
+                          fullWidth
                           disabled
                           onClick={() =>
                             onSetTeamPlayedState({
@@ -155,7 +158,7 @@ export function TeamControlSection({
                             : t('gameBoard.teamPlayedMarkAction')}
                         </AppButton>
                       </Box>
-                    </HelpTooltip>{' '}
+                    </HelpTooltip>
                   </>
                 ) : null}
               </Box>
@@ -177,20 +180,14 @@ export function TeamControlSection({
                       </Typography>
                     ) : null}
                     <Stack spacing={0.55} sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.25 }}>
-                      {otherTeams.map((team) => {
-                        const isCurrent = team.teamId === currentActiveTeam?.teamId
-                        const isDisabled = isTeamControlBusy || isActiveTeamLocked || isCurrent
-
-                        return (
-                          <CompactTeamRow
-                            key={team.teamId}
-                            team={team}
-                            isCurrent={isCurrent}
-                            disabled={isDisabled}
-                            onSelect={() => onSelectActiveTeam(team.teamId)}
-                          />
-                        )
-                      })}
+                      {otherTeams.map((team) => (
+                        <CompactTeamRow
+                          key={team.teamId}
+                          team={team}
+                          disabled={isTeamControlBusy || isActiveTeamLocked}
+                          onSelect={() => onSelectActiveTeam(team.teamId)}
+                        />
+                      ))}
                     </Stack>
                   </NativeDisclosure>
                 </>
@@ -235,12 +232,10 @@ function TeamSpotlight({ team }: { team: GameTeamQueueItem | null }) {
 
 function CompactTeamRow({
   team,
-  isCurrent,
   disabled,
   onSelect,
 }: {
   team: GameTeamQueueItem
-  isCurrent: boolean
   disabled: boolean
   onSelect: () => void
 }) {
@@ -250,38 +245,27 @@ function CompactTeamRow({
     <SelectionRow
       type="button"
       disabled={disabled}
-      selected={isCurrent}
+      selected={false}
       density="compact"
       onClick={onSelect}
       sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 0.8 }}
     >
-      <StatusBadge label={`#${team.teamSlotIndex}`} />
-
-      <TeamIdentity
-        compact
-        name={formatManagementTeamName(t, team.teamName, team.teamSlotIndex)}
-        participants={team.participants.map((participant) => participant.displayName)}
-        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-        status={
-          <Stack direction="row" gap={0.5} flexWrap="wrap">
-            {isCurrent ? (
-              <StatusBadge
-                size="small"
-                color="success"
-                label={t('gameBoard.teamQueueActiveChip')}
-              />
-            ) : null}
-            {team.isPlayed ? (
-              <StatusBadge
-                size="small"
-                color="success"
-                variant="outlined"
-                label={t('gameBoard.teamQueuePlayedChip')}
-              />
-            ) : null}
-          </Stack>
-        }
+      <StatusBadge
+        size="small"
+        density="tight"
+        variant="outlined"
+        label={`#${team.teamSlotIndex}`}
       />
+      <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+        <Typography variant="body2" fontWeight={700} lineHeight={1.25}>
+          {formatManagementTeamName(t, team.teamName, team.teamSlotIndex)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" lineHeight={1.25}>
+          {team.participants.length
+            ? team.participants.map((participant) => participant.displayName).join(', ')
+            : t('gameBoard.roundSummaryNoParticipants')}
+        </Typography>
+      </Stack>
     </SelectionRow>
   )
 }
