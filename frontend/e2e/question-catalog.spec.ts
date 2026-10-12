@@ -558,7 +558,9 @@ test('import menu opens below the right edge of its trigger', async ({ page }, t
   await page.setViewportSize({ width: 1440, height: 1000 })
   await mockCatalog(page)
   await page.goto('/panel/catalog-questions')
+  await expect(page.getByTestId('question-catalog-details')).toBeVisible()
   const trigger = page.getByRole('button', { name: 'Развернуть импорт из JSON', exact: true })
+  await page.evaluate(() => document.fonts.ready)
   const triggerBox = (await trigger.boundingBox())!
   await trigger.click()
   const menu = page.getByRole('menu')
