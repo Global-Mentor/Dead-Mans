@@ -135,13 +135,13 @@ public partial class SeedBaseModifierCatalog : Migration
             new("10000000-0000-0000-0000-00000000000b"),
             new("20000000-0000-0000-0000-00000000000b"),
             "Фейерверк",
-            "Ведущий делает 5 выстрелов осветительными снарядами в небо: первый в начале миссии, остальные с интервалом в 1 минуту.",
+            "Ведущий делает 5 выстрелов осветительными снарядами в небо с интервалом в 1 минуту. Первый выстрел - через 1 минуту после начала миссии, последний - через 5 минут.",
             "round",
             "🎆",
             "!активировать фейерверк",
             11,
             1,
-            """{"schemaVersion":2,"kind":"rule","phase":"round","performer":"mentor","requiresHostMonitoring":true,"rule":"\u0412\u0435\u0434\u0443\u0449\u0438\u0439 \u0434\u0435\u043B\u0430\u0435\u0442 5 \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u043E\u0432 \u043E\u0441\u0432\u0435\u0442\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u043C\u0438 \u0441\u043D\u0430\u0440\u044F\u0434\u0430\u043C\u0438 \u0432 \u043D\u0435\u0431\u043E: \u043F\u0435\u0440\u0432\u044B\u0439 \u0432 \u043D\u0430\u0447\u0430\u043B\u0435 \u043C\u0438\u0441\u0441\u0438\u0438, \u043E\u0441\u0442\u0430\u043B\u044C\u043D\u044B\u0435 \u0441 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B\u043E\u043C \u0432 1 \u043C\u0438\u043D\u0443\u0442\u0443.","stackingPolicy":"aggregateParameters","resolution":{"type":"ruleStatus"},"reward":"none","formulaReference":null,"durationSecondsPerActivation":300}"""
+            """{"schemaVersion":2,"kind":"rule","phase":"round","performer":"mentor","requiresHostMonitoring":true,"rule":"Ведущий делает 5 выстрелов осветительными снарядами в небо с интервалом в 1 минуту. Первый выстрел - через 1 минуту после начала миссии, последний - через 5 минут.","stackingPolicy":"aggregateParameters","resolution":{"type":"ruleStatus"},"reward":"none","formulaReference":null,"durationSecondsPerActivation":300}"""
         ),
         new(
             new("10000000-0000-0000-0000-00000000000c"),

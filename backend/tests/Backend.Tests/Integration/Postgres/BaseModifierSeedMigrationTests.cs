@@ -97,6 +97,13 @@ public sealed class BaseModifierSeedMigrationTests : IClassFixture<PostgresTestD
         }
 
         var turtle = definitions[ModifierDefinitionSeedIds.Chirik].CurrentVersion!;
+        var fireworkVersions = await db.ModifierDefinitionVersions.AsNoTracking()
+            .Where(version => version.ModifierId == ModifierDefinitionSeedIds.Feyerverk)
+            .OrderBy(version => version.Revision).ToArrayAsync();
+        var firework = Assert.Single(fireworkVersions);
+        Assert.Equal(300, ModifierBehaviorV2Json.Deserialize(firework.BehaviorV2Json).DurationSecondsPerActivation);
+        Assert.Contains("через 1 минуту", firework.Description, StringComparison.Ordinal);
+        Assert.Contains("через 5 минут", firework.Description, StringComparison.Ordinal);
         Assert.Contains("Длительность всех активаций складывается", turtle.Description);
         Assert.Contains("(пример: 2 активации - 120 секунд)", turtle.Description);
 
