@@ -179,7 +179,7 @@ vi.mock('./use-open-game-board-cell.ts', () => ({
 
 vi.mock('../game-rounds/api/game-rounds-api.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../game-rounds/api/game-rounds-api.ts')>()),
-  previewGameRoundScore: pageMocks.previewGameRoundScore,
+  broadcastGameRoundSummary: pageMocks.previewGameRoundScore,
 }))
 
 vi.mock('./ui/GameBoardGrid.tsx', () => ({
@@ -713,7 +713,7 @@ describe('GameBoardPage', () => {
     expect(screen.queryByRole('button', { name: 'Запуск игры' })).not.toBeInTheDocument()
   })
 
-  it('marks the team as played when the operator finishes it in the round summary', async () => {
+  it('saves the team action for presentation completion without marking it played yet', async () => {
     const completeRound = vi.fn().mockResolvedValue(undefined)
     const setTeamPlayedState = vi.fn().mockResolvedValue(undefined)
     pageMocks.useGameBoardPage.mockReturnValue(
@@ -787,17 +787,20 @@ describe('GameBoardPage', () => {
       timeout: 5_000,
     })
     await waitFor(
-      () => expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeEnabled(),
+      () => expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeEnabled(),
       { timeout: 5_000 },
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Завершить раунд' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить итоги' }))
 
     await waitFor(() =>
-      expect(setTeamPlayedState).toHaveBeenCalledWith({
-        teamId: 'team-1',
-        isPlayed: true,
-      }),
+      expect(completeRound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          roundId: 'round-1',
+          markTeamPlayedAfterPresentation: true,
+        }),
+      ),
     )
+    expect(setTeamPlayedState).not.toHaveBeenCalled()
   })
 
   it('lets staff select the active team from the management panel during an active game', () => {
@@ -1372,7 +1375,48 @@ describe('GameBoardPage', () => {
     expect(rebuildRound).not.toHaveBeenCalled()
   })
 
-  it('starts gameplay from the preparation stage with optimistic versioning', () => {
+  it('finishes preparation without starting gameplay with optimistic versioning', () => {
+    const completePreparation = vi.fn()
+    pageMocks.useStartGameRound.mockReturnValue({
+      isChangingRoundStage: false,
+      startRound: vi.fn(),
+      completePreparation,
+      reviewRound: vi.fn(),
+      completeRound: vi.fn(),
+      toastMessage: null,
+      dismissToast: vi.fn(),
+    })
+    pageMocks.useGameBoardLaunchPanel.mockReturnValue(
+      createLaunchPanelState({ canManageGame: true }),
+    )
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({
+        data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
+        activeRound: {
+          participants: [],
+          roundId: 'round-1',
+          cellId: 'cell-1',
+          teamId: 'team-1',
+          teamSlotIndex: 1,
+          status: 'preparing',
+          roundVersion: 8,
+          baseScore: 100,
+          emptyCardPenaltyApplied: false,
+        },
+      }),
+    )
+
+    renderBoard()
+    openManagementPanel()
+    fireEvent.click(screen.getByRole('button', { name: 'Завершить подготовку' }))
+
+    expect(completePreparation).toHaveBeenCalledWith({
+      roundId: 'round-1',
+      expectedRoundVersion: 8,
+    })
+  })
+
+  it('starts gameplay only after preparation is completed with optimistic versioning', () => {
     const beginGameplay = vi.fn()
     pageMocks.useStartGameRound.mockReturnValue({
       isChangingRoundStage: false,
@@ -1395,7 +1439,7 @@ describe('GameBoardPage', () => {
           cellId: 'cell-1',
           teamId: 'team-1',
           teamSlotIndex: 1,
-          status: 'preparing',
+          status: 'preparation_completed',
           roundVersion: 8,
           baseScore: 100,
           emptyCardPenaltyApplied: false,

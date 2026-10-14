@@ -178,9 +178,16 @@ try
     );
     app.MapHub<GameBoardHub>(RealtimeHubContracts.GameBoard.HubPath);
     app.MapHub<GameSetupHub>(RealtimeHubContracts.GameSetup.HubPath);
+    app.MapHub<GameOverlayHub>(RealtimeHubContracts.GameOverlay.HubPath, options =>
+    {
+        // Browser long polling supports the secret header, keeping it out of URLs and access logs.
+        options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
+        options.LongPolling.PollTimeout = TimeSpan.FromSeconds(30);
+    });
     app.MapControllers();
     if (!isDevelopment && !isTesting)
     {
+        app.MapFallbackToFile("/overlay", "index.html");
         app.MapFallbackToFile("/auth/callback", "index.html");
         app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html")
             .RequireAuthorization();

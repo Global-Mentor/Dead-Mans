@@ -1,5 +1,6 @@
 import { z } from '../../../shared/validation/zod.ts'
 import type { components } from '../../../shared/api/contracts/generated'
+import { hasGameRoundDraftChanges } from './reconcile-game-round-draft.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type GameRoundModifierResult = GameRoundDetails['modifierResults'][number]
@@ -13,61 +14,59 @@ const aggregateSafeCountFormulaCodes = new Set([
 
 export const gameRoundRuleOutcomeStatuses = ['completed', 'violated', 'notTriggered'] as const
 export const gameRoundPostRoundActions = ['continue', 'mark_team_played'] as const
-const ruleGroupSummarySchema = z
-  .object({
-    resolutionGroupId: z.string().min(1),
-    modifierId: z.string().min(1),
-    modifierName: z.string().min(1),
-    modifierDescription: z.string().nullable(),
-    memberResultIds: z.array(z.string().min(1)).min(1),
-    memberActivationIds: z.array(z.string().min(1)).min(1),
-    outcomeStatus: z.enum(gameRoundRuleOutcomeStatuses).nullable(),
-    violationComment: z.string(),
-  })
-  .superRefine((value, context) => {
-    if (value.outcomeStatus === null) {
-      context.addIssue({ code: 'custom', path: ['outcomeStatus'], message: '' })
-    }
-    if (value.outcomeStatus === 'violated' && value.violationComment.trim().length === 0) {
-      context.addIssue({ code: 'custom', path: ['violationComment'], message: '' })
-    }
-  })
+const ruleGroupDraftSchema = z.object({
+  resolutionGroupId: z.string().min(1),
+  modifierId: z.string().min(1),
+  modifierName: z.string().min(1),
+  modifierDescription: z.string().nullable(),
+  memberResultIds: z.array(z.string().min(1)).min(1),
+  memberActivationIds: z.array(z.string().min(1)).min(1),
+  outcomeStatus: z.enum(gameRoundRuleOutcomeStatuses).nullable(),
+  violationComment: z.string(),
+})
+const ruleGroupSummarySchema = ruleGroupDraftSchema.superRefine((value, context) => {
+  if (value.outcomeStatus === null) {
+    context.addIssue({ code: 'custom', path: ['outcomeStatus'], message: '' })
+  }
+  if (value.outcomeStatus === 'violated' && value.violationComment.trim().length === 0) {
+    context.addIssue({ code: 'custom', path: ['violationComment'], message: '' })
+  }
+})
 
-const scoringInstanceSummarySchema = z
-  .object({
-    modifierResultId: z.string().min(1),
-    activationId: z.string().min(1),
-    memberResultIds: z.array(z.string().min(1)).min(1),
-    memberActivationIds: z.array(z.string().min(1)).min(1),
-    modifierId: z.string().min(1),
-    modifierName: z.string().min(1),
-    modifierDescription: z.string().nullable(),
-    activationIndex: z.number().int().min(1),
-    activationCount: z.number().int().min(1),
-    resolutionKind: z.enum(['boolean', 'nonNegativeCount']),
-    isConditionMet: z.boolean().nullable(),
-    countValue: z.coerce.number<string | number>().int().min(0).nullable(),
-    inputLabel: z.string().nullable(),
-    maximumKind: z.enum(['none', 'resolvedKills', 'activations']).nullable(),
-    maximumPerActivation: z.number().int().min(1).nullable(),
-  })
-  .superRefine((value, context) => {
-    if (value.resolutionKind === 'boolean' && value.isConditionMet === null) {
-      context.addIssue({ code: 'custom', path: ['isConditionMet'], message: '' })
-    }
-    if (value.resolutionKind === 'nonNegativeCount' && value.countValue === null) {
-      context.addIssue({ code: 'custom', path: ['countValue'], message: '' })
-    }
-    if (
-      value.resolutionKind === 'nonNegativeCount' &&
-      value.countValue !== null &&
-      value.maximumKind === 'activations' &&
-      value.maximumPerActivation !== null &&
-      value.countValue > value.memberResultIds.length * value.maximumPerActivation
-    ) {
-      context.addIssue({ code: 'custom', path: ['countValue'], message: '' })
-    }
-  })
+const scoringInstanceDraftSchema = z.object({
+  modifierResultId: z.string().min(1),
+  activationId: z.string().min(1),
+  memberResultIds: z.array(z.string().min(1)).min(1),
+  memberActivationIds: z.array(z.string().min(1)).min(1),
+  modifierId: z.string().min(1),
+  modifierName: z.string().min(1),
+  modifierDescription: z.string().nullable(),
+  activationIndex: z.number().int().min(1),
+  activationCount: z.number().int().min(1),
+  resolutionKind: z.enum(['boolean', 'nonNegativeCount']),
+  isConditionMet: z.boolean().nullable(),
+  countValue: z.coerce.number<string | number>().int().min(0).nullable(),
+  inputLabel: z.string().nullable(),
+  maximumKind: z.enum(['none', 'resolvedKills', 'activations']).nullable(),
+  maximumPerActivation: z.number().int().min(1).nullable(),
+})
+const scoringInstanceSummarySchema = scoringInstanceDraftSchema.superRefine((value, context) => {
+  if (value.resolutionKind === 'boolean' && value.isConditionMet === null) {
+    context.addIssue({ code: 'custom', path: ['isConditionMet'], message: '' })
+  }
+  if (value.resolutionKind === 'nonNegativeCount' && value.countValue === null) {
+    context.addIssue({ code: 'custom', path: ['countValue'], message: '' })
+  }
+  if (
+    value.resolutionKind === 'nonNegativeCount' &&
+    value.countValue !== null &&
+    value.maximumKind === 'activations' &&
+    value.maximumPerActivation !== null &&
+    value.countValue > value.memberResultIds.length * value.maximumPerActivation
+  ) {
+    context.addIssue({ code: 'custom', path: ['countValue'], message: '' })
+  }
+})
 
 const automaticInstanceSummarySchema = z.object({
   modifierResultId: z.string().min(1),
@@ -79,14 +78,19 @@ const automaticInstanceSummarySchema = z.object({
   activationCount: z.number().int().min(1),
 })
 
-export const gameRoundSummaryFormSchema = z.object({
+const gameRoundSummaryDraftSchema = z.object({
   killsCount: z.coerce.number<string | number>().int().min(0),
   bountyCount: z.coerce.number<string | number>().int().min(0),
   notes: z.string().max(2000),
-  ruleGroups: z.array(ruleGroupSummarySchema),
-  scoringInstances: z.array(scoringInstanceSummarySchema),
+  ruleGroups: z.array(ruleGroupDraftSchema),
+  scoringInstances: z.array(scoringInstanceDraftSchema),
   automaticInstances: z.array(automaticInstanceSummarySchema),
   postRoundAction: z.enum(gameRoundPostRoundActions),
+})
+
+export const gameRoundSummaryFormSchema = gameRoundSummaryDraftSchema.extend({
+  ruleGroups: z.array(ruleGroupSummarySchema),
+  scoringInstances: z.array(scoringInstanceSummarySchema),
 })
 
 export type GameRoundSummaryFormInput = z.input<typeof gameRoundSummaryFormSchema>
@@ -95,6 +99,7 @@ export type GameRoundSummaryFormValues = z.infer<typeof gameRoundSummaryFormSche
 export type GameRoundPostRoundAction = (typeof gameRoundPostRoundActions)[number]
 
 export interface CompleteRoundInput {
+  markTeamPlayedAfterPresentation?: boolean
   roundId: string
   killsCount: number
   bountyCount: number
@@ -161,7 +166,7 @@ export function buildCompleteRoundInput(
   }
 }
 
-export function buildGameRoundPreviewRequest(input: CompleteRoundInput): FinalizeGameRoundRequest {
+function buildGameRoundPreviewRequest(input: CompleteRoundInput): FinalizeGameRoundRequest {
   return {
     status: 'completed',
     killsCount: input.killsCount,
@@ -175,6 +180,49 @@ export function buildGameRoundPreviewRequest(input: CompleteRoundInput): Finaliz
 
 export function serializeGameRoundPreviewInput(input: CompleteRoundInput) {
   return JSON.stringify(buildGameRoundPreviewRequest(input))
+}
+
+export function buildGameRoundBroadcastRequest(
+  activeRound: GameRoundDetails,
+  defaults: GameRoundSummaryFormInput,
+  input: unknown,
+): components['schemas']['BroadcastGameRoundSummaryRequestDto'] | null {
+  const draftResult = gameRoundSummaryDraftSchema.safeParse(input)
+  if (!draftResult.success) return null
+  const draft = draftResult.data
+  const metrics = gameRoundSummaryFormSchema
+    .pick({ killsCount: true, bountyCount: true })
+    .safeParse(draft)
+  if (!metrics.success) return null
+  const complete = gameRoundSummaryFormSchema.safeParse(draft)
+  const partialValues: GameRoundSummaryFormValues = {
+    ...buildGameRoundSummaryDefaultValues(activeRound),
+    ...metrics.data,
+    notes: '',
+    ruleGroups: draft.ruleGroups.flatMap((row) => {
+      const result = ruleGroupSummarySchema.safeParse(row)
+      return result.success ? [result.data] : []
+    }),
+    scoringInstances: draft.scoringInstances.flatMap((row) => {
+      const result = scoringInstanceSummarySchema.safeParse(row)
+      return result.success ? [result.data] : []
+    }),
+  }
+  return {
+    expectedRoundVersion: activeRound.roundVersion,
+    ...metrics.data,
+    hasChanges: hasGameRoundDraftChanges(defaults, {
+      ...draft,
+      notes: defaults.notes,
+      postRoundAction: defaults.postRoundAction,
+    }),
+    completeInput: complete.success
+      ? buildGameRoundPreviewRequest(buildCompleteRoundInput(activeRound, complete.data))
+      : null,
+    partialInput: complete.success
+      ? null
+      : buildGameRoundPreviewRequest(buildCompleteRoundInput(activeRound, partialValues)),
+  }
 }
 
 function buildRuleGroupDefaults(results: GameRoundModifierResult[]) {

@@ -1860,7 +1860,9 @@ test('card confirmation stays busy during submission and preserves the card afte
   releaseOpen()
   await expect(confirmation.getByRole('alert')).toBeVisible()
   await expect(confirmation).not.toContainText('internal diagnostic')
-  await expect(confirmation).toContainText('Испытание 3')
+  await expect(confirmation).toContainText(
+    `${board.colLabels[2]}: ${board.rowLabels[0]} (стоимость: 100 очк.)`,
+  )
   await expect(confirmation).toContainText('100 очк.')
   await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
   await expect.poll(() => attempts).toBe(2)
@@ -1910,7 +1912,9 @@ test('the administrator who opens a new card goes straight to the current round'
   await page.goto('/panel/game-board')
   await page.locator('[data-cell-id="card-2"]').click()
   const confirmation = page.getByRole('dialog')
-  await expect(confirmation).toContainText('Испытание 3')
+  await expect(confirmation).toContainText(
+    `${board.colLabels[2]}: ${board.rowLabels[0]} (стоимость: 100 очк.)`,
+  )
   await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
 
   await expect(page).toHaveURL(/\/panel\/game-round$/)
@@ -3400,7 +3404,7 @@ for (const width of [320, 390, 768, 1440]) {
     await stages.focus()
     await page.keyboard.press('Enter')
     await expect(stages).toHaveAttribute('aria-expanded', 'true')
-    await expect(assistant.getByRole('listitem')).toHaveCount(7)
+    await expect(assistant.getByRole('listitem')).toHaveCount(9)
     await expect(assistant.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
     await expect(assistant.locator('[data-state="complete"]')).toHaveCount(3)
     expect(await currentStep.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
@@ -3498,7 +3502,7 @@ test('admin starts modifier ordering from the current-round management petal', a
   await expect(page.getByRole('dialog', { name: 'Модификаторы' })).toBeVisible()
 })
 
-test('admin starts gameplay after preparation', async ({ page }) => {
+test('admin clears preparation before starting gameplay', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockGame(page)
   let status = 'preparing'
@@ -3514,10 +3518,16 @@ test('admin starts gameplay after preparation', async ({ page }) => {
       },
     }),
   )
-  await page.route('**/api/game/rounds/round-one/begin-gameplay', async (route) => {
+  await page.route('**/api/game/rounds/round-one/complete-preparation', async (route) => {
     expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
-    status = 'in_progress'
+    status = 'preparation_completed'
     roundVersion = 2
+    await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
+  })
+  await page.route('**/api/game/rounds/round-one/begin-gameplay', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 2 })
+    status = 'in_progress'
+    roundVersion = 3
     await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
   })
 
@@ -3525,8 +3535,10 @@ test('admin starts gameplay after preparation', async ({ page }) => {
   await expect(page.getByTestId('game-board-context')).toContainText('Подготовка к игре')
   await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
   const roundSection = page.getByTestId('management-round-section')
-  await expect(roundSection.getByRole('button', { name: 'Начать игру', exact: true })).toBeVisible()
-  await expect(roundSection.getByRole('button', { name: 'Завершить подготовку' })).toHaveCount(0)
+  await expect(roundSection.getByRole('button', { name: 'Начать игру', exact: true })).toHaveCount(
+    0,
+  )
+  await expect(roundSection.getByRole('button', { name: 'Завершить подготовку' })).toBeVisible()
   await page.screenshot({
     path: '../.tmp/game-board-design/management-preparing-390.png',
     animations: 'disabled',
@@ -3535,6 +3547,12 @@ test('admin starts gameplay after preparation', async ({ page }) => {
   await expect(roundSection.locator('[aria-current="step"]')).toContainText('Подготовка к игре')
   await roundSection.screenshot({
     path: '../.tmp/game-board-design/round-stages-preparing-390.png',
+    animations: 'disabled',
+  })
+  await roundSection.getByRole('button', { name: 'Завершить подготовку', exact: true }).click()
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Подготовка завершена')
+  await roundSection.screenshot({
+    path: '../.tmp/agent-work/overlay/preparation-completed-management.png',
     animations: 'disabled',
   })
   await roundSection.getByRole('button', { name: 'Начать игру', exact: true }).click()
@@ -3568,7 +3586,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
       }
       return heights
     })
-    await expect(phase.getByRole('listitem')).toHaveCount(7)
+    await expect(phase.getByRole('listitem')).toHaveCount(9)
     for (const side of [0, 1]) {
       const heights = samples.map((sample) => sample[side]!)
       if (reducedMotion === 'reduce')
@@ -3852,6 +3870,8 @@ test('a twelve-column board uses categories when its container cannot keep cards
   await page.setViewportSize({ width: 768, height: 900 })
   await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Категория 2')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  // After resize the old tab position can hover a card, lifting it out of its measured row.
+  await page.mouse.move(0, 0)
   await expect.poll(() => Boolean(sendEvent)).toBe(true)
   for (const nextBoard of [board, largeBoard]) {
     currentBoard = { ...nextBoard, gameId: `resized-${nextBoard.cols}` }
@@ -3935,7 +3955,7 @@ for (const width of [320, 1440]) {
         },
       }),
     )
-    await page.route('**/api/game/rounds/round-one/score-preview', (route) =>
+    await page.route('**/api/game/rounds/round-one/broadcast-summary', (route) =>
       route.fulfill({
         json: {
           scoreDetails: score,
@@ -4290,5 +4310,58 @@ for (const viewport of [
     )
     expect(overflowing).toBe(0)
     await page.screenshot({ path: info.outputPath('round.png'), animations: 'disabled' })
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`admin explicitly ends result presentation at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockGame(page)
+    let presenting = true
+    let attempts = 0
+    await page.route('**/api/game/rounds/active', (route) =>
+      presenting
+        ? route.fulfill({
+            json: {
+              ...activeRoundFixture,
+              status: 'showing_results',
+              roundVersion: 6,
+              finalScore: 300,
+            },
+          })
+        : route.fulfill({ status: 204 }),
+    )
+    await page.route('**/api/game/rounds/round-one/finish-presentation', async (route) => {
+      expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 6 })
+      attempts += 1
+      if (attempts === 1) return route.fulfill({ status: 503, json: { code: 'unavailable' } })
+      presenting = false
+      await route.fulfill({
+        json: { ...activeRoundFixture, status: 'completed', roundVersion: 7, finalScore: 300 },
+      })
+    })
+    await page.goto('/panel/game-round')
+    await expect(page.getByTestId('current-round-overview')).toContainText('Показ итогов')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const section = page.getByTestId('management-round-section')
+    const finish = section.getByRole('button', { name: 'Завершить показ', exact: true })
+    await expect(finish).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Подвести итоги', exact: true })).toHaveCount(0)
+    await expect(
+      page
+        .getByTestId('management-team-section')
+        .getByRole('button', { name: 'Снять выбор', exact: true }),
+    ).toBeDisabled()
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/results-management-${width}.png`,
+      animations: 'disabled',
+    })
+    await finish.click()
+    await expect(page.getByText('Не удалось завершить показ итогов.')).toBeVisible()
+    await expect(finish).toBeEnabled()
+    await finish.click()
+    await expect(finish).toHaveCount(0)
+    expect(attempts).toBe(2)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   })
 }

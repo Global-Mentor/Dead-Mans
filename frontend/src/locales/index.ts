@@ -25,6 +25,10 @@ type TranslationOf<TModule extends { default: Record<SupportedLanguage, object> 
   TModule['default']['en']
 
 type FeatureTranslations = {
+  gameOverlay: TranslationOf<
+    typeof import('../features/game-overlay/i18n/game-overlay-translations.ts')
+  >
+
   gameBoard: TranslationOf<typeof import('../features/game-board/i18n/game-board-translations.ts')>
   gameSetup: TranslationOf<typeof import('../features/game-setup/i18n/game-setup-translations.ts')>
   gameApplication: TranslationOf<

@@ -49,6 +49,21 @@ public sealed partial class DbGameRoundRepository
         );
     }
 
+    public Task<TransitionGameRoundResult> CompletePreparationAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return TransitionRoundAsync(
+            roundId, input.ExpectedRoundVersion,
+            GameRoundStatusValue.Preparing, GameRoundStatusValue.PreparationCompleted,
+            GameRoundTransitionActionValue.CompletePreparation, initiatedByUserId,
+            (_, _, _) => Task.CompletedTask, cancellationToken
+        );
+    }
+
     public Task<TransitionGameRoundResult> BeginGameplayAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,
@@ -59,7 +74,7 @@ public sealed partial class DbGameRoundRepository
         return TransitionRoundAsync(
             roundId,
             input.ExpectedRoundVersion,
-            GameRoundStatusValue.Preparing,
+            GameRoundStatusValue.PreparationCompleted,
             GameRoundStatusValue.InProgress,
             GameRoundTransitionActionValue.BeginGameplay,
             initiatedByUserId,
@@ -116,6 +131,31 @@ public sealed partial class DbGameRoundRepository
             },
             cancellationToken
         );
+    }
+
+    public Task<TransitionGameRoundResult> FinishPresentationAsync(
+        Guid roundId, GameRoundVersionCommandInput input, Guid initiatedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return TransitionRoundAsync(roundId, input.ExpectedRoundVersion,
+            GameRoundStatusValue.ShowingResults, GameRoundStatusValue.Completed,
+            GameRoundTransitionActionValue.FinishPresentation, initiatedByUserId,
+            async (round, now, token) =>
+            {
+                var game = await _dbContext.Games.FirstAsync(row => row.Id == round.GameId, token);
+                if (round.MarkTeamPlayedAfterPresentation)
+                {
+                    game.ActiveTeamId = null;
+                    // Persist the cleared selection before the team update, whose guard reads it.
+                    await _dbContext.SaveChangesAsync(token);
+                    var team = await _dbContext.GameTeams.FirstAsync(row => row.Id == round.TeamId, token);
+                    team.IsPlayed = true;
+                    team.PlayedAtUtc = now;
+                    team.UpdatedAtUtc = now;
+                }
+                var board = await _dbContext.GameBoards.FirstAsync(row => row.GameId == round.GameId, token);
+                board.Version += 1;
+            }, cancellationToken);
     }
 
     private async Task<TransitionGameRoundResult> TransitionRoundAsync(

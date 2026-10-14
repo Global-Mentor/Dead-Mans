@@ -134,7 +134,8 @@ public sealed record FinalizeGameRoundRequestDto(
     string? Notes,
     IReadOnlyList<FinalizeGameRoundModifierRequestDto>? ModifierResults,
     IReadOnlyList<FinalizeGameRoundRuleGroupRequestDto>? RuleGroups = null,
-    int? ExpectedRoundVersion = null
+    int? ExpectedRoundVersion = null,
+    bool MarkTeamPlayedAfterPresentation = false
 );
 
 public sealed record GameRoundScorePreviewDto(
@@ -144,6 +145,11 @@ public sealed record GameRoundScorePreviewDto(
     string NormalizedInputHash,
     IReadOnlyList<GameRoundModifierCalculationTraceDto> CalculationTrace
 );
+
+public sealed record BroadcastGameRoundSummaryRequestDto(
+    int ExpectedRoundVersion, int KillsCount, int BountyCount,
+    FinalizeGameRoundRequestDto? CompleteInput = null,
+    FinalizeGameRoundRequestDto? PartialInput = null, bool HasChanges = true);
 
 public sealed record GameRoundModifierCalculationTraceDto(
     string ModifierResultId,

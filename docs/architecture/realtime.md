@@ -8,8 +8,13 @@ Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and paylo
 | ---------- | ------------------ | -------------------------------------------- | ----------------------------------------------------------------------------- |
 | game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | board, round, modifier, quiz, notification and `gameLifecycleChanged` events  |
 | game-setup | `/hubs/game-setup` | Cookie session, admin only                   | `draftChanged` → no body; refetch `GET /api/game/setup` and question catalogs |
+| game-overlay | `/hubs/game-overlay` | Secret `X-Overlay-Key`, active staff owner | `frameChanged` without payload; refetch `GET /api/overlay/snapshot` |
 
 Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
+The standalone OBS overlay uses a separate anonymous browser connection with the secret header,
+without account cookies. Its LongPolling transport revalidates the key and its owner's current
+permissions on each request. It receives no panel events or private payloads. See the
+[OBS runtime contract](../development.md#obs-overlay) for polling, expiry and reconnect behavior.
 
 `registrationChanged` is sent to authenticated game-board clients, without a body,
 after a successful registration write: creating/renaming/joining/leaving a team,

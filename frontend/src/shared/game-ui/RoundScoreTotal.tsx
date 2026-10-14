@@ -1,14 +1,17 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { SectionDivider } from '../ui/index.ts'
+import { broadcastUpdateSx } from './broadcast-motion.ts'
 
 export function RoundScoreTotal({
   label,
   value,
   score,
+  animateChanges = false,
 }: {
   label: string
   value: string
   score: number
+  animateChanges?: boolean
 }) {
   return (
     <Stack spacing={1}>
@@ -45,12 +48,21 @@ export function RoundScoreTotal({
           sx={{
             m: 0,
             textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums',
             overflowWrap: 'anywhere',
             color: score > 0 ? 'success.main' : score < 0 ? 'error.main' : 'text.primary',
           }}
         >
-          {value}
+          {animateChanges ? (
+            <Box
+              component="span"
+              key={value}
+              sx={{ display: 'inline-block', ...broadcastUpdateSx }}
+            >
+              {value}
+            </Box>
+          ) : (
+            value
+          )}
         </Typography>
       </Box>
     </Stack>

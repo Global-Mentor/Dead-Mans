@@ -95,7 +95,8 @@ public sealed partial class DbGameRoundRepository
                 }
             }
 
-            round.Status = normalizedStatus;
+            round.Status = GameRoundStatusValue.ShowingResults;
+            round.MarkTeamPlayedAfterPresentation = input.MarkTeamPlayedAfterPresentation;
             round.FinishedAtUtc = now;
             round.ResolvedByUserId = resolvedByUserId;
             round.UpdatedAtUtc = now;
@@ -127,7 +128,7 @@ public sealed partial class DbGameRoundRepository
             await AddTransitionAuditAsync(
                 round,
                 GameRoundStatusValue.ReviewingResults,
-                GameRoundStatusValue.Completed,
+                GameRoundStatusValue.ShowingResults,
                 GameRoundTransitionActionValue.Finalize,
                 resolvedByUserId,
                 null,
@@ -147,9 +148,6 @@ public sealed partial class DbGameRoundRepository
             {
                 modifier.ArchivedAtUtc = now;
             }
-
-            var game = await _dbContext.Games.FirstAsync(x => x.Id == round.GameId, cancellationToken);
-            game.ActiveTeamId = null;
 
             var board = await _dbContext.GameBoards.FirstAsync(x => x.GameId == round.GameId, cancellationToken);
             board.Version += 1;
@@ -243,7 +241,7 @@ public sealed partial class DbGameRoundRepository
             }
         }
 
-        round.Status = normalizedStatus;
+        round.Status = GameRoundStatusValue.ShowingResults;
         round.KillsCount = input.KillsCount;
         round.BountyCount = input.BountyCount;
         if (!TryApplyModifierScoring(
@@ -269,7 +267,7 @@ public sealed partial class DbGameRoundRepository
 
         return new PreviewGameRoundScoreResult(
             FinalizeGameRoundOutcome.Completed,
-            ToScoreDetails(scoreBreakdown),
+            GameRoundScoreCalculator.ToDetails(scoreBreakdown),
             round.ModifierResults
                 .OrderBy(x => x.CreatedAtUtc)
                 .Select(ToModifierSnapshot)
@@ -345,5 +343,4 @@ public sealed partial class DbGameRoundRepository
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)))
             .ToLowerInvariant();
     }
-
 }

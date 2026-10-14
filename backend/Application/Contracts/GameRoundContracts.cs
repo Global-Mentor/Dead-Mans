@@ -124,8 +124,13 @@ public sealed record FinalizeGameRoundInput(
     string? Notes,
     IReadOnlyList<FinalizeGameRoundModifierInput> ModifierResults,
     IReadOnlyList<FinalizeGameRoundRuleGroupInput> RuleGroups,
-    int? ExpectedRoundVersion
+    int? ExpectedRoundVersion,
+    bool MarkTeamPlayedAfterPresentation = false
 );
+
+public sealed record BroadcastGameRoundSummaryInput(
+    int ExpectedRoundVersion, int KillsCount, int BountyCount, FinalizeGameRoundInput? CompleteInput,
+    FinalizeGameRoundInput? PartialInput = null, bool HasChanges = true);
 
 public enum StartGameRoundOutcome
 {

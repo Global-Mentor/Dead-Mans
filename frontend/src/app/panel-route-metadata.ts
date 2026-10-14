@@ -163,6 +163,14 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'admin',
     adminSection: 'system',
   }),
+  createPanelRouteDefinition({
+    id: 'game-overlay',
+    path: 'game-overlay',
+    labelKey: 'navigation.items.gameOverlay.label',
+    allowedRoles: ['moderator', 'admin', 'superadmin'],
+    group: 'admin',
+    adminSection: 'system',
+  }),
 ])
 
 type PanelRouteId = (typeof panelRoutes)[number]['id']

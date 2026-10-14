@@ -11,8 +11,10 @@ type GameManagementFlowStepId =
   | 'start_modifiers'
   | 'activate_modifiers'
   | 'start_round'
+  | 'complete_preparation'
   | 'play_round'
   | 'review_round'
+  | 'show_results'
 
 type GameManagementFlowStepState = 'complete' | 'current' | 'ready' | 'upcoming' | 'blocked'
 type GameManagementFlowSummaryKey =
@@ -23,8 +25,10 @@ type GameManagementFlowSummaryKey =
   | 'gameBoard.flowSummary.cardOpened'
   | 'gameBoard.flowSummary.awaitingModifiers'
   | 'gameBoard.flowSummary.roundPreparing'
+  | 'gameBoard.flowSummary.preparationCompleted'
   | 'gameBoard.flowSummary.roundInProgress'
   | 'gameBoard.flowSummary.reviewingResults'
+  | 'gameBoard.flowSummary.showingResults'
   | 'gameBoard.flowSummary.noCardsLeft'
 type GameManagementFlowStepTitleKey =
   | 'gameBoard.flowSteps.select_team.title'
@@ -32,16 +36,20 @@ type GameManagementFlowStepTitleKey =
   | 'gameBoard.flowSteps.start_modifiers.title'
   | 'gameBoard.flowSteps.activate_modifiers.title'
   | 'gameBoard.flowSteps.start_round.title'
+  | 'gameBoard.flowSteps.complete_preparation.title'
   | 'gameBoard.flowSteps.play_round.title'
   | 'gameBoard.flowSteps.review_round.title'
+  | 'gameBoard.flowSteps.show_results.title'
 type GameManagementFlowStepDescriptionKey =
   | 'gameBoard.flowSteps.select_team.description'
   | 'gameBoard.flowSteps.select_card.description'
   | 'gameBoard.flowSteps.start_modifiers.description'
   | 'gameBoard.flowSteps.activate_modifiers.description'
   | 'gameBoard.flowSteps.start_round.description'
+  | 'gameBoard.flowSteps.complete_preparation.description'
   | 'gameBoard.flowSteps.play_round.description'
   | 'gameBoard.flowSteps.review_round.description'
+  | 'gameBoard.flowSteps.show_results.description'
 
 interface GameManagementFlowStep {
   id: GameManagementFlowStepId
@@ -64,8 +72,10 @@ const flowStepOrder: readonly GameManagementFlowStepId[] = [
   'start_modifiers',
   'activate_modifiers',
   'start_round',
+  'complete_preparation',
   'play_round',
   'review_round',
+  'show_results',
 ]
 
 export function buildGameManagementFlow(
@@ -90,8 +100,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
+        complete_preparation: 'blocked',
         play_round: 'blocked',
         review_round: 'blocked',
+        show_results: 'blocked',
       },
     )
   }
@@ -108,8 +120,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'current',
         activate_modifiers: 'upcoming',
         start_round: 'upcoming',
+        complete_preparation: 'upcoming',
         play_round: 'upcoming',
         review_round: 'upcoming',
+        show_results: 'upcoming',
       },
     )
   }
@@ -126,8 +140,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'complete',
         activate_modifiers: 'current',
         start_round: 'ready',
+        complete_preparation: 'upcoming',
         play_round: 'upcoming',
         review_round: 'upcoming',
+        show_results: 'upcoming',
       },
     )
   }
@@ -144,8 +160,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'complete',
+        complete_preparation: 'complete',
         play_round: 'current',
         review_round: 'ready',
+        show_results: 'upcoming',
       },
     )
   }
@@ -155,15 +173,37 @@ export function buildGameManagementFlow(
       'round_running',
       'gameBoard.flowSummary.roundPreparing',
       'start_round',
-      'play_round',
+      'complete_preparation',
       {
         select_team: 'complete',
         select_card: 'complete',
         start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'current',
+        complete_preparation: 'ready',
+        play_round: 'upcoming',
+        review_round: 'upcoming',
+        show_results: 'upcoming',
+      },
+    )
+  }
+
+  if (activeRound?.status === 'preparation_completed') {
+    return createFlowModel(
+      'round_running',
+      'gameBoard.flowSummary.preparationCompleted',
+      'complete_preparation',
+      'play_round',
+      {
+        select_team: 'complete',
+        select_card: 'complete',
+        start_modifiers: 'complete',
+        activate_modifiers: 'complete',
+        start_round: 'complete',
+        complete_preparation: 'current',
         play_round: 'ready',
         review_round: 'upcoming',
+        show_results: 'upcoming',
       },
     )
   }
@@ -173,6 +213,26 @@ export function buildGameManagementFlow(
       'reviewing',
       'gameBoard.flowSummary.reviewingResults',
       'review_round',
+      'show_results',
+      {
+        select_team: 'complete',
+        select_card: 'complete',
+        start_modifiers: 'complete',
+        activate_modifiers: 'complete',
+        start_round: 'complete',
+        complete_preparation: 'complete',
+        play_round: 'complete',
+        review_round: 'current',
+        show_results: 'upcoming',
+      },
+    )
+  }
+
+  if (activeRound?.status === 'showing_results') {
+    return createFlowModel(
+      'reviewing',
+      'gameBoard.flowSummary.showingResults',
+      'show_results',
       null,
       {
         select_team: 'complete',
@@ -180,8 +240,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'complete',
         activate_modifiers: 'complete',
         start_round: 'complete',
+        complete_preparation: 'complete',
         play_round: 'complete',
-        review_round: 'current',
+        review_round: 'complete',
+        show_results: 'current',
       },
     )
   }
@@ -198,8 +260,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
+        complete_preparation: 'blocked',
         play_round: 'blocked',
         review_round: 'blocked',
+        show_results: 'blocked',
       },
     )
   }
@@ -216,8 +280,10 @@ export function buildGameManagementFlow(
         start_modifiers: 'blocked',
         activate_modifiers: 'blocked',
         start_round: 'blocked',
+        complete_preparation: 'blocked',
         play_round: 'blocked',
         review_round: 'blocked',
+        show_results: 'blocked',
       },
     )
   }
@@ -233,8 +299,10 @@ export function buildGameManagementFlow(
       start_modifiers: 'upcoming',
       activate_modifiers: 'upcoming',
       start_round: 'upcoming',
+      complete_preparation: 'upcoming',
       play_round: 'upcoming',
       review_round: 'upcoming',
+      show_results: 'upcoming',
     },
   )
 }
@@ -280,9 +348,17 @@ function createStep(
       titleKey: 'gameBoard.flowSteps.start_round.title',
       descriptionKey: 'gameBoard.flowSteps.start_round.description',
     },
+    complete_preparation: {
+      titleKey: 'gameBoard.flowSteps.complete_preparation.title',
+      descriptionKey: 'gameBoard.flowSteps.complete_preparation.description',
+    },
     play_round: {
       titleKey: 'gameBoard.flowSteps.play_round.title',
       descriptionKey: 'gameBoard.flowSteps.play_round.description',
+    },
+    show_results: {
+      titleKey: 'gameBoard.flowSteps.show_results.title',
+      descriptionKey: 'gameBoard.flowSteps.show_results.description',
     },
     review_round: {
       titleKey: 'gameBoard.flowSteps.review_round.title',

@@ -310,7 +310,13 @@ for (const locale of [
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(320)
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(568)
     expect(await menu.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    expect((await menu.getByRole('menuitem').allTextContents()).slice(-2)).toEqual([
+      locale.roles,
+      'OBS',
+    ])
     await page.keyboard.press('End')
+    await expect(menu.getByRole('menuitem', { name: 'OBS', exact: true })).toBeFocused()
+    await page.keyboard.press('ArrowUp')
     await expect(menu.getByRole('menuitem', { name: locale.roles, exact: true })).toBeFocused()
     await menu.screenshot({
       path: `../.tmp/header-design/admin-short-${locale.code}.png`,

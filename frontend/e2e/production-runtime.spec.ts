@@ -43,7 +43,9 @@ async function serveProductionApp(page: Page, api: (route: Route) => Promise<voi
     } else {
       const file = resolve(
         dist,
-        path === '/' || path.startsWith('/panel/') ? 'index.html' : `.${path}`,
+        path === '/' || path === '/overlay' || path.startsWith('/panel/')
+          ? 'index.html'
+          : `.${path}`,
       )
       expect(file.startsWith(`${dist}${sep}`)).toBe(true)
       await route.fulfill({
@@ -431,4 +433,168 @@ test('a shared hub reconnects after an abnormal close and refreshes an empty boa
     ),
   ).toBeVisible()
   expect(failures).toEqual([])
+})
+
+test('OBS overlay works under the production CSP without account requests', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  const errors: string[] = []
+  const requests: string[] = []
+  let showRound = false
+  let showGameplay = false
+  let showSummary = false
+  const gameplayStartedAtUtc = new Date(Date.now() - 30_000).toISOString()
+  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname))
+  await serveProductionApp(page, async (route) => {
+    if (new URL(route.request().url()).pathname.startsWith('/hubs/game-overlay')) {
+      await route.fulfill({ status: 503 })
+      return
+    }
+    expect(new URL(route.request().url()).pathname).toBe('/api/overlay/snapshot')
+    await route.fulfill({
+      json: {
+        gameId: 'game',
+        round:
+          showRound && !showGameplay
+            ? {
+                id: 'round',
+                columnLabel: 'Hunt',
+                rowLabel: '100',
+                title: 'Opened card',
+                cost: 100,
+                imageUrl: `${origin}/brand/share-card.png`,
+                modifiers: [
+                  {
+                    id: 'activation',
+                    modifierId: 'modifier-1',
+                    name: 'One chance',
+                    iconEmoji: null,
+                  },
+                ],
+              }
+            : null,
+        phase: showSummary
+          ? 'reviewing_results'
+          : showGameplay
+            ? 'in_progress'
+            : showRound
+              ? 'awaiting_modifiers'
+              : 'select_card',
+        summary: showSummary
+          ? {
+              roundId: 'round',
+              isFinal: false,
+              card: {
+                id: 'round',
+                columnLabel: 'Hunt',
+                rowLabel: '100',
+                title: 'Opened card',
+                cost: 100,
+                imageUrl: `${origin}/brand/share-card.png`,
+                modifiers: [],
+              },
+              teamName: 'Broadcast team',
+              teamSlotIndex: 1,
+              killsCount: 2,
+              bountyCount: 1,
+              killsScore: 200,
+              bountyScore: 100,
+              scoreDetails: {
+                scoreUnit: 100,
+                killsScore: 200,
+                bountyScore: 100,
+                modifierKillDelta: 0,
+                modifierKillScore: 0,
+                modifierScoreDelta: 0,
+                emptyCardPenaltyApplied: false,
+                emptyCardPenaltyScore: 0,
+                penaltyTotal: 0,
+                bonusDelta: 0,
+                totalKillCount: 2,
+                finalScore: 300,
+                calculationLines: [
+                  {
+                    kind: 'kills',
+                    activationCount: 0,
+                    pointsDelta: 200,
+                    runningTotal: 200,
+                    operands: [],
+                  },
+                  {
+                    kind: 'bounties',
+                    activationCount: 0,
+                    pointsDelta: 100,
+                    runningTotal: 300,
+                    operands: [],
+                  },
+                  {
+                    kind: 'modifierPoints',
+                    modifierId: 'modifier-1',
+                    modifierName: 'One chance',
+                    activationCount: 1,
+                    pointsDelta: 0,
+                    runningTotal: 300,
+                    operands: [],
+                  },
+                ],
+              },
+            }
+          : null,
+        gameplay: showGameplay
+          ? {
+              roundId: 'round',
+              gameplayStartedAtUtc,
+              serverNowUtc: new Date().toISOString(),
+              modifiers: [
+                {
+                  modifierId: 'modifier-1',
+                  name: 'One chance',
+                  iconEmoji: null,
+                  activationCount: 1,
+                  timers: [{ id: 'timer-1', durationSeconds: 300 }],
+                },
+              ],
+            }
+          : null,
+        team: { name: 'Broadcast team', slotIndex: 1, players: ['Hunter', 'Scout'] },
+        board: {
+          rowLabels: ['100'],
+          colLabels: ['Hunt'],
+          cells: [{ row: 0, col: 0, cost: 100, state: 'closed', title: null }],
+        },
+      },
+    })
+  })
+  await page.goto(`${origin}/overlay#key=${'a'.repeat(64)}`)
+  await expect(page.getByText('Broadcast team')).toBeVisible()
+  await expect(page.getByTestId('overlay-board')).toBeVisible()
+  await expect(page.getByTestId('overlay-board').locator('[data-state="closed"]')).toHaveText(
+    '100 pts',
+  )
+  showRound = true
+  await expect(page.getByTestId('overlay-card')).toBeVisible()
+  await expect(page.getByTestId('overlay-card').getByRole('img')).toBeVisible()
+  await expect(page.getByText('One chance')).toBeVisible()
+  await expect(page.getByTestId('overlay-board')).toHaveCount(0)
+  showGameplay = true
+  await expect(page.getByRole('timer')).toHaveText(/^4:[23]\d$/)
+  await expect(page.getByTestId('overlay-card')).toHaveCount(0)
+  await expect(page.getByTestId('overlay-team')).toBeHidden()
+  showSummary = true
+  await expect(page.getByTestId('overlay-summary')).toContainText('Result review')
+  await expect(page.getByTestId('overlay-summary-total').getByRole('status')).toHaveText('300')
+  await expect(
+    page.getByTestId('overlay-summary').getByTestId('round-score-breakdown').locator('dd'),
+  ).toHaveCount(0)
+  await expect(page.getByTestId('overlay-summary')).toContainText('One chance')
+  await expect(page.getByTestId('overlay-team')).toBeVisible()
+  await expect(page.getByTestId('overlay-team')).toContainText('Broadcast team')
+  await expect(page.getByTestId('overlay-team')).toContainText('Hunter')
+  await expect(page.getByTestId('overlay-team')).toContainText('Scout')
+  await expect(page.getByRole('timer')).toHaveCount(0)
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
+    'rgba(0, 0, 0, 0)',
+  )
+  expect(requests).not.toContain('/auth/me')
+  expect(errors).toEqual([])
 })

@@ -254,6 +254,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     public async Task SetActiveTeam_WhenCardHasActiveRound_ReturnsConflictAndKeepsActiveTeam(
         string roundStatus
     )
@@ -271,12 +272,12 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
                 .Where(cell => cell.Id == cellId)
                 .Select(cell => cell.Board.Game)
                 .SingleAsync();
-            if (roundStatus == GameRoundStatusValue.Preparing)
+            if (roundStatus is GameRoundStatusValue.Preparing or GameRoundStatusValue.PreparationCompleted)
             {
                 var round = await dbContext.GameRounds.SingleAsync(
                     candidate => candidate.BoardCellId == cellId
                 );
-                round.Status = GameRoundStatusValue.Preparing;
+                round.Status = roundStatus;
                 round.PreparedAtUtc = DateTime.UtcNow;
                 round.Version += 1;
             }
@@ -815,20 +816,21 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     public async Task OpenCell_WhenRoundIsActive_ReturnsConflict(string roundStatus)
     {
         var cellId = await SeedSingleCellAsync();
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
         var openResponse = await adminClient.PostAsync($"/api/game/cells/{cellId}/open", content: null);
         Assert.Equal(HttpStatusCode.NoContent, openResponse.StatusCode);
-        if (roundStatus == GameRoundStatusValue.Preparing)
+        if (roundStatus is GameRoundStatusValue.Preparing or GameRoundStatusValue.PreparationCompleted)
         {
             using var scope = _factory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var round = await dbContext.GameRounds.SingleAsync(
                 candidate => candidate.BoardCellId == cellId
             );
-            round.Status = GameRoundStatusValue.Preparing;
+            round.Status = roundStatus;
             round.PreparedAtUtc = DateTime.UtcNow;
             round.Version += 1;
             await dbContext.SaveChangesAsync();

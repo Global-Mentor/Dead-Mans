@@ -8,6 +8,60 @@ info:
 servers:
   - url: /api
 paths:
+  /overlay/key:
+    post:
+      operationId: rotateGameOverlayKey
+      description: Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: New key; previous links stop working
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameOverlayKeyDto"
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator or admin required
+    delete:
+      operationId: revokeGameOverlayKey
+      description: Revokes the current user's broadcast key. Idempotent. Moderator or admin only.
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: Key revoked
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator or admin required
+  /overlay/snapshot:
+    get:
+      operationId: getGameOverlaySnapshot
+      description: Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user IDs, questions or management data. Responses are not cacheable.
+      security:
+        - overlayKey: []
+      parameters:
+        - in: header
+          name: X-Overlay-Key
+          required: true
+          schema:
+            type: string
+            minLength: 64
+            maxLength: 64
+      responses:
+        "200":
+          description: Current frame; idle frames have no board
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameOverlaySnapshotDto"
+        "401":
+          description: Missing, invalid or revoked key, or inactive owner
+        "429":
+          description: Read rate limit reached
   /admin/users:
     get:
       operationId: getRoleAdministrationUsers
@@ -2141,6 +2195,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/rounds/{roundId}/finish-presentation:
+    post:
+      operationId: finishGameRoundPresentation
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roundId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRoundVersionCommandRequestDto'
+      responses:
+        '200':
+          description: Result presentation ended; the next round is available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoundDetailsDto'
+        '400':
+          description: Invalid auth claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Round not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Round is not showing results, or the version is stale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /game/rounds/{roundId}/review:
     post:
       operationId: reviewGameRound
@@ -2217,6 +2326,61 @@ paths:
       responses:
         '200':
           description: Modifier ordering closed and round moved to preparation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoundDetailsDto'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Round not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invalid lifecycle state or stale round version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/rounds/{roundId}/complete-preparation:
+    post:
+      operationId: completeGameRoundPreparation
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roundId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRoundVersionCommandRequestDto'
+      responses:
+        '200':
+          description: Preparation completed; overlay cleared without starting gameplay or modifier timers
           content:
             application/json:
               schema:
@@ -2491,7 +2655,7 @@ paths:
               $ref: '#/components/schemas/FinalizeGameRoundRequestDto'
       responses:
         '200':
-          description: Round finalized and written to history
+          description: Scores saved; round enters showing_results until finish-presentation completes it
           content:
             application/json:
               schema:
@@ -2587,6 +2751,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/rounds/{roundId}/broadcast-summary:
+    post:
+      operationId: broadcastGameRoundSummary
+      description: Publishes a server-calculated, provisional OBS summary. Does not finalize the round or alter scores. Partial inputs include individually resolved modifier conditions; unresolved modifiers remain zero. Writes serialize with phase transitions and require the current round version.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roundId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BroadcastGameRoundSummaryRequestDto' }
+      responses:
+        '200':
+          description: Complete provisional calculation published
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GameRoundScorePreviewDto' }
+        '204':
+          description: Partial metrics published; complete calculation is unavailable
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: Round not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Round phase or version changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Immutable modifier configuration cannot be calculated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /game/rounds/{roundId}/score-preview:
     post:
       operationId: previewGameRoundScore
@@ -4274,11 +4492,207 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   securitySchemes:
+    overlayKey:
+      type: apiKey
+      in: header
+      name: X-Overlay-Key
     cookieAuth:
       type: apiKey
       in: cookie
       name: dm_auth
   schemas:
+    GameOverlayKeyDto:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          minLength: 64
+          maxLength: 64
+    GameOverlayTeamDto:
+      type: object
+      required: [name, slotIndex, players]
+      properties:
+        name:
+          type: string
+          nullable: true
+        slotIndex:
+          type: integer
+        players:
+          type: array
+          items:
+            type: string
+    GameOverlayCellDto:
+      type: object
+      required: [row, col, cost, state, title, imageUrl, result]
+      properties:
+        row:
+          type: integer
+        col:
+          type: integer
+        cost:
+          type: integer
+        state:
+          type: string
+          enum: [closed, open, cancelled]
+        title:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        result:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/GameOverlayCellResultDto"
+          nullable: true
+    GameOverlayCellResultDto:
+      type: object
+      required: [teamName, teamSlotIndex, finalScore, penaltyTotal]
+      properties:
+        teamName:
+          type: string
+          nullable: true
+        teamSlotIndex:
+          type: integer
+        finalScore:
+          type: integer
+        penaltyTotal:
+          type: integer
+    GameOverlayBoardDto:
+      type: object
+      required: [rowLabels, colLabels, cells]
+      properties:
+        rowLabels:
+          type: array
+          items:
+            type: string
+        colLabels:
+          type: array
+          items:
+            type: string
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameOverlayCellDto"
+    GameOverlayModifierDto:
+      type: object
+      required: [id, name, iconEmoji, modifierId]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        iconEmoji:
+          type: string
+          nullable: true
+        modifierId:
+          type: string
+          description: Stable modifier definition identity shared by repeated activations.
+    GameOverlayRoundDto:
+      type: object
+      required: [id, title, cost, imageUrl, modifiers, columnLabel, rowLabel]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          nullable: true
+        cost:
+          type: integer
+        imageUrl:
+          type: string
+          nullable: true
+        modifiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameOverlayModifierDto"
+        columnLabel:
+          type: string
+          description: Published board column at the round's saved column index.
+        rowLabel:
+          type: string
+          description: Published board row at the round's saved row index.
+    GameOverlayTimerDto:
+      type: object
+      required: [id, durationSeconds]
+      properties:
+        id: { type: string }
+        durationSeconds: { type: integer, format: int64, minimum: 1 }
+    GameOverlayGameplayModifierDto:
+      type: object
+      required: [modifierId, name, iconEmoji, activationCount, timers]
+      properties:
+        modifierId: { type: string }
+        name: { type: string }
+        iconEmoji: { type: string, nullable: true }
+        activationCount: { type: integer, minimum: 1 }
+        timers:
+          type: array
+          items: { $ref: "#/components/schemas/GameOverlayTimerDto" }
+    GameOverlayGameplayDto:
+      type: object
+      required: [roundId, gameplayStartedAtUtc, serverNowUtc, modifiers]
+      properties:
+        roundId: { type: string }
+        gameplayStartedAtUtc: { type: string, format: date-time }
+        serverNowUtc: { type: string, format: date-time }
+        modifiers:
+          type: array
+          items: { $ref: "#/components/schemas/GameOverlayGameplayModifierDto" }
+    GameOverlaySummaryDto:
+      type: object
+      required: [roundId, isFinal, card, teamName, teamSlotIndex, killsCount, bountyCount, killsScore, bountyScore, scoreDetails]
+      properties:
+        roundId: { type: string }
+        isFinal: { type: boolean }
+        card: { $ref: '#/components/schemas/GameOverlayRoundDto' }
+        teamName: { type: string, nullable: true }
+        teamSlotIndex: { type: integer }
+        killsCount: { type: integer, minimum: 0 }
+        bountyCount: { type: integer, minimum: 0 }
+        killsScore: { type: integer }
+        bountyScore: { type: integer }
+        scoreDetails:
+          $ref: '#/components/schemas/GameRoundScoreDetailsDto'
+    GameOverlaySnapshotDto:
+      type: object
+      required: [gameId, phase, team, board, round]
+      properties:
+        gameId:
+          type: string
+          nullable: true
+        phase:
+          type: string
+          enum: [idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
+        team:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GameOverlayTeamDto"
+        board:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GameOverlayBoardDto"
+        round:
+          type: object
+          nullable: true
+          description: Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts.
+          allOf:
+            - $ref: "#/components/schemas/GameOverlayRoundDto"
+        gameplay:
+          type: object
+          nullable: true
+          description: Frozen modifier groups and timing anchors, only during in_progress. Timer durations aggregate only within their persisted runtime groups.
+          allOf:
+            - $ref: "#/components/schemas/GameOverlayGameplayDto"
+        summary:
+          type: object
+          nullable: true
+          description: Public provisional summary during review, then immutable final round score for 30 seconds after completion. This display does not block the next round. Excludes private notes and rule violation comments.
+          allOf:
+            - $ref: '#/components/schemas/GameOverlaySummaryDto'
     GameBoardCellMediaDto:
       type: object
       required: [url]
@@ -7032,7 +7446,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
+          enum: [card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed, cancelled]
         roundVersion:
           type: integer
           minimum: 1
@@ -7103,7 +7517,7 @@ components:
           nullable: true
         technicalCancellationStage:
           type: string
-          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results]
+          enum: [card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results]
           nullable: true
         purchasesRefunded:
           type: boolean
@@ -7585,7 +7999,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [card_opened, awaiting_modifiers, preparing, in_progress, reviewing_results, completed, cancelled]
+          enum: [card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed, cancelled]
         roundVersion:
           type: integer
           minimum: 1
@@ -7707,6 +8121,9 @@ components:
       type: object
       required: [status, killsCount, bountyCount]
       properties:
+        markTeamPlayedAfterPresentation:
+          type: boolean
+          description: Defaults to false. Mark the team played when the operator ends result presentation.
         status:
           type: string
           enum: [completed]
@@ -7755,6 +8172,28 @@ components:
           minLength: 1
           maxLength: 1000
           nullable: true
+    BroadcastGameRoundSummaryRequestDto:
+      type: object
+      required: [expectedRoundVersion, killsCount, bountyCount]
+      properties:
+        expectedRoundVersion: { type: integer, minimum: 1 }
+        killsCount: { type: integer, minimum: 0 }
+        bountyCount: { type: integer, minimum: 0 }
+        completeInput:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/FinalizeGameRoundRequestDto'
+        partialInput:
+          type: object
+          nullable: true
+          description: Only already entered modifier conditions and complete rule groups. Mutually exclusive with completeInput. Does not authorize finalization.
+          allOf:
+            - $ref: '#/components/schemas/FinalizeGameRoundRequestDto'
+        hasChanges:
+          type: boolean
+          default: true
+          description: False initializes public overlay rows and total to zero while keeping the operator's complete validation calculation separate.
     GameRoundScorePreviewDto:
       type: object
       required:
@@ -8234,9 +8673,19 @@ components:
 x-signalr:
   version: v1
   description: >
-    SignalR hubs run on the backend origin (not under /api). Negotiate with cookie auth
-    (same session as HTTP). Event names and hub paths are stable contract surface.
+    SignalR hubs run on the backend origin (not under /api). Authentication is specified
+    per hub. Event names and hub paths are stable contract surface.
   hubs:
+    gameOverlay:
+      path: /hubs/game-overlay
+      security:
+        - overlayKey: []
+      authorization:
+        summary: Secret overlay key in X-Overlay-Key. LongPolling only; no cookie session or hub methods.
+      serverEvents:
+        frameChanged:
+          summary: Broadcast state changed; refetch the authorized overlay snapshot. No payload.
+      clientEvents: {}
     gameBoard:
       path: /hubs/game-board
       security:

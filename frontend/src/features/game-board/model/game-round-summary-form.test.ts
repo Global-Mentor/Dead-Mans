@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { components } from '../../../shared/api/contracts/generated'
 import {
   buildCompleteRoundInput,
+  buildGameRoundBroadcastRequest,
   buildGameRoundSummaryDefaultValues,
   gameRoundSummaryFormSchema,
 } from './game-round-summary-form.ts'
@@ -10,6 +11,61 @@ type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 type ModifierResult = GameRoundDetails['modifierResults'][number]
 
 describe('game-round-summary-form', () => {
+  it('publishes filled conditions without completing the remaining form and initializes untouched rows', () => {
+    const round = createRound({
+      killsCount: 0,
+      bountyCount: 0,
+      modifierResults: [
+        createModifier({
+          modifierResultId: 'shot',
+          modifierId: 'shot',
+          activationId: 'shot',
+          resolutionKind: 'nonNegativeCount',
+        }),
+        createModifier({
+          modifierResultId: 'boolean',
+          modifierId: 'boolean',
+          activationId: 'boolean',
+        }),
+        createModifier({
+          modifierResultId: 'rule',
+          modifierId: 'rule',
+          activationId: 'rule',
+          resolutionKind: 'ruleStatus',
+          resolutionGroupId: 'group',
+        }),
+      ],
+    })
+    const defaults = buildGameRoundSummaryDefaultValues(round)
+    expect(buildGameRoundBroadcastRequest(round, defaults, defaults)).toMatchObject({
+      hasChanges: false,
+      completeInput: null,
+    })
+    const draft = {
+      ...defaults,
+      killsCount: '3',
+      notes: 'Private',
+      scoringInstances: defaults.scoringInstances.map((row) =>
+        row.modifierResultId === 'shot' ? { ...row, countValue: '1' } : row,
+      ),
+    }
+    const broadcast = buildGameRoundBroadcastRequest(round, defaults, draft)
+    expect(broadcast).toMatchObject({
+      hasChanges: true,
+      completeInput: null,
+      partialInput: {
+        killsCount: 3,
+        notes: null,
+        modifierResults: [{ modifierResultId: 'shot', countValue: 1, isConditionMet: null }],
+        ruleGroups: [],
+      },
+    })
+    expect(gameRoundSummaryFormSchema.safeParse(draft).success).toBe(false)
+    expect(
+      buildGameRoundBroadcastRequest(round, defaults, { ...defaults, notes: 'Private note' })
+        ?.hasChanges,
+    ).toBe(false)
+  })
   it('converts numeric text fields into numeric API values before submission', () => {
     const round = createRound({
       modifierResults: [createModifier({ resolutionKind: 'nonNegativeCount' })],

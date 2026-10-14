@@ -113,7 +113,7 @@ public sealed partial class DbGameRoundRepository
             )
             .ToArray();
 
-        var scoreDetails = ToScoreDetails(CalculateRoundScoreSnapshot(
+        var scoreDetails = Application.Features.GameRounds.GameRoundScoreCalculator.ToDetails(CalculateRoundScoreSnapshot(
             round.Status,
             round.BaseScore,
             round.KillsCount,

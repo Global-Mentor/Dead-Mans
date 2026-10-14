@@ -1,6 +1,7 @@
 export { AdminRegistrationPanel } from './ui/AdminRegistrationPanel.tsx'
 export { AdminGameLaunchDrawer } from './ui/AdminGameLaunchDrawer.tsx'
 export {
+  gameRegistrationQueryKeys,
   gameRegistrationAdminSnapshotQueryOptions,
   gameRegistrationSnapshotQueryOptions,
 } from './api/game-registration-queries.ts'

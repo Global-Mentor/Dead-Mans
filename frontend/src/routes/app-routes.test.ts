@@ -53,6 +53,7 @@ describe('panel route helpers', () => {
       catalogModifiersRoute,
       catalogQuestionsRoute,
       teamRegistrationsRoute,
+      getPanelRouteByPath('/panel/game-overlay'),
     ])
   })
 
@@ -68,6 +69,7 @@ describe('panel route helpers', () => {
       gameHistoryRoute,
       modifierHistoryRoute,
       teamRegistrationsRoute,
+      getPanelRouteByPath('/panel/game-overlay'),
     ])
   })
 
@@ -89,6 +91,7 @@ describe('panel route helpers', () => {
       catalogQuestionsRoute,
       teamRegistrationsRoute,
       roleAdministrationRoute,
+      getPanelRouteByPath('/panel/game-overlay'),
     ])
     expect(hasAccessToPanelRoute(roleAdministrationRoute, ['admin'])).toBe(false)
   })
@@ -96,6 +99,11 @@ describe('panel route helpers', () => {
   it('resolves nested panel paths to their route metadata', () => {
     expect(getPanelRouteByPath('/panel/game-board/cell/1')).toBe(gameBoardRoute)
     expect(getPanelRouteByPath('/outside')).toBeNull()
+    expect(getPanelRouteByPath('/panel/game-overlay')?.allowedRoles).toEqual([
+      'moderator',
+      'admin',
+      'superadmin',
+    ])
   })
 
   it('denies restricted routes without a matching authenticated role', () => {

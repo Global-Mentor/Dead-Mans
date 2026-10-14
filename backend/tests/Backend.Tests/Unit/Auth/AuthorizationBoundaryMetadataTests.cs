@@ -120,11 +120,13 @@ public sealed class AuthorizationBoundaryMetadataTests
                 nameof(GameRoundController.Start),
                 nameof(GameRoundController.Review),
                 nameof(GameRoundController.Prepare),
+                nameof(GameRoundController.CompletePreparation),
                 nameof(GameRoundController.Rebuild),
                 nameof(GameRoundController.BeginGameplay),
                 nameof(GameRoundController.ResumeGameplay),
                 nameof(GameRoundController.TechnicalCancel),
                 nameof(GameRoundController.Finalize),
+                nameof(GameRoundController.FinishPresentation),
                 nameof(GameRoundController.PreviewScore)
             ]
         };

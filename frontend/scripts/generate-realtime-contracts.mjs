@@ -42,6 +42,7 @@ const file = `// Generated from backend/openapi/deadmans.v1.yaml (x-signalr). Do
 export const realtimeHubs = {
 ${emitHub('gameBoard', 'gameBoard')}
 ${emitHub('gameSetup', 'gameSetup')}
+${emitHub('gameOverlay', 'gameOverlay')}
 } as const
 
 export type RealtimeHubKey = keyof typeof realtimeHubs

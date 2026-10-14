@@ -70,7 +70,9 @@ interface GameManagementToolProps {
   onStartRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onStartModifierOrdering: (input: { roundId: string; expectedRoundVersion: number }) => void
   onBeginGameplay: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onCompletePreparation: (input: { roundId: string; expectedRoundVersion: number }) => void
   onReviewRound: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onFinishPresentation: (input: { roundId: string; expectedRoundVersion: number }) => void
   onRebuildRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onTechnicalCancelRound: (input: TechnicalCancelRoundInput) => void
   onCompleteRound: (input: CompleteRoundInput) => Promise<unknown>
@@ -98,7 +100,9 @@ export function GameManagementTool({
   onStartRound,
   onStartModifierOrdering,
   onBeginGameplay,
+  onCompletePreparation,
   onReviewRound,
+  onFinishPresentation,
   onRebuildRound,
   onTechnicalCancelRound,
   onCompleteRound,
@@ -147,7 +151,9 @@ export function GameManagementTool({
     onStartRound,
     onStartModifierOrdering,
     onBeginGameplay,
+    onCompletePreparation,
     onReviewRound,
+    onFinishPresentation,
     onOpenSummary: () => setIsRoundSummaryDialogOpen(true),
     onResumeTeam: handleSelectActiveTeam,
   })
@@ -227,7 +233,7 @@ export function GameManagementTool({
                 />
               </SecondaryManagementSection>
 
-              {activeRound ? (
+              {activeRound && activeRound.status !== 'showing_results' ? (
                 <SecondaryManagementSection
                   sectionId="round-safety"
                   icon="recovery"
@@ -282,16 +288,10 @@ export function GameManagementTool({
           submitErrorMessage={roundStageError}
           onClose={() => setIsRoundSummaryDialogOpen(false)}
           onSubmit={async ({ roundSummary, postRoundAction }) => {
-            await onCompleteRound(roundSummary)
-
-            if (postRoundAction === 'mark_team_played') {
-              await onSetTeamPlayedState({
-                teamId: activeRound.teamId,
-                isPlayed: true,
-              })
-            } else {
-              await handleSelectActiveTeam(activeRound.teamId)
-            }
+            await onCompleteRound({
+              ...roundSummary,
+              markTeamPlayedAfterPresentation: postRoundAction === 'mark_team_played',
+            })
 
             setIsRoundSummaryDialogOpen(false)
           }}

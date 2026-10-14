@@ -814,6 +814,7 @@ public sealed class BackendProjectDependencyRulesTests
         var expectedFiles = new[]
         {
             "DbGameRoundRepository.cs",
+            "DbGameRoundRepository.BroadcastSummary.cs",
             "DbGameRoundRepository.ModifierScoring.cs",
             "DbGameRoundRepository.ModifierScoringSupport.cs",
             "DbGameRoundRepository.Projection.cs",
@@ -1169,6 +1170,7 @@ public sealed class BackendProjectDependencyRulesTests
         var expectedFiles = new[]
         {
             "GameRoundController.cs",
+            "GameRoundController.BroadcastSummary.cs",
             "GameRoundController.Queries.cs",
             "GameRoundController.Scoring.cs",
             "GameRoundController.Start.cs",

@@ -2,6 +2,12 @@ namespace backend.Api.Contracts;
 
 public static class RealtimeHubContracts
 {
+    public static class GameOverlay
+    {
+        public const string HubPath = "/hubs/game-overlay";
+        public const string FrameChangedEvent = "frameChanged";
+    }
+
     public static class GameBoard
     {
         public const string HubPath = "/hubs/game-board";

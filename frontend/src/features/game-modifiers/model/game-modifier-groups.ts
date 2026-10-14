@@ -3,6 +3,7 @@ import type {
   GameModifierAvailability,
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
+import { groupModifierActivations } from '../../../shared/game-ui/modifier-activation-groups.ts'
 import {
   getModifierCategory,
   modifierCategoryCodes,
@@ -42,17 +43,7 @@ export function groupActiveGameModifiers(
   activations: readonly GameModifierActivation[],
   locale?: string,
 ): GroupedActiveModifier[] {
-  const groups = new Map<string, GameModifierActivation[]>()
-
-  for (const activation of activations) {
-    const currentGroup = groups.get(activation.modifierId)
-    if (currentGroup) {
-      currentGroup.push(activation)
-      continue
-    }
-
-    groups.set(activation.modifierId, [activation])
-  }
+  const groups = groupModifierActivations(activations)
 
   return Array.from(groups.entries())
     .map(([modifierId, groupActivations]) => {

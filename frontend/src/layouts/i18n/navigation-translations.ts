@@ -53,6 +53,7 @@ const translations = {
       viewer: 'Participant',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Game history',
       },
@@ -152,6 +153,7 @@ const translations = {
       viewer: 'Участник',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'История игр',
       },
@@ -251,6 +253,7 @@ const translations = {
       viewer: 'Учасник',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Історія ігор',
       },
@@ -350,6 +353,7 @@ const translations = {
       viewer: 'Uczestnik',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Historia gier',
       },

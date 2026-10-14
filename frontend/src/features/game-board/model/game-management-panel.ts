@@ -32,7 +32,9 @@ export function buildRoundActionModel({
   onStartRound,
   onStartModifierOrdering,
   onBeginGameplay,
+  onCompletePreparation,
   onReviewRound,
+  onFinishPresentation,
   onOpenSummary,
   onResumeTeam,
 }: {
@@ -44,7 +46,9 @@ export function buildRoundActionModel({
   onStartRound: (input: { roundId: string; expectedRoundVersion: number }) => void
   onStartModifierOrdering: (input: { roundId: string; expectedRoundVersion: number }) => void
   onBeginGameplay: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onCompletePreparation: (input: { roundId: string; expectedRoundVersion: number }) => void
   onReviewRound: (input: { roundId: string; expectedRoundVersion: number }) => void
+  onFinishPresentation: (input: { roundId: string; expectedRoundVersion: number }) => void
   onOpenSummary: () => void
   onResumeTeam: (teamId: string) => void
 }): RoundActionModel {
@@ -94,6 +98,21 @@ export function buildRoundActionModel({
       statusTone: 'warning',
       statusLabel: t('gameBoard.flowSteps.start_round.title'),
       title: t('gameBoard.flowSteps.start_round.title'),
+      actionLabel: t('gameBoard.roundPanelCompletePreparation'),
+      actionTone: 'primary',
+      onAction: () =>
+        onCompletePreparation({
+          roundId: activeRound.roundId,
+          expectedRoundVersion: activeRound.roundVersion,
+        }),
+    }
+  }
+
+  if (activeRound?.status === 'preparation_completed') {
+    return {
+      statusTone: 'warning',
+      statusLabel: t('gameBoard.flowSteps.complete_preparation.title'),
+      title: t('gameBoard.flowSteps.complete_preparation.title'),
       actionLabel: t('gameBoard.roundPanelBeginGameplay'),
       actionTone: 'primary',
       onAction: () =>
@@ -127,6 +146,21 @@ export function buildRoundActionModel({
       actionLabel: t('gameBoard.roundPanelOpenSummary'),
       actionTone: 'success',
       onAction: onOpenSummary,
+    }
+  }
+
+  if (activeRound?.status === 'showing_results') {
+    return {
+      statusTone: 'success',
+      statusLabel: t('gameBoard.flowSteps.show_results.title'),
+      title: t('gameBoard.flowSteps.show_results.title'),
+      actionLabel: t('gameBoard.roundPanelFinishPresentation'),
+      actionTone: 'success',
+      onAction: () =>
+        onFinishPresentation({
+          roundId: activeRound.roundId,
+          expectedRoundVersion: activeRound.roundVersion,
+        }),
     }
   }
 

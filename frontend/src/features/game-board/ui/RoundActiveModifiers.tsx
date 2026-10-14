@@ -18,12 +18,14 @@ import {
 import { AppButton, InlineNotice, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   buildModifierRuntimeUnits,
-  calculateModifierRuntimeClock,
-  createServerClockOffset,
-  formatRuntimeDuration,
   groupActiveGameModifiers,
   groupActiveModifierCategories,
 } from '../../game-modifiers/index.ts'
+import {
+  calculateModifierRuntimeClock,
+  createServerClockOffset,
+  formatRuntimeDuration,
+} from '../../../shared/game-ui/modifier-runtime-clock.ts'
 
 export function RoundActiveModifiers({
   activations,

@@ -137,8 +137,10 @@ public sealed partial class DbGameBoardRepository
                     && (round.Status == GameRoundStatusValue.CardOpened
                         || round.Status == GameRoundStatusValue.AwaitingModifiers
                         || round.Status == GameRoundStatusValue.Preparing
+                        || round.Status == GameRoundStatusValue.PreparationCompleted
                         || round.Status == GameRoundStatusValue.InProgress
-                        || round.Status == GameRoundStatusValue.ReviewingResults),
+                        || round.Status == GameRoundStatusValue.ReviewingResults
+                        || round.Status == GameRoundStatusValue.ShowingResults),
                 cancellationToken
             ))
         {
@@ -317,8 +319,10 @@ public sealed partial class DbGameBoardRepository
                 && (round.Status == GameRoundStatusValue.CardOpened
                     || round.Status == GameRoundStatusValue.AwaitingModifiers
                     || round.Status == GameRoundStatusValue.Preparing
+                    || round.Status == GameRoundStatusValue.PreparationCompleted
                     || round.Status == GameRoundStatusValue.InProgress
-                    || round.Status == GameRoundStatusValue.ReviewingResults),
+                    || round.Status == GameRoundStatusValue.ReviewingResults
+                        || round.Status == GameRoundStatusValue.ShowingResults),
             cancellationToken
         );
     }

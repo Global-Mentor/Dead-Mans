@@ -21,6 +21,7 @@ public static class ApplicationServiceCollectionExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IGameBoardService, GameBoardService>();
+        services.AddScoped<IGameOverlayService, Features.GameOverlay.GameOverlayService>();
         services.AddScoped<IGameRoundService, GameRoundService>();
         services.AddScoped<IGameHistoryService, GameHistoryService>();
         services.AddScoped<IGameSetupService, GameSetupService>();

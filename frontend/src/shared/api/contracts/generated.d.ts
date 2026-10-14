@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/overlay/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged. */
+        post: operations["rotateGameOverlayKey"];
+        /** @description Revokes the current user's broadcast key. Idempotent. Moderator or admin only. */
+        delete: operations["revokeGameOverlayKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overlay/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user IDs, questions or management data. Responses are not cacheable. */
+        get: operations["getGameOverlaySnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/users": {
         parameters: {
             query?: never;
@@ -933,6 +968,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/rounds/{roundId}/finish-presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["finishGameRoundPresentation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/rounds/{roundId}/review": {
         parameters: {
             query?: never;
@@ -959,6 +1010,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["prepareGameRound"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/rounds/{roundId}/complete-preparation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeGameRoundPreparation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1055,6 +1122,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["technicalCancelGameRound"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/rounds/{roundId}/broadcast-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Publishes a server-calculated, provisional OBS summary. Does not finalize the round or alter scores. Partial inputs include individually resolved modifier conditions; unresolved modifiers remain zero. Writes serialize with phase transitions and require the current round version. */
+        post: operations["broadcastGameRoundSummary"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1647,6 +1731,98 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GameOverlayKeyDto: {
+            key: string;
+        };
+        GameOverlayTeamDto: {
+            name: string | null;
+            slotIndex: number;
+            players: string[];
+        };
+        GameOverlayCellDto: {
+            row: number;
+            col: number;
+            cost: number;
+            /** @enum {string} */
+            state: "closed" | "open" | "cancelled";
+            title: string | null;
+            imageUrl: string | null;
+            result: components["schemas"]["GameOverlayCellResultDto"] | null;
+        };
+        GameOverlayCellResultDto: {
+            teamName: string | null;
+            teamSlotIndex: number;
+            finalScore: number;
+            penaltyTotal: number;
+        };
+        GameOverlayBoardDto: {
+            rowLabels: string[];
+            colLabels: string[];
+            cells: components["schemas"]["GameOverlayCellDto"][];
+        };
+        GameOverlayModifierDto: {
+            id: string;
+            name: string;
+            iconEmoji: string | null;
+            /** @description Stable modifier definition identity shared by repeated activations. */
+            modifierId: string;
+        };
+        GameOverlayRoundDto: {
+            id: string;
+            title: string | null;
+            cost: number;
+            imageUrl: string | null;
+            modifiers: components["schemas"]["GameOverlayModifierDto"][];
+            /** @description Published board column at the round's saved column index. */
+            columnLabel: string;
+            /** @description Published board row at the round's saved row index. */
+            rowLabel: string;
+        };
+        GameOverlayTimerDto: {
+            id: string;
+            /** Format: int64 */
+            durationSeconds: number;
+        };
+        GameOverlayGameplayModifierDto: {
+            modifierId: string;
+            name: string;
+            iconEmoji: string | null;
+            activationCount: number;
+            timers: components["schemas"]["GameOverlayTimerDto"][];
+        };
+        GameOverlayGameplayDto: {
+            roundId: string;
+            /** Format: date-time */
+            gameplayStartedAtUtc: string;
+            /** Format: date-time */
+            serverNowUtc: string;
+            modifiers: components["schemas"]["GameOverlayGameplayModifierDto"][];
+        };
+        GameOverlaySummaryDto: {
+            roundId: string;
+            isFinal: boolean;
+            card: components["schemas"]["GameOverlayRoundDto"];
+            teamName: string | null;
+            teamSlotIndex: number;
+            killsCount: number;
+            bountyCount: number;
+            killsScore: number;
+            bountyScore: number;
+            scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
+        };
+        GameOverlaySnapshotDto: {
+            gameId: string | null;
+            /** @enum {string} */
+            phase: "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
+            team: components["schemas"]["GameOverlayTeamDto"] | null;
+            board: components["schemas"]["GameOverlayBoardDto"] | null;
+            /** @description Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts. */
+            round: components["schemas"]["GameOverlayRoundDto"] | null;
+            /** @description Frozen modifier groups and timing anchors, only during in_progress. Timer durations aggregate only within their persisted runtime groups. */
+            gameplay?: components["schemas"]["GameOverlayGameplayDto"] | null;
+            /** @description Public provisional summary during review, then immutable final round score for 30 seconds after completion. This display does not block the next round. Excludes private notes and rule violation comments. */
+            summary?: components["schemas"]["GameOverlaySummaryDto"] | null;
+        };
         GameBoardCellMediaDto: {
             url: string;
         };
@@ -2867,7 +3043,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -2898,7 +3074,7 @@ export interface components {
             technicalCancellationReasonCode?: "external_game_failure" | "stream_or_infrastructure_failure" | "application_error" | "operator_error" | "other" | null;
             publicCancellationSummary?: string | null;
             /** @enum {string|null} */
-            technicalCancellationStage?: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | null;
+            technicalCancellationStage?: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | null;
             purchasesRefunded: boolean;
             cellMedia: components["schemas"]["GameBoardCellMediaDto"][];
             participants: components["schemas"]["GameHistoryRoundParticipantItemDto"][];
@@ -3100,7 +3276,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -3150,6 +3326,8 @@ export interface components {
             isConditionMet?: boolean | null;
         };
         FinalizeGameRoundRequestDto: {
+            /** @description Defaults to false. Mark the team played when the operator ends result presentation. */
+            markTeamPlayedAfterPresentation?: boolean;
             /** @enum {string} */
             status: "completed";
             killsCount: number;
@@ -3166,6 +3344,19 @@ export interface components {
             /** @enum {string} */
             outcomeStatus: "completed" | "violated" | "notTriggered";
             violationComment?: string | null;
+        };
+        BroadcastGameRoundSummaryRequestDto: {
+            expectedRoundVersion: number;
+            killsCount: number;
+            bountyCount: number;
+            completeInput?: components["schemas"]["FinalizeGameRoundRequestDto"] | null;
+            /** @description Only already entered modifier conditions and complete rule groups. Mutually exclusive with completeInput. Does not authorize finalization. */
+            partialInput?: components["schemas"]["FinalizeGameRoundRequestDto"] | null;
+            /**
+             * @description False initializes public overlay rows and total to zero while keeping the operator's complete validation calculation separate.
+             * @default true
+             */
+            hasChanges: boolean;
         };
         GameRoundScorePreviewDto: {
             scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
@@ -3364,6 +3555,108 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    rotateGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New key; previous links stop working */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayKeyDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokeGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGameOverlaySnapshot: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Overlay-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current frame; idle frames have no board */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlaySnapshotDto"];
+                };
+            };
+            /** @description Missing, invalid or revoked key, or inactive owner */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Read rate limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getRoleAdministrationUsers: {
         parameters: {
             query?: {
@@ -6335,6 +6628,77 @@ export interface operations {
             };
         };
     };
+    finishGameRoundPresentation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GameRoundVersionCommandRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Result presentation ended; the next round is available */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDetailsDto"];
+                };
+            };
+            /** @description Invalid auth claims */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round is not showing results, or the version is stale */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     reviewGameRound: {
         parameters: {
             query?: never;
@@ -6422,6 +6786,77 @@ export interface operations {
         };
         responses: {
             /** @description Modifier ordering closed and round moved to preparation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDetailsDto"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid lifecycle state or stale round version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeGameRoundPreparation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GameRoundVersionCommandRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Preparation completed; overlay cleared without starting gameplay or modifier timers */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6776,7 +7211,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Round finalized and written to history */
+            /** @description Scores saved; round enters showing_results until finish-presentation completes it */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6903,6 +7338,93 @@ export interface operations {
             };
             /** @description Round is terminal or expected version is stale */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    broadcastGameRoundSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastGameRoundSummaryRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Complete provisional calculation published */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundScorePreviewDto"];
+                };
+            };
+            /** @description Partial metrics published; complete calculation is unavailable */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round phase or version changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Immutable modifier configuration cannot be calculated */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

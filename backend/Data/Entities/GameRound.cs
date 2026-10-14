@@ -16,6 +16,8 @@ public class GameRound
 
     public string Status { get; set; } = GameRoundStatusValue.AwaitingModifiers;
 
+    public bool MarkTeamPlayedAfterPresentation { get; set; }
+
     public int Version { get; set; } = 1;
 
     public DateTime? PreparedAtUtc { get; set; }

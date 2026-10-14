@@ -4,6 +4,9 @@ namespace backend.Application.Abstractions.Repositories;
 
 public interface IGameRoundRepository
 {
+    Task<PreviewGameRoundScoreResult> BroadcastSummaryAsync(Guid roundId,
+        BroadcastGameRoundSummaryInput input, Guid userId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<GameRoundTeamOption>> GetEligibleTeamsAsync(
         CancellationToken cancellationToken = default
     );
@@ -23,6 +26,13 @@ public interface IGameRoundRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<TransitionGameRoundResult> FinishPresentationAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<TransitionGameRoundResult> ReviewAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,
@@ -31,6 +41,13 @@ public interface IGameRoundRepository
     );
 
     Task<TransitionGameRoundResult> PrepareAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<TransitionGameRoundResult> CompletePreparationAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,
         Guid initiatedByUserId,

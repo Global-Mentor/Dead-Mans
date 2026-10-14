@@ -9,6 +9,7 @@ public sealed class GameRoundScoreCalculatorTests
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     [InlineData(GameRoundStatusValue.InProgress)]
     [InlineData(GameRoundStatusValue.ReviewingResults)]
     [InlineData(GameRoundStatusValue.Cancelled)]

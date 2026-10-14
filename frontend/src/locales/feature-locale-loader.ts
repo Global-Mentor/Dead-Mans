@@ -11,11 +11,18 @@ export type FeatureTranslationBundle = {
 }
 
 const registrations = new WeakMap<i18n, Map<string, Promise<void>>>()
+// Only development HMR needs to revisit live instances; production keeps weak caching.
+const liveInstances = import.meta.hot ? new Map<i18n, Set<string>>() : undefined
 
 export async function registerFeatureTranslations(
   i18nInstance: i18n,
   bundles: readonly FeatureTranslationBundle[],
 ) {
+  if (liveInstances) {
+    const keys = liveInstances.get(i18nInstance) ?? new Set<string>()
+    for (const bundle of bundles) keys.add(bundle.key)
+    liveInstances.set(i18nInstance, keys)
+  }
   let registered = registrations.get(i18nInstance)
   if (!registered) {
     registered = new Map()
@@ -51,6 +58,10 @@ export async function registerFeatureTranslations(
 }
 
 export const featureTranslationBundles = {
+  gameOverlay: {
+    key: 'gameOverlay',
+    load: () => import('../features/game-overlay/i18n/game-overlay-translations.ts'),
+  },
   gameBoard: {
     key: 'gameBoard',
     load: () => import('../features/game-board/i18n/game-board-translations.ts'),
@@ -98,3 +109,19 @@ export const featureTranslationBundles = {
 } as const satisfies Record<string, FeatureTranslationBundle>
 
 export const allFeatureTranslationBundles = Object.values(featureTranslationBundles)
+
+if (import.meta.hot) {
+  import.meta.hot.accept(async (updated) => {
+    if (!updated || !liveInstances) return
+    const register: typeof registerFeatureTranslations = updated.registerFeatureTranslations
+    const bundles: readonly FeatureTranslationBundle[] = updated.allFeatureTranslationBundles
+    for (const [instance, keys] of liveInstances) {
+      await register(
+        instance,
+        bundles.filter((bundle) => keys.has(bundle.key)),
+      )
+      // Notify mounted useTranslation consumers after replacing resources, without reloading forms.
+      await instance.changeLanguage(instance.language)
+    }
+  })
+}

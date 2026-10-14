@@ -315,6 +315,7 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     [InlineData(GameRoundStatusValue.InProgress)]
     [InlineData(GameRoundStatusValue.ReviewingResults)]
     public async Task FinishPreview_WhenRoundIsNonterminal_ReturnsBlocker(string roundStatus)

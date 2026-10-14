@@ -51,7 +51,11 @@ public sealed class ApplicationMigrationChainTests
                 "20260925153554_AllowCardOpenedRoundTransition",
                 "20261008093609_AllowAdditionalAdminTeamSlots",
                 "20261008122259_AllowAdminTeamUnconfirmation",
-                "20261011160156_RemoveModifierTags"
+                "20261011160156_RemoveModifierTags",
+                "20261012180425_AddGameOverlayKeys",
+                "20261013140621_AddRoundBroadcastDrafts",
+                "20261013195519_AddRoundResultPresentation",
+                "20261013234918_AddRoundPreparationCompleted"
             ],
             migrations
         );

@@ -29,29 +29,38 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         RealtimeHubContracts.GameBoard.ModifierCatalogChangedEvent;
 
     private readonly IHubContext<GameBoardHub> _hubContext;
+    private readonly IHubContext<GameOverlayHub> _overlayContext;
 
-    public SignalRGameBoardEventsPublisher(IHubContext<GameBoardHub> hubContext)
+    public SignalRGameBoardEventsPublisher(IHubContext<GameBoardHub> hubContext, IHubContext<GameOverlayHub> overlayContext)
     {
         _hubContext = hubContext;
+        _overlayContext = overlayContext;
     }
 
     public Task PublishCellOpenedAsync(GameCellOpenedEvent payload, CancellationToken cancellationToken = default)
     {
-        return _hubContext.Clients
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients
             .Group(RealtimeGroupNames.GameBoardAudience)
-            .SendAsync(CellOpenedEventName, payload.ToDto(), cancellationToken);
+            .SendAsync(CellOpenedEventName, payload.ToDto(), cancellationToken));
     }
+
+    public Task PublishOverlayFrameChangedAsync(CancellationToken cancellationToken = default) =>
+        _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken);
 
     public Task PublishModifierActivatedAsync(
         GameModifierActivatedEvent payload,
         CancellationToken cancellationToken = default
     )
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             ModifierActivatedEventName,
             payload.ToDto(),
             cancellationToken
-        );
+        ));
     }
 
     public Task PublishModifierActivationCancelledAsync(
@@ -59,11 +68,13 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     )
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             ModifierActivationCancelledEventName,
             payload.ToDto(),
             cancellationToken
-        );
+        ));
     }
 
     public Task PublishModifierAvailabilityChangedAsync(
@@ -83,11 +94,13 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     )
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             RoundStateChangedEventName,
             payload.ToDto(),
             cancellationToken
-        );
+        ));
     }
 
     public Task PublishQuizStateChangedAsync(
@@ -119,19 +132,23 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     )
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             GameLifecycleChangedEventName,
             payload.ToDto(),
             cancellationToken
-        );
+        ));
     }
 
     public Task PublishTeamStateChangedAsync(CancellationToken cancellationToken = default)
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
             TeamStateChangedEventName,
             cancellationToken: cancellationToken
-        );
+        ));
     }
 
     public Task PublishTwitchQuizStateChangedAsync(CancellationToken cancellationToken = default)

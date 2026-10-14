@@ -17,6 +17,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     [InlineData(GameRoundStatusValue.InProgress)]
     [InlineData(GameRoundStatusValue.ReviewingResults)]
     public async Task CancelledRounds_BlockDisbandingAndRemainInFinalResults(string phase)

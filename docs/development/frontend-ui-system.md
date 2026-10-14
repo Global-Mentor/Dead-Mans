@@ -25,15 +25,15 @@ The common compact scale applies to every panel page, including application regi
 
 `uiTokens.type` is the source for text sizes in rem; MUI typography variants assign those sizes to roles. Use `Typography` variants instead of local font-size overrides. HTML heading levels express document structure independently of their visual variant.
 
-| Role | Size at the default root size | Variant |
-| --- | --- | --- |
-| Page and dialog title | 24px | h3/h4 |
-| Main section or team title | 20px | h5 |
-| Subsection, list heading, disclosure | 18px | h6/subtitle1 |
-| Main reading text and item name | 16px | body1/subtitle2 |
-| Supporting text, actions, help | 14px | body2/caption/button |
-| Short metadata and overlines | 12px | overline/compact badge |
-| Display emphasis | 32px | h1/h2 |
+| Role                                 | Size at the default root size | Variant                |
+| ------------------------------------ | ----------------------------- | ---------------------- |
+| Page and dialog title                | 24px                          | h3/h4                  |
+| Main section or team title           | 20px                          | h5                     |
+| Subsection, list heading, disclosure | 18px                          | h6/subtitle1           |
+| Main reading text and item name      | 16px                          | body1/subtitle2        |
+| Supporting text, actions, help       | 14px                          | body2/caption/button   |
+| Short metadata and overlines         | 12px                          | overline/compact badge |
+| Display emphasis                     | 32px                          | h1/h2                  |
 
 Main text uses a 1.5 line height and headings 1.25. Display sizes are not a default for page panels. Brand marks, illustrations and card-matrix geometry may own their visual scale; ordinary form controls and section headings do not inherit that exception.
 
@@ -277,4 +277,164 @@ The architecture check also rejects local corner-radius recipes in features, lay
 - Action menus, form-select popups and searchable combobox lists share the JSON-import menu surface, separators, typography and hover/focus treatment through the theme dropdown styles. Selected options remain visibly marked, disabled options remain unavailable, and lists retain their original menu/listbox roles, keyboard selection and focus restoration. Navigation tree menus retain their group branches. Native select mode remains available where explicitly requested.
 - ConfirmDialog centers its action description and accepts a separate subject, rendered beneath it in an emphasized text surface. Identify renamed objects as old name → new name. Use the supplementary content slot for warnings and acknowledgment controls after the subject, preserving error handling and busy guards. Other informational AppDialog descriptions are centered without altering form layout.
 
+Card-opening confirmation identifies the selected board position as `column: row (value)`
+with a localized cost label and units. Use the board's column and row names even when
+the closed card's title is hidden; the generic cell label does not identify the selection.
+
 `ListPanel textAlign="center"` centers the heading with an inline summary aligned to the right; phone layouts place the summary below the heading. Other list panels retain their inline heading and summary. Modifier catalog behavior sections use the compact `SectionHeader headingSize="small"` typography.
+
+## Broadcast presentation
+
+During `reviewing_results`, the shared top team strip sits above `BroadcastSummary`,
+which presents the frozen card and public score preview. The operator's summary dialog publishes numeric inputs after a 350ms
+debounce, serializes writes and excludes notes and violation comments from the overlay.
+Review starts with zero base metrics, scoring-capable frozen modifier rows and a zero preliminary total,
+even before the operator opens the form. Partial drafts calculate individually resolved
+modifier conditions through the existing server scoring engine; unresolved conditions remain zero.
+Complete form validation remains required for finalization. Draft rows are separate from historical round facts and are
+valid only for their round version; phase transitions and finalization share the write
+locks. Overlay invalidations do not refetch the operator's round on every input.
+After confirmation, the overlay reads the saved round result and frozen modifier
+results, retains its participant snapshot and shows the compact score breakdown beside the enlarged card.
+The summary uses two separate panels with a transparent gap. The left panel contains
+card metadata and its image; the right panel contains the result heading and score list.
+Card metadata and the result heading share the top grid row with equal height. Both panels
+share the same width, top and bottom edges. Card value uses the same typography as column
+and row. Below the headers, the image begins on the left and the top-aligned score list
+begins on the right. Only scoring-capable
+modifiers receive initial zero rows; pure runtime rules never pad the score breakdown.
+Saving enters `showing_results` and holds the immutable result in OBS until the operator ends
+presentation. This phase blocks the next round and game finalization, including after reload.
+Ending presentation applies the stored team action and moves the round to `completed`.
+The total occupies a separate corner-framed footer pinned to the bottom of the right panel.
+The footer uses the default surface without accent fill or an ornament divider. Its title
+is centered above one amount: a provisional number, or the confirmed earned-points/penalty
+message. The score list omits its inline total.
+Only the confirmed total uses the 650ms final reveal; card, team and score breakdown stay visible.
+Changed score values use a 240ms reveal without replaying unchanged rows. All motion respects
+reduced-motion preferences. There is no presentation deadline; stale-frame expiry still hides
+outdated content during prolonged connection loss. `BroadcastSummary` remains presentational. Resuming
+gameplay invalidates the prior draft through the round version. Scene changes use the
+existing motion and reduced-motion behavior; input updates do not remount the scene.
+
+`/overlay` is a standalone transparent OBS browser source designed for 1920 x 1080.
+It has no site navigation, dialogs, input controls or status notices. The active team
+uses `BroadcastTeam`, including result review and presentation. The read-only board uses
+`BroadcastBoard` and the shared `BoardMatrix`.
+The overlay uses the same application components and materials: `RoundBriefingPanel`
+for round summaries, `ItemCard` for the team strip and round image, and `ModifierDetailsItem`
+inside `ModifierDetailsList` for activated modifiers. The whole board has one textured
+`ItemCard frame="corner" emphasis="available"` backdrop with a crisp brass frame,
+textured fill and the shared corner rules. Its edges remain sharp, without blur or
+transparency masks. Both live and broadcast boards share `BoardCardFace`,
+`BoardColumnLabel`, `BoardRowLabel`, card state styles and adaptive label-gutter metrics.
+Do not substitute generic headings or fixed narrow gutters in the broadcast board.
+Shared board-card copy belongs to the eagerly loaded `boardCard` dictionary, so prices,
+results and state labels work without loading the game-page translations first.
+Revealed cards retain media, completed results and team names from the server; closed
+card titles and media remain hidden.
+Use their standard textured surfaces, corner frames and typography without a separate
+broadcast skin. The document remains transparent for OBS. While a board, round briefing
+or result panel is present, `BroadcastBackdrop` dims the full viewport with a 90% black
+layer behind the content. Opacity fades over 240ms, with immediate changes for reduced motion.
+Gameplay and empty states remain transparent; session clearing removes the layer immediately.
+The backdrop uses no blur, filters or continuous animation. CSS cannot blur the separate
+OBS game source underneath the browser source.
+Overlay layout and content fitting belong to the broadcast composition; component appearance
+continues to belong to the shared application library.
+
+During card selection, card opening, modifier selection, preparation and results, `BroadcastTeam`
+shows a horizontal corner-framed strip centered at the 24px top margin. The team label and
+name occupy its left third; the roster occupies three equal columns on the right.
+A divider separates the roster from the team name, matching the dividers between players.
+Names wrap without truncation. During card selection, the strip follows the measured board
+width after fitting, including dense-board scaling and viewport resizing. During opening,
+modifier selection, preparation and results, it uses the same 1152px maximum width as the panels.
+The strip keeps its mounted identity across these phases and disappears during gameplay.
+During results, its team name comes from the saved round summary.
+The strip's intrinsic height reserves space in a CSS grid, so long names cannot overlap
+content. The scene region below it fills the remaining viewport with a 12px gap and 24px
+outer margins. When hidden, the strip collapses and fades over 180ms, releasing its layout space before
+the next centered scene enters; reduced motion makes this immediate. Only modifiers occupy the
+right-hand gameplay region, starting at the 24px top margin.
+The board is centered in the available scene region. Round briefing and summary are
+horizontally centered and top-aligned, keeping a consistent 12px gap below the team strip. Round and
+summary are at most 1152px wide and 900px high, with a 720px minimum composition height
+limited by the region, a 24px column gap and a shared image-height budget. Dense content
+still scales to fit. The board can use up to 1600px of width and all remaining height,
+without reserving empty sidebars for the team. Its width follows card proportions and
+available height. It appears only during card selection.
+Cards retain 2:3 proportions. Dense boards scale as a complete composition to stay inside
+the reserved region; very large boards consequently have smaller text. Document transparency
+is scoped to `/overlay` and is removed on navigation to ordinary application routes.
+During `card_opened`, `awaiting_modifiers` and `preparing`, `BroadcastRound` shows the saved card image
+on the right and active modifier names and icons in the adjacent column.
+One shared briefing panel above both columns displays the server's current round phase,
+using the application phase names and updating in place through modifier selection and preparation.
+The phase label and value share the same heading typography. Empty modifier lists show
+only the zero total, without an additional empty-state caption.
+The round composition is centered horizontally and anchored directly below
+the horizontal team strip, without an additional vertical centering gap. Its two summary panels share a grid row and
+the same height, including when labels wrap. The card summary shows `column: row` and
+a localized `value: amount` line with units; column and row names come from the published
+board at the round's saved indices. Modifier entries appear below their summary panel.
+The round image uses intrinsic proportions and the shared overlay image-height limit; its frame follows
+the rendered image height instead of forcing a 2:3 canvas with empty vertical bands.
+It disappears when gameplay starts. Missing media retains the card title and a localized fallback.
+During `preparation_completed`, all broadcast content and the backdrop are hidden.
+The management panel offers a separate gameplay-start command; modifier timers have not started.
+During `in_progress`, the right-hand region displays only `BroadcastGameplay`.
+It shows frozen round modifier groups without activator names. Timed
+modifiers appear first, retaining their order until 15 seconds after their last timer expires. The gameplay region is at most
+360px wide and has no visible heading or total. Timed groups use one compact row per
+modifier: a 40px icon, name with activation multiplier, and a right-aligned 32px countdown.
+Distinct independent deadlines stack in the same reserved column; equal deadlines share
+one countdown while the name retains the full activation multiplier. Untimed groups use two columns with
+32px icons and the smaller application body typography. Names remain complete and wrap;
+all groups remain visible, with equal card heights within each grid. `BroadcastGameplay`
+composes the shared `ItemCard` and `ModifierIconTile` without changing interactive modifier
+rows. Timers reserve their initial digit width; only the remaining seconds change, without
+regrouping the list every tick. A two-pixel track under each countdown shows its remaining
+fraction. Its transform is an inline value, avoiding new Emotion rules for every second;
+it has no continuous animation. Expired names and icons soften over 400ms while their
+surface stays opaque for readability over bright gameplay. Rows retain their geometry
+and zero countdown for 15 seconds, then join the two-column compact grid after untimed
+modifiers, ordered by their last deadline. Their icons, names and multipliers remain visible;
+the timer and duration track disappear. A 480ms position/scale animation moves the collapsing
+card and its neighbours into place, without duplicate cards. Reduced motion, viewport changes
+and fit-scale changes skip this movement. The entire HUD fits the available height for exceptionally dense data.
+Runtime groups use the persisted gameplay start and server clock; aggregate groups add
+durations, independent instances retain separate timers inside their modifier row.
+The clock is anchored to monotonic client time at HTTP receipt, so refetch and reload
+restore elapsed time rather than restarting timers. One local ticker runs only while
+countdowns are active, isolated inside `BroadcastTimedModifiers`; untimed items and the
+surrounding layout do not rerender for each tick. Returning to a visible document immediately
+resynchronizes the displayed time. Expired timers stop the ticker; a separate single deadline
+wakeup handles compaction, using the same server-anchored clock so refetch/reload cannot restart
+the 15-second grace period. Phase exit, expired sessions and revoked links clean up both clocks
+and any row animations. Dense lists scale to the remaining
+vertical space without pages. The team strip is shown before gameplay and during result review and presentation.
+Repeated activations share one modifier row by stable definition id, with a multiplier.
+Compact overlay rows omit activator names. Before gameplay, the header uses a localized plain-text `Total: count` line for the
+total number of activations, without a badge.
+Every modifier group remains visible together, without pagination or timed rotation.
+`ModifierDetailsList layout="fit"` keeps one column while it fits and switches to two
+columns when needed, using the same measurements as the current round and the rendered
+card image height as an additional limit. Image loading and resizing update that limit.
+Exceptionally dense compositions scale together to fit the frame after this reflow. Identical snapshots
+preserve the rendered frame. Successful modifier activation updates state without a toast;
+activation failures retain their localized feedback.
+Scene entry uses a 360ms opacity/translation animation following a 180ms exit interval.
+The HUD enters from the right; centered scenes rise slightly into place. Board, round and
+summary have separate fixed layout regions, so outgoing content retains its dimensions.
+The team strip fades and collapses in 180ms without unmounting; returning it expands the same layout slot.
+New modifier rows use a short reveal, while repeated activations animate only their multiplier.
+The phase label updates in place. Content-height changes ease the centered composition into
+its new position using one compositor translation; viewport resizes and fit-scale changes
+remain immediate. Layout motion owns and cleans up its observer, media-query listener and
+animation. Application modifier rows and score breakdowns keep their default non-animated behavior.
+Animations do not replay on data refresh, use no continuous effects and respect reduced
+motion. Entry and value animations release their transform when finished rather than
+retaining their final keyframe. Invalid or expired sessions clear the entire frame immediately,
+including exits.
+Link management remains in the authenticated panel at `/panel/game-overlay`.

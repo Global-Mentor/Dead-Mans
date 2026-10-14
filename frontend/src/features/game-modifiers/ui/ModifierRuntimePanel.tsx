@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { InlineNotice, ItemCard, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
+import { buildModifierRuntimeUnits } from '../model/modifier-runtime.ts'
 import {
-  buildModifierRuntimeUnits,
   calculateModifierRuntimeClock,
   createServerClockOffset,
   formatRuntimeDuration,
-} from '../model/modifier-runtime.ts'
+} from '../../../shared/game-ui/modifier-runtime-clock.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 

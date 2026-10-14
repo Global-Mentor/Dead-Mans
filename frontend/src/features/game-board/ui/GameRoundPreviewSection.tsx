@@ -5,16 +5,7 @@ import { RoundScoreBreakdown } from '../../../shared/game-ui/index.ts'
 import { BusyIndicator, InlineNotice, FormSection, Metric } from '../../../shared/ui/index.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
-type ScorePreview = components['schemas']['GameRoundScorePreviewDto']
-type GameRoundPreviewStatus =
-  'incomplete' | 'debouncing' | 'loading' | 'success' | 'error' | 'stale'
-
-export interface GameRoundPreviewState {
-  status: GameRoundPreviewStatus
-  data: ScorePreview | null
-  inputKey: string | null
-  errorCode: string | null
-}
+import type { GameRoundPreviewState } from '../model/game-round-preview-state.ts'
 
 export function GameRoundPreviewSection({
   state,
@@ -45,7 +36,7 @@ export function GameRoundPreviewSection({
         {state.status === 'error' ? (
           <InlineNotice severity="error" variant="outlined">
             {t('gameBoard.roundSummaryPreviewFailed', {
-              reason: state.errorCode ?? t('gameBoard.roundSummaryPreviewFailedFallback'),
+              reason: t('gameBoard.roundSummaryPreviewFailedFallback'),
             })}
           </InlineNotice>
         ) : null}
@@ -105,7 +96,7 @@ export function GameRoundPreviewSection({
                 emphasis="result"
               />
             </Box>
-            <RoundScoreBreakdown score={score} />
+            <RoundScoreBreakdown score={score} provisional />
             {state.data?.calculationTrace.length ? (
               <Stack spacing={0.75}>
                 <Typography variant="caption" color="text.secondary">

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { components } from '../../../shared/api/contracts/generated'
+import { buildModifierRuntimeUnits } from './modifier-runtime.ts'
 import {
-  buildModifierRuntimeUnits,
   calculateModifierRuntimeClock,
   createServerClockOffset,
   formatRuntimeDuration,
-} from './modifier-runtime.ts'
+} from '../../../shared/game-ui/modifier-runtime-clock.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
 

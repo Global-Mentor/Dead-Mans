@@ -98,6 +98,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.HasPostgresExtension("citext");
         modelBuilder.HasPostgresExtension("pg_trgm");
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new GameOverlayKeyConfiguration());
+        modelBuilder.ApplyConfiguration(new GameRoundBroadcastDraftConfiguration());
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleAuditEventConfiguration());

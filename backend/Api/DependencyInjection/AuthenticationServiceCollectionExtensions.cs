@@ -16,6 +16,8 @@ public static class AuthenticationServiceCollectionExtensions
     {
         services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddScheme<AuthenticationSchemeOptions, GameOverlayAuthenticationHandler>(
+                GameOverlayAuthenticationHandler.SchemeName, _ => { })
             .AddCookie(options =>
             {
                 options.Cookie.Name = AuthCookieNames.Authentication;

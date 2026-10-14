@@ -29,7 +29,8 @@ public static partial class ApiContractMapper
             string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
             modifierResults,
             ruleGroups,
-            request.ExpectedRoundVersion
+            request.ExpectedRoundVersion,
+            request.MarkTeamPlayedAfterPresentation
         );
     }
 

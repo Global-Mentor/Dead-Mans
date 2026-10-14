@@ -89,6 +89,8 @@ const translations = {
     flowTooltip:
       'The panel follows the live round lifecycle and shows what has already been done and what should happen next.',
     flowSummary: {
+      preparationCompleted: 'The team is ready. OBS is clear; start the game separately.',
+      showingResults: 'The saved result stays in OBS until you end the presentation.',
       waitingForLaunch:
         'Start the game in the launch section first. After that you can assign the active team and begin the round flow.',
       finished: 'Results are available',
@@ -130,9 +132,17 @@ const translations = {
         title: 'Game preparation',
         description: 'After modifier ordering ends, prepare the team for the game.',
       },
+      complete_preparation: {
+        title: 'Preparation complete',
+        description: 'The team is ready. OBS is clear; start the game separately.',
+      },
       play_round: {
         title: 'Gameplay',
         description: 'Play the card, apply effects, and finish the live play segment.',
+      },
+      show_results: {
+        title: 'Show results',
+        description: 'The saved result stays in OBS until you end the presentation.',
       },
       review_round: {
         title: 'Results summary',
@@ -237,6 +247,8 @@ const translations = {
     roundPanelOpenCell: 'Open cell',
     roundPanelStartModifierOrdering: 'Start modifier selection',
     roundPanelStart: 'Finish modifier ordering',
+    roundPanelCompletePreparation: 'Finish preparation',
+    roundPanelCompletePreparationFailed: 'Unable to finish preparation.',
     roundPanelBeginGameplay: 'Start game',
     roundPanelReview: 'Finish game',
     roundPanelOpenSummary: 'Summarize results',
@@ -249,6 +261,8 @@ const translations = {
     roundPanelStartModifierOrderingFailed: 'Unable to start modifier ordering.',
     roundPanelStartFailed: 'Unable to finish modifier ordering.',
     roundPanelBeginGameplayFailed: 'Unable to start gameplay.',
+    roundPanelFinishPresentation: 'End presentation',
+    roundPanelFinishPresentationFailed: 'Unable to end result presentation.',
     roundPanelReviewFailed: 'Unable to finish gameplay.',
     roundPanelCompleteFailed: 'Unable to complete the round.',
     roundPanelSafetyTitle: 'Round recovery',
@@ -280,7 +294,7 @@ const translations = {
       'Your unsaved round result changes will be lost. You can keep editing instead.',
     roundSummaryCloseConfirmAction: 'Close without saving',
     roundSummaryCloseConfirmCancel: 'Keep editing',
-    roundSummarySubmit: 'Complete round',
+    roundSummarySubmit: 'Save results',
     roundSummaryPostRoundTitle: 'What happens to the team next?',
     roundSummaryPostRoundDescription:
       'Choose whether this team stays on the board for the next round or finishes its game now.',
@@ -521,6 +535,8 @@ const translations = {
     flowTooltip:
       'Панель показывает живую последовательность раунда: что уже сделано, что идёт сейчас и какой следующий шаг нужен ведущему.',
     flowSummary: {
+      preparationCompleted: 'Команда готова. Экран OBS очищен; начните игру отдельной кнопкой.',
+      showingResults: 'Итоги сохранены и остаются в OBS до завершения показа.',
       waitingForLaunch:
         'Сначала запустите игру в секции запуска. После этого можно назначать активную команду и начинать цикл раунда.',
       finished: 'Результаты доступны',
@@ -565,9 +581,17 @@ const translations = {
         title: 'Подготовка к игре',
         description: 'После закрытия заказа модификаторов подготовьте команду к игре.',
       },
+      complete_preparation: {
+        title: 'Подготовка завершена',
+        description: 'Команда готова. Экран OBS очищен; начните игру отдельной кнопкой.',
+      },
       play_round: {
         title: 'Проведение игры',
         description: 'Разыграйте карточку, примените эффекты и закончите игровой этап.',
+      },
+      show_results: {
+        title: 'Показ итогов',
+        description: 'Итоги сохранены и остаются в OBS до завершения показа.',
       },
       review_round: {
         title: 'Подведение итогов',
@@ -673,6 +697,8 @@ const translations = {
     roundPanelOpenCell: 'Открытая карточка',
     roundPanelStartModifierOrdering: 'Начать выбор модификаторов',
     roundPanelStart: 'Завершить заказ модификаторов',
+    roundPanelCompletePreparation: 'Завершить подготовку',
+    roundPanelCompletePreparationFailed: 'Не удалось завершить подготовку.',
     roundPanelBeginGameplay: 'Начать игру',
     roundPanelReview: 'Завершить игру',
     roundPanelOpenSummary: 'Подвести итоги',
@@ -685,6 +711,8 @@ const translations = {
     roundPanelStartModifierOrderingFailed: 'Не удалось открыть заказ модификаторов.',
     roundPanelStartFailed: 'Не удалось завершить заказ модификаторов.',
     roundPanelBeginGameplayFailed: 'Не удалось начать игру.',
+    roundPanelFinishPresentation: 'Завершить показ',
+    roundPanelFinishPresentationFailed: 'Не удалось завершить показ итогов.',
     roundPanelReviewFailed: 'Не удалось завершить игру.',
     roundPanelCompleteFailed: 'Не удалось завершить раунд.',
     roundPanelSafetyTitle: 'Сбои раунда',
@@ -716,7 +744,7 @@ const translations = {
       'Несохранённые изменения результата раунда будут потеряны. Можно вернуться к редактированию.',
     roundSummaryCloseConfirmAction: 'Закрыть без сохранения',
     roundSummaryCloseConfirmCancel: 'Продолжить редактирование',
-    roundSummarySubmit: 'Завершить раунд',
+    roundSummarySubmit: 'Сохранить итоги',
     roundSummaryPostRoundTitle: 'Что делаем с командой дальше?',
     roundSummaryPostRoundDescription:
       'Выберите, остаётся эта команда на следующий раунд или завершает свою игру прямо сейчас.',
@@ -961,6 +989,8 @@ const translations = {
     flowTooltip:
       'Панель показує живу послідовність раунду: що вже зроблено, що триває зараз і який наступний крок потрібен ведучому.',
     flowSummary: {
+      preparationCompleted: 'Команда готова. Екран OBS очищено; почніть гру окремою кнопкою.',
+      showingResults: 'Підсумки збережено. Вони залишаються в OBS до завершення показу.',
       waitingForLaunch:
         'Спочатку запустіть гру в секції запуску. Після цього можна призначати активну команду й починати цикл раунду.',
       finished: 'Результати доступні',
@@ -1004,9 +1034,17 @@ const translations = {
         title: 'Підготовка до гри',
         description: 'Після завершення замовлення підготуйте команду до гри.',
       },
+      complete_preparation: {
+        title: 'Підготовку завершено',
+        description: 'Команда готова. Екран OBS очищено; почніть гру окремою кнопкою.',
+      },
       play_round: {
         title: 'Проведення гри',
         description: 'Розіграйте картку, застосуйте ефекти та завершіть ігровий етап.',
+      },
+      show_results: {
+        title: 'Показ підсумків',
+        description: 'Підсумки збережено. Вони залишаються в OBS до завершення показу.',
       },
       review_round: {
         title: 'Підбиття підсумків',
@@ -1111,6 +1149,8 @@ const translations = {
     roundPanelOpenCell: 'Відкрита картка',
     roundPanelStartModifierOrdering: 'Почати вибір модифікаторів',
     roundPanelStart: 'Завершити замовлення модифікаторів',
+    roundPanelCompletePreparation: 'Завершити підготовку',
+    roundPanelCompletePreparationFailed: 'Не вдалося завершити підготовку.',
     roundPanelBeginGameplay: 'Почати гру',
     roundPanelReview: 'Завершити гру',
     roundPanelOpenSummary: 'Підбити підсумки',
@@ -1123,6 +1163,8 @@ const translations = {
     roundPanelStartModifierOrderingFailed: 'Не вдалося відкрити замовлення модифікаторів.',
     roundPanelStartFailed: 'Не вдалося завершити замовлення модифікаторів.',
     roundPanelBeginGameplayFailed: 'Не вдалося почати гру.',
+    roundPanelFinishPresentation: 'Завершити показ',
+    roundPanelFinishPresentationFailed: 'Не вдалося завершити показ підсумків.',
     roundPanelReviewFailed: 'Не вдалося завершити гру.',
     roundPanelCompleteFailed: 'Не вдалося завершити раунд.',
     roundPanelSafetyTitle: 'Збої раунду',
@@ -1154,7 +1196,7 @@ const translations = {
       'Незбережені зміни результату раунду буде втрачено. Можна повернутися до редагування.',
     roundSummaryCloseConfirmAction: 'Закрити без збереження',
     roundSummaryCloseConfirmCancel: 'Продовжити редагування',
-    roundSummarySubmit: 'Завершити раунд',
+    roundSummarySubmit: 'Зберегти підсумки',
     roundSummaryPostRoundTitle: 'Що робимо з командою далі?',
     roundSummaryPostRoundDescription:
       'Оберіть, чи лишається ця команда на наступний раунд, чи завершує свою гру просто зараз.',
@@ -1398,6 +1440,9 @@ const translations = {
     flowTooltip:
       'Panel pokazuje żywy przebieg rundy: co już zrobiono, co dzieje się teraz i jaki jest następny krok prowadzącego.',
     flowSummary: {
+      preparationCompleted:
+        'Drużyna jest gotowa. Ekran OBS jest czysty; rozpocznij grę osobnym przyciskiem.',
+      showingResults: 'Zapisane wyniki pozostają w OBS do zakończenia prezentacji.',
       waitingForLaunch:
         'Najpierw uruchom grę w sekcji startu. Dopiero potem można wybrać aktywną drużynę i rozpocząć cykl rundy.',
       finished: 'Wyniki są dostępne',
@@ -1441,9 +1486,18 @@ const translations = {
         title: 'Przygotowanie do gry',
         description: 'Po zamknięciu zamówień przygotuj drużynę do gry.',
       },
+      complete_preparation: {
+        title: 'Przygotowanie zakończone',
+        description:
+          'Drużyna jest gotowa. Ekran OBS jest czysty; rozpocznij grę osobnym przyciskiem.',
+      },
       play_round: {
         title: 'Rozgrywka',
         description: 'Rozegraj kartę, zastosuj efekty i zakończ etap gry.',
+      },
+      show_results: {
+        title: 'Prezentacja wyników',
+        description: 'Zapisane wyniki pozostają w OBS do zakończenia prezentacji.',
       },
       review_round: {
         title: 'Podsumowanie wyników',
@@ -1549,6 +1603,8 @@ const translations = {
     roundPanelOpenCell: 'Otwarta karta',
     roundPanelStartModifierOrdering: 'Rozpocznij wybór modyfikatorów',
     roundPanelStart: 'Zakończ zamawianie modyfikatorów',
+    roundPanelCompletePreparation: 'Zakończ przygotowanie',
+    roundPanelCompletePreparationFailed: 'Nie udało się zakończyć przygotowania.',
     roundPanelBeginGameplay: 'Rozpocznij grę',
     roundPanelReview: 'Zakończ grę',
     roundPanelOpenSummary: 'Podsumuj wyniki',
@@ -1561,6 +1617,8 @@ const translations = {
     roundPanelStartModifierOrderingFailed: 'Nie udało się rozpocząć zamawiania modyfikatorów.',
     roundPanelStartFailed: 'Nie udało się zakończyć zamawiania modyfikatorów.',
     roundPanelBeginGameplayFailed: 'Nie udało się rozpocząć gry.',
+    roundPanelFinishPresentation: 'Zakończ prezentację',
+    roundPanelFinishPresentationFailed: 'Nie udało się zakończyć prezentacji wyników.',
     roundPanelReviewFailed: 'Nie udało się zakończyć gry.',
     roundPanelCompleteFailed: 'Nie udało się zakończyć rundy.',
     roundPanelSafetyTitle: 'Naprawa rundy',
@@ -1591,7 +1649,7 @@ const translations = {
       'Niezapisane zmiany wyniku rundy zostaną utracone. Możesz wrócić do edycji.',
     roundSummaryCloseConfirmAction: 'Zamknij bez zapisywania',
     roundSummaryCloseConfirmCancel: 'Kontynuuj edycję',
-    roundSummarySubmit: 'Zakończ rundę',
+    roundSummarySubmit: 'Zapisz wyniki',
     roundSummaryPostRoundTitle: 'Co dalej z drużyną?',
     roundSummaryPostRoundDescription:
       'Wybierz, czy ta drużyna zostaje na następną rundę, czy kończy swoją grę już teraz.',

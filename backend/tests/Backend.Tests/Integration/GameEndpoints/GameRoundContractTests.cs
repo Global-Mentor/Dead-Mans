@@ -12,6 +12,8 @@ using backend.Messaging;
 using Backend.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Backend.Tests.Integration.GameEndpoints;
 
@@ -183,6 +185,11 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         );
         Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
 
+        var completion = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{awaitingRoundId}/complete-preparation",
+            new GameRoundVersionCommandRequestDto(2));
+        Assert.Equal(HttpStatusCode.OK, completion.StatusCode);
+
         var response = await client.PostAsJsonAsync(
             "/api/game/rounds",
             new StartGameRoundRequestDto(seeded.CellId.ToString(), seeded.TeamId.ToString())
@@ -241,6 +248,28 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         Assert.Null(prepared.GameplayStartedAtUtc);
         Assert.Empty(prepared.ModifierResults);
 
+        var prematureBegin = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{roundId}/begin-gameplay",
+            new GameRoundVersionCommandRequestDto(prepared.RoundVersion));
+        Assert.Equal(HttpStatusCode.Conflict, prematureBegin.StatusCode);
+
+        var completionResponse = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{roundId}/complete-preparation",
+            new GameRoundVersionCommandRequestDto(prepared.RoundVersion));
+        Assert.Equal(HttpStatusCode.OK, completionResponse.StatusCode);
+        var ready = await completionResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
+        Assert.NotNull(ready);
+        Assert.Equal(GameRoundStatusValue.PreparationCompleted, ready.Status);
+        Assert.Equal(3, ready.RoundVersion);
+        Assert.Null(ready.GameplayStartedAtUtc);
+        Assert.Empty(ready.ModifierResults);
+        var repeatedCompletion = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{roundId}/complete-preparation",
+            new GameRoundVersionCommandRequestDto(prepared.RoundVersion));
+        Assert.Equal(HttpStatusCode.OK, repeatedCompletion.StatusCode);
+        Assert.Equal(ready.RoundVersion,
+            (await repeatedCompletion.Content.ReadFromJsonAsync<GameRoundDetailsDto>())!.RoundVersion);
+
         var staleBeginResponse = await client.PostAsJsonAsync(
             $"/api/game/rounds/{roundId}/begin-gameplay",
             new GameRoundVersionCommandRequestDto(1)
@@ -253,20 +282,20 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
 
         var beginResponse = await client.PostAsJsonAsync(
             $"/api/game/rounds/{roundId}/begin-gameplay",
-            new GameRoundVersionCommandRequestDto(prepared.RoundVersion)
+            new GameRoundVersionCommandRequestDto(ready.RoundVersion)
         );
         var inProgress = await beginResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
 
         Assert.Equal(HttpStatusCode.OK, beginResponse.StatusCode);
         Assert.NotNull(inProgress);
         Assert.Equal(GameRoundStatusValue.InProgress, inProgress.Status);
-        Assert.Equal(3, inProgress.RoundVersion);
+        Assert.Equal(4, inProgress.RoundVersion);
         Assert.NotNull(inProgress.GameplayStartedAtUtc);
         Assert.Single(inProgress.ModifierResults);
 
         var repeatedBeginResponse = await client.PostAsJsonAsync(
             $"/api/game/rounds/{roundId}/begin-gameplay",
-            new GameRoundVersionCommandRequestDto(prepared.RoundVersion)
+            new GameRoundVersionCommandRequestDto(ready.RoundVersion)
         );
         var repeatedBegin = await repeatedBeginResponse.Content.ReadFromJsonAsync<GameRoundDetailsDto>();
 
@@ -284,7 +313,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         Assert.Equal(HttpStatusCode.OK, reviewResponse.StatusCode);
         Assert.NotNull(reviewing);
         Assert.Equal(GameRoundStatusValue.ReviewingResults, reviewing.Status);
-        Assert.Equal(4, reviewing.RoundVersion);
+        Assert.Equal(5, reviewing.RoundVersion);
         Assert.NotNull(reviewing.ReviewedAtUtc);
 
         var resumeResponse = await client.PostAsJsonAsync(
@@ -296,7 +325,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         Assert.Equal(HttpStatusCode.OK, resumeResponse.StatusCode);
         Assert.NotNull(resumed);
         Assert.Equal(GameRoundStatusValue.InProgress, resumed.Status);
-        Assert.Equal(5, resumed.RoundVersion);
+        Assert.Equal(6, resumed.RoundVersion);
         Assert.Equal(inProgress.GameplayStartedAtUtc, resumed.GameplayStartedAtUtc);
         Assert.Null(resumed.ReviewedAtUtc);
     }
@@ -367,6 +396,7 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     [InlineData(GameRoundStatusValue.InProgress)]
     [InlineData(GameRoundStatusValue.ReviewingResults)]
     public async Task TechnicalCancel_FromEveryNonterminalStage_RefundsOnceRetiresCardAndFreesTeam(
@@ -392,6 +422,15 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
             Assert.NotNull(prepared);
             currentVersion = prepared.RoundVersion;
+        }
+
+        if (targetStatus is GameRoundStatusValue.PreparationCompleted or GameRoundStatusValue.InProgress or GameRoundStatusValue.ReviewingResults)
+        {
+            var response = await client.PostAsJsonAsync(
+                $"/api/game/rounds/{roundId}/complete-preparation",
+                new GameRoundVersionCommandRequestDto(currentVersion));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            currentVersion = (await response.Content.ReadFromJsonAsync<GameRoundDetailsDto>())!.RoundVersion;
         }
 
         if (targetStatus is GameRoundStatusValue.InProgress or GameRoundStatusValue.ReviewingResults)
@@ -477,8 +516,9 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             {
                 GameRoundStatusValue.AwaitingModifiers => 1,
                 GameRoundStatusValue.Preparing => 2,
-                GameRoundStatusValue.InProgress => 3,
-                GameRoundStatusValue.ReviewingResults => 4,
+                GameRoundStatusValue.PreparationCompleted => 3,
+                GameRoundStatusValue.InProgress => 4,
+                GameRoundStatusValue.ReviewingResults => 5,
                 _ => throw new ArgumentOutOfRangeException(nameof(targetStatus), targetStatus, null)
             },
             audits.Length
@@ -677,11 +717,12 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             null,
             []
         );
-        using var client = TestAuthClientFactory.CreateClient(
+        using var authenticatedFactory = TestAuthClientFactory.CreateFactory(
             _factory,
             [AuthRoleCodes.Admin],
             userId: seeded.ModeratorId
         );
+        using var client = authenticatedFactory.CreateClient();
 
         using (var anonymousClient = _factory.CreateClient())
         {
@@ -748,6 +789,21 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         Assert.Equivalent(preview.ScoreDetails, finalized.ScoreDetails, strict: true);
         Assert.Equal(445, finalized.FinalScore);
 
+        Assert.Equal(GameRoundStatusValue.ShowingResults, finalized.Status);
+        await using var connection = new HubConnectionBuilder().WithUrl(
+            new Uri(authenticatedFactory.Server.BaseAddress, RealtimeHubContracts.GameBoard.HubPath), options =>
+            {
+                options.Transports = HttpTransportType.LongPolling;
+                options.HttpMessageHandlerFactory = _ => authenticatedFactory.Server.CreateHandler();
+            }).Build();
+        var teamChanged = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.On(RealtimeHubContracts.GameBoard.TeamStateChangedEvent, () => teamChanged.TrySetResult());
+        await connection.StartAsync();
+        var finishPresentation = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{finalized.RoundId}/finish-presentation",
+            new GameRoundVersionCommandRequestDto(finalized.RoundVersion));
+        Assert.Equal(HttpStatusCode.OK, finishPresentation.StatusCode);
+        await teamChanged.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var history = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
             $"/api/game/history/games/{seeded.GameId}"
         );
@@ -1059,6 +1115,11 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
         Assert.All(finalized.ModifierResults, modifier =>
             Assert.Equal("Нарушение подтверждено", modifier.ViolationComment));
 
+        Assert.Equal(GameRoundStatusValue.ShowingResults, finalized.Status);
+        var finishPresentation = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{finalized.RoundId}/finish-presentation",
+            new GameRoundVersionCommandRequestDto(finalized.RoundVersion));
+        Assert.Equal(HttpStatusCode.OK, finishPresentation.StatusCode);
         var history = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
             $"/api/game/history/games/{seeded.GameId}"
         );
@@ -1422,6 +1483,11 @@ public sealed class GameRoundContractTests : IClassFixture<TestWebApplicationFac
             new GameRoundVersionCommandRequestDto(1)
         );
         Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
+
+        var completion = await client.PostAsJsonAsync(
+            $"/api/game/rounds/{roundId}/complete-preparation",
+            new GameRoundVersionCommandRequestDto(2));
+        Assert.Equal(HttpStatusCode.OK, completion.StatusCode);
 
         return await client.PostAsJsonAsync(
             "/api/game/rounds",

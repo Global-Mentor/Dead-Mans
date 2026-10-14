@@ -16,7 +16,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     {
         var clients = new FakeHubClients();
         var hubContext = new FakeHubContext(clients);
-        var publisher = new SignalRGameBoardEventsPublisher(hubContext);
+        var publisher = new SignalRGameBoardEventsPublisher(hubContext, new FakeOverlayHubContext());
         var payload = new GameCellOpenedEvent(
             GameId: Guid.NewGuid().ToString(),
             Version: 5,
@@ -52,7 +52,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     {
         var clients = new FakeHubClients();
         var hubContext = new FakeHubContext(clients);
-        var publisher = new SignalRGameBoardEventsPublisher(hubContext);
+        var publisher = new SignalRGameBoardEventsPublisher(hubContext, new FakeOverlayHubContext());
         var payload = new GameQuizStateChangedEvent(
             Guid.NewGuid(),
             GameQuizStateChangeKinds.QuestionClosed,
@@ -77,7 +77,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     {
         var clients = new FakeHubClients();
         var hubContext = new FakeHubContext(clients);
-        var publisher = new SignalRGameBoardEventsPublisher(hubContext);
+        var publisher = new SignalRGameBoardEventsPublisher(hubContext, new FakeOverlayHubContext());
         var payload = new GameRoundStateChangedEvent(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -105,7 +105,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     public async Task PublishModifierAvailabilityChangedAsync_SendsVersionedEventToRealtimeGroup()
     {
         var clients = new FakeHubClients();
-        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients));
+        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients), new FakeOverlayHubContext());
         var payload = new GameModifierAvailabilityChangedEvent(
             Guid.NewGuid().ToString(),
             7,
@@ -132,7 +132,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     public async Task PublishGameLifecycleChangedAsync_SendsVersionedEventToRealtimeGroup()
     {
         var clients = new FakeHubClients();
-        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients));
+        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients), new FakeOverlayHubContext());
         var payload = new GameLifecycleChangedEvent(
             Guid.NewGuid(),
             GameLifecycleStatuses.Finished,
@@ -160,7 +160,7 @@ public sealed class SignalRGameBoardEventsPublisherTests
     public async Task PublishUserNotificationCreatedAsync_SendsOnlyToUserSpecificGroup()
     {
         var clients = new FakeHubClients();
-        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients));
+        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients), new FakeOverlayHubContext());
         var userId = Guid.NewGuid();
         var notification = new GameUserNotification(
             Guid.NewGuid(),
@@ -229,6 +229,12 @@ public sealed class SignalRGameBoardEventsPublisherTests
             ("connection-1", RealtimeGroupNames.GameBoardUserAudience(userId)),
             groups.Additions
         );
+    }
+
+    private sealed class FakeOverlayHubContext : IHubContext<GameOverlayHub>
+    {
+        public IHubClients Clients { get; } = new FakeHubClients();
+        public IGroupManager Groups { get; } = new RecordingGroupManager();
     }
 
     private sealed class FakeHubContext : IHubContext<GameBoardHub>

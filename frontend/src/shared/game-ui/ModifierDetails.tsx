@@ -3,22 +3,26 @@ import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { ItemCard, NativeDisclosure, SectionDivider } from '../ui/index.ts'
 import { ModifierIconTile } from './ModifierIconTile.tsx'
 import { ModifierCatalogHeading } from './ModifierCatalogGroup.tsx'
+import { broadcastRevealSx } from './broadcast-motion.ts'
 
 export function ModifierDetailsList({
   count,
   layout = 'viewport',
   scrollContainerRef,
+  heightReferenceRef,
   children,
 }: {
   count: number
   layout?: 'viewport' | 'fit'
   scrollContainerRef?: RefObject<HTMLElement | null>
+  heightReferenceRef?: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
   const listRef = useRef<HTMLUListElement>(null)
   useLayoutEffect(() => {
     const list = listRef.current
     const viewport = scrollContainerRef?.current
+    const heightReference = heightReferenceRef?.current
     if (layout !== 'fit' || !list || !viewport) return
     let disposed = false
     const measure = () => {
@@ -27,7 +31,8 @@ export function ModifierDetailsList({
       list.style.setProperty('--modifier-columns', 'minmax(0, 1fr)')
       const listBounds = list.getBoundingClientRect()
       const viewportBounds = viewport.getBoundingClientRect()
-      const compactHeight = measureCompactList(list)
+      const scale = listBounds.width / Math.max(1, list.offsetWidth) || 1
+      const compactHeight = measureCompactList(list, scale)
       let bottomInset = 0
       for (
         let parent = list.parentElement;
@@ -37,9 +42,13 @@ export function ModifierDetailsList({
         const style = getComputedStyle(parent)
         bottomInset += parseFloat(style.paddingBottom) + parseFloat(style.borderBottomWidth)
       }
-      const topInset = listBounds.top - viewportBounds.top + viewport.scrollTop - viewport.clientTop
-      const availableHeight = viewport.clientHeight - topInset - bottomInset
-      const twoColumns = count > 1 && listBounds.width >= 480 && compactHeight > availableHeight + 1
+      const topInset =
+        (listBounds.top - viewportBounds.top) / scale + viewport.scrollTop - viewport.clientTop
+      const viewportHeight = viewport.clientHeight - topInset - bottomInset
+      const availableHeight = heightReference
+        ? Math.min(viewportHeight, heightReference.offsetHeight)
+        : viewportHeight
+      const twoColumns = count > 1 && list.clientWidth >= 480 && compactHeight > availableHeight + 1
       list.style.setProperty(
         '--modifier-columns',
         twoColumns ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)',
@@ -48,6 +57,7 @@ export function ModifierDetailsList({
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(viewport)
+    if (heightReference) observer.observe(heightReference)
     const contentObserver = new MutationObserver(measure)
     contentObserver.observe(list, { childList: true, subtree: true, characterData: true })
     document.fonts?.addEventListener('loadingdone', measure)
@@ -59,7 +69,7 @@ export function ModifierDetailsList({
       document.fonts?.removeEventListener('loadingdone', measure)
       list.style.removeProperty('--modifier-columns')
     }
-  }, [children, count, layout, scrollContainerRef])
+  }, [children, count, heightReferenceRef, layout, scrollContainerRef])
   return (
     <Box sx={{ minWidth: 0 }}>
       <Box
@@ -83,7 +93,7 @@ export function ModifierDetailsList({
   )
 }
 
-function measureCompactList(list: Element): number {
+function measureCompactList(list: Element, scale = 1): number {
   const gap = parseFloat(getComputedStyle(list).rowGap) || 0
   const rows = Array.from(list.children)
   return rows.reduce(
@@ -93,9 +103,11 @@ function measureCompactList(list: Element): number {
       const heading = row.querySelector(':scope > [data-modifier-group-heading]')
       const content = row.querySelector('summary') ?? row.firstElementChild
       const contentHeight = nestedList
-        ? measureCompactList(nestedList) +
-          (heading ? heading.getBoundingClientRect().height + (parseFloat(style.rowGap) || 0) : 0)
-        : (content?.getBoundingClientRect().height ?? 0)
+        ? measureCompactList(nestedList, scale) +
+          (heading
+            ? heading.getBoundingClientRect().height / scale + (parseFloat(style.rowGap) || 0)
+            : 0)
+        : (content?.getBoundingClientRect().height ?? 0) / scale
       return (
         height +
         contentHeight +
@@ -169,6 +181,7 @@ export function ModifierDetailsItem({
   emoji,
   reserveIcon = false,
   catalog = false,
+  reveal = false,
   metadata,
   effect,
   actions,
@@ -180,6 +193,7 @@ export function ModifierDetailsItem({
   emoji?: string | null | undefined
   reserveIcon?: boolean
   catalog?: boolean
+  reveal?: boolean
   metadata?: ReactNode
   effect?: ReactNode
   actions?: ReactNode
@@ -222,6 +236,7 @@ export function ModifierDetailsItem({
         listStyle: 'none',
         overflowWrap: 'anywhere',
         containerType: 'inline-size',
+        ...(reveal ? broadcastRevealSx : {}),
       }}
     >
       <Box
@@ -249,7 +264,15 @@ export function ModifierDetailsItem({
             </Stack>
           </NativeDisclosure>
         ) : (
-          <Box sx={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>{summary}</Box>
+          <Box
+            sx={{
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {summary}
+          </Box>
         )}
         {actions ? (
           <Stack
