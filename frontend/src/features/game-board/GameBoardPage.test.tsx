@@ -534,13 +534,23 @@ describe('GameBoardPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('confirms card opening with the card name, cost, and next phase', () => {
+  it('confirms a hidden card with its column, row, cost, and next phase', () => {
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({
+        data: {
+          ...readySnapshot,
+          cols: 2,
+          colLabels: ['Охота', 'Бомбардир'],
+          rowLabels: ['Разминка'],
+        },
+      }),
+    )
     pageMocks.useOpenGameBoardCell.mockReturnValue({
       pendingCell: {
         id: 'cell-confirm',
         row: 0,
         col: 1,
-        title: 'Босс',
+        title: null,
         description: null,
         cost: 500,
         state: 'closed',
@@ -564,6 +574,8 @@ describe('GameBoardPage', () => {
         'Открыть карточку стоимостью 500 очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
       ),
     ).toBeInTheDocument()
+    expect(screen.getByText('Бомбардир: Разминка (стоимость: 500 очк.)')).toBeInTheDocument()
+    expect(screen.queryByText('Ячейка', { exact: true })).not.toBeInTheDocument()
     expect(screen.queryByText(/ряд|колонка/i)).not.toBeInTheDocument()
   })
 

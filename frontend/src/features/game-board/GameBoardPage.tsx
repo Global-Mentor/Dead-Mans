@@ -12,7 +12,7 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { getBoardRowLabelColumnWidth } from './theme/board-grid-metrics.ts'
+import { getBoardRowLabelColumnWidth } from '../../shared/game-ui/board-grid-metrics.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
@@ -195,7 +195,15 @@ export function GameBoardPage() {
         description={t('gameBoard.openConfirmDescription', {
           cost: pendingCell?.cost ?? 0,
         })}
-        subject={pendingCell?.title || t('gameBoard.cellLabel')}
+        subject={
+          pendingCell
+            ? t('gameBoard.openConfirmSubject', {
+                column: snapshot.colLabels[pendingCell.col]?.trim() ?? '',
+                row: snapshot.rowLabels[pendingCell.row]?.trim() ?? '',
+                cost: pendingCell.cost,
+              })
+            : ''
+        }
         errorMessage={confirmationError}
         cancelLabel={t('common.actions.cancel')}
         confirmLabel={t(isSubmitting ? 'gameBoard.openPending' : 'common.actions.open')}

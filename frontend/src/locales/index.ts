@@ -1,3 +1,4 @@
+import boardCardTranslations from '../shared/i18n/board-card-translations.ts'
 import appTranslations from '../app/i18n/app-translations.ts'
 import authTranslations from '../features/auth/i18n/auth-translations.ts'
 import adminToolsTranslations from '../features/admin-tools/i18n/admin-tools-translations.ts'
@@ -15,6 +16,7 @@ function createBaseTranslation(language: SupportedLanguage) {
     navigation: navigationTranslations[language],
     languageSwitcher: languageSwitcherTranslations[language],
     common: commonTranslations[language],
+    boardCard: boardCardTranslations[language],
     adminTools: adminToolsTranslations[language],
   }
 }

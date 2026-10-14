@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { alpha } from '@mui/material/styles'
-import { appTheme } from '../../../app/theme/appTheme.ts'
+import { appTheme } from '../../app/theme/appTheme.ts'
 import { createBoardCellSx } from './board-cell-sx.ts'
 import { boardGridMetrics } from './board-grid-metrics.ts'
 

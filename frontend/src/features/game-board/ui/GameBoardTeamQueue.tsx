@@ -221,7 +221,7 @@ function QueueList({
                     >
                       {formatted === null
                         ? '-'
-                        : t('gameBoard.cellPlayedPoints', { score: formatted })}
+                        : t('boardCard.cellPlayedPoints', { score: formatted })}
                     </Typography>
                   }
                   sx={{

@@ -112,7 +112,7 @@ export function RoundCardSection({
               textAlign="center"
               sx={{ m: 0, fontVariantNumeric: 'tabular-nums' }}
             >
-              {round ? t('gameBoard.costLabel', { cost: round.baseScore }) : '-'}
+              {round ? t('boardCard.costLabel', { cost: round.baseScore }) : '-'}
             </Typography>
           </Box>
         </Box>
