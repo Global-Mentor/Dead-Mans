@@ -37,7 +37,7 @@ export function useActivateGameModifier() {
     }),
     mutationFn: (modifierId: string) => activateGameModifier(modifierId),
     onSuccess: () => {
-      setToastMessage(t('gameModifiers.activateSuccess'))
+      setToastMessage(null)
 
       void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
       void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })

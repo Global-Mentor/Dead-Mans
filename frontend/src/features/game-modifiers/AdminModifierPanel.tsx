@@ -99,8 +99,7 @@ export function AdminModifierTool() {
     mutationFn: (input: { modifierId: string; playerId: string }) =>
       adminActivateGameModifier(input.modifierId, input.playerId),
     onSuccess: () => {
-      setToastSeverity('info')
-      setToastMessage(t('gameModifiers.adminPanel.activateSuccess'))
+      setToastMessage(null)
       setSelectedAvailableModifierId('')
       invalidateModifierCaches()
     },

@@ -696,6 +696,22 @@ for (const width of [320, 390, 768]) {
   })
 }
 
+test('successful modifier activation closes confirmation without a toast', async ({ page }) => {
+  await mockModifiers(page)
+  await page.goto('/panel/game-modifiers')
+  await page.getByRole('button', { name: 'Активировать Модификатор 1', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+  const activation = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.includes('/modifiers/'),
+  )
+  await confirmation.getByRole('button', { name: 'Активировать', exact: true }).click()
+  expect((await activation).status()).toBe(204)
+  await expect(confirmation).toBeHidden()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
 for (const width of [390, 768, 1440]) {
   test(`details, purchases and refunds remain accessible at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 })

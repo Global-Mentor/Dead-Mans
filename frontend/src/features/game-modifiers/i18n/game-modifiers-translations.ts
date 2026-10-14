@@ -65,7 +65,6 @@ const translations = {
     activationConfirmTitle: 'Activate this modifier?',
     activationConfirmDescription: 'Activate this modifier for {{cost}} quiz points?',
 
-    activateSuccess: 'Modifier activated.',
     selfCancelAction: 'Cancel purchase and refund',
     selfCancelConfirmTitle: 'Cancel your modifier purchase?',
     selfCancelConfirmDescription:
@@ -145,7 +144,6 @@ const translations = {
         'Rules stay the same as for normal players. The selected player must have enough quiz points.',
       activateAction: 'Activate for player',
 
-      activateSuccess: 'Modifier activated for the selected player.',
       emergencyDisableReasonLabel: 'Emergency-disable reason',
       emergencyDisableAction: 'Disable new activations',
 
@@ -270,7 +268,6 @@ const translations = {
     activationConfirmTitle: 'Активировать этот модификатор?',
     activationConfirmDescription: 'Активировать модификатор за {{cost}} очк. викторины?',
 
-    activateSuccess: 'Модификатор активирован.',
     selfCancelAction: 'Отменить покупку и вернуть очки',
     selfCancelConfirmTitle: 'Отменить покупку модификатора?',
     selfCancelConfirmDescription:
@@ -350,7 +347,6 @@ const translations = {
         'Правила те же, что и у обычного игрока. У выбранного игрока должно хватать очков викторины.',
       activateAction: 'Активировать игроку',
 
-      activateSuccess: 'Модификатор активирован для выбранного игрока.',
       emergencyDisableReasonLabel: 'Причина аварийного отключения',
       emergencyDisableAction: 'Отключить новые активации',
 
@@ -475,7 +471,6 @@ const translations = {
     activationConfirmTitle: 'Активувати цей модифікатор?',
     activationConfirmDescription: 'Активувати модифікатор за {{cost}} очк. вікторини?',
 
-    activateSuccess: 'Модифікатор активовано.',
     selfCancelAction: 'Скасувати покупку й повернути очки',
     selfCancelConfirmTitle: 'Скасувати покупку модифікатора?',
     selfCancelConfirmDescription:
@@ -555,7 +550,6 @@ const translations = {
         'Правила ті самі, що й для звичайного гравця. У вибраного гравця має вистачати очок вікторини.',
       activateAction: 'Активувати для гравця',
 
-      activateSuccess: 'Модифікатор активовано для вибраного гравця.',
       emergencyDisableReasonLabel: 'Причина аварійного вимкнення',
       emergencyDisableAction: 'Вимкнути нові активації',
 
@@ -680,7 +674,6 @@ const translations = {
     activationConfirmTitle: 'Aktywować ten modyfikator?',
     activationConfirmDescription: 'Aktywować ten modyfikator za {{cost}} punktów quizowych?',
 
-    activateSuccess: 'Modyfikator aktywowany.',
     selfCancelAction: 'Cofnij zakup i zwróć punkty',
     selfCancelConfirmTitle: 'Cofnąć zakup modyfikatora?',
     selfCancelConfirmDescription:
@@ -760,7 +753,6 @@ const translations = {
         'Obowiązują te same zasady co dla zwykłych graczy. Wybrany gracz musi mieć wystarczająco punktów quizowych.',
       activateAction: 'Aktywuj dla gracza',
 
-      activateSuccess: 'Modyfikator aktywowano dla wybranego gracza.',
       emergencyDisableReasonLabel: 'Powód awaryjnego wyłączenia',
       emergencyDisableAction: 'Wyłącz nowe aktywacje',
 

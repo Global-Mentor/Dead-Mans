@@ -178,7 +178,7 @@ describe('useActivateGameModifier', () => {
     await waitFor(() => {
       expect(result.current.isActivating).toBe(false)
       expect(result.current.pendingModifierId).toBeNull()
-      expect(result.current.toastMessage).toBe(i18n.t('gameModifiers.activateSuccess'))
+      expect(result.current.toastMessage).toBeNull()
     })
 
     expect(invalidateQueries).toHaveBeenCalled()
