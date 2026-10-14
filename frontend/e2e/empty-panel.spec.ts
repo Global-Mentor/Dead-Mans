@@ -79,17 +79,26 @@ const emptyRoutes = [
 ] as const
 
 for (const width of [390, 768, 1440]) {
-  test(`empty panel routes remain usable at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 })
-    const errors: string[] = []
-    page.on('pageerror', (error) => errors.push(error.message))
-    page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
-    })
-    await mockEmptyDatabase(page)
-    let stateBounds: { x: number; y: number; width: number } | undefined
-    for (const [route, message] of emptyRoutes) {
-      await page.goto(`/panel/${route}`)
+  for (const [route, message] of emptyRoutes) {
+    test(`empty ${route} remains usable at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 })
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text())
+      })
+      await mockEmptyDatabase(page)
+      // Compare each route with the same reference without one cumulative navigation deadline.
+      await page.goto('/panel/game-board')
+      await expect(page.getByRole('main')).toContainText(emptyRoutes[0][1])
+      await page.evaluate(() => document.fonts.ready)
+      const referencePanel = page.getByTestId('page-state-panel').first()
+      await expect(referencePanel).toBeVisible()
+      const stateBounds = await referencePanel.boundingBox()
+      if (!stateBounds) throw new Error('Missing reference state panel')
+      if (route !== 'game-board') {
+        await page.goto(`/panel/${route}`)
+      }
       await expect(page.getByRole('main')).toContainText(message)
       await expect(page.getByRole('main')).not.toContainText('Не удалось')
       await page.evaluate(() => document.fonts.ready)
@@ -98,7 +107,6 @@ for (const width of [390, 768, 1440]) {
       await expect(panel.getByRole('heading', { level: 1 })).toHaveCount(1)
       const bounds = await panel.boundingBox()
       if (!bounds) throw new Error(`Missing state panel on ${route}`)
-      stateBounds ??= bounds
       expect(
         Math.abs(bounds.x - stateBounds.x),
         `${route} horizontal placement`,
@@ -137,9 +145,9 @@ for (const width of [390, 768, 1440]) {
           ),
         })
       }
-    }
-    expect(errors).toEqual([])
-  })
+      expect(errors).toEqual([])
+    })
+  }
 }
 
 test('empty setup keeps creation reachable without duplicate prompts', async ({ page }) => {
