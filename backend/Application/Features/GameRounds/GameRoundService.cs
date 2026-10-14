@@ -50,6 +50,25 @@ public sealed class GameRoundService : IGameRoundService
         );
     }
 
+    public async Task<TransitionGameRoundResult> FinishPresentationAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await PublishRoundStateChangeOnSuccessAsync(
+            () => _repository.FinishPresentationAsync(roundId, input, initiatedByUserId, cancellationToken)
+        );
+        if (result.Outcome == TransitionGameRoundOutcome.Transitioned)
+        {
+            await RealtimePublishGuard.TryPublishAsync(
+                token => _eventsPublisher.PublishTeamStateChangedAsync(token), _logger,
+                AppMessages.Logs.RealtimeGameRoundStateChangedPublishFailed, roundId);
+        }
+        return result;
+    }
+
     public Task<TransitionGameRoundResult> ReviewAsync(
         Guid roundId,
         GameRoundVersionCommandInput input,
@@ -83,6 +102,18 @@ public sealed class GameRoundService : IGameRoundService
     {
         return PublishRoundStateChangeOnSuccessAsync(
             () => _repository.PrepareAsync(roundId, input, initiatedByUserId, cancellationToken)
+        );
+    }
+
+    public Task<TransitionGameRoundResult> CompletePreparationAsync(
+        Guid roundId,
+        GameRoundVersionCommandInput input,
+        Guid initiatedByUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return PublishRoundStateChangeOnSuccessAsync(
+            () => _repository.CompletePreparationAsync(roundId, input, initiatedByUserId, cancellationToken)
         );
     }
 
@@ -154,6 +185,19 @@ public sealed class GameRoundService : IGameRoundService
     )
     {
         return _repository.PreviewScoreAsync(roundId, input, resolvedByUserId, cancellationToken);
+    }
+
+    public async Task<PreviewGameRoundScoreResult> BroadcastSummaryAsync(Guid roundId,
+        BroadcastGameRoundSummaryInput input, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var result = await _repository.BroadcastSummaryAsync(roundId, input, userId, cancellationToken);
+        if (result.Outcome == FinalizeGameRoundOutcome.Completed)
+        {
+            await RealtimePublishGuard.TryPublishAsync(
+                token => _eventsPublisher.PublishOverlayFrameChangedAsync(token), _logger,
+                AppMessages.Logs.RealtimeGameRoundStateChangedPublishFailed, roundId);
+        }
+        return result;
     }
 
     private async Task<T> PublishRoundStateChangeOnSuccessAsync<T>(Func<Task<T>> action)

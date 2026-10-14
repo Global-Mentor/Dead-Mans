@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { gameModifierCatalogQueryOptions } from '../game-modifiers/api/game-modifier-queries.ts'
@@ -11,9 +12,9 @@ export function ModifierCatalogRealtimeSync() {
   const queryClient = useQueryClient()
   const invalidate = useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: gameModifierCatalogQueryOptions.queryKey }),
-      queryClient.invalidateQueries({ queryKey: modifierHistoryRootQueryOptions.queryKey }),
-      queryClient.invalidateQueries({ queryKey: gameSetupDraftQueryOptions.queryKey }),
+      refreshRealtimeQueries(queryClient, gameModifierCatalogQueryOptions.queryKey),
+      refreshRealtimeQueries(queryClient, modifierHistoryRootQueryOptions.queryKey),
+      refreshRealtimeQueries(queryClient, gameSetupDraftQueryOptions.queryKey),
     ])
   }, [queryClient])
 

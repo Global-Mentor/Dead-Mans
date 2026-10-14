@@ -67,6 +67,8 @@ describe('buildGameManagementFlow', () => {
       'blocked',
       'blocked',
       'blocked',
+      'blocked',
+      'blocked',
     ])
   })
 
@@ -79,6 +81,8 @@ describe('buildGameManagementFlow', () => {
     expect(flow.summaryKey).toBe('gameBoard.flowSummary.selectActiveTeam')
     expect(flow.steps.map((step) => step.state)).toEqual([
       'current',
+      'blocked',
+      'blocked',
       'blocked',
       'blocked',
       'blocked',
@@ -109,6 +113,8 @@ describe('buildGameManagementFlow', () => {
       'upcoming',
       'upcoming',
       'upcoming',
+      'upcoming',
+      'upcoming',
     ])
   })
 
@@ -121,6 +127,8 @@ describe('buildGameManagementFlow', () => {
       'complete',
       'complete',
       'current',
+      'upcoming',
+      'upcoming',
       'upcoming',
       'upcoming',
       'upcoming',
@@ -146,13 +154,21 @@ describe('buildGameManagementFlow', () => {
       'ready',
       'upcoming',
       'upcoming',
+      'upcoming',
+      'upcoming',
     ])
   })
 
   it('shows gameplay and result review phases in order', () => {
     const preparing = buildGameManagementFlow(baseSnapshot, createRound({ status: 'preparing' }))
     expect(preparing.currentStepId).toBe('start_round')
-    expect(preparing.nextStepId).toBe('play_round')
+    expect(preparing.nextStepId).toBe('complete_preparation')
+    const ready = buildGameManagementFlow(
+      baseSnapshot,
+      createRound({ status: 'preparation_completed' }),
+    )
+    expect(ready.currentStepId).toBe('complete_preparation')
+    expect(ready.nextStepId).toBe('play_round')
     expect(preparing.summaryKey).toBe('gameBoard.flowSummary.roundPreparing')
 
     const inProgress = buildGameManagementFlow(baseSnapshot, createRound({ status: 'in_progress' }))
@@ -166,8 +182,10 @@ describe('buildGameManagementFlow', () => {
       'complete',
       'complete',
       'complete',
+      'complete',
       'current',
       'ready',
+      'upcoming',
     ])
 
     const reviewing = buildGameManagementFlow(
@@ -176,9 +194,28 @@ describe('buildGameManagementFlow', () => {
     )
     expect(reviewing.phase).toBe('reviewing')
     expect(reviewing.currentStepId).toBe('review_round')
-    expect(reviewing.nextStepId).toBeNull()
+    expect(reviewing.nextStepId).toBe('show_results')
     expect(reviewing.summaryKey).toBe('gameBoard.flowSummary.reviewingResults')
     expect(reviewing.steps.map((step) => step.state)).toEqual([
+      'complete',
+      'complete',
+      'complete',
+      'complete',
+      'complete',
+      'complete',
+      'complete',
+      'current',
+      'upcoming',
+    ])
+  })
+  it('holds the result step until the operator ends presentation', () => {
+    const flow = buildGameManagementFlow(baseSnapshot, createRound({ status: 'showing_results' }))
+    expect(flow.currentStepId).toBe('show_results')
+    expect(flow.nextStepId).toBeNull()
+    expect(flow.steps).toHaveLength(9)
+    expect(flow.steps.map((step) => step.state)).toEqual([
+      'complete',
+      'complete',
       'complete',
       'complete',
       'complete',

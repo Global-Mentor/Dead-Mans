@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Tests.Unit.Infrastructure.Persistence;
 
-public sealed class DbGameBoardRepositoryTests
+public sealed partial class DbGameBoardRepositoryTests
 {
     private static readonly StorageOptions Storage = new() { PublicBaseUrl = "https://cdn.example" };
 
@@ -316,6 +316,17 @@ public sealed class DbGameBoardRepositoryTests
                 ConfirmedAtUtc = previousTimestamp
             }
         );
+        db.GameRounds.Add(new GameRound
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            TeamId = teamId,
+            BoardId = Guid.NewGuid(),
+            BoardCellId = Guid.NewGuid(),
+            Status = GameRoundStatusValue.Cancelled,
+            CreatedAtUtc = previousTimestamp,
+            UpdatedAtUtc = previousTimestamp
+        });
         await db.SaveChangesAsync();
         IGameBoardRepository repository = new DbGameBoardRepository(
             db,

@@ -1,6 +1,15 @@
 import { Box, Typography } from '@mui/material'
+import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
-import { DisclosureSection, InlineNotice, SectionCard } from '../../../../shared/ui/index.ts'
+import { GameControlIcon, type GameControlIconName } from '../../../../shared/game-ui/index.ts'
+import {
+  AppAccordion,
+  AppAccordionDetails,
+  AppAccordionSummary,
+  InlineNotice,
+  SectionCard,
+  HelpTooltip,
+} from '../../../../shared/ui/index.ts'
 export function ManagementControlSurface({
   kind,
   children,
@@ -9,7 +18,11 @@ export function ManagementControlSurface({
   children: ReactNode
 }) {
   return (
-    <SectionCard surface="panel" data-testid={`management-${kind}-section`} sx={{ minWidth: 0 }}>
+    <SectionCard
+      surface="panel"
+      data-testid={`management-${kind}-section`}
+      sx={{ minWidth: 0, p: 2 }}
+    >
       {children}
     </SectionCard>
   )
@@ -18,44 +31,65 @@ export function ManagementControlSurface({
 export function SecondaryManagementSection({
   sectionId,
   title,
-  tooltip,
   children,
   defaultExpanded = false,
+  icon,
 }: {
-  sectionId: string
+  sectionId: 'launch' | 'manual-quiz' | 'round-safety' | 'finish-game'
   title: string
-  tooltip: string
   children: ReactNode
   defaultExpanded?: boolean
+  icon?: GameControlIconName
 }) {
+  const { t } = useTranslation()
   return (
-    <DisclosureSection
-      title={title}
-      description={tooltip}
-      panelId={`management-${sectionId}-content`}
+    <AppAccordion
+      surface="inset"
       data-testid={`management-${sectionId}-section`}
       defaultExpanded={defaultExpanded}
     >
-      {children}
-    </DisclosureSection>
+      <AppAccordionSummary
+        density="compact"
+        id={`management-${sectionId}-header`}
+        aria-controls={`management-${sectionId}-content`}
+      >
+        <Typography
+          component="span"
+          variant="body2"
+          fontWeight={700}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          {icon ? <GameControlIcon name={icon} /> : null}
+          <HelpTooltip
+            placement="left"
+            describeChild
+            title={t(`gameBoard.managementHelp.${sectionId}`)}
+          >
+            <Box component="span" tabIndex={0}>
+              {title}
+            </Box>
+          </HelpTooltip>
+        </Typography>
+      </AppAccordionSummary>
+      <AppAccordionDetails>{children}</AppAccordionDetails>
+    </AppAccordion>
   )
 }
 
 export function ManagementSectionTitle({
   title,
-  tooltip,
   icon,
+  help,
 }: {
+  help?: string
   title: string
-  tooltip: string
-  icon?: 'round' | 'team'
+  icon?: GameControlIconName
 }) {
   return (
     <Typography
       variant="subtitle2"
       component={icon ? 'h3' : 'span'}
       fontWeight={600}
-      title={tooltip}
       sx={{
         minWidth: 0,
         display: 'flex',
@@ -63,35 +97,20 @@ export function ManagementSectionTitle({
         gap: 1,
         overflowWrap: 'anywhere',
         color: icon === 'round' ? 'primary.light' : 'text.primary',
-        fontSize: icon === 'round' ? 16 : 20,
+        fontSize: 16,
         lineHeight: 1.2,
       }}
     >
-      {icon ? (
-        <Box
-          component="svg"
-          aria-hidden
-          viewBox="0 0 24 24"
-          sx={{
-            width: 22,
-            height: 22,
-            flexShrink: 0,
-            fill: 'none',
-            stroke: 'currentColor',
-            strokeWidth: 1.4,
-          }}
-        >
-          {icon === 'round' ? (
-            <path d="M5 5h14v14H5z M9 8l6 4-6 4z" />
-          ) : (
-            <>
-              <circle cx="9" cy="8" r="3" />
-              <path d="M3 20v-2a6 6 0 0112 0v2 M16 5a3 3 0 010 6 M17 14a5 5 0 014 4v2" />
-            </>
-          )}
-        </Box>
-      ) : null}
-      {title}
+      {icon ? <GameControlIcon name={icon} /> : null}
+      {help ? (
+        <HelpTooltip placement="left" describeChild title={help}>
+          <Box component="span" tabIndex={0}>
+            {title}
+          </Box>
+        </HelpTooltip>
+      ) : (
+        title
+      )}
     </Typography>
   )
 }

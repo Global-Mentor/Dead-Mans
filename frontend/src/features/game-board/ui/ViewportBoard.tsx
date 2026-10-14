@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
+import { boardGridMetrics } from '../../../shared/game-ui/board-grid-metrics.ts'
 
 interface ViewportBoardProps {
   columns: number

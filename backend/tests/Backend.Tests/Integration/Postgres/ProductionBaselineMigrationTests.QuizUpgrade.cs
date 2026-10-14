@@ -192,9 +192,25 @@ public sealed partial class ProductionBaselineMigrationTests
         AddValidSetup(db, game, now, user);
         await db.SaveChangesAsync();
 
-        await TestModifierVersionFactory.AddAsync(db, new TestModifierSpec(
-            Guid.NewGuid(), "Retained modifier", "Catalog survives upgrade", GameModifierCategories.Round,
-            5, null, BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior), now);
+        var modifierId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+        var behaviorJson = ModifierBehaviorV2Json.Serialize(
+            BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik));
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO modifier_definitions (id, is_archived, created_at_utc)
+            VALUES ({modifierId}, FALSE, {now});
+            INSERT INTO modifier_definition_versions (
+                id, modifier_id, revision, name, description, category, activation_cost,
+                normalized_tags, behavior_v2_json, created_at_utc,
+                created_by_display_name_snapshot, change_type, changed_fields
+            ) VALUES (
+                {versionId}, {modifierId}, 1, 'Retained modifier', 'Catalog survives upgrade',
+                'round', 5, ARRAY[]::text[], {behaviorJson}::jsonb, {now},
+                'Test fixture', 'created', ARRAY['created']::text[]
+            );
+            UPDATE modifier_definitions SET current_version_id = {versionId} WHERE id = {modifierId};
+            """);
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();

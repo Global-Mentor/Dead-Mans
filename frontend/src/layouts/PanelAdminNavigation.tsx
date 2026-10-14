@@ -8,7 +8,6 @@ import {
 import { useId, useState, type MouseEvent } from 'react'
 import { Box, SvgIcon, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
-import { alpha } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
 import { gameSetupDraftQueryOptions } from '../features/game-setup/index.ts'
@@ -116,6 +115,7 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
       </HelpTooltip>
 
       <ActionMenu
+        appearance="tree"
         id={`${triggerId}-menu`}
         anchorEl={anchor}
         open={Boolean(anchor)}
@@ -123,38 +123,12 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{
-          paper: { sx: { mt: 1, width: 320, maxWidth: 'calc(100vw - 32px)' } },
+          paper: { sx: { mt: 1, width: 'max-content' } },
           list: { 'aria-labelledby': triggerId },
         }}
       >
-        {accessibleSections.map((section, index) => [
-          <MenuGroupLabel
-            key={`${section.id}-heading`}
-            disableSticky
-            sx={(theme) => ({
-              color: theme.palette.primary.light,
-              backgroundColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              fontSize: 15,
-              fontWeight: 600,
-              lineHeight: 1.5,
-              letterSpacing: '0.01em',
-              textTransform: 'none',
-              px: 2,
-              pt: index === 0 ? 1 : 2.25,
-              pb: 0.75,
-              '&::after': {
-                content: '""',
-                flex: 1,
-                minWidth: 16,
-                height: '1px',
-                ml: 0.5,
-                backgroundImage: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.4)}, transparent)`,
-              },
-            })}
-          >
+        {accessibleSections.map((section) => [
+          <MenuGroupLabel key={`${section.id}-heading`} disableSticky appearance="tree">
             <SvgIcon aria-hidden sx={{ fontSize: 16, flexShrink: 0 }}>
               <path
                 d={sectionIconPaths[section.id]}
@@ -171,7 +145,7 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
             const isDisabled = draftDependentRouteIds.has(route.id) && !hasDraftGame
 
             return isDisabled ? (
-              <ActionMenuItem key={route.id} disabled sx={{ minHeight: 44, whiteSpace: 'normal' }}>
+              <ActionMenuItem key={route.id} disabled>
                 {t(route.labelKey)}
               </ActionMenuItem>
             ) : (
@@ -182,7 +156,6 @@ export function PanelAdminNavigation({ activeRouteId, roles }: PanelAdminNavigat
                 selected={activeRouteId === route.id}
                 onClick={closeMenu}
                 aria-current={activeRouteId === route.id ? 'page' : undefined}
-                sx={{ minHeight: 44, whiteSpace: 'normal' }}
               >
                 {t(route.labelKey)}
               </ActionMenuItem>

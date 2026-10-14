@@ -37,7 +37,6 @@ public sealed class ModifierDefinitionVersionConfiguration
         builder.Property(x => x.Category).HasMaxLength(32).IsRequired();
         builder.Property(x => x.IconEmoji).HasMaxLength(16);
         builder.Property(x => x.ActivationCommand).HasMaxLength(128);
-        builder.Property(x => x.NormalizedTags).HasColumnType("text[]").IsRequired();
         builder.Property(x => x.BehaviorV2Json).HasColumnType("jsonb").IsRequired();
         builder.Property(x => x.CreatedByDisplayNameSnapshot).HasMaxLength(128).IsRequired();
         builder.Property(x => x.ChangeNote).HasMaxLength(500);

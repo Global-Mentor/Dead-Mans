@@ -109,6 +109,7 @@ public sealed class AuthorizationBoundaryMetadataTests
                 nameof(GameRegistrationController.CancelTeamInvitation),
                 nameof(GameRegistrationController.MoveTeam),
                 nameof(GameRegistrationController.ConfirmTeam),
+                nameof(GameRegistrationController.UnconfirmTeam),
                 nameof(GameRegistrationController.RejectTeam),
                 nameof(GameRegistrationController.DisbandTeam),
                 nameof(GameRegistrationController.CreateInvitation)
@@ -119,11 +120,13 @@ public sealed class AuthorizationBoundaryMetadataTests
                 nameof(GameRoundController.Start),
                 nameof(GameRoundController.Review),
                 nameof(GameRoundController.Prepare),
+                nameof(GameRoundController.CompletePreparation),
                 nameof(GameRoundController.Rebuild),
                 nameof(GameRoundController.BeginGameplay),
                 nameof(GameRoundController.ResumeGameplay),
                 nameof(GameRoundController.TechnicalCancel),
                 nameof(GameRoundController.Finalize),
+                nameof(GameRoundController.FinishPresentation),
                 nameof(GameRoundController.PreviewScore)
             ]
         };

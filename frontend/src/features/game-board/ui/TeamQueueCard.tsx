@@ -72,7 +72,7 @@ export function TeamQueueCard({
                   label={
                     formattedScore === null
                       ? '-'
-                      : t('gameBoard.cellPlayedPoints', { score: formattedScore })
+                      : t('boardCard.cellPlayedPoints', { score: formattedScore })
                   }
                 />
               ) : null}

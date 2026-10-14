@@ -4,6 +4,59 @@
  */
 
 export interface paths {
+    "/overlay/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Current user's persistent overlay test mode. Moderator or admin only. No active game required. Responses are not cacheable. */
+        get: operations["getGameOverlayTestState"];
+        /** @description Sets the current user's test mode explicitly and idempotently, then invalidates overlay snapshots. A missing or concurrently revoked link returns hasKey=false and enabled=false. Does not change the game or its timers. Rotation and revocation clear the mode. */
+        put: operations["setGameOverlayTestState"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overlay/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged. */
+        post: operations["rotateGameOverlayKey"];
+        /** @description Revokes the current user's broadcast key. Idempotent. Moderator or admin only. */
+        delete: operations["revokeGameOverlayKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overlay/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user IDs, questions or management data. Responses are not cacheable. */
+        get: operations["getGameOverlaySnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/users": {
         parameters: {
             query?: never;
@@ -29,6 +82,23 @@ export interface paths {
         };
         get?: never;
         put: operations["updateRoleAdministrationUserRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{userId}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Sets application access without changing roles or history. Blocking denies new sign-ins and rejects existing authenticated sessions on their next request. Permanent owners and self-blocking are protected. Repeating the same state is idempotent. */
+        put: operations["updateRoleAdministrationUserAccess"];
         post?: never;
         delete?: never;
         options?: never;
@@ -916,6 +986,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/rounds/{roundId}/finish-presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["finishGameRoundPresentation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/rounds/{roundId}/review": {
         parameters: {
             query?: never;
@@ -942,6 +1028,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["prepareGameRound"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/rounds/{roundId}/complete-preparation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeGameRoundPreparation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1044,6 +1146,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/rounds/{roundId}/broadcast-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Publishes a server-calculated, provisional OBS summary. Does not finalize the round or alter scores. Partial inputs include individually resolved modifier conditions; unresolved modifiers remain zero. Writes serialize with phase transitions and require the current round version. */
+        post: operations["broadcastGameRoundSummary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/rounds/{roundId}/score-preview": {
         parameters: {
             query?: never;
@@ -1117,7 +1236,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Opens registration for the saved draft. Quiz questions are optional. Send the reviewed game ID and version to reject stale or replaced drafts; an empty body remains supported for existing clients. */
+        /** @description Opens registration for the saved draft. Every cell requires media. Empty modifier and question selections each require explicit consent. Send the reviewed game ID and version to reject stale or replaced drafts. An empty body does not acknowledge missing content. */
         post: operations["openGameRegistration"];
         delete?: never;
         options?: never;
@@ -1282,6 +1401,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Admins and superadmins may create an additional reserved slot when all public slots are occupied and no explicit slot is requested. Moderators require an available slot. Additional slots do not expand public self-registration capacity. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot. */
         post: operations["createAdminRegistrationTeam"];
         delete?: never;
         options?: never;
@@ -1363,6 +1483,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["confirmRegistrationTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/registration/teams/{teamId}/unconfirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unconfirmRegistrationTeam"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1613,6 +1749,108 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GameOverlayTestStateDto: {
+            hasKey: boolean;
+            enabled: boolean;
+        };
+        SetGameOverlayTestRequest: {
+            enabled: boolean;
+        };
+        GameOverlayKeyDto: {
+            key: string;
+        };
+        GameOverlayTeamDto: {
+            name: string | null;
+            slotIndex: number;
+            players: string[];
+        };
+        GameOverlayCellDto: {
+            row: number;
+            col: number;
+            cost: number;
+            /** @enum {string} */
+            state: "closed" | "open" | "cancelled";
+            title: string | null;
+            imageUrl: string | null;
+            result: components["schemas"]["GameOverlayCellResultDto"] | null;
+        };
+        GameOverlayCellResultDto: {
+            teamName: string | null;
+            teamSlotIndex: number;
+            finalScore: number;
+            penaltyTotal: number;
+        };
+        GameOverlayBoardDto: {
+            rowLabels: string[];
+            colLabels: string[];
+            cells: components["schemas"]["GameOverlayCellDto"][];
+        };
+        GameOverlayModifierDto: {
+            id: string;
+            name: string;
+            iconEmoji: string | null;
+            /** @description Stable modifier definition identity shared by repeated activations. */
+            modifierId: string;
+        };
+        GameOverlayRoundDto: {
+            id: string;
+            title: string | null;
+            cost: number;
+            imageUrl: string | null;
+            modifiers: components["schemas"]["GameOverlayModifierDto"][];
+            /** @description Published board column at the round's saved column index. */
+            columnLabel: string;
+            /** @description Published board row at the round's saved row index. */
+            rowLabel: string;
+        };
+        GameOverlayTimerDto: {
+            id: string;
+            /** Format: int64 */
+            durationSeconds: number;
+        };
+        GameOverlayGameplayModifierDto: {
+            modifierId: string;
+            name: string;
+            iconEmoji: string | null;
+            activationCount: number;
+            timers: components["schemas"]["GameOverlayTimerDto"][];
+        };
+        GameOverlayGameplayDto: {
+            roundId: string;
+            /** Format: date-time */
+            gameplayStartedAtUtc: string;
+            /** Format: date-time */
+            serverNowUtc: string;
+            modifiers: components["schemas"]["GameOverlayGameplayModifierDto"][];
+        };
+        GameOverlaySummaryDto: {
+            roundId: string;
+            isFinal: boolean;
+            card: components["schemas"]["GameOverlayRoundDto"];
+            teamName: string | null;
+            teamSlotIndex: number;
+            killsCount: number;
+            bountyCount: number;
+            killsScore: number;
+            bountyScore: number;
+            scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
+        };
+        GameOverlaySnapshotDto: {
+            gameId: string | null;
+            /**
+             * @description Test mode replaces all game content with the static brand preview; it does not change the round phase.
+             * @enum {string}
+             */
+            phase: "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
+            team: components["schemas"]["GameOverlayTeamDto"] | null;
+            board: components["schemas"]["GameOverlayBoardDto"] | null;
+            /** @description Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts. */
+            round: components["schemas"]["GameOverlayRoundDto"] | null;
+            /** @description Frozen modifier groups and timing anchors, only during in_progress. Timer durations aggregate only within their persisted runtime groups. */
+            gameplay?: components["schemas"]["GameOverlayGameplayDto"] | null;
+            /** @description Public provisional summary during review, then immutable final round score for 30 seconds after completion. This display does not block the next round. Excludes private notes and rule violation comments. */
+            summary?: components["schemas"]["GameOverlaySummaryDto"] | null;
+        };
         GameBoardCellMediaDto: {
             url: string;
         };
@@ -1768,6 +2006,8 @@ export interface components {
             reservedLabel?: string | null;
             recruitmentOpen: boolean;
             status: string;
+            /** @description The team has opened at least one card, including technically cancelled rounds. */
+            hasOpenedCard: boolean;
             isPlayed: boolean;
             /** Format: date-time */
             disbandRequestedAtUtc?: string | null;
@@ -1923,7 +2163,10 @@ export interface components {
             remainingTeams: number;
         };
         GameTeamQueueResultDto: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Current active or ready game ID, including when its queue is empty. Null only when no current game exists.
+             */
             gameId: string | null;
             summary: components["schemas"]["GameTeamQueueSummaryDto"];
             teams: components["schemas"]["GameTeamQueueItemDto"][];
@@ -2100,7 +2343,6 @@ export interface components {
             isLockedByActiveGame: boolean;
             /** Format: int32 */
             revision: number;
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
         };
         CreateGameModifierRequestDto: {
@@ -2113,7 +2355,6 @@ export interface components {
             conflictingModifierIds?: string[];
             iconEmoji?: string | null;
             activationCommand?: string | null;
-            normalizedTags?: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             changeNote?: string | null;
         };
@@ -2127,10 +2368,10 @@ export interface components {
             conflictingModifierIds?: string[];
             iconEmoji?: string | null;
             activationCommand?: string | null;
-            normalizedTags?: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             expectedRevision: number;
-            changeNote?: string | null;
+            /** @description Required edit comment; must contain non-whitespace text after trimming. */
+            changeNote: string;
         };
         ModifierHistorySummaryDto: {
             /** Format: uuid */
@@ -2182,7 +2423,6 @@ export interface components {
             activationCommand?: string | null;
             activationCost: number;
             activationLimit: components["schemas"]["GameModifierActivationLimitDto"];
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             conflicts: components["schemas"]["ModifierConflictSnapshotDto"][];
             isCurrent: boolean;
@@ -2228,7 +2468,6 @@ export interface components {
             description: string;
             iconEmoji?: string | null;
             activationCommand: string;
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             example: components["schemas"]["GameModifierDraftExampleDto"];
         };
@@ -2292,6 +2531,7 @@ export interface components {
             summary: components["schemas"]["GameModifierAdminPlayersSummaryDto"];
             players: components["schemas"]["GameModifierAdminPlayerDto"][];
         };
+        /** @description Persistent user notification. team_rejected includes the rejected team name. */
         GameUserNotificationDto: {
             /** Format: uuid */
             notificationId: string;
@@ -2301,6 +2541,7 @@ export interface components {
             modifierName?: string | null;
             actorDisplayName?: string | null;
             quizPointsDelta?: number | null;
+            teamName?: string | null;
         };
         AdminActivateGameModifierRequestDto: {
             /** Format: uuid */
@@ -2830,7 +3071,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -2861,7 +3102,7 @@ export interface components {
             technicalCancellationReasonCode?: "external_game_failure" | "stream_or_infrastructure_failure" | "application_error" | "operator_error" | "other" | null;
             publicCancellationSummary?: string | null;
             /** @enum {string|null} */
-            technicalCancellationStage?: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | null;
+            technicalCancellationStage?: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | null;
             purchasesRefunded: boolean;
             cellMedia: components["schemas"]["GameBoardCellMediaDto"][];
             participants: components["schemas"]["GameHistoryRoundParticipantItemDto"][];
@@ -2962,7 +3203,6 @@ export interface components {
             activationCommand?: string | null;
             activationCost: number;
             activationLimit: components["schemas"]["GameModifierActivationLimitDto"];
-            normalizedTags: string[];
             behaviorV2: components["schemas"]["GameModifierBehaviorV2"];
             conflicts: components["schemas"]["ModifierConflictSnapshotDto"][];
             successfulActivationsCount: number;
@@ -3064,7 +3304,7 @@ export interface components {
             teamName?: string | null;
             teamSlotIndex: number;
             /** @enum {string} */
-            status: "card_opened" | "awaiting_modifiers" | "preparing" | "in_progress" | "reviewing_results" | "completed" | "cancelled";
+            status: "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed" | "cancelled";
             roundVersion: number;
             /** Format: date-time */
             startedAtUtc: string;
@@ -3114,6 +3354,8 @@ export interface components {
             isConditionMet?: boolean | null;
         };
         FinalizeGameRoundRequestDto: {
+            /** @description Defaults to false. Mark the team played when the operator ends result presentation. */
+            markTeamPlayedAfterPresentation?: boolean;
             /** @enum {string} */
             status: "completed";
             killsCount: number;
@@ -3130,6 +3372,19 @@ export interface components {
             /** @enum {string} */
             outcomeStatus: "completed" | "violated" | "notTriggered";
             violationComment?: string | null;
+        };
+        BroadcastGameRoundSummaryRequestDto: {
+            expectedRoundVersion: number;
+            killsCount: number;
+            bountyCount: number;
+            completeInput?: components["schemas"]["FinalizeGameRoundRequestDto"] | null;
+            /** @description Only already entered modifier conditions and complete rule groups. Mutually exclusive with completeInput. Does not authorize finalization. */
+            partialInput?: components["schemas"]["FinalizeGameRoundRequestDto"] | null;
+            /**
+             * @description False initializes public overlay rows and total to zero while keeping the operator's complete validation calculation separate.
+             * @default true
+             */
+            hasChanges: boolean;
         };
         GameRoundScorePreviewDto: {
             scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
@@ -3165,15 +3420,38 @@ export interface components {
             userId: string;
             twitchLogin: string;
             displayName: string;
+            /** @description Enabled account; disabled accounts cannot sign in or use authenticated functions. Unrelated to online presence. */
             isActive: boolean;
+            /** @description Effective roles, including all inherited roles below the highest assigned role (superadmin > admin > moderator > viewer). */
             roles: components["schemas"]["AuthRole"][];
             isPermanentSuperAdmin: boolean;
+            /**
+             * Format: date-time
+             * @description First appearance in the local system, including Twitch chat participation.
+             */
+            createdAtUtc: string;
+            /**
+             * Format: date-time
+             * @description Most recent successful application sign-in; null means no application sign-in.
+             */
+            lastLoginAtUtc: string | null;
+        };
+        RoleAdministrationSummaryDto: {
+            totalUsers: number;
+            loggedInUsers: number;
+            /** @description Users first recorded within the last thirty days. */
+            newUsers: number;
         };
         RoleAdministrationPageDto: {
+            summary: components["schemas"]["RoleAdministrationSummaryDto"];
             items: components["schemas"]["RoleAdministrationUserDto"][];
             page: number;
             pageSize: number;
             totalCount: number;
+        };
+        UpdateUserAccessRequestDto: {
+            /** @description True allows application access; false blocks application sign-in and authenticated requests. */
+            isActive: boolean;
         };
         UpdateUserRolesRequestDto: {
             roles: components["schemas"]["AuthRole"][];
@@ -3184,7 +3462,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_round_in_progress" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
+            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "role_administration.self_block_protected" | "game_board.cell_not_found" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_active_team" | "game_board.team_played_state_no_opened_card" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.cell_media_required" | "game_lifecycle.empty_modifiers_not_acknowledged" | "game_lifecycle.empty_questions_not_acknowledged" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.team_not_ready" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -3305,12 +3583,199 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getGameOverlayTestState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether a link exists and its test mode is enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayTestStateDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    setGameOverlayTestState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGameOverlayTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Confirmed state of the current user's link */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayTestStateDto"];
+                };
+            };
+            /** @description Missing or invalid enabled value */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rotateGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New key; previous links stop working */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayKeyDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokeGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGameOverlaySnapshot: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Overlay-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current frame; idle frames have no board */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlaySnapshotDto"];
+                };
+            };
+            /** @description Missing, invalid or revoked key, or inactive owner */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Read rate limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getRoleAdministrationUsers: {
         parameters: {
             query?: {
                 search?: string;
                 page?: number;
                 pageSize?: number;
+                isActive?: boolean;
+                hasLoggedIn?: boolean;
+                role?: "moderator" | "admin" | "superadmin";
+                registeredWithinDays?: number;
+                /** @description Role sorting uses the highest effective role, including permanent owners; roleDesc orders superadmin, admin, moderator, then viewer. */
+                sort?: "createdDesc" | "createdAsc" | "lastLoginDesc" | "lastLoginAsc" | "nameAsc" | "nameDesc" | "roleAsc" | "roleDesc";
             };
             header?: never;
             path?: never;
@@ -3325,6 +3790,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleAdministrationPageDto"];
+                };
+            };
+            /** @description Invalid filters or pagination */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not authenticated */
@@ -3409,6 +3883,78 @@ export interface operations {
                 };
             };
             /** @description Permanent super administrator assignment is protected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    updateRoleAdministrationUserAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserAccessRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Updated user application access */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleAdministrationUserDto"];
+                };
+            };
+            /** @description Missing or invalid access state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing super administrator role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Blocking a permanent owner or the current user is forbidden */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3627,14 +4173,17 @@ export interface operations {
     };
     getGameModifierCatalog: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Return only archived definitions when true; otherwise return only current non-archived definitions. */
+                archived?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Global catalog of supported game modifiers */
+            /** @description Current modifier definitions for the explicitly selected archive scope */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3643,6 +4192,7 @@ export interface operations {
                     "application/json": components["schemas"]["GameModifierDefinitionDto"][];
                 };
             };
+            400: components["responses"]["BadRequest"];
             /** @description Not authenticated */
             401: {
                 headers: {
@@ -6185,6 +6735,77 @@ export interface operations {
             };
         };
     };
+    finishGameRoundPresentation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GameRoundVersionCommandRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Result presentation ended; the next round is available */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDetailsDto"];
+                };
+            };
+            /** @description Invalid auth claims */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round is not showing results, or the version is stale */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     reviewGameRound: {
         parameters: {
             query?: never;
@@ -6272,6 +6893,77 @@ export interface operations {
         };
         responses: {
             /** @description Modifier ordering closed and round moved to preparation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDetailsDto"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid lifecycle state or stale round version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeGameRoundPreparation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GameRoundVersionCommandRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Preparation completed; overlay cleared without starting gameplay or modifier timers */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6626,7 +7318,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Round finalized and written to history */
+            /** @description Scores saved; round enters showing_results until finish-presentation completes it */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6753,6 +7445,93 @@ export interface operations {
             };
             /** @description Round is terminal or expected version is stale */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    broadcastGameRoundSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastGameRoundSummaryRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Complete provisional calculation published */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundScorePreviewDto"];
+                };
+            };
+            /** @description Partial metrics published; complete calculation is unavailable */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Round phase or version changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Immutable modifier configuration cannot be calculated */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7249,6 +8028,16 @@ export interface operations {
                     /** Format: uuid */
                     gameId: string;
                     expectedVersion: number;
+                    /**
+                     * @description Explicit consent to publish this draft without modifiers.
+                     * @default false
+                     */
+                    allowWithoutModifiers?: boolean;
+                    /**
+                     * @description Explicit consent to publish this draft without quiz questions.
+                     * @default false
+                     */
+                    allowWithoutQuestions?: boolean;
                 };
             };
         };
@@ -8246,6 +9035,65 @@ export interface operations {
             500: components["responses"]["InternalServerError"];
         };
     };
+    unconfirmRegistrationTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Team returned to forming by moderator/admin; roster and readiness preserved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationTeamDto"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing moderator/admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Team is active, has opened a card, is not confirmed, or game is not ready/active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
     rejectRegistrationTeam: {
         parameters: {
             query?: never;
@@ -8257,7 +9105,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Team rejected and removed */
+            /** @description Ready forming team rejected; active members receive persistent refusal notifications */
             204: {
                 headers: {
                     [name: string]: unknown;

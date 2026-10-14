@@ -2,6 +2,7 @@ import { Box, Stack, Typography, useMediaQuery } from '@mui/material'
 import type { ReactNode } from 'react'
 import { NativeDisclosure } from '../ui/index.ts'
 import { RoundBriefingPanel } from './RoundBriefingPanel.tsx'
+import { scrollRegionSx } from '../theme/layout-sx.ts'
 
 /** History navigation stays separate from the selected immutable record. */
 export function HistoryWorkspace({
@@ -26,7 +27,7 @@ export function HistoryWorkspace({
   const wide = useMediaQuery('(min-width: 1000px)')
   const content = (
     <Stack gap={1} sx={{ minHeight: 0, flex: 1, height: wide ? '100%' : 'min(440px, 45dvh)' }}>
-      <Box sx={{ flexShrink: 0 }}>{tools}</Box>
+      <Box sx={{ flexShrink: 0, pt: 1, ...scrollRegionSx }}>{tools}</Box>
       <Box
         role="region"
         aria-label={title}
@@ -34,8 +35,7 @@ export function HistoryWorkspace({
         sx={{
           flex: 1,
           minHeight: 0,
-          overflowY: 'auto',
-          overscrollBehaviorY: 'contain',
+          ...scrollRegionSx,
         }}
       >
         {records}

@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
@@ -77,9 +78,7 @@ export function QuizLeaderboard({
           </Typography>
         }
       >
-        <Box sx={{ minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}>
-          {content}
-        </Box>
+        <Box sx={{ minHeight: 0, ...scrollRegionSx }}>{content}</Box>
       </RoundBriefingPanel>
     )
   }

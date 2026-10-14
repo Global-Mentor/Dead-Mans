@@ -29,6 +29,8 @@ internal static class GameBoardCellOpenGuard
             join board in dbContext.GameBoards.AsNoTracking() on cell.BoardId equals board.Id
             join game in dbContext.Games.AsNoTracking() on board.GameId equals game.Id
             where cell.Id == cellId && game.Status == GameStatusValue.Active && !game.IsDeleted
+                && !dbContext.GameRounds.Any(round => round.GameId == game.Id
+                    && round.Status == GameRoundStatusValue.ShowingResults)
             select new OpenCellTarget(
                 cell.Id,
                 cell.BoardId,

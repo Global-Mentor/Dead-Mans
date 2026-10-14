@@ -8,8 +8,13 @@ Canonical contract: `backend/openapi/deadmans.v1.yaml` → `x-signalr` and paylo
 | ---------- | ------------------ | -------------------------------------------- | ----------------------------------------------------------------------------- |
 | game-board | `/hubs/game-board` | Cookie session, any authenticated panel user | board, round, modifier, quiz, notification and `gameLifecycleChanged` events  |
 | game-setup | `/hubs/game-setup` | Cookie session, admin only                   | `draftChanged` → no body; refetch `GET /api/game/setup` and question catalogs |
+| game-overlay | `/hubs/game-overlay` | Secret `X-Overlay-Key`, active staff owner | `frameChanged` without payload; refetch `GET /api/overlay/snapshot` |
 
 Clients connect to `{backendOrigin}/hubs/*` with credentials (same Twitch cookie session as HTTP).
+The standalone OBS overlay uses a separate anonymous browser connection with the secret header,
+without account cookies. Its LongPolling transport revalidates the key and its owner's current
+permissions on each request. It receives no panel events or private payloads. See the
+[OBS runtime contract](../development.md#obs-overlay) for polling, expiry and reconnect behavior.
 
 `registrationChanged` is sent to authenticated game-board clients, without a body,
 after a successful registration write: creating/renaming/joining/leaving a team,
@@ -31,6 +36,11 @@ After a successful DB write, SignalR publish is **best-effort** (`RealtimePublis
 `GET /api/game` returns `204 No Content` when no active, ready or finished board is
 available. Clients render the normal empty state; a missing board is not an HTTP error.
 
+Board versions are comparable only within the same game. A reconnect resync can
+replace the cached game with another game even when its version is lower. Responses
+from superseded resyncs or a previous cached game identity must not restore stale
+state; same-game resyncs preserve any newer event already applied to the cache.
+
 `gameLifecycleChanged` is emitted only after a successful game-finalization commit and
 contains `gameId`, terminal `status`, the incremented `boardVersion` and
 `occurredAtUtc`. Consumers invalidate completion-sensitive queries and resync from HTTP;
@@ -48,5 +58,17 @@ they never apply the event as an authoritative local mutation.
 - HTTP payload types: `GameCellOpenedEventDto` and `GameModifierActivatedEventDto` in generated OpenAPI types (`npm run generate:transport`).
 - Shared frontend lifecycle: `frontend/src/shared/realtime/SignalrConnectionProvider.tsx` owns a `SignalrConnectionManager` for the authenticated session. Subscribers share one connection per hub, with credentials, automatic reconnect, bounded retry delays, resync after reconnect and cleanup after the final subscriber leaves.
 - Feature realtime modules register only their generated event names, event payload handling and source-of-truth resync logic.
+
+The shared layout owns board, quiz, history and modifier synchronization across panel
+routes. History and modifier pages do not install duplicate subscriptions. Setup keeps
+its separately authorized hub scoped to administrative pages. Transport startup does
+not wait for subscribers' HTTP resyncs, so a slow request cannot block connection retries.
+
+`refreshRealtimeQueries` merges same-turn refreshes for the same query key and client.
+Events received during a refresh request cause a trailing refresh after it completes,
+instead of cancelling and restarting it for every event. There is no timer debounce;
+inactive queries are invalidated without eager fetching. Existing polling fallbacks remain.
+Setup resyncs preserve request ordering across remounts, discard responses after unmount
+or game replacement, and compare versions only within the same game.
 
 After changing hubs or events, update OpenAPI first, then regenerate frontend artifacts and adjust `RealtimeHubContracts.cs`.

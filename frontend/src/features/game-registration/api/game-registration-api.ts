@@ -24,6 +24,7 @@ const gameRegistrationApiClient =
       | '/game/registration/my-team/invitations'
       | '/game/registration/my-team/invitations/{invitationId}/cancel'
       | '/game/registration/teams/{teamId}/confirm'
+      | '/game/registration/teams/{teamId}/unconfirm'
       | '/game/registration/teams/{teamId}/reject'
       | '/game/registration/teams/{teamId}/disband'
       | '/game/registration/invitations'
@@ -194,6 +195,14 @@ export function confirmGameRegistrationTeam(teamId: string) {
       params: {
         path: { teamId },
       },
+    }),
+  )
+}
+
+export function unconfirmGameRegistrationTeam(teamId: string) {
+  return unwrapOpenApiData(
+    gameRegistrationApiClient.POST('/game/registration/teams/{teamId}/unconfirm', {
+      params: { path: { teamId } },
     }),
   )
 }

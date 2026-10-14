@@ -49,7 +49,6 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                 conflictIds,
                 definition.IconEmoji,
                 definition.ActivationCommand,
-                definition.NormalizedTags,
                 ModifierBehaviorV2Json.Deserialize(definition.BehaviorV2Json),
                 definition.Revision,
                 "Concurrent start/update verification"
@@ -203,8 +202,7 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
 
         var editedName = before.Name + " immutable v-next";
         var editedBehavior = BuiltInModifierBehaviorCatalog
-            .Get(BuiltInModifierBehaviorCatalog.Zhazhda)
-            .Behavior;
+            .Get(BuiltInModifierBehaviorCatalog.Zhazhda);
         await using (var updateDb = _database.CreateDbContext())
         {
             var repository = new DbGameModifierRepository(updateDb, TimeProvider.System);
@@ -213,8 +211,7 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                 new UpdateGameModifierInput(
                     editedName, before.Description, GameModifierCategories.Result, before.ActivationCost + 5,
                     new GameModifierActivationLimit(1), conflictIds,
-                    before.IconEmoji, before.ActivationCommand, before.NormalizedTags,
-                    editedBehavior, before.Revision,
+                    before.IconEmoji, before.ActivationCommand, editedBehavior, before.Revision,
                     "Game 2 must use the new revision"),
                 new ModifierChangeActor(first.UserId, "Concurrency Admin"));
             Assert.Equal(UpdateGameModifierRepositoryStatus.Updated, update.Status);
@@ -247,7 +244,6 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                     conflictIds,
                     current.IconEmoji,
                     current.ActivationCommand,
-                    current.NormalizedTags,
                     ModifierBehaviorV2Json.Deserialize(current.BehaviorV2Json),
                     current.Revision,
                     "Must be rejected while game 2 is active"),
@@ -306,8 +302,14 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             .Where(x => x.Id == ModifierId)
             .Select(x => x.IsArchived)
             .SingleAsync());
-        Assert.DoesNotContain(await new DbGameModifierRepository(assertDb, TimeProvider.System).GetCatalogAsync(),
-            modifier => modifier.Id == ModifierId);
+        var catalogRepository = new DbGameModifierRepository(assertDb, TimeProvider.System);
+        var currentCatalog = await catalogRepository.GetCatalogAsync();
+        var archivedCatalog = await catalogRepository.GetCatalogAsync(archived: true);
+        Assert.DoesNotContain(currentCatalog, modifier => modifier.Id == ModifierId);
+        var archivedModifier = Assert.Single(archivedCatalog, modifier => modifier.Id == ModifierId);
+        Assert.Equal(editedName, archivedModifier.Name);
+        Assert.Equal(before.Revision + 1, archivedModifier.Revision);
+        Assert.DoesNotContain(archivedCatalog, archived => currentCatalog.Any(current => current.Id == archived.Id));
         Assert.Equal(2, await assertDb.GameEnabledModifiers.AsNoTracking()
             .CountAsync(x => (x.GameId == first.GameId || x.GameId == second.GameId)
                 && x.ModifierId == ModifierId));
@@ -325,8 +327,8 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             var created = await new DbGameModifierRepository(db, TimeProvider.System).CreateModifierAsync(
                 new CreateGameModifierInput("External modifier", "Not enabled in the active game",
                     GameModifierCategories.Round, 1, new GameModifierActivationLimit(1), [ModifierId],
-                    null, "!test", [],
-                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior), actor);
+                    null, "!test",
+                    BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)), actor);
             target = Assert.IsType<GameModifierDefinition>(created.Modifier);
         }
         await using (var db = _database.CreateDbContext())
@@ -340,7 +342,7 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             var updated = await new DbGameModifierRepository(db, TimeProvider.System).UpdateModifierAsync(
                 target.Id, new UpdateGameModifierInput("Renamed", target.Description, target.Category,
                     target.ActivationCost, target.ActivationLimit, [ModifierId], target.IconEmoji,
-                    target.ActivationCommand, target.NormalizedTags, target.BehaviorV2, target.Revision), actor);
+                    target.ActivationCommand, target.BehaviorV2, target.Revision), actor);
             Assert.Equal(UpdateGameModifierRepositoryStatus.CompatibilityLocked, updated.Status);
             Assert.Null(updated.Changes);
         }
@@ -375,7 +377,7 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                         GameModifierCategories.Round,
                         1,
                         3,
-                        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior
+                        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)
                     ),
                     new TestModifierSpec(
                         ModifierDefinitionSeedIds.Feyerverk,
@@ -384,7 +386,7 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
                         GameModifierCategories.Round,
                         1,
                         null,
-                        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Feyerverk).Behavior
+                        BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Feyerverk)
                     )
                 ],
                 now
@@ -502,7 +504,8 @@ public sealed class ModifierVersionConcurrencyTests : IClassFixture<PostgresTest
             NullLogger<DbGameLifecyclePersistence>.Instance,
             TimeProvider.System
         );
-        var publication = await lifecycle.OpenRegistrationAsync(gameId);
+        await PublicationTestData.AddMediaAsync(db, gameId);
+        var publication = await lifecycle.OpenRegistrationAsync(gameId, allowWithoutQuestions: true);
         Assert.True(publication.Success);
         return new GameFixture(gameId, userId, buyerId, teamId, boardId, cellId);
     }

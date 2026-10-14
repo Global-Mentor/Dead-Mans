@@ -36,6 +36,7 @@ export function GameRoundPage() {
   if (snapshotQuery.isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.loading')}
         showSpinner
@@ -45,16 +46,22 @@ export function GameRoundPage() {
   if (snapshotQuery.isError && !snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.errorLoading')}
         tone="error"
-        actions={<AppButton onClick={retry}>{t('common.actions.retry')}</AppButton>}
+        actions={
+          <AppButton tone="secondary" onClick={retry}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
       />
     )
   }
   if (!snapshot) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.gameRound.label')}
         message={t('gameBoard.empty')}
       />
@@ -70,8 +77,6 @@ export function GameRoundPage() {
         minWidth: 0,
         maxWidth: { xs: '100%', md: 'calc((100dvh - 128px) * 1.55)' },
         mx: 'auto',
-        px: { xs: 0, md: 0 },
-        pb: { xs: 0, md: 0 },
       }}
     >
       <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>

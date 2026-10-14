@@ -12,7 +12,7 @@ import {
   PageShell,
   PageStatePanel,
 } from '../../shared/ui/index.ts'
-import { getBoardRowLabelColumnWidth } from './theme/board-grid-metrics.ts'
+import { getBoardRowLabelColumnWidth } from '../../shared/game-ui/board-grid-metrics.ts'
 import { GameBoardCardPreviewDialog } from './ui/GameBoardCardPreviewDialog.tsx'
 import { GameBoardGrid } from './ui/GameBoardGrid.tsx'
 import { GameBoardLayout } from './ui/GameBoardLayout.tsx'
@@ -65,22 +65,32 @@ export function GameBoardPage() {
   const previewPlayResult = useCardPlayResult(data?.gameId ?? null, previewCell)
   const boardCellResults = useGameBoardCellResults(data?.gameId ?? null, data?.cells ?? [])
   if (isLoading)
-    return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.loading')} />
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t('gameBoard.title')}
+        message={t('gameBoard.loading')}
+        showSpinner
+      />
+    )
   if (isError || data === undefined)
     return (
       <PageStatePanel
+        variant="page"
         title={t('gameBoard.title')}
         message={t('gameBoard.errorLoading')}
         tone="error"
         actions={
-          <AppButton onClick={retry} loading={isRefreshing}>
+          <AppButton tone="secondary" onClick={retry} loading={isRefreshing}>
             {t('common.actions.retry')}
           </AppButton>
         }
       />
     )
   if (data === null)
-    return <PageStatePanel title={t('gameBoard.title')} message={t('gameBoard.empty')} />
+    return (
+      <PageStatePanel variant="page" title={t('gameBoard.title')} message={t('gameBoard.empty')} />
+    )
 
   const snapshot = data
   const rowLabelColumnWidth = getBoardRowLabelColumnWidth(snapshot.rowLabels)
@@ -92,7 +102,6 @@ export function GameBoardPage() {
       sx={{
         width: '100%',
         minWidth: 0,
-        px: 0,
         flexDirection: 'column',
         justifyContent: 'flex-start',
       }}
@@ -185,8 +194,16 @@ export function GameBoardPage() {
         title={t('gameBoard.openConfirmTitle')}
         description={t('gameBoard.openConfirmDescription', {
           cost: pendingCell?.cost ?? 0,
-          title: pendingCell?.title || t('gameBoard.cellLabel'),
         })}
+        subject={
+          pendingCell
+            ? t('gameBoard.openConfirmSubject', {
+                column: snapshot.colLabels[pendingCell.col]?.trim() ?? '',
+                row: snapshot.rowLabels[pendingCell.row]?.trim() ?? '',
+                cost: pendingCell.cost,
+              })
+            : ''
+        }
         errorMessage={confirmationError}
         cancelLabel={t('common.actions.cancel')}
         confirmLabel={t(isSubmitting ? 'gameBoard.openPending' : 'common.actions.open')}

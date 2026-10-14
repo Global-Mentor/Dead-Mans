@@ -6,7 +6,8 @@ public sealed record GameUserNotificationDto(
     DateTime CreatedAtUtc,
     string? ModifierName,
     string? ActorDisplayName,
-    int? QuizPointsDelta
+    int? QuizPointsDelta,
+    string? TeamName = null
 );
 
 public sealed record GameUserNotificationCreatedEventDto(GameUserNotificationDto Notification);

@@ -84,7 +84,9 @@ export function GameAdminToolsPanel({
             onStartRound={startRound.startRound}
             onStartModifierOrdering={startRound.startModifierOrdering}
             onBeginGameplay={startRound.beginGameplay}
+            onCompletePreparation={startRound.completePreparation}
             onReviewRound={startRound.reviewRound}
+            onFinishPresentation={startRound.finishPresentation}
             onRebuildRound={startRound.rebuildRound}
             onTechnicalCancelRound={startRound.technicalCancelRound}
             onCompleteRound={startRound.completeRound}
@@ -95,6 +97,7 @@ export function GameAdminToolsPanel({
           />
         ) : (
           <PageStatePanel
+            headingLevel="h3"
             title={t('adminTools.gameTool')}
             message={t(
               isError || isRefreshError

@@ -960,7 +960,7 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
                 "round",
                 5,
                 null,
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik).Behavior),
+                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Chirik)),
             now);
 
         dbContext.GameModifierActivations.Add(

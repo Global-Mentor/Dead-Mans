@@ -1,6 +1,7 @@
 import type { ButtonBaseProps } from '@mui/material'
 import { alpha, type Theme } from '@mui/material/styles'
 import { mergeSx } from '../../../theme/merge-sx.ts'
+import { uiTokens } from '../../../theme/tokens.ts'
 import { SurfaceButton } from '../../primitives/buttons/SurfaceButton.tsx'
 
 type NavigationLayout = 'route' | 'compact' | 'profile' | 'management' | 'icon'
@@ -18,7 +19,7 @@ function navigationSx(theme: Theme, active: boolean, layout: NavigationLayout) {
     flexShrink: 0,
     borderRadius: '4px',
     fontFamily: theme.typography.fontFamily ?? 'inherit',
-    fontSize: 14.4,
+    fontSize: uiTokens.navigation.fontSize,
     fontWeight: active ? 700 : 500,
     whiteSpace: 'nowrap',
     textDecoration: 'none',

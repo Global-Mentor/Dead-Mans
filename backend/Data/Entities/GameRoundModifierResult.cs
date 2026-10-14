@@ -22,8 +22,6 @@ public class GameRoundModifierResult
 
     public string? ModifierActivationCommandSnapshot { get; set; }
 
-    public string[] ModifierNormalizedTagsSnapshot { get; set; } = [];
-
     public string ModifierBehaviorV2SnapshotJson { get; set; } = string.Empty;
 
     public string OutcomeStatus { get; set; } = GameRoundModifierOutcomeValue.Pending;

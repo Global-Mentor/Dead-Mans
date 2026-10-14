@@ -15,7 +15,6 @@ function createModifier(overrides: Partial<GameModifierDefinition> = {}): GameMo
     activationCommand: '!активировать патрон',
     isLockedByActiveGame: false,
     revision: 1,
-    normalizedTags: ['weapon', 'first bullet'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'scoring',
@@ -42,8 +41,10 @@ describe('modifier-search', () => {
 
     expect(text).toContain('condition')
     expect(text).toContain('bonus_kill_on_condition')
-    expect(text).toContain('first bullet')
-    expect(text).toContain('!активировать патрон')
+    expect(text).not.toContain('first bullet')
+    expect(text).not.toContain('!активировать патрон')
+    expect(matchesModifierSearch(createModifier(), 'первой пулей')).toBe(true)
+    expect(matchesModifierSearch(createModifier(), 'first bullet')).toBe(false)
   })
 
   it('matches translated or UI-provided extra terms', () => {

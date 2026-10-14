@@ -126,6 +126,7 @@ function PlayedCardTeam({ round }: { round: PlayedCardPreviewRound }) {
           emptyLabel={t('gameHistory.noParticipants')}
           variant="body1"
           decorated
+          markerPlacement="leading"
         />
       ) : (
         <Typography variant="body2" color="text.secondary">

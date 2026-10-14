@@ -20,6 +20,67 @@ const questions = [
   },
 ]
 
+for (const width of [390, 768, 1440]) {
+  test(`question picker shows ten questions with a standard close action at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const quiz = await mockQuiz(page)
+    await page.route('**/api/game/quiz/questions/available', (route) =>
+      route.fulfill({
+        json: Array.from({ length: 10 }, (_, index) => ({
+          questionId: `preview-${index}`,
+          questionCode: `preview-${index}`,
+          categoryName: index % 2 ? 'География' : 'Наука',
+          text: `${index + 1}. ${questions[index % 2]!.text}`,
+        })),
+      }),
+    )
+    await page.goto('/panel/game-quiz')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+    await page.getByRole('button', { name: 'Задать конкретный вопрос', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Задать конкретный вопрос', exact: true })
+    await expect(dialog.getByRole('button', { name: /Наука|География/ })).toHaveCount(10)
+    await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true })).toHaveClass(
+      /MuiButton-containedError/,
+    )
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await dialog.screenshot({
+      path: info.outputPath('question-picker-ten.png'),
+      animations: 'disabled',
+    })
+    const initialHeight = (await dialog.boundingBox())!.height
+    const choices = dialog.getByRole('button', { name: /Наука|География/ })
+    const labels = await choices.allTextContents()
+    expect(labels.slice(0, 5).every((label) => label.includes('География'))).toBe(true)
+    expect(labels.slice(5).every((label) => label.includes('Наука'))).toBe(true)
+    await choices.first().click()
+    await expect(choices.first()).toHaveAttribute('aria-pressed', 'true')
+    await expect(dialog.locator('label').filter({ hasText: 'Поиск вопросов' })).toHaveAttribute(
+      'data-shrink',
+      'true',
+    )
+    await dialog.screenshot({
+      path: info.outputPath('question-picker-selected.png'),
+      animations: 'disabled',
+    })
+    await expect(dialog.getByText('Выбранный', { exact: true })).toHaveCount(0)
+    await dialog.getByRole('combobox', { name: /^Категория/ }).click()
+    await page.getByRole('option', { name: 'Наука', exact: true }).click()
+    await expect(choices).toHaveCount(5)
+    expect((await dialog.boundingBox())!.height).toBeCloseTo(initialHeight, 0)
+    await dialog.getByRole('textbox', { name: 'Поиск вопросов', exact: true }).fill('планета')
+    expect((await dialog.boundingBox())!.height).toBeCloseTo(initialHeight, 0)
+    await expect(dialog.getByRole('button', { name: /Наука|География/ })).toHaveCount(5)
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    expect(quiz.starts()).toBe(0)
+  })
+}
+
 async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
   let starts = 0
   let refreshFailed = false
@@ -194,6 +255,23 @@ async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
       refreshFailed = false
     },
   }
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`compact quiz management fits at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    await mockQuiz(page)
+    await page.goto('/panel/game-quiz')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Следующий вопрос', exact: true })).toBeVisible()
+    const panel = page.getByTestId('admin-tool-drawer-scroll-body')
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await page.getByRole('complementary', { name: 'Инструменты управления игрой' }).screenshot({
+      path: info.outputPath('compact-quiz-management.png'),
+      animations: 'disabled',
+    })
+  })
 }
 
 for (const width of [390, 768, 1440]) {
@@ -407,6 +485,65 @@ for (const { role, width } of [
     } else {
       await expect(panel).toHaveCount(0)
       await expect(page.getByText('Статус Twitch-бота', { exact: true })).toHaveCount(0)
+    }
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`Twitch connection actions preserve the centered heading at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockQuiz(page)
+    let botConnected = false
+    let broadcasterConnected = false
+    await page.route('**/integrations/twitch/status', (route) =>
+      route.fulfill({
+        json: { enabled: true, botConnected, broadcasterConnected, eventSubConnected: false },
+      }),
+    )
+    for (const [bot, channel] of [
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ] as const) {
+      botConnected = bot
+      broadcasterConnected = channel
+      await page.goto('/panel/game-quiz')
+      const panel = page.getByTestId('quiz-twitch-panel')
+      const heading = panel.getByRole('heading', { name: 'Статус Twitch-бота' })
+      await expect(heading).toBeVisible()
+      await page.evaluate(() => document.fonts.ready)
+      const panelRect = (await panel.boundingBox())!
+      const titleRect = (await heading.boundingBox())!
+      expect(
+        Math.abs(titleRect.x + titleRect.width / 2 - panelRect.x - panelRect.width / 2),
+      ).toBeLessThanOrEqual(1)
+      for (const [name, connected, side] of [
+        ['Подключить бота', bot, 'left'],
+        ['Авторизовать канал', channel, 'right'],
+      ] as const) {
+        const button = panel.getByRole('button', { name, exact: true })
+        await expect(button).toHaveCount(connected ? 0 : 1)
+        if (connected) continue
+        await expect(button).toBeVisible()
+        await button.focus()
+        await expect(button).toBeFocused()
+        const rect = (await button.boundingBox())!
+        expect(
+          Math.abs(rect.y + rect.height / 2 - titleRect.y - titleRect.height / 2),
+        ).toBeLessThanOrEqual(1)
+        if (side === 'left') expect(rect.x + rect.width).toBeLessThanOrEqual(titleRect.x)
+        else expect(rect.x).toBeGreaterThanOrEqual(titleRect.x + titleRect.width)
+      }
+      expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      )
+      await panel.screenshot({
+        path: info.outputPath(`twitch-${bot}-${channel}.png`),
+        animations: 'disabled',
+      })
     }
   })
 }
@@ -793,7 +930,18 @@ for (const path of [
   'team-registrations',
   'role-administration',
 ]) {
-  test(`one management panel is available on ${path}`, async ({ page }) => {
+  const isAdministration = [
+    'game-setup',
+    'admin-modifiers',
+    'admin-questions',
+    'catalog-modifiers',
+    'catalog-questions',
+    'team-registrations',
+    'role-administration',
+  ].includes(path)
+  test(`management panel is ${isAdministration ? 'hidden' : 'available'} on ${path}`, async ({
+    page,
+  }) => {
     const pageErrors: string[] = []
     page.on('pageerror', (error) => pageErrors.push(error.message))
     await mockQuiz(page)
@@ -810,8 +958,10 @@ for (const path of [
     }
     await page.goto(`/panel/${path}`)
     const trigger = page.getByRole('button', { name: 'Управление игрой', exact: true })
-    await expect(trigger).toHaveCount(1)
+    await expect(page.locator('main')).toBeVisible()
+    await expect(trigger).toHaveCount(isAdministration ? 0 : 1)
     expect(pageErrors).toEqual([])
+    if (isAdministration) return
     await trigger.click()
     await expect(
       page.getByRole('tab', { name: 'Управление викториной', exact: true }),
@@ -1008,7 +1158,8 @@ for (const width of [390, 768, 1440]) {
     expect(availableBounds!.height).toEqual(firstBounds!.height)
     await page.getByRole('tab', { name: 'Заработано', exact: true }).click()
     await page.getByRole('tab', { name: 'Заработано', exact: true }).hover()
-    await expect(page.getByRole('tooltip')).toContainText('без учёта трат')
+    await expect(page.getByRole('tooltip', { name: /без учёта трат/ })).toBeVisible()
+    await expect(page.getByRole('tooltip', { name: /Текущий баланс/ })).toBeHidden()
     await page.mouse.move(0, 0)
     const columns = await page
       .getByTestId('quiz-sections-grid')

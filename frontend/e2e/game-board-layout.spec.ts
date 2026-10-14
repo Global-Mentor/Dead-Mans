@@ -73,7 +73,9 @@ test('board progress position is stable when entering from another tab', async (
   expect([...new Set(visibleSamples.map((sample) => sample.width))]).toHaveLength(1)
 })
 
-test('first board request leaves navigation available without a spinner', async ({ page }) => {
+test('first board request keeps navigation available beside an inline loading indicator', async ({
+  page,
+}) => {
   await mockGame(page, 'active', 'viewer')
   let releaseSnapshot = () => {}
   const snapshotGate = new Promise<void>((resolve) => {
@@ -86,7 +88,7 @@ test('first board request leaves navigation available without a spinner', async 
 
   await page.goto('/panel/game-board')
   await expect(page.getByTestId('page-state-panel')).toContainText('Загрузка игрового поля')
-  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await expect(page.getByTestId('page-state-panel').getByRole('progressbar')).toHaveCount(1)
   await page.getByRole('link', { name: 'Очередь команд' }).click()
   await expect(page).toHaveURL(/\/panel\/game-team-queue$/)
   releaseSnapshot()
@@ -227,6 +229,41 @@ test('returning to a cached board stays usable during its refresh', async ({ pag
   await expect(page.getByRole('progressbar')).toHaveCount(0)
   releaseSnapshot()
 })
+
+for (const status of ['ready', 'active'] as const) {
+  for (const width of [390, 768, 1440]) {
+    test(`empty ${status} team queue keeps its game and refreshes at ${width}px`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.clock.install()
+      await mockGame(page, status, 'viewer')
+      let empty = true
+      await page.route('**/api/game/team-queue', (route) =>
+        empty
+          ? route.fulfill({
+              json: {
+                gameId: board.gameId,
+                teams: [],
+                summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+              },
+            })
+          : route.fallback(),
+      )
+      await page.goto('/panel/game-team-queue')
+      const queue = page.getByTestId('team-queue-panel')
+      await expect(queue.getByRole('heading', { name: 'Не отыграли' })).toBeVisible()
+      await expect(queue.getByRole('heading', { name: 'Отыгравшие' })).toBeVisible()
+      await expect(queue.getByRole('article')).toHaveCount(0)
+      await expect(queue.getByRole('button', { name: 'Повторить' })).toHaveCount(0)
+      await page.screenshot({ path: info.outputPath('empty-queue.png') })
+      empty = false
+      await page.clock.fastForward(5_001)
+      await expect(queue.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+      await expect(queue.getByRole('article', { name: 'Последний рубеж' })).toBeVisible()
+    })
+  }
+}
 
 async function mockGame(
   page: Page,
@@ -441,7 +478,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
                           phase: 'round',
                           performer: 'activeTeam',
                           requiresHostMonitoring: true,
-                          rule: 'Играть без лечения.',
+                          rule: 'Старое краткое правило.',
                           stackingPolicy: 'aggregateParameters',
                           durationSecondsPerActivation: 120,
                         },
@@ -482,7 +519,6 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
               conflictingModifierIds: [],
               activationCommand: null,
               revision: 1,
-              normalizedTags: [],
               behaviorV2: {
                 schemaVersion: 2,
                 kind: 'rule',
@@ -525,7 +561,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     await expect(phaseLabel).toHaveText('Этап раунда:')
     await expect(phaseLabel).toHaveCSS('text-align', 'center')
     await expect(overview.getByRole('link', { name: 'Вернуться к доске' })).toHaveCount(0)
-    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '28px')
+    await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-size', '24px')
     await expect(page.getByTestId('round-phase-value')).toHaveCSS('font-weight', '700')
     const labelStyles = await Promise.all(
       [cardSummary.locator('dt').first(), cardSummary.locator('dt').last()].map((label) =>
@@ -587,7 +623,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         const labelRect = label.getBoundingClientRect()
         return [labelRect.top - headerRect.top, headerRect.bottom - labelRect.bottom]
       })
-      for (const gap of labelSpacing) expect(gap).toBeCloseTo(12, 0)
+      for (const gap of labelSpacing) expect(gap).toBeCloseTo(8, 0)
       expect(await geometry()).toEqual(initialGeometry)
       if (width >= 768) {
         const widths = await Promise.all(
@@ -624,7 +660,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     activeTeamId = 'team-one'
     update()
     await expect(team).toContainText('Ночные странники')
-    await expect(team.locator('h3')).toHaveCSS('font-size', '26px')
+    await expect(team.locator('h3')).toHaveCSS('font-size', '20px')
     expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).not.toBe(
       'none',
     )
@@ -656,7 +692,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         await team.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
       ).toBe(true)
       for (const item of await team.getByRole('listitem').all()) {
-        await expect(item.locator('[aria-hidden="true"]')).toHaveCount(2)
+        await expect(item.locator('[aria-hidden="true"]')).toHaveCount(0)
       }
       const teamSpacing = await team.evaluate((element) => {
         const name = element.querySelector('h3')!.getBoundingClientRect()
@@ -1067,6 +1103,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         }
         await modifiers.getByRole('button', { name: /Жажда/ }).click()
         await expect(modifiers).toContainText('Играть без лечения.')
+        await expect(modifiers.getByText('Старое краткое правило.', { exact: true })).toHaveCount(0)
         await expect(modifiers).toContainText('Внимание ведущего')
         await modifiers.getByRole('button', { name: /Жажда/ }).click()
       }
@@ -1203,7 +1240,6 @@ for (const width of [390, 768, 1440]) {
       iconEmoji: '🛡️',
       activationCommand: null,
       revision: 1,
-      normalizedTags: [],
       behaviorV2: {
         schemaVersion: 2,
         kind: 'rule',
@@ -1264,11 +1300,11 @@ for (const width of [390, 768, 1440]) {
     await expect(modifiers).toBeVisible()
     await modifiers.getByRole('button', { name: 'Активировать модификатор', exact: true }).click()
     const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
-    const description = confirmation.getByText(
-      'Активировать «Защитный знак» за 1 очк. викторины?',
-      { exact: true },
-    )
+    const description = confirmation.getByText('Активировать модификатор за 1 очк. викторины?', {
+      exact: true,
+    })
     await expect(description).toHaveCSS('text-align', 'center')
+    await expect(confirmation.getByText('Защитный знак', { exact: true })).toBeVisible()
     await expect(confirmation.getByRole('button', { name: 'Отмена', exact: true })).toBeVisible()
     await expect(
       confirmation.getByRole('button', { name: 'Не активировать', exact: true }),
@@ -1317,7 +1353,8 @@ for (const width of [390, 768, 1440]) {
             }
             const text = element.textContent ?? ''
             samples.push(
-              text.includes('Активировать «Защитный знак» за 1 очк. викторины?') &&
+              text.includes('Активировать модификатор за 1 очк. викторины?') &&
+                text.includes('Защитный знак') &&
                 !text.includes('Действие больше недоступно.'),
             )
             requestAnimationFrame(sample)
@@ -1451,15 +1488,15 @@ for (const { width, height } of [
     await mockGame(page, 'active', 'viewer')
     await page.setViewportSize({ width, height })
     const names = [
-      'Чирик',
+      'Черепаха',
       'Жажда',
       'Расходник',
       'Трупы',
       'Навыки',
-      'Патрон',
+      'Первая пуля',
       'Проказник',
       'Диарея',
-      'Менторбайт',
+      'Провокация',
       'Кэп',
       'Фейерверк',
       'Крыса',
@@ -1467,7 +1504,25 @@ for (const { width, height } of [
       'Подъём',
       'Хард75',
     ]
-    const costs = [3, 3, 4, 4, 4, 4, 6, 7, 8, 10, 11, 12, 13, 14, 18]
+    const costs = [2, 3, 4, 4, 4, 4, 6, 7, 8, 10, 11, 12, 13, 14, 18]
+    const phases = [
+      'round',
+      'result',
+      'preparation',
+      'round',
+      'preparation',
+      'result',
+      'round',
+      'round',
+      'round',
+      'round',
+      'round',
+      'result',
+      'result',
+      'round',
+      'result',
+    ]
+    const hostNames = ['Проказник', 'Провокация', 'Фейерверк', 'Крыса', 'Шот']
     await page.route('**/api/game/rounds/active', (route) =>
       route.fulfill({ json: activeRoundFixture }),
     )
@@ -1483,7 +1538,7 @@ for (const { width, height } of [
           availableModifiers: names.map((name, index) => ({
             modifier: {
               id: `modifier-${index}`,
-              category: index < 5 ? 'preparation' : index < 10 ? 'round' : 'result',
+              category: phases[index],
               name,
               description: `Описание модификатора «${name}».`,
               activationCost: costs[index],
@@ -1492,13 +1547,12 @@ for (const { width, height } of [
               iconEmoji: ['🛡️', '💧', '🎯', '📖', '⌛'][index % 5],
               activationCommand: null,
               revision: 1,
-              normalizedTags: [],
               behaviorV2: {
                 schemaVersion: 2,
                 kind: 'rule',
-                phase: 'round',
-                performer: 'activeTeam',
-                requiresHostMonitoring: false,
+                phase: phases[index],
+                performer: hostNames.includes(name) ? 'mentor' : 'activeTeam',
+                requiresHostMonitoring: true,
                 rule: 'Правило',
                 stackingPolicy: 'aggregateParameters',
                 resolution: { type: 'ruleStatus' },
@@ -1588,25 +1642,30 @@ for (const { width, height } of [
     const rowHeight = (await skill.boundingBox())!.height
     expect(rowHeight).toBeLessThanOrEqual(width >= 600 ? 56 : 94)
     const headings = list.locator('section > header')
-    await expect(headings).toHaveCount(3)
+    await expect(headings).toHaveCount(4)
     await expect(headings.first()).toHaveCSS('border-left-width', '3px')
     await expect(headings.first()).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-    for (const category of ['Перед раундом', 'Во время раунда', 'На итог раунда']) {
+    for (const [category, count] of [
+      ['Перед раундом', 2],
+      ['Во время раунда', 5],
+      ['На итог раунда', 3],
+      ['Участие ведущего', 5],
+    ] as const) {
       const group = list.getByRole('region', { name: category, exact: true })
       await expect(group).toHaveCSS('border-top-width', '1px')
       await expect(group).toHaveCSS('border-bottom-width', '1px')
-      await expect(group.getByRole('listitem')).toHaveCount(5)
+      await expect(group.getByRole('listitem')).toHaveCount(count)
     }
+    const hostGroup = list.getByRole('region', { name: 'Участие ведущего', exact: true })
+    for (const name of hostNames)
+      await expect(hostGroup.getByRole('listitem', { name, exact: true })).toHaveCount(1)
     const close = panel.getByRole('button', { name: 'Закрыть модификаторы' })
     const balanceBounds = await balance.boundingBox()
-    if (width === 1920)
-      expect(
-        await body.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
-      ).toBe(true)
+    expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
     expect(await body.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
-    await list.getByRole('listitem', { name: 'Хард75' }).scrollIntoViewIfNeeded()
+    await list.getByRole('listitem', { name: 'Шот' }).scrollIntoViewIfNeeded()
     await expect(
-      list.getByRole('listitem', { name: 'Хард75' }).getByRole('button', { name: 'Подробнее' }),
+      list.getByRole('listitem', { name: 'Шот' }).getByRole('button', { name: 'Подробнее' }),
     ).toBeInViewport()
     await expect(balance).toBeInViewport()
     await expect(close).toBeInViewport()
@@ -1616,12 +1675,12 @@ for (const { width, height } of [
       animations: 'disabled',
     })
     await list
-      .getByRole('listitem', { name: 'Чирик' })
+      .getByRole('listitem', { name: 'Черепаха' })
       .getByRole('button', { name: 'Подробнее' })
       .click()
-    const details = page.getByRole('dialog', { name: 'Чирик' })
-    await expect(details).toContainText('Описание модификатора «Чирик».')
-    await expect(details.getByText('Описание модификатора «Чирик».', { exact: true })).toHaveCSS(
+    const details = page.getByRole('dialog', { name: 'Черепаха' })
+    await expect(details).toContainText('Описание модификатора «Черепаха».')
+    await expect(details.getByText('Описание модификатора «Черепаха».', { exact: true })).toHaveCSS(
       'text-align',
       'left',
     )
@@ -1647,7 +1706,9 @@ for (const { width, height } of [
               return
             }
             if (Number(getComputedStyle(element).opacity) > 0)
-              samples.push(element.textContent?.includes('Описание модификатора «Чирик».') ?? false)
+              samples.push(
+                element.textContent?.includes('Описание модификатора «Черепаха».') ?? false,
+              )
             requestAnimationFrame(sample)
           }
           requestAnimationFrame(sample)
@@ -1659,7 +1720,7 @@ for (const { width, height } of [
     expect(closingSamples.every(Boolean)).toBe(true)
     await expect(details).not.toBeVisible()
     await expect(
-      list.getByRole('listitem', { name: 'Чирик' }).getByRole('button', { name: 'Подробнее' }),
+      list.getByRole('listitem', { name: 'Черепаха' }).getByRole('button', { name: 'Подробнее' }),
     ).toBeFocused()
     await skill.getByRole('button', { name: 'Подробнее' }).click()
     const skillDetails = page.getByRole('dialog', { name: 'Навыки', exact: true })
@@ -1667,12 +1728,20 @@ for (const { width, height } of [
     await expect(skillDetails.getByRole('status')).toHaveCount(0)
     await page.keyboard.press('Escape')
     await expect(skillDetails).not.toBeVisible()
+    await hostGroup
+      .getByRole('listitem', { name: 'Шот', exact: true })
+      .getByRole('button', { name: 'Подробнее' })
+      .click()
+    const hostDetails = page.getByRole('dialog', { name: 'Шот', exact: true })
+    await expect(hostDetails.getByText('Участие ведущего', { exact: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(hostDetails).not.toBeVisible()
     if (width === 390) {
       await page.setViewportSize({ width, height: 640 })
       expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
         true,
       )
-      const lastModifier = list.getByRole('listitem', { name: 'Хард75' })
+      const lastModifier = list.getByRole('listitem', { name: 'Шот' })
       await lastModifier.scrollIntoViewIfNeeded()
       await expect(lastModifier.getByRole('button', { name: 'Подробнее' })).toBeVisible()
       await page.setViewportSize({ width, height })
@@ -1689,6 +1758,7 @@ for (const { width, height } of [
       await page.reload()
       const longRow = page.getByRole('listitem', { name: names[1] })
       await expect(longRow).toBeVisible()
+      await longRow.scrollIntoViewIfNeeded()
       expect(await longRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true,
       )
@@ -1790,7 +1860,9 @@ test('card confirmation stays busy during submission and preserves the card afte
   releaseOpen()
   await expect(confirmation.getByRole('alert')).toBeVisible()
   await expect(confirmation).not.toContainText('internal diagnostic')
-  await expect(confirmation).toContainText('Испытание 3')
+  await expect(confirmation).toContainText(
+    `${board.colLabels[2]}: ${board.rowLabels[0]} (стоимость: 100 очк.)`,
+  )
   await expect(confirmation).toContainText('100 очк.')
   await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
   await expect.poll(() => attempts).toBe(2)
@@ -1840,7 +1912,9 @@ test('the administrator who opens a new card goes straight to the current round'
   await page.goto('/panel/game-board')
   await page.locator('[data-cell-id="card-2"]').click()
   const confirmation = page.getByRole('dialog')
-  await expect(confirmation).toContainText('Испытание 3')
+  await expect(confirmation).toContainText(
+    `${board.colLabels[2]}: ${board.rowLabels[0]} (стоимость: 100 очк.)`,
+  )
   await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
 
   await expect(page).toHaveURL(/\/panel\/game-round$/)
@@ -2551,6 +2625,92 @@ test('queue dialog survives resizing and restores focus when its mobile trigger 
   await expect(page.getByTestId('game-board-team-queue').getByText('Последний рубеж')).toBeVisible()
 })
 
+for (const width of [390, 1440]) {
+  test(`management quick team selection is a framed keyboard disclosure at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const writes = await mockGame(page, 'active', 'admin', 'Ночные странники', undefined, 6)
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const team = page.getByTestId('management-team-section')
+    const selection = team.getByRole('button', { name: 'Быстрый выбор команды', exact: true })
+    await expect(selection).toHaveAttribute('aria-expanded', 'false')
+    const phase = page.getByTestId('management-round-phase')
+    expect((await phase.locator('[aria-current="step"]').boundingBox())!.height).toBeCloseTo(
+      await selection.evaluate((element) => element.parentElement!.getBoundingClientRect().height),
+      0,
+    )
+    const help = page.getByRole('tooltip').filter({ hasText: 'Выбор активной команды и отметка' })
+    await team.getByText('Ворон', { exact: true }).hover()
+    await expect(help).not.toBeVisible()
+    const heading = team
+      .getByRole('heading', { name: 'Активная команда', exact: true })
+      .locator('span[tabindex="0"]')
+    await heading.hover()
+    await expect(help).toBeVisible()
+    await expect(help).toHaveAttribute('data-popper-placement', width === 1440 ? 'left' : 'top')
+    await team.getByText('Ночные странники', { exact: true }).hover()
+    await expect(help).not.toBeVisible()
+
+    expect(
+      await selection.evaluate((element) =>
+        parseFloat(getComputedStyle(element.parentElement!).borderTopWidth),
+      ),
+    ).toBeGreaterThanOrEqual(1)
+    await selection.focus()
+    await page.keyboard.press('Enter')
+    await expect(selection).toHaveAttribute('aria-expanded', 'true')
+    await expect(team.getByRole('button').filter({ hasText: 'Команда' })).not.toHaveCount(0)
+    expect(await team.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await page
+      .getByRole('dialog', { name: 'Инструменты управления игрой' })
+      .screenshot({ path: info.outputPath('quick-team-selection.png'), animations: 'disabled' })
+    expect(writes).toEqual([])
+  })
+}
+
+for (const width of [320, 390, 1440]) {
+  test(`compact manual points keeps fields aligned and requires confirmation at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 })
+    const writes = await mockGame(page)
+    await page.route('**/api/game/quiz/manual-awards/players', (route) =>
+      route.fulfill({
+        json: [
+          { userId: 'player-one', login: 'raven', displayName: 'Ворон', availableQuizPoints: 20 },
+        ],
+      }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const section = page.getByTestId('management-manual-quiz-section')
+    await section.getByRole('button', { name: 'Очки викторины', exact: true }).click()
+    await section.getByRole('combobox', { name: 'Игрок', exact: true }).click()
+    await page.getByRole('option').filter({ hasText: 'Ворон' }).click()
+    const points = section.getByRole('textbox', { name: 'Очки', exact: true })
+    await points.fill('5')
+    await section
+      .getByRole('textbox', { name: 'Причина корректировки', exact: true })
+      .fill('Исправление результата')
+    const operation = section.getByRole('combobox', { name: /^Операция/ })
+    const bounds = await Promise.all([points.boundingBox(), operation.boundingBox()])
+    expect(Math.abs(bounds[0]!.y - bounds[1]!.y)).toBeLessThanOrEqual(1)
+    expect(await section.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await section.screenshot({
+      path: info.outputPath('compact-manual-points.png'),
+      animations: 'disabled',
+    })
+    await section.getByRole('button', { name: 'Применить корректировку', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: /корректиров/i })).toBeVisible()
+    expect(writes).toEqual([])
+    await page.keyboard.press('Escape')
+  })
+}
+
 for (const width of [320, 1440]) {
   test(`long team names and large scores remain readable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 320 ? 500 : 900 })
@@ -2653,8 +2813,19 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
                 : 1080
     await page.setViewportSize({ width, height })
     const writes = await mockGame(page)
+    const unsafeSelectors: string[] = []
+    page.on('console', (message) => {
+      if (message.text().includes('potentially unsafe when doing server-side rendering'))
+        unsafeSelectors.push(message.text())
+    })
     await page.goto('/panel/game-board')
     await expect(page.getByRole('heading', { name: 'Последняя охота' })).toBeVisible()
+    await page.getByRole('button', { name: 'Администрирование', exact: true }).click()
+    await expect(
+      page.getByRole('menuitem', { name: 'Каталог вопросов', exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    expect(unsafeSelectors).toEqual([])
     await expect(page.getByRole('progressbar')).toHaveCount(0)
     const region = page.getByRole('region', { name: 'Последняя охота' })
     // The queue precedes the board on narrow screens; the card field stays near the top on desktop.
@@ -2684,15 +2855,15 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       .boundingBox()
     if (width >= 900) {
       expect(managementBox!.x + managementBox!.width).toBe(width)
-      expect(managementBox!.width).toBe(60)
-      expect(managementBox!.height).toBeGreaterThanOrEqual(192)
+      expect(managementBox!.width).toBe(36)
+      expect(managementBox!.height).toBe(128)
       expect(managementBox!.y + managementBox!.height / 2).toBeCloseTo(height / 2, 0)
       if (width >= 1200) {
         const lastCard = await region.locator('[data-cell-id="card-4"]').boundingBox()
         expect(managementBox!.x).toBeGreaterThan(lastCard!.x + lastCard!.width)
       }
     } else {
-      expect(managementBox!.height).toBeGreaterThanOrEqual(44)
+      expect(managementBox!.height).toBe(36)
       expect(managementBox!.x + managementBox!.width).toBeLessThanOrEqual(width)
       expect(managementBox!.y + managementBox!.height).toBeLessThanOrEqual(height)
     }
@@ -2739,7 +2910,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       const statusSize = await page
         .getByTestId('game-board-status-title')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
-      expect(statusSize).toBe(20)
+      expect(statusSize).toBe(18)
     }
     if (width >= 1200) {
       expect(
@@ -2761,7 +2932,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     await expect(page.getByTestId('game-management-tool')).toBeVisible()
     const management = page.getByTestId('game-management-tool')
     await expect(management.getByText('Фаза раунда', { exact: true })).toHaveCount(0)
-    await expect(management.getByRole('heading', { name: 'Ассистент раунда' })).toBeVisible()
+    await expect(management.getByRole('heading', { name: 'Раунд' })).toBeVisible()
     await expect(management.getByRole('heading', { name: 'Активная команда' })).toBeVisible()
     for (const section of ['round', 'team', 'manual-quiz', 'finish-game']) {
       const block = management.getByTestId(`management-${section}-section`)
@@ -2778,11 +2949,13 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
     }
     const assistantBounds = await management.getByTestId('management-round-section').boundingBox()
     const teamBounds = await management.getByTestId('management-team-section').boundingBox()
-    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeGreaterThanOrEqual(15)
-    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeGreaterThanOrEqual(8)
+    expect(teamBounds!.y - assistantBounds!.y - assistantBounds!.height).toBeLessThanOrEqual(12)
+    for (const label of ['Снять выбор', 'Отыграла']) {
       const action = management.getByRole('button', { name: label, exact: true })
       await expect(action).toHaveClass(/MuiButton-outlinedPrimary/)
-      await expect(action).toBeEnabled()
+      if (label === 'Отыграла') await expect(action).toBeDisabled()
+      else await expect(action).toBeEnabled()
     }
     await expect(page.getByRole('tab', { name: 'Управление игрой' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Управление модификаторами' })).toBeVisible()
@@ -2843,6 +3016,41 @@ test('long team queue uses its own page and leaves the board clear', async ({ pa
 })
 
 for (const width of [390, 768, 1440]) {
+  test(`played queue keeps numeric slot order at ${width}px`, async ({ page }, info) => {
+    await mockGame(page, 'active', 'viewer')
+    await page.setViewportSize({ width, height: 900 })
+    await page.route('**/api/game/team-queue', (route) =>
+      route.fulfill({
+        json: {
+          gameId: board.gameId,
+          teams: [10, 4, 3].map((slot, index) => ({
+            teamId: `played-${slot}`,
+            teamName: `Команда ${slot}`,
+            teamSlotIndex: slot,
+            isPlayed: true,
+            playedAtUtc: `2026-09-01T10:0${index}:00Z`,
+            finalScore: slot * 10,
+            participants: [],
+          })),
+          summary: { totalTeams: 3, playedTeams: 3, remainingTeams: 0 },
+        },
+      }),
+    )
+    await page.goto('/panel/game-team-queue')
+    const played = page.getByRole('region', { name: 'Отыгравшие', exact: true })
+    await expect(played.getByRole('article')).toHaveCount(3)
+    expect(await played.getByLabel(/Место в очереди/).allTextContents()).toEqual(['3', '4', '10'])
+    const search = page.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
+    await search.fill('Команда 4')
+    await expect(played.getByRole('article')).toHaveCount(1)
+    await search.fill('')
+    await expect(played.getByRole('article')).toHaveCount(3)
+    expect(await played.getByLabel(/Место в очереди/).allTextContents()).toEqual(['3', '4', '10'])
+    await page
+      .getByTestId('team-queue-panel')
+      .screenshot({ path: info.outputPath('numeric-queue.png'), animations: 'disabled' })
+  })
+
   test(`team queue page keeps search and play order readable at ${width}px`, async ({
     page,
   }, testInfo) => {
@@ -2886,6 +3094,7 @@ for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       await page.goto('/panel/game-team-queue')
       const panel = page.getByTestId('team-queue-panel')
+      await expect(panel.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '18px')
       const active = panel.getByRole('article', { name: 'Ночные странники' })
       const personal = panel.getByRole('article', { name: 'Последний рубеж' })
       await expect(active.getByText('Играет', { exact: true })).toBeVisible()
@@ -2956,8 +3165,8 @@ for (const width of [320, 390, 768, 1440]) {
       if (width >= 600) {
         expect(sections[0]!.width).toBeCloseTo(sections[1]!.width, 0)
         expect(sections[0]!.top).toBe(sections[1]!.top)
-        expect(sections[0]!.bottom).toBeCloseTo(876, 0)
-        expect(sections[1]!.bottom).toBeCloseTo(876, 0)
+        expect(sections[0]!.bottom).toBeCloseTo(884, 0)
+        expect(sections[1]!.bottom).toBeCloseTo(884, 0)
       }
       const input = panel.getByRole('textbox', { name: 'Поиск по названию команды или участнику' })
       await input.fill('стрелок')
@@ -3154,7 +3363,7 @@ for (const status of ['ready', 'finished'] as const) {
   }
 }
 
-for (const width of [320, 1440]) {
+for (const width of [320, 390, 768, 1440]) {
   test(`management highlights the round action at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     const writes = await mockGame(page)
@@ -3175,15 +3384,70 @@ for (const width of [320, 1440]) {
     await page.goto('/panel/game-board')
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
     const assistant = page.getByTestId('management-round-section')
-    await expect(assistant.getByRole('button')).toBeVisible()
-    await expect(assistant.getByRole('button')).toBeEnabled()
-    await assistant.locator('summary').click()
-    const steps = assistant.getByRole('list', { name: 'Фаза раунда' })
-    await expect(steps.getByRole('listitem')).toHaveCount(7)
-    await expect(steps.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
-    await assistant.locator('summary').click()
+    const primaryAction = assistant.getByRole('button', {
+      name: 'Завершить заказ модификаторов',
+      exact: true,
+    })
+    await expect(primaryAction).toBeVisible()
+    await expect(primaryAction).toBeEnabled()
+    const stages = assistant.getByRole('button', { name: 'Выбор модификаторов', exact: true })
+    const phase = assistant.getByTestId('management-round-phase')
+    const currentStep = assistant.locator('[aria-current="step"]')
+    const currentFill = await currentStep.evaluate(
+      (element) => getComputedStyle(element).backgroundImage,
+    )
+    const neutralFill = await phase.evaluate((element) => getComputedStyle(element).backgroundImage)
+    await expect(stages).toHaveAttribute('aria-expanded', 'false')
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    await expect(phase.getByRole('listitem').nth(0)).toContainText('Карточка открыта')
+    await expect(phase.getByRole('listitem').nth(2)).toContainText('Подготовка к игре')
+    await stages.focus()
+    await page.keyboard.press('Enter')
+    await expect(stages).toHaveAttribute('aria-expanded', 'true')
+    await expect(assistant.getByRole('listitem')).toHaveCount(9)
+    await expect(assistant.locator('[aria-current="step"]')).toContainText('Выбор модификаторов')
+    await expect(assistant.locator('[data-state="complete"]')).toHaveCount(3)
+    expect(await currentStep.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      currentFill,
+    )
+    expect(await phase.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      neutralFill,
+    )
+    const list = assistant.getByRole('list')
+    const listGeometry = await list.evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      const borderLeft = parseFloat(getComputedStyle(element).borderLeftWidth)
+      const borderRight = parseFloat(getComputedStyle(element).borderRightWidth)
+      return {
+        width: bounds.width - borderLeft - borderRight,
+        rows: Array.from(element.querySelectorAll('[role="listitem"]'), (row) => {
+          const rowBounds = row.getBoundingClientRect()
+          return { offset: rowBounds.x - bounds.x - borderLeft, width: rowBounds.width }
+        }),
+      }
+    })
+    expect(listGeometry.width).toBeCloseTo(
+      await phase.evaluate((element) => element.clientWidth),
+      0,
+    )
+    for (const row of listGeometry.rows) {
+      expect(row.offset).toBeCloseTo(0, 0)
+      expect(row.width).toBeCloseTo(listGeometry.width, 0)
+    }
+    await assistant.screenshot({
+      path: `../.tmp/game-board-design/round-stages-${width}.png`,
+      animations: 'disabled',
+    })
+    await expect(
+      assistant.getByRole('listitem').filter({ hasText: 'Подготовка к игре' }),
+    ).toBeVisible()
+    await stages.click()
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    expect(await phase.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+      neutralFill,
+    )
     await expect(page.getByTestId('management-team-section')).toContainText('Ворон')
-    for (const label of ['Снять активную команду', 'Отметить как отыгравшую']) {
+    for (const label of ['Снять выбор', 'Отыграла']) {
       const action = page
         .getByTestId('management-team-section')
         .getByRole('button', { name: label, exact: true })
@@ -3238,7 +3502,7 @@ test('admin starts modifier ordering from the current-round management petal', a
   await expect(page.getByRole('dialog', { name: 'Модификаторы' })).toBeVisible()
 })
 
-test('admin starts gameplay after preparation', async ({ page }) => {
+test('admin clears preparation before starting gameplay', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockGame(page)
   let status = 'preparing'
@@ -3254,10 +3518,16 @@ test('admin starts gameplay after preparation', async ({ page }) => {
       },
     }),
   )
-  await page.route('**/api/game/rounds/round-one/begin-gameplay', async (route) => {
+  await page.route('**/api/game/rounds/round-one/complete-preparation', async (route) => {
     expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 1 })
-    status = 'in_progress'
+    status = 'preparation_completed'
     roundVersion = 2
+    await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
+  })
+  await page.route('**/api/game/rounds/round-one/begin-gameplay', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 2 })
+    status = 'in_progress'
+    roundVersion = 3
     await route.fulfill({ json: { ...activeRoundFixture, status, roundVersion } })
   })
 
@@ -3265,16 +3535,71 @@ test('admin starts gameplay after preparation', async ({ page }) => {
   await expect(page.getByTestId('game-board-context')).toContainText('Подготовка к игре')
   await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
   const roundSection = page.getByTestId('management-round-section')
-  await expect(roundSection.getByRole('button', { name: 'Начать игру', exact: true })).toBeVisible()
-  await expect(roundSection.getByRole('button', { name: 'Завершить подготовку' })).toHaveCount(0)
+  await expect(roundSection.getByRole('button', { name: 'Начать игру', exact: true })).toHaveCount(
+    0,
+  )
+  await expect(roundSection.getByRole('button', { name: 'Завершить подготовку' })).toBeVisible()
   await page.screenshot({
     path: '../.tmp/game-board-design/management-preparing-390.png',
     animations: 'disabled',
   })
+  await roundSection.getByRole('button', { name: 'Подготовка к игре', exact: true }).click()
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Подготовка к игре')
+  await roundSection.screenshot({
+    path: '../.tmp/game-board-design/round-stages-preparing-390.png',
+    animations: 'disabled',
+  })
+  await roundSection.getByRole('button', { name: 'Завершить подготовку', exact: true }).click()
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Подготовка завершена')
+  await roundSection.screenshot({
+    path: '../.tmp/agent-work/overlay/preparation-completed-management.png',
+    animations: 'disabled',
+  })
   await roundSection.getByRole('button', { name: 'Начать игру', exact: true }).click()
   await expect(roundSection).toContainText('Проведение игры')
+  await expect(roundSection.locator('[aria-current="step"]')).toContainText('Проведение игры')
   await expect(roundSection.getByRole('button', { name: 'Завершить игру' })).toBeVisible()
 })
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`round context reveals both sides with motion preference ${reducedMotion}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ reducedMotion })
+    await mockGame(page)
+    await page.route('**/api/game/rounds/active', (route) =>
+      route.fulfill({ json: { ...activeRoundFixture, status: 'preparing' } }),
+    )
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const phase = page.getByTestId('management-round-phase')
+    const trigger = phase.getByRole('button', { name: 'Подготовка к игре', exact: true })
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    const samples = await trigger.evaluate(async (button) => {
+      const ids = button.getAttribute('aria-controls')!.split(' ')
+      ;(button as HTMLButtonElement).click()
+      const heights: number[][] = []
+      for (let frame = 0; frame < 14; frame += 1) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+        heights.push(ids.map((id) => document.getElementById(id)!.getBoundingClientRect().height))
+      }
+      return heights
+    })
+    await expect(phase.getByRole('listitem')).toHaveCount(9)
+    for (const side of [0, 1]) {
+      const heights = samples.map((sample) => sample[side]!)
+      if (reducedMotion === 'reduce')
+        expect(Math.max(...heights)).toBeCloseTo(Math.min(...heights), 0)
+      else expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(5)
+    }
+    await trigger.focus()
+    await page.keyboard.press('Space')
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await expect(phase.getByRole('listitem')).toHaveCount(3)
+    await expect(trigger).toBeFocused()
+  })
+}
 
 test('current-round management is an edge petal on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -3545,6 +3870,8 @@ test('a twelve-column board uses categories when its container cannot keep cards
   await page.setViewportSize({ width: 768, height: 900 })
   await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Категория 2')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  // After resize the old tab position can hover a card, lifting it out of its measured row.
+  await page.mouse.move(0, 0)
   await expect.poll(() => Boolean(sendEvent)).toBe(true)
   for (const nextBoard of [board, largeBoard]) {
     currentBoard = { ...nextBoard, gameId: `resized-${nextBoard.cols}` }
@@ -3628,7 +3955,7 @@ for (const width of [320, 1440]) {
         },
       }),
     )
-    await page.route('**/api/game/rounds/round-one/score-preview', (route) =>
+    await page.route('**/api/game/rounds/round-one/broadcast-summary', (route) =>
       route.fulfill({
         json: {
           scoreDetails: score,
@@ -3983,5 +4310,58 @@ for (const viewport of [
     )
     expect(overflowing).toBe(0)
     await page.screenshot({ path: info.outputPath('round.png'), animations: 'disabled' })
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`admin explicitly ends result presentation at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockGame(page)
+    let presenting = true
+    let attempts = 0
+    await page.route('**/api/game/rounds/active', (route) =>
+      presenting
+        ? route.fulfill({
+            json: {
+              ...activeRoundFixture,
+              status: 'showing_results',
+              roundVersion: 6,
+              finalScore: 300,
+            },
+          })
+        : route.fulfill({ status: 204 }),
+    )
+    await page.route('**/api/game/rounds/round-one/finish-presentation', async (route) => {
+      expect(route.request().postDataJSON()).toEqual({ expectedRoundVersion: 6 })
+      attempts += 1
+      if (attempts === 1) return route.fulfill({ status: 503, json: { code: 'unavailable' } })
+      presenting = false
+      await route.fulfill({
+        json: { ...activeRoundFixture, status: 'completed', roundVersion: 7, finalScore: 300 },
+      })
+    })
+    await page.goto('/panel/game-round')
+    await expect(page.getByTestId('current-round-overview')).toContainText('Показ итогов')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const section = page.getByTestId('management-round-section')
+    const finish = section.getByRole('button', { name: 'Завершить показ', exact: true })
+    await expect(finish).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Подвести итоги', exact: true })).toHaveCount(0)
+    await expect(
+      page
+        .getByTestId('management-team-section')
+        .getByRole('button', { name: 'Снять выбор', exact: true }),
+    ).toBeDisabled()
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/results-management-${width}.png`,
+      animations: 'disabled',
+    })
+    await finish.click()
+    await expect(page.getByText('Не удалось завершить показ итогов.')).toBeVisible()
+    await expect(finish).toBeEnabled()
+    await finish.click()
+    await expect(finish).toHaveCount(0)
+    expect(attempts).toBe(2)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   })
 }

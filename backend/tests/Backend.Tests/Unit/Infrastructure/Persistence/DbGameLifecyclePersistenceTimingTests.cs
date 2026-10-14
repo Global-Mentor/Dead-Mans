@@ -29,7 +29,17 @@ public sealed class DbGameLifecyclePersistenceTimingTests
         await dbContext.SaveChangesAsync();
         var persistence = CreatePersistence(dbContext, timestamp);
 
-        var result = await persistence.OpenRegistrationAsync(gameId);
+        dbContext.GameBoards.Add(new GameBoard
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            Rows = 1,
+            Cols = 1,
+            Cells = [new BoardCell { Id = Guid.NewGuid(), RowIndex = 0, ColIndex = 0, Title = "", Cost = 100 }]
+        });
+        await dbContext.SaveChangesAsync();
+        await Backend.Tests.Support.PublicationTestData.AddMediaAsync(dbContext, gameId);
+        var result = await persistence.OpenRegistrationAsync(gameId, allowWithoutModifiers: true, allowWithoutQuestions: true);
 
         Assert.True(result.Success);
         var game = await dbContext.Games.SingleAsync();

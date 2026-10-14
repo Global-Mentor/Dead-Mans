@@ -6,6 +6,7 @@ import {
   cancelGameRegistrationTeamInvitation,
   cancelPlayerGameRegistrationInvitation,
   confirmGameRegistrationTeam,
+  unconfirmGameRegistrationTeam,
   createAdminGameRegistrationInvitation,
   createPlayerGameRegistrationInvitation,
   createAdminGameRegistrationTeam,
@@ -183,6 +184,16 @@ export function confirmGameRegistrationTeamMutationOptions(
 ) {
   return mutationOptions({
     mutationFn: confirmGameRegistrationTeam,
+    ...registrationMutationHandlers(queryClient, onError),
+  })
+}
+
+export function unconfirmGameRegistrationTeamMutationOptions(
+  queryClient: QueryClient,
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  return mutationOptions({
+    mutationFn: unconfirmGameRegistrationTeam,
     ...registrationMutationHandlers(queryClient, onError),
   })
 }

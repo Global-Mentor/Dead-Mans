@@ -82,7 +82,8 @@ public enum SetGameTeamPlayedStateOutcome
     NoActiveGame,
     TeamNotFound,
     TeamNotConfirmed,
-    RoundInProgress,
+    TeamActiveInGame,
+    TeamHasNotOpenedCard,
 }
 
 public sealed record GameCellOpenedEvent(

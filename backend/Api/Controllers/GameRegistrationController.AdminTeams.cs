@@ -61,6 +61,7 @@ public sealed partial class GameRegistrationController
             request.TeamSlotId,
             request.RecruitmentOpen,
             request.Name,
+            allowAdditionalSlot: User.IsInRole(AuthRoleCodes.Admin) || User.IsInRole(AuthRoleCodes.SuperAdmin),
             cancellationToken
         );
         return ToTeamResult(result, StatusCodes.Status201Created);
@@ -211,6 +212,18 @@ public sealed partial class GameRegistrationController
             teamId,
             cancellationToken
         );
+        return ToTeamResult(result, StatusCodes.Status200OK);
+    }
+
+    [HttpPost("teams/{teamId:guid}/unconfirm")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    [ProducesResponseType(typeof(ApiContracts.RegistrationTeamDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UnconfirmTeam(Guid teamId, CancellationToken cancellationToken)
+    {
+        var adminId = RequireUserId();
+        if (adminId is null)
+            return this.UnauthorizedError(AppMessages.Client.AuthenticationRequired);
+        var result = await _registrationService.UnconfirmTeamAsync(adminId.Value, teamId, cancellationToken);
         return ToTeamResult(result, StatusCodes.Status200OK);
     }
 

@@ -8,7 +8,7 @@ vi.mock('../use-game-setup-questions-catalog.ts', () => ({
   useGameSetupQuestionsCatalog: () => ({
     search: '',
     setSearch: vi.fn(),
-    activeCategory: null,
+    activeCategory: 'all',
     setActiveCategory: vi.fn(),
     catalogQuery: { isLoading: false, isError: false },
     categories: [],
@@ -54,6 +54,7 @@ function renderQuestions(enabledQuestionIds: string[] = []) {
         enabledQuestionIds,
         quizAnswerDurationSeconds: 60,
       }}
+      isSaving={false}
       onToggle={onToggle}
       onBulkSetEnabled={onBulkSetEnabled}
       onDurationChange={vi.fn()}
@@ -77,7 +78,7 @@ describe('GameSetupQuestionsSection', () => {
   })
 
   it('hides disabled questions even if a stale draft still contains their ids', () => {
-    const { onBulkSetEnabled } = renderQuestions(['disabled'])
+    const { onBulkSetEnabled } = renderQuestions(['available', 'disabled'])
     expect(screen.queryByRole('checkbox', { name: 'Disabled question' })).not.toBeInTheDocument()
     fireEvent.click(
       screen.getByRole('button', { name: i18n.t('gameSetup.questions.disableVisible') }),

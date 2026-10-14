@@ -27,7 +27,7 @@
   и server time; formula parameters/trace остаются moderator/admin projection. Frontend
   восстанавливает countdown по `gameplayStartedAtUtc`, прекращает его в review/terminal state
   и не пишет outcome по локальному timer event
-- round lifecycle: `awaiting_modifiers` → `preparing` → `in_progress` →
+- round lifecycle: `awaiting_modifiers` → `preparing` → `preparation_completed` → `in_progress` →
   `reviewing_results` → terminal state; prepare/begin/review/resume используют
   monotonic `roundVersion` и серверные timestamps
 - round summary использует exact resolution groups/instances, authoritative preview hash и

@@ -14,6 +14,7 @@ import {
 import { formatTeamNameWithFallback } from '../../game-registration/index.ts'
 import { groupTeamQueueTeams } from '../model/team-queue-order.ts'
 import { TeamQueueCard } from './TeamQueueCard.tsx'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 
 interface TeamQueuePanelProps {
   teams: readonly GameTeamQueueItem[]
@@ -50,7 +51,7 @@ export function TeamQueuePanel({
       ].some((value) => value.toLocaleLowerCase(i18n.resolvedLanguage).includes(query)),
   )
   const grouped = groupTeamQueueTeams(teams)
-  // Filtering keeps authoritative queue slots and historical play positions.
+  // Filtering keeps authoritative queue slot numbers.
   const matchingIds = new Set(matchingTeams.map((team) => team.teamId))
   const remaining = grouped.remainingTeams.filter(({ team }) => matchingIds.has(team.teamId))
   const played = grouped.playedTeams.filter(({ team }) => matchingIds.has(team.teamId))
@@ -71,7 +72,7 @@ export function TeamQueuePanel({
         sx={{ flexShrink: 0 }}
         header={
           <Stack direction="row" alignItems="center" justifyContent="center" gap={1.5}>
-            <Typography id={panelId + '-title'} component="h1" variant="h5">
+            <Typography id={panelId + '-title'} component="h1" variant="h6">
               {t('gameBoard.teamQueueTitle')}
             </Typography>
           </Stack>
@@ -219,8 +220,7 @@ function TeamQueueSection({
         sx={{
           minHeight: 0,
           flex: 1,
-          overflowY: 'auto',
-          overscrollBehaviorY: 'contain',
+          ...scrollRegionSx,
           '&:focus-visible': {
             outline: '2px solid',
             outlineColor: 'primary.main',

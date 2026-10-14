@@ -9,26 +9,11 @@ export type CellOpenedEvent = GameCellOpenedEvent
 export type ModifierActivatedEvent = GameModifierActivatedEvent
 export type ModifierActivationCancelledEvent = GameModifierActivationCancelledEvent
 
-interface CellOpenedPatchResult {
-  nextSnapshot: GameBoardSnapshot | null
-  requiresResync: boolean
-}
-
-interface ModifierActivatedPatchResult {
-  nextSnapshot: GameBoardSnapshot | null
-  requiresResync: boolean
-}
-
-interface ModifierCancelledPatchResult {
-  nextSnapshot: GameBoardSnapshot | null
-  requiresResync: boolean
-}
-
 export function selectNewerGameBoardSnapshot(
   current: GameBoardSnapshot | null | undefined,
   incoming: GameBoardSnapshot,
 ): GameBoardSnapshot {
-  if (!current) {
+  if (!current || current.gameId !== incoming.gameId) {
     return incoming
   }
 
@@ -38,13 +23,13 @@ export function selectNewerGameBoardSnapshot(
 export function applyCellOpenedEvent(
   current: GameBoardSnapshot | null | undefined,
   event: CellOpenedEvent,
-): CellOpenedPatchResult {
+): GameBoardSnapshot | null {
   if (!current) {
-    return { nextSnapshot: null, requiresResync: true }
+    return null
   }
 
   if (current.gameId !== event.gameId || event.version <= current.version) {
-    return { nextSnapshot: current, requiresResync: false }
+    return current
   }
 
   let updated = false
@@ -58,29 +43,26 @@ export function applyCellOpenedEvent(
   })
 
   if (!updated) {
-    return { nextSnapshot: current, requiresResync: true }
+    return current
   }
 
   return {
-    nextSnapshot: {
-      ...current,
-      version: event.version,
-      cells,
-    },
-    requiresResync: false,
+    ...current,
+    version: event.version,
+    cells,
   }
 }
 
 export function applyModifierActivatedEvent(
   current: GameBoardSnapshot | null | undefined,
   event: ModifierActivatedEvent,
-): ModifierActivatedPatchResult {
+): GameBoardSnapshot | null {
   if (!current) {
-    return { nextSnapshot: null, requiresResync: true }
+    return null
   }
 
   if (current.gameId !== event.gameId || event.version <= current.version) {
-    return { nextSnapshot: current, requiresResync: false }
+    return current
   }
 
   let activationExists = false
@@ -94,25 +76,22 @@ export function applyModifierActivatedEvent(
   })
 
   return {
-    nextSnapshot: {
-      ...current,
-      version: event.version,
-      activeModifiers: activationExists ? activeModifiers : [...activeModifiers, event.activation],
-    },
-    requiresResync: false,
+    ...current,
+    version: event.version,
+    activeModifiers: activationExists ? activeModifiers : [...activeModifiers, event.activation],
   }
 }
 
 export function applyModifierActivationCancelledEvent(
   current: GameBoardSnapshot | null | undefined,
   event: ModifierActivationCancelledEvent,
-): ModifierCancelledPatchResult {
+): GameBoardSnapshot | null {
   if (!current) {
-    return { nextSnapshot: null, requiresResync: true }
+    return null
   }
 
   if (current.gameId !== event.gameId || event.version <= current.version) {
-    return { nextSnapshot: current, requiresResync: false }
+    return current
   }
 
   const activeModifiers = current.activeModifiers.filter(
@@ -120,15 +99,12 @@ export function applyModifierActivationCancelledEvent(
   )
 
   if (activeModifiers.length === current.activeModifiers.length) {
-    return { nextSnapshot: current, requiresResync: true }
+    return current
   }
 
   return {
-    nextSnapshot: {
-      ...current,
-      version: event.version,
-      activeModifiers,
-    },
-    requiresResync: false,
+    ...current,
+    version: event.version,
+    activeModifiers,
   }
 }

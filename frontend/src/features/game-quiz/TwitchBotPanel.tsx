@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
-import { RoundBriefingPanel, RoundBriefingDivider } from '../../shared/game-ui/index.ts'
+import { RoundBriefingDivider, RoundBriefingPanel } from '../../shared/game-ui/index.ts'
 import { AppButton, InlineNotice, SectionDivider, StatusReadout } from '../../shared/ui/index.ts'
 type Props = {
   status: TwitchBotStatus
@@ -29,10 +29,7 @@ export function TwitchBotPanel({
     publication?.outcomeDeliveryStatus === 'failed' ||
     publication?.outcomeDeliveryStatus === 'uncertain'
   const hasDetails =
-    (canAdmin && (!status.botConnected || !status.broadcasterConnected)) ||
-    needsRecovery ||
-    unresolvedOutcome ||
-    Boolean(publication?.lastError || status.lastError)
+    needsRecovery || unresolvedOutcome || Boolean(publication?.lastError || status.lastError)
 
   return (
     <RoundBriefingPanel
@@ -40,23 +37,65 @@ export function TwitchBotPanel({
       aria-label={t('gameQuiz.twitch.title')}
       sx={{ px: 1, py: 0 }}
     >
-      <Box sx={{ display: 'grid', gridTemplateRows: 'minmax(0, 1fr) auto minmax(0, 1fr)' }}>
-        <Typography
-          component="h2"
-          variant="h6"
-          color="primary.light"
-          fontWeight={700}
-          textAlign="center"
+      <Box>
+        <Box
           sx={{
-            py: 1,
-            minHeight: 48,
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr)',
+              sm: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+            },
+            gap: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            py: 1,
           }}
         >
-          {t('gameQuiz.twitch.title')}
-        </Typography>
+          <Box sx={{ minWidth: 0, display: 'flex', justifyContent: 'flex-start' }}>
+            {canAdmin && !status.botConnected ? (
+              <AppButton
+                size="small"
+                sx={{ maxWidth: '100%' }}
+                aria-label={t('gameQuiz.twitch.connectBot')}
+                onClick={() => window.location.assign('/api/integrations/twitch/oauth/bot')}
+              >
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  {t('gameQuiz.twitch.connectBot')}
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                  {t('gameQuiz.twitch.botLabel')}
+                </Box>
+              </AppButton>
+            ) : null}
+          </Box>
+          <Typography
+            component="h2"
+            variant="h6"
+            color="primary.light"
+            fontWeight={700}
+            textAlign="center"
+            sx={{ minWidth: 0 }}
+          >
+            {t('gameQuiz.twitch.title')}
+          </Typography>
+          <Box sx={{ minWidth: 0, display: 'flex', justifyContent: 'flex-end' }}>
+            {canAdmin && !status.broadcasterConnected ? (
+              <AppButton
+                size="small"
+                tone="secondary"
+                sx={{ maxWidth: '100%' }}
+                aria-label={t('gameQuiz.twitch.connectChannel')}
+                onClick={() => window.location.assign('/api/integrations/twitch/oauth/broadcaster')}
+              >
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  {t('gameQuiz.twitch.connectChannel')}
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                  {t('gameQuiz.twitch.channelLabel')}
+                </Box>
+              </AppButton>
+            ) : null}
+          </Box>
+        </Box>
         <RoundBriefingDivider />
         <Stack direction="row" spacing={1} alignItems="stretch" sx={{ py: 1, minHeight: 48 }}>
           {[
@@ -104,29 +143,6 @@ export function TwitchBotPanel({
       </Box>
       {hasDetails ? (
         <Stack spacing={1} sx={{ pb: 1 }}>
-          {canAdmin && (!status.botConnected || !status.broadcasterConnected) ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center">
-              {!status.botConnected ? (
-                <AppButton
-                  size="small"
-                  onClick={() => window.location.assign('/api/integrations/twitch/oauth/bot')}
-                >
-                  {t('gameQuiz.twitch.connectBot')}
-                </AppButton>
-              ) : null}
-              {!status.broadcasterConnected ? (
-                <AppButton
-                  size="small"
-                  tone="secondary"
-                  onClick={() =>
-                    window.location.assign('/api/integrations/twitch/oauth/broadcaster')
-                  }
-                >
-                  {t('gameQuiz.twitch.connectChannel')}
-                </AppButton>
-              ) : null}
-            </Stack>
-          ) : null}
           {publication?.status === 'uncertain' ? (
             <InlineNotice severity="warning">{t('gameQuiz.twitch.uncertainWarning')}</InlineNotice>
           ) : null}

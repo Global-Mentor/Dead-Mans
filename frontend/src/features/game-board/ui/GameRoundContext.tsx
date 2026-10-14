@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
 import { StatusBadge } from '../../../shared/ui/index.ts'
+import { buildModifierRuntimeUnits } from '../../game-modifiers/index.ts'
 import {
-  buildModifierRuntimeUnits,
   calculateModifierRuntimeClock,
   formatRuntimeDuration,
-} from '../../game-modifiers/model/modifier-runtime.ts'
+} from '../../../shared/game-ui/modifier-runtime-clock.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']

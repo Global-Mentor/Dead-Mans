@@ -109,7 +109,6 @@ public sealed record GameHistoryModifierSnapshot(
     string? ActivationCommand,
     int ActivationCost,
     GameModifierActivationLimit ActivationLimit,
-    IReadOnlyList<string> NormalizedTags,
     ModifierBehaviorV2 BehaviorV2,
     IReadOnlyList<ModifierConflictSnapshot> Conflicts,
     int SuccessfulActivationsCount,

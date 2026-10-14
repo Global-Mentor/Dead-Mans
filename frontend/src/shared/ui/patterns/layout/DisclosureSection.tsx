@@ -7,14 +7,14 @@ import { StatusBadge } from '../../primitives/status/StatusBadge.tsx'
 
 const groupHeaderSx = {
   width: '100%',
-  minHeight: 52,
+  minHeight: 44,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 1.25,
   m: 0,
   px: { xs: 1.25, sm: 1.5 },
-  py: 1.1,
+  py: 0.75,
   border: 0,
   borderRadius: 0,
   color: 'text.primary',
@@ -58,10 +58,7 @@ function GroupTitle({
         variant="subtitle1"
         sx={{
           minWidth: 0,
-          fontSize: 20,
           fontWeight: 700,
-          lineHeight: 1.2,
-          letterSpacing: '0.025em',
         }}
       >
         {title}

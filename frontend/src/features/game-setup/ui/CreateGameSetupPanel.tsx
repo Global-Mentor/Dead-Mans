@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
-import { AppButton, ControlledFormTextField, ItemCard } from '../../../shared/ui/index.ts'
+import { AppButton, ControlledFormTextField } from '../../../shared/ui/index.ts'
 import {
   createGameSetupFormSchema,
   type CreateGameSetupFormValues,
@@ -50,29 +50,11 @@ export function CreateGameSetupPanel({ isSubmitting, onCreate }: CreateGameSetup
 
   if (!isOpen) {
     return (
-      <ItemCard
-        borderStyle="dashed"
-        sx={{
-          mt: 3,
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1,
-          textAlign: 'center',
-        }}
-      >
-        <Typography variant="h6" color="text.secondary">
-          {t('gameSetup.createDialog.promptTitle')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {t('gameSetup.createDialog.promptDescription')}
-        </Typography>
+      <Box>
         <AppButton onClick={() => setIsOpen(true)}>
           {t('gameSetup.createDialog.startCreate')}
         </AppButton>
-      </ItemCard>
+      </Box>
     )
   }
 

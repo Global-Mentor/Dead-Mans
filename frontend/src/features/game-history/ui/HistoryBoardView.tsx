@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
@@ -40,7 +41,7 @@ export function HistoryBoardView({
       aria-label={t('gameHistory.boardTitle', { game: game.gameTitle })}
       tabIndex={0}
       data-testid="history-board-view"
-      sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' }}
+      sx={{ flex: 1, minHeight: 0, ...scrollRegionSx }}
     >
       {game.board ? (
         <ReadOnlyGameBoard

@@ -179,7 +179,7 @@ vi.mock('./use-open-game-board-cell.ts', () => ({
 
 vi.mock('../game-rounds/api/game-rounds-api.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../game-rounds/api/game-rounds-api.ts')>()),
-  previewGameRoundScore: pageMocks.previewGameRoundScore,
+  broadcastGameRoundSummary: pageMocks.previewGameRoundScore,
 }))
 
 vi.mock('./ui/GameBoardGrid.tsx', () => ({
@@ -336,7 +336,7 @@ describe('GameBoardPage', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText('Загрузка игрового поля...')).toBeInTheDocument()
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toBeVisible()
 
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ isError: true }))
@@ -346,7 +346,9 @@ describe('GameBoardPage', () => {
     cleanup()
     pageMocks.useGameBoardPage.mockReturnValue(createPageQuery({ data: null }))
     renderBoard()
-    expect(screen.getByText('Игровое поле сейчас недоступно.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Игра пока не опубликована. Поле появится после открытия регистрации.'),
+    ).toBeInTheDocument()
   })
 
   it('keeps labeled controls and the current step visible without a menu', () => {
@@ -532,13 +534,23 @@ describe('GameBoardPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('confirms card opening with the card name, cost, and next phase', () => {
+  it('confirms a hidden card with its column, row, cost, and next phase', () => {
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({
+        data: {
+          ...readySnapshot,
+          cols: 2,
+          colLabels: ['Охота', 'Бомбардир'],
+          rowLabels: ['Разминка'],
+        },
+      }),
+    )
     pageMocks.useOpenGameBoardCell.mockReturnValue({
       pendingCell: {
         id: 'cell-confirm',
         row: 0,
         col: 1,
-        title: 'Босс',
+        title: null,
         description: null,
         cost: 500,
         state: 'closed',
@@ -559,9 +571,11 @@ describe('GameBoardPage', () => {
 
     expect(
       screen.getByText(
-        'Открыть «Босс» стоимостью 500 очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
+        'Открыть карточку стоимостью 500 очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
       ),
     ).toBeInTheDocument()
+    expect(screen.getByText('Бомбардир: Разминка (стоимость: 500 очк.)')).toBeInTheDocument()
+    expect(screen.queryByText('Ячейка', { exact: true })).not.toBeInTheDocument()
     expect(screen.queryByText(/ряд|колонка/i)).not.toBeInTheDocument()
   })
 
@@ -604,16 +618,11 @@ describe('GameBoardPage', () => {
     expect(within(managementPanel).getByTestId('admin-tool-drawer-scroll-body')).toHaveStyle(
       'overflow-y: auto',
     )
-    expect(
-      within(managementPanel).getByText('Перед стартом пройдите финальные проверки регистрации.'),
-    ).toBeInTheDocument()
+    expect(within(managementPanel).getByRole('button', { name: 'Запуск игры' })).toBeInTheDocument()
     expect(
       within(managementPanel).queryByText(/Сначала запустите игру в секции запуска/),
     ).not.toBeInTheDocument()
     expect(within(managementPanel).getAllByText('Запуск')[0]).toBeInTheDocument()
-    expect(
-      screen.getByText('Перед стартом пройдите финальные проверки регистрации.'),
-    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Запуск игры' }))
     expect(screen.getByRole('heading', { name: 'Запуск игры' })).toBeInTheDocument()
@@ -704,7 +713,7 @@ describe('GameBoardPage', () => {
     expect(screen.queryByRole('button', { name: 'Запуск игры' })).not.toBeInTheDocument()
   })
 
-  it('marks the team as played when the operator finishes it in the round summary', async () => {
+  it('saves the team action for presentation completion without marking it played yet', async () => {
     const completeRound = vi.fn().mockResolvedValue(undefined)
     const setTeamPlayedState = vi.fn().mockResolvedValue(undefined)
     pageMocks.useGameBoardPage.mockReturnValue(
@@ -778,17 +787,20 @@ describe('GameBoardPage', () => {
       timeout: 5_000,
     })
     await waitFor(
-      () => expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeEnabled(),
+      () => expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeEnabled(),
       { timeout: 5_000 },
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Завершить раунд' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить итоги' }))
 
     await waitFor(() =>
-      expect(setTeamPlayedState).toHaveBeenCalledWith({
-        teamId: 'team-1',
-        isPlayed: true,
-      }),
+      expect(completeRound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          roundId: 'round-1',
+          markTeamPlayedAfterPresentation: true,
+        }),
+      ),
     )
+    expect(setTeamPlayedState).not.toHaveBeenCalled()
   })
 
   it('lets staff select the active team from the management panel during an active game', () => {
@@ -836,7 +848,7 @@ describe('GameBoardPage', () => {
     })
 
     expect(
-      screen.getByText('Выберите активную команду, прежде чем открывать карточки.'),
+      within(managementPanel).getByRole('button', { name: 'Выбор активной команды', exact: true }),
     ).toBeInTheDocument()
     expect(
       screen.queryByText(
@@ -1012,10 +1024,10 @@ describe('GameBoardPage', () => {
 
     const nextTeamButton = within(managementPanel).getByText('Команда #2').closest('button')
     const clearTeamButton = within(managementPanel).getByRole('button', {
-      name: 'Снять активную команду',
+      name: 'Снять выбор',
     })
     const markPlayedButton = within(managementPanel).getByRole('button', {
-      name: 'Отметить как отыгравшую',
+      name: 'Отыграла',
     })
 
     expect(nextTeamButton).toBeDisabled()
@@ -1082,13 +1094,13 @@ describe('GameBoardPage', () => {
 
     openManagementPanel()
 
-    fireEvent.click(screen.getByRole('button', { name: /Ручная корректировка очков викторины/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Очки викторины/i }))
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Игрок' }), {
       target: { value: 'player' },
     })
-    fireEvent.click(screen.getByRole('option', { name: /Player One · player_one/i }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Очки викторины' }), {
+    fireEvent.click(screen.getByRole('option', { name: /Player One/i }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Очки' }), {
       target: { value: '7' },
     })
     fireEvent.change(screen.getByRole('textbox', { name: 'Причина корректировки' }), {
@@ -1114,7 +1126,7 @@ describe('GameBoardPage', () => {
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Операция' }))
     fireEvent.click(screen.getByRole('option', { name: 'Вычесть' }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Очки викторины' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Очки' }), {
       target: { value: '16' },
     })
     fireEvent.change(screen.getByRole('textbox', { name: 'Причина корректировки' }), {
@@ -1240,9 +1252,10 @@ describe('GameBoardPage', () => {
     openManagementPanel()
 
     expect(
-      screen.getByText(
-        'Игроки могут активировать модификаторы. Когда все закончат, завершите заказ.',
-      ),
+      within(screen.getByTestId('management-round-section')).getByRole('button', {
+        name: 'Выбор модификаторов',
+        exact: true,
+      }),
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Завершить заказ модификаторов' }))
 
@@ -1300,7 +1313,110 @@ describe('GameBoardPage', () => {
     })
   })
 
-  it('starts gameplay from the preparation stage with optimistic versioning', () => {
+  it('invalidates recovery confirmation when the round advances or is replaced', async () => {
+    let activeRound = {
+      participants: [],
+      roundId: 'round-1',
+      cellId: 'cell-1',
+      teamId: 'team-1',
+      teamSlotIndex: 1,
+      status: 'preparing',
+      roundVersion: 8,
+      baseScore: 100,
+      emptyCardPenaltyApplied: false,
+    }
+    pageMocks.useGameBoardPage.mockImplementation(() =>
+      createPageQuery({
+        data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
+        activeRound,
+      }),
+    )
+    pageMocks.useGameBoardLaunchPanel.mockReturnValue(
+      createLaunchPanelState({ canManageGame: true }),
+    )
+    const rebuildRound = vi.fn()
+    pageMocks.useStartGameRound.mockReturnValue({
+      isChangingRoundStage: false,
+      rebuildRound,
+      startRound: vi.fn(),
+      beginGameplay: vi.fn(),
+      reviewRound: vi.fn(),
+      completeRound: vi.fn(),
+      technicalCancelRound: vi.fn(),
+      toastMessage: null,
+      dismissToast: vi.fn(),
+    })
+    const view = renderBoard()
+    openManagementPanel()
+    const safety = screen.getByTestId('management-round-safety-section')
+    fireEvent.click(within(safety).getByRole('button', { name: 'Сбои раунда' }))
+    fireEvent.click(within(safety).getByRole('button', { name: 'Пересобрать заказ модификаторов' }))
+    const dialog = screen.getByRole('dialog', { name: 'Пересобрать заказ модификаторов?' })
+    activeRound = { ...activeRound, status: 'in_progress', roundVersion: 9 }
+    const rerender = () =>
+      view.rerender(
+        <MemoryRouter>
+          <GameBoardPage />
+          <GameAdminToolsPanel initialToolId="game" />
+        </MemoryRouter>,
+      )
+    rerender()
+    const confirm = within(dialog).getByRole('button', { name: 'Пересобрать заказ модификаторов' })
+    expect(confirm).toBeDisabled()
+    fireEvent.click(confirm)
+    expect(rebuildRound).not.toHaveBeenCalled()
+    activeRound = { ...activeRound, roundId: 'round-2', status: 'preparing', roundVersion: 1 }
+    rerender()
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Пересобрать заказ модификаторов?' }),
+      ).not.toBeInTheDocument(),
+    )
+    expect(rebuildRound).not.toHaveBeenCalled()
+  })
+
+  it('finishes preparation without starting gameplay with optimistic versioning', () => {
+    const completePreparation = vi.fn()
+    pageMocks.useStartGameRound.mockReturnValue({
+      isChangingRoundStage: false,
+      startRound: vi.fn(),
+      completePreparation,
+      reviewRound: vi.fn(),
+      completeRound: vi.fn(),
+      toastMessage: null,
+      dismissToast: vi.fn(),
+    })
+    pageMocks.useGameBoardLaunchPanel.mockReturnValue(
+      createLaunchPanelState({ canManageGame: true }),
+    )
+    pageMocks.useGameBoardPage.mockReturnValue(
+      createPageQuery({
+        data: { ...readySnapshot, status: 'active', activeTeamId: 'team-1' },
+        activeRound: {
+          participants: [],
+          roundId: 'round-1',
+          cellId: 'cell-1',
+          teamId: 'team-1',
+          teamSlotIndex: 1,
+          status: 'preparing',
+          roundVersion: 8,
+          baseScore: 100,
+          emptyCardPenaltyApplied: false,
+        },
+      }),
+    )
+
+    renderBoard()
+    openManagementPanel()
+    fireEvent.click(screen.getByRole('button', { name: 'Завершить подготовку' }))
+
+    expect(completePreparation).toHaveBeenCalledWith({
+      roundId: 'round-1',
+      expectedRoundVersion: 8,
+    })
+  })
+
+  it('starts gameplay only after preparation is completed with optimistic versioning', () => {
     const beginGameplay = vi.fn()
     pageMocks.useStartGameRound.mockReturnValue({
       isChangingRoundStage: false,
@@ -1323,7 +1439,7 @@ describe('GameBoardPage', () => {
           cellId: 'cell-1',
           teamId: 'team-1',
           teamSlotIndex: 1,
-          status: 'preparing',
+          status: 'preparation_completed',
           roundVersion: 8,
           baseScore: 100,
           emptyCardPenaltyApplied: false,

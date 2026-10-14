@@ -112,7 +112,7 @@ public sealed class DbGameRegistrationRepositoryTests
                 CreatedAtUtc = utc,
                 ReadyAtUtc = utc,
                 MinPlayersPerTeam = 1,
-                MaxPlayersPerTeam = 3
+                MaxPlayersPerTeam = 1
             }
         );
         db.GameTeamSlots.Add(
@@ -131,6 +131,7 @@ public sealed class DbGameRegistrationRepositoryTests
                 Id = teamId,
                 GameId = gameId,
                 SlotId = slotId,
+                Name = "Ready team",
                 RecruitmentOpen = true,
                 Status = TeamStatusValue.Forming,
                 CreatedAtUtc = utc,
@@ -144,7 +145,8 @@ public sealed class DbGameRegistrationRepositoryTests
                 GameId = gameId,
                 TeamId = teamId,
                 UserId = userId,
-                JoinedAtUtc = utc
+                JoinedAtUtc = utc,
+                ReadyAtUtc = utc
             }
         );
         await db.SaveChangesAsync();

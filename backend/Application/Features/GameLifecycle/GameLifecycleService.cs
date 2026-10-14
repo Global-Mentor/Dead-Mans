@@ -59,7 +59,8 @@ public sealed class GameLifecycleService : IGameLifecycleService
             );
         }
 
-        var result = await _persistence.OpenRegistrationAsync(draft.GameId, input?.ExpectedVersion, cancellationToken);
+        var result = await _persistence.OpenRegistrationAsync(draft.GameId, input?.ExpectedVersion,
+            input?.AllowWithoutModifiers ?? false, input?.AllowWithoutQuestions ?? false, cancellationToken);
         if (result.Success)
         {
             await PublishTransitionAsync(result, "ready");

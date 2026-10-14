@@ -123,18 +123,15 @@ export function useGameSetupDraft() {
     queueMicrotask(() => setRemoteChangeNotice(false))
   }, [draftOverride, isDirty, snapshot])
 
-  const updateDraft = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
-    if (!snapshotDraftKey || !draft) {
-      return
-    }
-
-    setDraftOverride({
-      key: snapshotDraftKey,
-      draft: updater(draft),
-    })
-    setResetErrorMessage(null)
-    setRemoteChangeNotice(false)
-  }
+  const updateDraft = useCallback(
+    (nextDraft: GameSetupDraftState) => {
+      if (!snapshotDraftKey) return
+      setDraftOverride({ key: snapshotDraftKey, draft: nextDraft })
+      setResetErrorMessage(null)
+      setRemoteChangeNotice(false)
+    },
+    [snapshotDraftKey],
+  )
 
   const createDraftMutation = useMutation({
     mutationFn: createDraftGameSetup,
@@ -176,6 +173,7 @@ export function useGameSetupDraft() {
     snapshotDraftKey,
     isLoading: draftQuery.isLoading,
     isError: draftQuery.isError,
+    retryLoad: draftQuery.refetch,
     isEmpty: draftQuery.data?.snapshot === null,
     isDirty,
     remoteChangeNotice,

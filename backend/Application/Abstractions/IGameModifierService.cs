@@ -141,6 +141,7 @@ public sealed record CancelGameModifierActivationResult(
 public interface IGameModifierService
 {
     Task<IReadOnlyList<GameModifierDefinition>> GetCatalogAsync(
+        bool archived = false,
         CancellationToken cancellationToken = default
     );
 

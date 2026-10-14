@@ -1,9 +1,9 @@
-import type { ComponentType, LazyExoticComponent } from 'react'
+import type { ComponentType } from 'react'
 import { lazyPanelPage } from './lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import { panelRoutes, type PanelRouteDefinition } from './panel-route-metadata.ts'
 
-type PanelRoutePage = LazyExoticComponent<ComponentType>
+type PanelRoutePage = ReturnType<typeof lazyPanelPage>
 
 type PanelRouteConfigEntry = PanelRouteDefinition & {
   Page: PanelRoutePage
@@ -11,6 +11,11 @@ type PanelRouteConfigEntry = PanelRouteDefinition & {
 }
 
 const panelPages = {
+  'game-overlay': lazyPanelPage(
+    () => import('../features/game-overlay/GameOverlaySettingsPage.tsx'),
+    'GameOverlaySettingsPage',
+    [translations.gameOverlay],
+  ),
   'game-history': lazyPanelPage(
     () => import('../features/game-history/GameHistoryPage.tsx'),
     'GameHistoryPage',
@@ -84,7 +89,7 @@ const panelPages = {
   'admin-modifiers': lazyPanelPage(
     () => import('../features/game-setup/AdminGameModifiersPage.tsx'),
     'AdminGameModifiersPage',
-    [translations.gameSetup, translations.gameCatalog],
+    [translations.gameSetup, translations.gameCatalog, translations.gameModifiers],
   ),
   'admin-questions': lazyPanelPage(
     () => import('../features/game-setup/AdminGameQuestionsPage.tsx'),
@@ -94,7 +99,7 @@ const panelPages = {
   'catalog-modifiers': lazyPanelPage(
     () => import('../features/game-catalog/CatalogModifiersPage.tsx'),
     'CatalogModifiersPage',
-    [translations.gameCatalog],
+    [translations.gameCatalog, translations.gameModifiers],
   ),
   'catalog-questions': lazyPanelPage(
     () => import('../features/game-catalog/CatalogQuestionsPage.tsx'),
@@ -104,7 +109,12 @@ const panelPages = {
   'team-registrations': lazyPanelPage(
     () => import('../features/team-registrations/TeamRegistrationsPage.tsx'),
     'TeamRegistrationsPage',
-    [translations.teamRegistrations, translations.gameApplication, translations.gameRegistration],
+    [
+      translations.teamRegistrations,
+      translations.gameApplication,
+      translations.gameRegistration,
+      translations.gameBoard,
+    ],
   ),
   'role-administration': lazyPanelPage(
     () => import('../features/role-administration/RoleAdministrationPage.tsx'),
@@ -118,18 +128,7 @@ const gameSetupRealtimeSync = lazyPanelPage(
   'GameSetupRealtimeSync',
 )
 
-const gameHistoryRealtimeSync = lazyPanelPage(
-  () => import('../features/game-history/GameHistoryRealtimeSync.tsx'),
-  'GameHistoryRealtimeSync',
-)
-
 const panelSyncComponents = {
-  'game-history': gameHistoryRealtimeSync,
-  'game-leaderboard': gameHistoryRealtimeSync,
-  'game-modifiers': lazyPanelPage(
-    () => import('../features/game-modifiers/realtime/GameModifiersRealtimeSync.tsx'),
-    'GameModifiersRealtimeSync',
-  ),
   'game-setup': gameSetupRealtimeSync,
   'admin-questions': gameSetupRealtimeSync,
   'admin-modifiers': gameSetupRealtimeSync,
@@ -142,3 +141,9 @@ export const panelRouteConfig = panelRoutes.map((definition) => ({
     ? { Sync: panelSyncComponents[definition.id as keyof typeof panelSyncComponents] }
     : {}),
 })) satisfies readonly PanelRouteConfigEntry[]
+
+export async function preloadPanelRoute(pathname: string) {
+  const route = panelRouteConfig.find((candidate) => candidate.fullPath === pathname)
+  if (!route) return
+  await Promise.all([route.Page.preload(), route.Sync?.preload()])
+}

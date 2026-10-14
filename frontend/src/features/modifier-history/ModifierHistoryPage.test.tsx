@@ -67,7 +67,6 @@ vi.mock('./api/modifier-history-api.ts', () => ({
     activationCommand: '!архив',
     activationCost: revision === 1 ? 4 : 9,
     activationLimit: { count: 2 },
-    normalizedTags: ['история'],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',
@@ -130,6 +129,8 @@ describe('ModifierHistoryPage', () => {
   it('selects the first modifier and its latest revision when opening the archive', async () => {
     renderHistory('/panel/modifier-history')
     expect(await screen.findByText('Сохранённое описание')).toBeVisible()
+    expect(screen.queryByText('Неизменяемое правило')).not.toBeInTheDocument()
+    expect(screen.queryByText('!архив')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '🧭 Архивная редакция', exact: true })).toBeVisible()
     expect(screen.getByText('Текущая', { exact: true })).toBeVisible()
   })
@@ -184,7 +185,9 @@ describe('ModifierHistoryPage', () => {
   it('shows an empty archive without requesting a modifier', async () => {
     vi.mocked(fetchModifierHistory).mockResolvedValueOnce({ items: [], nextCursor: null })
     renderHistory('/panel/modifier-history')
-    expect(await screen.findByText('По фильтрам ничего не найдено.')).toBeVisible()
+    expect(
+      await screen.findByText('Модификаторы ещё не добавлены. Здесь будут показаны их редакции.'),
+    ).toBeVisible()
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
   })
 
@@ -201,6 +204,8 @@ describe('ModifierHistoryPage', () => {
     )
 
     expect(await screen.findByText('Сохранённое описание')).toBeVisible()
+    expect(screen.queryByText('Неизменяемое правило')).not.toBeInTheDocument()
+    expect(screen.queryByText('!архив')).not.toBeInTheDocument()
     expect(screen.queryByText('Теги', { exact: true })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('tab', { name: 'Изменения' }))
     expect(screen.getByText('Каскад совместимости')).toBeVisible()
@@ -218,10 +223,14 @@ describe('ModifierHistoryPage', () => {
         'Конфликт-снимок',
       ),
     ).toBeInTheDocument()
-    expect(screen.getByText('Правило: Неизменяемое правило', { exact: true })).not.toBeVisible()
+    expect(
+      screen.queryByText('Правило: Неизменяемое правило', { exact: true }),
+    ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Поведение', exact: true }))
-    expect(screen.getByText('Правило: Первое правило', { exact: true })).toBeVisible()
-    expect(screen.getByText('Правило: Неизменяемое правило', { exact: true })).toBeVisible()
+    expect(screen.queryByText('Правило: Первое правило', { exact: true })).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Правило: Неизменяемое правило', { exact: true }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText(/schemaVersion: 2/)).not.toBeInTheDocument()
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
     expect(document.querySelector('img[src="x"]')).toBeNull()

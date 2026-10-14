@@ -155,6 +155,65 @@ public sealed class GameQuestionContractTests(TestWebApplicationFactory factory)
     }
 
     [Theory]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("result")]
+    public async Task TwitchLengthLimit_IsEnforcedByCreateUpdateAndImport(string oversizedMessage)
+    {
+        using var client = CreateAdminClient();
+        var categoryId = await CreateCategoryAsync(client);
+        var text = oversizedMessage == "question" ? new string('Q', 490) : "Original?";
+        var first = oversizedMessage == "options" ? new string('A', 240)
+            : oversizedMessage == "result" ? new string('A', 400) : "Yes";
+        var second = oversizedMessage == "options" ? new string('B', 240) : "No";
+        var options = new[] { new { text = first, isCorrect = true }, new { text = second, isCorrect = false } };
+        var payload = new { categoryId, text, options, reward = int.MaxValue };
+        var invalidCreate = await client.PostAsJsonAsync("/api/game/questions", payload);
+        Assert.Equal(HttpStatusCode.BadRequest, invalidCreate.StatusCode);
+
+        var validCreate = await client.PostAsJsonAsync("/api/game/questions", new
+        {
+            categoryId,
+            text = "Retained?",
+            reward = 1,
+            options = new[] { new { text = "Yes", isCorrect = true }, new { text = "No", isCorrect = false } }
+        });
+        Assert.Equal(HttpStatusCode.Created, validCreate.StatusCode);
+        var created = (await validCreate.Content.ReadFromJsonAsync<GameQuestionCatalogItemDto>())!;
+        var invalidUpdate = await client.PutAsJsonAsync($"/api/game/questions/{created.QuestionId}", payload);
+        Assert.Equal(HttpStatusCode.BadRequest, invalidUpdate.StatusCode);
+
+        using var body = new MultipartFormDataContent();
+        body.Add(new StringContent(System.Text.Json.JsonSerializer.Serialize(new { questions = new[] { payload } }),
+            Encoding.UTF8, "application/json"), "file", "questions.json");
+        var response = await client.PostAsync("/api/game/questions/import", body);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var imported = (await response.Content.ReadFromJsonAsync<ImportGameQuestionsResultDto>())!;
+        Assert.Equal(0, imported.ImportedCount);
+        Assert.Single(imported.SkippedQuestions);
+        var catalog = await client.GetFromJsonAsync<GameQuestionCatalogItemDto[]>("/api/game/questions/catalog");
+        Assert.Equal("Retained?", Assert.Single(catalog!).Text);
+    }
+
+    [Fact]
+    public async Task TwitchPreview_AcceptsIncompleteDraftsAndUsesTheSameLengthLimit()
+    {
+        using var client = CreateAdminClient();
+        var response = await client.PostAsJsonAsync("/api/game/questions/twitch-preview", new
+        {
+            text = "",
+            options = new[] { "", "" },
+            durationSeconds = 3600,
+            reward = 0
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var preview = (await response.Content.ReadFromJsonAsync<TwitchQuizPreviewDto>())!;
+        Assert.Contains("!1 []", preview.Options);
+        Assert.Equal(500, preview.MaximumLength);
+        Assert.True(preview.IsCompatible);
+    }
+
+    [Theory]
     [InlineData(AuthRoleCodes.Viewer)]
     [InlineData(AuthRoleCodes.Moderator)]
     public async Task CatalogAndAnswerMutations_AreRestrictedToAdmins(string role)

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { PageShell, PageStatePanel } from '../../shared/ui/index.ts'
+import { AppButton, PageShell, PageStatePanel } from '../../shared/ui/index.ts'
 import { GameSetupBoardNotices } from './ui/GameSetupBoardNotices.tsx'
 import { GameSetupEmptyState } from './ui/GameSetupEmptyState.tsx'
 import { GameSetupModifiersSection } from './ui/GameSetupModifiersSection.tsx'
@@ -12,6 +12,7 @@ export function AdminGameModifiersPage() {
     draft,
     isLoading,
     isError,
+    retryLoad,
     syncStatus,
     isDirty,
     saveErrorMessage,
@@ -21,6 +22,8 @@ export function AdminGameModifiersPage() {
     draftRemovedNotice,
     reloadFromServer,
     toggleModifier,
+    setModifiersEnabled,
+    isSaving,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -29,6 +32,7 @@ export function AdminGameModifiersPage() {
   if (isLoading) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.adminModifiers.label')}
         message={t('gameSetup.loading')}
         showSpinner
@@ -39,9 +43,15 @@ export function AdminGameModifiersPage() {
   if (isError) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('navigation.items.adminModifiers.label')}
         message={t('gameSetup.errorLoading')}
         tone="error"
+        actions={
+          <AppButton tone="secondary" onClick={() => void retryLoad()}>
+            {t('common.actions.retry')}
+          </AppButton>
+        }
       />
     )
   }
@@ -49,6 +59,7 @@ export function AdminGameModifiersPage() {
   if (!draft) {
     return (
       <GameSetupEmptyState
+        title={t('navigation.items.adminModifiers.label')}
         draftRemovedNotice={draftRemovedNotice}
         onDismissDraftRemovedNotice={dismissDraftRemovedNotice}
       />
@@ -56,10 +67,22 @@ export function AdminGameModifiersPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell
+      sx={{
+        width: '100%',
+        maxWidth: 1200,
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+      }}
+    >
       <GameSetupModifiersSection
         draft={draft}
         onToggle={toggleModifier}
+        onBulkSetEnabled={setModifiersEnabled}
+        isSaving={isSaving}
         actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
 

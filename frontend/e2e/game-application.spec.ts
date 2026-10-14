@@ -308,7 +308,7 @@ for (const viewport of [
     const readyToggle = page.getByRole('button', { name: 'Готовы к участию (1 команда)' })
     const formingHeader = page.getByRole('heading', { name: 'В процессе формирования' })
     const formingToggle = page.getByRole('button', { name: 'В процессе формирования' })
-    await expect(formingHeader.getByText('В процессе формирования')).toHaveCSS('font-size', '20px')
+    await expect(formingHeader.getByText('В процессе формирования')).toHaveCSS('font-size', '18px')
     await expect(page.getByText('Свернуть список команд')).toHaveCount(0)
     await expect(page.getByText('Раскрыть список команд')).toHaveCount(0)
     const readGroupHeaderStyle = (element: HTMLElement) => {

@@ -29,7 +29,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
             draft.Cells.Select(cell => new GameSetupCellUpdate(cell.Id.ToString(), cell.Row, cell.Col, cell.Title, cell.Cost)).ToArray(),
             [], []);
         Task<UpdateDraftSetupRepositoryResult> Save(ApplicationDbContext db) => Setup(db).UpdateDraftSetupAsync(update);
-        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version);
+        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version, allowWithoutModifiers: true, allowWithoutQuestions: true);
 
         var (saved, published) = saveFirst
             ? await RunInOrderAsync(Save, Publish)
@@ -63,7 +63,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
     {
         var draft = await CreateDraftAsync();
         Task<Guid?> Reset(ApplicationDbContext db) => Setup(db).DeleteDraftSetupAsync();
-        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version);
+        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version, allowWithoutModifiers: true, allowWithoutQuestions: true);
         var (deletedId, published) = resetFirst
             ? await RunInOrderAsync(Reset, Publish)
             : await ReverseAsync(Publish, Reset);
@@ -100,16 +100,17 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         async Task<bool> ChangeMedia(ApplicationDbContext db) => attach
             ? await Media(db).AttachMediaAsync(cellId, Guid.NewGuid(), "test", "new.png", "image/png", 100, "http://localhost") is not null
             : await Media(db).DetachMediaAsync(cellId) is not null;
-        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version);
+        Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db).OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version, allowWithoutModifiers: true, allowWithoutQuestions: true);
         var (changed, published) = mediaFirst
             ? await RunInOrderAsync(ChangeMedia, Publish)
             : await ReverseAsync(Publish, ChangeMedia);
 
-        Assert.True(published.Success);
+        Assert.Equal(attach || !mediaFirst, published.Success);
+        if (!attach && mediaFirst) Assert.Equal(GameLifecycleErrorCode.CellMediaRequired, published.Error);
         Assert.Equal(mediaFirst, changed);
         await using var readDb = database.CreateDbContext();
-        Assert.Equal(GameStatusValue.Ready, (await readDb.Games.SingleAsync()).Status);
-        Assert.Equal(attach == mediaFirst ? 1 : 0, await readDb.BoardCellMedia.CountAsync());
+        Assert.Equal(published.Success ? GameStatusValue.Ready : GameStatusValue.Draft, (await readDb.Games.SingleAsync()).Status);
+        Assert.Equal(draft.Cells.Count - (!attach && mediaFirst ? 1 : 0), await readDb.BoardCellMedia.CountAsync());
     }
 
     [Theory]
@@ -141,7 +142,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
 
         await using (var publishDb = database.CreateDbContext())
         {
-            var result = await Lifecycle(publishDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion);
+            var result = await Lifecycle(publishDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion, allowWithoutModifiers: true, allowWithoutQuestions: true);
             Assert.False(result.Success);
             Assert.Equal(GameLifecycleErrorCode.DraftStaleVersion, result.Error);
         }
@@ -154,7 +155,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
             Assert.Empty(await verifyDb.GameEnabledQuestions.ToArrayAsync());
         }
         await using var retryDb = database.CreateDbContext();
-        Assert.True((await Lifecycle(retryDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion + 1)).Success);
+        Assert.True((await Lifecycle(retryDb).OpenRegistrationAsync(Guid.Parse(draft.GameId), reviewedVersion + 1, allowWithoutModifiers: true, allowWithoutQuestions: true)).Success);
     }
 
     [Theory]
@@ -199,7 +200,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         Task<bool> Disable(ApplicationDbContext db) => new DbGameQuestionRepository(db, TimeProvider.System)
             .SetQuestionEnabledAsync(questionId, false);
         Task<GameLifecycleResult> Publish(ApplicationDbContext db) => Lifecycle(db)
-            .OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version);
+            .OpenRegistrationAsync(Guid.Parse(draft.GameId), draft.Version, allowWithoutModifiers: true, allowWithoutQuestions: true);
         var (disabled, published) = disableFirst
             ? await RunInOrderAsync(Disable, Publish)
             : await ReverseAsync(Publish, Disable);
@@ -222,7 +223,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         {
             var setup = Setup(seedDb);
             var saved = await setup.UpdateDraftSetupAsync(SelectQuestion(publishedDraft, questionId));
-            Assert.True((await Lifecycle(seedDb).OpenRegistrationAsync(Guid.Parse(publishedDraft.GameId), saved.Snapshot!.Version)).Success);
+            Assert.True((await Lifecycle(seedDb).OpenRegistrationAsync(Guid.Parse(publishedDraft.GameId), saved.Snapshot!.Version, allowWithoutModifiers: true, allowWithoutQuestions: true)).Success);
         }
         GameBoardSnapshot legacyDraft;
         await using (var seedDb = database.CreateDbContext())
@@ -280,6 +281,7 @@ public sealed class GamePublicationConcurrencyTests(PostgresTestDatabase databas
         var draft = await Setup(db).CreateDraftSetupAsync("Reviewed draft");
         Assert.NotNull(draft);
         Assert.Empty(draft.EnabledQuestionIds);
+        await PublicationTestData.AddMediaAsync(db, Guid.Parse(draft.GameId));
         return draft;
     }
 

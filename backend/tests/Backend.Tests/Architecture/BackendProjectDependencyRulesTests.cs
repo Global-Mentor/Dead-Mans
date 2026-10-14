@@ -521,6 +521,7 @@ public sealed class BackendProjectDependencyRulesTests
         {
             "DbGameRegistrationPersistence.cs",
             "DbGameRegistrationPersistence.AdminTeams.cs",
+            "DbGameRegistrationPersistence.TeamConfirmation.cs",
             "DbGameRegistrationPersistence.Invitations.cs",
             "DbGameRegistrationPersistence.InvitationValidation.cs",
             "DbGameRegistrationPersistence.RosterChanges.cs",
@@ -813,6 +814,7 @@ public sealed class BackendProjectDependencyRulesTests
         var expectedFiles = new[]
         {
             "DbGameRoundRepository.cs",
+            "DbGameRoundRepository.BroadcastSummary.cs",
             "DbGameRoundRepository.ModifierScoring.cs",
             "DbGameRoundRepository.ModifierScoringSupport.cs",
             "DbGameRoundRepository.Projection.cs",
@@ -942,6 +944,7 @@ public sealed class BackendProjectDependencyRulesTests
         {
             "GameRegistrationService.cs",
             "GameRegistrationService.AdminTeams.cs",
+            "GameRegistrationService.TeamConfirmation.cs",
             "GameRegistrationService.Invitations.cs",
             "GameRegistrationService.Queries.cs"
         };
@@ -1167,6 +1170,7 @@ public sealed class BackendProjectDependencyRulesTests
         var expectedFiles = new[]
         {
             "GameRoundController.cs",
+            "GameRoundController.BroadcastSummary.cs",
             "GameRoundController.Queries.cs",
             "GameRoundController.Scoring.cs",
             "GameRoundController.Start.cs",

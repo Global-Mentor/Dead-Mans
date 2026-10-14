@@ -1,10 +1,26 @@
-import type { ErrorResponse, GameModifierActivation } from '../../../shared/api/contracts/index.ts'
 import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../../shared/api/errors/api-error-codes.ts'
+import type {
+  ErrorResponse,
+  GameModifierActivation,
+  GameModifierDefinition,
+} from '../../../shared/api/contracts/index.ts'
+import { buildModifierSearchText } from './modifier-search.ts'
+
+export type ModifierSelectOption = Pick<GameModifierDefinition, 'id' | 'name'> &
+  Partial<Pick<GameModifierDefinition, 'iconEmoji' | 'activationCost'>> & {
+    searchText?: string
+    activationCount?: number
+  }
+
+export function modifierSelectOption(modifier: GameModifierDefinition): ModifierSelectOption {
+  return { ...modifier, searchText: buildModifierSearchText(modifier, []) }
+}
 
 export interface CancelModifierOption {
   modifierId: string
   modifierName: string
+  activationCount: number
 }
 
 export function buildCancelModifierOptions(
@@ -15,6 +31,8 @@ export function buildCancelModifierOptions(
 
   for (const activation of activeModifiers) {
     if (seenModifierIds.has(activation.modifierId)) {
+      const option = options.find((item) => item.modifierId === activation.modifierId)
+      if (option) option.activationCount += 1
       continue
     }
 
@@ -22,6 +40,7 @@ export function buildCancelModifierOptions(
     options.push({
       modifierId: activation.modifierId,
       modifierName: activation.modifierName,
+      activationCount: 1,
     })
   }
 

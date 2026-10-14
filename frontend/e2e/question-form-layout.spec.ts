@@ -71,8 +71,6 @@ for (const viewport of [
     await page.setViewportSize(viewport)
     await mockLocalUi(page)
     await page.goto('/panel/catalog-questions')
-    const tools = page.getByTestId('catalog-tools').locator('summary')
-    if (viewport.width < 1200) await tools.click()
     await page.getByRole('button', { name: 'Добавить вопрос', exact: true }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()

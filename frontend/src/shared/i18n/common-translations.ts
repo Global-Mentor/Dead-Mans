@@ -28,6 +28,8 @@ const translations = {
       authoritative:
         'Confirmed server calculation. Each line shows its source and effect on the total.',
       final: 'Final round score',
+      provisional: 'Server preview based on the entered values. Results have not been confirmed.',
+      previewTotal: 'Provisional round score',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Running total: {{value}}',
       kind: {
@@ -74,6 +76,7 @@ const translations = {
         preparation: 'Before the round',
         round: 'During the round',
         result: 'Affects the round result',
+        host: 'Host participation',
       },
     },
   },
@@ -86,7 +89,7 @@ const translations = {
     discardChanges: {
       title: 'Отменить несохранённые изменения?',
       description: 'Введённые изменения будут потеряны.',
-      confirm: 'Отменить изменения',
+      confirm: 'Сбросить',
     },
     actions: {
       increaseValue: 'Увеличить: {{field}}',
@@ -109,6 +112,8 @@ const translations = {
       authoritative:
         'Подтверждённый расчёт сервера. В каждой строке указаны источник очков и влияние на итог.',
       final: 'Финальный счёт раунда',
+      provisional: 'Расчёт сервера по введённым данным. Результат ещё не подтверждён.',
+      previewTotal: 'Предварительный счёт раунда',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Промежуточный итог: {{value}}',
       kind: {
@@ -155,6 +160,7 @@ const translations = {
         preparation: 'Перед раундом',
         round: 'Во время раунда',
         result: 'На итог раунда',
+        host: 'Участие ведущего',
       },
     },
   },
@@ -190,6 +196,8 @@ const translations = {
       authoritative:
         'Підтверджений розрахунок сервера. У кожному рядку вказано джерело очок і вплив на підсумок.',
       final: 'Фінальний рахунок раунду',
+      provisional: 'Розрахунок сервера за введеними даними. Результат ще не підтверджено.',
+      previewTotal: 'Попередній рахунок раунду',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Проміжний підсумок: {{value}}',
       kind: {
@@ -236,6 +244,7 @@ const translations = {
         preparation: 'Перед раундом',
         round: 'Під час раунду',
         result: 'На підсумок раунду',
+        host: 'Участь ведучого',
       },
     },
   },
@@ -268,6 +277,9 @@ const translations = {
       authoritative:
         'Potwierdzone obliczenie serwera. Każdy wiersz pokazuje źródło punktów i wpływ na wynik.',
       final: 'Końcowy wynik rundy',
+      provisional:
+        'Obliczenie serwera na podstawie wprowadzonych danych. Wynik nie został zatwierdzony.',
+      previewTotal: 'Wstępny wynik rundy',
       modifierTitle: '{{name}} ×{{count}}',
       runningTotal: 'Suma częściowa: {{value}}',
       kind: {
@@ -314,6 +326,7 @@ const translations = {
         preparation: 'Przed rundą',
         round: 'W trakcie rundy',
         result: 'Na wynik rundy',
+        host: 'Udział prowadzącego',
       },
     },
   },

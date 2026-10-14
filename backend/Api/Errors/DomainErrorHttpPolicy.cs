@@ -104,6 +104,11 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationTeamNameRequired,
                 AppMessages.ErrorCodes.GameRegistrationTeamNameRequired
             ),
+            GameRegistrationErrorCode.TeamNotReady => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRegistrationTeamNotReady,
+                AppMessages.ErrorCodes.GameRegistrationTeamNotReady
+            ),
             GameRegistrationErrorCode.TeamNotFull => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationTeamNotFull,
@@ -158,6 +163,21 @@ public static class DomainErrorHttpPolicy
                 StatusCodes.Status409Conflict,
                 "An enabled modifier cannot be bound to an immutable revision.",
                 AppMessages.ErrorCodes.GameModifierVersionBindingMissing
+            ),
+            GameLifecycleErrorCode.CellMediaRequired => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleCellMediaRequired,
+                AppMessages.ErrorCodes.GameLifecycleCellMediaRequired
+            ),
+            GameLifecycleErrorCode.EmptyModifiersNotAcknowledged => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleEmptyModifiersNotAcknowledged,
+                AppMessages.ErrorCodes.GameLifecycleEmptyModifiersNotAcknowledged
+            ),
+            GameLifecycleErrorCode.EmptyQuestionsNotAcknowledged => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameLifecycleEmptyQuestionsNotAcknowledged,
+                AppMessages.ErrorCodes.GameLifecycleEmptyQuestionsNotAcknowledged
             ),
             GameLifecycleErrorCode.QuestionsUnavailable => new(
                 StatusCodes.Status409Conflict,

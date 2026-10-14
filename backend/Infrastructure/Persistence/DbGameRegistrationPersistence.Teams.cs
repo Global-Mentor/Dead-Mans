@@ -78,9 +78,10 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistCreateEmptyTeamAsync(
         Guid gameId,
         Guid adminUserId,
-        Guid teamSlotId,
+        Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool appendToQueue = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -102,11 +103,14 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        // A null slot is reserved for authorized administrative overflow creation.
+        // The game lock serializes allocation with other roster and lifecycle mutations.
+        var resolvedSlotId = teamSlotId ?? await ResolveAdditionalTeamSlotAsync(gameId, utcNow, cancellationToken);
         var team = new GameTeam
         {
             Id = Guid.NewGuid(),
             GameId = gameId,
-            SlotId = teamSlotId,
+            SlotId = resolvedSlotId,
             Name = TeamNameValue.Normalize(name),
             RecruitmentOpen = recruitmentOpen,
             Status = TeamStatusValue.Forming,
@@ -128,6 +132,12 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
                 gameId
             );
             return Fail<RegistrationTeamDto>(GameRegistrationUniqueViolationMapper.Map(ex));
+        }
+
+        if (appendToQueue)
+        {
+            var placement = await AppendCreatedTeamToQueueAsync(gameId, adminUserId, team.Id, cancellationToken);
+            if (!placement.Success) return placement;
         }
 
         if (transaction is not null)
@@ -362,4 +372,34 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         return await LoadTeamResultAsync(team.Id, cancellationToken);
     }
 
+    private async Task<Guid> ResolveAdditionalTeamSlotAsync(Guid gameId, DateTime utcNow, CancellationToken cancellationToken)
+    {
+        var blockedSlotIds = await _reads.GetBlockedTeamSlotIdsAsync(gameId, cancellationToken);
+        var availableSlotId = await _dbContext.GameTeamSlots.AsNoTracking()
+            .Where(slot => slot.GameId == gameId && !blockedSlotIds.Contains(slot.Id))
+            .OrderBy(slot => slot.SlotIndex)
+            .Select(slot => (Guid?)slot.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (availableSlotId.HasValue) return availableSlotId.Value;
+
+        var lastIndex = await _dbContext.GameTeamSlots.Where(slot => slot.GameId == gameId)
+            .Select(slot => (int?)slot.SlotIndex).MaxAsync(cancellationToken) ?? 0;
+        var additionalSlot = new GameTeamSlot
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            SlotIndex = checked(lastIndex + 1),
+            SlotType = TeamSlotTypeValue.Reserved,
+            ReservedLabel = $"#{checked(lastIndex + 1)}",
+            CreatedAtUtc = utcNow
+        };
+        if (_dbContext.Database.IsRelational())
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT set_config('deadmans.additional_team_slot', {additionalSlot.Id.ToString()}, true)",
+                cancellationToken);
+        }
+        _dbContext.GameTeamSlots.Add(additionalSlot);
+        return additionalSlot.Id;
+    }
 }

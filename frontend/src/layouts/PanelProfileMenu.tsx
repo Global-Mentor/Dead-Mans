@@ -1,7 +1,8 @@
 import {
+  AppButton,
+  OrnamentDivider,
   SectionDivider,
-  ActionMenu,
-  ActionMenuItem,
+  SettingsPopover,
   NavigationButton,
   StatusBadge,
 } from '../shared/ui/index.ts'
@@ -12,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { AuthContextValue, AuthUser } from '../shared/auth/auth-context.ts'
 import type { AuthRole } from '../shared/api/contracts/index.ts'
+import { highestRole } from '../shared/auth/role-hierarchy.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
@@ -30,6 +32,7 @@ function roleColor(role: AuthRole): 'warning' | 'info' | 'default' {
 export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const role = highestRole(user.roles)
   const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null)
   const closeProfile = () => setProfileAnchor(null)
 
@@ -48,7 +51,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
       <NavigationButton
         aria-label={user.displayName}
         aria-controls={profileAnchor ? 'profile-menu' : undefined}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={profileAnchor ? 'true' : undefined}
         onClick={handleProfileOpen}
         active={Boolean(profileAnchor)}
@@ -67,7 +70,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
             backgroundColor: alpha(theme.palette.primary.main, 0.14),
             border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
             color: 'primary.light',
-            fontSize: 13.5,
+            fontSize: theme.typography.body2.fontSize,
             fontWeight: 700,
           })}
         >
@@ -77,7 +80,7 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
           variant="body2"
           fontWeight={700}
           noWrap
-          sx={{ display: { xs: 'none', xl: 'block' }, fontSize: 14.4 }}
+          sx={{ display: { xs: 'none', xl: 'block' } }}
         >
           {user.displayName}
         </Typography>
@@ -86,54 +89,63 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
         </Box>
       </NavigationButton>
 
-      <ActionMenu
-        id="profile-menu"
+      <SettingsPopover
+        labelledBy="profile-menu-heading"
         anchorEl={profileAnchor}
         open={Boolean(profileAnchor)}
         onClose={closeProfile}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { mt: 1, width: 280, maxWidth: 'calc(100vw - 32px)' } } }}
+        slotProps={{ paper: { id: 'profile-menu', sx: { mt: 1, width: 320 } } }}
       >
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="overline" sx={huntOverlineSx}>
-            {t('navigation.profile')}
-          </Typography>
-          <Typography variant="body1" fontWeight={700} sx={{ mt: 0.25 }}>
-            {user.displayName}
-          </Typography>
-        </Box>
-
-        <SectionDivider />
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="overline" sx={huntOverlineSx}>
-            {t('navigation.accessRoles')}
-          </Typography>
-          <Stack direction="row" gap={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 0.75 }}>
-            {user.roles.map((role) => (
-              <StatusBadge
-                key={role}
-                size="small"
-                color={roleColor(role)}
-                variant={role === 'viewer' ? 'outlined' : 'filled'}
-                label={t(`navigation.roles.${role}`)}
-              />
-            ))}
+        <Stack spacing={2}>
+          <Stack spacing={1.5} sx={{ textAlign: 'center', minWidth: 0 }}>
+            <Box>
+              <Typography id="profile-menu-heading" variant="overline" sx={huntOverlineSx}>
+                {t('navigation.profile')}
+              </Typography>
+              <Typography variant="h5" component="p" sx={{ overflowWrap: 'anywhere', mt: 0.25 }}>
+                {user.displayName}
+              </Typography>
+            </Box>
+            <OrnamentDivider />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                {t('navigation.accessRole')}
+              </Typography>
+              <Stack
+                direction="row"
+                gap={0.75}
+                justifyContent="center"
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ mt: 0.75 }}
+              >
+                <StatusBadge
+                  size="small"
+                  density="compact"
+                  color={roleColor(role)}
+                  variant="outlined"
+                  label={t(`navigation.roles.${role}`)}
+                />
+              </Stack>
+            </Box>
           </Stack>
-        </Box>
-
-        <SectionDivider />
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="overline" sx={huntOverlineSx}>
-            {t('navigation.language')}
-          </Typography>
-          <LanguageSwitcher sx={{ mt: 0.75, width: '100%' }} />
-        </Box>
-        <SectionDivider />
-        <ActionMenuItem onClick={() => void handleLogout()}>
-          {t('navigation.logout')}
-        </ActionMenuItem>
-      </ActionMenu>
+          <Stack spacing={1.25}>
+            <SectionDivider />
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
+                {t('navigation.language')}
+              </Typography>
+              <LanguageSwitcher sx={{ flex: 1, minWidth: 0 }} />
+            </Stack>
+            <SectionDivider />
+          </Stack>
+          <AppButton tone="danger" fullWidth onClick={() => void handleLogout()}>
+            {t('navigation.logout')}
+          </AppButton>
+        </Stack>
+      </SettingsPopover>
     </>
   )
 }

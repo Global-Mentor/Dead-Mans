@@ -9,6 +9,56 @@ namespace Backend.Tests.Unit.Infrastructure.Persistence;
 public sealed class DbGameQuestionRepositoryAnswersTests
 {
     [Fact]
+    public async Task CatalogStatistics_CountOnlyClosedAnswersAndRetainFractionalPercentage()
+    {
+        await using var db = CreateDbContext();
+        var now = DateTime.UtcNow;
+        var category = await SeedCategoryAsync(db, now);
+        var repository = new DbGameQuestionRepository(db, TimeProvider.System);
+        var question = await repository.CreateQuestionAsync(new CreateGameQuestionInput(
+            "stats", category.Id, "Question", [new("Right", true), new("Wrong", false)], 1, true, 0));
+        Assert.NotNull(question);
+        var closed = new GameQuizQuestionSession
+        {
+            Id = Guid.NewGuid(),
+            QuestionId = question.QuestionId,
+            Status = "closed",
+            AskedAtUtc = now
+        };
+        var open = new GameQuizQuestionSession
+        {
+            Id = Guid.NewGuid(),
+            QuestionId = question.QuestionId,
+            Status = "open",
+            AskedAtUtc = now.AddMinutes(1)
+        };
+        db.AddRange(closed, open);
+        for (var index = 0; index < 3; index++)
+        {
+            db.GameQuizSubmissions.Add(new GameQuizSubmission
+            {
+                Id = Guid.NewGuid(),
+                QuestionSessionId = closed.Id,
+                IsCorrect = index == 0
+            });
+        }
+        db.GameQuizSubmissions.Add(new GameQuizSubmission
+        {
+            Id = Guid.NewGuid(),
+            QuestionSessionId = open.Id,
+            IsCorrect = true
+        });
+        await db.SaveChangesAsync();
+
+        var item = Assert.Single(await repository.GetCatalogAsync(null, null, true));
+        Assert.Equal(2, item.AskedTotalCount);
+        Assert.Equal(3, item.SubmissionTotalCount);
+        Assert.Equal(1, item.CorrectSubmissionTotalCount);
+        Assert.Equal(100m / 3, item.CorrectPercentage);
+        Assert.Equal(open.AskedAtUtc, item.LastAskedAtUtc);
+    }
+
+    [Fact]
     public async Task CreateQuestionAsync_PersistsOptionsAndOneCorrectChoice()
     {
         var timestamp = new DateTimeOffset(2038, 7, 8, 9, 10, 11, TimeSpan.Zero);

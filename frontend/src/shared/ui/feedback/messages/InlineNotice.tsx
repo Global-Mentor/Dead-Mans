@@ -25,8 +25,8 @@ export function InlineNotice({
           '& .MuiAlert-message': {
             minWidth: 0,
             overflowWrap: 'anywhere',
-            ...(appearance === 'textured' ? { py: 0, fontSize: '0.875rem', lineHeight: 1.4 } : {}),
-            ...(appearance === 'inline' ? { p: 0, fontSize: '0.78rem', lineHeight: 1.35 } : {}),
+            ...(appearance === 'textured' ? { py: 0, ...theme.typography.body2 } : {}),
+            ...(appearance === 'inline' ? { p: 0, ...theme.typography.body2 } : {}),
           },
         }),
         sx,

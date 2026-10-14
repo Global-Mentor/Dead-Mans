@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierAvailability } from '../../../shared/api/contracts/index.ts'
 import {
+  getCategoryLabel,
   ModifierCatalogGroup,
   ModifierCatalogRow,
   ModifierConflictNotice,
@@ -11,7 +12,6 @@ import {
 } from '../../../shared/game-ui/index.ts'
 import { ListPanel } from '../../../shared/ui/index.ts'
 import { groupAvailableGameModifiers } from '../model/game-modifier-groups.ts'
-import { getCategoryLabel } from './modifier-category.ts'
 import { ModifierActivationControl } from './ModifierActivationControl.tsx'
 
 type AvailableModifierGroup = ReturnType<typeof groupAvailableGameModifiers>[number]
@@ -51,7 +51,7 @@ export function AvailableModifiersSection({
       }}
     >
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" textAlign="center">
           {hasSearch ? t('common.modifiers.emptySearch') : t('gameModifiers.availableEmpty')}
         </Typography>
       ) : (

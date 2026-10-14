@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import {
+  getCategoryLabel,
   ModifierDetailsGroup,
   ModifierDetailsItem,
   ModifierDetailsList,
@@ -17,13 +18,14 @@ import {
 import { AppButton, InlineNotice, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
 import {
   buildModifierRuntimeUnits,
+  groupActiveGameModifiers,
+  groupActiveModifierCategories,
+} from '../../game-modifiers/index.ts'
+import {
   calculateModifierRuntimeClock,
   createServerClockOffset,
   formatRuntimeDuration,
-  groupActiveGameModifiers,
-  groupActiveModifierCategories,
-  getCategoryLabel,
-} from '../../game-modifiers/index.ts'
+} from '../../../shared/game-ui/modifier-runtime-clock.ts'
 
 export function RoundActiveModifiers({
   activations,
@@ -99,7 +101,7 @@ export function RoundActiveModifiers({
           component="h2"
           variant="h6"
           fontWeight={700}
-          sx={{ flex: 1, fontSize: 20, lineHeight: 1.2, minWidth: 0, overflowWrap: 'anywhere' }}
+          sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}
         >
           {t('gameBoard.currentRoundScreen.modifiers')}
         </Typography>
@@ -265,11 +267,6 @@ export function RoundActiveModifiers({
                             if (!round) return null
                             return (
                               <Box key={unit.key}>
-                                {!descriptions.includes(unit.rule) ? (
-                                  <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
-                                    {unit.rule}
-                                  </Typography>
-                                ) : null}
                                 <Typography variant="caption" color="text.secondary">
                                   {t(`gameModifiers.runtime.performer.${unit.performer}`)} ·{' '}
                                   <RoundRuntimeClock

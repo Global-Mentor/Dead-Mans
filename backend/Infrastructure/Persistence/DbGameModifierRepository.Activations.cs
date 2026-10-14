@@ -222,7 +222,6 @@ public sealed partial class DbGameModifierRepository : IGameModifierRepository
             ModifierCategorySnapshot = modifierDefinition.Category,
             ModifierIconEmojiSnapshot = modifierDefinition.IconEmoji,
             ActivationCommandSnapshot = modifierDefinition.ActivationCommand,
-            NormalizedTagsSnapshot = modifierDefinition.NormalizedTags.ToArray(),
             BehaviorV2SnapshotJson = ModifierBehaviorV2Json.Serialize(behaviorV2),
             ActivatedAtUtc = now,
             Status = GameModifierActivationStatusValue.Active

@@ -13,8 +13,10 @@ public sealed partial class DbGameLifecyclePersistence
         GameRoundStatusValue.CardOpened,
         GameRoundStatusValue.AwaitingModifiers,
         GameRoundStatusValue.Preparing,
+        GameRoundStatusValue.PreparationCompleted,
         GameRoundStatusValue.InProgress,
-        GameRoundStatusValue.ReviewingResults
+        GameRoundStatusValue.ReviewingResults,
+        GameRoundStatusValue.ShowingResults
     ];
 
     public async Task<GameFinishPreviewResult> GetFinishPreviewAsync(

@@ -144,9 +144,9 @@ production by the migration.
   - `draft -> ready` pins the whole enabled set, and activation/runtime calculations resolve
     price, limit, compatibility, formula and display fields only from that game binding;
   - `modifier_definition_versions.behavior_v2_json` is strict schema version `2`; formulas are
-    pinned by code/version with typed parameters, and normalized tags are stored separately;
+    pinned by code/version with typed parameters;
   - activation rows freeze the revision, BehaviorV2, name, description, category, command,
-    icon and tags at purchase time;
+    and icon at purchase time;
   - result rows copy only from the activation snapshot and require both a definition revision
     and BehaviorV2 snapshot. Missing or invalid snapshots fail closed instead of being silently
     recalculated from the current catalog.

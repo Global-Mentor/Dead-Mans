@@ -2,6 +2,12 @@ import { Box, Stack, useMediaQuery } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  modifierCategoryCodes,
+  type ModifierCategoryCode,
+} from '../../shared/game-ui/index.ts'
 import type { GameBoardCell, GameModifierState } from '../../shared/api/contracts/index.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import {
@@ -25,7 +31,6 @@ import {
   groupAvailableGameModifiers,
 } from './model/game-modifier-groups.ts'
 import { deriveModifierRoundSummaryMeta } from './model/modifier-round-summary.ts'
-import { modifierCategoryCodes, type ModifierCategoryCode } from './model/modifier-categories.ts'
 import { matchesModifierSearch } from './model/modifier-search.ts'
 import { ActiveModifiersSection } from './ui/ActiveModifiersSection.tsx'
 import { AvailableModifiersSection } from './ui/AvailableModifiersSection.tsx'
@@ -79,12 +84,22 @@ export function GameModifiersPage() {
     () =>
       (state?.availableModifiers ?? []).filter(
         (availability) =>
-          (category === 'all' || availability.modifier.category === category) &&
+          (category === 'all' ||
+            getModifierCategory(
+              availability.modifier.category,
+              availability.modifier.behaviorV2.performer,
+            ) === category) &&
           matchesModifierSearch(
             availability.modifier,
             search,
             [
-              t(`common.modifiers.categories.${availability.modifier.category}`),
+              getCategoryLabel(
+                t,
+                getModifierCategory(
+                  availability.modifier.category,
+                  availability.modifier.behaviorV2.performer,
+                ),
+              ),
               t(`gameCatalog.modifiers.wizard.kinds.${availability.modifier.behaviorV2.kind}`),
               t(
                 `gameCatalog.modifiers.roundSummaryType.${
@@ -138,6 +153,7 @@ export function GameModifiersPage() {
   if (stateQuery.isLoading || (stateQuery.isError && !state) || isEmpty) {
     return (
       <PageStatePanel
+        variant="page"
         title={t('common.entities.modifiers')}
         message={t(
           stateQuery.isLoading
@@ -150,7 +166,7 @@ export function GameModifiersPage() {
         tone={stateQuery.isError ? 'error' : 'default'}
         actions={
           stateQuery.isError ? (
-            <AppButton onClick={() => void stateQuery.refetch()}>
+            <AppButton tone="secondary" onClick={() => void stateQuery.refetch()}>
               {t('common.actions.retry')}
             </AppButton>
           ) : undefined
@@ -182,9 +198,10 @@ export function GameModifiersPage() {
             maxWidth: 1440,
             width: { xs: '100%', md: hasAdminPanel ? 'calc(100% - 72px)' : '100%' },
             mx: 'auto',
-            p: { xs: 0, md: 0 },
             maxHeight: 'var(--modifier-page-height)',
             overflowY: 'auto',
+            scrollbarGutter: 'stable both-edges',
+            scrollbarWidth: 'thin',
             minHeight: 0,
           }}
         >
@@ -251,12 +268,12 @@ export function GameModifiersPage() {
                   display: 'grid',
                   gridTemplateAreas: '"panel"',
                   gridTemplateColumns: 'minmax(0, 1fr)',
-                  gap: 2,
+                  gap: 1.5,
                   alignItems: 'start',
                   '--modifier-panel-header-height': '0px',
                   '@media (min-width: 1000px)': {
                     '--modifier-panel-header-height':
-                      'calc(var(--modifier-tools-height, 56px) + 12px)',
+                      'calc(var(--modifier-tools-height, 36px) + 16px)',
                     gridTemplateAreas: '"available active"',
                     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   },
@@ -275,8 +292,9 @@ export function GameModifiersPage() {
                 >
                   <AvailableModifiersSection
                     tools={
-                      <Stack ref={toolsRef} direction={{ xs: 'column', sm: 'row' }} gap={1.25}>
+                      <Stack ref={toolsRef} direction={{ xs: 'column', sm: 'row' }} gap={1}>
                         <FormTextField
+                          density="compact"
                           value={search}
                           label={t('common.modifiers.searchLabel')}
                           onChange={(event) => setSearch(event.target.value)}
@@ -298,6 +316,7 @@ export function GameModifiersPage() {
                           }}
                         />
                         <FormSelect
+                          density="compact"
                           value={category}
                           label={t('gameModifiers.categoryFilter')}
                           onChange={setCategory}
@@ -308,7 +327,7 @@ export function GameModifiersPage() {
                               label: t(`common.modifiers.categories.${value}`),
                             })),
                           ]}
-                          sx={{ width: { xs: '100%', sm: 210 }, flexShrink: 0 }}
+                          sx={{ width: { xs: '100%', sm: 180 }, flexShrink: 0 }}
                         />
                       </Stack>
                     }

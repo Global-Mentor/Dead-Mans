@@ -1,236 +1,101 @@
 import { Box, Stack, Typography } from '@mui/material'
-import type { DragEvent, ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { ActionIcon, HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
-import { formatRegistrationTeamStatus } from '../model/registration-team-status.ts'
-import type { AdminInviteTeamTarget } from './AdminInvitePlayerDialog.tsx'
-import { writeRegistrationDragPayload } from './admin-registration-support.ts'
+import type { ReactNode } from 'react'
+import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
+import type { RegistrationPlayer } from '../../../shared/api/contracts/index.ts'
+import type { AdminTeamTarget } from './AdminTeamPlayerDialog.tsx'
 
-export type OrderedAdminTeamEntry = AdminInviteTeamTarget
+export type OrderedAdminTeamEntry = AdminTeamTarget
 
 export function AdminRegistrationPlayerCard({
   player,
   compact = false,
-  onDragStart,
-  onDragEnd,
+  alignment = 'start',
   actions,
+  metadata,
+  footer,
   testId,
 }: {
   player: RegistrationPlayer
   compact?: boolean
-  onDragStart?: (event: DragEvent<HTMLElement>) => void
-  onDragEnd?: () => void
+  alignment?: 'start' | 'center'
+  metadata?: ReactNode
+  footer?: ReactNode
   actions?: ReactNode
   testId?: string
 }) {
+  if (alignment === 'center') {
+    return (
+      <Box
+        component="li"
+        data-testid={testId}
+        sx={(theme) => ({
+          listStyle: 'none',
+          display: 'grid',
+          gridTemplateColumns: metadata
+            ? 'minmax(44px,1fr) minmax(0,2fr) minmax(44px,1fr)'
+            : 'minmax(0,1fr)',
+          alignItems: 'center',
+          columnGap: 0.5,
+          minWidth: 0,
+          py: 0.5,
+          minHeight: metadata ? 44 : undefined,
+          rowGap: footer ? 0.5 : 0,
+          borderBottom: '1px solid ' + theme.palette.divider,
+          '&:last-child': { borderBottom: 0 },
+        })}
+      >
+        {actions ? (
+          <Box sx={{ gridColumn: 1, gridRow: 1, justifySelf: 'start' }}>{actions}</Box>
+        ) : null}
+        <Box sx={{ minWidth: 0, gridColumn: metadata ? 2 : 1, gridRow: 1 }}>
+          <ParticipantNamesList
+            names={[player.displayName]}
+            emptyLabel=""
+            variant="body1"
+            decorated
+            dense
+            alignment="center"
+          />
+        </Box>
+        {metadata ? (
+          <Box sx={{ gridColumn: 3, gridRow: 1, minWidth: 0, justifySelf: 'end' }}>{metadata}</Box>
+        ) : null}
+        {footer ? (
+          <Box sx={{ gridColumn: '1 / -1', justifySelf: 'center', minWidth: 0 }}>{footer}</Box>
+        ) : null}
+      </Box>
+    )
+  }
   return (
     <Stack
       component="li"
       data-testid={testId}
-      direction="row"
-      spacing={1}
-      alignItems="center"
+      direction={{ xs: compact ? 'column' : 'row', sm: 'row' }}
+      gap={1}
+      alignItems={{ xs: compact ? 'stretch' : 'center', sm: 'center' }}
       justifyContent="space-between"
-      draggable={Boolean(onDragStart)}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
       sx={(theme) => ({
         listStyle: 'none',
         minWidth: 0,
         py: compact ? 0.6 : 0.75,
         px: compact ? 0 : 0.5,
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        cursor: onDragStart ? 'grab' : undefined,
-        '&:last-child': {
-          borderBottom: 0,
-        },
+        borderBottom: '1px solid ' + theme.palette.divider,
+        '&:last-child': { borderBottom: 0 },
       })}
     >
-      <Stack direction="row" spacing={0.75} alignItems="baseline" sx={{ minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={700} noWrap sx={{ minWidth: 0 }}>
+      <Stack
+        direction="row"
+        gap={1}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ minWidth: 0, flex: 1 }}
+      >
+        <Typography variant="body2" fontWeight={700} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
           {player.displayName}
         </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap>
-          @{player.login}
-        </Typography>
+        {metadata}
       </Stack>
       {actions ? <Box sx={{ flexShrink: 0 }}>{actions}</Box> : null}
     </Stack>
-  )
-}
-
-export function AdminRegistrationTeamHeaderChips({ team }: { team: RegistrationTeam }) {
-  const { t } = useTranslation()
-  const disbandRequestDescription = team.disbandRequestedAtUtc
-    ? t('gameApplication.adminPanel.disbandRequestDescription', {
-        player: team.disbandRequestedByDisplayName ?? t('gameApplication.unknownPlayer'),
-      })
-    : null
-
-  return (
-    <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
-      <StatusBadge
-        textFlow="singleLine"
-        size="small"
-        label={t('gameApplication.adminPanel.slotLabel', { slot: team.teamSlotIndex })}
-        draggable
-        onDragStart={(event) =>
-          writeRegistrationDragPayload(event, { kind: 'team', teamId: team.teamId })
-        }
-        sx={{ cursor: 'grab' }}
-      />
-      <StatusBadge
-        textFlow="singleLine"
-        size="small"
-        label={formatRegistrationTeamStatus(team.status, t)}
-      />
-      {team.isActiveInGame ? (
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          color="primary"
-          label={t('gameApplication.adminPanel.activeTeamChip')}
-        />
-      ) : null}
-      {team.isPlayed ? (
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          color="success"
-          label={t('gameApplication.adminPanel.playedTeamChip')}
-        />
-      ) : null}
-      {team.disbandRequestedAtUtc ? (
-        <HelpTooltip title={disbandRequestDescription} describeChild arrow>
-          <StatusBadge
-            textFlow="singleLine"
-            size="small"
-            color="warning"
-            label={t('gameApplication.adminPanel.disbandRequestedChip')}
-            tabIndex={0}
-          />
-        </HelpTooltip>
-      ) : null}
-    </Stack>
-  )
-}
-
-export function AdminRegistrationOperationalStatus({
-  readyTeamsCount,
-  availablePlayersCount,
-  disbandRequestsCount,
-  minPlayers,
-  maxPlayers,
-}: {
-  readyTeamsCount: number
-  availablePlayersCount: number
-  disbandRequestsCount: number
-  minPlayers: number
-  maxPlayers: number
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <Stack
-      role="status"
-      aria-label={t('gameApplication.adminPanel.statusStripLabel')}
-      direction="row"
-      spacing={0.75}
-      flexWrap="wrap"
-      useFlexGap
-    >
-      <HelpTooltip title={t('gameApplication.adminPanel.teamReadyHint')} describeChild arrow>
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          color={readyTeamsCount > 0 ? 'success' : 'default'}
-          variant={readyTeamsCount > 0 ? 'filled' : 'outlined'}
-          label={`${t('gameApplication.adminPanel.readyTeams')}: ${readyTeamsCount}`}
-          tabIndex={0}
-        />
-      </HelpTooltip>
-      <HelpTooltip
-        title={t('gameApplication.adminPanel.availablePlayersDescription')}
-        describeChild
-        arrow
-      >
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          variant="outlined"
-          label={`${t('gameApplication.adminPanel.freePlayersStatus')}: ${availablePlayersCount}`}
-          tabIndex={0}
-        />
-      </HelpTooltip>
-      <HelpTooltip
-        title={t('gameApplication.adminPanel.disbandRequestsAlertDescription')}
-        describeChild
-        arrow
-      >
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          color={disbandRequestsCount > 0 ? 'warning' : 'default'}
-          variant={disbandRequestsCount > 0 ? 'filled' : 'outlined'}
-          label={`${t('gameApplication.adminPanel.disbandRequestsStatus')}: ${disbandRequestsCount}`}
-          tabIndex={0}
-        />
-      </HelpTooltip>
-      <HelpTooltip title={t('gameApplication.adminPanel.assignHint')} describeChild arrow>
-        <StatusBadge
-          textFlow="singleLine"
-          size="small"
-          variant="outlined"
-          label={t('gameApplication.adminPanel.teamRulesStatus', {
-            min: minPlayers,
-            max: maxPlayers,
-          })}
-          tabIndex={0}
-        />
-      </HelpTooltip>
-    </Stack>
-  )
-}
-
-export function AdminRegistrationTeamNameSummary({ team }: { team: RegistrationTeam }) {
-  const { t } = useTranslation()
-  const currentName = team.name?.trim() ?? ''
-  const fallbackName = t('common.teamWithSlot', { slot: team.teamSlotIndex })
-
-  return (
-    <Typography variant="subtitle1" fontWeight={700} noWrap>
-      {currentName || fallbackName}
-    </Typography>
-  )
-}
-
-export function AdminRegistrationTeamReorderButton({
-  label,
-  disabled,
-  direction,
-  onClick,
-}: {
-  label: string
-  disabled: boolean
-  direction: 'up' | 'down'
-  onClick: () => void
-}) {
-  return (
-    <HelpTooltip title={label} placement="right">
-      <span>
-        <ActionIcon
-          size="small"
-          aria-label={label}
-          disabled={disabled}
-          onClick={onClick}
-          appearance="outlined"
-        >
-          <Box component="span" aria-hidden sx={{ fontSize: 18, fontWeight: 700, lineHeight: 1 }}>
-            {direction === 'up' ? '↑' : '↓'}
-          </Box>
-        </ActionIcon>
-      </span>
-    </HelpTooltip>
   )
 }

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
@@ -6,6 +6,11 @@ import { TeamRegistrationsPage } from './TeamRegistrationsPage.tsx'
 
 const pageMocks = vi.hoisted(() => ({
   useTeamRegistrationsPage: vi.fn(),
+  roles: ['moderator'] as string[],
+}))
+
+vi.mock('../../shared/auth/use-auth.ts', () => ({
+  useAuth: () => ({ user: { roles: pageMocks.roles } }),
 }))
 
 vi.mock('./use-team-registrations-page.ts', () => ({
@@ -25,6 +30,7 @@ function createPageController(data: unknown, overrides: Record<string, unknown> 
     removePlayerFromTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
     cancelTeamInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },
     moveTeamToSlot: { isPending: false, mutate: vi.fn() },
+    unconfirmTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
     confirmTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
     rejectTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
     disbandTeam: { isPending: false, variables: undefined, mutate: vi.fn() },
@@ -33,6 +39,7 @@ function createPageController(data: unknown, overrides: Record<string, unknown> 
       isUpdatingPlayedState: false,
       updatingTeamId: null,
       setTeamPlayedState: vi.fn(),
+      getErrorMessage: vi.fn(),
       toastMessage: null,
       dismissToast: vi.fn(),
     },
@@ -42,11 +49,19 @@ function createPageController(data: unknown, overrides: Record<string, unknown> 
   }
 }
 
+function renderPage() {
+  const result = renderWithAppProviders(<TeamRegistrationsPage />)
+  const team = screen.queryAllByRole('button', { name: /^Управление:/ })[0]
+  if (team) fireEvent.click(team)
+  return result
+}
+
 beforeAll(async () => {
   await i18n.changeLanguage('ru')
 })
 
 beforeEach(() => {
+  pageMocks.roles = ['moderator']
   pageMocks.useTeamRegistrationsPage.mockReturnValue(createPageController(null))
 })
 
@@ -56,13 +71,74 @@ afterEach(() => {
 })
 
 describe('TeamRegistrationsPage', () => {
+  it('requires a ready roster and confirms refusal before notifying its members', () => {
+    const rejectTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+    const team = {
+      teamId: 'team-1',
+      name: 'Ночной дозор',
+      teamSlotIndex: 1,
+      teamSlotType: 'public',
+      recruitmentOpen: true,
+      status: 'forming',
+      isReady: true,
+      isActiveInGame: false,
+      isPlayed: false,
+      hasOpenedCard: false,
+      pendingInvitations: [],
+      members: [
+        {
+          player: { userId: 'u-1', login: 'hunter', displayName: 'Охотник' },
+          joinedAtUtc: '2026-10-08T10:00:00Z',
+          readyAtUtc: '2026-10-08T10:01:00Z',
+        },
+      ],
+    }
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController(
+        {
+          gameId: 'g',
+          gameStatus: 'ready',
+          minPlayersPerTeam: 1,
+          maxPlayersPerTeam: 1,
+          teams: [team],
+          teamSlots: [
+            {
+              teamSlotId: 'slot',
+              teamSlotIndex: 1,
+              teamSlotType: 'public',
+              teamId: team.teamId,
+              isAvailableForNewTeam: false,
+            },
+          ],
+          availablePlayers: [],
+        },
+        { rejectTeam },
+      ),
+    )
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'Отклонить', exact: true }))
+    expect(rejectTeam.mutate).not.toHaveBeenCalled()
+    const dialog = screen.getByRole('dialog', { name: 'Отказать команде в допуске?' })
+    expect(dialog).toHaveTextContent('Каждый участник получит уведомление')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Отклонить', exact: true }))
+    expect(rejectTeam.mutate).toHaveBeenCalledWith(team.teamId, {
+      onSuccess: expect.any(Function),
+      onError: expect.any(Function),
+    })
+    cleanup()
+    team.members[0]!.readyAtUtc = ''
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Отклонить', exact: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Распустить', exact: true })).toBeEnabled()
+  })
+
   it('renders loading and error states', () => {
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController(null, {
         adminSnapshotQuery: { isLoading: true, isError: false, data: undefined },
       }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
     expect(screen.getByText('Загрузка команд...')).toBeInTheDocument()
 
     cleanup()
@@ -71,14 +147,14 @@ describe('TeamRegistrationsPage', () => {
         adminSnapshotQuery: { isLoading: false, isError: true, data: undefined },
       }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
     expect(screen.getByText('Не удалось загрузить команды.')).toBeInTheDocument()
   })
 
   it('shows a clean unavailable state while registration is closed', () => {
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    expect(screen.getByText('Заявки команд')).toBeInTheDocument()
+    expect(screen.getByText('Управление командами')).toBeInTheDocument()
     expect(screen.getByText('Приём заявок команд пока не открыт.')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
@@ -95,7 +171,7 @@ describe('TeamRegistrationsPage', () => {
         availablePlayers: [],
       }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
     expect(
       screen.getByText('Пока нет команд. Создайте пустой состав и распределите игроков вручную.'),
     ).toBeInTheDocument()
@@ -152,22 +228,30 @@ describe('TeamRegistrationsPage', () => {
         availablePlayers: [],
       }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    expect(screen.getByText('Player One')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('admin-team-details')).getByText('Player One'),
+    ).toBeInTheDocument()
     expect(screen.getByText('Invited Player')).toBeInTheDocument()
     expect(screen.getByText('Ожидает подтверждения')).toBeInTheDocument()
-    fireEvent.mouseOver(screen.getByText('Игроков: 1'))
+    expect(screen.getByTestId('admin-team-details')).not.toHaveTextContent(
+      'Перед подтверждением дождитесь ответа на приглашения или отмените их.',
+    )
+    fireEvent.mouseOver(screen.getByRole('button', { name: 'Готово: Подтвердить' }).parentElement!)
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Перед подтверждением дождитесь ответа на приглашения или отмените их.',
     )
-    expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeDisabled()
-    expect(screen.queryByRole('button', { name: 'Отклонить' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox', { name: 'Название команды' })).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
-    expect(screen.getByRole('button', { name: 'Отклонить' })).toBeEnabled()
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Готово: Подтвердить' }).parentElement!)
+    expect(screen.getByRole('button', { name: 'Готово: Подтвердить' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Отклонить' })).toBeDisabled()
     expect(screen.getByRole('textbox', { name: 'Название команды' })).toBeInTheDocument()
+
+    expect(screen.queryByRole('button', { name: 'Другие действия' })).not.toBeInTheDocument()
+    const actions = screen.getByRole('group', { name: 'Действия' })
+    expect(within(actions).getByRole('button', { name: 'Готово: Подтвердить' })).toBeDisabled()
+    expect(within(actions).getByRole('button', { name: 'Отклонить' })).toBeDisabled()
+    expect(within(actions).getByRole('button', { name: 'Распустить' })).toBeEnabled()
   })
 
   it('allows confirming an unready roster but requires a team name', () => {
@@ -222,22 +306,29 @@ describe('TeamRegistrationsPage', () => {
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController(snapshot, { confirmTeam }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    const confirmButton = screen.getByRole('button', { name: 'Подтвердить' })
+    const confirmButton = screen.getByRole('button', { name: 'Готово: Подтвердить' })
     expect(confirmButton).toBeEnabled()
     fireEvent.click(confirmButton)
-    expect(confirmTeam.mutate).toHaveBeenCalledExactlyOnceWith('team-1')
+    expect(confirmTeam.mutate).not.toHaveBeenCalled()
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Подтвердить', exact: true }),
+    )
+    expect(confirmTeam.mutate).toHaveBeenCalledExactlyOnceWith('team-1', {
+      onSuccess: expect.any(Function),
+      onError: expect.any(Function),
+    })
 
     cleanup()
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController({ ...snapshot, teams: [{ ...namedTeam, name: null }] }, { confirmTeam }),
     )
-    renderWithAppProviders(<TeamRegistrationsPage />)
-    expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeDisabled()
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Готово: Подтвердить' })).toBeDisabled()
   })
 
-  it('shows bottom team creation actions without rendering empty slots', () => {
+  it('shows team creation actions without rendering empty slots', () => {
     const createAdminTeam = { isPending: false, mutate: vi.fn() }
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
       createPageController(
@@ -264,19 +355,26 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
     expect(screen.queryByText('Слот свободен')).not.toBeInTheDocument()
-    expect(screen.getByText('Создать команду')).toBeInTheDocument()
+    fireEvent.click(
+      within(screen.getByRole('tablist', { name: 'Управление командами', exact: true })).getByRole(
+        'tab',
+        { name: 'Команда', exact: true },
+      ),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Создать команду', exact: true }))
+    expect(screen.getByRole('menuitem', { name: 'Создать открытую команду' })).toBeEnabled()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Создать открытую команду' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Создать открытую команду' }))
     expect(createAdminTeam.mutate).toHaveBeenCalledWith({
       recruitmentOpen: true,
       teamSlotId: undefined,
     })
   })
 
-  it('assigns a dragged free player into a team slot', () => {
+  it('assigns a free player through the team picker', () => {
     const assignPlayerToTeam = { isPending: false, mutate: vi.fn() }
 
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
@@ -322,25 +420,28 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    const transferStore = new Map<string, string>()
-    const dataTransfer = {
-      effectAllowed: 'all',
-      setData: vi.fn((type: string, value: string) => {
-        transferStore.set(type, value)
+    fireEvent.click(
+      within(screen.getByRole('tablist', { name: 'Управление составом' })).getByRole('tab', {
+        name: 'Игроки (1)',
+        exact: true,
       }),
-      getData: vi.fn((type: string) => transferStore.get(type) ?? ''),
-    }
+    )
+    fireEvent.click(
+      within(screen.getByTestId('admin-player-user-77')).getByRole('button', {
+        name: 'Добавить Free Player в команду',
+      }),
+    )
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'В команду' }))
 
-    fireEvent.dragStart(screen.getByTestId('admin-player-user-77'), { dataTransfer })
-    fireEvent.dragOver(screen.getByTestId('admin-slot-2'), { dataTransfer })
-    fireEvent.drop(screen.getByTestId('admin-slot-2'), { dataTransfer })
-
-    expect(assignPlayerToTeam.mutate).toHaveBeenCalledWith({
-      teamId: 'team-1',
-      userId: 'user-77',
-    })
+    expect(assignPlayerToTeam.mutate).toHaveBeenCalledWith(
+      {
+        teamId: 'team-1',
+        userId: 'user-77',
+      },
+      { onSuccess: expect.any(Function), onError: expect.any(Function) },
+    )
   })
 
   it('sends an admin invitation to an available player for a closed team during an active game', () => {
@@ -390,19 +491,23 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
     fireEvent.click(screen.getByRole('button', { name: 'Пригласить игрока' }))
     expect(screen.getByText('Пригласить в команду #2')).toBeInTheDocument()
     expect(screen.getAllByText('Candidate Player')).toHaveLength(2)
 
+    fireEvent.click(screen.getByRole('button', { name: 'Candidate Player', exact: true }))
     fireEvent.click(screen.getByRole('button', { name: 'Пригласить' }))
 
-    expect(createAdminInvitation.mutate).toHaveBeenCalledWith({
-      teamSlotId: 'slot-1',
-      invitedUserId: 'user-77',
-      teamId: 'team-1',
-    })
+    expect(createAdminInvitation.mutate).toHaveBeenCalledWith(
+      {
+        teamSlotId: 'slot-1',
+        invitedUserId: 'user-77',
+        teamId: 'team-1',
+      },
+      { onSuccess: expect.any(Function), onError: expect.any(Function) },
+    )
   })
 
   it('does not allow admin invitations to open teams', () => {
@@ -452,7 +557,7 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
     expect(screen.queryByRole('button', { name: 'Пригласить игрока' })).not.toBeInTheDocument()
     expect(screen.queryByText('Пригласить в команду #2')).not.toBeInTheDocument()
@@ -509,23 +614,31 @@ describe('TeamRegistrationsPage', () => {
         ),
       )
 
-      renderWithAppProviders(<TeamRegistrationsPage />)
+      renderPage()
 
       if (status === 'confirmed') {
         expect(screen.queryByRole('button', { name: 'Исключить' })).not.toBeInTheDocument()
-        expect(screen.getByTestId('admin-player-user-1')).toHaveAttribute('draggable', 'false')
+        expect(
+          within(screen.getByTestId('admin-player-user-1')).queryByRole('button', {
+            name: /^Переместить/,
+          }),
+        ).not.toBeInTheDocument()
         expect(removePlayerFromTeam.mutate).not.toHaveBeenCalled()
         return
       }
 
-      fireEvent.click(screen.getByRole('button', { name: 'Исключить' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Действия игрока Player One' }))
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Исключить' }))
       expect(screen.getByText('Исключить игрока из команды?')).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Исключить игрока' }))
 
-      expect(removePlayerFromTeam.mutate).toHaveBeenCalledWith({
-        teamId: 'team-1',
-        userId: 'user-1',
-      })
+      expect(removePlayerFromTeam.mutate).toHaveBeenCalledWith(
+        {
+          teamId: 'team-1',
+          userId: 'user-1',
+        },
+        { onSuccess: expect.any(Function), onError: expect.any(Function) },
+      )
     },
   )
 
@@ -578,7 +691,7 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
     fireEvent.click(screen.getByRole('button', { name: 'Отменить приглашение' }))
 
@@ -588,7 +701,7 @@ describe('TeamRegistrationsPage', () => {
     })
   })
 
-  it('moves teams up and down to define game order', () => {
+  it('moves teams by dragging to define game order', () => {
     const moveTeamToSlot = { isPending: false, mutate: vi.fn() }
 
     pageMocks.useTeamRegistrationsPage.mockReturnValue(
@@ -644,9 +757,11 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Ниже' })[0])
+    const dataTransfer = { effectAllowed: '', setData: vi.fn(), setDragImage: vi.fn() }
+    fireEvent.dragStart(screen.getAllByRole('button', { name: /^Порядок:/ })[0], { dataTransfer })
+    fireEvent.drop(screen.getByTestId('admin-slot-2'), { dataTransfer })
 
     expect(moveTeamToSlot.mutate).toHaveBeenCalledWith({
       teamId: 'team-1',
@@ -707,95 +822,106 @@ describe('TeamRegistrationsPage', () => {
       ),
     )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+    renderPage()
 
-    expect(screen.getByText('Игроки запросили роспуск команды')).toBeInTheDocument()
-    expect(screen.getByText('Очередь 2 · Player One')).toBeInTheDocument()
-    fireEvent.mouseOver(screen.getByText('Запрос на роспуск'))
+    expect(screen.getByRole('combobox', { name: 'Статус' })).toBeInTheDocument()
+    fireEvent.mouseOver(
+      within(screen.getByTestId('admin-team-details')).getByText('Запрос на роспуск'),
+    )
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       /Player One попросил администратора/i,
+    )
+    fireEvent.mouseLeave(
+      within(screen.getByTestId('admin-team-details')).getByText('Запрос на роспуск'),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Распустить команду' }))
 
-    expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1')
+    expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1', {
+      onSuccess: expect.any(Function),
+      onError: expect.any(Function),
+    })
   })
 
   it.each([
     {
       isActiveInGame: true,
       isPlayed: false,
-      message: 'Нельзя распустить команду, чей ход сейчас активен.',
+      message: 'Команда сейчас активна. Роспуск и отмена подтверждения недоступны.',
     },
     {
       isActiveInGame: false,
       isPlayed: true,
-      message: 'Команда уже открывала карточку или отмечена отыгравшей. Распустить её нельзя.',
+      message:
+        'Команда уже открывала карточку или отмечена отыгравшей. Роспуск и отмена подтверждения недоступны.',
     },
-  ])('explains why disbanding is blocked ($message)', ({ isActiveInGame, isPlayed, message }) => {
-    const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
+  ])(
+    'explains why disbanding is blocked ($message)',
+    async ({ isActiveInGame, isPlayed, message }) => {
+      const disbandTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
 
-    pageMocks.useTeamRegistrationsPage.mockReturnValue(
-      createPageController(
-        {
-          gameId: 'game-1',
-          gameStatus: 'active',
-          minPlayersPerTeam: 1,
-          maxPlayersPerTeam: 2,
-          teamSlots: [
-            {
-              teamSlotId: 'slot-1',
-              teamSlotIndex: 2,
-              teamSlotType: 'public',
-              reservedLabel: null,
-              isAvailableForNewTeam: false,
-              teamId: 'team-1',
-              teamStatus: 'confirmed',
-            },
-          ],
-          teams: [
-            {
-              teamId: 'team-1',
-              teamSlotIndex: 2,
-              teamSlotType: 'public',
-              reservedLabel: null,
-              recruitmentOpen: false,
-              status: 'confirmed',
-              isActiveInGame,
-              isPlayed,
-              members: [
-                {
-                  player: {
-                    userId: 'user-1',
-                    login: 'player',
-                    displayName: 'Player One',
+      pageMocks.useTeamRegistrationsPage.mockReturnValue(
+        createPageController(
+          {
+            gameId: 'game-1',
+            gameStatus: 'active',
+            minPlayersPerTeam: 1,
+            maxPlayersPerTeam: 2,
+            teamSlots: [
+              {
+                teamSlotId: 'slot-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                reservedLabel: null,
+                isAvailableForNewTeam: false,
+                teamId: 'team-1',
+                teamStatus: 'confirmed',
+              },
+            ],
+            teams: [
+              {
+                teamId: 'team-1',
+                teamSlotIndex: 2,
+                teamSlotType: 'public',
+                reservedLabel: null,
+                recruitmentOpen: false,
+                status: 'confirmed',
+                isActiveInGame,
+                isPlayed,
+                members: [
+                  {
+                    player: {
+                      userId: 'user-1',
+                      login: 'player',
+                      displayName: 'Player One',
+                    },
+                    joinedAtUtc: '2026-06-11T11:00:00Z',
                   },
-                  joinedAtUtc: '2026-06-11T11:00:00Z',
-                },
-              ],
-              pendingInvitations: [],
-            },
-          ],
-          availablePlayers: [],
-        },
-        {
-          disbandTeam,
-        },
-      ),
-    )
+                ],
+                pendingInvitations: [],
+              },
+            ],
+            availablePlayers: [],
+          },
+          {
+            disbandTeam,
+          },
+        ),
+      )
 
-    renderWithAppProviders(<TeamRegistrationsPage />)
+      renderPage()
 
-    expect(screen.queryByRole('button', { name: 'Распустить' })).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
-    expect(screen.getByRole('alert')).toHaveTextContent(message)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(disbandTeam.mutate).not.toHaveBeenCalled()
-  })
+      const button = screen.getByRole('button', { name: 'Распустить' })
+      expect(button).toBeDisabled()
+      expect(button.parentElement).toHaveAttribute('tabindex', '0')
+      fireEvent.mouseOver(button.parentElement!)
+      expect(await screen.findByRole('tooltip')).toHaveTextContent(message)
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(disbandTeam.mutate).not.toHaveBeenCalled()
+    },
+  )
 
   it.each([
     { status: 'forming', gameStatus: 'ready', empty: true },
@@ -848,21 +974,15 @@ describe('TeamRegistrationsPage', () => {
           { disbandTeam, assignPlayerToTeam },
         ),
       )
-      renderWithAppProviders(<TeamRegistrationsPage />)
+      renderPage()
 
-      if (status === 'confirmed') {
-        fireEvent.drop(screen.getByTestId('admin-slot-2'), {
-          dataTransfer: {
-            getData: () => JSON.stringify({ kind: 'player', userId: 'free-player' }),
-          },
-        })
-        expect(assignPlayerToTeam.mutate).not.toHaveBeenCalled()
-      }
-      fireEvent.click(screen.getByRole('button', { name: 'Другие действия' }))
       fireEvent.click(screen.getByRole('button', { name: 'Распустить' }))
       expect(screen.getByRole('dialog')).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Распустить команду' }))
-      expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1')
+      expect(disbandTeam.mutate).toHaveBeenCalledWith('team-1', {
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function),
+      })
     },
   )
 })

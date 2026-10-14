@@ -5,6 +5,9 @@ import type {
   GameModifierDefinition,
 } from '../../../shared/api/contracts/index.ts'
 import {
+  getModifierCategory,
+  getCategoryLabel,
+  modifierCategoryCodes,
   ModifierCatalogRow,
   ModifierCatalogGroup,
   ModifierDescriptionBlock,
@@ -13,8 +16,6 @@ import {
 } from '../../../shared/game-ui/index.ts'
 import { AppButton, HelpTooltip, ListPanel, StatusBadge } from '../../../shared/ui/index.ts'
 import { groupActiveGameModifiers } from '../model/game-modifier-groups.ts'
-import { getCategoryLabel } from './modifier-category.ts'
-import { modifierCategoryCodes } from '../model/modifier-categories.ts'
 
 type ActiveModifierGroup = ReturnType<typeof groupActiveGameModifiers>[number]
 
@@ -47,6 +48,7 @@ export function ActiveModifiersSection({
     <ListPanel
       data-testid="active-modifiers-section"
       title={t('gameModifiers.activeTitle')}
+      textAlign="center"
       headerMinHeight="var(--modifier-panel-header-height)"
       summary={
         <StatusBadge
@@ -59,15 +61,19 @@ export function ActiveModifiersSection({
       }}
     >
       {groups.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" textAlign="center">
           {t('gameModifiers.activeEmpty')}
         </Typography>
       ) : (
         <Stack spacing={1}>
           {[...modifierCategoryCodes, null].map((category) => {
-            const categoryGroups = groups.filter(
-              (group) => (definitionsById.get(group.modifierId)?.category ?? null) === category,
-            )
+            const categoryGroups = groups.filter((group) => {
+              const definition = definitionsById.get(group.modifierId)
+              return (
+                getModifierCategory(definition?.category, definition?.behaviorV2.performer) ===
+                category
+              )
+            })
             return categoryGroups.length > 0 ? (
               <ModifierCatalogGroup
                 key={category ?? 'unavailable'}

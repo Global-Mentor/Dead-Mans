@@ -64,7 +64,8 @@ public static class GameRegistrationMapping
             team.IsActiveInGame,
             team.IsReady,
             team.Members.Select(ToDto).ToArray(),
-            team.PendingInvitations.Select(ToDto).ToArray()
+            team.PendingInvitations.Select(ToDto).ToArray(),
+            team.HasOpenedCard
         );
 
     public static ApiContracts.RegistrationInvitationDto ToDto(

@@ -55,6 +55,17 @@ describe('question form schema', () => {
     if (parsed.success) expect(parsed.data.options[1]?.text).toBe('\uFEFFParis')
   })
 
+  it.each([
+    ['café', 'cafe\u0301'],
+    ['A\u2013B', 'A-B'],
+    ['A\u2014B', 'A-B'],
+  ])('rejects equivalent answers after Twitch text normalization: %s and %s', (first, second) => {
+    const parsed = createQuestionFormSchema(messages).safeParse(values([first, second]))
+    expect(parsed.success).toBe(false)
+    if (!parsed.success)
+      expect(parsed.error.issues.some((issue) => issue.message === 'duplicate')).toBe(true)
+  })
+
   it('rejects server-equivalent Greek answers', () => {
     expect(createQuestionFormSchema(messages).safeParse(values(['ΟΣ', 'οσ'])).success).toBe(false)
   })
@@ -105,3 +116,12 @@ describe('question form schema', () => {
     expect(createQuestionFormSchema(messages).safeParse(twoCorrect).success).toBe(false)
   })
 })
+
+it.each([{ reward: '2147483648' }, { priority: '2147483648' }, { priority: '-2147483649' }])(
+  'rejects integer amounts outside the API range: %j',
+  (amount) => {
+    expect(
+      createQuestionFormSchema(messages).safeParse({ ...values(['A', 'B']), ...amount }).success,
+    ).toBe(false)
+  },
+)

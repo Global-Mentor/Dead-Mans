@@ -5,7 +5,7 @@ import { getAppSurfaceSx } from '../../../theme/surface-sx.ts'
 interface NativeDisclosureProps {
   summary: ReactNode
   children: ReactNode
-  density?: 'standard' | 'compact'
+  density?: 'standard' | 'compact' | 'tight'
   indicator?: 'native' | 'chevron' | 'inline-chevron'
   open?: boolean
   onExpandedChange?: (expanded: boolean) => void
@@ -39,7 +39,13 @@ export function NativeDisclosure({
       onToggle={(event) => setNativeExpanded(event.currentTarget.open)}
       sx={[
         ...(surface === 'panel'
-          ? [(theme: Theme) => ({ ...getAppSurfaceSx(theme, 'panel'), p: 1.25 })]
+          ? [
+              (theme: Theme) => ({
+                ...getAppSurfaceSx(theme, 'panel'),
+                px: 1.25,
+                py: density === 'tight' ? 0.5 : 1.25,
+              }),
+            ]
           : []),
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
@@ -58,9 +64,9 @@ export function NativeDisclosure({
         }
         sx={{
           display: pinned ? 'none' : 'list-item',
-          minHeight: 44,
-          py: density === 'compact' ? 0 : 1,
-          alignContent: density === 'compact' ? 'center' : undefined,
+          minHeight: density === 'tight' ? 36 : 44,
+          py: density === 'standard' ? 1 : 0,
+          alignContent: density !== 'standard' ? 'center' : undefined,
           cursor: 'pointer',
           overflowWrap: 'anywhere',
           color: 'text.secondary',

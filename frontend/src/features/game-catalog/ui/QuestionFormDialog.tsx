@@ -7,7 +7,6 @@ import type {
   CreateGameQuestionRequest,
   GameQuestionCatalogItem,
   GameQuestionCategoryItem,
-  TwitchQuizPreview,
 } from '../../../shared/api/contracts/index.ts'
 import {
   ActionIcon,
@@ -16,16 +15,18 @@ import {
   ChoiceLabel,
   ControlledFormTextField,
   DiscardChangesDialog,
+  ConfirmDialog,
   FormSelect,
   FormSwitch,
   HelpTooltip,
   InlineNotice,
-  ItemCard,
+  FormSection,
+  FieldWithHelp,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
-import { previewTwitchQuizMessages } from '../../game-questions/api/game-questions-api.ts'
+import { QuestionTwitchPreview } from './QuestionTwitchPreview.tsx'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
-import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
+import { toDefaultValues, toRequest } from '../model/question-form-values.ts'
 import {
   createQuestionFormSchema,
   maxQuestionAnswers,
@@ -35,58 +36,12 @@ import {
 
 const questionFormId = 'catalog-question-form'
 
-function createDefaultOptions(): QuestionFormValues['options'] {
-  return Array.from({ length: 4 }, (_, index) => ({ text: '', isCorrect: index === 0 }))
-}
-
-function toDefaultValues(
-  initial: GameQuestionCatalogItem | undefined,
-  categories: readonly GameQuestionCategoryItem[],
-): QuestionFormValues {
-  if (!initial) {
-    return {
-      categoryId: categories[0]?.id ?? '',
-      text: '',
-      options: createDefaultOptions(),
-      reward: '0',
-      priority: '0',
-      isEnabled: true,
-    }
-  }
-
-  const options = getQuestionDisplayOptions(initial).sort(
-    (left, right) => Number(right.isCorrect) - Number(left.isCorrect),
-  )
-
-  return {
-    categoryId: initial.categoryId,
-    text: initial.text,
-    options: options.map((option, index) => ({ text: option.text, isCorrect: index === 0 })),
-    reward: String(initial.reward),
-    priority: String(initial.priority ?? 0),
-    isEnabled: initial.isEnabled,
-  }
-}
-
-function toRequest(values: QuestionFormValues): CreateGameQuestionRequest {
-  return {
-    categoryId: values.categoryId,
-    text: values.text.trim(),
-    options: values.options.map((option, index) => ({
-      text: option.text,
-      isCorrect: index === 0,
-    })),
-    reward: Number.parseInt(values.reward, 10),
-    isEnabled: values.isEnabled,
-    priority: Number.parseInt(values.priority, 10),
-  }
-}
-
 interface QuestionFormDialogProps {
   open: boolean
   mode: 'create' | 'edit'
   initial?: GameQuestionCatalogItem | undefined
   categories: readonly GameQuestionCategoryItem[]
+  defaultCategoryId?: string | undefined
   isBusy: boolean
   onClose: () => void
   onSubmit: (request: CreateGameQuestionRequest) => Promise<void>
@@ -97,6 +52,7 @@ function QuestionFormDialogBody({
   initial,
   categories,
   isBusy,
+  defaultCategoryId,
   onClose,
   onSubmit,
 }: Omit<QuestionFormDialogProps, 'open'>) {
@@ -112,45 +68,21 @@ function QuestionFormDialogBody({
 
   const { control, handleSubmit, setError, setValue, setFocus, formState } =
     useForm<QuestionFormValues>({
-      defaultValues: toDefaultValues(initial, categories),
+      defaultValues: toDefaultValues(initial, categories, defaultCategoryId),
       resolver: zodResolver(schema),
     })
-  const busy = isBusy || formState.isSubmitting
+  const [pendingValues, setPendingValues] = useState<QuestionFormValues | null>(null)
+  const [saving, setSaving] = useState(false)
+  const busy = isBusy || formState.isSubmitting || saving
   const close = useDirtyClose({ dirty: formState.isDirty, busy, onClose })
   const categoryValue = useWatch({ control, name: 'categoryId' }) ?? ''
   const questionText = useWatch({ control, name: 'text' }) ?? ''
   const watchedOptions = useWatch({ control, name: 'options' })
   const rewardValue = useWatch({ control, name: 'reward' }) ?? '0'
-  const [twitchPreview, setTwitchPreview] = useState<TwitchQuizPreview | null>(null)
   const twitchOptionTexts = useMemo(
     () => (watchedOptions ?? []).map((option) => option.text),
     [watchedOptions],
   )
-  const canPreviewTwitch = twitchOptionTexts.length >= minQuestionAnswers
-  const visibleTwitchPreview = canPreviewTwitch ? twitchPreview : null
-
-  useEffect(() => {
-    if (!canPreviewTwitch) return
-    let active = true
-    const timer = window.setTimeout(() => {
-      void previewTwitchQuizMessages(
-        questionText,
-        twitchOptionTexts,
-        Math.max(0, Number.parseInt(rewardValue, 10) || 0),
-      )
-        .then((preview) => {
-          if (active) setTwitchPreview(preview)
-        })
-        .catch(() => {
-          if (active) setTwitchPreview(null)
-        })
-    }, 250)
-    return () => {
-      active = false
-      window.clearTimeout(timer)
-    }
-  }, [canPreviewTwitch, questionText, rewardValue, twitchOptionTexts])
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'options',
@@ -174,26 +106,33 @@ function QuestionFormDialogBody({
   const optionsRootError =
     formState.errors.options?.root?.message ?? formState.errors.options?.message
 
-  const submit = handleSubmit(async (values) => {
-    if (!hasCategories) {
-      setError('categoryId', {
-        type: 'manual',
-        message: t('gameCatalog.questions.noCategories'),
-      })
-      return
-    }
-
+  const save = async (values: QuestionFormValues) => {
+    setSaving(true)
     try {
       await onSubmit(toRequest(values))
+      setPendingValues(null)
     } catch (error) {
+      setPendingValues(null)
       setError('root', { type: 'server', message: resolveCatalogErrorMessage(error, t) })
+    } finally {
+      setSaving(false)
     }
+  }
+  const submit = handleSubmit(async (values) => {
+    if (busy) return
+    if (!hasCategories) {
+      setError('categoryId', { type: 'manual', message: t('gameCatalog.questions.noCategories') })
+      return
+    }
+    setPendingValues(values)
   })
 
   return (
     <>
       <AppDialog
         open
+        maxWidth="md"
+        contentDensity="compact"
         onClose={close.requestClose}
         title={
           mode === 'create'
@@ -202,7 +141,7 @@ function QuestionFormDialogBody({
         }
         actions={
           <>
-            <AppButton tone="ghost" onClick={close.requestClose} disabled={busy}>
+            <AppButton tone="danger" onClick={close.requestClose} disabled={busy}>
               {t('common.actions.cancel')}
             </AppButton>
             <AppButton
@@ -232,198 +171,262 @@ function QuestionFormDialogBody({
           </InlineNotice>
         ) : null}
         <form noValidate id={questionFormId} onSubmit={(event) => void submit(event)}>
-          <Stack spacing={2} sx={{ pt: 0.5 }}>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field, fieldState }) => (
-                <FormSelect
-                  required
-                  value={field.value}
-                  options={categoryOptions}
-                  label={t('gameCatalog.questions.fields.category')}
-                  disabled={busy || !hasCategories}
-                  error={fieldState.invalid}
-                  helperText={fieldState.error?.message}
-                  onChange={field.onChange}
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              pt: 0.5,
+              alignItems: 'stretch',
+              gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
+              gridTemplateAreas: {
+                xs: '"content" "answers" "settings" "preview"',
+                md: '"content settings" "answers answers" "preview preview"',
+              },
+            }}
+          >
+            <FormSection
+              textAlign="center"
+              headingSize="small"
+              title={t('gameCatalog.questions.editor.content')}
+              sx={{ gridArea: 'content' }}
+            >
+              <Stack gap={1.5}>
+                <Controller
+                  control={control}
+                  name="categoryId"
+                  render={({ field, fieldState }) => (
+                    <FormSelect
+                      required
+                      value={field.value}
+                      options={categoryOptions}
+                      label={t('gameCatalog.questions.fields.category')}
+                      disabled={busy || !hasCategories}
+                      error={fieldState.invalid}
+                      helperText={fieldState.error?.message}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
-              )}
-            />
-            <ControlledFormTextField
-              control={control}
-              name="text"
-              required
-              label={t('gameCatalog.questions.fields.text')}
-              multiline
-              minRows={2}
-              disabled={busy}
-            />
-            <Stack spacing={1.5}>
-              <Box>
-                <Typography variant="subtitle2">
-                  {t('gameCatalog.questions.fields.answers')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('gameCatalog.questions.fields.answersHint')}
-                </Typography>
-              </Box>
-              <Box sx={{ borderLeft: '3px solid', borderColor: 'success.main', pl: 1.5 }}>
                 <ControlledFormTextField
                   control={control}
-                  name="options.0.text"
+                  name="text"
                   required
-                  label={t('gameCatalog.questions.fields.correctAnswer')}
-                  placeholder={t('gameCatalog.questions.fields.correctAnswerPlaceholder')}
+                  autoFocus
+                  inputProps={{ maxLength: 2000 }}
+                  label={t('gameCatalog.questions.fields.text')}
+                  multiline
+                  minRows={2}
                   disabled={busy}
                 />
+              </Stack>
+            </FormSection>
+            <FormSection
+              textAlign="center"
+              headingSize="small"
+              title={t('gameCatalog.questions.fields.answers')}
+              description={t('gameCatalog.questions.fields.answersHint')}
+              sx={{ gridArea: 'answers' }}
+            >
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr)',
+                  gap: 1.5,
+                }}
+              >
+                <Box sx={{ pr: 6 }}>
+                  <ControlledFormTextField
+                    control={control}
+                    name="options.0.text"
+                    required
+                    label={t('gameCatalog.questions.fields.correctAnswer')}
+                    placeholder={t('gameCatalog.questions.fields.correctAnswerPlaceholder')}
+                    disabled={busy}
+                  />
+                </Box>
+                {fields.slice(1).map((field, alternativeIndex) => {
+                  const index = alternativeIndex + 1
+                  const removeLabel = t('gameCatalog.questions.fields.removeAnswer', {
+                    number: index,
+                  })
+                  return (
+                    <Stack
+                      key={field.id}
+                      direction="row"
+                      spacing={0.5}
+                      alignItems="flex-start"
+                      sx={{ minWidth: 0 }}
+                    >
+                      <ControlledFormTextField
+                        control={control}
+                        name={`options.${index}.text`}
+                        label={t('gameCatalog.questions.fields.answerAlternative', {
+                          number: index,
+                        })}
+                        disabled={busy}
+                      />
+                      <HelpTooltip title={removeLabel}>
+                        <span>
+                          <ActionIcon
+                            aria-label={removeLabel}
+                            size="small"
+                            disabled={busy || fields.length <= minQuestionAnswers}
+                            onClick={() => {
+                              remove(index)
+                              requestAnimationFrame(() =>
+                                setFocus(`options.${Math.min(index, fields.length - 2)}.text`),
+                              )
+                            }}
+                          >
+                            <SvgIcon fontSize="small">
+                              <path
+                                d="m6 6 12 12M6 18 18 6"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                              />
+                            </SvgIcon>
+                          </ActionIcon>
+                        </span>
+                      </HelpTooltip>
+                    </Stack>
+                  )
+                })}
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={1}
+                  sx={{ gridColumn: '1 / -1' }}
+                >
+                  <AppButton
+                    tone="secondary"
+                    size="small"
+                    type="button"
+                    startIcon={
+                      <SvgIcon fontSize="small">
+                        <path
+                          d="M12 5v14M5 12h14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </SvgIcon>
+                    }
+                    disabled={busy || !canAddAnswer}
+                    onClick={() =>
+                      append(
+                        { text: '', isCorrect: false },
+                        { focusName: `options.${fields.length}.text` },
+                      )
+                    }
+                    sx={{ flexShrink: 0 }}
+                  >
+                    {t('gameCatalog.questions.fields.addAnswer')}
+                  </AppButton>
+                  <Typography variant="caption" color="text.secondary" aria-live="polite">
+                    {t('gameCatalog.questions.fields.answerCount', {
+                      count: fields.length,
+                      max: maxQuestionAnswers,
+                    })}
+                  </Typography>
+                </Stack>
               </Box>
-              {fields.slice(1).map((field, alternativeIndex) => {
-                const index = alternativeIndex + 1
-                const removeLabel = t('gameCatalog.questions.fields.removeAnswer', {
-                  number: index,
-                })
-                return (
-                  <Stack
-                    key={field.id}
-                    direction="row"
-                    spacing={0.5}
-                    alignItems="flex-start"
-                    sx={{ borderLeft: '3px solid', borderColor: 'error.main', pl: 1.5 }}
+            </FormSection>
+            <FormSection
+              textAlign="center"
+              headingSize="small"
+              title={t('gameCatalog.questions.editor.settings')}
+              sx={{ gridArea: 'settings' }}
+            >
+              <Stack gap={1.5}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <FieldWithHelp
+                    label={t('gameCatalog.questions.fields.reward')}
+                    help={t('gameCatalog.questions.editor.rewardHelp')}
+                    helpAlign="center"
                   >
                     <ControlledFormTextField
                       control={control}
-                      name={`options.${index}.text`}
-                      label={t('gameCatalog.questions.fields.answerAlternative', { number: index })}
+                      name="reward"
+                      type="number"
+                      label={t('gameCatalog.questions.fields.reward')}
+                      inputProps={{ min: 0, max: 2147483647, step: 1, inputMode: 'numeric' }}
                       disabled={busy}
                     />
-                    <HelpTooltip title={removeLabel}>
-                      <span>
-                        <ActionIcon
-                          aria-label={removeLabel}
-                          size="small"
-                          disabled={busy || fields.length <= minQuestionAnswers}
-                          onClick={() => {
-                            remove(index)
-                            requestAnimationFrame(() =>
-                              setFocus(`options.${Math.min(index, fields.length - 2)}.text`),
-                            )
-                          }}
-                        >
-                          <SvgIcon fontSize="small">
-                            <path
-                              d="m6 6 12 12M6 18 18 6"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                          </SvgIcon>
-                        </ActionIcon>
-                      </span>
-                    </HelpTooltip>
-                  </Stack>
-                )
-              })}
-              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                <AppButton
-                  tone="ghost"
-                  size="small"
-                  type="button"
-                  startIcon={
-                    <SvgIcon fontSize="small">
-                      <path
-                        d="M12 5v14M5 12h14"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </SvgIcon>
-                  }
-                  disabled={busy || !canAddAnswer}
-                  onClick={() =>
-                    append(
-                      { text: '', isCorrect: false },
-                      { focusName: `options.${fields.length}.text` },
-                    )
-                  }
-                  sx={{ flexShrink: 0 }}
-                >
-                  {t('gameCatalog.questions.fields.addAnswer')}
-                </AppButton>
-                <Typography variant="caption" color="text.secondary" aria-live="polite">
-                  {t('gameCatalog.questions.fields.answerCount', {
-                    count: fields.length,
-                    max: maxQuestionAnswers,
-                  })}
-                </Typography>
-              </Stack>
-            </Stack>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <ControlledFormTextField
-                control={control}
-                name="reward"
-                type="number"
-                label={t('gameCatalog.questions.fields.reward')}
-                disabled={busy}
-              />
-              <ControlledFormTextField
-                control={control}
-                name="priority"
-                type="number"
-                label={t('gameCatalog.questions.fields.priority')}
-                disabled={busy}
-              />
-            </Stack>
-            <Controller
-              control={control}
-              name="isEnabled"
-              render={({ field }) => (
-                <ChoiceLabel
-                  control={
-                    <FormSwitch
-                      checked={field.value}
-                      onChange={(event) => field.onChange(event.target.checked)}
+                  </FieldWithHelp>
+                  <FieldWithHelp
+                    label={t('gameCatalog.questions.fields.priority')}
+                    help={t('gameCatalog.questions.editor.priorityHelp')}
+                    helpAlign="center"
+                  >
+                    <ControlledFormTextField
+                      control={control}
+                      name="priority"
+                      type="number"
+                      label={t('gameCatalog.questions.fields.priority')}
+                      inputProps={{ min: -2147483648, max: 2147483647, step: 1 }}
                       disabled={busy}
                     />
-                  }
+                  </FieldWithHelp>
+                </Stack>
+                <FieldWithHelp
                   label={t('gameCatalog.questions.fields.isEnabled')}
-                />
-              )}
-            />
-            {visibleTwitchPreview ? (
-              <ItemCard>
-                <Typography variant="subtitle2">
-                  {t('gameCatalog.questions.twitchPreview')}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                  {visibleTwitchPreview.question}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {visibleTwitchPreview.questionLength} / {visibleTwitchPreview.maximumLength}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                  {visibleTwitchPreview.options}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {visibleTwitchPreview.optionsLength} / {visibleTwitchPreview.maximumLength}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                  {visibleTwitchPreview.resultTemplate}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {visibleTwitchPreview.resultMaximumLength} / {visibleTwitchPreview.maximumLength}
-                </Typography>
-                {!visibleTwitchPreview.isCompatible ? (
-                  <InlineNotice severity="error" sx={{ mt: 1 }}>
-                    {t('gameCatalog.questions.twitchTooLong')}
-                  </InlineNotice>
-                ) : null}
-              </ItemCard>
-            ) : null}
-          </Stack>
+                  help={t('gameCatalog.questions.editor.availabilityHelp')}
+                  helpAlign="center"
+                >
+                  <Controller
+                    control={control}
+                    name="isEnabled"
+                    render={({ field }) => (
+                      <ChoiceLabel
+                        control={
+                          <FormSwitch
+                            checked={field.value}
+                            onChange={(event) => field.onChange(event.target.checked)}
+                            disabled={busy}
+                          />
+                        }
+                        label={t('gameCatalog.questions.fields.isEnabled')}
+                      />
+                    )}
+                  />
+                </FieldWithHelp>
+              </Stack>
+            </FormSection>
+            <Box sx={{ gridArea: 'preview', minWidth: 0 }}>
+              <QuestionTwitchPreview
+                text={questionText}
+                options={twitchOptionTexts}
+                reward={rewardValue}
+              />
+            </Box>
+          </Box>
         </form>
       </AppDialog>
+      <ConfirmDialog
+        open={pendingValues !== null}
+        title={t(
+          mode === 'create'
+            ? 'gameCatalog.questions.createConfirmTitle'
+            : 'gameCatalog.questions.saveTitle',
+        )}
+        description={t(
+          mode === 'create'
+            ? 'gameCatalog.questions.createConfirm'
+            : 'gameCatalog.questions.saveConfirm',
+        )}
+        subject={pendingValues?.text}
+        confirmLabel={t('common.actions.save')}
+        cancelLabel={t('common.actions.cancel')}
+        isBusy={busy}
+        onClose={() => setPendingValues(null)}
+        onConfirm={async () => {
+          if (pendingValues) await save(pendingValues)
+        }}
+      />
       <DiscardChangesDialog
         open={close.confirmOpen}
         busy={busy}
@@ -435,5 +438,10 @@ function QuestionFormDialogBody({
 }
 
 export function QuestionFormDialog({ open, ...props }: QuestionFormDialogProps) {
-  return open ? <QuestionFormDialogBody {...props} /> : null
+  return open ? (
+    <QuestionFormDialogBody
+      key={props.mode + '-' + (props.initial?.questionId ?? 'new')}
+      {...props}
+    />
+  ) : null
 }

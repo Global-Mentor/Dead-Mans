@@ -60,6 +60,7 @@ public interface IGameRegistrationService
         Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool allowAdditionalSlot = false,
         CancellationToken cancellationToken = default
     );
 
@@ -98,6 +99,12 @@ public interface IGameRegistrationService
     );
 
     Task<GameRegistrationResult<RegistrationTeamDto>> ConfirmTeamAsync(
+        Guid adminUserId,
+        Guid teamId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<GameRegistrationResult<RegistrationTeamDto>> UnconfirmTeamAsync(
         Guid adminUserId,
         Guid teamId,
         CancellationToken cancellationToken = default

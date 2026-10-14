@@ -4,6 +4,8 @@ namespace backend.Application.Abstractions.Realtime;
 
 public interface IGameBoardEventsPublisher
 {
+    Task PublishOverlayFrameChangedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
     Task PublishCellOpenedAsync(GameCellOpenedEvent payload, CancellationToken cancellationToken = default);
 
     Task PublishModifierActivatedAsync(

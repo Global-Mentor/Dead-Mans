@@ -11,8 +11,22 @@ import type { paths } from '../../../shared/api/contracts/generated'
 
 const catalogModifiersApiClient =
   createApiClient<
-    Pick<paths, '/game/modifiers' | '/game/modifiers/preview' | '/game/modifiers/{modifierId}'>
+    Pick<
+      paths,
+      | '/game/modifiers'
+      | '/game/modifiers/catalog'
+      | '/game/modifiers/preview'
+      | '/game/modifiers/{modifierId}'
+    >
   >()
+
+export function fetchArchivedModifierCatalog() {
+  return unwrapOpenApiData(
+    catalogModifiersApiClient.GET('/game/modifiers/catalog', {
+      params: { query: { archived: true } },
+    }),
+  )
+}
 
 export function createGameModifier(request: CreateGameModifierRequest) {
   return unwrapOpenApiData(

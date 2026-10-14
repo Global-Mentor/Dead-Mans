@@ -3,7 +3,7 @@ import { Box } from '@mui/material'
 import { pageShellSx, setupSplitLayoutSx } from '../../../theme/layout-sx.ts'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 
-type PageShellVariant = 'standard' | 'centered' | 'split'
+type PageShellVariant = 'standard' | 'centered' | 'split' | 'state'
 
 interface PageShellProps extends Omit<BoxProps, 'component'> {
   variant?: PageShellVariant
@@ -11,13 +11,14 @@ interface PageShellProps extends Omit<BoxProps, 'component'> {
 
 function resolveVariantSx(variant: PageShellVariant): SxProps<Theme> {
   switch (variant) {
+    case 'state':
+      return { ...pageShellSx, maxWidth: 720 }
     case 'centered':
       return {
         flex: 1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        px: { xs: 1, sm: 2 },
       }
     case 'split':
       return setupSplitLayoutSx

@@ -11,6 +11,7 @@ public sealed partial class GameRegistrationService
         Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
+        bool allowAdditionalSlot = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -26,7 +27,7 @@ public sealed partial class GameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
-        Guid resolvedTeamSlotId;
+        Guid? resolvedTeamSlotId;
         if (teamSlotId.HasValue)
         {
             var slot = await _reads.GetTeamSlotAsync(game.GameId, teamSlotId.Value, cancellationToken);
@@ -42,6 +43,11 @@ public sealed partial class GameRegistrationService
             }
 
             resolvedTeamSlotId = slot.TeamSlotId;
+        }
+        else if (allowAdditionalSlot)
+        {
+            // Resolve automatic placement under the persistence game lock.
+            resolvedTeamSlotId = null;
         }
         else
         {
@@ -60,6 +66,7 @@ public sealed partial class GameRegistrationService
             resolvedTeamSlotId,
             recruitmentOpen,
             normalizedName,
+            appendToQueue: !teamSlotId.HasValue,
             cancellationToken
         ));
     }
@@ -276,54 +283,6 @@ public sealed partial class GameRegistrationService
             adminUserId,
             teamId,
             targetTeamSlotId,
-            cancellationToken
-        ));
-    }
-
-    public async Task<GameRegistrationResult<RegistrationTeamDto>> ConfirmTeamAsync(
-        Guid adminUserId,
-        Guid teamId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var game = await _reads.GetManageableGameAsync(cancellationToken);
-        if (game is null)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
-        }
-
-        var team = await _reads.GetTeamAdminActionSnapshotAsync(game.GameId, teamId, cancellationToken);
-        if (team is null)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotFound);
-        }
-
-        if (team.Status != TeamStatusValue.Forming)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
-        }
-
-        if (TeamNameValue.Normalize(team.Name) is null)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameRequired);
-        }
-
-        if (team.MemberCount < game.MinPlayersPerTeam || team.MemberCount > game.MaxPlayersPerTeam)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
-        }
-
-        if (await _reads.TeamHasPendingInvitationAsync(game.GameId, teamId, cancellationToken))
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.PendingOutgoingInvitation);
-        }
-
-        return await CompleteMutationAsync(_persistence.PersistConfirmTeamAsync(
-            game.GameId,
-            adminUserId,
-            teamId,
-            game.MinPlayersPerTeam,
-            game.MaxPlayersPerTeam,
             cancellationToken
         ));
     }

@@ -1,5 +1,5 @@
-import { Stack, type SxProps, type Theme } from '@mui/material'
-import { useState } from 'react'
+import { Stack } from '@mui/material'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppButton, FormTextField } from '../../../shared/ui/index.ts'
 import {
@@ -13,7 +13,7 @@ interface RegistrationTeamNameEditorProps {
   canEdit: boolean
   isSaving: boolean
   onSave: (name?: string) => void
-  buttonSx?: SxProps<Theme>
+  onDirtyChange?: (dirty: boolean) => void
   required?: boolean
   autoFocus?: boolean
   existingNames?: (string | null | undefined)[]
@@ -24,7 +24,7 @@ export function RegistrationTeamNameEditor({
   canEdit,
   isSaving,
   onSave,
-  buttonSx,
+  onDirtyChange,
   required = false,
   autoFocus = false,
   existingNames = [],
@@ -37,6 +37,10 @@ export function RegistrationTeamNameEditor({
   const normalizedName = normalizeTeamNameInput(name) ?? ''
   const currentName = normalizeTeamNameInput(sourceName) ?? ''
   const isChanged = normalizedName !== currentName
+  useEffect(() => {
+    onDirtyChange?.(isChanged)
+    return () => onDirtyChange?.(false)
+  }, [isChanged, onDirtyChange])
   const nameError =
     required && !normalizedName
       ? 'gameApplication.teamNameRequired'
@@ -50,9 +54,9 @@ export function RegistrationTeamNameEditor({
 
   return (
     <Stack
-      direction={{ xs: 'column', md: 'row' }}
+      direction={{ xs: 'column', sm: 'row' }}
       spacing={1}
-      alignItems={{ xs: 'stretch', md: 'flex-start' }}
+      alignItems={{ xs: 'stretch', sm: 'flex-start' }}
     >
       <FormTextField
         fullWidth
@@ -83,12 +87,12 @@ export function RegistrationTeamNameEditor({
         }
       />
       <AppButton
-        size="small"
+        framePlacement="inset"
         disabled={!canEdit || !isChanged || isSaving || nameError !== null}
         onClick={() => {
           if (!nameError) onSave(normalizeTeamNameInput(name))
         }}
-        {...(buttonSx ? { sx: buttonSx } : {})}
+        sx={{ flexShrink: 0 }}
       >
         {t('common.actions.save')}
       </AppButton>

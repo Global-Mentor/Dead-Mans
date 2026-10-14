@@ -1,9 +1,15 @@
 import { Box } from '@mui/material'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
 import { BoardMatrix } from '../../../shared/game-ui/index.ts'
-import { FormTextField, SectionCard } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AppDialog,
+  FormTextField,
+  ImageFrame,
+  SectionCard,
+} from '../../../shared/ui/index.ts'
 import type { GameSetupCellMediaDisplayState } from '../model/game-setup-cell-media-display.ts'
 import { resolveGameSetupCellImageUrl } from '../model/game-setup-cell-media-display.ts'
 import {
@@ -41,6 +47,7 @@ export function GameSetupGrid({
   onDeleteCellMedia,
 }: GameSetupGridProps) {
   const { t } = useTranslation()
+  const [preview, setPreview] = useState<{ url: string; alt: string } | null>(null)
   const mediaUrlByCellId = useMemo(() => {
     return new Map(
       snapshot.cells
@@ -55,6 +62,7 @@ export function GameSetupGrid({
         colLabels={draft.colLabels}
         rowLabels={draft.rowLabels}
         minWidth={680}
+        minCellWidth={160}
         gap={0.75}
         leadColumnWidth={120}
         renderColumnLabel={(columnLabel, columnIndex) => (
@@ -63,7 +71,7 @@ export function GameSetupGrid({
             label={t('gameSetup.columnLabel', { column: columnIndex + 1 })}
             value={columnLabel}
             multiline
-            minRows={2}
+            minRows={1}
             maxRows={2}
             onChange={(event) => {
               const nextValue = normalizeBoardLabelInput(event.target.value)
@@ -84,11 +92,10 @@ export function GameSetupGrid({
         )}
         renderRowLabel={(rowLabel, rowIndex) => (
           <FormTextField
-            density="compact"
             label={t('gameSetup.rowLabel', { row: rowIndex + 1 })}
             value={rowLabel}
             multiline
-            minRows={2}
+            minRows={1}
             maxRows={2}
             onChange={(event) => {
               const nextValue = normalizeBoardLabelInput(event.target.value)
@@ -130,6 +137,13 @@ export function GameSetupGrid({
                 isBusy={cellImageBusy}
                 onUpload={onUploadCellMedia}
                 onDelete={onDeleteCellMedia}
+                onPreview={() => {
+                  if (imageUrl)
+                    setPreview({
+                      url: imageUrl,
+                      alt: cellDraft?.title || t('gameSetup.cellMedia.previewTitle'),
+                    })
+                }}
               />
               <FormTextField
                 label={t('gameSetup.cellTitleLabel')}
@@ -150,6 +164,7 @@ export function GameSetupGrid({
                 textAlign="center"
                 value={cellDraft?.cost ?? 0}
                 onChange={(event) => {
+                  if (!/^\d*$/.test(event.target.value)) return
                   const parsed = Number.parseInt(event.target.value, 10)
                   const nextCost = Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
                   onDraftChange((current) =>
@@ -159,13 +174,35 @@ export function GameSetupGrid({
                   )
                 }}
                 onBlur={onDraftCommit}
-                type="number"
-                inputProps={{ min: 0 }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               />
             </SectionCard>
           )
         }}
       />
+      <AppDialog
+        open={preview !== null}
+        onClose={() => setPreview(null)}
+        title={preview?.alt ?? t('gameSetup.cellMedia.previewTitle')}
+        maxWidth="md"
+        actions={
+          <AppButton tone="secondary" onClick={() => setPreview(null)}>
+            {t('common.actions.close')}
+          </AppButton>
+        }
+      >
+        {preview ? (
+          <ImageFrame
+            src={preview.url}
+            alt={preview.alt}
+            fit="contain"
+            sizing="fill"
+            loadingLabel={t('common.media.loading')}
+            errorLabel={t('common.media.error')}
+            sx={{ height: '60dvh' }}
+          />
+        ) : null}
+      </AppDialog>
     </Box>
   )
 }

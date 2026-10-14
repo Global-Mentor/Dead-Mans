@@ -25,6 +25,10 @@ const codeToKey: Record<string, Extract<ParseKeys, `gameCatalog.errors.${string}
   'game_question.category_protected': 'gameCatalog.errors.categoryProtected',
 }
 
+export function isModifierCompatibilityLockedError(error: unknown): boolean {
+  return extractCode(error) === 'game_modifier_compatibility_locked'
+}
+
 export function isModifierRevisionStaleError(error: unknown): boolean {
   return extractCode(error) === 'game_modifier_revision_stale'
 }

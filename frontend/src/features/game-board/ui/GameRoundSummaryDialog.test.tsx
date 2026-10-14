@@ -8,8 +8,8 @@ import { GameRoundSummaryDialog } from './GameRoundSummaryDialog.tsx'
 
 const apiMocks = vi.hoisted(() => ({ previewGameRoundScore: vi.fn() }))
 
-vi.mock('../../game-rounds/api/game-rounds-api.ts', () => ({
-  previewGameRoundScore: apiMocks.previewGameRoundScore,
+vi.mock('../../game-rounds/index.ts', () => ({
+  broadcastGameRoundSummary: apiMocks.previewGameRoundScore,
 }))
 
 type GameRoundDetails = components['schemas']['GameRoundDetailsDto']
@@ -21,7 +21,9 @@ beforeAll(async () => {
 })
 
 beforeEach(() => {
-  apiMocks.previewGameRoundScore.mockResolvedValue(createPreview())
+  apiMocks.previewGameRoundScore.mockImplementation((_id, input) =>
+    Promise.resolve(input.completeInput ? createPreview() : null),
+  )
 })
 
 afterEach(() => {
@@ -230,10 +232,13 @@ describe('GameRoundSummaryDialog', () => {
     expect(screen.getByText('Время игры: 2:00')).toBeInTheDocument()
     expect(screen.getByText('Таймер «Чирик» завершён')).toBeInTheDocument()
     expect(screen.getByText(/Укажите все обязательные исходы/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeDisabled()
 
     await act(async () => new Promise((resolve) => window.setTimeout(resolve, 400)))
-    expect(apiMocks.previewGameRoundScore).not.toHaveBeenCalled()
+    expect(apiMocks.previewGameRoundScore).toHaveBeenCalledWith(
+      'round-1',
+      expect.objectContaining({ completeInput: null }),
+    )
   })
 
   it('debounces preview and submits only the latest server-approved draft', async () => {
@@ -253,16 +258,18 @@ describe('GameRoundSummaryDialog', () => {
       'round-1',
       expect.objectContaining({
         killsCount: 3,
-        notes: 'Подтверждено ведущим.',
         expectedRoundVersion: 4,
-        modifierResults: [],
-        ruleGroups: [],
+        completeInput: expect.objectContaining({
+          notes: 'Подтверждено ведущим.',
+          modifierResults: [],
+          ruleGroups: [],
+        }),
       }),
     )
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeEnabled(),
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Завершить раунд' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить итоги' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
     expect(onSubmit).toHaveBeenCalledWith(
@@ -276,7 +283,7 @@ describe('GameRoundSummaryDialog', () => {
     )
   })
 
-  it('ignores an older preview response that arrives after the latest response', async () => {
+  it('serializes publications and ignores the older calculation while a newer draft waits', async () => {
     const first = deferred<ScorePreview>()
     const second = deferred<ScorePreview>()
     apiMocks.previewGameRoundScore
@@ -288,13 +295,13 @@ describe('GameRoundSummaryDialog', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Убитые враги' }), {
       target: { value: '2' },
     })
+    await act(async () => new Promise((resolve) => window.setTimeout(resolve, 400)))
+    expect(apiMocks.previewGameRoundScore).toHaveBeenCalledTimes(1)
+    first.resolve(createPreview({ scoreDetails: createScoreDetails({ finalScore: 111 }) }))
     await waitFor(() => expect(apiMocks.previewGameRoundScore).toHaveBeenCalledTimes(2))
-
+    expect(screen.queryByText('111 очк.')).not.toBeInTheDocument()
     second.resolve(createPreview({ scoreDetails: createScoreDetails({ finalScore: 222 }) }))
     await waitFor(() => expect(screen.getByText('222 очк.')).toBeInTheDocument())
-    first.resolve(createPreview({ scoreDetails: createScoreDetails({ finalScore: 111 }) }))
-    await act(async () => Promise.resolve())
-
     expect(screen.getByText('222 очк.')).toBeInTheDocument()
     expect(screen.queryByText('111 очк.')).not.toBeInTheDocument()
   })
@@ -309,7 +316,7 @@ describe('GameRoundSummaryDialog', () => {
     renderDialog(createRound())
 
     await waitFor(() => expect(screen.getByText(/Раунд изменился на сервере/)).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeDisabled()
   })
 
   it('shows the authoritative Zhazhda formula without recalculating it in the form', async () => {
@@ -376,8 +383,11 @@ describe('GameRoundSummaryDialog', () => {
         new ApiError('failed', { status: 422, details: { code: 'formula.incompatible' } }),
       )
     })
-    await waitFor(() => expect(screen.getByText(/formula.incompatible/)).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Завершить раунд' })).toBeDisabled()
+    await waitFor(() =>
+      expect(screen.getByText(/Не удалось построить предпросмотр формулы/)).toBeInTheDocument(),
+    )
+    expect(screen.queryByText(/formula.incompatible/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Сохранить итоги' })).toBeDisabled()
   })
 })
 

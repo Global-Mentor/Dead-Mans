@@ -5,6 +5,7 @@ interface BoardMatrixProps {
   colLabels: readonly string[]
   rowLabels: readonly string[]
   minWidth?: number
+  minCellWidth?: number
   gap?: number
   leadColumnWidth?: number | string
   leadCell?: ReactNode
@@ -18,6 +19,7 @@ export function BoardMatrix({
   colLabels,
   rowLabels,
   minWidth = 680,
+  minCellWidth = 0,
   gap = 0.75,
   leadColumnWidth = 132,
   leadCell,
@@ -36,7 +38,7 @@ export function BoardMatrix({
           data-testid="board-matrix-grid"
           sx={{
             display: 'grid',
-            gridTemplateColumns: `${labelColumnWidth} repeat(${colLabels.length}, minmax(0, 1fr))${trailingSpacer ? ` ${labelColumnWidth}` : ''}`,
+            gridTemplateColumns: `${labelColumnWidth} repeat(${colLabels.length}, minmax(${minCellWidth}px, 1fr))${trailingSpacer ? ` ${labelColumnWidth}` : ''}`,
             columnGap: gap,
             rowGap: gap,
             alignItems: 'stretch',

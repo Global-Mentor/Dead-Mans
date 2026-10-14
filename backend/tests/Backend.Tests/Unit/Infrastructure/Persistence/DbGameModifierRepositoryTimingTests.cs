@@ -25,7 +25,7 @@ public sealed class DbGameModifierRepositoryTimingTests
                 GameModifierCategories.Round,
                 1,
                 null,
-                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior
+                BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda)
             ),
             timestamp.AddDays(-1).UtcDateTime
         );

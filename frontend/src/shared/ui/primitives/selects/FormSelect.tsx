@@ -4,6 +4,7 @@ import type { ChangeEvent, ReactNode } from 'react'
 import { createContext, forwardRef, useContext } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import type { FormTextFieldProps } from '../fields/FormTextField.tsx'
+import { dropdownPaperSx } from '../../../theme/dropdown-sx.ts'
 import { FormTextField } from '../fields/FormTextField.tsx'
 
 interface FormSelectOption<TValue extends string | number> {
@@ -18,18 +19,35 @@ const OptionsContext = createContext<readonly FormSelectOption<string | number>[
 const OptionsSelect = forwardRef<HTMLDivElement, SelectProps>(function OptionsSelect(props, ref) {
   const options = useContext(OptionsContext)
   return (
-    <Select {...props} ref={ref}>
-      {options.map((option) =>
-        props.native ? (
-          <option key={String(option.value)} value={option.value}>
-            {option.label}
-          </option>
-        ) : (
-          <MenuItem key={String(option.value)} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ),
-      )}
+    <Select
+      {...props}
+      ref={ref}
+      MenuProps={{
+        ...props.MenuProps,
+        slotProps: {
+          ...props.MenuProps?.slotProps,
+          paper: (ownerState) => {
+            const supplied = props.MenuProps?.slotProps?.paper
+            const resolved = typeof supplied === 'function' ? supplied(ownerState) : supplied
+            return {
+              ...resolved,
+              sx: mergeSx(
+                (theme) => ({ ...dropdownPaperSx(theme), position: 'absolute' }),
+                props.MenuProps?.PaperProps?.sx,
+                resolved?.sx,
+              ),
+            }
+          },
+        },
+      }}
+    >
+      {props.native
+        ? options.map((option) => (
+            <option key={String(option.value)} value={option.value}>
+              {option.label}
+            </option>
+          ))
+        : props.children}
     </Select>
   )
 })
@@ -68,6 +86,7 @@ export function FormSelect<TValue extends string | number>({
           appearance === 'toolbar'
             ? (theme) => ({
                 minWidth: 70,
+                '& .MuiSelect-icon': { fontSize: 20 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: alpha(theme.palette.primary.main, 0.35),
                 },
@@ -112,7 +131,13 @@ export function FormSelect<TValue extends string | number>({
           )
           onChange(selected ? selected.value : (event.target.value as TValue))
         }}
-      />
+      >
+        {options.map((option) => (
+          <MenuItem key={String(option.value)} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </FormTextField>
     </OptionsContext.Provider>
   )
 }

@@ -177,7 +177,6 @@ public sealed class GameQuestionService : IGameQuestionService
 
         var skipped = new List<ImportGameQuestionSkippedItem>();
         var normalizedInputs = new List<ImportGameQuestionCandidate>(inputs.Count);
-        var seenExternalCodes = new HashSet<string>(StringComparer.Ordinal);
 
         for (var index = 0; index < inputs.Count; index++)
         {
@@ -200,21 +199,6 @@ public sealed class GameQuestionService : IGameQuestionService
                         input.Text?.Trim(),
                         AppMessages.ErrorCodes.GameQuestionImportInvalidFields,
                         "Missing or invalid fields. Include text, a non-negative reward, 2-10 unique options, and exactly one correct option.",
-                        input.SourceQuestion
-                    )
-                );
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(normalized.ExternalCode)
-                && !seenExternalCodes.Add(normalized.ExternalCode))
-            {
-                skipped.Add(
-                    new ImportGameQuestionSkippedItem(
-                        input.RowNumber,
-                        normalized.Text,
-                        AppMessages.ErrorCodes.GameQuestionImportDuplicateCodeInFile,
-                        $"External code '{normalized.ExternalCode}' is duplicated inside the import file.",
                         input.SourceQuestion
                     )
                 );

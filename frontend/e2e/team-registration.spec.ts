@@ -138,10 +138,10 @@ async function openTeamManagement(
     },
   )
   await page.goto('/panel/team-registrations')
-  await expect(page.getByText('Review player', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Manage Review team', exact: true }).click()
+  await expect(page.getByTestId('admin-player-player-1')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0)
-  if (state === 'editable') return () => disbandRequests
-  await page.getByRole('button', { name: 'More team actions', exact: true }).click()
+  if (state === 'editable' || state === 'active') return () => disbandRequests
   await page.getByRole('button', { name: 'Disband', exact: true }).click()
   return () => disbandRequests
 }
@@ -149,7 +149,7 @@ async function openTeamManagement(
 test('disbands an eligible confirmed team and refreshes the roster', async ({ page }) => {
   const requests = await openTeamManagement(page, 'eligible')
   await page.getByRole('dialog').getByRole('button', { name: 'Disband team', exact: true }).click()
-  await expect(page.getByText('Review player', { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('admin-player-player-1')).toHaveCount(0)
   expect(requests()).toBe(1)
 })
 
@@ -158,26 +158,56 @@ test('admin can create and reorder teams after game start', async ({ page }) => 
   await page.route('**/api/game/registration/admin/teams**', (route) =>
     route.fulfill({ status: 409, json: { code: 'test.conflict' } }),
   )
-  const create = page.getByRole('button', { name: 'Create open team', exact: true })
+  await page.getByRole('button', { name: 'Create team', exact: true }).click()
+  const create = page.getByRole('menuitem', { name: 'Create open team', exact: true })
   await expect(create).toBeEnabled()
   const creationRequest = page.waitForRequest(
     (request) => request.method() === 'POST' && request.url().endsWith('/admin/teams'),
   )
   await create.click()
   expect((await creationRequest).postDataJSON()).toMatchObject({ recruitmentOpen: true })
-  const down = page.getByTestId('admin-slot-1').getByRole('button', { name: 'Down', exact: true })
-  await expect(down).toBeEnabled()
+  const handle = page.getByTestId('admin-slot-1').getByRole('button', { name: /^Order:/ })
+  await expect(handle).toBeEnabled()
   const moveRequest = page.waitForRequest(
     (request) => request.method() === 'POST' && request.url().endsWith('/move'),
   )
-  await down.click()
+  await handle.dragTo(page.getByTestId('admin-slot-2'))
   expect((await moveRequest).postDataJSON()).toMatchObject({ targetTeamSlotId: 'slot-2' })
 })
 
+for (const width of [390, 768, 1440]) {
+  test(`team creation menu stays anchored inside the viewport at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await openTeamManagement(page, 'editable')
+    const trigger = page.getByRole('button', { name: 'Create team', exact: true })
+    await trigger.click()
+    const menu = page.getByRole('menu')
+    await expect(menu.getByRole('menuitem')).toHaveCount(2)
+    const popup = menu.locator('..')
+    await expect(popup).toHaveCSS('position', 'absolute')
+    const bounds = (await popup.boundingBox())!
+    expect(bounds.x).toBeGreaterThanOrEqual(15)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width - 15)
+    expect(bounds.width).toBeLessThanOrEqual(320)
+    await page.screenshot({ path: info.outputPath('create-team-menu.png'), animations: 'disabled' })
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+}
+
 test('shows the reason when an active team cannot be disbanded', async ({ page }) => {
   const requests = await openTeamManagement(page, 'active')
-  await expect(page.getByRole('alert')).toContainText('active team cannot be disbanded')
+  const button = page.getByRole('button', { name: 'Disband', exact: true })
+  await expect(button).toBeDisabled()
+  const help = button.locator('..')
+  await page.keyboard.press('Tab')
+  await help.focus()
+  await expect(page.getByRole('tooltip', { name: /This team is active/ })).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('alert')).toHaveCount(0)
   expect(requests()).toBe(0)
 })
 
@@ -187,7 +217,7 @@ test('shows a server refusal when the team opened a card after the snapshot load
   const requests = await openTeamManagement(page, 'stale')
   await page.getByRole('dialog').getByRole('button', { name: 'Disband team', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('opened a card')
-  await expect(page.getByText('Review player', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('admin-player-player-1')).toBeVisible()
   expect(requests()).toBe(1)
 })
 
@@ -209,7 +239,7 @@ for (const width of [1440, 768, 390, 320]) {
         animations: 'disabled',
       })
       await dialog.getByRole('button', { name: 'Disband team', exact: true }).click()
-      await expect(page.getByText('Review player', { exact: true })).toHaveCount(0)
+      await expect(page.getByTestId('admin-player-player-1')).toHaveCount(0)
       expect(requests()).toBe(1)
     })
   }

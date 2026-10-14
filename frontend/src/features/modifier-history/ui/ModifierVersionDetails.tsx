@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import type { ContentTabsSelection } from '../../../shared/ui/index.ts'
 import type { ModifierVersionDetail } from '../../../shared/api/contracts/index.ts'
 import { ModifierBehaviorDetails } from './ModifierBehaviorDetails.tsx'
-import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
+import {
+  getModifierCategory,
+  getCategoryLabel,
+  RoundBriefingPanel,
+} from '../../../shared/game-ui/index.ts'
 import {
   ContentTabs,
   DetailBlock,
@@ -53,7 +57,7 @@ export function ModifierVersionDetails({
           minHeight: 0,
           overflowY: 'auto',
           overscrollBehaviorY: 'contain',
-          scrollbarGutter: 'stable',
+          scrollbarGutter: 'stable both-edges',
           containerType: 'inline-size',
         }}
       >
@@ -140,7 +144,7 @@ export function ModifierVersionDetails({
                   ) : null}
                 </DetailBlock>
                 {item.changedFields
-                  .filter((field) => field !== 'normalizedTags')
+                  .filter((field) => field !== 'normalizedTags' && field !== 'activationCommand')
                   .map((field) => {
                     const title = t('modifierHistory.fields.' + field, { defaultValue: field })
                     const content = (
@@ -225,7 +229,10 @@ export function ModifierVersionDetails({
 function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }) {
   const { t } = useTranslation()
   const fields: Array<readonly [string, string]> = [
-    [t('modifierHistory.category'), t(`common.modifiers.categories.${item.category}`)],
+    [
+      t('modifierHistory.category'),
+      getCategoryLabel(t, getModifierCategory(item.category, item.behaviorV2.performer)),
+    ],
     [t('modifierHistory.cost'), String(item.activationCost)],
     [
       t('modifierHistory.limit'),
@@ -233,7 +240,6 @@ function ModifierConfigurationReadOnly({ item }: { item: ModifierVersionDetail }
         ? t('modifierHistory.unlimited')
         : String(item.activationLimit.count),
     ],
-    [t('modifierHistory.command'), item.activationCommand ?? '-'],
   ]
   return (
     <Stack gap={1.25}>
@@ -319,7 +325,7 @@ function formatDiffValue(
     const other = new Map(counterpart ? flattenObject(counterpart.behaviorV2) : [])
     return (
       [...new Set([...own.keys(), ...other.keys()])]
-        .filter((key) => own.get(key) !== other.get(key))
+        .filter((key) => key !== 'rule' && own.get(key) !== other.get(key))
         .map((key) => behaviorFieldLabel(key, t) + ': ' + (own.get(key) ?? '-'))
         .join('\n') || '-'
     )
@@ -330,7 +336,6 @@ function formatDiffValue(
     description: item.description,
     category: item.category,
     iconEmoji: item.iconEmoji,
-    activationCommand: item.activationCommand,
     activationCost: item.activationCost,
     activationLimit: item.activationLimit.count ?? t('modifierHistory.unlimited'),
     compatibility:

@@ -46,11 +46,10 @@ export function QuizQuestionContent({
   const question = (
     <Typography
       component="h3"
-      variant="h6"
+      variant="h5"
       sx={{
-        fontSize: embedded ? '1.375rem' : { xs: '1.25rem', sm: '1.5rem' },
         fontWeight: 700,
-        lineHeight: embedded ? 1.4 : 1.35,
+        lineHeight: 1.4,
         overflowWrap: 'anywhere',
         ...(embedded ? { py: 1, whiteSpace: 'pre-wrap' } : {}),
       }}
@@ -77,7 +76,7 @@ export function QuizQuestionContent({
                   loading="eager"
                   sx={{ width: 56, height: 56, flexShrink: 0 }}
                 />
-                <Typography color="primary.light" sx={{ fontWeight: 700, fontSize: '1.125rem' }}>
+                <Typography variant="h6" color="primary.light" sx={{ fontWeight: 700 }}>
                   {t('gameQuiz.questionHeading')}
                 </Typography>
               </Stack>
@@ -88,14 +87,13 @@ export function QuizQuestionContent({
                   </Typography>
                   <Typography
                     component="div"
+                    variant="h3"
                     role="timer"
                     aria-live="off"
                     aria-label={t('gameQuiz.timeLeft', { seconds: countdown.secondsLeft })}
                     color={countdown.secondsLeft <= 10 ? 'error.light' : 'primary.light'}
                     sx={{
-                      fontSize: '1.875rem',
                       fontWeight: 700,
-                      lineHeight: 1.1,
                       fontVariantNumeric: 'tabular-nums',
                     }}
                   >

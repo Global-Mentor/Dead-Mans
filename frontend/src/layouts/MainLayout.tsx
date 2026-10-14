@@ -4,13 +4,21 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { lazyPanelPage } from '../app/lazy-panel-page.ts'
 import { featureTranslationBundles as translations } from '../locales/feature-locale-loader.ts'
 import {
+  getPanelRouteByPath,
   gameBoardRoute,
+  gameSetupRoute,
+  adminModifiersRoute,
+  adminQuestionsRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
   modifierHistoryRoute,
   gameModifiersRoute,
   gameQuizRoute,
   gameTeamQueueRoute,
+  roleAdministrationRoute,
+  teamRegistrationsRoute,
+  catalogModifiersRoute,
+  catalogQuestionsRoute,
 } from '../routes/app-routes.ts'
 import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 import { ModifierCatalogRealtimeSync } from '../features/modifier-history/ModifierCatalogRealtimeSync.tsx'
@@ -50,18 +58,27 @@ export function MainLayout() {
 function MainLayoutContent() {
   const { user } = useAuth()
   const { pathname } = useLocation()
+  const isAdministration = getPanelRouteByPath(pathname)?.group === 'admin'
   const boundedWorkspace = [
+    adminModifiersRoute.fullPath,
+    adminQuestionsRoute.fullPath,
+    gameSetupRoute.fullPath,
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,
     gameHistoryRoute.fullPath,
     modifierHistoryRoute.fullPath,
+    roleAdministrationRoute.fullPath,
+    teamRegistrationsRoute.fullPath,
+    catalogModifiersRoute.fullPath,
+    catalogQuestionsRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
-    hasPanelCapability('startGame', user?.roles) ||
-    (hasPanelCapability('manageGame', user?.roles) &&
-      [gameBoardRoute.fullPath, gameModifiersRoute.fullPath, gameQuizRoute.fullPath].includes(
-        pathname,
-      ))
+    !isAdministration &&
+    (hasPanelCapability('startGame', user?.roles) ||
+      (hasPanelCapability('manageGame', user?.roles) &&
+        [gameBoardRoute.fullPath, gameModifiersRoute.fullPath, gameQuizRoute.fullPath].includes(
+          pathname,
+        )))
   return (
     <Box
       sx={{
@@ -83,11 +100,11 @@ function MainLayoutContent() {
         sx={{
           flexGrow: 1,
           ...(boundedWorkspace ? { flex: '1 1 0%', minHeight: 0 } : {}),
-          py: { xs: 2, sm: 3 },
-          px: { xs: 2, sm: 3 },
+          p: uiTokens.spacing.page,
           pb: {
-            xs: hasManagementPanel ? 10 : uiTokens.spacing.page.md,
-            md: uiTokens.spacing.page.md,
+            xs: hasManagementPanel ? 10 : uiTokens.spacing.page.xs,
+            sm: hasManagementPanel ? 10 : uiTokens.spacing.page.sm,
+            md: uiTokens.spacing.page.sm,
           },
           display: 'flex',
           flexDirection: 'column',

@@ -62,17 +62,44 @@ it('offers a retry for an initial error without presenting it as an empty queue'
   expect(onRetry).toHaveBeenCalledTimes(1)
 })
 
-it('keeps remaining teams ahead of teams sorted by play time', () => {
+it('orders waiting teams by numeric queue slot', () => {
+  renderWithAppProviders(
+    <TeamQueuePanel
+      {...props}
+      teams={[10, 4, 3].map((slot) => ({
+        ...teams[0]!,
+        teamId: `waiting-${slot}`,
+        teamName: `Команда ${slot}`,
+        teamSlotIndex: slot,
+      }))}
+    />,
+  )
+  expect(screen.getAllByRole('article').map((item) => item.getAttribute('aria-label'))).toEqual([
+    'Команда 3',
+    'Команда 4',
+    'Команда 10',
+  ])
+})
+
+it('orders played teams by numeric queue slot independently of their play time', () => {
   renderWithAppProviders(
     <TeamQueuePanel
       {...props}
       teams={[
+        {
+          ...teams[0]!,
+          teamId: 'ten',
+          teamName: 'Десятые',
+          teamSlotIndex: 10,
+          isPlayed: true,
+          playedAtUtc: '2026-08-09T09:00:00Z',
+        },
         { ...teams[0]!, teamId: 'waiting', teamName: 'Ожидают', teamSlotIndex: 1 },
         {
           ...teams[0]!,
           teamId: 'late',
           teamName: 'Поздние',
-          teamSlotIndex: 2,
+          teamSlotIndex: 3,
           isPlayed: true,
           playedAtUtc: '2026-08-09T10:05:00Z',
         },
@@ -80,7 +107,7 @@ it('keeps remaining teams ahead of teams sorted by play time', () => {
           ...teams[0]!,
           teamId: 'early',
           teamName: 'Ранние',
-          teamSlotIndex: 3,
+          teamSlotIndex: 4,
           isPlayed: true,
           playedAtUtc: '2026-08-09T10:00:00Z',
         },
@@ -91,10 +118,12 @@ it('keeps remaining teams ahead of teams sorted by play time', () => {
   const waiting = within(panel).getByRole('article', { name: 'Ожидают' })
   const early = within(panel).getByRole('article', { name: 'Ранние' })
   const late = within(panel).getByRole('article', { name: 'Поздние' })
-  expect(waiting.compareDocumentPosition(early)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  expect(early.compareDocumentPosition(late)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  expect(within(early).getByLabelText('Место в очереди 3')).toBeInTheDocument()
-  expect(within(late).getByLabelText('Место в очереди 2')).toBeInTheDocument()
+  const ten = within(panel).getByRole('article', { name: 'Десятые' })
+  expect(waiting.compareDocumentPosition(late)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  expect(late.compareDocumentPosition(early)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  expect(early.compareDocumentPosition(ten)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  expect(within(early).getByLabelText('Место в очереди 4')).toBeInTheDocument()
+  expect(within(late).getByLabelText('Место в очереди 3')).toBeInTheDocument()
   expect(within(panel).queryByText(/Отыгрыш #/)).not.toBeInTheDocument()
 })
 

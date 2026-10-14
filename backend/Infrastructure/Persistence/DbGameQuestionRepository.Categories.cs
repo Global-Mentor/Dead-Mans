@@ -33,73 +33,48 @@ public sealed partial class DbGameQuestionRepository
         CancellationToken cancellationToken = default
     )
     {
-        var existingById = await _dbContext.QuestionCategories
-            .AsNoTracking()
-            .Where(x => x.Id == QuestionCatalogDefaults.UncategorizedCategoryId)
-            .Select(
-                x => new GameQuestionCategoryItem(
-                    x.Id,
-                    x.Name,
-                    x.Questions.Count(question => !question.IsDeleted),
-                    IsProtectedCategory(x.Id, x.Name)
-                )
-            )
-            .FirstOrDefaultAsync(cancellationToken);
-        if (existingById is not null)
+        await using var transaction = _dbContext.Database.IsRelational()
+            && _dbContext.Database.CurrentTransaction is null
+                ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+        await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
+
+        var category = await GetCategoryAsync(QuestionCatalogDefaults.UncategorizedCategoryId, cancellationToken);
+        if (category is not null)
         {
-            if (!string.Equals(
-                    existingById.Name,
-                    QuestionCatalogDefaults.UncategorizedCategoryName,
-                    StringComparison.Ordinal
-                ))
+            if (!string.Equals(category.Name, QuestionCatalogDefaults.UncategorizedCategoryName, StringComparison.Ordinal))
             {
-                var entityToNormalize = await _dbContext.QuestionCategories.FirstAsync(
-                    x => x.Id == QuestionCatalogDefaults.UncategorizedCategoryId,
-                    cancellationToken
-                );
-                entityToNormalize.Name = QuestionCatalogDefaults.UncategorizedCategoryName;
-                entityToNormalize.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+                var entity = await _dbContext.QuestionCategories.FirstAsync(
+                    x => x.Id == QuestionCatalogDefaults.UncategorizedCategoryId, cancellationToken);
+                entity.Name = QuestionCatalogDefaults.UncategorizedCategoryName;
+                entity.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
                 await _dbContext.SaveChangesAsync(cancellationToken);
-                return existingById with
-                {
-                    Name = QuestionCatalogDefaults.UncategorizedCategoryName,
-                    IsProtected = true
-                };
+                category = category with { Name = entity.Name, IsProtected = true };
             }
-
-            return existingById;
         }
-
-        var existingByName = await _dbContext.QuestionCategories
-            .AsNoTracking()
-            .Where(x => x.Name == QuestionCatalogDefaults.UncategorizedCategoryName)
-            .Select(
-                x => new GameQuestionCategoryItem(
-                    x.Id,
-                    x.Name,
-                    x.Questions.Count(question => !question.IsDeleted),
-                    IsProtectedCategory(x.Id, x.Name)
-                )
-            )
-            .FirstOrDefaultAsync(cancellationToken);
-        if (existingByName is not null)
+        else
         {
-            return existingByName;
+            category = await GetCategoryAsync(QuestionCatalogDefaults.UncategorizedCategoryName, cancellationToken);
+            if (category is null)
+            {
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+                var entity = new QuestionCategory
+                {
+                    Id = QuestionCatalogDefaults.UncategorizedCategoryId,
+                    Name = QuestionCatalogDefaults.UncategorizedCategoryName,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now
+                };
+                _dbContext.QuestionCategories.Add(entity);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                category = new GameQuestionCategoryItem(entity.Id, entity.Name, 0, true);
+            }
         }
-
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var entity = new QuestionCategory
+        if (transaction is not null)
         {
-            Id = QuestionCatalogDefaults.UncategorizedCategoryId,
-            Name = QuestionCatalogDefaults.UncategorizedCategoryName,
-            CreatedAtUtc = now,
-            UpdatedAtUtc = now
-        };
-
-        _dbContext.QuestionCategories.Add(entity);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return new GameQuestionCategoryItem(entity.Id, entity.Name, 0, true);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        return category;
     }
 
     public async Task<GameQuestionCategoryItem?> GetCategoryAsync(

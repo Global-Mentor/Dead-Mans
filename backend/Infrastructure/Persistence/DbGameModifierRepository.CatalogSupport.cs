@@ -68,8 +68,7 @@ public sealed partial class DbGameModifierRepository
             x.ModifierId, x.Category, x.Name, x.Description, x.ActivationCost,
             new GameModifierActivationLimit(x.MaxActivationsPerRound),
             conflictingModifierIds, x.IconEmoji, x.ActivationCommand,
-            isLockedByActiveGame, x.Revision, x.NormalizedTags,
-            ResolveBehaviorV2(x));
+            isLockedByActiveGame, x.Revision, ResolveBehaviorV2(x));
     }
 
     private static ModifierBehaviorV2 ResolveBehaviorV2(ModifierDefinitionVersion version)

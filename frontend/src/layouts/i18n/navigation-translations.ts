@@ -1,5 +1,9 @@
 const translations = {
   en: {
+    teamFallback: 'Your team',
+    teamRejectedItemDescription:
+      'The administrator declined your team’s participation. Its roster has closed and you are no longer a member.',
+    teamRejectedItemTitle: 'Team “{{team}}” was not admitted to the game',
     brandMark: 'DM',
     menu: 'Menu',
     openNavigation: 'Open navigation',
@@ -13,7 +17,7 @@ const translations = {
       system: 'System',
     },
     profile: 'Profile',
-    accessRoles: 'Access roles',
+    accessRole: 'Access role',
     uiStateGallery: {
       title: 'Interface components',
       description: 'Development preview of shared interface states.',
@@ -40,7 +44,7 @@ const translations = {
     modifierFallback: 'Unknown modifier',
     someone: 'Someone',
     administration: 'Administration',
-    language: 'Interface language',
+    language: 'Language',
     logout: 'Log out',
     roles: {
       superadmin: 'Super administrator',
@@ -49,6 +53,7 @@ const translations = {
       viewer: 'Participant',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Game history',
       },
@@ -77,10 +82,10 @@ const translations = {
         label: 'Board setup',
       },
       adminModifiers: {
-        label: 'Current game modifiers',
+        label: 'Modifiers for the game',
       },
       adminQuestions: {
-        label: 'Current game questions',
+        label: 'Questions for the game',
       },
       catalogModifiers: {
         label: 'Modifier catalog',
@@ -94,6 +99,10 @@ const translations = {
     },
   },
   ru: {
+    teamFallback: 'Ваша команда',
+    teamRejectedItemDescription:
+      'Администратор отказал команде в участии. Состав закрыт, вы больше не состоите в этой команде.',
+    teamRejectedItemTitle: 'Команда «{{team}}» не допущена к игре',
     brandMark: 'DM',
     menu: 'Меню',
     openNavigation: 'Открыть навигацию',
@@ -107,7 +116,7 @@ const translations = {
       system: 'Система',
     },
     profile: 'Профиль',
-    accessRoles: 'Роли доступа',
+    accessRole: 'Роль доступа',
     uiStateGallery: {
       title: 'Компоненты интерфейса',
       description: 'Служебный просмотр общих состояний интерфейса.',
@@ -135,7 +144,7 @@ const translations = {
     modifierFallback: 'Неизвестный модификатор',
     someone: 'Кто-то',
     administration: 'Администрирование',
-    language: 'Язык интерфейса',
+    language: 'Язык',
     logout: 'Выйти',
     roles: {
       superadmin: 'Суперадминистратор',
@@ -144,6 +153,7 @@ const translations = {
       viewer: 'Участник',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'История игр',
       },
@@ -172,10 +182,10 @@ const translations = {
         label: 'Настройка доски',
       },
       adminModifiers: {
-        label: 'Модификаторы текущей игры',
+        label: 'Модификаторы для игры',
       },
       adminQuestions: {
-        label: 'Вопросы текущей игры',
+        label: 'Вопросы для игры',
       },
       catalogModifiers: {
         label: 'Каталог модификаторов',
@@ -189,6 +199,10 @@ const translations = {
     },
   },
   uk: {
+    teamFallback: 'Ваша команда',
+    teamRejectedItemDescription:
+      'Адміністратор відмовив команді в участі. Склад закрито, ви більше не входите до цієї команди.',
+    teamRejectedItemTitle: 'Команду «{{team}}» не допущено до гри',
     brandMark: 'DM',
     menu: 'Меню',
     openNavigation: 'Відкрити навігацію',
@@ -202,7 +216,7 @@ const translations = {
       system: 'Система',
     },
     profile: 'Профіль',
-    accessRoles: 'Ролі доступу',
+    accessRole: 'Роль доступу',
     uiStateGallery: {
       title: 'Компоненти інтерфейсу',
       description: 'Службовий перегляд спільних станів інтерфейсу.',
@@ -230,7 +244,7 @@ const translations = {
     modifierFallback: 'Невідомий модифікатор',
     someone: 'Хтось',
     administration: 'Адміністрування',
-    language: 'Мова інтерфейсу',
+    language: 'Мова',
     logout: 'Вийти',
     roles: {
       superadmin: 'Суперадміністратор',
@@ -239,6 +253,7 @@ const translations = {
       viewer: 'Учасник',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Історія ігор',
       },
@@ -267,10 +282,10 @@ const translations = {
         label: 'Налаштування дошки',
       },
       adminModifiers: {
-        label: 'Модифікатори поточної гри',
+        label: 'Модифікатори для гри',
       },
       adminQuestions: {
-        label: 'Питання поточної гри',
+        label: 'Питання для гри',
       },
       catalogModifiers: {
         label: 'Каталог модифікаторів',
@@ -284,6 +299,10 @@ const translations = {
     },
   },
   pl: {
+    teamFallback: 'Twoja drużyna',
+    teamRejectedItemDescription:
+      'Administrator odmówił drużynie udziału. Skład został zamknięty i nie jesteś już jego członkiem.',
+    teamRejectedItemTitle: 'Drużyna „{{team}}” nie została dopuszczona do gry',
     brandMark: 'DM',
     menu: 'Menu',
     openNavigation: 'Otwórz nawigację',
@@ -297,7 +316,7 @@ const translations = {
       system: 'System',
     },
     profile: 'Profil',
-    accessRoles: 'Role dostępu',
+    accessRole: 'Rola dostępu',
     uiStateGallery: {
       title: 'Komponenty interfejsu',
       description: 'Deweloperski podgląd wspólnych stanów interfejsu.',
@@ -325,7 +344,7 @@ const translations = {
     modifierFallback: 'Nieznany modyfikator',
     someone: 'Ktoś',
     administration: 'Administracja',
-    language: 'Język interfejsu',
+    language: 'Język',
     logout: 'Wyloguj się',
     roles: {
       superadmin: 'Superadministrator',
@@ -334,6 +353,7 @@ const translations = {
       viewer: 'Uczestnik',
     },
     items: {
+      gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Historia gier',
       },
@@ -362,10 +382,10 @@ const translations = {
         label: 'Konfiguracja planszy',
       },
       adminModifiers: {
-        label: 'Modyfikatory bieżącej gry',
+        label: 'Modyfikatory do gry',
       },
       adminQuestions: {
-        label: 'Pytania bieżącej gry',
+        label: 'Pytania do gry',
       },
       catalogModifiers: {
         label: 'Katalog modyfikatorów',

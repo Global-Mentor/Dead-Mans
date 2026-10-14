@@ -9,6 +9,7 @@ public sealed class GameRoundScoreCalculatorTests
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
+    [InlineData(GameRoundStatusValue.PreparationCompleted)]
     [InlineData(GameRoundStatusValue.InProgress)]
     [InlineData(GameRoundStatusValue.ReviewingResults)]
     [InlineData(GameRoundStatusValue.Cancelled)]
@@ -170,7 +171,7 @@ public sealed class GameRoundScoreCalculatorTests
     public void Calculate_WithStackedZhazhda_PublishesTransparentAdjustedKillValueFormula()
     {
         var modifierId = Guid.NewGuid();
-        var behavior = BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior;
+        var behavior = BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda);
         var modifiers = Enumerable.Range(0, 2)
             .Select(_ => new GameRoundScoreModifierInput(
                 ScoreDelta: 45,
@@ -200,7 +201,7 @@ public sealed class GameRoundScoreCalculatorTests
     [Fact]
     public void Calculate_WithZeroKillZhazhda_PublishesBothModifierAndEmptyCardPenalties()
     {
-        var behavior = BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda).Behavior;
+        var behavior = BuiltInModifierBehaviorCatalog.Get(BuiltInModifierBehaviorCatalog.Zhazhda);
         var modifierId = Guid.NewGuid();
         var result = GameRoundScoreCalculator.Calculate(new(
             GameRoundStatusValue.Completed,

@@ -59,6 +59,9 @@ public sealed partial class GameRegistrationReadStore
             .SingleAsync(cancellationToken);
 
         var loadedTeamIds = teams.Select(team => team.Id).ToList();
+        var teamsWithOpenedCards = (await _dbContext.GameRounds.AsNoTracking()
+            .Where(round => round.GameId == gameId && loadedTeamIds.Contains(round.TeamId))
+            .Select(round => round.TeamId).Distinct().ToListAsync(cancellationToken)).ToHashSet();
         var membersByTeamId = await LoadMembersByTeamIdAsync(loadedTeamIds, cancellationToken);
         var pendingInvitationsByTeamId = await LoadPendingInvitationsByTeamIdAsync(
             loadedTeamIds,
@@ -102,7 +105,8 @@ public sealed partial class GameRegistrationReadStore
                     pendingInvitations ?? (IReadOnlyList<RegistrationTeamPendingInvitationDto>)[],
                     disbandRequestedByDisplayName,
                     activeTeamId == team.Id,
-                    maxPlayersPerTeam
+                    maxPlayersPerTeam,
+                    teamsWithOpenedCards.Contains(team.Id)
                 );
             })
             .ToList();
@@ -277,7 +281,8 @@ public sealed partial class GameRegistrationReadStore
         IReadOnlyList<RegistrationTeamPendingInvitationDto> pendingInvitations,
         string? disbandRequestedByDisplayName,
         bool isActiveInGame,
-        short maxPlayersPerTeam
+        short maxPlayersPerTeam,
+        bool hasOpenedCard
     ) =>
         new(
             team.Id,
@@ -297,7 +302,8 @@ public sealed partial class GameRegistrationReadStore
                 && members.Count == maxPlayersPerTeam
                 && members.All(member => member.ReadyAtUtc.HasValue),
             members,
-            pendingInvitations
+            pendingInvitations,
+            hasOpenedCard
         );
 
     private sealed record TeamInviteTargetRow(

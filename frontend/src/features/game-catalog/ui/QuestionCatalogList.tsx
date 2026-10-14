@@ -1,136 +1,104 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  GameQuestionCatalogItem,
-  GameQuestionCategoryItem,
-} from '../../../shared/api/contracts/index.ts'
-import {
-  AppButton,
-  AsyncSection,
-  FormTextField,
-  RecordRow,
-  SectionCard,
-  SectionHeader,
-  StatusBadge,
-} from '../../../shared/ui/index.ts'
-import { getQuestionDisplayOptions } from '../model/question-answer-normalize.ts'
-
-interface QuestionCatalogListProps {
-  search: string
-  selectedCategory: GameQuestionCategoryItem | null
-  questions: readonly GameQuestionCatalogItem[]
-  isLoading: boolean
-  isError: boolean
-  onSearchChange: (search: string) => void
-  onEdit: (question: GameQuestionCatalogItem) => void
-  onDelete: (question: GameQuestionCatalogItem) => void
-}
+import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/index.ts'
+import { ListPanel, PageStatePanel, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
 
 export function QuestionCatalogList({
-  search,
-  selectedCategory,
   questions,
-  isLoading,
-  isError,
-  onSearchChange,
-  onEdit,
-  onDelete,
-}: QuestionCatalogListProps) {
-  const { t } = useTranslation()
-
-  return (
-    <SectionCard sx={{ height: '100%' }}>
-      <SectionHeader
-        headingLevel="h1"
-        title={t('gameCatalog.questions.title')}
-        description={
-          selectedCategory
-            ? `${t('gameCatalog.questions.description')} ${selectedCategory.name}.`
-            : t('gameCatalog.questions.description')
-        }
-      />
-
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
-        <FormTextField
-          value={search}
-          label={t('gameCatalog.questions.searchLabel')}
-          onChange={(event) => onSearchChange(event.target.value)}
+  totalCount,
+  selectedId,
+  onSelect,
+}: {
+  questions: readonly GameQuestionCatalogItem[]
+  totalCount: number
+  selectedId: string | null
+  onSelect: (question: GameQuestionCatalogItem) => void
+}) {
+  const { t, i18n } = useTranslation()
+  const prefix = useId()
+  const number = new Intl.NumberFormat(i18n.resolvedLanguage).format
+  if (questions.length === 0) {
+    return (
+      <Box data-testid="question-catalog-list" sx={{ minWidth: 0 }}>
+        <PageStatePanel
+          headingLevel="h2"
+          title={t('gameCatalog.questions.catalog.list')}
+          message={t('gameCatalog.workspace.results', {
+            count: number(0),
+            total: number(totalCount),
+          })}
         />
-      </Stack>
-
-      <AsyncSection
-        isLoading={isLoading}
-        isError={isError}
-        hasData={questions.length > 0}
-        isEmpty={questions.length === 0}
-        loadingMessage={t('gameCatalog.questions.loading')}
-        errorMessage={t('gameCatalog.questions.error')}
-        emptyMessage={t('gameCatalog.questions.empty')}
-      >
-        <Stack spacing={1} sx={{ mt: 1.5 }}>
-          {questions.map((question) => (
-            <RecordRow
-              key={question.questionId}
-              actions={
-                <>
-                  <AppButton size="small" tone="secondary" onClick={() => onEdit(question)}>
-                    {t('gameCatalog.actions.edit')}
-                  </AppButton>
-                  <AppButton size="small" tone="danger" onClick={() => onDelete(question)}>
-                    {t('gameCatalog.actions.delete')}
-                  </AppButton>
-                </>
-              }
+      </Box>
+    )
+  }
+  return (
+    <ListPanel
+      title={t('gameCatalog.questions.catalog.list')}
+      data-testid="question-catalog-list"
+      summary={
+        <Typography variant="body2" color="text.secondary" role="status">
+          {t('gameCatalog.workspace.results', {
+            count: number(questions.length),
+            total: number(totalCount),
+          })}
+        </Typography>
+      }
+      sx={{ height: '100%', minHeight: 0 }}
+    >
+      <Stack component="ul" gap={0.75} sx={{ m: 0, p: 0 }}>
+        {questions.map((question, index) => (
+          <Box component="li" key={question.questionId} sx={{ listStyle: 'none', minWidth: 0 }}>
+            <SelectionRow
+              selected={selectedId === question.questionId}
+              selectionAppearance="outline"
+              tone={index % 2 === 1 ? 'alternate' : 'default'}
+              density="compact"
+              aria-label={question.text}
+              aria-describedby={prefix + '-' + question.questionId}
+              onClick={() => onSelect(question)}
             >
-              <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-                {question.text}
-              </Typography>
-              <QuestionCatalogMetaChips question={question} />
-            </RecordRow>
-          ))}
-        </Stack>
-      </AsyncSection>
-    </SectionCard>
-  )
-}
-
-function QuestionCatalogMetaChips({ question }: { question: GameQuestionCatalogItem }) {
-  const { t } = useTranslation()
-  const options = getQuestionDisplayOptions(question)
-
-  return (
-    <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 0.75 }}>
-      <StatusBadge
-        color="info"
-        label={t('gameCatalog.questions.categoryMeta', {
-          category: question.categoryName,
-        })}
-      />
-      <StatusBadge
-        color="warning"
-        label={t('gameCatalog.questions.rewardMeta', { reward: question.reward })}
-      />
-      {options.map((option, index) => (
-        <StatusBadge
-          key={`${question.questionId}-option-${index}`}
-          color={option.isCorrect ? 'success' : 'default'}
-          label={t('gameCatalog.questions.answerMeta', { answer: option.text })}
-        />
-      ))}
-      <StatusBadge
-        label={t('gameCatalog.questions.askedMeta', {
-          asked: question.askedTotalCount,
-        })}
-      />
-      <StatusBadge
-        label={`${question.correctSubmissionTotalCount}/${question.submissionTotalCount} · ${question.correctPercentage}%`}
-      />
-      {question.isEnabled ? null : (
-        <StatusBadge color="error" label={t('gameCatalog.questions.disabledBadge')} />
-      )}
-      {question.twitchCompatible ? null : (
-        <StatusBadge color="error" label={t('gameCatalog.questions.twitchIncompatibleBadge')} />
-      )}
-    </Stack>
+              <Stack gap={0.75} sx={{ minWidth: 0, width: '100%' }}>
+                <Typography component="span" variant="body1" fontWeight={700}>
+                  {question.text}
+                </Typography>
+                <Stack
+                  component="span"
+                  id={prefix + '-' + question.questionId}
+                  direction="row"
+                  gap={0.75}
+                  alignItems="center"
+                  flexWrap="wrap"
+                >
+                  <StatusBadge density="tight" variant="outlined" label={question.categoryName} />
+                  <StatusBadge
+                    density="tight"
+                    variant="outlined"
+                    color="warning"
+                    label={t('gameCatalog.questions.rewardMeta', {
+                      reward: number(question.reward),
+                    })}
+                  />
+                  {!question.isEnabled ? (
+                    <StatusBadge
+                      density="tight"
+                      color="error"
+                      label={t('gameCatalog.questions.catalog.disabled')}
+                    />
+                  ) : null}
+                  {question.twitchCompatible === false ? (
+                    <StatusBadge
+                      density="tight"
+                      color="warning"
+                      label={t('gameCatalog.questions.twitchIncompatibleBadge')}
+                    />
+                  ) : null}
+                </Stack>
+              </Stack>
+            </SelectionRow>
+          </Box>
+        ))}
+      </Stack>
+    </ListPanel>
   )
 }

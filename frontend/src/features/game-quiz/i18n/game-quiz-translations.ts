@@ -13,7 +13,6 @@ const translations = {
     answerSending: 'Sending your answer...',
     waitingForResults: 'Time is up. Waiting for the results.',
     questionStartError: 'Could not start this question. Your selection is saved. Try again.',
-    questionSelected: 'Selected',
     personalStatsTitle: 'Your quiz statistics',
     correctAnswersLabel: 'Correct answers',
     incorrectAnswersLabel: 'Incorrect answers',
@@ -71,8 +70,7 @@ const translations = {
     nextQuestion: 'Next question',
     askSpecificQuestion: 'Ask a specific question',
     questionPickerTitle: 'Ask a specific question',
-    questionPickerDescription:
-      'Find a question, select it, then press “Start selected”. No question is started until you confirm.',
+
     noQuestionsAvailable: 'No unused questions are available for this game.',
     questionsLoadError: 'Could not load the question list. Please try again.',
     retryQuestions: 'Retry',
@@ -110,14 +108,16 @@ const translations = {
       channelDisconnected: 'Channel not connected',
       eventSubConnected: 'EventSub connected',
       eventSubDisconnected: 'EventSub not connected',
-      connectBot: 'Connect bot account',
-      connectChannel: 'Authorize channel owner',
+      connectBot: 'Connect bot',
+      connectChannel: 'Authorize channel',
       retry: 'Retry delivery',
       uncertainWarning:
         'Twitch did not confirm delivery. Retrying may send the same message again.',
       cancel: 'Cancel question',
       skipOutcome: 'Skip result message',
     },
+    managementHelp:
+      'Ask the next available question or select one manually. Questions are grouped by category. Wait for the open question to finish; launching is unavailable during modifier ordering.',
   },
   ru: {
     correctAnswerHeading: 'Правильный ответ:',
@@ -133,7 +133,6 @@ const translations = {
     answerSending: 'Отправляем ваш ответ...',
     waitingForResults: 'Время вышло. Ожидаем результаты.',
     questionStartError: 'Не удалось запустить вопрос. Выбор сохранён. Попробуйте ещё раз.',
-    questionSelected: 'Выбрано',
     personalStatsTitle: 'Ваша статистика викторины',
     correctAnswersLabel: 'Верных ответов',
     incorrectAnswersLabel: 'Неверных ответов',
@@ -191,8 +190,7 @@ const translations = {
     nextQuestion: 'Следующий вопрос',
     askSpecificQuestion: 'Задать конкретный вопрос',
     questionPickerTitle: 'Задать конкретный вопрос',
-    questionPickerDescription:
-      'Найдите вопрос, выберите его и нажмите «Запустить выбранный». До подтверждения вопрос не запускается.',
+
     noQuestionsAvailable: 'Для этой игры нет доступных незаданных вопросов.',
     questionsLoadError: 'Не удалось загрузить список вопросов. Попробуйте ещё раз.',
     retryQuestions: 'Повторить',
@@ -230,14 +228,16 @@ const translations = {
       channelDisconnected: 'Канал не подключён',
       eventSubConnected: 'EventSub подключён',
       eventSubDisconnected: 'EventSub не подключён',
-      connectBot: 'Подключить аккаунт бота',
-      connectChannel: 'Авторизовать владельца канала',
+      connectBot: 'Подключить бота',
+      connectChannel: 'Авторизовать канал',
       retry: 'Повторить отправку',
       uncertainWarning:
         'Twitch не подтвердил доставку. При повторной отправке сообщение может появиться в чате ещё раз.',
       cancel: 'Отменить вопрос',
       skipOutcome: 'Пропустить сообщение итога',
     },
+    managementHelp:
+      'Запустите следующий доступный вопрос или выберите конкретный. Вопросы сгруппированы по категориям. Дождитесь завершения открытого вопроса; во время выбора модификаторов запуск недоступен.',
   },
   uk: {
     correctAnswerHeading: 'Правильна відповідь:',
@@ -253,7 +253,6 @@ const translations = {
     answerSending: 'Надсилаємо вашу відповідь...',
     waitingForResults: 'Час вичерпано. Очікуємо результати.',
     questionStartError: 'Не вдалося запустити запитання. Вибір збережено. Спробуйте ще раз.',
-    questionSelected: 'Вибрано',
     personalStatsTitle: 'Ваша статистика вікторини',
     correctAnswersLabel: 'Правильних відповідей',
     incorrectAnswersLabel: 'Неправильних відповідей',
@@ -314,8 +313,7 @@ const translations = {
     nextQuestion: 'Наступне запитання',
     askSpecificQuestion: 'Поставити конкретне запитання',
     questionPickerTitle: 'Поставити конкретне запитання',
-    questionPickerDescription:
-      'Знайдіть запитання, виберіть його та натисніть «Запустити вибране». До підтвердження запитання не запускається.',
+
     noQuestionsAvailable: 'Для цієї гри немає доступних незаданих запитань.',
     questionsLoadError: 'Не вдалося завантажити список запитань. Спробуйте ще раз.',
     retryQuestions: 'Повторити',
@@ -353,14 +351,16 @@ const translations = {
       channelDisconnected: 'Канал не підключено',
       eventSubConnected: 'EventSub підключено',
       eventSubDisconnected: 'EventSub не підключено',
-      connectBot: 'Підключити акаунт бота',
-      connectChannel: 'Авторизувати власника каналу',
+      connectBot: 'Підключити бота',
+      connectChannel: 'Авторизувати канал',
       retry: 'Повторити надсилання',
       uncertainWarning:
         'Twitch не підтвердив доставку. Повторне надсилання може продублювати повідомлення в чаті.',
       cancel: 'Скасувати запитання',
       skipOutcome: 'Пропустити повідомлення підсумку',
     },
+    managementHelp:
+      'Запустіть наступне доступне питання або оберіть конкретне. Питання згруповано за категоріями. Дочекайтеся завершення відкритого питання; під час вибору модифікаторів запуск недоступний.',
   },
   pl: {
     correctAnswerHeading: 'Poprawna odpowiedź:',
@@ -377,7 +377,6 @@ const translations = {
     waitingForResults: 'Czas minął. Oczekiwanie na wyniki.',
     questionStartError:
       'Nie udało się uruchomić pytania. Wybór został zachowany. Spróbuj ponownie.',
-    questionSelected: 'Wybrano',
     personalStatsTitle: 'Twoje statystyki quizu',
     correctAnswersLabel: 'Poprawne odpowiedzi',
     incorrectAnswersLabel: 'Błędne odpowiedzi',
@@ -435,8 +434,7 @@ const translations = {
     nextQuestion: 'Następne pytanie',
     askSpecificQuestion: 'Zadaj konkretne pytanie',
     questionPickerTitle: 'Zadaj konkretne pytanie',
-    questionPickerDescription:
-      'Znajdź pytanie, wybierz je i kliknij „Uruchom wybrane”. Pytanie nie rozpocznie się przed potwierdzeniem.',
+
     noQuestionsAvailable: 'Brak dostępnych niezadanych pytań w tej grze.',
     questionsLoadError: 'Nie udało się załadować pytań. Spróbuj ponownie.',
     retryQuestions: 'Ponów',
@@ -474,14 +472,16 @@ const translations = {
       channelDisconnected: 'Kanał niepołączony',
       eventSubConnected: 'EventSub połączony',
       eventSubDisconnected: 'EventSub niepołączony',
-      connectBot: 'Połącz konto bota',
-      connectChannel: 'Autoryzuj właściciela kanału',
+      connectBot: 'Połącz bota',
+      connectChannel: 'Autoryzuj kanał',
       retry: 'Ponów wysyłkę',
       uncertainWarning:
         'Twitch nie potwierdził dostarczenia. Ponowienie może wysłać tę samą wiadomość jeszcze raz.',
       cancel: 'Anuluj pytanie',
       skipOutcome: 'Pomiń wiadomość wyniku',
     },
+    managementHelp:
+      'Uruchom następne dostępne pytanie lub wybierz je ręcznie. Pytania są grupowane według kategorii. Poczekaj na zakończenie otwartego pytania; podczas wyboru modyfikatorów uruchamianie jest niedostępne.',
   },
 }
 

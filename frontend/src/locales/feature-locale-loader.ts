@@ -10,31 +10,58 @@ export type FeatureTranslationBundle = {
   load: () => Promise<FeatureLocaleModule>
 }
 
+const registrations = new WeakMap<i18n, Map<string, Promise<void>>>()
+// Only development HMR needs to revisit live instances; production keeps weak caching.
+const liveInstances = import.meta.hot ? new Map<i18n, Set<string>>() : undefined
+
 export async function registerFeatureTranslations(
   i18nInstance: i18n,
   bundles: readonly FeatureTranslationBundle[],
 ) {
-  const modules = await Promise.all(bundles.map(({ load }) => load()))
-
-  for (const [index, module] of modules.entries()) {
-    const bundle = bundles[index]
-    if (!bundle) {
-      throw new Error(`Translation bundle at index ${index} is missing`)
-    }
-
-    for (const language of supportedLanguages) {
-      i18nInstance.addResourceBundle(
-        language,
-        'translation',
-        { [bundle.key]: module.default[language] },
-        true,
-        true,
-      )
-    }
+  if (liveInstances) {
+    const keys = liveInstances.get(i18nInstance) ?? new Set<string>()
+    for (const bundle of bundles) keys.add(bundle.key)
+    liveInstances.set(i18nInstance, keys)
   }
+  let registered = registrations.get(i18nInstance)
+  if (!registered) {
+    registered = new Map()
+    registrations.set(i18nInstance, registered)
+  }
+  const cache = registered
+  await Promise.all(
+    bundles.map((bundle) => {
+      let pending = cache.get(bundle.key)
+      if (!pending) {
+        pending = bundle
+          .load()
+          .then((module) => {
+            for (const language of supportedLanguages) {
+              i18nInstance.addResourceBundle(
+                language,
+                'translation',
+                { [bundle.key]: module.default[language] },
+                true,
+                true,
+              )
+            }
+          })
+          .catch((error: unknown) => {
+            cache.delete(bundle.key)
+            throw error
+          })
+        cache.set(bundle.key, pending)
+      }
+      return pending
+    }),
+  )
 }
 
 export const featureTranslationBundles = {
+  gameOverlay: {
+    key: 'gameOverlay',
+    load: () => import('../features/game-overlay/i18n/game-overlay-translations.ts'),
+  },
   gameBoard: {
     key: 'gameBoard',
     load: () => import('../features/game-board/i18n/game-board-translations.ts'),
@@ -82,3 +109,19 @@ export const featureTranslationBundles = {
 } as const satisfies Record<string, FeatureTranslationBundle>
 
 export const allFeatureTranslationBundles = Object.values(featureTranslationBundles)
+
+if (import.meta.hot) {
+  import.meta.hot.accept(async (updated) => {
+    if (!updated || !liveInstances) return
+    const register: typeof registerFeatureTranslations = updated.registerFeatureTranslations
+    const bundles: readonly FeatureTranslationBundle[] = updated.allFeatureTranslationBundles
+    for (const [instance, keys] of liveInstances) {
+      await register(
+        instance,
+        bundles.filter((bundle) => keys.has(bundle.key)),
+      )
+      // Notify mounted useTranslation consumers after replacing resources, without reloading forms.
+      await instance.changeLanguage(instance.language)
+    }
+  })
+}

@@ -56,7 +56,7 @@ END $$;
 
 WITH seed_users(id, twitch_user_id, login, display_name) AS (
   VALUES
-    ('0f000000-0000-0000-0000-000000000001'::uuid, 'deadmans-local-host', 'local_host', 'Local Host'),
+    ('0f000000-0000-4000-8000-000000000001'::uuid, 'deadmans-local-host', 'local_host', 'Local Host'),
     ('4f00c7f1-08e2-4d2e-b27d-7a943b5740c1'::uuid, 'deadmans-local-test-user-001', 'anna_sokolova', 'Anna Sokolova'),
     ('13f1a25d-227b-4e3d-a6e6-0a4d83b5cbb2'::uuid, 'deadmans-local-test-user-002', 'dmitry_volkov', 'Dmitry Volkov'),
     ('0dc2383c-dde8-46ad-8f21-00f1430b7c31'::uuid, 'deadmans-local-test-user-003', 'maria_orlova', 'Maria Orlova'),
@@ -104,17 +104,17 @@ SET
 
 INSERT INTO user_roles (user_id, role_id, assigned_by_user_id, assigned_at_utc, expires_at_utc)
 VALUES
-  ('0f000000-0000-0000-0000-000000000001'::uuid, 1, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
-  ('0f000000-0000-0000-0000-000000000001'::uuid, 2, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
-  ('0f000000-0000-0000-0000-000000000001'::uuid, 3, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
-  ('0f000000-0000-0000-0000-000000000001'::uuid, 4, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL)
+  ('0f000000-0000-4000-8000-000000000001'::uuid, 1, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
+  ('0f000000-0000-4000-8000-000000000001'::uuid, 2, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
+  ('0f000000-0000-4000-8000-000000000001'::uuid, 3, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL),
+  ('0f000000-0000-4000-8000-000000000001'::uuid, 4, NULL, TIMESTAMPTZ '2026-08-07 00:00:00+00', NULL)
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id, assigned_by_user_id, assigned_at_utc, expires_at_utc)
 SELECT
   id,
   3,
-  '0f000000-0000-0000-0000-000000000001'::uuid,
+  '0f000000-0000-4000-8000-000000000001'::uuid,
   TIMESTAMPTZ '2026-08-07 00:00:00+00',
   NULL
 FROM users
@@ -364,11 +364,11 @@ SELECT
   team_seed.recruitment_open,
   team_seed.is_played,
   'confirmed',
-  '0f000000-0000-0000-0000-000000000001'::uuid,
+  '0f000000-0000-4000-8000-000000000001'::uuid,
   TIMESTAMPTZ '2026-08-07 00:12:00+00',
   TIMESTAMPTZ '2026-08-07 00:12:00+00',
   TIMESTAMPTZ '2026-08-07 00:15:00+00',
-  '0f000000-0000-0000-0000-000000000001'::uuid,
+  '0f000000-0000-4000-8000-000000000001'::uuid,
   NULL,
   NULL,
   NULL,
@@ -636,7 +636,7 @@ VALUES
     'Тестовая карточка «Пиромант» из строки «Разминка». Независимая стоимость карточки: 105 очков.',
     105,
     'Команда сыграла карточку в ноль: стоимость карточки полностью ушла в штраф.',
-    '0f000000-0000-0000-0000-000000000001'::uuid,
+    '0f000000-0000-4000-8000-000000000001'::uuid,
     TIMESTAMPTZ '2026-08-07 00:40:00+00',
     TIMESTAMPTZ '2026-08-07 00:55:00+00'
   ),
@@ -663,7 +663,7 @@ VALUES
     'Тестовая карточка «Бомбардир» из строки «Разминка». Независимая стоимость карточки: 100 очков.',
     100,
     'Проверка формулы Жажды: (100 + 5 × 3) × 3 = 345 очков.',
-    '0f000000-0000-0000-0000-000000000001'::uuid,
+    '0f000000-0000-4000-8000-000000000001'::uuid,
     TIMESTAMPTZ '2026-08-07 01:00:00+00',
     TIMESTAMPTZ '2026-08-07 01:15:00+00'
   ),
@@ -788,7 +788,7 @@ SELECT
   'manual_adjustment',
   CASE WHEN twitch_user_id LIKE 'deadmans-local-test-user-%' THEN 30 ELSE 50 END AS points,
   pg_temp.deadmans_seed_uuid('local-test-award-request-' || id::text),
-  '0f000000-0000-0000-0000-000000000001'::uuid,
+  '0f000000-0000-4000-8000-000000000001'::uuid,
   'Стартовый локальный баланс для проверки модификаторов.',
   0,
   CASE WHEN twitch_user_id LIKE 'deadmans-local-test-user-%' THEN 30 ELSE 50 END,
@@ -816,7 +816,7 @@ VALUES (
   'manual_adjustment',
   -5,
   pg_temp.deadmans_seed_uuid('local-test-deduction-request-anna'),
-  '0f000000-0000-0000-0000-000000000001'::uuid,
+  '0f000000-0000-4000-8000-000000000001'::uuid,
   'Тестовое исправление ошибочного начисления.',
   30,
   25,

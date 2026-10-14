@@ -113,7 +113,7 @@ describe('useGameSetupDraft', () => {
     await waitFor(() => expect(result.current.snapshot).toEqual(snapshot))
 
     act(() => {
-      result.current.updateDraft((current) => ({ ...current, title: 'Local title' }))
+      result.current.updateDraft({ ...result.current.draft!, title: 'Local title' })
     })
 
     expect(result.current.isDirty).toBe(true)
@@ -157,11 +157,11 @@ describe('useGameSetupDraft', () => {
       })
 
       act(() =>
-        result.current.updateDraft((current) => ({
-          ...current,
+        result.current.updateDraft({
+          ...result.current.draft!,
           title: 'Local title',
-          cells: current.cells.map((cell) => ({ ...cell, title: 'Local cell' })),
-        })),
+          cells: result.current.draft!.cells.map((cell) => ({ ...cell, title: 'Local cell' })),
+        }),
       )
       const remoteSnapshot = { ...selectedSnapshot, version: 2, enabledQuestionIds: ['q2'] }
       const updates = [

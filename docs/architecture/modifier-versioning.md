@@ -7,13 +7,13 @@ history, authorization, and retention.
 
 `modifier_definitions` is the stable aggregate root. Its `id` never changes and its
 `current_version_id` points to the current immutable row. Archive state and definition
-creation/archive audit live on the root. It deliberately has no name, price, behavior, tags,
+creation/archive audit live on the root. It deliberately has no name, price, behavior,
 compatibility, revision, or other mutable content columns: the current version is the only
 catalog source of truth.
 
 `modifier_definition_versions` stores every normalized content save. `(modifier_id,
 revision)` is unique and revision is positive. Every row contains the complete name,
-description, category, emoji, command, price, limit, tags, typed `BehaviorV2`, author id,
+description, category, emoji, command, price, limit, typed `BehaviorV2`, author id,
 author-name snapshot, timestamp, optional 500-character note, semantic `changed_fields`,
 change type, and optional cascade source. PostgreSQL triggers reject `UPDATE` and `DELETE`;
 `ApplicationDbContext` rejects the same state transitions before SQL is generated.
@@ -26,6 +26,18 @@ Current catalog and revision history use dedicated `AsNoTracking` read projectio
 paths use the shared modifier projector/resolver and never invent fallback values from the
 current catalog for a played game.
 
+## Display categories
+
+Catalog filters, setup selection, available and active modifier groups, and revision details
+use a shared display category. A revision with `BehaviorV2.performer = mentor` belongs to
+`host` (host participation), regardless of its phase. Host monitoring alone does not put a
+team rule in this category. Other revisions retain their preparation, round, or result category.
+
+The persisted category and behavior phase still define when the modifier applies. They are
+not replaced by the display category; host modifier details retain the phase separately.
+Played rounds use the saved runtime performer and category, and game lists use the pinned
+revision, so later catalog edits cannot move a historical modifier between groups.
+
 ## Writes and concurrency
 
 Create, edit, archive, compatibility cascade, `draft -> ready`, and `ready -> active` take the
@@ -36,6 +48,9 @@ bindings, and every referenced conflict target.
 
 - A meaningful normalized edit inserts revision `N + 1`; a no-op returns the current
   revision without inserting or publishing.
+- User edits require a non-blank `changeNote`, trimmed to at most 500 characters.
+  Creation and automatic compatibility cascades may omit the note. The note explains
+  an edit but does not itself count as a content change or create a revision.
 - Update and archive require `expectedRevision`; stale writers receive
   `409 game_modifier_revision_stale`.
 - Compatibility is symmetric. A change inserts the initiating `edited` revision and a
@@ -98,8 +113,12 @@ archive/timestamp/id and revision/id indexes back stable keyset traversal. Query
 catalog history, timeline, detail, conflicts, and related games remain constant as revision
 volume grows, and PostgreSQL regression tests assert the revision index plan.
 
-The existing `GET /api/game/modifiers/catalog` still returns only current, non-archived
-definitions. Only `admin` may create, edit, or archive. History is available to every
+`GET /api/game/modifiers/catalog` returns only current, non-archived definitions by default.
+The explicit `archived=true` query returns only archived definitions, with their last current
+revision and retained conflict references. The two scopes never mix. The administrative
+catalogue requests the archive only after its archive category is selected; archived content
+is read-only and remains excluded from setup and runtime selection. Only `admin` may create,
+edit, or archive. History is available to every
 authenticated role. All ids and `(modifierId, revision)` pairs are validated server-side;
 unknown or mismatched values return `404 game_modifier_not_found`.
 
@@ -121,8 +140,10 @@ history, and detail queries and then refetch the source of truth.
 
 The first public database is created by `20260908003848_ProductionBaseline`; there is no
 modifier data backfill and no compatibility reader. The baseline seeds no modifier definitions.
-Definitions are created through the supported catalog workflow, every content save starts or
-advances immutable revision history, and `draft -> ready` pins the selected set.
+`20260923123000_SeedBaseModifierCatalog` adds the 15 base definitions with their initial
+immutable revisions and symmetric conflicts. Additional definitions are created through the
+supported catalog workflow, every content save starts or advances immutable revision history,
+and `draft -> ready` pins the selected set.
 
 Before the first deployment the database may be dropped and rebuilt from this baseline. After
 deployment, the baseline is immutable and every change uses a new forward migration. Rollback of
@@ -135,3 +156,15 @@ The release gate is the backend suite (including real PostgreSQL migration, trig
 query-count, plan, and race tests), generated HTTP/realtime transports, frontend check, both
 Windows launchers, and the v1/game-1 -> v2/game-2 smoke path. Do not deploy when any part of
 that gate is red.
+
+## Modifier editor presentation
+
+Modifier tags are retired. Current models, HTTP contracts, forms and search do not carry tags.
+The removal migration drops their catalog and result-snapshot columns without creating revisions
+or changing game results. Older migrations retain their original schema; the historical
+`normalizedTags` changed-field marker remains valid but is hidden from revision presentation.
+
+Base modifier names, descriptions and rules refer to the host as "ведущий".
+Stable identifiers and the existing `mentor` transport value are independent of this wording.
+
+The UI uses only the full definition or pinned snapshot description. Separate rule text and activation commands are not exposed in forms, review or history. Existing database columns, API fields and immutable revisions remain intact. New editor revisions mirror the full description into the required behavior rule field; hidden activation commands are preserved on edit. New text and amount inputs have no example values. Cost is a nonnegative integer; enabled duration and numeric activation limits are positive integers. Blank activation limits remain unlimited.

@@ -22,10 +22,15 @@ interface AppDialogProps extends Omit<
   description?: ReactNode
   actions?: ReactNode
   contentDensity?: 'comfortable' | 'compact'
+  height?: 'content' | 'viewport'
   slotProps?: Pick<NonNullable<DialogProps['slotProps']>, 'transition'>
 }
 
-function dialogSx(maxWidth: DialogProps['maxWidth'], fullScreen: boolean) {
+function dialogSx(
+  maxWidth: DialogProps['maxWidth'],
+  fullScreen: boolean,
+  height: 'content' | 'viewport',
+) {
   return (theme: Theme) => ({
     '& .MuiBackdrop-root': {
       backgroundColor: alpha(theme.palette.common.black, 0.8),
@@ -34,7 +39,11 @@ function dialogSx(maxWidth: DialogProps['maxWidth'], fullScreen: boolean) {
       width: fullScreen ? '100%' : { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
       maxWidth: fullScreen ? 'none' : maxWidth === 'sm' ? 540 : undefined,
       m: fullScreen ? 0 : { xs: 2, sm: 4 },
-      ...(fullScreen ? { height: '100dvh' } : {}),
+      ...(fullScreen
+        ? { height: '100dvh' }
+        : height === 'viewport'
+          ? { height: { xs: 'calc(100dvh - 32px)', sm: 'min(900px, calc(100dvh - 64px))' } }
+          : {}),
       overflow: 'hidden',
       borderColor: alpha(huntPalette.amber, 0.62),
       backgroundColor: huntPalette.bark,
@@ -49,6 +58,7 @@ export function AppDialog({
   description,
   actions,
   contentDensity = 'comfortable',
+  height = 'content',
   children,
   sx,
   maxWidth = 'sm',
@@ -70,7 +80,6 @@ export function AppDialog({
             maxWidth: 500,
             mx: 'auto',
             mb: children ? 2 : 0,
-            lineHeight: 1.65,
             textAlign: 'center',
             textWrap: 'wrap',
           }}
@@ -78,7 +87,9 @@ export function AppDialog({
           {description}
         </Typography>
       ) : description ? (
-        <div id={descriptionId}>{description}</div>
+        <Box id={descriptionId} sx={{ textAlign: 'center', overflowWrap: 'anywhere' }}>
+          {description}
+        </Box>
       ) : null}
       {children}
     </>
@@ -92,20 +103,17 @@ export function AppDialog({
       {...dialogProps}
       transitionDuration={reducedMotion ? 0 : dialogProps.transitionDuration}
       {...(description ? { 'aria-describedby': descriptionId } : {})}
-      sx={mergeSx(dialogSx(maxWidth, fullScreen), sx)}
+      sx={mergeSx(dialogSx(maxWidth, fullScreen, height), sx)}
     >
       <DialogTitle
         sx={{
           position: 'relative',
-          px: { xs: 2.5, sm: 4 },
-          pt: { xs: 2.75, sm: 3.25 },
-          pb: { xs: 2.25, sm: 2.5 },
+          px: 2,
+          py: 1.5,
           borderBottom: '1px solid',
           borderColor: alpha(huntPalette.amber, 0.38),
           color: 'primary.light',
-          fontSize: { xs: '1.55rem', sm: '1.8rem' },
-          lineHeight: 1.15,
-          letterSpacing: '0.01em',
+          typography: 'h3',
           textAlign: 'center',
           overflowWrap: 'anywhere',
           '&::after': {
@@ -129,6 +137,7 @@ export function AppDialog({
       <DialogContent
         sx={{
           p: 0,
+          ...(height === 'viewport' ? { display: 'flex', minHeight: 0 } : {}),
           borderBottom: '1px solid',
           borderColor: alpha(huntPalette.amber, 0.3),
           backgroundColor: alpha(huntPalette.soot, 0.14),
@@ -136,12 +145,11 @@ export function AppDialog({
       >
         <Box
           sx={{
-            px: { xs: 1.5, sm: 2.5 },
-            py: isStandaloneMessage
-              ? 3.5
-              : contentDensity === 'compact'
-                ? { xs: 1.25, sm: 1.75 }
-                : { xs: 2.75, sm: 3.25 },
+            ...(height === 'viewport'
+              ? { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0 }
+              : {}),
+            px: 1.5,
+            py: isStandaloneMessage ? 2 : contentDensity === 'compact' ? 1.25 : 1.5,
           }}
         >
           {content}
@@ -157,9 +165,9 @@ export function AppDialog({
               sm: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             },
             alignItems: 'stretch',
-            gap: 1.25,
-            px: { xs: 2.5, sm: 4 },
-            py: { xs: 2.25, sm: 2.75 },
+            gap: 1,
+            px: 1.5,
+            py: 1.5,
             backgroundColor: alpha(huntPalette.soot, 0.2),
           }}
         >

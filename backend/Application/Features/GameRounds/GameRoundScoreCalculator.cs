@@ -8,10 +8,19 @@ namespace backend.Application.Features.GameRounds;
 
 public static class GameRoundScoreCalculator
 {
+    public static int CalculatePenaltyTotal(decimal finalScore) =>
+        finalScore < 0 ? SaturatingInt32.From(decimal.Abs(finalScore)) : 0;
+
+    public static GameRoundScoreDetails ToDetails(GameRoundScoreBreakdown breakdown) => new(
+        breakdown.ScoreUnit, breakdown.KillsScore, breakdown.BountyScore,
+        breakdown.ModifierKillDelta, breakdown.ModifierKillScore, breakdown.ModifierScoreDelta,
+        breakdown.EmptyCardPenaltyApplied, breakdown.EmptyCardPenaltyScore, breakdown.PenaltyTotal,
+        breakdown.BonusDelta, breakdown.TotalKillCount, breakdown.FinalScore, breakdown.CalculationLines);
+
     public static GameRoundScoreBreakdown Calculate(GameRoundScoreInput input)
     {
         var normalizedStatus = input.Status.Trim().ToLowerInvariant();
-        if (normalizedStatus != GameRoundStatusValue.Completed)
+        if (normalizedStatus is not (GameRoundStatusValue.Completed or GameRoundStatusValue.ShowingResults))
         {
             return EmptyBreakdown(input.BaseScore);
         }
@@ -39,7 +48,7 @@ public static class GameRoundScoreCalculator
             SaturatingInt32.From(rawModifierScoreDelta),
             emptyCardPenaltyApplied,
             SaturatingInt32.From(rawEmptyCardPenaltyScore),
-            rawFinalScore < 0 ? SaturatingInt32.From(decimal.Abs(rawFinalScore)) : 0,
+            CalculatePenaltyTotal(rawFinalScore),
             SaturatingInt32.From(rawBonusDelta),
             SaturatingInt32.From(rawTotalKillCount),
             SaturatingInt32.From(rawFinalScore),

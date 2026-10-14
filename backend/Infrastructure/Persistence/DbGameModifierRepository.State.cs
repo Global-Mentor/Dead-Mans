@@ -14,8 +14,9 @@ namespace backend.Infrastructure.Persistence;
 public sealed partial class DbGameModifierRepository : IGameModifierRepository
 {
     public async Task<IReadOnlyList<GameModifierDefinition>> GetCatalogAsync(
+        bool archived = false,
         CancellationToken cancellationToken = default
-    ) => await new ModifierCatalogReadProjection(_dbContext).LoadAsync(cancellationToken);
+    ) => await new ModifierCatalogReadProjection(_dbContext).LoadAsync(archived, cancellationToken);
 
     public async Task<GetGameModifierStateRepositoryResult> GetStateAsync(
         Guid userId,

@@ -83,10 +83,17 @@ it('ranks played teams by result and shows a diamond instead of a waiting slot n
       teams={[
         { ...team, teamId: 'waiting', teamName: 'Ждут', teamSlotIndex: 9, isPlayed: false },
         { ...team, teamId: 'low', teamName: 'Низкий', finalScore: -20 },
-        { ...team, teamId: 'tie-first', teamName: 'Равный первый', finalScore: 50 },
+        {
+          ...team,
+          teamId: 'tie-first',
+          teamName: 'Равный первый',
+          teamSlotIndex: 10,
+          finalScore: 50,
+        },
         {
           ...team,
           teamId: 'tie-second',
+          teamSlotIndex: 3,
           teamName: 'Равный второй',
           finalScore: 50,
           playedAtUtc: '2026-09-01T11:00:00Z',

@@ -140,10 +140,15 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         var (gameId, cellId) = await SeedDraftWithSingleCellAsync();
         var storage = new InMemoryObjectStorage();
         using var admin = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        if (publish)
+        {
+            using var seedScope = _factory.Services.CreateScope();
+            await PublicationTestData.AddMediaAsync(seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>(), gameId);
+        }
         var interruptedStorage = new LifecycleDuringUploadStorage(storage, async () =>
         {
             using var transition = publish
-                ? await admin.PostAsync("/api/game/lifecycle/open-registration", null)
+                ? await PublicationTestData.OpenPreparedDraftAsync(_factory.Services, admin)
                 : await admin.DeleteAsync("/api/game/setup");
             transition.EnsureSuccessStatusCode();
         });
@@ -160,8 +165,8 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         Assert.Empty(storage.ListObjectKeys("deadman-test", $"games/{gameId}/"));
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        Assert.Empty(await db.BoardCellMedia.ToArrayAsync());
-        Assert.Empty(await db.MediaAssets.ToArrayAsync());
+        Assert.Equal(publish ? 1 : 0, await db.BoardCellMedia.CountAsync());
+        Assert.Equal(publish ? 1 : 0, await db.MediaAssets.CountAsync());
         Assert.Equal(publish ? GameStatusValue.Ready : null, await db.Games.Where(game => game.Id == gameId).Select(game => game.Status).SingleOrDefaultAsync());
     }
 

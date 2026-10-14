@@ -5,7 +5,8 @@ import {
   NavigationButton,
 } from '../shared/ui/index.ts'
 import type { TFunction } from 'i18next'
-import { useCallback, useState, type MouseEvent } from 'react'
+import { useCallback, useState, type MouseEvent, type SyntheticEvent } from 'react'
+import { preloadPanelRoute } from '../app/panel-route-config.tsx'
 import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -31,12 +32,20 @@ import {
 import type { GameUserNotification } from '../shared/api/contracts/index.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
+import { refreshRealtimeQueries } from '../shared/realtime/refresh-realtime-queries.ts'
 import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
 
 const USER_NOTIFICATION_CREATED_EVENT = realtimeHubs.gameBoard.events.userNotificationCreated
+
+function preloadNavigationTarget(event: SyntheticEvent) {
+  const link = event.target instanceof Element ? event.target.closest('a[href]') : null
+  if (!(link instanceof HTMLAnchorElement) || link.origin !== window.location.origin) return
+  // Speculative loading must not surface an error before navigation; the loader can retry.
+  void preloadPanelRoute(link.pathname).catch(() => {})
+}
 
 export function PanelNavigation() {
   const { t } = useTranslation()
@@ -115,6 +124,9 @@ export function PanelNavigation() {
 
       <Box
         component="header"
+        onPointerOver={preloadNavigationTarget}
+        onFocusCapture={preloadNavigationTarget}
+        onTouchStart={preloadNavigationTarget}
         sx={(theme) => ({
           position: 'sticky',
           top: 0,
@@ -274,7 +286,11 @@ export function PanelNavigation() {
                       <ActionMenuItem
                         key={`game-notification-${notification.notificationId}`}
                         component={RouterLink}
-                        to={gameModifiersRoute.fullPath}
+                        to={
+                          notification.type === 'team_rejected'
+                            ? gameApplicationRoute.fullPath
+                            : gameModifiersRoute.fullPath
+                        }
                         onClick={closeNotificationMenu}
                         sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}
                       >
@@ -348,7 +364,7 @@ export function PanelNavigation() {
 function GameNotificationRealtimeSync() {
   const queryClient = useQueryClient()
   const syncNotifications = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: gameNotificationQueryKeys.all })
+    await refreshRealtimeQueries(queryClient, gameNotificationQueryKeys.all)
   }, [queryClient])
 
   const registerEventHandlers = useCallback(
@@ -361,9 +377,17 @@ function GameNotificationRealtimeSync() {
       }
 
       connection.on(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
+      connection.on(
+        realtimeHubs.gameBoard.events.registrationChanged,
+        handleUserNotificationCreated,
+      )
 
       return () => {
         connection.off(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
+        connection.off(
+          realtimeHubs.gameBoard.events.registrationChanged,
+          handleUserNotificationCreated,
+        )
       }
     },
     [syncNotifications],
@@ -381,6 +405,10 @@ function GameNotificationRealtimeSync() {
 
 function getGameNotificationTitle(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
+    case 'team_rejected':
+      return t('navigation.teamRejectedItemTitle', {
+        team: notification.teamName ?? t('navigation.teamFallback'),
+      })
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemTitle', {
         modifier: notification.modifierName ?? t('navigation.modifierFallback'),
@@ -392,6 +420,8 @@ function getGameNotificationTitle(t: TFunction, notification: GameUserNotificati
 
 function getGameNotificationDescription(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
+    case 'team_rejected':
+      return t('navigation.teamRejectedItemDescription')
     case 'modifier_cancelled':
       return t('navigation.modifierCancelledItemDescription', {
         player: notification.actorDisplayName ?? t('navigation.someone'),

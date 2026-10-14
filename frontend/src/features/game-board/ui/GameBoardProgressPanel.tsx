@@ -133,11 +133,9 @@ export function GameBoardProgressPanel({
           variant="h6"
           color="text.primary"
           sx={{
-            fontSize: '1.125rem',
             fontWeight: 700,
             textAlign: 'center',
             overflowWrap: 'anywhere',
-            lineHeight: 1.2,
           }}
         >
           {caption}

@@ -1,24 +1,46 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { activeGameRoundQueryOptions } from '../game-rounds/api/game-rounds-queries.ts'
+import type { components } from '../../shared/api/contracts/generated'
 import {
+  activeGameRoundQueryOptions,
   beginGameRoundGameplay,
+  completeGameRoundPreparation,
   finalizeGameRound,
+  finishGameRoundPresentation,
   prepareGameRound,
   rebuildGameRound,
   reviewGameRound,
   startGameRoundModifierOrdering,
   technicalCancelGameRound,
-} from '../game-rounds/api/game-rounds-api.ts'
-import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
-import { currentGameBoardQueryOptions } from './api/game-board-queries.ts'
+} from '../game-rounds/index.ts'
+import { gameHistoryQueryKeys } from '../game-history/index.ts'
+import { gameRegistrationQueryKeys } from '../game-registration/index.ts'
+import {
+  currentGameBoardQueryOptions,
+  currentGameTeamQueueQueryOptions,
+} from './api/game-board-queries.ts'
 import type { CompleteRoundInput } from './model/game-round-summary-form.ts'
 
-async function invalidateRoundState(queryClient: ReturnType<typeof useQueryClient>) {
-  await queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
-  await queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
-  await queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all })
+async function applyRoundState(
+  queryClient: ReturnType<typeof useQueryClient>,
+  round: components['schemas']['GameRoundDetailsDto'],
+) {
+  await queryClient.cancelQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+  queryClient.setQueryData(activeGameRoundQueryOptions.queryKey, (current) => {
+    if (current && (current.roundId !== round.roundId || current.roundVersion > round.roundVersion))
+      return current
+    return round.status === 'completed' || round.status === 'cancelled' ? null : round
+  })
+  await Promise.all(
+    [
+      activeGameRoundQueryOptions.queryKey,
+      currentGameBoardQueryOptions.queryKey,
+      currentGameTeamQueueQueryOptions.queryKey,
+      gameRegistrationQueryKeys.all,
+      gameHistoryQueryKeys.all,
+    ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+  )
 }
 
 export interface TechnicalCancelRoundInput {
@@ -45,8 +67,8 @@ export function useStartGameRound() {
       startGameRoundModifierOrdering(input.roundId, {
         expectedRoundVersion: input.expectedRoundVersion,
       }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelStartModifierOrderingFailed'))
@@ -57,8 +79,8 @@ export function useStartGameRound() {
     onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       prepareGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelStartFailed'))
@@ -71,11 +93,39 @@ export function useStartGameRound() {
       beginGameRoundGameplay(input.roundId, {
         expectedRoundVersion: input.expectedRoundVersion,
       }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelBeginGameplayFailed'))
+    },
+  })
+
+  const completePreparationMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
+    mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
+      completeGameRoundPreparation(input.roundId, {
+        expectedRoundVersion: input.expectedRoundVersion,
+      }),
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
+    },
+    onError: () => {
+      setErrorMessage(t('gameBoard.roundPanelCompletePreparationFailed'))
+    },
+  })
+
+  const finishPresentationMutation = useMutation({
+    onMutate: () => setErrorMessage(null),
+    mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
+      finishGameRoundPresentation(input.roundId, {
+        expectedRoundVersion: input.expectedRoundVersion,
+      }),
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
+    },
+    onError: () => {
+      setErrorMessage(t('gameBoard.roundPanelFinishPresentationFailed'))
     },
   })
 
@@ -83,8 +133,8 @@ export function useStartGameRound() {
     onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       reviewGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelReviewFailed'))
@@ -95,8 +145,8 @@ export function useStartGameRound() {
     onMutate: () => setErrorMessage(null),
     mutationFn: (input: { roundId: string; expectedRoundVersion: number }) =>
       rebuildGameRound(input.roundId, { expectedRoundVersion: input.expectedRoundVersion }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelRebuildFailed'))
@@ -112,8 +162,8 @@ export function useStartGameRound() {
         publicSummary: input.publicSummary,
         internalDetail: input.internalDetail,
       }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelTechnicalCancelFailed'))
@@ -125,6 +175,7 @@ export function useStartGameRound() {
     mutationFn: (input: CompleteRoundInput) =>
       finalizeGameRound(input.roundId, {
         status: 'completed',
+        markTeamPlayedAfterPresentation: input.markTeamPlayedAfterPresentation ?? false,
         killsCount: input.killsCount,
         bountyCount: input.bountyCount,
         notes: input.notes,
@@ -132,8 +183,8 @@ export function useStartGameRound() {
         ruleGroups: input.ruleGroups,
         expectedRoundVersion: input.expectedRoundVersion,
       }),
-    onSuccess: async () => {
-      await invalidateRoundState(queryClient)
+    onSuccess: async (round) => {
+      await applyRoundState(queryClient, round)
     },
     onError: () => {
       setErrorMessage(t('gameBoard.roundPanelCompleteFailed'))
@@ -144,7 +195,9 @@ export function useStartGameRound() {
     startModifierOrderingMutation.isPending ||
     startMutation.isPending ||
     beginGameplayMutation.isPending ||
+    completePreparationMutation.isPending ||
     reviewMutation.isPending ||
+    finishPresentationMutation.isPending ||
     rebuildMutation.isPending ||
     technicalCancelMutation.isPending ||
     completeMutation.isPending
@@ -154,7 +207,9 @@ export function useStartGameRound() {
     startModifierOrdering: startModifierOrderingMutation.mutate,
     startRound: startMutation.mutate,
     beginGameplay: beginGameplayMutation.mutate,
+    completePreparation: completePreparationMutation.mutate,
     reviewRound: reviewMutation.mutate,
+    finishPresentation: finishPresentationMutation.mutate,
     rebuildRound: rebuildMutation.mutate,
     technicalCancelRound: technicalCancelMutation.mutate,
     completeRound: completeMutation.mutateAsync,

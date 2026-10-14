@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
     --output /out \
     /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.11-noble AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble AS runtime
 WORKDIR /app
 ARG RELEASE_SHA=local
 

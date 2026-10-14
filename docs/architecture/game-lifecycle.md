@@ -8,12 +8,28 @@ this version deliberately has no reopen command.
 After an active team opens a card, the server creates a `card_opened` round. Modifier
 ordering stays closed until a moderator or administrator explicitly starts it. The
 round then moves through `awaiting_modifiers` (orders open), `preparing` (orders
-closed), `in_progress` (gameplay), and `reviewing_results` (gameplay finished).
-The operator opens the result form during review and finalizes the round as
-`completed`. Technical cancellation remains available during each unfinished phase.
+closed), `preparation_completed` (OBS cleared, waiting to start), `in_progress` (gameplay), and `reviewing_results` (gameplay finished).
+The operator opens the result form during review. Saving freezes scores and moves the
+round to `showing_results`. OBS retains this result until the operator calls
+`POST /api/game/rounds/{roundId}/finish-presentation`, which moves it to `completed`.
+Presentation blocks opening another card, changing the active team and finishing the game.
+The post-round team action is saved with the score and applied atomically when presentation ends.
+`finished_at_utc` records score finalization; the transition audit records presentation completion.
+Saved scores and modifier outcomes cannot change during presentation. Technical cancellation
+remains available only before scores are saved.
 Each transition checks the expected round version and records an audit entry. The
-older round-start API also requires `preparing`, so it cannot skip ordering or
+older round-start API also requires `preparation_completed`, so it cannot skip ordering or
 preparation. An active quiz question prevents opening or reopening modifier ordering.
+
+## Publication readiness
+
+Opening registration requires media attached to every board cell; card titles remain optional.
+The publication request defaults both `allowWithoutModifiers` and `allowWithoutQuestions` to
+`false`. Each empty selection requires its own explicit consent. The UI collects those consents
+in the publication confirmation and resets them when it is reopened or the reviewed draft version
+changes. The server rechecks media and selected content under the publication lock before
+changing state. A failed check leaves the draft editable. Media is checked again at game start,
+including for older ready games. Published content remains immutable.
 
 ## Publication freeze at ready
 
@@ -49,8 +65,7 @@ best completed-round result before penalties
 
 Cancelled rounds do not contribute to scores. Only teams that opened a card enter the
 finish preview, final results and history; opening creates a round. Teams with only
-cancelled rounds remain in history with no scored rounds or placement. Marking a team
-played without opening any card does not add it to history. A completed round with a
+cancelled rounds remain in history with no scored rounds or placement. A team can only be manually marked played after opening a card and while it is not active. Existing legacy manual flags without opened cards do not add teams to history. A completed round with a
 zero score still counts. Registration audit records remain available. Equal final scores share a competition
 placement (`1, 1, 3`); the existing best/total/latest/slot ordering is only a stable
 display order inside a tie. Quiz points are reported separately and never enter team
@@ -101,3 +116,13 @@ After the transaction commits, the server best-effort publishes
 the board, round, queue, registration, history, quiz-derived history, modifier and finish
 preview caches. A realtime transport failure is logged and never rolls back the database
 commit.
+
+### Completing preparation before gameplay
+
+`POST /api/game/rounds/{roundId}/complete-preparation` persists `preparation_completed`
+with optimistic versioning and a transition audit. OBS clears the team, card, modifiers
+and backdrop; reconnects and reloads preserve this phase. The round stays nonterminal,
+blocking another team, card or game finalization. Only the separate gameplay-start command
+sets `gameplayStartedAtUtc` and captures modifier timer snapshots. Both start APIs require
+`preparation_completed`; the database guard also rejects bypassing this stage. Technical
+cancellation remains available here.

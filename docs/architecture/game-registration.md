@@ -80,6 +80,21 @@ browser validation bubbles.
 Leaving requires confirmation. The dialog stays open while the request is pending and
 after a failed request, allowing a retry; it closes only after success or cancellation.
 
+## Additional administrator teams
+
+Admins and superadmins can create empty teams beyond the initial slot count in ready and active games. Automatic placement reuses an available slot or creates a new reserved slot at the end of the queue. Slot and team creation share the game roster lock and transaction, including concurrent requests. Moderators still need an available public slot or an explicitly selected available slot; clients cannot grant themselves overflow permission. Reserved overflow slots do not increase public self-registration capacity. Explicit occupied or invalid slot requests still fail.
+
+## Refusal of admission
+
+Staff rejection applies only to a named, full forming team with every active member ready and no
+pending invitations. The persistence operation locks the game and team and rechecks lifecycle,
+readiness and opened-card history. A refused team becomes rejected, closes active memberships and
+releases its queue place. Each active member receives one persistent team_rejected notification in
+the same transaction; a failed refusal creates no notifications. RegistrationChanged resynchronizes
+both registration and unread notifications. Reconnect also reloads unread notifications.
+Disbanding remains available to forming or confirmed teams before participation and does not send
+an admission-refusal message. Refusal is a team decision, not an account ban.
+
 ## Registration API
 
 - `GET /api/game/registration` - snapshot for the ready game
@@ -118,8 +133,9 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - Pending invitations for closed teams are attached to the team DTO and rendered alongside roster members with an awaiting-confirmation marker; they do not count as active members until accepted.
 - Once a team is confirmed, players see a request-to-disband action instead of direct leave; an existing request is shown as pending.
 - Moderators/admins work in a team-centric management panel with available players, explicit up/down team ordering, drag-and-drop team swaps, empty-team creation, and approve/reject actions in one place.
-- Moderators/admins see pending disband requests in a prominent alert and in the team row, and confirm a dialog before disbanding a team. Trying to disband an active or played team displays an alert explaining the refusal. Server refusals also show a translated error message.
+- Moderators/admins see pending disband requests in a prominent alert and in the team row, and confirm a dialog before disbanding a team. Trying to disband an active team or one that opened a card displays the reason inside its confirmation dialog. Server refusals remain in that dialog without a duplicate toast.
 - Confirmed rosters have no individual removal or player drag controls and do not accept player drops. The API enforces the same rule for both the source and destination of a transfer, returning `409 game_registration.team_roster_locked` with a translated explanation. Queue reordering is limited to registration; stale requests after game start return a domain conflict.
+- Manual played-state changes require a confirmed, inactive team with at least one opened card. A round belonging to another team does not block this command. Technically cancelled rounds count as opened-card history. Registration snapshots expose the server-derived `hasOpenedCard` flag; clearing the manual played flag never clears that history.
 - Disbanding closes recruitment and clears the pending disband request while preserving team, invitation and membership history. After game start, a narrow database exception permits this transition only for an inactive team that is not marked played and has never opened a card. All registration mutations acquire the game-row lock before any team, slot or invitation locks, serializing them with game start, round creation, active-team selection and played-state changes. Leaving a team rechecks confirmation and pending invitations under that lock. The team transition and membership closure commit together, enforced by deferred roster checks. Starting a game still requires a confirmed roster; all eligible teams may subsequently be disbanded.
 - Leaving, removing or transferring the last member uses the same closure procedure. Automatic closure records the acting player for a voluntary exit and the administrator for a removal or transfer. Final results omit teams that never opened a card. A cancelled round preserves its team in history and prevents disbanding; an administrator may mark that team played to remove it from the remaining queue. Reverting the migration is refused if it would restore invariants incompatible with already committed empty rosters or finalizations.
 
@@ -160,3 +176,7 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - **Infrastructure**: `IGameRegistrationReadStore` + `IGameRegistrationPersistence`, `IGameLifecycleReadStore` + `IGameLifecyclePersistence`; team slot seeding via `GameTeamSlotInitializer` in `Infrastructure/Persistence/`.
 - **History**: admin reject marks a team as `rejected`, closes active memberships, and cancels pending team invitations. Player leave marks `LeftAtUtc`; if the last active member leaves, the team becomes `disbanded`. Confirmed teams cannot be left directly; a member can store `DisbandRequestedAtUtc` / `DisbandRequestedByUserId`, and an admin disband records `DisbandedAtUtc` / `DisbandedByUserId`, closes active memberships, and cancels pending team invitations. Rows are preserved so future player/team/game history can be built from the same tables.
 - **Frontend**: transport in `frontend/src/features/game-registration/api/`; UI in `game-application/` and `team-registrations/`. The admin panel is reused across both admin entry points. A missing ready-game snapshot (`404`) renders a normal unavailable state without disabled mock controls.
+
+Administrative confirmation can be cancelled through `POST /api/game/registration/teams/{teamId}/unconfirm` in ready and active games. The team must be confirmed, inactive and have no opened-card history (including technically cancelled rounds). The game/team locks serialize this transition with game start and card opening. It restores forming status and clears confirmation metadata while preserving membership, readiness and history. Finished games remain immutable.
+
+Automatic administrative team creation appends the new team after all existing teams. A free slot is reused without increasing capacity; if it is inside the queue, transactional adjacent swaps preserve the relative order of existing teams and move their pending invitations with them. Creation and placement share the game-row lock and commit once. Explicit API slot placement remains explicit.

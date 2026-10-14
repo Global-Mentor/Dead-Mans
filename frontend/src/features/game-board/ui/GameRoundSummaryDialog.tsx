@@ -1,10 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Box, Stack, Typography } from '@mui/material'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { ApiError } from '../../../shared/api/errors/ApiError.ts'
 import {
   AppButton,
   AppDialog,
@@ -16,11 +15,11 @@ import {
   FormSection,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
-import { previewGameRoundScore } from '../../game-rounds/api/game-rounds-api.ts'
-import { getGameRoundPreviewErrorCode } from '../model/game-round-preview-error.ts'
+import { useGameRoundSummaryPreview } from '../use-game-round-summary-preview.ts'
+import type { GameRoundPreviewState } from '../model/game-round-preview-state.ts'
 import {
   buildCompleteRoundInput,
-  buildGameRoundPreviewRequest,
+  buildGameRoundBroadcastRequest,
   buildGameRoundSummaryDefaultValues,
   gameRoundSummaryFormSchema,
   serializeGameRoundPreviewInput,
@@ -35,7 +34,7 @@ import {
 } from '../model/reconcile-game-round-draft.ts'
 import { GameRoundContext } from './GameRoundContext.tsx'
 import { GameRoundPostRoundSection } from './GameRoundPostRoundSection.tsx'
-import { GameRoundPreviewSection, type GameRoundPreviewState } from './GameRoundPreviewSection.tsx'
+import { GameRoundPreviewSection } from './GameRoundPreviewSection.tsx'
 import {
   GameRoundModifierHeading,
   GameRoundRuleGroupCard,
@@ -69,7 +68,6 @@ function GameRoundSummaryDialogBody({
 }: Omit<GameRoundSummaryDialogProps, 'open'>) {
   const { t } = useTranslation()
   const formId = useId()
-  const requestSequence = useRef(0)
   const defaultValues = useMemo(
     () => buildGameRoundSummaryDefaultValues(activeRound),
     [activeRound],
@@ -84,12 +82,10 @@ function GameRoundSummaryDialogBody({
     mode: 'onChange',
   })
   const watchedValues = useWatch({ control })
-  const [previewState, setPreviewState] = useState<GameRoundPreviewState>({
-    status: 'incomplete',
-    data: null,
-    inputKey: null,
-    errorCode: null,
-  })
+  const broadcastInput = useMemo(
+    () => buildGameRoundBroadcastRequest(activeRound, defaultValues, watchedValues),
+    [activeRound, defaultValues, watchedValues],
+  )
   const editingDefaults = useRef<GameRoundSummaryFormInput>(defaultValues)
   const close = useDirtyClose({
     // Watch updates synchronously with input; resolver-backed isDirty can lag a close click.
@@ -97,20 +93,14 @@ function GameRoundSummaryDialogBody({
     busy: isSubmitting,
     onClose,
   })
-  const parsedValues = useMemo(
-    () => gameRoundSummaryFormSchema.safeParse(watchedValues),
-    [watchedValues],
-  )
-  const previewInput = useMemo(
-    () => (parsedValues.success ? buildCompleteRoundInput(activeRound, parsedValues.data) : null),
-    [activeRound, parsedValues],
-  )
-  const previewInputKey = useMemo(
-    () =>
-      previewInput
-        ? `${activeRound.roundId}:${serializeGameRoundPreviewInput(previewInput)}`
-        : null,
-    [activeRound.roundId, previewInput],
+  const previewInputKey = broadcastInput?.completeInput
+    ? `${activeRound.roundId}:${JSON.stringify(broadcastInput.completeInput)}`
+    : null
+  const previewState = useGameRoundSummaryPreview(
+    activeRound.roundId,
+    activeRound.roundVersion,
+    broadcastInput,
+    previewInputKey,
   )
   const isPreviewFresh =
     previewState.status === 'success' &&
@@ -119,7 +109,9 @@ function GameRoundSummaryDialogBody({
     Boolean(previewState.data.normalizedInputHash.trim())
   const scorePreview = isPreviewFresh ? previewState.data?.scoreDetails : null
   const displayedPreviewState: GameRoundPreviewState = !previewInputKey
-    ? { status: 'incomplete', data: null, inputKey: null, errorCode: null }
+    ? previewState.status === 'error' || previewState.status === 'stale'
+      ? previewState
+      : { status: 'incomplete', data: null, inputKey: null, errorCode: null }
     : previewState.inputKey !== previewInputKey
       ? { status: 'debouncing', data: previewState.data, inputKey: null, errorCode: null }
       : previewState
@@ -132,64 +124,6 @@ function GameRoundSummaryDialogBody({
     reset(draft, { keepDefaultValues: true })
     editingDefaults.current = defaultValues
   }, [defaultValues, getValues, reset])
-
-  useEffect(() => {
-    const sequence = ++requestSequence.current
-    if (!previewInput || !previewInputKey) return
-    const timer = window.setTimeout(() => {
-      if (requestSequence.current !== sequence) return
-      setPreviewState((current) => ({
-        ...current,
-        status: 'loading',
-        inputKey: previewInputKey,
-        errorCode: null,
-      }))
-      previewGameRoundScore(activeRound.roundId, buildGameRoundPreviewRequest(previewInput))
-        .then((data) => {
-          if (requestSequence.current !== sequence) return
-          if (data.roundVersion !== activeRound.roundVersion) {
-            setPreviewState({
-              status: 'stale',
-              data: null,
-              inputKey: previewInputKey,
-              errorCode: null,
-            })
-            return
-          }
-          if (!data.normalizedInputHash.trim()) {
-            setPreviewState({
-              status: 'error',
-              data: null,
-              inputKey: previewInputKey,
-              errorCode: null,
-            })
-            return
-          }
-          setPreviewState({
-            status: 'success',
-            data,
-            inputKey: previewInputKey,
-            errorCode: null,
-          })
-        })
-        .catch((error: unknown) => {
-          if (requestSequence.current !== sequence) return
-          const errorCode = getGameRoundPreviewErrorCode(error)
-          setPreviewState({
-            status:
-              errorCode === 'game_round.stale_version' ||
-              (error instanceof ApiError && error.status === 409)
-                ? 'stale'
-                : 'error',
-            data: null,
-            inputKey: previewInputKey,
-            errorCode,
-          })
-        })
-    }, 350)
-
-    return () => window.clearTimeout(timer)
-  }, [activeRound.roundId, activeRound.roundVersion, previewInput, previewInputKey])
 
   return (
     <>

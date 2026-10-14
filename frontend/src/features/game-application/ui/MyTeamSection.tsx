@@ -183,12 +183,8 @@ export function MyTeamSection({
                   sx={{
                     ml: 'auto',
                     minWidth: 0,
-                    minHeight: 34,
                     flexShrink: 0,
-                    gap: 0.65,
-                    px: 1,
-                    py: 0.5,
-                    fontSize: 13,
+                    gap: 0.5,
                     whiteSpace: 'nowrap',
                   }}
                   onClick={() => {
@@ -410,6 +406,7 @@ export function MyTeamSection({
               ? 'gameApplication.leaveTeamConfirmTitle'
               : 'gameApplication.requestDisbandConfirmTitle',
         )}
+        subject={team.name}
         description={t(
           confirmation === 'cancel'
             ? 'gameApplication.cancelDisbandConfirmDescription'

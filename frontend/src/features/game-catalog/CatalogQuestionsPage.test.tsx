@@ -18,7 +18,6 @@ function createCatalogController(overrides: Record<string, unknown> = {}) {
     setSearch: vi.fn(),
     selectedCategoryId: null,
     setSelectedCategoryId: vi.fn(),
-    selectedCategory: null,
     catalogQuery: { isLoading: false, isError: false, data: [] },
     categoriesQuery: { isLoading: false, isError: false, data: [] },
     dialog: null,
@@ -26,10 +25,9 @@ function createCatalogController(overrides: Record<string, unknown> = {}) {
     openEdit: vi.fn(),
     closeDialog: vi.fn(),
     submitQuestion: vi.fn(),
-    categoryDialog: null,
-    openCreateCategory: vi.fn(),
-    openEditCategory: vi.fn(),
-    closeCreateCategory: vi.fn(),
+    categoryDialog: false,
+    openCategoryManagement: vi.fn(),
+    closeCategoryManagement: vi.fn(),
     submitCategory: vi.fn(),
     isSaving: false,
     isSavingCategory: false,
@@ -38,11 +36,6 @@ function createCatalogController(overrides: Record<string, unknown> = {}) {
     cancelDelete: vi.fn(),
     confirmDelete: vi.fn(),
     isDeleting: false,
-    deleteCategoryTarget: null,
-    requestDeleteCategory: vi.fn(),
-    cancelDeleteCategory: vi.fn(),
-    confirmDeleteCategory: vi.fn(),
-    isDeletingCategory: false,
     importQuestions: vi.fn(),
     isImportingQuestions: false,
     downloadTemplate: vi.fn(),
@@ -112,7 +105,7 @@ describe('CatalogQuestionsPage', () => {
     renderWithAppProviders(<CatalogQuestionsPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Развернуть импорт из JSON' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Загрузить JSON' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Загрузить JSON' }))
     const input = document.querySelector('input[type="file"]')
     expect(input).not.toBeNull()
 

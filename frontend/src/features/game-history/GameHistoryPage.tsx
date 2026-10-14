@@ -15,6 +15,7 @@ import {
   AsyncSection,
   FormTextField,
   PageShell,
+  PageStatePanel,
   SectionCard,
   SectionHeader,
   SelectionTile,
@@ -116,15 +117,53 @@ export function GameHistoryPage({
       ? (currentGameDetails?.gameTitle ?? currentGameQuery.data.title)
       : null
 
+  if (
+    !isBoardSwitcherVisible &&
+    ((activeBoard === 'realtime' && currentGameId === null) ||
+      (activeBoard === 'history' && completedGames.length === 0))
+  ) {
+    const isCurrent = activeBoard === 'realtime'
+    const query = isCurrent ? currentGameQuery : gamesQuery
+    return (
+      <PageStatePanel
+        variant="page"
+        title={t(
+          isCurrent
+            ? 'navigation.items.gameLeaderboard.label'
+            : 'navigation.items.gameHistory.label',
+        )}
+        message={t(
+          query.isLoading
+            ? isCurrent
+              ? 'gameHistory.loadingCurrentGame'
+              : 'gameHistory.loadingGames'
+            : query.isError
+              ? isCurrent
+                ? 'gameHistory.errorCurrentGame'
+                : 'gameHistory.errorGames'
+              : isCurrent
+                ? 'gameHistory.currentGameMissing'
+                : 'gameHistory.completedGamesEmpty',
+        )}
+        showSpinner={query.isLoading}
+        tone={query.isError ? 'error' : 'default'}
+        actions={
+          query.isError ? (
+            <AppButton tone="secondary" onClick={() => void query.refetch()}>
+              {t('common.actions.retry')}
+            </AppButton>
+          ) : undefined
+        }
+      />
+    )
+  }
+
   return (
     <PageShell
       sx={{
         maxWidth: 1800,
         width: '100%',
         mx: 'auto',
-        p: { xs: 0, md: 0 },
-        px: { xs: 0, md: 0 },
-        pb: { xs: 0, md: 0 },
         flex: 1,
         minHeight: 0,
         display: 'flex',
@@ -232,6 +271,7 @@ export function GameHistoryPage({
               onPickerOpenChange={setPickerOpen}
               tools={
                 <FormTextField
+                  density="compact"
                   label={t('gameHistory.searchGames')}
                   value={search}
                   onChange={(event) => {

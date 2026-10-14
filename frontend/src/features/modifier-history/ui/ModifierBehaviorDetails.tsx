@@ -73,14 +73,6 @@ export function ModifierBehaviorDetails({ behavior }: { behavior: Behavior }) {
   )
   return (
     <Stack gap={1} sx={{ mt: 1 }}>
-      <DetailBlock>
-        <Typography component="h4" variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
-          {field('rule')}
-        </Typography>
-        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-          {behavior.rule}
-        </Typography>
-      </DetailBlock>
       <Box
         sx={{
           display: 'grid',

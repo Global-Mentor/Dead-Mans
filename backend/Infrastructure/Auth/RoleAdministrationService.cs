@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using backend.Application.Abstractions.Auth;
 using backend.Data;
 using backend.Data.Entities;
@@ -29,10 +30,43 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
         string? search,
         int page,
         int pageSize,
+        RoleAdministrationFilter filter,
         CancellationToken cancellationToken
     )
     {
-        var query = _dbContext.Users.AsNoTracking();
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var permanentIds = _permanentSuperAdminTwitchUserIds.ToArray();
+        var allUsers = _dbContext.Users.AsNoTracking();
+        var newSince = utcNow.AddDays(-30);
+        var summary = new RoleAdministrationSummary(
+            await allUsers.CountAsync(cancellationToken),
+            await allUsers.CountAsync(user => user.LastLoginAtUtc != null, cancellationToken),
+            await allUsers.CountAsync(user => user.CreatedAtUtc >= newSince, cancellationToken)
+        );
+        var query = allUsers;
+        if (filter.IsActive is { } isActive)
+            query = query.Where(user => user.IsActive == isActive);
+        if (filter.HasLoggedIn is { } hasLoggedIn)
+            query = query.Where(user => (user.LastLoginAtUtc != null) == hasLoggedIn);
+        if (filter.RegisteredWithinDays is { } days)
+        {
+            var since = utcNow.AddDays(-days);
+            query = query.Where(user => user.CreatedAtUtc >= since);
+        }
+        if (filter.Role is { } role)
+        {
+            string[] inheritedRoles = role switch
+            {
+                AuthRoleCodes.Moderator => [AuthRoleCodes.Moderator, AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
+                AuthRoleCodes.Admin => [AuthRoleCodes.Admin, AuthRoleCodes.SuperAdmin],
+                _ => [AuthRoleCodes.SuperAdmin]
+            };
+            query = query.Where(user =>
+                permanentIds.Contains(user.TwitchUserId)
+                || user.UserRoles.Any(assignment =>
+                    (assignment.ExpiresAtUtc == null || assignment.ExpiresAtUtc > utcNow)
+                    && inheritedRoles.Contains(assignment.Role.Code)));
+        }
         var normalizedSearch = search?.Trim();
         if (!string.IsNullOrWhiteSpace(normalizedSearch))
         {
@@ -44,9 +78,31 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var users = await query
-            .OrderByDescending(user => user.LastLoginAtUtc)
-            .ThenBy(user => user.DisplayName)
+        page = Math.Clamp(page, 1, Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)));
+        Expression<Func<User, int>> roleRank = user =>
+            permanentIds.Contains(user.TwitchUserId)
+            || user.UserRoles.Any(assignment =>
+                (assignment.ExpiresAtUtc == null || assignment.ExpiresAtUtc > utcNow)
+                && assignment.Role.Code == AuthRoleCodes.SuperAdmin) ? 3
+            : user.UserRoles.Any(assignment =>
+                (assignment.ExpiresAtUtc == null || assignment.ExpiresAtUtc > utcNow)
+                && assignment.Role.Code == AuthRoleCodes.Admin) ? 2
+            : user.UserRoles.Any(assignment =>
+                (assignment.ExpiresAtUtc == null || assignment.ExpiresAtUtc > utcNow)
+                && assignment.Role.Code == AuthRoleCodes.Moderator) ? 1 : 0;
+        var ordered = filter.Sort switch
+        {
+            "createdAsc" => query.OrderBy(user => user.CreatedAtUtc),
+            "createdDesc" => query.OrderByDescending(user => user.CreatedAtUtc),
+            "nameAsc" => query.OrderBy(user => user.DisplayName),
+            "nameDesc" => query.OrderByDescending(user => user.DisplayName),
+            "roleAsc" => query.OrderBy(roleRank),
+            "roleDesc" => query.OrderByDescending(roleRank),
+            "lastLoginAsc" => query.OrderBy(user => user.LastLoginAtUtc == null).ThenBy(user => user.LastLoginAtUtc),
+            _ => query.OrderBy(user => user.LastLoginAtUtc == null).ThenByDescending(user => user.LastLoginAtUtc),
+        };
+        var users = await ordered
+            .ThenBy(user => user.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(user => new UserSnapshot(
@@ -54,7 +110,9 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
                 user.TwitchUserId,
                 user.Login,
                 user.DisplayName,
-                user.IsActive
+                user.IsActive,
+                user.CreatedAtUtc,
+                user.LastLoginAtUtc
             ))
             .ToArrayAsync(cancellationToken);
         var roleCodesByUserId = await GetRoleCodesByUserIdAsync(
@@ -65,7 +123,7 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
             .Select(user => ToAdministrationUser(user, roleCodesByUserId.GetValueOrDefault(user.UserId)))
             .ToArray();
 
-        return new RoleAdministrationPage(items, page, pageSize, totalCount);
+        return new RoleAdministrationPage(items, page, pageSize, totalCount, summary);
     }
 
     public async Task<UpdateUserRolesResult> UpdateRolesAsync(
@@ -98,10 +156,9 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
         {
             return new UpdateUserRolesResult(UpdateUserRolesOutcome.PermanentSuperAdminProtected);
         }
-        if (requestedRoles.Contains(AuthRoleCodes.SuperAdmin))
-        {
-            requestedRoles.Add(AuthRoleCodes.Admin);
-        }
+        requestedRoles = UserRoleService.ExpandRoles(requestedRoles)
+            .Where(role => AuthRoleCodes.Assignable.Contains(role, StringComparer.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
 
         var rolesByCode = await _dbContext.Roles
             .Where(role => AuthRoleCodes.Assignable.Contains(role.Code))
@@ -167,9 +224,56 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
                     targetUser.TwitchUserId,
                     targetUser.Login,
                     targetUser.DisplayName,
-                    targetUser.IsActive
+                    targetUser.IsActive,
+                    targetUser.CreatedAtUtc,
+                    targetUser.LastLoginAtUtc
                 ),
                 updatedRoleCodes.GetValueOrDefault(targetUserId)
+            )
+        );
+    }
+
+    public async Task<UpdateUserAccessResult> UpdateAccessAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        bool isActive,
+        CancellationToken cancellationToken
+    )
+    {
+        var targetUser = await _dbContext.Users
+            .SingleOrDefaultAsync(user => user.Id == targetUserId, cancellationToken);
+        if (targetUser is null)
+        {
+            return new UpdateUserAccessResult(UpdateUserAccessOutcome.UserNotFound);
+        }
+        if (!isActive && _permanentSuperAdminTwitchUserIds.Contains(targetUser.TwitchUserId))
+        {
+            return new UpdateUserAccessResult(UpdateUserAccessOutcome.PermanentSuperAdminProtected);
+        }
+        if (!isActive && actorUserId == targetUserId)
+        {
+            return new UpdateUserAccessResult(UpdateUserAccessOutcome.SelfBlockProtected);
+        }
+        if (targetUser.IsActive != isActive)
+        {
+            targetUser.IsActive = isActive;
+            targetUser.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        var roleCodes = await GetRoleCodesByUserIdAsync([targetUserId], cancellationToken);
+        return new UpdateUserAccessResult(
+            UpdateUserAccessOutcome.Updated,
+            ToAdministrationUser(
+                new UserSnapshot(
+                    targetUser.Id,
+                    targetUser.TwitchUserId,
+                    targetUser.Login,
+                    targetUser.DisplayName,
+                    targetUser.IsActive,
+                    targetUser.CreatedAtUtc,
+                    targetUser.LastLoginAtUtc
+                ),
+                roleCodes.GetValueOrDefault(targetUserId)
             )
         );
     }
@@ -214,14 +318,9 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
     {
         var isPermanentSuperAdmin = _permanentSuperAdminTwitchUserIds.Contains(user.TwitchUserId);
         var roleCodes = assignedRoleCodes?.ToList() ?? [];
-        roleCodes.Add(AuthRoleCodes.Viewer);
         if (isPermanentSuperAdmin)
         {
             roleCodes.Add(AuthRoleCodes.SuperAdmin);
-        }
-        if (roleCodes.Contains(AuthRoleCodes.SuperAdmin, StringComparer.Ordinal))
-        {
-            roleCodes.Add(AuthRoleCodes.Admin);
         }
 
         return new RoleAdministrationUser(
@@ -229,8 +328,10 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
             user.TwitchLogin,
             user.DisplayName,
             user.IsActive,
-            UserRoleService.NormalizeRoles(roleCodes),
-            isPermanentSuperAdmin
+            UserRoleService.ExpandRoles(roleCodes),
+            isPermanentSuperAdmin,
+            user.CreatedAtUtc,
+            user.LastLoginAtUtc
         );
     }
 
@@ -268,6 +369,8 @@ public sealed class RoleAdministrationService : IRoleAdministrationService
         string TwitchUserId,
         string TwitchLogin,
         string DisplayName,
-        bool IsActive
+        bool IsActive,
+        DateTime CreatedAtUtc,
+        DateTime? LastLoginAtUtc
     );
 }

@@ -397,6 +397,34 @@ describe('useSignalrHubSubscription', () => {
     })
   })
 
+  it('restarts a closed transport while an earlier HTTP resync is still pending', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    let finishSync: (() => void) | undefined
+    const pendingSync = new Promise<void>((resolve) => {
+      finishSync = resolve
+    })
+    const onConnected = vi.fn().mockReturnValueOnce(pendingSync).mockResolvedValue(undefined)
+    render(
+      <Provider>
+        <Subscriber
+          hub="gameBoard"
+          logLabel="Slow resync"
+          onConnected={onConnected}
+          registerEventHandlers={() => vi.fn()}
+        />
+      </Provider>,
+    )
+    await vi.waitFor(() => expect(onConnected).toHaveBeenCalledOnce())
+    const connection = signalrMocks.connections[0]!
+    connection.state = 'Disconnected'
+    connection.onclose.mock.calls[0]?.[0]?.(new Error('connection lost'))
+    await vi.advanceTimersByTimeAsync(750)
+    expect(connection.start).toHaveBeenCalledTimes(2)
+    expect(onConnected).toHaveBeenCalledTimes(2)
+    finishSync?.()
+  })
+
   it('stops a pending connection when its last subscriber unmounts', async () => {
     let finishStart: (() => void) | undefined
     const pendingStart = new Promise<void>((resolve) => {

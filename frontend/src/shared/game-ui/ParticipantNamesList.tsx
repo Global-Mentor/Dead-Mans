@@ -8,8 +8,11 @@ interface ParticipantNamesListProps {
   direction?: 'column' | 'row'
   decorated?: boolean
   leadingMarker?: boolean
+  markerPlacement?: 'none' | 'leading' | 'paired'
   alignment?: 'start' | 'center'
   layout?: 'flow' | 'columns'
+  textFlow?: 'wrap' | 'singleLine'
+  minimumRows?: number
 }
 
 export function ParticipantNamesList({
@@ -20,14 +23,27 @@ export function ParticipantNamesList({
   direction = 'column',
   decorated = false,
   leadingMarker = false,
+  markerPlacement = decorated ? 'paired' : leadingMarker ? 'leading' : 'none',
   alignment,
   layout = 'flow',
+  textFlow = 'wrap',
+  minimumRows = 0,
 }: ParticipantNamesListProps) {
   const columns = layout === 'columns'
   const columnCount = Math.min(names.length, 3)
   if (names.length === 0) {
     return (
-      <Typography variant={variant} color="text.secondary" textAlign={alignment}>
+      <Typography
+        variant={variant}
+        color="text.secondary"
+        textAlign={alignment}
+        noWrap={textFlow === 'singleLine'}
+        sx={
+          minimumRows > 0
+            ? { minHeight: minimumRows + 'lh', ...(dense ? { lineHeight: 1.25 } : {}) }
+            : undefined
+        }
+      >
         {emptyLabel}
       </Typography>
     )
@@ -41,7 +57,14 @@ export function ParticipantNamesList({
         columns ? 0 : direction === 'row' ? (dense ? 0.75 : 1) : decorated ? 0.5 : dense ? 0 : 0.2
       }
       useFlexGap={direction === 'row'}
-      sx={{
+      sx={(theme) => ({
+        ...(minimumRows > 0
+          ? {
+              fontSize: theme.typography[variant].fontSize,
+              lineHeight: dense ? 1.25 : theme.typography[variant].lineHeight,
+              minHeight: minimumRows + 'lh',
+            }
+          : {}),
         m: 0,
         p: 0,
         listStyle: 'none',
@@ -55,10 +78,10 @@ export function ParticipantNamesList({
           : direction === 'row'
             ? { flexWrap: 'wrap', justifyContent: 'center' }
             : {}),
-      }}
+      })}
     >
       {names.map((name, index) =>
-        decorated || leadingMarker ? (
+        decorated || markerPlacement !== 'none' ? (
           <Stack
             component="li"
             key={`${name}-${index}`}
@@ -78,9 +101,10 @@ export function ParticipantNamesList({
                 : {}),
             }}
           >
-            <ParticipantDiamond />
+            {markerPlacement !== 'none' ? <ParticipantDiamond /> : null}
             <Typography
               variant={variant}
+              noWrap={textFlow === 'singleLine'}
               fontWeight={decorated ? 700 : undefined}
               sx={{
                 minWidth: 0,
@@ -91,13 +115,14 @@ export function ParticipantNamesList({
             >
               {name}
             </Typography>
-            {decorated ? <ParticipantDiamond /> : null}
+            {markerPlacement === 'paired' ? <ParticipantDiamond /> : null}
           </Stack>
         ) : (
           <Typography
             component="li"
             key={`${name}-${index}`}
             variant={variant}
+            noWrap={textFlow === 'singleLine'}
             sx={{
               textAlign: alignment,
               ...(dense ? { lineHeight: 1.25 } : {}),

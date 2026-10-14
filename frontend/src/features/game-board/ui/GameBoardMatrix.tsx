@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { BoardMatrix } from '../../../shared/game-ui/index.ts'
 import { ActionIcon, TabOption, TabStrip } from '../../../shared/ui/index.ts'
 import { ViewportBoard } from './ViewportBoard.tsx'
-import { boardGridMetrics } from '../theme/board-grid-metrics.ts'
+import { boardGridMetrics } from '../../../shared/game-ui/board-grid-metrics.ts'
 
 interface GameBoardMatrixProps extends ComponentProps<typeof BoardMatrix> {
   categoryLayout?: boolean
@@ -74,7 +74,7 @@ export function GameBoardMatrix({
                   {index === activeColumnIndex ? (
                     <Box
                       component="span"
-                      aria-label={t('gameBoard.cellActiveRound')}
+                      aria-label={t('boardCard.cellActiveRound')}
                       sx={{
                         width: 6,
                         height: 6,
@@ -129,7 +129,7 @@ export function GameBoardMatrix({
         </Box>
         {activeColumnIndex !== undefined ? (
           <ActionIcon
-            aria-label={t('gameBoard.cellActiveRound')}
+            aria-label={t('boardCard.cellActiveRound')}
             appearance="outlined"
             disabled={activeColumnIndex === column}
             sx={{ visibility: activeColumnIndex === column ? 'hidden' : 'visible' }}

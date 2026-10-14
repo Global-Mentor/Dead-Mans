@@ -54,7 +54,6 @@ public class GameRoundModifierResultConfiguration
         builder.Property(x => x.ModifierDescriptionSnapshot).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.DefinitionRevisionSnapshot).IsRequired();
         builder.Property(x => x.ModifierActivationCommandSnapshot).HasMaxLength(128);
-        builder.Property(x => x.ModifierNormalizedTagsSnapshot).HasColumnType("text[]").IsRequired();
         builder.Property(x => x.ModifierBehaviorV2SnapshotJson).HasColumnType("jsonb").IsRequired();
         builder.Property(x => x.OutcomeStatus).HasMaxLength(32).IsRequired();
         builder.Property(x => x.ResolutionDataJson).HasColumnType("jsonb");

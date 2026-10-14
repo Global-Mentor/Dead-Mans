@@ -113,7 +113,7 @@ public sealed partial class DbGameRoundRepository
             )
             .ToArray();
 
-        var scoreDetails = ToScoreDetails(CalculateRoundScoreSnapshot(
+        var scoreDetails = Application.Features.GameRounds.GameRoundScoreCalculator.ToDetails(CalculateRoundScoreSnapshot(
             round.Status,
             round.BaseScore,
             round.KillsCount,
@@ -202,7 +202,6 @@ public sealed partial class DbGameRoundRepository
                         ModifierDescriptionSnapshot = x.ModifierDescriptionSnapshot,
                         DefinitionRevisionSnapshot = x.DefinitionRevisionSnapshot,
                         ModifierActivationCommandSnapshot = x.ActivationCommandSnapshot,
-                        ModifierNormalizedTagsSnapshot = x.NormalizedTagsSnapshot.ToArray(),
                         ModifierBehaviorV2SnapshotJson = ResolveBehaviorSnapshotJson(x),
                         ResolutionGroupId = resolutionGroupIds.GetValueOrDefault(x.ModifierId),
                         ResolutionKind = ResolveResolutionKind(ResolveBehaviorSnapshotJson(x)),

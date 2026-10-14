@@ -66,7 +66,7 @@ export function GameBoardTeamQueue({
                 currentUserId={currentUserId}
               />
             ) : (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" align="center">
                 {t('gameBoard.progress.noWaiting')}
               </Typography>
             )}
@@ -91,7 +91,7 @@ export function GameBoardTeamQueue({
               {playedTeams.length ? (
                 playedList
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" align="center">
                   {t('gameBoard.teamQueuePlayedEmpty')}
                 </Typography>
               )}
@@ -131,7 +131,7 @@ function QueueList({
               py: 0.5,
               borderBottom: '1px solid',
               borderColor: 'divider',
-              '&:first-child': { borderTop: '1px solid', borderTopColor: 'divider' },
+              '&:first-of-type': { borderTop: '1px solid', borderTopColor: 'divider' },
               ...(own
                 ? {
                     borderLeft: '3px solid',
@@ -221,7 +221,7 @@ function QueueList({
                     >
                       {formatted === null
                         ? '-'
-                        : t('gameBoard.cellPlayedPoints', { score: formatted })}
+                        : t('boardCard.cellPlayedPoints', { score: formatted })}
                     </Typography>
                   }
                   sx={{

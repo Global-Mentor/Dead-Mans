@@ -9,7 +9,9 @@ export function useViewportPanelHeight(property: `--${string}`, minimumHeight: n
 
     const update = () => {
       const top = grid.getBoundingClientRect().top + window.scrollY
-      const height = `${Math.max(minimumHeight, window.innerHeight - top - 24)}px`
+      const main = grid.closest('main')
+      const bottomInset = main ? Number.parseFloat(getComputedStyle(main).paddingBottom) : 0
+      const height = `${Math.max(minimumHeight, window.innerHeight - top - bottomInset)}px`
       if (grid.style.getPropertyValue(property) !== height) {
         grid.style.setProperty(property, height)
       }

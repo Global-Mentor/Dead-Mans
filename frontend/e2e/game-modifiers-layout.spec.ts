@@ -1,9 +1,64 @@
 import { expect, test, type Page } from '@playwright/test'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
+import { recordDensity } from './density-metrics.ts'
 
 const longTeamName = 'Команда исследователей заброшенного порта'
 const longCardTitle = 'Последний бой за сокровища затонувшего корабля'
 const longParticipantName = 'ОченьДлинныйНикИгрокаБезПробелов'
+
+test.describe('compact filters on touch screens', () => {
+  test.use({ hasTouch: true })
+
+  test('keep readable text and touch targets without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await mockModifiers(page)
+    await page.goto('/panel/game-modifiers')
+    const available = page.getByTestId('available-modifiers-section')
+    await expect(available).toBeVisible()
+    for (const field of await available.locator('.MuiInputBase-root').all()) {
+      expect((await field.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+      await expect(field.locator('.MuiInputBase-input')).toHaveCSS('font-size', '16px')
+    }
+    const details = available.getByRole('button', { name: 'Подробнее', exact: true }).first()
+    expect((await details.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    await available.getByRole('combobox', { name: 'Категории' }).click()
+    await page.getByRole('option', { name: 'Перед раундом', exact: true }).click()
+    await expect(available.getByRole('listitem')).toHaveCount(6)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  })
+})
+
+for (const width of [390, 768, 1440]) {
+  test(`available and active modifiers separate host participation at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockModifiers(page, { hostPerformers: true })
+    await page.goto('/panel/game-modifiers')
+    const available = page.getByTestId('available-modifiers-section')
+    const active = page.getByTestId('active-modifiers-section')
+    await expect(
+      available.getByRole('heading', { name: 'Участие ведущего', exact: true }),
+    ).toBeVisible()
+    if (width < 1000) await page.getByRole('tab', { name: 'Активные · 1' }).click()
+    await expect(
+      active.getByRole('heading', { name: 'Участие ведущего', exact: true }),
+    ).toBeVisible()
+    if (width < 1000) await page.getByRole('tab', { name: 'Каталог' }).click()
+    await available.getByRole('combobox', { name: 'Категории' }).click()
+    await page.getByRole('option', { name: 'Участие ведущего', exact: true }).click()
+    await expect(available.getByRole('listitem')).toHaveCount(3)
+    await page.evaluate(() => document.fonts.ready)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({
+      path: info.outputPath('active-host-category.png'),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+}
 
 async function expectEqualSummaryCells(page: Page) {
   const cells = [
@@ -47,7 +102,6 @@ const modifiers = Array.from({ length: 18 }, (_, index) => ({
     iconEmoji: index % 2 === 0 ? '⚓' : '🧭',
     activationCommand: null,
     revision: 1,
-    normalizedTags: [],
     behaviorV2: {
       schemaVersion: 2,
       kind: 'rule',
@@ -68,9 +122,151 @@ const modifiers = Array.from({ length: 18 }, (_, index) => ({
   limit: index % 3 === 0 ? 2 : null,
 }))
 
+for (const width of [390, 768, 1440]) {
+  test(`compact modifier management preserves its draft at ${width}px`, async ({ page }, info) => {
+    page.on('pageerror', (error) => {
+      throw error
+    })
+    await page.setViewportSize({ width, height: 844 })
+    await mockModifiers(page, { role: 'admin' })
+    await page.route('**/api/game/modifiers/admin/players', (route) =>
+      route.fulfill({
+        json: {
+          players: [
+            {
+              userId: 'player',
+              login: 'player',
+              displayName: 'Капитан Флинт',
+              availableQuizPoints: 17,
+            },
+          ],
+          summary: {
+            playersCount: 1,
+            totalAvailableQuizPoints: 17,
+            totalEarnedQuizPoints: 20,
+            totalSpentQuizPoints: 3,
+          },
+        },
+      }),
+    )
+    await page.route('**/api/game/modifiers/admin/state/*', (route) =>
+      route.fulfill({
+        json: {
+          availableQuizPoints: 17,
+          earnedQuizPoints: 20,
+          spentQuizPoints: 3,
+          isOrderingOpen: true,
+          activeModifiers: [],
+          availableModifiers: modifiers,
+        },
+      }),
+    )
+    await page.route('**/api/game/modifiers/catalog', (route) =>
+      route.fulfill({ json: modifiers.map((item) => item.modifier) }),
+    )
+    await page.route('**/api/game/modifiers/admin/activations', (route) =>
+      route.fulfill({
+        json: Array.from({ length: 3 }, (_, index) => ({
+          activationId: `activation-${index}`,
+          roundId: 'round',
+          roundVersion: 3,
+          modifierId: modifiers[1]!.modifier.id,
+          modifierName: modifiers[1]!.modifier.name,
+          activatedByUserId: index === 2 ? 'other-player' : 'player',
+          activatedByDisplayName: index === 2 ? 'Ворон' : 'Капитан Флинт',
+          activationCost: 3,
+          activatedAtUtc: `2026-10-06T18:0${index}:00Z`,
+        })),
+      }),
+    )
+    await page.goto('/panel/game-modifiers')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление модификаторами', exact: true }).click()
+    const panel = page.getByTestId('admin-tool-drawer-scroll-body')
+    const activation = panel.getByRole('region', { name: 'Добавить модификатор' })
+    await expect(activation.getByRole('combobox', { name: 'Игрок', exact: true })).toHaveValue(
+      'Капитан Флинт',
+    )
+    const player = activation.getByRole('combobox', { name: 'Игрок', exact: true })
+    await player.click()
+    await player.fill('player')
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await expect(page.getByRole('option')).toHaveText('Капитан Флинт')
+    await page.getByRole('option').click()
+    const modifier = activation.getByRole('combobox', { name: 'Модификатор', exact: true })
+    await modifier.click()
+    const firstOption = page.getByRole('option').first()
+    await expect(firstOption).toBeVisible()
+    expect(
+      await firstOption.evaluate((element) =>
+        parseFloat(getComputedStyle(element).borderBottomWidth),
+      ),
+    ).toBeGreaterThan(0)
+    await page.getByRole('option').filter({ hasText: 'Модификатор 2' }).first().click()
+    const cancellation = panel.getByRole('region', { name: 'Отменить модификатор' })
+    await cancellation.getByRole('combobox', { name: 'Модификатор', exact: true }).click()
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await expect(page.getByRole('option')).toContainText('×3')
+    await page.getByRole('option').click()
+    await cancellation.getByRole('combobox', { name: 'Игрок', exact: true }).click()
+    await expect(page.getByRole('option')).toHaveCount(2)
+    await page.getByRole('option', { name: 'Ворон', exact: true }).click()
+    await cancellation
+      .getByRole('textbox', { name: 'Причина отмены', exact: true })
+      .fill('Ошибочная активация')
+    await expect(
+      cancellation.getByRole('button', { name: 'Отменить и вернуть очки', exact: true }),
+    ).toBeEnabled()
+    const stopHeader = panel.getByRole('button', { name: 'Остановить модификатор', exact: true })
+    await stopHeader.locator('span[tabindex="0"]').hover()
+    const stopHelp = page.getByRole('tooltip').filter({ hasText: 'Запрещает всем игрокам' })
+    await expect(stopHelp).toBeVisible()
+    // This last section is near the viewport bottom; readable help flips above it.
+    await expect(stopHelp).toHaveAttribute('data-popper-placement', 'top')
+    const helpBounds = (await stopHelp.boundingBox())!
+    expect(helpBounds.y).toBeGreaterThanOrEqual(0)
+    expect(helpBounds.y + helpBounds.height).toBeLessThanOrEqual(844)
+    await stopHeader.click()
+    const stopping = panel.getByRole('region', { name: 'Остановить модификатор' })
+    await stopping.getByRole('combobox', { name: 'Модификатор', exact: true }).click()
+    await page.getByRole('option').filter({ hasText: 'Модификатор 3' }).first().click()
+    const reason = stopping.getByRole('textbox', {
+      name: 'Причина аварийного отключения',
+      exact: true,
+    })
+    await reason.fill('Проверка сохранения черновика')
+    await page.getByRole('tab', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление модификаторами', exact: true }).click()
+    await expect(reason).toHaveValue('Проверка сохранения черновика')
+    await page.getByRole('button', { name: 'Закрыть инструменты управления', exact: true }).click()
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await expect(reason).toHaveValue('Проверка сохранения черновика')
+    await expect(modifier).toHaveValue('Модификатор 2')
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+    const drawer = page.getByRole('complementary', { name: 'Инструменты управления игрой' })
+    await expect
+      .poll(() =>
+        page
+          .getByRole('dialog', { name: 'Инструменты управления игрой' })
+          .evaluate((element) => parseFloat(getComputedStyle(element).width)),
+      )
+      .toBe(Math.min(width, 440))
+    await drawer.screenshot({
+      path: info.outputPath('compact-modifier-management.png'),
+      animations: 'disabled',
+    })
+  })
+}
+
 async function mockModifiers(
   page: Page,
-  options: { locale?: string; role?: string; orderingOpen?: boolean; longNames?: boolean } = {},
+  options: {
+    locale?: string
+    role?: string
+    orderingOpen?: boolean
+    longNames?: boolean
+    hostPerformers?: boolean
+  } = {},
 ) {
   await page.addInitScript(
     (locale) => localStorage.setItem('i18nextLng', locale),
@@ -145,7 +341,12 @@ async function mockModifiers(
                       ...item.modifier,
                       name: 'Очень длинное название модификатора для проверки переноса строк и доступности действий',
                     }
-                  : item.modifier,
+                  : options.hostPerformers && index < 3
+                    ? {
+                        ...item.modifier,
+                        behaviorV2: { ...item.modifier.behaviorV2, performer: 'mentor' },
+                      }
+                    : item.modifier,
             })),
           },
         })
@@ -268,6 +469,21 @@ for (const size of [
       0,
     )
     await expect(available).toBeVisible()
+    const clippedLabels = await available.locator('label').evaluateAll((labels) =>
+      labels
+        .filter((label) => {
+          const bounds = label.getBoundingClientRect()
+          for (let parent = label.parentElement; parent; parent = parent.parentElement) {
+            if (!['auto', 'scroll', 'hidden', 'clip'].includes(getComputedStyle(parent).overflowY))
+              continue
+            const frame = parent.getBoundingClientRect()
+            if (bounds.top < frame.top - 1 || bounds.bottom > frame.bottom + 1) return true
+          }
+          return false
+        })
+        .map((label) => label.textContent),
+    )
+    expect(clippedLabels).toEqual([])
     await expect(available.getByRole('heading', { level: 2 })).toHaveCount(0)
     await expect(available.getByText('18 модификаторов', { exact: true })).toHaveCount(0)
     await expect(
@@ -280,6 +496,22 @@ for (const size of [
     const availableBounds = await available.boundingBox()
     expect(Math.abs(availableBounds!.width - activeBounds!.width)).toBeLessThanOrEqual(1)
     const active = page.getByTestId('active-modifiers-section')
+    const activeTitle = active.getByRole('heading', { level: 2 })
+    await expect(activeTitle).toHaveCSS('font-size', '18px')
+    for (const field of await available.locator('.MuiInputBase-root').all()) {
+      expect((await field.boundingBox())!.height).toBe(36)
+      await expect(field.locator('.MuiInputBase-input')).toHaveCSS('font-size', '14px')
+    }
+    await expect(activeTitle).toHaveCSS('text-align', 'center')
+    const activeTitleBounds = await activeTitle.boundingBox()
+    expect(
+      Math.abs(
+        activeTitleBounds!.x +
+          activeTitleBounds!.width / 2 -
+          activeBounds!.x -
+          activeBounds!.width / 2,
+      ),
+    ).toBeLessThanOrEqual(1)
     const availableCategory = await available
       .getByRole('heading', { level: 3, name: 'Перед раундом', exact: true })
       .boundingBox()
@@ -287,6 +519,11 @@ for (const size of [
       .getByRole('heading', { level: 3, name: 'Перед раундом', exact: true })
       .boundingBox()
     expect(Math.abs(availableCategory!.y - activeCategory!.y)).toBeLessThanOrEqual(1)
+    const activeGroupHeader = await active
+      .locator('[data-modifier-group-heading]')
+      .first()
+      .boundingBox()
+    expect(activeGroupHeader!.y - activeBounds!.y).toBeLessThanOrEqual(64)
     const availableRow = await available
       .getByRole('listitem', { name: 'Модификатор 1', exact: true })
       .boundingBox()
@@ -303,6 +540,7 @@ for (const size of [
       .evaluateAll((surfaces) => surfaces.map((surface) => getComputedStyle(surface).borderRadius))
     expect(corners.length).toBeGreaterThan(0)
     expect(corners.every((radius) => radius === '0px')).toBe(true)
+    await recordDensity(page, testInfo, 'modifiers')
     await page.screenshot({ path: testInfo.outputPath('modifiers.png') })
     const search = page.getByRole('textbox', { name: 'Поиск модификаторов' })
     await search.fill('Нет такого модификатора')
@@ -378,7 +616,7 @@ test('catalog filters and mobile tabs preserve independent active purchases and 
   await expect(cardPreview).toBeFocused()
 
   const available = page.getByTestId('available-modifiers-section')
-  const stage = available.getByRole('combobox', { name: 'Этап действия' })
+  const stage = available.getByRole('combobox', { name: 'Категории' })
   await stage.click()
   await page.getByRole('option', { name: 'Во время раунда', exact: true }).click()
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(6)
@@ -410,7 +648,7 @@ test('catalog filters and mobile tabs preserve independent active purchases and 
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(6)
   await page.screenshot({ path: info.outputPath('filtered-catalog.png'), animations: 'disabled' })
   await stage.click()
-  await page.getByRole('option', { name: 'Все этапы', exact: true }).click()
+  await page.getByRole('option', { name: 'Все категории', exact: true }).click()
   await expect(available.getByRole('heading', { level: 4 })).toHaveCount(18)
 })
 
@@ -457,6 +695,22 @@ for (const width of [320, 390, 768]) {
     )
   })
 }
+
+test('successful modifier activation closes confirmation without a toast', async ({ page }) => {
+  await mockModifiers(page)
+  await page.goto('/panel/game-modifiers')
+  await page.getByRole('button', { name: 'Активировать Модификатор 1', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Активировать этот модификатор?' })
+  const activation = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.includes('/modifiers/'),
+  )
+  await confirmation.getByRole('button', { name: 'Активировать', exact: true }).click()
+  expect((await activation).status()).toBe(204)
+  await expect(confirmation).toBeHidden()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
 
 for (const width of [390, 768, 1440]) {
   test(`details, purchases and refunds remain accessible at ${width}px`, async ({ page }, info) => {

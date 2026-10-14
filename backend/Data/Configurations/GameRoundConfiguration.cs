@@ -23,13 +23,13 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_resolution_semantics",
-                    "((status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) "
-                    + "OR ((status = 'completed') AND final_score IS NOT NULL AND resolved_by_user_id IS NOT NULL) "
+                    "((status IN ('card_opened','awaiting_modifiers','preparing','preparation_completed','in_progress','reviewing_results')) AND final_score IS NULL AND resolved_by_user_id IS NULL) "
+                    + "OR ((status IN ('showing_results','completed')) AND final_score IS NOT NULL AND resolved_by_user_id IS NOT NULL) "
                     + "OR ((status = 'cancelled') AND final_score = 0 AND resolved_by_user_id IS NOT NULL)"
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_empty_card_penalty_semantics",
-                    "(empty_card_penalty_applied = false) OR (status = 'completed' AND final_score IS NOT NULL)"
+                    "(empty_card_penalty_applied = false) OR (status IN ('showing_results','completed') AND final_score IS NOT NULL)"
                 );
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_version_positive",
@@ -38,10 +38,10 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
                 tableBuilder.HasCheckConstraint(
                     "ck_game_rounds_lifecycle_timestamps",
                     "(status IN ('card_opened','awaiting_modifiers') AND prepared_at_utc IS NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
-                    + "OR (status = 'preparing' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
+                    + "OR (status IN ('preparing','preparation_completed') AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NULL AND reviewed_at_utc IS NULL) "
                     + "OR (status = 'in_progress' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NULL) "
                     + "OR (status = 'reviewing_results' AND prepared_at_utc IS NOT NULL AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) "
-                    + "OR (status = 'completed' AND prepared_at_utc IS NOT NULL "
+                    + "OR (status IN ('showing_results','completed') AND prepared_at_utc IS NOT NULL "
                     + "AND gameplay_started_at_utc IS NOT NULL AND reviewed_at_utc IS NOT NULL) "
                     + "OR (status = 'cancelled')"
                 );
@@ -111,6 +111,7 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
         builder.Property(x => x.KillsCount).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.BountyCount).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.EmptyCardPenaltyApplied).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.MarkTeamPlayedAfterPresentation).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.Version).IsRequired().HasDefaultValue(1);
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
@@ -120,7 +121,7 @@ public class GameRoundConfiguration : IEntityTypeConfiguration<GameRound>
             .HasIndex(x => x.GameId, "ux_game_rounds_single_nonterminal_game")
             .IsUnique()
             .HasFilter(
-                "status IN ('card_opened','awaiting_modifiers','preparing','in_progress','reviewing_results')"
+                "status IN ('card_opened','awaiting_modifiers','preparing','preparation_completed','in_progress','reviewing_results','showing_results')"
             );
         builder.HasIndex(x => new { x.TeamId, x.CreatedAtUtc });
         builder.HasIndex(x => new { x.BoardCellId, x.CreatedAtUtc });

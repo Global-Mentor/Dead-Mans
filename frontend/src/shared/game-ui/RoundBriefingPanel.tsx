@@ -1,9 +1,12 @@
 import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { ComponentProps, ReactNode } from 'react'
-import { SectionCard, SectionDivider } from '../ui/index.ts'
+import { OrnamentDivider as RoundBriefingDivider, SectionCard } from '../ui/index.ts'
 import { cornerFrameSx } from '../theme/corner-frame-sx.ts'
 import { mergeSx } from '../theme/merge-sx.ts'
+import { uiTokens } from '../theme/tokens.ts'
+
+export { RoundBriefingDivider }
 
 export function RoundBriefingPanel({
   sx,
@@ -22,7 +25,7 @@ export function RoundBriefingPanel({
       sx={mergeSx(
         (theme) => ({
           minWidth: 0,
-          p: header ? 0 : 2,
+          p: header ? 0 : uiTokens.spacing.section,
           ...(header ? { display: 'flex', flexDirection: 'column' } : {}),
           ...cornerFrameSx(theme),
           boxShadow: `inset 0 1px 0 ${alpha(theme.palette.primary.light, 0.12)}, inset 0 -1px 0 ${alpha(theme.palette.common.black, 0.32)}`,
@@ -32,11 +35,11 @@ export function RoundBriefingPanel({
     >
       {header ? (
         <>
-          <Box sx={{ px: 2, py: 1.5, flexShrink: 0 }}>{header}</Box>
-          <RoundBriefingDivider sx={{ width: 'calc(100% - 32px)', mx: 2 }} />
+          <Box sx={{ px: uiTokens.spacing.section, py: 1, flexShrink: 0 }}>{header}</Box>
+          <RoundBriefingDivider sx={{ width: 'auto', mx: uiTokens.spacing.section }} />
           <Box
             sx={(theme) => ({
-              px: 2,
+              px: uiTokens.spacing.section,
               py: 1,
               flex: 1,
               minHeight: 0,
@@ -56,39 +59,5 @@ export function RoundBriefingPanel({
         children
       )}
     </SectionCard>
-  )
-}
-
-export function RoundBriefingDivider(props: ComponentProps<typeof SectionDivider>) {
-  return (
-    <SectionDivider
-      {...props}
-      aria-hidden
-      sx={mergeSx(
-        (theme) => ({
-          position: 'relative',
-          width: '100%',
-          height: '1px',
-          minHeight: '1px',
-          overflow: 'visible',
-          border: 0,
-          m: 0,
-          background: `linear-gradient(90deg, ${alpha(theme.palette.primary.light, 0.5)}, ${alpha(theme.palette.primary.light, 0.18)} 35%, ${alpha(theme.palette.primary.light, 0.18)} 65%, ${alpha(theme.palette.primary.light, 0.5)})`,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: 5,
-            height: 5,
-            transform: 'translate(-50%, -50%) rotate(45deg)',
-            backgroundColor: theme.palette.primary.light,
-            boxShadow: `0 0 0 3px ${theme.palette.background.paper}`,
-            pointerEvents: 'none',
-          },
-        }),
-        props.sx,
-      )}
-    />
   )
 }

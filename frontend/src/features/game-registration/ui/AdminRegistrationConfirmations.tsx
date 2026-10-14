@@ -1,0 +1,192 @@
+import { Stack, Typography } from '@mui/material'
+import type { Dispatch, SetStateAction } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
+import { ConfirmDialog, DiscardChangesDialog } from '../../../shared/ui/index.ts'
+import { canConfirmAdminTeam } from '../model/admin-team-readiness.ts'
+import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
+
+interface PendingRemove {
+  teamId: string
+  teamSlotIndex: number
+  player: RegistrationPlayer
+}
+export function AdminRegistrationConfirmations({
+  controls,
+  dialogError,
+  onDialogError,
+  pendingConfirmTeam,
+  setPendingConfirmTeam,
+  pendingUnconfirmTeam,
+  setPendingUnconfirmTeam,
+  pendingDisbandTeam,
+  setPendingDisbandTeam,
+  pendingRemovePlayer,
+  setPendingRemovePlayer,
+  pendingSelection,
+  setPendingSelection,
+  setSelectedTeamId,
+  setNameDirty,
+  setActivePanel,
+}: {
+  controls: AdminRegistrationPanelProps
+  dialogError: string | null
+  onDialogError: (error: Error) => void
+  pendingConfirmTeam: RegistrationTeam | null
+  setPendingConfirmTeam: Dispatch<SetStateAction<RegistrationTeam | null>>
+  pendingUnconfirmTeam: RegistrationTeam | null
+  setPendingUnconfirmTeam: Dispatch<SetStateAction<RegistrationTeam | null>>
+  pendingDisbandTeam: RegistrationTeam | null
+  setPendingDisbandTeam: Dispatch<SetStateAction<RegistrationTeam | null>>
+  pendingRemovePlayer: PendingRemove | null
+  setPendingRemovePlayer: Dispatch<SetStateAction<PendingRemove | null>>
+  pendingSelection: string | null
+  setPendingSelection: Dispatch<SetStateAction<string | null>>
+  setSelectedTeamId: Dispatch<SetStateAction<string | null>>
+  setNameDirty: Dispatch<SetStateAction<boolean>>
+  setActivePanel: Dispatch<SetStateAction<string>>
+}) {
+  const { t } = useTranslation()
+  const { onDisbandTeam, onRemovePlayer, isDisbandingTeam, isRemovingPlayer } = controls
+  const currentConfirmTeam = controls.snapshot.teams.find(
+    (team) => team.teamId === pendingConfirmTeam?.teamId,
+  )
+  const canConfirm = Boolean(
+    currentConfirmTeam &&
+    canConfirmAdminTeam(
+      currentConfirmTeam,
+      controls.snapshot.minPlayersPerTeam,
+      controls.snapshot.maxPlayersPerTeam,
+    ),
+  )
+  return (
+    <>
+      <DiscardChangesDialog
+        open={pendingSelection !== null}
+        onClose={() => setPendingSelection(null)}
+        onDiscard={() => {
+          setSelectedTeamId(pendingSelection)
+          setNameDirty(false)
+          setPendingSelection(null)
+          setActivePanel('detail')
+        }}
+      />
+      <ConfirmDialog
+        open={pendingConfirmTeam !== null}
+        title={t('teamRegistrations.confirmTitle')}
+        description={t('teamRegistrations.canConfirm')}
+        subject={pendingConfirmTeam?.name}
+        errorMessage={
+          dialogError ||
+          (pendingConfirmTeam &&
+          !canConfirm &&
+          !controls.isConfirmingTeam(pendingConfirmTeam.teamId)
+            ? t('teamRegistrations.confirmUnavailableHint')
+            : null)
+        }
+        confirmDisabled={!canConfirm}
+        cancelLabel={t('common.actions.cancel')}
+        confirmLabel={t('teamRegistrations.confirm')}
+        isBusy={pendingConfirmTeam ? controls.isConfirmingTeam(pendingConfirmTeam.teamId) : false}
+        onClose={() => setPendingConfirmTeam(null)}
+        onConfirm={() => {
+          if (pendingConfirmTeam && canConfirm)
+            controls.onConfirmTeam(
+              pendingConfirmTeam.teamId,
+              () => setPendingConfirmTeam(null),
+              onDialogError,
+            )
+        }}
+      />
+      <ConfirmDialog
+        open={pendingUnconfirmTeam !== null}
+        title={t('teamRegistrations.unconfirmTitle')}
+        description={t('teamRegistrations.unconfirmHint')}
+        subject={
+          pendingUnconfirmTeam?.name ||
+          t('common.teamWithSlot', { slot: pendingUnconfirmTeam?.teamSlotIndex ?? '-' })
+        }
+        errorMessage={dialogError}
+        cancelLabel={t('common.actions.cancel')}
+        confirmLabel={t('teamRegistrations.unconfirmDialogAction')}
+        isBusy={
+          pendingUnconfirmTeam ? controls.isUnconfirmingTeam(pendingUnconfirmTeam.teamId) : false
+        }
+        onClose={() => setPendingUnconfirmTeam(null)}
+        onConfirm={() => {
+          if (pendingUnconfirmTeam)
+            controls.onUnconfirmTeam(
+              pendingUnconfirmTeam.teamId,
+              () => setPendingUnconfirmTeam(null),
+              onDialogError,
+            )
+        }}
+      />
+      <ConfirmDialog
+        errorMessage={dialogError}
+        confirmTone="danger"
+        confirmDisabled={Boolean(
+          pendingDisbandTeam &&
+          (pendingDisbandTeam.isActiveInGame ||
+            pendingDisbandTeam.isPlayed ||
+            pendingDisbandTeam.hasOpenedCard),
+        )}
+        open={pendingDisbandTeam !== null}
+        onClose={() => setPendingDisbandTeam(null)}
+        onConfirm={() => {
+          if (pendingDisbandTeam) {
+            onDisbandTeam(
+              pendingDisbandTeam.teamId,
+              () => setPendingDisbandTeam(null),
+              onDialogError,
+            )
+          }
+        }}
+        isBusy={pendingDisbandTeam ? isDisbandingTeam(pendingDisbandTeam.teamId) : false}
+        title={t('gameApplication.adminPanel.disbandConfirmTitle')}
+        description={t('teamRegistrations.disbandEffects')}
+        subject={
+          <Stack gap={0.5}>
+            <span>
+              {pendingDisbandTeam?.name ||
+                t('common.teamWithSlot', { slot: pendingDisbandTeam?.teamSlotIndex ?? '-' })}
+            </span>
+            <Typography variant="body2">
+              {t('teamRegistrations.playersCountLabel')}: {pendingDisbandTeam?.members.length ?? 0}
+            </Typography>
+          </Stack>
+        }
+        cancelLabel={t('gameApplication.adminPanel.disbandConfirmCancel')}
+        confirmLabel={t('gameApplication.adminPanel.disbandConfirmAction')}
+      />
+      <ConfirmDialog
+        errorMessage={dialogError}
+        confirmTone="danger"
+        open={pendingRemovePlayer !== null}
+        onClose={() => setPendingRemovePlayer(null)}
+        onConfirm={() => {
+          if (pendingRemovePlayer) {
+            onRemovePlayer(
+              pendingRemovePlayer.teamId,
+              pendingRemovePlayer.player.userId,
+              () => setPendingRemovePlayer(null),
+              onDialogError,
+            )
+          }
+        }}
+        isBusy={
+          pendingRemovePlayer
+            ? isRemovingPlayer(pendingRemovePlayer.teamId, pendingRemovePlayer.player.userId)
+            : false
+        }
+        title={t('gameApplication.adminPanel.removePlayerConfirmTitle')}
+        subject={pendingRemovePlayer?.player.displayName ?? t('gameApplication.unknownPlayer')}
+        description={t('gameApplication.adminPanel.removePlayerConfirmDescription', {
+          slot: pendingRemovePlayer?.teamSlotIndex ?? '-',
+        })}
+        cancelLabel={t('gameApplication.adminPanel.removePlayerConfirmCancel')}
+        confirmLabel={t('gameApplication.adminPanel.removePlayerConfirmAction')}
+      />
+    </>
+  )
+}

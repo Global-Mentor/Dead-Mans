@@ -116,7 +116,6 @@ export function GameBoardActiveTeamCard({
                   >
                     {participant.displayName}
                   </Typography>
-                  <Box component="span" aria-hidden sx={participantOrnamentSx} />
                 </Stack>
               ))}
             </Stack>

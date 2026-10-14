@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { GameSetupDraftState } from './model/game-setup-draft.ts'
 import { useGameSetupCellMedia } from './use-game-setup-cell-media.ts'
 import { useGameSetupDraft } from './use-game-setup-draft.ts'
@@ -24,6 +24,9 @@ export function useGameSetupPage() {
     flushDraftSave: save.flushDraftSave,
   })
 
+  const { updateDraft: applyDraft } = draft
+  const { handleDraftEdited, saveDraft } = save
+
   const updateDraft = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
     const currentDraft = currentDraftRef.current
     if (!currentDraft) {
@@ -32,22 +35,25 @@ export function useGameSetupPage() {
 
     const nextDraft = updater(currentDraft)
     currentDraftRef.current = nextDraft
-    draft.updateDraft(() => nextDraft)
-    save.handleDraftEdited(nextDraft)
+    applyDraft(nextDraft)
+    handleDraftEdited(nextDraft)
   }
 
-  const updateDraftAndSave = (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
-    const currentDraft = currentDraftRef.current
-    if (!currentDraft) {
-      return
-    }
+  const updateDraftAndSave = useCallback(
+    (updater: (current: GameSetupDraftState) => GameSetupDraftState) => {
+      const currentDraft = currentDraftRef.current
+      if (!currentDraft) {
+        return
+      }
 
-    const nextDraft = updater(currentDraft)
-    currentDraftRef.current = nextDraft
-    draft.updateDraft(() => nextDraft)
-    save.handleDraftEdited(nextDraft)
-    void save.saveDraft(nextDraft).catch(() => undefined)
-  }
+      const nextDraft = updater(currentDraft)
+      currentDraftRef.current = nextDraft
+      applyDraft(nextDraft)
+      handleDraftEdited(nextDraft)
+      void saveDraft(nextDraft).catch(() => undefined)
+    },
+    [applyDraft, handleDraftEdited, saveDraft],
+  )
 
   const commitDraft = () => {
     void save.saveDraft().catch(() => undefined)
@@ -69,37 +75,47 @@ export function useGameSetupPage() {
     save.resetToSaved()
   }
 
-  const toggleModifier = (modifierId: string, enabled: boolean) => {
-    updateDraftAndSave((current) => {
-      const currentIds = current.enabledModifierIds
-      const nextIds = enabled
-        ? currentIds.includes(modifierId)
-          ? currentIds
-          : [...currentIds, modifierId]
-        : currentIds.filter((id) => id !== modifierId)
+  const setModifiersEnabled = useCallback(
+    (modifierIds: readonly string[], enabled: boolean) => {
+      updateDraftAndSave((current) => {
+        const currentIds = current.enabledModifierIds
+        const targets = new Set(modifierIds)
+        const nextIds = enabled
+          ? [...new Set([...currentIds, ...modifierIds])]
+          : currentIds.filter((id) => !targets.has(id))
 
-      return {
-        ...current,
-        enabledModifierIds: nextIds,
-      }
-    })
-  }
+        return {
+          ...current,
+          enabledModifierIds: nextIds,
+        }
+      })
+    },
+    [updateDraftAndSave],
+  )
 
-  const toggleQuestion = (questionId: string, enabled: boolean) => {
-    updateDraftAndSave((current) => {
-      const currentIds = current.enabledQuestionIds
-      const nextIds = enabled
-        ? currentIds.includes(questionId)
-          ? currentIds
-          : [...currentIds, questionId]
-        : currentIds.filter((id) => id !== questionId)
+  const toggleModifier = useCallback(
+    (modifierId: string, enabled: boolean) => setModifiersEnabled([modifierId], enabled),
+    [setModifiersEnabled],
+  )
 
-      return {
-        ...current,
-        enabledQuestionIds: nextIds,
-      }
-    })
-  }
+  const toggleQuestion = useCallback(
+    (questionId: string, enabled: boolean) => {
+      updateDraftAndSave((current) => {
+        const currentIds = current.enabledQuestionIds
+        const nextIds = enabled
+          ? currentIds.includes(questionId)
+            ? currentIds
+            : [...currentIds, questionId]
+          : currentIds.filter((id) => id !== questionId)
+
+        return {
+          ...current,
+          enabledQuestionIds: nextIds,
+        }
+      })
+    },
+    [updateDraftAndSave],
+  )
 
   const setQuestionsEnabled = (questionIds: readonly string[], enabled: boolean) => {
     updateDraftAndSave((current) => {
@@ -128,6 +144,7 @@ export function useGameSetupPage() {
     draft: draft.draft,
     isLoading: draft.isLoading,
     isError: draft.isError,
+    retryLoad: draft.retryLoad,
     isDirty: draft.isDirty,
     syncStatus: save.syncStatus,
     remoteChangeNotice: draft.remoteChangeNotice,
@@ -141,6 +158,7 @@ export function useGameSetupPage() {
     createDraft,
     deleteDraft,
     toggleModifier,
+    setModifiersEnabled,
     toggleQuestion,
     setQuestionsEnabled,
     setQuizAnswerDuration,

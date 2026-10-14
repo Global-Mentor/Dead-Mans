@@ -76,25 +76,6 @@ public sealed partial class DbGameRoundRepository
         resolutionDataJson
     );
 
-    private static GameRoundScoreDetails ToScoreDetails(GameRoundScoreBreakdown breakdown)
-    {
-        return new GameRoundScoreDetails(
-            breakdown.ScoreUnit,
-            breakdown.KillsScore,
-            breakdown.BountyScore,
-            breakdown.ModifierKillDelta,
-            breakdown.ModifierKillScore,
-            breakdown.ModifierScoreDelta,
-            breakdown.EmptyCardPenaltyApplied,
-            breakdown.EmptyCardPenaltyScore,
-            breakdown.PenaltyTotal,
-            breakdown.BonusDelta,
-            breakdown.TotalKillCount,
-            breakdown.FinalScore,
-            breakdown.CalculationLines
-        );
-    }
-
     private static bool TryCreateModifierInputsById(
         IReadOnlyList<FinalizeGameRoundModifierInput> modifierInputs,
         out IReadOnlyDictionary<Guid, FinalizeGameRoundModifierInput> modifierInputsById,

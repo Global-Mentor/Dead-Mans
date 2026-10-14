@@ -20,7 +20,6 @@ public static partial class ApiContractMapper
                 .ToArray(),
             request.IconEmoji,
             request.ActivationCommand,
-            request.NormalizedTags,
             request.BehaviorV2.ToModel(),
             request.ChangeNote
         );
@@ -39,7 +38,6 @@ public static partial class ApiContractMapper
                 .ToArray(),
             request.IconEmoji,
             request.ActivationCommand,
-            request.NormalizedTags,
             request.BehaviorV2.ToModel(),
             request.ExpectedRevision,
             request.ChangeNote
@@ -59,8 +57,7 @@ public static partial class ApiContractMapper
     public static ModifierVersionDetailDto ToDto(this ModifierVersionDetail item) => new(
         item.VersionId.ToString(), item.ModifierId.ToString(), item.Revision, item.Name,
         item.Description, item.Category, item.IconEmoji, item.ActivationCommand,
-        item.ActivationCost, item.ActivationLimit.ToDto(), item.NormalizedTags,
-        item.BehaviorV2.ToDto(), item.Conflicts.Select(x => new ModifierConflictSnapshotDto(
+        item.ActivationCost, item.ActivationLimit.ToDto(), item.BehaviorV2.ToDto(), item.Conflicts.Select(x => new ModifierConflictSnapshotDto(
             x.ModifierId.ToString(), x.Name)).ToArray(), item.CreatedAtUtc,
         item.CreatedByUserId?.ToString(), item.CreatedByDisplayName, item.ChangeNote,
         item.ChangeType, item.CascadeSourceModifierId?.ToString(), item.ChangedFields,
@@ -76,7 +73,6 @@ public static partial class ApiContractMapper
         preview.Description,
         preview.IconEmoji,
         preview.ActivationCommand,
-        preview.NormalizedTags.ToArray(),
         preview.BehaviorV2.ToDto(),
         new GameModifierDraftExampleDto(
             preview.Example.CardValue,
@@ -103,7 +99,6 @@ public static partial class ApiContractMapper
             definition.ActivationCommand,
             definition.IsLockedByActiveGame,
             definition.Revision,
-            definition.NormalizedTags.ToArray(),
             definition.BehaviorV2.ToDto()
         );
     }

@@ -25,6 +25,12 @@ export const realtimeHubs = {
       draftChanged: 'draftChanged',
     },
   },
+  gameOverlay: {
+    path: '/hubs/game-overlay',
+    events: {
+      frameChanged: 'frameChanged',
+    },
+  },
 } as const
 
 export type RealtimeHubKey = keyof typeof realtimeHubs

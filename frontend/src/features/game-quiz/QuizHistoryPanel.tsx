@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { scrollRegionSx } from '../../shared/theme/layout-sx.ts'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
@@ -98,8 +99,7 @@ export function QuizHistoryPanel({
           pb: 0.75,
           '@media (min-width: 1000px) and (min-height: 600px)': {
             flex: '1 1 auto',
-            overflowY: 'auto',
-            overscrollBehaviorY: 'contain',
+            ...scrollRegionSx,
           },
         }}
       >

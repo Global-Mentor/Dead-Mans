@@ -16,7 +16,8 @@ const contentTypes: Record<string, string> = {
   '.jpg': 'image/jpeg',
 }
 
-async function serveFixture(page: Page) {
+async function serveFixture(page: Page, assetDelayMs = 0) {
+  const activity = { connections: 0, requests: [] as string[] }
   const userId = 'a518e557-2910-4111-97fb-86eb7a079101'
   const team = {
     teamId: '5d4cf998-7479-429f-a644-ac55544b024e',
@@ -37,6 +38,7 @@ async function serveFixture(page: Page) {
   }
 
   await page.routeWebSocket(/\/hubs\/game-board(?:\?|$)/, (socket) => {
+    activity.connections += 1
     socket.onMessage((message) => {
       if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
     })
@@ -44,6 +46,7 @@ async function serveFixture(page: Page) {
 
   await page.route(`${origin}/**`, async (route: Route) => {
     const path = new URL(route.request().url()).pathname
+    activity.requests.push(path)
     if (path === '/auth/me') {
       await route.fulfill({
         json: { userId, displayName: 'Performance player', roles: ['viewer'] },
@@ -60,6 +63,32 @@ async function serveFixture(page: Page) {
           cells: [],
           rowLabels: ['A'],
           colLabels: ['1'],
+        },
+      })
+    } else if (path === '/api/game/team-queue') {
+      await route.fulfill({
+        json: {
+          gameId: 'a0dbc6cb-40b1-4785-bc52-17f55201c406',
+          teams: [
+            {
+              teamId: team.teamId,
+              teamName: team.name,
+              teamSlotIndex: 1,
+              isPlayed: false,
+              finalScore: null,
+              playedAtUtc: null,
+              participants: [team.members[0]!.player],
+            },
+          ],
+        },
+      })
+    } else if (path.endsWith('/negotiate')) {
+      await route.fulfill({
+        json: {
+          negotiateVersion: 1,
+          connectionId: 'performance',
+          connectionToken: 'performance',
+          availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text', 'Binary'] }],
         },
       })
     } else if (path === '/api/game/registration') {
@@ -81,6 +110,9 @@ async function serveFixture(page: Page) {
     } else if (path.startsWith('/api/') || path.startsWith('/hubs/')) {
       await route.fulfill({ status: 204 })
     } else {
+      if (assetDelayMs && path.endsWith('.js')) {
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, assetDelayMs))
+      }
       const file = resolve(
         dist,
         path === '/' || path.startsWith('/panel/') ? 'index.html' : `.${path}`,
@@ -92,7 +124,60 @@ async function serveFixture(page: Page) {
       })
     }
   })
+  return activity
 }
+
+test('profiles navigation intent and cached return in the production bundle', async ({
+  browser,
+}) => {
+  test.setTimeout(120_000)
+  const samples = []
+  for (const intent of ['click', 'hover'] as const) {
+    for (let iteration = 0; iteration < 5; iteration += 1) {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      await page.addInitScript(() => localStorage.setItem('i18nextLng', 'en'))
+      const activity = await serveFixture(page, 80)
+      await page.goto(`${origin}/panel/game-application`)
+      await expect(page.getByRole('button', { name: 'Leave team' })).toBeVisible()
+      await expect.poll(() => activity.connections).toBe(1)
+      const assetsBefore = activity.requests.filter((path) => path.endsWith('.js'))
+      const link = page.locator('a[href="/panel/game-team-queue"]:visible')
+      if (intent === 'hover') {
+        await link.hover()
+        await page.waitForTimeout(200)
+      }
+      const start = performance.now()
+      await link.click()
+      await expect(page.getByRole('heading', { name: 'Team queue', exact: true })).toBeVisible()
+      await expect(page.getByRole('article', { name: 'Performance team' })).toBeVisible()
+      const navigationMs = performance.now() - start
+      const returnStart = performance.now()
+      await page.locator('a[href="/panel/game-application"]:visible').click()
+      await expect(page.getByRole('button', { name: 'Leave team' })).toBeVisible()
+      samples.push({
+        intent,
+        navigationMs,
+        returnMs: performance.now() - returnStart,
+        assetsBefore,
+        assetsAfter: activity.requests.filter((path) => path.endsWith('.js')),
+        connections: activity.connections,
+        apiRequests: activity.requests.filter((path) => path.startsWith('/api/')).length,
+      })
+      expect(errors).toEqual([])
+      expect(activity.connections).toBe(1)
+      await page.close()
+    }
+  }
+  await mkdir('../.tmp/agent-work/performance', { recursive: true })
+  const report = { bundle: dist, assetDelayMs: 80, hoverLeadMs: 200, samples }
+  await writeFile(
+    `../.tmp/agent-work/performance/${outputLabel}-navigation.json`,
+    `${JSON.stringify(report, null, 2)}\n`,
+  )
+  console.log(JSON.stringify(report))
+})
 
 async function performanceMetrics(session: CDPSession) {
   const result = await session.send('Performance.getMetrics')

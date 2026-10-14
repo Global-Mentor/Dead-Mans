@@ -1,7 +1,13 @@
-import { Stack, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppButton, ConfirmDialog, FormSelect, FormTextField } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  ConfirmDialog,
+  FormSelect,
+  FormTextField,
+  HelpTooltip,
+} from '../../../shared/ui/index.ts'
 import type { TechnicalCancelRoundInput } from '../use-start-game-round.ts'
 import type { GameRoundDetails } from '../model/game-management-panel.ts'
 
@@ -42,16 +48,21 @@ export function RoundSafetyControls({
     <Stack spacing={1}>
       {activeRound.status === 'preparing' ? (
         <>
-          <Typography variant="body2" color="text.secondary">
-            {t('gameBoard.roundPanelRebuildHint')}
-          </Typography>
           <AppButton
             tone="dangerSecondary"
             size="small"
             disabled={isBusy}
             onClick={() => setIsRebuildConfirmOpen(true)}
           >
-            {t('gameBoard.roundPanelRebuild')}
+            <HelpTooltip
+              placement="left"
+              describeChild
+              title={t('gameBoard.roundPanelRebuildHelp')}
+            >
+              <Box component="span" tabIndex={0}>
+                {t('gameBoard.roundPanelRebuild')}
+              </Box>
+            </HelpTooltip>
           </AppButton>
         </>
       ) : null}
@@ -68,7 +79,7 @@ export function RoundSafetyControls({
       />
       <FormTextField
         multiline
-        minRows={2}
+        minRows={1}
         required
         label={t('gameBoard.roundPanelTechnicalDetail')}
         value={internalDetail}
@@ -98,6 +109,7 @@ export function RoundSafetyControls({
       <ConfirmDialog
         open={isRebuildConfirmOpen}
         title={t('gameBoard.roundPanelRebuildConfirmTitle')}
+        confirmDisabled={activeRound.status !== 'preparing'}
         description={t('gameBoard.roundPanelRebuildConfirmDescription')}
         confirmLabel={t('gameBoard.roundPanelRebuild')}
         cancelLabel={t('common.actions.cancel')}
@@ -105,6 +117,7 @@ export function RoundSafetyControls({
         isBusy={isBusy}
         onClose={() => setIsRebuildConfirmOpen(false)}
         onConfirm={() => {
+          if (activeRound.status !== 'preparing') return
           setIsRebuildConfirmOpen(false)
           onRebuild({
             roundId: activeRound.roundId,

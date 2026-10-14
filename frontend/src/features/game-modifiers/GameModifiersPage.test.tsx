@@ -124,7 +124,6 @@ function createState() {
           iconEmoji: '🧰',
           activationCommand: null,
           revision: 1,
-          normalizedTags: [],
           behaviorV2: {
             schemaVersion: 2,
             kind: 'rule',
@@ -482,7 +481,7 @@ describe('GameModifiersPage', () => {
     fireEvent.click(activateButton)
     expect(
       within(screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })).getByText(
-        'Активировать «Расходники» за 3 очк. викторины?',
+        'Активировать модификатор за 3 очк. викторины?',
       ),
     ).toBeInTheDocument()
   })
@@ -532,7 +531,7 @@ describe('GameModifiersPage', () => {
     expect(activate).not.toHaveBeenCalled()
     const dialog = screen.getByRole('dialog', { name: 'Активировать этот модификатор?' })
     expect(
-      within(dialog).getByText('Активировать «Расходники» за 3 очк. викторины?'),
+      within(dialog).getByText('Активировать модификатор за 3 очк. викторины?'),
     ).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Отмена', exact: true })).toBeVisible()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Активировать', exact: true }))

@@ -1,5 +1,5 @@
 import type { ButtonProps } from '@mui/material'
-import { Button } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { uiTokens } from '../../../theme/tokens.ts'
@@ -9,9 +9,20 @@ import { resolveAppButtonTone } from './app-button-tone.ts'
 interface AppButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
   tone?: AppButtonTone
   brand?: 'twitch'
+  labelAlignment?: 'lineBox' | 'capHeight'
+  framePlacement?: 'outset' | 'inset'
 }
 
-export function AppButton({ tone = 'primary', brand, loading, sx, ...props }: AppButtonProps) {
+export function AppButton({
+  tone = 'primary',
+  brand,
+  loading,
+  sx,
+  children,
+  labelAlignment = 'lineBox',
+  framePlacement = 'outset',
+  ...props
+}: AppButtonProps) {
   const toneProps = resolveAppButtonTone(tone)
   return (
     <Button
@@ -40,10 +51,19 @@ export function AppButton({ tone = 'primary', brand, loading, sx, ...props }: Ap
               '&:hover': { backgroundColor: uiTokens.brand.twitchHover, backgroundImage: 'none' },
             }
           : undefined,
+        framePlacement === 'inset' ? { borderImageOutset: 0 } : undefined,
         sx,
       )}
       loading={loading}
       aria-busy={props['aria-busy'] ?? (loading || undefined)}
-    />
+    >
+      {labelAlignment === 'capHeight' ? (
+        <Box component="span" sx={{ textBoxTrim: 'trim-both', textBoxEdge: 'cap alphabetic' }}>
+          {children}
+        </Box>
+      ) : (
+        children
+      )}
+    </Button>
   )
 }

@@ -48,7 +48,15 @@ public sealed class ApplicationMigrationChainTests
                 "20260920180839_AddTwitchQuizIntegration",
                 "20260923123000_SeedBaseModifierCatalog",
                 "20260925145728_StartModifierOrderingPhase",
-                "20260925153554_AllowCardOpenedRoundTransition"
+                "20260925153554_AllowCardOpenedRoundTransition",
+                "20261008093609_AllowAdditionalAdminTeamSlots",
+                "20261008122259_AllowAdminTeamUnconfirmation",
+                "20261011160156_RemoveModifierTags",
+                "20261012180425_AddGameOverlayKeys",
+                "20261013140621_AddRoundBroadcastDrafts",
+                "20261013195519_AddRoundResultPresentation",
+                "20261013234918_AddRoundPreparationCompleted",
+                "20261014185916_AddOverlayTestMode"
             ],
             migrations
         );
@@ -68,6 +76,8 @@ public sealed class ApplicationMigrationChainTests
         var script = migrator.GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
 
         Assert.Contains("20260908003848_ProductionBaseline", script, StringComparison.Ordinal);
+        Assert.Contains("20261014185916_AddOverlayTestMode", script, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE game_overlay_keys ADD test_enabled boolean NOT NULL DEFAULT FALSE", script, StringComparison.Ordinal);
         Assert.Contains("CREATE EXTENSION IF NOT EXISTS citext", script, StringComparison.Ordinal);
         Assert.Contains("behavior_v2_snapshot_json", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_point_ledger_entries", script, StringComparison.Ordinal);
@@ -95,7 +105,7 @@ public sealed class ApplicationMigrationChainTests
         Assert.Contains("20260920001406_HardenQuizSubmissionHistory", script, StringComparison.Ordinal);
         Assert.Contains("20260920180839_AddTwitchQuizIntegration", script, StringComparison.Ordinal);
         Assert.Contains("20260923123000_SeedBaseModifierCatalog", script, StringComparison.Ordinal);
-        Assert.Contains("!активировать чирик", script, StringComparison.Ordinal);
+        Assert.Contains("!активировать черепаха", script, StringComparison.Ordinal);
         Assert.Contains("twitch_quiz_publications", script, StringComparison.Ordinal);
         Assert.Contains("twitch_eventsub_receipts", script, StringComparison.Ordinal);
         Assert.Contains("game_quiz_submissions", script, StringComparison.Ordinal);

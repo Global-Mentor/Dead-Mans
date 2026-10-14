@@ -23,7 +23,6 @@ public sealed record GameModifierDefinition(
     string? ActivationCommand,
     bool IsLockedByActiveGame,
     int Revision,
-    IReadOnlyList<string> NormalizedTags,
     ModifierBehaviorV2 BehaviorV2
 );
 
@@ -36,7 +35,6 @@ public sealed record CreateGameModifierInput(
     IReadOnlyList<Guid> ConflictingModifierIds,
     string? IconEmoji,
     string? ActivationCommand,
-    IReadOnlyList<string>? NormalizedTags,
     ModifierBehaviorV2 BehaviorV2,
     string? ChangeNote = null
 );
@@ -50,7 +48,6 @@ public sealed record UpdateGameModifierInput(
     IReadOnlyList<Guid> ConflictingModifierIds,
     string? IconEmoji,
     string? ActivationCommand,
-    IReadOnlyList<string>? NormalizedTags,
     ModifierBehaviorV2 BehaviorV2,
     int ExpectedRevision = 1,
     string? ChangeNote = null
@@ -111,7 +108,6 @@ public sealed record ModifierVersionDetail(
     string? ActivationCommand,
     int ActivationCost,
     GameModifierActivationLimit ActivationLimit,
-    IReadOnlyList<string> NormalizedTags,
     ModifierBehaviorV2 BehaviorV2,
     IReadOnlyList<ModifierConflictSnapshot> Conflicts,
     DateTime CreatedAtUtc,
@@ -152,7 +148,6 @@ public sealed record GameModifierDraftPreview(
     string Description,
     string? IconEmoji,
     string ActivationCommand,
-    IReadOnlyList<string> NormalizedTags,
     ModifierBehaviorV2 BehaviorV2,
     GameModifierDraftExample Example
 );

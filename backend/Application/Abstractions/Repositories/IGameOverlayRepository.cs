@@ -1,0 +1,14 @@
+using backend.Application.Contracts;
+
+namespace backend.Application.Abstractions.Repositories;
+
+public interface IGameOverlayRepository
+{
+    Task ReplaceKeyAsync(Guid ownerId, string hash, CancellationToken cancellationToken);
+    Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<bool> ValidateKeyAsync(string hash, CancellationToken cancellationToken);
+    Task<GameOverlayTestState> ReadTestStateAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<GameOverlayTestState> SetTestEnabledAsync(Guid ownerId, bool enabled, CancellationToken cancellationToken);
+    Task<bool> IsTestEnabledAsync(string hash, CancellationToken cancellationToken);
+    Task<GameOverlaySnapshot> ReadAsync(CancellationToken cancellationToken);
+}

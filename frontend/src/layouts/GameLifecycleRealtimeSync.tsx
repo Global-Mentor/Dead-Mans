@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../shared/realtime/refresh-realtime-queries.ts'
 import { useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -11,23 +12,27 @@ import {
 } from '../features/game-registration/index.ts'
 import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
 import { gameQuizQueryKeys } from '../features/game-quiz/api/game-quiz-queries.ts'
+import { gameHistoryQueryKeys } from '../features/game-history/index.ts'
 
 const eventName = realtimeHubs.gameBoard.events.gameLifecycleChanged
 
 // Shared navigation and registration state must update even outside the board page.
 export function GameLifecycleRealtimeSync() {
   const queryClient = useQueryClient()
-  const invalidate = useCallback(async () => {
-    await Promise.all(
-      [
-        currentGameBoardQueryOptions,
-        currentGameTeamQueueQueryOptions,
-        gameSetupDraftQueryOptions,
-        gameRegistrationSnapshotQueryOptions,
-        gameRegistrationAdminSnapshotQueryOptions,
-      ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
-    )
-  }, [queryClient])
+  const invalidate = useCallback(
+    async (includeBoard = true) => {
+      await Promise.all(
+        [
+          ...(includeBoard ? [currentGameBoardQueryOptions] : []),
+          currentGameTeamQueueQueryOptions,
+          gameSetupDraftQueryOptions,
+          gameRegistrationSnapshotQueryOptions,
+          gameRegistrationAdminSnapshotQueryOptions,
+        ].map(({ queryKey }) => refreshRealtimeQueries(queryClient, queryKey)),
+      )
+    },
+    [queryClient],
+  )
   const registerEventHandlers = useCallback(
     (connection: {
       on: (name: string, handler: () => void) => void
@@ -40,24 +45,25 @@ export function GameLifecycleRealtimeSync() {
             gameRegistrationSnapshotQueryOptions,
             gameRegistrationAdminSnapshotQueryOptions,
             currentGameTeamQueueQueryOptions,
-          ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
+          ].map(({ queryKey }) => refreshRealtimeQueries(queryClient, queryKey)),
         )
       }
       const teamStateHandler = () => {
+        void refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all)
         void Promise.all(
           [
             currentGameBoardQueryOptions,
             currentGameTeamQueueQueryOptions,
             gameRegistrationSnapshotQueryOptions,
             gameRegistrationAdminSnapshotQueryOptions,
-          ].map(({ queryKey }) => queryClient.invalidateQueries({ queryKey })),
+          ].map(({ queryKey }) => refreshRealtimeQueries(queryClient, queryKey)),
         )
       }
       const twitchQuizHandler = () => {
-        void queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.twitchIntegration() })
+        void refreshRealtimeQueries(queryClient, gameQuizQueryKeys.twitchIntegration())
       }
       const roundStateHandler = () => {
-        void queryClient.invalidateQueries({ queryKey: currentGameTeamQueueQueryOptions.queryKey })
+        void refreshRealtimeQueries(queryClient, currentGameTeamQueueQueryOptions.queryKey)
       }
       connection.on(eventName, handler)
       connection.on(realtimeHubs.gameBoard.events.registrationChanged, registrationHandler)
@@ -77,7 +83,8 @@ export function GameLifecycleRealtimeSync() {
   useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game lifecycle',
-    onConnected: invalidate,
+    // The board subscriber performs its version-aware HTTP resync on reconnect.
+    onConnected: useCallback(() => invalidate(false), [invalidate]),
     registerEventHandlers,
   })
   return null
