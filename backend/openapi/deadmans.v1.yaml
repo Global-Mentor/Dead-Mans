@@ -8,6 +8,47 @@ info:
 servers:
   - url: /api
 paths:
+  /overlay/test:
+    get:
+      operationId: getGameOverlayTestState
+      description: Current user's persistent overlay test mode. Moderator or admin only. No active game required. Responses are not cacheable.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Whether a link exists and its test mode is enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameOverlayTestStateDto'
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator or admin required
+    put:
+      operationId: setGameOverlayTestState
+      description: Sets the current user's test mode explicitly and idempotently, then invalidates overlay snapshots. A missing or concurrently revoked link returns hasKey=false and enabled=false. Does not change the game or its timers. Rotation and revocation clear the mode.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetGameOverlayTestRequest'
+      responses:
+        "200":
+          description: Confirmed state of the current user's link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameOverlayTestStateDto'
+        "400":
+          description: Missing or invalid enabled value
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator or admin required
   /overlay/key:
     post:
       operationId: rotateGameOverlayKey
@@ -4501,6 +4542,17 @@ components:
       in: cookie
       name: dm_auth
   schemas:
+    GameOverlayTestStateDto:
+      type: object
+      required: [hasKey, enabled]
+      properties:
+        hasKey: { type: boolean }
+        enabled: { type: boolean }
+    SetGameOverlayTestRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
     GameOverlayKeyDto:
       type: object
       required: [key]
@@ -4664,7 +4716,8 @@ components:
           nullable: true
         phase:
           type: string
-          enum: [idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
+          description: Test mode replaces all game content with the static brand preview; it does not change the round phase.
+          enum: [test, idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
         team:
           type: object
           nullable: true

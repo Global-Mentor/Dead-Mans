@@ -1,6 +1,8 @@
 namespace backend.Api.Contracts;
 
 public sealed record GameOverlayKeyDto(string Key);
+public sealed record GameOverlayTestStateDto(bool HasKey, bool Enabled);
+public sealed record SetGameOverlayTestRequest(bool? Enabled);
 public sealed record GameOverlayTeamDto(string? Name, int SlotIndex, IReadOnlyList<string> Players);
 public sealed record GameOverlayCellDto(int Row, int Col, int Cost, string State, string? Title,
     string? ImageUrl = null, GameOverlayCellResultDto? Result = null);

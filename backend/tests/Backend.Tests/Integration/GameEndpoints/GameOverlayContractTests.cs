@@ -75,13 +75,15 @@ public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) 
         using var snapshot = await client.GetAsync("/api/overlay/snapshot");
         Assert.Equal(HttpStatusCode.OK, snapshot.StatusCode);
         Assert.True(snapshot.Headers.CacheControl?.NoStore);
-        foreach (var path in new[] { "/api/game", "/api/game/team-queue" })
+        foreach (var path in new[] { "/api/game", "/api/game/team-queue", "/api/overlay/test" })
         {
             using var denied = await client.GetAsync(path);
             Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
         }
         using var mutation = await client.PostAsync("/api/overlay/key", null);
         Assert.Equal(HttpStatusCode.Unauthorized, mutation.StatusCode);
+        using var testMutation = await client.PutAsJsonAsync("/api/overlay/test", new { enabled = true });
+        Assert.Equal(HttpStatusCode.Unauthorized, testMutation.StatusCode);
         using var draftMutation = await client.PostAsJsonAsync($"/api/game/rounds/{Guid.NewGuid()}/broadcast-summary",
             new { expectedRoundVersion = 1, killsCount = 1, bountyCount = 0 });
         Assert.Equal(HttpStatusCode.Unauthorized, draftMutation.StatusCode);
@@ -113,9 +115,44 @@ public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) 
     }
 
     [Theory]
+    [InlineData("GET")]
+    [InlineData("PUT")]
+    public async Task Viewer_CannotControlOverlayTest(string method)
+    {
+        using var client = TestAuthClientFactory.CreateClient(factory, ["viewer"]);
+        using var request = new HttpRequestMessage(new HttpMethod(method), "/api/overlay/test");
+        request.Headers.Add("X-Dead-Mans-Api-Client", "1");
+        if (method == "PUT") request.Content = JsonContent.Create(new { enabled = true });
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Staff_CanReadOwnTestMode_AndCannotSubmitAnImplicitToggle()
+    {
+        var ownerId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.Add(new GameOverlayKey { Owner = CreateStaffOwner(db, ownerId), KeyHash = new string('c', 64), TestEnabled = true });
+            await db.SaveChangesAsync();
+        }
+        using var client = TestAuthClientFactory.CreateClient(factory, ["moderator"], ownerId);
+        using var response = await client.GetAsync("/api/overlay/test");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.Equal(new GameOverlayTestStateDto(true, true), await response.Content.ReadFromJsonAsync<GameOverlayTestStateDto>());
+        client.DefaultRequestHeaders.Add("X-Dead-Mans-Api-Client", "1");
+        using var invalid = await client.PutAsJsonAsync("/api/overlay/test", new { });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
+
+    [Theory]
     [InlineData("GET", "/api/overlay/snapshot")]
     [InlineData("POST", "/api/overlay/key")]
     [InlineData("DELETE", "/api/overlay/key")]
+    [InlineData("GET", "/api/overlay/test")]
+    [InlineData("PUT", "/api/overlay/test")]
     [InlineData("POST", "/hubs/game-overlay/negotiate?negotiateVersion=1")]
     public async Task AnonymousWithoutKey_CannotReadOrManageOverlay(string method, string path)
     {

@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/overlay/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Current user's persistent overlay test mode. Moderator or admin only. No active game required. Responses are not cacheable. */
+        get: operations["getGameOverlayTestState"];
+        /** @description Sets the current user's test mode explicitly and idempotently, then invalidates overlay snapshots. A missing or concurrently revoked link returns hasKey=false and enabled=false. Does not change the game or its timers. Rotation and revocation clear the mode. */
+        put: operations["setGameOverlayTestState"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/overlay/key": {
         parameters: {
             query?: never;
@@ -1731,6 +1749,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GameOverlayTestStateDto: {
+            hasKey: boolean;
+            enabled: boolean;
+        };
+        SetGameOverlayTestRequest: {
+            enabled: boolean;
+        };
         GameOverlayKeyDto: {
             key: string;
         };
@@ -1812,8 +1837,11 @@ export interface components {
         };
         GameOverlaySnapshotDto: {
             gameId: string | null;
-            /** @enum {string} */
-            phase: "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
+            /**
+             * @description Test mode replaces all game content with the static brand preview; it does not change the round phase.
+             * @enum {string}
+             */
+            phase: "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
             team: components["schemas"]["GameOverlayTeamDto"] | null;
             board: components["schemas"]["GameOverlayBoardDto"] | null;
             /** @description Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts. */
@@ -3555,6 +3583,85 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getGameOverlayTestState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether a link exists and its test mode is enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayTestStateDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    setGameOverlayTestState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGameOverlayTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Confirmed state of the current user's link */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayTestStateDto"];
+                };
+            };
+            /** @description Missing or invalid enabled value */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     rotateGameOverlayKey: {
         parameters: {
             query?: never;

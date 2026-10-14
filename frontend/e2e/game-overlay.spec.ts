@@ -1127,6 +1127,7 @@ for (const width of [390, 768, 1440]) {
     await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
     let issued = 0
     let revoked = false
+    let testEnabled = false
     await page.route(
       (url) => url.pathname === '/auth/me' || url.pathname.startsWith('/api/'),
       (route) => {
@@ -1139,7 +1140,13 @@ for (const width of [390, 768, 1440]) {
               roles: ['admin', 'viewer'],
             },
           })
+        if (path === '/api/overlay/test') {
+          if (route.request().method() === 'PUT')
+            testEnabled = route.request().postDataJSON().enabled
+          return route.fulfill({ json: { hasKey: issued > 0 && !revoked, enabled: testEnabled } })
+        }
         if (path === '/api/overlay/key') {
+          testEnabled = false
           expect(route.request().headers()['x-dead-mans-api-client']).toBe('1')
           if (route.request().method() === 'DELETE') {
             revoked = true
@@ -1153,12 +1160,18 @@ for (const width of [390, 768, 1440]) {
     )
     await page.goto('/panel/game-overlay')
     await expect(page.getByRole('heading', { name: 'Оверлей OBS' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Test Overlay' })).toBeDisabled()
     await page.getByRole('button', { name: 'Создать / заменить ссылку' }).click()
     const link = page.getByLabel('Секретная ссылка OBS')
     await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'a'.repeat(64)}`)
     await page.getByRole('button', { name: 'Создать / заменить ссылку' }).click()
     await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'b'.repeat(64)}`)
     expect(issued).toBe(2)
+    await page.getByRole('button', { name: 'Test Overlay' }).click()
+    await expect(page.getByRole('button', { name: 'Завершить тест' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe(
       'rgba(0, 0, 0, 0)',
     )
@@ -1167,6 +1180,11 @@ for (const width of [390, 768, 1440]) {
     ).toBe(true)
     await mkdir('../.tmp/agent-work/overlay', { recursive: true })
     await page.screenshot({ path: `../.tmp/agent-work/overlay/settings-${width}.png` })
+    await page.getByRole('button', { name: 'Завершить тест' }).click()
+    await expect(page.getByRole('button', { name: 'Test Overlay' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     await page.getByRole('button', { name: 'Отозвать ссылку' }).click()
     await expect(page.getByText('Ссылка отозвана.')).toBeVisible()
     await expect(link).toHaveCount(0)

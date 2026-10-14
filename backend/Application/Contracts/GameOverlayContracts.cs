@@ -1,5 +1,7 @@
 namespace backend.Application.Contracts;
 
+public sealed record GameOverlayTestState(bool HasKey, bool Enabled);
+
 public sealed record GameOverlayTeam(string? Name, int SlotIndex, IReadOnlyList<string> Players);
 
 public sealed record GameOverlayCell(int Row, int Col, int Cost, string State, string? Title,

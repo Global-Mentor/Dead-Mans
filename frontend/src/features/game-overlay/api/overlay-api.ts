@@ -15,6 +15,14 @@ export function revokeOverlayKey() {
   return ensureOpenApiSuccess(client.DELETE('/overlay/key'))
 }
 
+export function fetchOverlayTestState(signal: AbortSignal) {
+  return unwrapOpenApiData(client.GET('/overlay/test', { signal, cache: 'no-store' }))
+}
+
+export function setOverlayTestEnabled(enabled: boolean) {
+  return unwrapOpenApiData(client.PUT('/overlay/test', { body: { enabled } }))
+}
+
 export async function fetchOverlayFrame(key: string, signal: AbortSignal) {
   const snapshot = await unwrapOpenApiData(
     client.GET('/overlay/snapshot', {

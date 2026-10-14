@@ -30,7 +30,7 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
     {
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO game_overlay_keys (owner_id, key_hash) VALUES ({ownerId}, {hash})
-            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash
+            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, test_enabled = false
             """, cancellationToken);
     }
 
@@ -39,6 +39,21 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
         await db.Set<GameOverlayKey>().Where(key => key.OwnerId == ownerId)
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task<GameOverlayTestState> ReadTestStateAsync(Guid ownerId, CancellationToken cancellationToken) =>
+        await db.Set<GameOverlayKey>().AsNoTracking().Where(key => key.OwnerId == ownerId)
+            .Select(key => new GameOverlayTestState(true, key.TestEnabled)).SingleOrDefaultAsync(cancellationToken)
+        ?? new GameOverlayTestState(false, false);
+
+    public async Task<GameOverlayTestState> SetTestEnabledAsync(Guid ownerId, bool enabled, CancellationToken cancellationToken)
+    {
+        var changed = await db.Set<GameOverlayKey>().Where(key => key.OwnerId == ownerId)
+            .ExecuteUpdateAsync(update => update.SetProperty(key => key.TestEnabled, enabled), cancellationToken);
+        return new GameOverlayTestState(changed != 0, changed != 0 && enabled);
+    }
+
+    public Task<bool> IsTestEnabledAsync(string hash, CancellationToken cancellationToken) =>
+        db.Set<GameOverlayKey>().AsNoTracking().AnyAsync(key => key.KeyHash == hash && key.TestEnabled, cancellationToken);
 
     public async Task<GameOverlaySnapshot> ReadAsync(CancellationToken cancellationToken)
     {

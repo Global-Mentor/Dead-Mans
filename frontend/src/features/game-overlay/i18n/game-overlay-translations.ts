@@ -1,5 +1,12 @@
 const translations = {
   en: {
+    testStart: 'Test Overlay',
+    testStop: 'Stop test',
+    testHelp:
+      'Create a link first. Test Overlay replaces your OBS scene with the Deadman’s logo until you stop the test. The game and its timers continue.',
+    testActive: 'Test mode is on. Your OBS source shows the logo instead of game content.',
+    testError: 'Unable to load or change test mode. Try again.',
+    testImage: 'Deadman’s logo - overlay test',
     summaryReview: 'Result review',
     summaryFinal: 'Round results',
     summaryEarned: 'Earned: {{points}} pts',
@@ -35,6 +42,14 @@ const translations = {
     board: 'Game board',
   },
   ru: {
+    testStart: 'Test Overlay',
+    testStop: 'Завершить тест',
+    testHelp:
+      'Сначала создайте ссылку. Test Overlay заменит вашу сцену OBS логотипом Deadman’s до завершения теста. Игра и её таймеры продолжают работать.',
+    testActive:
+      'Тестовый режим включён. В вашем источнике OBS вместо игровой информации отображается логотип.',
+    testError: 'Не удалось загрузить или изменить тестовый режим. Попробуйте ещё раз.',
+    testImage: 'Логотип Deadman’s - тест оверлея',
     summaryReview: 'Подведение итогов',
     summaryFinal: 'Итоги раунда',
     summaryEarned: 'Заработано: {{points}} очк.',
@@ -70,6 +85,14 @@ const translations = {
     board: 'Игровая доска',
   },
   uk: {
+    testStart: 'Test Overlay',
+    testStop: 'Завершити тест',
+    testHelp:
+      'Спочатку створіть посилання. Test Overlay замінить вашу сцену OBS логотипом Deadman’s до завершення тесту. Гра та її таймери продовжують працювати.',
+    testActive:
+      'Тестовий режим увімкнено. У вашому джерелі OBS замість ігрової інформації відображається логотип.',
+    testError: 'Не вдалося завантажити або змінити тестовий режим. Спробуйте ще раз.',
+    testImage: 'Логотип Deadman’s - тест оверлею',
     summaryReview: 'Підбиття підсумків',
     summaryFinal: 'Підсумки раунду',
     summaryEarned: 'Зароблено: {{points}} очк.',
@@ -105,6 +128,14 @@ const translations = {
     board: 'Ігрова дошка',
   },
   pl: {
+    testStart: 'Test Overlay',
+    testStop: 'Zakończ test',
+    testHelp:
+      'Najpierw utwórz link. Test Overlay zastąpi Twoją scenę OBS logo Deadman’s do zakończenia testu. Gra i jej liczniki czasu nadal działają.',
+    testActive:
+      'Tryb testowy jest włączony. Twoje źródło OBS wyświetla logo zamiast informacji o grze.',
+    testError: 'Nie udało się wczytać lub zmienić trybu testowego. Spróbuj ponownie.',
+    testImage: 'Logo Deadman’s - test nakładki',
     summaryReview: 'Podsumowanie wyników',
     summaryFinal: 'Wyniki rundy',
     summaryEarned: 'Zdobyte punkty: {{points}}',

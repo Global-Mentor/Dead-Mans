@@ -697,6 +697,12 @@ namespace backend.Data.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("key_hash");
 
+                    b.Property<bool>("TestEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("test_enabled");
+
                     b.HasKey("OwnerId")
                         .HasName("pk_game_overlay_keys");
 

@@ -46,7 +46,7 @@ public sealed class GameOverlayController(IGameOverlayService service) : Control
     [Authorize(AuthenticationSchemes = GameOverlayAuthenticationHandler.SchemeName)]
     public async Task<IActionResult> GetSnapshot(CancellationToken cancellationToken)
     {
-        var snapshot = await service.ReadAsync(cancellationToken);
+        var snapshot = await service.ReadAsync(Request.Headers["X-Overlay-Key"].ToString(), cancellationToken);
         return Ok(new GameOverlaySnapshotDto(snapshot.GameId, snapshot.Phase,
             snapshot.Team is { } team ? new GameOverlayTeamDto(team.Name, team.SlotIndex, team.Players) : null,
             snapshot.Board is { } board ? new GameOverlayBoardDto(board.RowLabels, board.ColLabels,
@@ -68,5 +68,26 @@ public sealed class GameOverlayController(IGameOverlayService service) : Control
                     [], summary.Card.ColumnLabel, summary.Card.RowLabel), summary.TeamName, summary.TeamSlotIndex,
                 summary.KillsCount, summary.BountyCount, summary.KillsScore, summary.BountyScore,
                 summary.ScoreDetails.ToDto()) : null));
+    }
+
+    [HttpGet("test")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> GetTestState(CancellationToken cancellationToken)
+    {
+        var ownerId = HttpContext.TryGetUserId();
+        if (ownerId is null) return Unauthorized();
+        var state = await service.ReadTestStateAsync(ownerId.Value, cancellationToken);
+        return Ok(new GameOverlayTestStateDto(state.HasKey, state.Enabled));
+    }
+
+    [HttpPut("test")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> SetTestState(SetGameOverlayTestRequest request, CancellationToken cancellationToken)
+    {
+        var ownerId = HttpContext.TryGetUserId();
+        if (ownerId is null) return Unauthorized();
+        if (request.Enabled is not { } enabled) return BadRequest();
+        var state = await service.SetTestEnabledAsync(ownerId.Value, enabled, cancellationToken);
+        return Ok(new GameOverlayTestStateDto(state.HasKey, state.Enabled));
     }
 }

@@ -13,6 +13,7 @@ import {
 } from '../../shared/game-ui/index.ts'
 import { useOverlayFrame } from './use-overlay-frame.ts'
 import { OverlayPresence } from './OverlayPresence.tsx'
+import { OverlayTestScene } from './OverlayTestScene.tsx'
 
 const centeredSceneSx = {
   position: 'absolute',
@@ -69,7 +70,9 @@ const OverlayFrame = memo(function OverlayFrame({
         pointerEvents: 'none',
       }}
     >
-      {frame?.team ? (
+      {frame?.phase === 'test' ? (
+        <OverlayTestScene />
+      ) : frame?.team ? (
         <>
           <BroadcastBackdrop
             visible={Boolean(
