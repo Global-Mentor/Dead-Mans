@@ -175,6 +175,29 @@ test('admin can create and reorder teams after game start', async ({ page }) => 
   expect((await moveRequest).postDataJSON()).toMatchObject({ targetTeamSlotId: 'slot-2' })
 })
 
+for (const width of [390, 768, 1440]) {
+  test(`team creation menu stays anchored inside the viewport at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await openTeamManagement(page, 'editable')
+    const trigger = page.getByRole('button', { name: 'Create team', exact: true })
+    await trigger.click()
+    const menu = page.getByRole('menu')
+    await expect(menu.getByRole('menuitem')).toHaveCount(2)
+    const popup = menu.locator('..')
+    await expect(popup).toHaveCSS('position', 'absolute')
+    const bounds = (await popup.boundingBox())!
+    expect(bounds.x).toBeGreaterThanOrEqual(15)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width - 15)
+    expect(bounds.width).toBeLessThanOrEqual(320)
+    await page.screenshot({ path: info.outputPath('create-team-menu.png'), animations: 'disabled' })
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+}
+
 test('shows the reason when an active team cannot be disbanded', async ({ page }) => {
   const requests = await openTeamManagement(page, 'active')
   const button = page.getByRole('button', { name: 'Disband', exact: true })

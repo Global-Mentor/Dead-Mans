@@ -14,6 +14,8 @@ export const ActionMenu = styled(Menu, {
 })<{ appearance?: 'index' | 'tree' }>(({ theme, appearance = 'index' }) => ({
   '& .MuiMenu-paper': {
     ...popoverPanelSx(theme),
+    position: 'absolute',
+    width: 'max-content',
   },
   '& .MuiMenu-list': dropdownListSx(theme),
   '& .MuiMenu-list > .MuiMenuItem-root': {
