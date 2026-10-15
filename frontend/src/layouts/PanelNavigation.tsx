@@ -102,9 +102,9 @@ export function PanelNavigation() {
       : []
   const gameNotifications = gameNotificationsQuery.data ?? []
   const importantNotificationsCount = disbandRequestTeams.length
-  const modifierNotificationsCount = gameNotifications.length
+  const savedNotificationsCount = gameNotifications.length
   const totalNotificationsCount =
-    pendingInvitationsCount + importantNotificationsCount + modifierNotificationsCount
+    pendingInvitationsCount + importantNotificationsCount + savedNotificationsCount
 
   const openNotificationMenu = (event: MouseEvent<HTMLElement>) => {
     setNotificationAnchor(event.currentTarget)
@@ -287,9 +287,9 @@ export function PanelNavigation() {
                         key={`game-notification-${notification.notificationId}`}
                         component={RouterLink}
                         to={
-                          notification.type === 'team_rejected'
-                            ? gameApplicationRoute.fullPath
-                            : gameModifiersRoute.fullPath
+                          notification.type === 'modifier_cancelled'
+                            ? gameModifiersRoute.fullPath
+                            : gameApplicationRoute.fullPath
                         }
                         onClick={closeNotificationMenu}
                         sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}
@@ -405,6 +405,14 @@ function GameNotificationRealtimeSync() {
 
 function getGameNotificationTitle(t: TFunction, notification: GameUserNotification) {
   switch (notification.type) {
+    case 'team_member_assigned':
+      return t('navigation.teamMemberAssignedTitle')
+    case 'team_member_transferred':
+      return t('navigation.teamMemberTransferredTitle')
+    case 'team_member_removed':
+      return t('navigation.teamMemberRemovedTitle')
+    case 'team_disbanded':
+      return t('navigation.teamDisbandedTitle')
     case 'team_rejected':
       return t('navigation.teamRejectedItemTitle', {
         team: notification.teamName ?? t('navigation.teamFallback'),
@@ -419,7 +427,25 @@ function getGameNotificationTitle(t: TFunction, notification: GameUserNotificati
 }
 
 function getGameNotificationDescription(t: TFunction, notification: GameUserNotification) {
+  const teamLabel = (name: string | null | undefined, slot: number | null | undefined) =>
+    name
+      ? t('navigation.notificationTeamName', { name })
+      : slot != null
+        ? t('navigation.notificationTeamSlot', { slot })
+        : t('navigation.teamFallback')
+  const teams = {
+    team: teamLabel(notification.teamName, notification.teamSlotIndex),
+    previousTeam: teamLabel(notification.previousTeamName, notification.previousTeamSlotIndex),
+  }
   switch (notification.type) {
+    case 'team_member_assigned':
+      return t('navigation.teamMemberAssignedDescription', teams)
+    case 'team_member_transferred':
+      return t('navigation.teamMemberTransferredDescription', teams)
+    case 'team_member_removed':
+      return t('navigation.teamMemberRemovedDescription', teams)
+    case 'team_disbanded':
+      return t('navigation.teamDisbandedDescription', teams)
     case 'team_rejected':
       return t('navigation.teamRejectedItemDescription')
     case 'modifier_cancelled':

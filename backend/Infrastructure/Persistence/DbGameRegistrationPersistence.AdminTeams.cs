@@ -180,6 +180,8 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         await CloseMembershipAsync(membership, team, adminUserId, utcNow, cancellationToken);
+        await AddParticipationNotificationAsync(
+            GameNotificationTypes.TeamMemberRemoved, membership, team, adminUserId, utcNow, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         if (transaction is not null)

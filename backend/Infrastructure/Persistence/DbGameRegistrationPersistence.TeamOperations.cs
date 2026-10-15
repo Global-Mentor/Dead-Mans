@@ -70,16 +70,18 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             );
         }
 
-        _dbContext.GameTeamMembers.Add(
-            new GameTeamMember
-            {
-                Id = Guid.NewGuid(),
-                GameId = gameId,
-                TeamId = targetTeam.Id,
-                UserId = userId,
-                JoinedAtUtc = utcNow
-            }
-        );
+        var membership = new GameTeamMember
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            TeamId = targetTeam.Id,
+            UserId = userId,
+            JoinedAtUtc = utcNow
+        };
+        _dbContext.GameTeamMembers.Add(membership);
+        await AddParticipationNotificationAsync(
+            activeMembership is null ? GameNotificationTypes.TeamMemberAssigned : GameNotificationTypes.TeamMemberTransferred,
+            membership, targetTeam, adminUserId, utcNow, cancellationToken, activeMembership?.Team);
 
         targetTeam.UpdatedAtUtc = utcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);

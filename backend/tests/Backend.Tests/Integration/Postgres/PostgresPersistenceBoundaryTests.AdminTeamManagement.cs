@@ -102,7 +102,10 @@ public sealed partial class PostgresPersistenceBoundaryTests
         if (reject) Assert.Equal(GameRegistrationErrorCode.TeamNotReady, result.Error);
         await using var verifyDb = _database.CreateDbContext();
         Assert.Equal(!reject, (await verifyDb.GameTeamMembers.SingleAsync(member => member.TeamId == team.Id)).LeftAtUtc.HasValue);
-        Assert.Empty(await verifyDb.GameUserNotifications.ToListAsync());
+        var notifications = await verifyDb.GameUserNotifications.ToListAsync();
+        Assert.Equal(reject ? 1 : 2, notifications.Count);
+        Assert.Contains(notifications, notice => notice.Type == GameNotificationTypes.TeamMemberAssigned && notice.UserId == player.Id);
+        Assert.Equal(!reject, notifications.Any(notice => notice.Type == GameNotificationTypes.TeamDisbanded && notice.UserId == player.Id));
         Assert.Equal(TeamStatusValue.Confirmed, (await verifyDb.GameTeams.SingleAsync(team => team.Id == seeded.TeamId)).Status);
     }
 }

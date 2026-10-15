@@ -1925,7 +1925,8 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, repeatedResponse.StatusCode);
         Assert.Single(publisher.PublishedModifierCancelledEvents);
-        Assert.Single(publisher.PublishedUserNotificationEvents);
+        Assert.Empty(publisher.PublishedUserNotificationEvents);
+        Assert.Empty((await ownerClient.GetFromJsonAsync<GameUserNotificationDto[]>("/api/game/notifications"))!);
 
         var refundedState = await ownerClient.GetFromJsonAsync<GameModifierStateDto>(
             "/api/game/modifiers/state"

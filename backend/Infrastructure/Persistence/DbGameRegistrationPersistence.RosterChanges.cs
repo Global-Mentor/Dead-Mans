@@ -171,6 +171,8 @@ public sealed partial class DbGameRegistrationPersistence
             .ToListAsync(cancellationToken);
         foreach (var member in members)
         {
+            await AddParticipationNotificationAsync(
+                GameNotificationTypes.TeamDisbanded, member, team, adminUserId, utcNow, cancellationToken);
             member.ReadyAtUtc = null;
             member.LeftAtUtc = utcNow;
         }

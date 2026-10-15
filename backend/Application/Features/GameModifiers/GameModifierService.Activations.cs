@@ -254,6 +254,7 @@ public sealed partial class GameModifierService
 
         if (cancellationResult.StateChanged
             && cancellationResult.ActivatedByUserId.HasValue
+            && cancellationResult.ActivatedByUserId != cancelledByUserId
             && cancellationResult.ActivationId.HasValue
             && Guid.TryParse(cancellationResult.GameId, out var notificationGameId)
             && !string.IsNullOrWhiteSpace(cancellationResult.ModifierName)

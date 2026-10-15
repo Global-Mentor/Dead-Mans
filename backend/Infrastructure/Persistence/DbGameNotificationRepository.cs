@@ -139,6 +139,16 @@ public sealed class DbGameNotificationRepository : IGameNotificationRepository
             }
         }
 
+        if (row.SchemaVersion == 1 && row.Type is GameNotificationTypes.TeamMemberAssigned
+            or GameNotificationTypes.TeamMemberTransferred or GameNotificationTypes.TeamMemberRemoved
+            or GameNotificationTypes.TeamDisbanded)
+        {
+            var payload = JsonSerializer.Deserialize<TeamParticipationNotificationPayload>(row.PayloadJson, NotificationJsonOptions);
+            if (payload is not null)
+                return new GameUserNotification(row.Id, row.Type, row.CreatedAtUtc, null, null, null,
+                    payload.TeamName, payload.TeamSlotIndex, payload.PreviousTeamName, payload.PreviousTeamSlotIndex);
+        }
+
         if (row.Type == GameNotificationTypes.TeamRejected && row.SchemaVersion == 1)
         {
             var payload = JsonSerializer.Deserialize<TeamRejectedNotificationPayload>(row.PayloadJson, NotificationJsonOptions);
