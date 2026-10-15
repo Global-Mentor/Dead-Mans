@@ -117,7 +117,7 @@ test('overlay test replaces the live scene, survives reloads and restores the cu
   await overlay.goto(`/overlay#key=${key}`)
   await expect(overlay.getByTestId('overlay-board')).toBeVisible()
   await page.goto('/panel/game-overlay')
-  await page.getByRole('button', { name: 'Test Overlay' }).click()
+  await page.getByRole('button', { name: 'Запустить тест' }).click()
   await expect(overlay.getByTestId('overlay-test-scene')).toBeVisible()
   await expect(overlay.getByTestId('overlay-board')).toHaveCount(0)
   await expect(overlay.getByTestId('overlay-team')).toHaveCount(0)
@@ -159,7 +159,7 @@ test('overlay test replaces the live scene, survives reloads and restores the cu
   await expect(overlay.getByTestId('overlay-test-scene')).toHaveCount(0)
   await expect(overlay.getByTestId('overlay-round-layout')).toBeVisible()
   await expect(overlay.getByTestId('overlay-board')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Test Overlay' }).click()
+  await page.getByRole('button', { name: 'Запустить тест' }).click()
   await expect(overlay.getByTestId('overlay-test-scene')).toBeVisible()
   revoked = true
   notify()

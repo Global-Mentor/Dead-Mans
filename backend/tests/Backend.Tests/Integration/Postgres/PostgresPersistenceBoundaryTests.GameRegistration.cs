@@ -401,6 +401,25 @@ public sealed partial class PostgresPersistenceBoundaryTests
 
         await using var verifyDb = _database.CreateDbContext();
         var closedTeam = await verifyDb.GameTeams.SingleAsync(candidate => candidate.Id == team.Id);
+        var expectedNotificationType = operation switch
+        {
+            "assign" => GameNotificationTypes.TeamMemberTransferred,
+            "remove" => GameNotificationTypes.TeamMemberRemoved,
+            "reject" => GameNotificationTypes.TeamRejected,
+            "disband" or "disband-forming" => GameNotificationTypes.TeamDisbanded,
+            _ => null
+        };
+        var notifications = await new DbGameNotificationRepository(verifyDb, TimeProvider.System).GetUnreadForUserAsync(player.Id);
+        if (expectedNotificationType is null) Assert.Empty(notifications);
+        else
+        {
+            var notice = Assert.Single(notifications);
+            Assert.Equal(expectedNotificationType, notice.Type);
+            if (operation != "reject") Assert.Equal(operation == "assign" ? 2 : 1, notice.TeamSlotIndex);
+            if (operation == "assign") Assert.Equal(1, notice.PreviousTeamSlotIndex);
+        }
+        Assert.Empty(await new DbGameNotificationRepository(verifyDb, TimeProvider.System).GetUnreadForUserAsync(invitee.Id));
+        Assert.Empty(await new DbGameNotificationRepository(verifyDb, TimeProvider.System).GetUnreadForUserAsync(admin.Id));
         Assert.Equal(operation == "reject" ? TeamStatusValue.Rejected : TeamStatusValue.Disbanded, closedTeam.Status);
         Assert.False(closedTeam.RecruitmentOpen);
         Assert.Null(closedTeam.DisbandRequestedAtUtc);

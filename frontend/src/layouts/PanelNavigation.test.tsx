@@ -323,7 +323,55 @@ describe('PanelNavigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Открыть уведомления' }))
     const item = screen.getByRole('menuitem', { name: /Команда «Ночной дозор» не допущена к игре/ })
     expect(item).toHaveAttribute('href', '/panel/game-application')
-    expect(item).toHaveTextContent('Администратор отказал команде в участии.')
+    expect(item).toHaveTextContent('Организатор отказал команде в участии.')
+  })
+
+  it.each([
+    [
+      'team_member_assigned',
+      'Вы добавлены в команду',
+      'Организатор добавил вас в команду «Ночной дозор».',
+    ],
+    [
+      'team_member_transferred',
+      'Вы переведены в другую команду',
+      'Организатор перевёл вас из команды № 2 в команду «Ночной дозор».',
+    ],
+    [
+      'team_member_removed',
+      'Вы исключены из команды',
+      'Организатор исключил вас из команды «Ночной дозор».',
+    ],
+    [
+      'team_disbanded',
+      'Команда расформирована',
+      'Организатор расформировал команду «Ночной дозор». Вы больше не состоите в ней.',
+    ],
+  ])('shows unambiguous %s participation notifications', (type, title, description) => {
+    renderNavigation(
+      { id: 'viewer-1', displayName: 'Player', roles: ['viewer'] },
+      '/panel/game-board',
+      createDraftSnapshot(),
+      null,
+      null,
+      'active',
+      [
+        {
+          notificationId: 'change',
+          type,
+          createdAtUtc: '2026-10-15T12:00:00Z',
+          teamName: 'Ночной дозор',
+          teamSlotIndex: 3,
+          previousTeamName: null,
+          previousTeamSlotIndex: 2,
+        },
+      ],
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть уведомления' }))
+    const item = screen.getByRole('menuitem', { name: new RegExp(title) })
+    expect(item).toHaveAttribute('href', '/panel/game-application')
+    expect(item).toHaveTextContent(description)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('shows modifier cancellation notifications for players', () => {

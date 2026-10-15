@@ -7,7 +7,10 @@ public sealed record GameUserNotificationDto(
     string? ModifierName,
     string? ActorDisplayName,
     int? QuizPointsDelta,
-    string? TeamName = null
+    string? TeamName = null,
+    int? TeamSlotIndex = null,
+    string? PreviousTeamName = null,
+    int? PreviousTeamSlotIndex = null
 );
 
 public sealed record GameUserNotificationCreatedEventDto(GameUserNotificationDto Notification);

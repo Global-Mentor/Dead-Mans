@@ -1,8 +1,19 @@
 const translations = {
   en: {
+    notificationTeamName: '“{{name}}”',
+    notificationTeamSlot: 'No. {{slot}}',
+    teamMemberAssignedTitle: 'You were added to a team',
+    teamMemberAssignedDescription: 'An organizer added you to team {{team}}.',
+    teamMemberTransferredTitle: 'You were moved to another team',
+    teamMemberTransferredDescription:
+      'An organizer moved you from team {{previousTeam}} to team {{team}}.',
+    teamMemberRemovedTitle: 'You were removed from a team',
+    teamMemberRemovedDescription: 'An organizer removed you from team {{team}}.',
+    teamDisbandedTitle: 'Your team was disbanded',
+    teamDisbandedDescription: 'An organizer disbanded team {{team}}. You are no longer a member.',
     teamFallback: 'Your team',
     teamRejectedItemDescription:
-      'The administrator declined your team’s participation. Its roster has closed and you are no longer a member.',
+      'An organizer declined your team’s participation. You are no longer a member of this team.',
     teamRejectedItemTitle: 'Team “{{team}}” was not admitted to the game',
     brandMark: 'DM',
     menu: 'Menu',
@@ -53,6 +64,8 @@ const translations = {
       viewer: 'Participant',
     },
     items: {
+      gameGuide: { label: 'How to play' },
+      settings: { label: 'Settings' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Game history',
@@ -99,9 +112,21 @@ const translations = {
     },
   },
   ru: {
+    notificationTeamName: '«{{name}}»',
+    notificationTeamSlot: '№ {{slot}}',
+    teamMemberAssignedTitle: 'Вы добавлены в команду',
+    teamMemberAssignedDescription: 'Организатор добавил вас в команду {{team}}.',
+    teamMemberTransferredTitle: 'Вы переведены в другую команду',
+    teamMemberTransferredDescription:
+      'Организатор перевёл вас из команды {{previousTeam}} в команду {{team}}.',
+    teamMemberRemovedTitle: 'Вы исключены из команды',
+    teamMemberRemovedDescription: 'Организатор исключил вас из команды {{team}}.',
+    teamDisbandedTitle: 'Команда расформирована',
+    teamDisbandedDescription:
+      'Организатор расформировал команду {{team}}. Вы больше не состоите в ней.',
     teamFallback: 'Ваша команда',
     teamRejectedItemDescription:
-      'Администратор отказал команде в участии. Состав закрыт, вы больше не состоите в этой команде.',
+      'Организатор отказал команде в участии. Вы больше не состоите в этой команде.',
     teamRejectedItemTitle: 'Команда «{{team}}» не допущена к игре',
     brandMark: 'DM',
     menu: 'Меню',
@@ -153,6 +178,8 @@ const translations = {
       viewer: 'Участник',
     },
     items: {
+      gameGuide: { label: 'Как играть' },
+      settings: { label: 'Настройки' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'История игр',
@@ -199,9 +226,21 @@ const translations = {
     },
   },
   uk: {
+    notificationTeamName: '«{{name}}»',
+    notificationTeamSlot: '№ {{slot}}',
+    teamMemberAssignedTitle: 'Вас додано до команди',
+    teamMemberAssignedDescription: 'Організатор додав вас до команди {{team}}.',
+    teamMemberTransferredTitle: 'Вас переведено до іншої команди',
+    teamMemberTransferredDescription:
+      'Організатор перевів вас із команди {{previousTeam}} до команди {{team}}.',
+    teamMemberRemovedTitle: 'Вас виключено з команди',
+    teamMemberRemovedDescription: 'Організатор виключив вас із команди {{team}}.',
+    teamDisbandedTitle: 'Команду розформовано',
+    teamDisbandedDescription:
+      'Організатор розформував команду {{team}}. Ви більше не входите до її складу.',
     teamFallback: 'Ваша команда',
     teamRejectedItemDescription:
-      'Адміністратор відмовив команді в участі. Склад закрито, ви більше не входите до цієї команди.',
+      'Організатор відмовив команді в участі. Ви більше не входите до її складу.',
     teamRejectedItemTitle: 'Команду «{{team}}» не допущено до гри',
     brandMark: 'DM',
     menu: 'Меню',
@@ -253,6 +292,8 @@ const translations = {
       viewer: 'Учасник',
     },
     items: {
+      gameGuide: { label: 'Як грати' },
+      settings: { label: 'Налаштування' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Історія ігор',
@@ -299,9 +340,21 @@ const translations = {
     },
   },
   pl: {
+    notificationTeamName: '„{{name}}”',
+    notificationTeamSlot: 'nr {{slot}}',
+    teamMemberAssignedTitle: 'Dodano Cię do drużyny',
+    teamMemberAssignedDescription: 'Organizator dodał Cię do drużyny {{team}}.',
+    teamMemberTransferredTitle: 'Przeniesiono Cię do innej drużyny',
+    teamMemberTransferredDescription:
+      'Organizator przeniósł Cię z drużyny {{previousTeam}} do drużyny {{team}}.',
+    teamMemberRemovedTitle: 'Usunięto Cię z drużyny',
+    teamMemberRemovedDescription: 'Organizator usunął Cię z drużyny {{team}}.',
+    teamDisbandedTitle: 'Drużyna została rozwiązana',
+    teamDisbandedDescription:
+      'Organizator rozwiązał drużynę {{team}}. Nie należysz już do tej drużyny.',
     teamFallback: 'Twoja drużyna',
     teamRejectedItemDescription:
-      'Administrator odmówił drużynie udziału. Skład został zamknięty i nie jesteś już jego członkiem.',
+      'Organizator odmówił drużynie udziału. Nie należysz już do tej drużyny.',
     teamRejectedItemTitle: 'Drużyna „{{team}}” nie została dopuszczona do gry',
     brandMark: 'DM',
     menu: 'Menu',
@@ -353,6 +406,8 @@ const translations = {
       viewer: 'Uczestnik',
     },
     items: {
+      gameGuide: { label: 'Jak grać' },
+      settings: { label: 'Ustawienia' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
         label: 'Historia gier',

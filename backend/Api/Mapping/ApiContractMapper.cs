@@ -121,7 +121,10 @@ public static partial class ApiContractMapper
             notification.ModifierName,
             notification.ActorDisplayName,
             notification.QuizPointsDelta,
-            notification.TeamName
+            notification.TeamName,
+            notification.TeamSlotIndex,
+            notification.PreviousTeamName,
+            notification.PreviousTeamSlotIndex
         );
     }
 

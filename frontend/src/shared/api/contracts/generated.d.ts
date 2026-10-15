@@ -2531,7 +2531,7 @@ export interface components {
             summary: components["schemas"]["GameModifierAdminPlayersSummaryDto"];
             players: components["schemas"]["GameModifierAdminPlayerDto"][];
         };
-        /** @description Persistent user notification. team_rejected includes the rejected team name. */
+        /** @description Persistent user notification. Participation changes use team_member_assigned, team_member_transferred, team_member_removed or team_disbanded. Team names and queue positions are snapshots at the time of the change; for transfers, teamName/teamSlotIndex identify the destination and previousTeamName/previousTeamSlotIndex identify the source. team_rejected includes the rejected team name. */
         GameUserNotificationDto: {
             /** Format: uuid */
             notificationId: string;
@@ -2542,6 +2542,9 @@ export interface components {
             actorDisplayName?: string | null;
             quizPointsDelta?: number | null;
             teamName?: string | null;
+            teamSlotIndex?: number | null;
+            previousTeamName?: string | null;
+            previousTeamSlotIndex?: number | null;
         };
         AdminActivateGameModifierRequestDto: {
             /** Format: uuid */

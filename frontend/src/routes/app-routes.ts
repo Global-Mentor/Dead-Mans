@@ -7,6 +7,7 @@ export {
   catalogQuestionsRoute,
   gameApplicationRoute,
   gameBoardRoute,
+  gameGuideRoute,
   gameRoundRoute,
   gameTeamQueueRoute,
   gameHistoryRoute,
@@ -19,6 +20,7 @@ export {
   panelRootPath,
   roleAdministrationRoute,
   teamRegistrationsRoute,
+  settingsRoute,
   type PanelAdminSection,
   type PanelRouteDefinition,
 } from '../app/panel-route-metadata.ts'

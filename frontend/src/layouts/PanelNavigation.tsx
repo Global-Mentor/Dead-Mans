@@ -3,9 +3,9 @@ import {
   ActionMenu,
   ActionMenuItem,
   NavigationButton,
+  HelpTooltip,
 } from '../shared/ui/index.ts'
-import type { TFunction } from 'i18next'
-import { useCallback, useState, type MouseEvent, type SyntheticEvent } from 'react'
+import { useState, type MouseEvent, type SyntheticEvent } from 'react'
 import { preloadPanelRoute } from '../app/panel-route-config.tsx'
 import { Box, Stack, SvgIcon, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
@@ -16,8 +16,11 @@ import { currentGameBoardQueryOptions } from '../features/game-board/index.ts'
 import {
   gameNotificationQueryKeys,
   gameNotificationsQueryOptions,
-} from '../features/game-notifications/api/game-notification-queries.ts'
-import { markGameNotificationsRead } from '../features/game-notifications/api/game-notifications-api.ts'
+  GameNotificationRealtimeSync,
+  getGameNotificationTitle,
+  getGameNotificationDescription,
+  markGameNotificationsRead,
+} from '../features/game-notifications/index.ts'
 import {
   gameRegistrationAdminSnapshotQueryOptions,
   gameRegistrationSnapshotQueryOptions,
@@ -25,20 +28,16 @@ import {
 import {
   gameApplicationRoute,
   gameBoardRoute,
+  gameGuideRoute,
   gameModifiersRoute,
   getPanelRouteByPath,
   teamRegistrationsRoute,
 } from '../routes/app-routes.ts'
-import type { GameUserNotification } from '../shared/api/contracts/index.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
-import { realtimeHubs, useSignalrHubSubscription } from '../shared/realtime/index.ts'
-import { refreshRealtimeQueries } from '../shared/realtime/refresh-realtime-queries.ts'
 import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
-
-const USER_NOTIFICATION_CREATED_EVENT = realtimeHubs.gameBoard.events.userNotificationCreated
 
 function preloadNavigationTarget(event: SyntheticEvent) {
   const link = event.target instanceof Element ? event.target.closest('a[href]') : null
@@ -102,9 +101,9 @@ export function PanelNavigation() {
       : []
   const gameNotifications = gameNotificationsQuery.data ?? []
   const importantNotificationsCount = disbandRequestTeams.length
-  const modifierNotificationsCount = gameNotifications.length
+  const savedNotificationsCount = gameNotifications.length
   const totalNotificationsCount =
-    pendingInvitationsCount + importantNotificationsCount + modifierNotificationsCount
+    pendingInvitationsCount + importantNotificationsCount + savedNotificationsCount
 
   const openNotificationMenu = (event: MouseEvent<HTMLElement>) => {
     setNotificationAnchor(event.currentTarget)
@@ -120,7 +119,10 @@ export function PanelNavigation() {
 
   return (
     <>
-      <GameNotificationRealtimeSync />
+      <GameNotificationRealtimeSync
+        userId={user.id}
+        canSeeStaffNotifications={canSeeStaffNotifications}
+      />
 
       <Box
         component="header"
@@ -231,6 +233,34 @@ export function PanelNavigation() {
               sx={{ gridColumn: 3, gridRow: 1, flexShrink: 0, justifySelf: 'end' }}
             >
               <PanelAdminNavigation activeRouteId={activeRoute?.id} roles={user.roles} />
+              <HelpTooltip title={t('navigation.items.gameGuide.label')}>
+                <NavigationButton
+                  component={RouterLink}
+                  to={gameGuideRoute.fullPath}
+                  aria-label={t('navigation.items.gameGuide.label')}
+                  aria-current={activeRoute?.id === gameGuideRoute.id ? 'page' : undefined}
+                  active={activeRoute?.id === gameGuideRoute.id}
+                  layout="icon"
+                >
+                  <SvgIcon sx={{ fontSize: 18 }}>
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4M12 16h.01"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </SvgIcon>
+                </NavigationButton>
+              </HelpTooltip>
               <NavigationButton
                 aria-controls={notificationAnchor ? 'notification-menu' : undefined}
                 aria-expanded={notificationAnchor ? 'true' : undefined}
@@ -287,9 +317,9 @@ export function PanelNavigation() {
                         key={`game-notification-${notification.notificationId}`}
                         component={RouterLink}
                         to={
-                          notification.type === 'team_rejected'
-                            ? gameApplicationRoute.fullPath
-                            : gameModifiersRoute.fullPath
+                          notification.type === 'modifier_cancelled'
+                            ? gameModifiersRoute.fullPath
+                            : gameApplicationRoute.fullPath
                         }
                         onClick={closeNotificationMenu}
                         sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}
@@ -359,75 +389,4 @@ export function PanelNavigation() {
       </Box>
     </>
   )
-}
-
-function GameNotificationRealtimeSync() {
-  const queryClient = useQueryClient()
-  const syncNotifications = useCallback(async () => {
-    await refreshRealtimeQueries(queryClient, gameNotificationQueryKeys.all)
-  }, [queryClient])
-
-  const registerEventHandlers = useCallback(
-    (connection: {
-      on: (eventName: string, handler: () => void) => void
-      off: (eventName: string, handler: () => void) => void
-    }) => {
-      const handleUserNotificationCreated = () => {
-        void syncNotifications()
-      }
-
-      connection.on(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
-      connection.on(
-        realtimeHubs.gameBoard.events.registrationChanged,
-        handleUserNotificationCreated,
-      )
-
-      return () => {
-        connection.off(USER_NOTIFICATION_CREATED_EVENT, handleUserNotificationCreated)
-        connection.off(
-          realtimeHubs.gameBoard.events.registrationChanged,
-          handleUserNotificationCreated,
-        )
-      }
-    },
-    [syncNotifications],
-  )
-
-  useSignalrHubSubscription({
-    hub: 'gameBoard',
-    logLabel: 'Game notifications',
-    onConnected: syncNotifications,
-    registerEventHandlers,
-  })
-
-  return null
-}
-
-function getGameNotificationTitle(t: TFunction, notification: GameUserNotification) {
-  switch (notification.type) {
-    case 'team_rejected':
-      return t('navigation.teamRejectedItemTitle', {
-        team: notification.teamName ?? t('navigation.teamFallback'),
-      })
-    case 'modifier_cancelled':
-      return t('navigation.modifierCancelledItemTitle', {
-        modifier: notification.modifierName ?? t('navigation.modifierFallback'),
-      })
-    default:
-      return t('navigation.genericNotificationTitle')
-  }
-}
-
-function getGameNotificationDescription(t: TFunction, notification: GameUserNotification) {
-  switch (notification.type) {
-    case 'team_rejected':
-      return t('navigation.teamRejectedItemDescription')
-    case 'modifier_cancelled':
-      return t('navigation.modifierCancelledItemDescription', {
-        player: notification.actorDisplayName ?? t('navigation.someone'),
-        points: notification.quizPointsDelta ?? 0,
-      })
-    default:
-      return t('navigation.genericNotificationDescription')
-  }
 }

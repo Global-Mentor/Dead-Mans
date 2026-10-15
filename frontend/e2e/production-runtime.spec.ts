@@ -129,6 +129,28 @@ test('navigation retries a failed speculative chunk load after connectivity retu
   expect(errors).toEqual([])
 })
 
+test('game guide loads its translations and illustrations under production CSP', async ({
+  page,
+}) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
+  await page.goto(`${origin}/panel/game-board`)
+  await page.getByRole('link', { name: 'How to play', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'How to play Dead Mans' })).toBeVisible()
+  const contents = page.getByRole('navigation', { name: 'In this guide' })
+  await contents.getByRole('link', { name: 'Round', exact: true }).click()
+  const illustration = page.getByRole('img', { name: 'Board with closed cards and their values' })
+  await illustration.scrollIntoViewIfNeeded()
+  await expect
+    .poll(() => illustration.evaluate((element: HTMLImageElement) => element.naturalWidth))
+    .toBeGreaterThan(0)
+  await contents.getByRole('link', { name: 'Quiz', exact: true }).click()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'How the quiz works' })).toBeInViewport()
+  expect(errors).toEqual([])
+})
+
 test('production entry point declares a bundled favicon', async ({ page }) => {
   await serveProductionApp(page, async (route) => route.fulfill({ status: 204 }))
   await page.goto(`${origin}/`)

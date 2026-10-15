@@ -71,6 +71,8 @@ public sealed partial class GameRegistrationContractTests
         Assert.All(await db.GameTeamMembers.Where(m => m.TeamId == teamId).ToListAsync(), m => Assert.Null(m.LeftAtUtc));
         Assert.Empty(await db.GameUserNotifications.ToListAsync());
         Assert.Equal(HttpStatusCode.NoContent, (await admin.PostAsync($"/api/game/registration/teams/{teamId}/disband", null)).StatusCode);
-        Assert.Empty(await db.GameUserNotifications.ToListAsync());
+        var disbandNotifications = await db.GameUserNotifications.ToListAsync();
+        Assert.Equal(full ? 2 : 1, disbandNotifications.Count);
+        Assert.All(disbandNotifications, notice => Assert.Equal("team_disbanded", notice.Type));
     }
 }

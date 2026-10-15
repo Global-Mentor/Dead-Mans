@@ -163,6 +163,12 @@ Draft setup creates six default public team slots (`GameRegistrationDefaults`). 
 - Before release, run the real PostgreSQL migration, constraint and concurrency suite. CI provides
   PostgreSQL and runs this suite before image publication; local in-memory tests do not replace it.
 
+## Participation notifications
+
+Administrative assignment, transfer, removal and disbanding persist quiet notifications for the affected players in the roster transaction. The actor receives no notification about their own membership change. Transfers produce one notification with both teams, including when the source team becomes empty. Voluntary joins/leaves and queue moves produce none. Names and queue positions are snapshots; later renames do not rewrite notifications. The existing `registrationChanged` event triggers an authenticated unread-list refresh, including after reconnect. No private notification payload is broadcast with that event.
+
+Participation notifications do not imply admission or promise that registration remains open. Balance adjustments, round cancellation and round resets do not create notifications.
+
 ## Known future work
 
 - explicit registration settings in the game setup/global settings UI;

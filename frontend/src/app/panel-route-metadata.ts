@@ -22,7 +22,7 @@ type PanelRouteDefinitionInput = {
   path: string
   labelKey: PanelRouteLabelKey
   allowedRoles?: readonly AuthRole[]
-  group: 'player' | 'admin'
+  group: 'player' | 'admin' | 'profile'
   adminSection?: PanelAdminSection
 }
 
@@ -171,6 +171,20 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'admin',
     adminSection: 'system',
   }),
+  createPanelRouteDefinition({
+    id: 'game-guide',
+    path: 'game-guide',
+    labelKey: 'navigation.items.gameGuide.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'profile',
+  }),
+  createPanelRouteDefinition({
+    id: 'settings',
+    path: 'settings',
+    labelKey: 'navigation.items.settings.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'profile',
+  }),
 ])
 
 type PanelRouteId = (typeof panelRoutes)[number]['id']
@@ -185,6 +199,7 @@ function requirePanelRoute(routeId: PanelRouteId): PanelRouteDefinition {
 }
 
 export const gameBoardRoute = requirePanelRoute('game-board')
+export const gameGuideRoute = requirePanelRoute('game-guide')
 export const gameRoundRoute = requirePanelRoute('game-round')
 export const gameTeamQueueRoute = requirePanelRoute('game-team-queue')
 export const gameLeaderboardRoute = requirePanelRoute('game-leaderboard')
@@ -200,3 +215,5 @@ export const catalogModifiersRoute = requirePanelRoute('catalog-modifiers')
 export const catalogQuestionsRoute = requirePanelRoute('catalog-questions')
 export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
 export const roleAdministrationRoute = requirePanelRoute('role-administration')
+
+export const settingsRoute = requirePanelRoute('settings')
