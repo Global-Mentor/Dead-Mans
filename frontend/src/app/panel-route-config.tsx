@@ -11,6 +11,11 @@ type PanelRouteConfigEntry = PanelRouteDefinition & {
 }
 
 const panelPages = {
+  settings: lazyPanelPage(
+    () => import('../features/user-settings/UserSettingsPage.tsx'),
+    'UserSettingsPage',
+    [translations.userSettings],
+  ),
   'game-overlay': lazyPanelPage(
     () => import('../features/game-overlay/GameOverlaySettingsPage.tsx'),
     'GameOverlaySettingsPage',

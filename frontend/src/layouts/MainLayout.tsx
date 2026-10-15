@@ -74,6 +74,7 @@ function MainLayoutContent() {
   ].includes(pathname)
   const hasManagementPanel =
     !isAdministration &&
+    getPanelRouteByPath(pathname)?.group !== 'profile' &&
     (hasPanelCapability('startGame', user?.roles) ||
       (hasPanelCapability('manageGame', user?.roles) &&
         [gameBoardRoute.fullPath, gameModifiersRoute.fullPath, gameQuizRoute.fullPath].includes(

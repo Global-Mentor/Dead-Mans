@@ -166,6 +166,8 @@ for (const width of [320, 390, 768, 1200, 1440, 1920]) {
     await page.keyboard.press('Tab')
     await expect(profile.getByRole('combobox', { name: 'Язык интерфейса' })).toBeFocused()
     await page.keyboard.press('Tab')
+    await expect(profile.getByRole('button', { name: 'Настройки', exact: true })).toBeFocused()
+    await page.keyboard.press('Tab')
     await expect(profile.getByRole('button', { name: 'Выйти' })).toBeFocused()
     await page.keyboard.press('Tab')
     await expect(profile.getByRole('combobox', { name: 'Язык интерфейса' })).toBeFocused()

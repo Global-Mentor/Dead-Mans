@@ -58,6 +58,10 @@ export async function registerFeatureTranslations(
 }
 
 export const featureTranslationBundles = {
+  userSettings: {
+    key: 'userSettings',
+    load: () => import('../features/user-settings/i18n/user-settings-translations.ts'),
+  },
   gameOverlay: {
     key: 'gameOverlay',
     load: () => import('../features/game-overlay/i18n/game-overlay-translations.ts'),

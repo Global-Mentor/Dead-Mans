@@ -17,6 +17,7 @@ import { highestRole } from '../shared/auth/role-hierarchy.ts'
 import { LanguageSwitcher } from '../shared/i18n/LanguageSwitcher.tsx'
 import { huntOverlineSx } from '../shared/theme/surface-sx.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
+import { settingsRoute } from '../routes/app-routes.ts'
 
 interface PanelProfileMenuProps {
   user: AuthUser
@@ -141,6 +142,16 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
             </Stack>
             <SectionDivider />
           </Stack>
+          <AppButton
+            tone="secondary"
+            fullWidth
+            onClick={() => {
+              closeProfile()
+              navigate(settingsRoute.fullPath)
+            }}
+          >
+            {t('navigation.items.settings.label')}
+          </AppButton>
           <AppButton tone="danger" fullWidth onClick={() => void handleLogout()}>
             {t('navigation.logout')}
           </AppButton>

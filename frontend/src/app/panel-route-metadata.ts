@@ -22,7 +22,7 @@ type PanelRouteDefinitionInput = {
   path: string
   labelKey: PanelRouteLabelKey
   allowedRoles?: readonly AuthRole[]
-  group: 'player' | 'admin'
+  group: 'player' | 'admin' | 'profile'
   adminSection?: PanelAdminSection
 }
 
@@ -171,6 +171,13 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'admin',
     adminSection: 'system',
   }),
+  createPanelRouteDefinition({
+    id: 'settings',
+    path: 'settings',
+    labelKey: 'navigation.items.settings.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'profile',
+  }),
 ])
 
 type PanelRouteId = (typeof panelRoutes)[number]['id']
@@ -200,3 +207,5 @@ export const catalogModifiersRoute = requirePanelRoute('catalog-modifiers')
 export const catalogQuestionsRoute = requirePanelRoute('catalog-questions')
 export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
 export const roleAdministrationRoute = requirePanelRoute('role-administration')
+
+export const settingsRoute = requirePanelRoute('settings')

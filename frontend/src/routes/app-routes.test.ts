@@ -19,6 +19,7 @@ import {
   modifierHistoryRoute,
   roleAdministrationRoute,
   teamRegistrationsRoute,
+  settingsRoute,
 } from './app-routes.ts'
 
 describe('panel route helpers', () => {
@@ -33,6 +34,7 @@ describe('panel route helpers', () => {
       gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
+      settingsRoute,
     ])
   })
 
@@ -54,6 +56,7 @@ describe('panel route helpers', () => {
       catalogQuestionsRoute,
       teamRegistrationsRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      settingsRoute,
     ])
   })
 
@@ -70,6 +73,7 @@ describe('panel route helpers', () => {
       modifierHistoryRoute,
       teamRegistrationsRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      settingsRoute,
     ])
   })
 
@@ -92,6 +96,7 @@ describe('panel route helpers', () => {
       teamRegistrationsRoute,
       roleAdministrationRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      settingsRoute,
     ])
     expect(hasAccessToPanelRoute(roleAdministrationRoute, ['admin'])).toBe(false)
   })
