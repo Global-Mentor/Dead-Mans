@@ -55,7 +55,7 @@ describe('StatusBadge', () => {
     expect(label).toHaveStyle({
       fontSize: '1rem',
       fontWeight: 800,
-      fontVariantNumeric: 'tabular-nums',
+      fontVariantNumeric: 'var(--app-font-numeric)',
     })
   })
 })

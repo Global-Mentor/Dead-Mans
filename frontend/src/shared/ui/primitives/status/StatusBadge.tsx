@@ -75,7 +75,7 @@ export function StatusBadge({
                 fontSize: uiTokens.type.body,
                 lineHeight: 1.2,
                 fontWeight: 800,
-                fontVariantNumeric: 'tabular-nums',
+                fontVariantNumeric: 'var(--app-font-numeric)',
               },
             }
           : undefined,
