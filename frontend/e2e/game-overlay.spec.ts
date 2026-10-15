@@ -1122,7 +1122,8 @@ test('missing key stays transparent without requesting game data', async ({ page
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`overlay link management at ${width}px`, async ({ page }) => {
+  test(`overlay link management at ${width}px`, async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.setViewportSize({ width, height: 1000 })
     await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
     let issued = 0
@@ -1160,14 +1161,23 @@ for (const width of [390, 768, 1440]) {
     )
     await page.goto('/panel/game-overlay')
     await expect(page.getByRole('heading', { name: 'Оверлей OBS' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Test Overlay' })).toBeDisabled()
-    await page.getByRole('button', { name: 'Создать / заменить ссылку' }).click()
+    await expect(page.getByRole('button', { name: 'Запустить тест' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Копировать ссылку' })).toBeDisabled()
+    await mkdir('../.tmp/agent-work/overlay', { recursive: true })
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/settings-empty-${width}.png`,
+      fullPage: true,
+    })
+    await page.getByRole('button', { name: 'Создать ссылку' }).click()
     const link = page.getByLabel('Секретная ссылка OBS')
     await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'a'.repeat(64)}`)
-    await page.getByRole('button', { name: 'Создать / заменить ссылку' }).click()
+    await page.getByRole('button', { name: 'Копировать ссылку' }).click()
+    await expect(page.getByRole('button', { name: 'Скопировано', exact: true })).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await link.inputValue())
+    await page.getByRole('button', { name: 'Новая ссылка' }).click()
     await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'b'.repeat(64)}`)
     expect(issued).toBe(2)
-    await page.getByRole('button', { name: 'Test Overlay' }).click()
+    await page.getByRole('button', { name: 'Запустить тест' }).click()
     await expect(page.getByRole('button', { name: 'Завершить тест' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -1178,10 +1188,13 @@ for (const width of [390, 768, 1440]) {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true)
-    await mkdir('../.tmp/agent-work/overlay', { recursive: true })
-    await page.screenshot({ path: `../.tmp/agent-work/overlay/settings-${width}.png` })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/settings-${width}.png`,
+      fullPage: true,
+    })
     await page.getByRole('button', { name: 'Завершить тест' }).click()
-    await expect(page.getByRole('button', { name: 'Test Overlay' })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: 'Запустить тест' })).toHaveAttribute(
       'aria-pressed',
       'false',
     )

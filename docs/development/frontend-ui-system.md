@@ -438,3 +438,8 @@ motion. Entry and value animations release their transform when finished rather 
 retaining their final keyframe. Invalid or expired sessions clear the entire frame immediately,
 including exits.
 Link management remains in the authenticated panel at `/panel/game-overlay`.
+Its settings use one compact, centered panel with a single embedded heading and
+ornamental dividers, matching the queue and Twitch panels. Link actions have equal
+widths; the test action aligns with the same columns. Keep setup and test help brief,
+without separate introductory headings, repeated instructions or cards for the fixed
+OBS dimensions. Narrow screens stack controls without shrinking their text or targets.

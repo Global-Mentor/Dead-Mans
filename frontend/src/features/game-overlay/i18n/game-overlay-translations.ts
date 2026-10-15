@@ -1,10 +1,13 @@
 const translations = {
   en: {
-    testStart: 'Test Overlay',
+    savedLinkHelp: 'A link already exists. Use the one saved in OBS or create a new one.',
+    replace: 'New link',
+    create: 'Create link',
+    setupHelp: 'In OBS, add a Browser source, paste the link and set its size to 1920 × 1080.',
+    testStart: 'Start test',
     testStop: 'Stop test',
-    testHelp:
-      'Create a link first. Test Overlay replaces your OBS scene with the Deadman’s logo until you stop the test. The game and its timers continue.',
-    testActive: 'Test mode is on. Your OBS source shows the logo instead of game content.',
+    testHelp: 'The test shows the Deadman’s logo in OBS. The game continues.',
+    testActive: 'Test running: OBS shows the logo. The game continues.',
     testError: 'Unable to load or change test mode. Try again.',
     testImage: 'Deadman’s logo - overlay test',
     summaryReview: 'Result review',
@@ -25,11 +28,8 @@ const translations = {
     imageError: 'Image unavailable',
 
     title: 'OBS overlay',
-    instructions:
-      'Add a Browser source in OBS, paste the link and set Width to 1920 and Height to 1080. The team appears after selection; the board disappears when a card opens.',
     keyHelp:
-      'The link allows viewing only. Keep it private. Creating a new link immediately disables your previous link. Save it in OBS: it is shown only here until you leave this page.',
-    rotate: 'Create / replace link',
+      'Keep the link private and save it in OBS before leaving this page. A new link disables the previous one.',
     revoke: 'Revoke link',
     revoked: 'Link revoked.',
     link: 'Secret OBS link',
@@ -42,12 +42,14 @@ const translations = {
     board: 'Game board',
   },
   ru: {
-    testStart: 'Test Overlay',
+    savedLinkHelp: 'Ссылка уже создана. Используйте сохранённую в OBS или создайте новую.',
+    replace: 'Новая ссылка',
+    create: 'Создать ссылку',
+    setupHelp: 'В OBS добавьте источник «Браузер», вставьте ссылку и задайте размер 1920 × 1080.',
+    testStart: 'Запустить тест',
     testStop: 'Завершить тест',
-    testHelp:
-      'Сначала создайте ссылку. Test Overlay заменит вашу сцену OBS логотипом Deadman’s до завершения теста. Игра и её таймеры продолжают работать.',
-    testActive:
-      'Тестовый режим включён. В вашем источнике OBS вместо игровой информации отображается логотип.',
+    testHelp: 'Тест покажет логотип Deadman’s в OBS. Игра продолжится.',
+    testActive: 'Тест включён: в OBS отображается логотип. Игра продолжается.',
     testError: 'Не удалось загрузить или изменить тестовый режим. Попробуйте ещё раз.',
     testImage: 'Логотип Deadman’s - тест оверлея',
     summaryReview: 'Подведение итогов',
@@ -68,11 +70,8 @@ const translations = {
     imageError: 'Изображение недоступно',
 
     title: 'Оверлей OBS',
-    instructions:
-      'Добавьте в OBS источник «Браузер», вставьте ссылку и задайте ширину 1920 и высоту 1080. Команда появляется после выбора; доска скрывается после открытия карточки.',
     keyHelp:
-      'Ссылка разрешает только просмотр. Не публикуйте её. Создание новой ссылки сразу отключает предыдущую. Сохраните её в OBS: здесь она видна только до ухода со страницы.',
-    rotate: 'Создать / заменить ссылку',
+      'Не публикуйте ссылку и сохраните её в OBS до ухода со страницы. Новая ссылка отключит прежнюю.',
     revoke: 'Отозвать ссылку',
     revoked: 'Ссылка отозвана.',
     link: 'Секретная ссылка OBS',
@@ -85,12 +84,14 @@ const translations = {
     board: 'Игровая доска',
   },
   uk: {
-    testStart: 'Test Overlay',
+    savedLinkHelp: 'Посилання вже створено. Використовуйте збережене в OBS або створіть нове.',
+    replace: 'Нове посилання',
+    create: 'Створити посилання',
+    setupHelp: 'В OBS додайте джерело «Браузер», вставте посилання та задайте розмір 1920 × 1080.',
+    testStart: 'Запустити тест',
     testStop: 'Завершити тест',
-    testHelp:
-      'Спочатку створіть посилання. Test Overlay замінить вашу сцену OBS логотипом Deadman’s до завершення тесту. Гра та її таймери продовжують працювати.',
-    testActive:
-      'Тестовий режим увімкнено. У вашому джерелі OBS замість ігрової інформації відображається логотип.',
+    testHelp: 'Тест покаже логотип Deadman’s в OBS. Гра триватиме.',
+    testActive: 'Тест увімкнено: в OBS відображається логотип. Гра триває.',
     testError: 'Не вдалося завантажити або змінити тестовий режим. Спробуйте ще раз.',
     testImage: 'Логотип Deadman’s - тест оверлею',
     summaryReview: 'Підбиття підсумків',
@@ -111,11 +112,8 @@ const translations = {
     imageError: 'Зображення недоступне',
 
     title: 'Оверлей OBS',
-    instructions:
-      'Додайте в OBS джерело «Браузер», вставте посилання та задайте ширину 1920 і висоту 1080. Команда з’являється після вибору; дошка ховається після відкриття картки.',
     keyHelp:
-      'Посилання дозволяє лише перегляд. Не публікуйте його. Нове посилання одразу вимикає попереднє. Збережіть його в OBS: тут воно видиме лише до виходу зі сторінки.',
-    rotate: 'Створити / замінити посилання',
+      'Не публікуйте посилання та збережіть його в OBS до виходу зі сторінки. Нове посилання вимкне попереднє.',
     revoke: 'Відкликати посилання',
     revoked: 'Посилання відкликано.',
     link: 'Секретне посилання OBS',
@@ -128,12 +126,14 @@ const translations = {
     board: 'Ігрова дошка',
   },
   pl: {
-    testStart: 'Test Overlay',
+    savedLinkHelp: 'Link już istnieje. Użyj zapisanego w OBS lub utwórz nowy.',
+    replace: 'Nowy link',
+    create: 'Utwórz link',
+    setupHelp: 'W OBS dodaj źródło „Przeglądarka”, wklej link i ustaw rozmiar 1920 × 1080.',
+    testStart: 'Uruchom test',
     testStop: 'Zakończ test',
-    testHelp:
-      'Najpierw utwórz link. Test Overlay zastąpi Twoją scenę OBS logo Deadman’s do zakończenia testu. Gra i jej liczniki czasu nadal działają.',
-    testActive:
-      'Tryb testowy jest włączony. Twoje źródło OBS wyświetla logo zamiast informacji o grze.',
+    testHelp: 'Test wyświetli logo Deadman’s w OBS. Gra będzie kontynuowana.',
+    testActive: 'Test włączony: OBS wyświetla logo. Gra trwa dalej.',
     testError: 'Nie udało się wczytać lub zmienić trybu testowego. Spróbuj ponownie.',
     testImage: 'Logo Deadman’s - test nakładki',
     summaryReview: 'Podsumowanie wyników',
@@ -154,11 +154,8 @@ const translations = {
     imageError: 'Obraz niedostępny',
 
     title: 'Nakładka OBS',
-    instructions:
-      'Dodaj w OBS źródło „Przeglądarka”, wklej link i ustaw szerokość 1920 oraz wysokość 1080. Drużyna pojawia się po wyborze; plansza znika po otwarciu karty.',
     keyHelp:
-      'Link pozwala tylko na podgląd. Nie udostępniaj go publicznie. Nowy link natychmiast wyłącza poprzedni. Zapisz go w OBS: tutaj jest widoczny tylko do opuszczenia strony.',
-    rotate: 'Utwórz / zastąp link',
+      'Nie udostępniaj linku i zapisz go w OBS przed opuszczeniem strony. Nowy link wyłączy poprzedni.',
     revoke: 'Unieważnij link',
     revoked: 'Link unieważniony.',
     link: 'Prywatny link OBS',
