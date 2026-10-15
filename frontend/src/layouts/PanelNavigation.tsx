@@ -3,6 +3,7 @@ import {
   ActionMenu,
   ActionMenuItem,
   NavigationButton,
+  HelpTooltip,
 } from '../shared/ui/index.ts'
 import { useState, type MouseEvent, type SyntheticEvent } from 'react'
 import { preloadPanelRoute } from '../app/panel-route-config.tsx'
@@ -27,6 +28,7 @@ import {
 import {
   gameApplicationRoute,
   gameBoardRoute,
+  gameGuideRoute,
   gameModifiersRoute,
   getPanelRouteByPath,
   teamRegistrationsRoute,
@@ -231,6 +233,34 @@ export function PanelNavigation() {
               sx={{ gridColumn: 3, gridRow: 1, flexShrink: 0, justifySelf: 'end' }}
             >
               <PanelAdminNavigation activeRouteId={activeRoute?.id} roles={user.roles} />
+              <HelpTooltip title={t('navigation.items.gameGuide.label')}>
+                <NavigationButton
+                  component={RouterLink}
+                  to={gameGuideRoute.fullPath}
+                  aria-label={t('navigation.items.gameGuide.label')}
+                  aria-current={activeRoute?.id === gameGuideRoute.id ? 'page' : undefined}
+                  active={activeRoute?.id === gameGuideRoute.id}
+                  layout="icon"
+                >
+                  <SvgIcon sx={{ fontSize: 18 }}>
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4M12 16h.01"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </SvgIcon>
+                </NavigationButton>
+              </HelpTooltip>
               <NavigationButton
                 aria-controls={notificationAnchor ? 'notification-menu' : undefined}
                 aria-expanded={notificationAnchor ? 'true' : undefined}

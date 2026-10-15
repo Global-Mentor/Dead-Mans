@@ -25,6 +25,7 @@ type TranslationOf<TModule extends { default: Record<SupportedLanguage, object> 
   TModule['default']['en']
 
 type FeatureTranslations = {
+  gameGuide: TranslationOf<typeof import('../features/game-guide/i18n/game-guide-translations.ts')>
   userSettings: TranslationOf<
     typeof import('../features/user-settings/i18n/user-settings-translations.ts')
   >

@@ -6,6 +6,7 @@ import {
   catalogQuestionsRoute,
   gameApplicationRoute,
   gameBoardRoute,
+  gameGuideRoute,
   gameRoundRoute,
   gameTeamQueueRoute,
   gameHistoryRoute,
@@ -34,6 +35,7 @@ describe('panel route helpers', () => {
       gameLeaderboardRoute,
       gameHistoryRoute,
       modifierHistoryRoute,
+      gameGuideRoute,
       settingsRoute,
     ])
   })
@@ -56,6 +58,7 @@ describe('panel route helpers', () => {
       catalogQuestionsRoute,
       teamRegistrationsRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      gameGuideRoute,
       settingsRoute,
     ])
   })
@@ -73,6 +76,7 @@ describe('panel route helpers', () => {
       modifierHistoryRoute,
       teamRegistrationsRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      gameGuideRoute,
       settingsRoute,
     ])
   })
@@ -96,6 +100,7 @@ describe('panel route helpers', () => {
       teamRegistrationsRoute,
       roleAdministrationRoute,
       getPanelRouteByPath('/panel/game-overlay'),
+      gameGuideRoute,
       settingsRoute,
     ])
     expect(hasAccessToPanelRoute(roleAdministrationRoute, ['admin'])).toBe(false)

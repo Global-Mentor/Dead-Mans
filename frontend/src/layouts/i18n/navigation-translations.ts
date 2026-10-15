@@ -64,6 +64,7 @@ const translations = {
       viewer: 'Participant',
     },
     items: {
+      gameGuide: { label: 'How to play' },
       settings: { label: 'Settings' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -177,6 +178,7 @@ const translations = {
       viewer: 'Участник',
     },
     items: {
+      gameGuide: { label: 'Как играть' },
       settings: { label: 'Настройки' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -290,6 +292,7 @@ const translations = {
       viewer: 'Учасник',
     },
     items: {
+      gameGuide: { label: 'Як грати' },
       settings: { label: 'Налаштування' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -403,6 +406,7 @@ const translations = {
       viewer: 'Uczestnik',
     },
     items: {
+      gameGuide: { label: 'Jak grać' },
       settings: { label: 'Ustawienia' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
