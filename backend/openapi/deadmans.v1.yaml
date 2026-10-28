@@ -8806,6 +8806,8 @@ x-signalr:
           summary: A user-specific game notification was created for the connected player.
           payload:
             $ref: '#/components/schemas/GameUserNotificationCreatedEventDto'
+        userNotificationsRead:
+          summary: Notifications were marked read; only this user's connections refetch their unread notifications.
         gameLifecycleChanged:
           summary: The active game was finalized and clients must resync board and history state.
           payload:

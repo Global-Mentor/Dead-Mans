@@ -88,9 +88,14 @@ export function GameNotificationRealtimeSync({
         realtimeHubs.gameBoard.events.userNotificationCreated,
         realtimeHubs.gameBoard.events.registrationChanged,
       ]
+      const onRead = () => {
+        void refreshRealtimeQueries(queryClient, gameNotificationQueryKeys.all).catch(() => {})
+      }
+      connection.on(realtimeHubs.gameBoard.events.userNotificationsRead, onRead)
       for (const event of events) connection.on(event, handler)
       return () => {
         subscribed = false
+        connection.off(realtimeHubs.gameBoard.events.userNotificationsRead, onRead)
         for (const event of events) connection.off(event, handler)
       }
     },

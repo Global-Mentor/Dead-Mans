@@ -134,6 +134,8 @@ test('one background notification across tabs, no replay, no notification read s
   first.notifications = [notice('old')]
   await page.goto('/panel/settings')
   await page.getByRole('switch', { name: 'Уведомления браузера' }).click()
+  await expect(page.getByRole('switch', { name: 'Уведомления браузера' })).toBeChecked()
+  await expect.poll(() => context.serviceWorkers().length).toBe(1)
   await expect.poll(() => first.reads).toBeGreaterThan(1)
   const secondPage = await context.newPage()
   await mockNotifications(secondPage, 'granted')
@@ -171,7 +173,7 @@ test('one background notification across tabs, no replay, no notification read s
   await elsewhere.bringToFront()
   // Headless Chrome reports every WindowClient as focused. Emulate only those
   // browser visibility flags; keep real service-worker messaging and tab locks.
-  await context.serviceWorkers()[0]?.evaluate(() => {
+  await context.serviceWorkers()[0]!.evaluate(() => {
     const scope = globalThis as unknown as {
       clients: {
         matchAll: (

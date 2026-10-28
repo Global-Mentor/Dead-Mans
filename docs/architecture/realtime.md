@@ -24,6 +24,11 @@ the admin snapshot when active, and the team queue. The shared subscription work
 on the application page and admin pages; reconnect also refreshes registration state.
 No private invitation details are broadcast. Publish failures do not undo committed writes.
 
+After notifications are marked read, `userNotificationsRead` is sent without a payload
+only to that user's game-board connections. Each session refetches its unread list;
+the read event does not trigger a new browser notification. Publishing is best effort
+after the database update, and reconnect resynchronizes the unread list.
+
 Question catalog edits also emit `draftChanged` after commit. Disabling or deleting
 questions removes draft selections and increments affected board versions atomically.
 Setup clients invalidate question catalogs on the event and on reconnect; local unsaved

@@ -31,9 +31,15 @@ public sealed class GameNotificationService : IGameNotificationService
         return _repository.GetUnreadForUserAsync(userId, cancellationToken);
     }
 
-    public Task MarkAllReadAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task MarkAllReadAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return _repository.MarkAllReadAsync(userId, cancellationToken);
+        await _repository.MarkAllReadAsync(userId, cancellationToken);
+        await RealtimePublishGuard.TryPublishAsync(
+            publishToken => _eventsPublisher.PublishUserNotificationsReadAsync(userId, publishToken),
+            _logger,
+            AppMessages.Logs.RealtimeGameNotificationsReadPublishFailed,
+            userId
+        );
     }
 
     public async Task NotifyModifierCancelledAsync(

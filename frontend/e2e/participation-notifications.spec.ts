@@ -2,6 +2,31 @@ import { expect, test } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { setupNotificationFixture } from './support/notification-fixture.ts'
 
+test('notifications read in another session clear the bell without focusing or reloading', async ({
+  page,
+}) => {
+  const fixture = await setupNotificationFixture(page)
+  fixture.notifications = [
+    {
+      notificationId: 'read-elsewhere',
+      type: 'team_member_assigned',
+      createdAtUtc: '2026-10-15T12:00:00Z',
+      teamName: 'Hunters',
+    },
+  ]
+  await page.goto('/panel/game-application')
+  const bell = page.getByRole('button', { name: 'Открыть уведомления' })
+  await expect(bell).toContainText('1')
+  await expect.poll(() => fixture.connected).toBe(true)
+
+  fixture.notifications = []
+  await fixture.emit('userNotificationsRead')
+
+  await expect(bell.locator('.MuiBadge-badge')).toBeHidden()
+  await bell.click()
+  await expect(page.getByText('Сейчас важных уведомлений нет.', { exact: true })).toBeVisible()
+})
+
 for (const [locale, width, buttonName] of [
   ['ru', 390, 'Открыть уведомления'],
   ['ru', 768, 'Открыть уведомления'],
