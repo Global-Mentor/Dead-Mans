@@ -187,6 +187,68 @@ describe('useGameSetupSave', () => {
     )
   })
 
+  it.each(['replacement', 'newer-edit', 'explicit-reload'] as const)(
+    'does not roll back the current draft when an old layout save fails after %s',
+    async (change) => {
+      let reject!: (error: Error) => void
+      apiMocks.saveDraftGameSetup.mockReturnValueOnce(
+        new Promise<GameSetupSnapshot>((_, fail) => {
+          reject = fail
+        }),
+      )
+      const setDraftOverride = vi.fn()
+      const applyLoadedDraftState = vi.fn()
+      const initialDraft = createDraftFromSnapshot(snapshot)
+      const hook = renderHook(
+        ({ currentSnapshot, currentDraft }) =>
+          useGameSetupSave({
+            draft: currentDraft,
+            snapshot: currentSnapshot,
+            snapshotDraftKey: currentSnapshot.gameId,
+            isDirty: true,
+            applyLoadedDraftState,
+            setDraftOverride,
+            setRemoteChangeNotice: vi.fn(),
+          }),
+        {
+          wrapper: createQueryWrapper(),
+          initialProps: { currentSnapshot: snapshot, currentDraft: initialDraft },
+        },
+      )
+      act(() =>
+        hook.result.current.applyLayoutChange((draft) => ({ ...draft, rowLabels: ['200'] })),
+      )
+      await waitFor(() => expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce())
+
+      const nextSnapshot = {
+        ...snapshot,
+        gameId: change === 'replacement' ? 'game-2' : snapshot.gameId,
+      }
+      const nextDraft = { ...createDraftFromSnapshot(nextSnapshot), title: 'Current draft' }
+      if (change === 'explicit-reload') act(() => hook.result.current.resetToSaved())
+      if (change === 'newer-edit') act(() => hook.result.current.handleDraftEdited(nextDraft))
+      hook.rerender({ currentSnapshot: nextSnapshot, currentDraft: nextDraft })
+      setDraftOverride.mockClear()
+
+      await act(async () => {
+        reject(new ApiError('Unavailable', { status: 503 }))
+      })
+
+      expect(setDraftOverride).not.toHaveBeenCalled()
+      expect(applyLoadedDraftState).not.toHaveBeenCalled()
+      apiMocks.saveDraftGameSetup.mockResolvedValueOnce({
+        ...nextSnapshot,
+        title: nextDraft.title,
+        version: 4,
+      })
+      act(() => hook.result.current.handleDraftEdited(nextDraft))
+      await act(async () => hook.result.current.saveDraft())
+      expect(apiMocks.saveDraftGameSetup).toHaveBeenLastCalledWith(
+        expect.objectContaining({ title: nextDraft.title, rowLabels: nextDraft.rowLabels }),
+      )
+    },
+  )
+
   it('saves an edit committed before the dirty prop rerenders', async () => {
     const initialDraft = createDraftFromSnapshot(snapshot)
     const editedDraft = { ...initialDraft, title: 'Immediate blur edit' }

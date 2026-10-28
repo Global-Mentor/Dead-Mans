@@ -217,6 +217,7 @@ export function useGameSetupSave({
 
     const previousDraft = draft
     const nextDraft = updater(draft)
+    const generation = saveGenerationRef.current
     draftRef.current = nextDraft
     dirtyRef.current = true
     setDraftOverride({
@@ -224,6 +225,10 @@ export function useGameSetupSave({
       draft: nextDraft,
     })
     void saveDraftWithLayout(nextDraft).catch((error) => {
+      if (generation !== saveGenerationRef.current || draftRef.current !== nextDraft) {
+        return
+      }
+
       if (error instanceof SupersededGameSetupSaveError) {
         return
       }
