@@ -38,6 +38,32 @@ public sealed class DatabaseConnectionStringResolverTests
     }
 
     [Fact]
+    public void Validate_DefaultPoolLeavesDatabaseCapacityForOtherConnections()
+    {
+        var result = DatabaseConnectionStringResolver.Validate(
+            "Host=db.example.com;Database=deadmans;Username=app;SSL Mode=VerifyFull",
+            CreateEnvironment(Environments.Production)
+        );
+
+        Assert.Equal(32, new NpgsqlConnectionStringBuilder(result).MaxPoolSize);
+    }
+
+    [Theory]
+    [InlineData("Maximum Pool Size=12", 12)]
+    [InlineData("MaxPoolSize=80", 80)]
+    [InlineData("Maximum Pool Size=100", 100)]
+    [InlineData("Minimum Pool Size=48", 48)]
+    public void Validate_PreservesExplicitPoolBudgets(string options, int expectedMaximum)
+    {
+        var result = DatabaseConnectionStringResolver.Validate(
+            $"Host=db.example.com;Database=deadmans;Username=app;SSL Mode=VerifyFull;{options}",
+            CreateEnvironment(Environments.Production)
+        );
+
+        Assert.Equal(expectedMaximum, new NpgsqlConnectionStringBuilder(result).MaxPoolSize);
+    }
+
+    [Fact]
     public void ResolveAndValidate_WhenTestingAllowsExternalDatabaseToBeReplaced()
     {
         var configuration = CreateConfiguration(new Dictionary<string, string?>());
