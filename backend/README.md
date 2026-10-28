@@ -32,6 +32,7 @@ Guardrails:
 - контроллеры формируют error `IActionResult` через `ApiErrorResults` helper-методы (есть тест-запрет на прямой `ErrorResponseFactory.Create(...)` в `Controllers/`);
 - `DomainErrorHttpPolicy` задает единое отображение domain `*ErrorCode -> HTTP status + payload` и покрыт тестом полноты enum;
 - непойманные исключения обрабатываются централизованно в `ApiExceptionHandlingMiddleware` и возвращают единый 500 payload;
+- отмена операции после разрыва клиентского соединения не считается серверной ошибкой: middleware не пишет тело ошибки и отмечает еще не начатый ответ статусом 499 для request log; отмена без `RequestAborted` остается ошибкой 500;
 - error payload включает `requestId` для трассировки, а `ApiErrorMetrics` публикует счетчики backend ошибок по статусу/коду/источнику;
 - CI собирает `backend/backend.slnx`, поэтому нарушение границ ловится на PR.
 
