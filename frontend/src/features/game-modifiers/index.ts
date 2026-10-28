@@ -1,4 +1,7 @@
-export { gameModifierCatalogQueryOptions } from './api/game-modifier-queries.ts'
+export {
+  gameModifierCatalogQueryOptions,
+  gameModifierQueryKeys,
+} from './api/game-modifier-queries.ts'
 export {
   groupActiveGameModifiers,
   groupActiveModifierCategories,

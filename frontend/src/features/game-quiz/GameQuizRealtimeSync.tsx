@@ -2,8 +2,8 @@ import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-q
 import { useCallback } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
-import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
-import { gameModifierQueryKeys } from '../game-modifiers/api/game-modifier-queries.ts'
+import { gameHistoryQueryKeys } from '../game-history/index.ts'
+import { gameModifierQueryKeys } from '../game-modifiers/index.ts'
 import {
   currentGameBoardQueryOptions,
   manualGameQuizAwardPlayersQueryOptions,
