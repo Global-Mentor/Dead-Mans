@@ -168,6 +168,8 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
         var modifierResults = await _dbContext.GameRoundModifierResults
             .AsNoTracking()
             .Where(x => x.Round.GameId == gameId)
+            .OrderBy(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
             .Select(
                 x =>
                     new RoundModifierRow(

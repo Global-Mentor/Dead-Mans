@@ -16,7 +16,8 @@ public sealed partial class DbGameRoundRepository
             round.BaseScore,
             round.KillsCount,
             round.BountyCount,
-            round.ModifierResults.Select(x => CreateScoreModifierInput(
+            round.ModifierResults.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+                .Select(x => CreateScoreModifierInput(
                 x.ScoreDelta, x.KillDelta, x.ModifierId, x.ModifierNameSnapshot,
                 x.DefinitionRevisionSnapshot, x.ModifierBehaviorV2SnapshotJson, x.ResolutionDataJson))
         ));
