@@ -57,7 +57,9 @@ public static class AuthenticationServiceCollectionExtensions
     {
         if (context.Request.Path.StartsWithSegments("/panel", StringComparison.OrdinalIgnoreCase))
         {
-            context.Response.Redirect("/");
+            var returnTo = context.Request.PathBase.Add(context.Request.Path).ToUriComponent()
+                + context.Request.QueryString.ToUriComponent();
+            context.Response.Redirect($"/?returnTo={Uri.EscapeDataString(returnTo)}");
             return Task.CompletedTask;
         }
 

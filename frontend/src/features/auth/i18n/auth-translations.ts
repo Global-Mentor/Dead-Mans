@@ -1,7 +1,7 @@
 const translations = {
   en: {
-    subtitle: 'Sign in with Twitch to open the game board.',
-    description: 'After sign-in the panel loads the current game board from the database.',
+    subtitle: 'Sign in with Twitch to open the app.',
+    description: 'After sign-in you will return to the page you wanted to open.',
     button: 'Sign in with Twitch',
     processing: 'Finishing Twitch sign-in...',
     checkingSession: 'Checking your session...',
@@ -22,8 +22,8 @@ const translations = {
     },
   },
   ru: {
-    subtitle: 'Войдите через Twitch, чтобы открыть игровое поле.',
-    description: 'После входа панель загружает текущее игровое поле из базы данных.',
+    subtitle: 'Войдите через Twitch, чтобы открыть приложение.',
+    description: 'После входа вы вернётесь на страницу, которую хотели открыть.',
     button: 'Войти через Twitch',
     processing: 'Завершаем вход через Twitch...',
     checkingSession: 'Проверяем вашу сессию...',
@@ -44,8 +44,8 @@ const translations = {
     },
   },
   uk: {
-    subtitle: 'Увійдіть через Twitch, щоб відкрити ігрове поле.',
-    description: 'Після входу панель завантажує поточне ігрове поле з бази даних.',
+    subtitle: 'Увійдіть через Twitch, щоб відкрити застосунок.',
+    description: 'Після входу ви повернетеся на сторінку, яку хотіли відкрити.',
     button: 'Увійти через Twitch',
     processing: 'Завершуємо вхід через Twitch...',
     checkingSession: 'Перевіряємо вашу сесію...',
@@ -66,8 +66,8 @@ const translations = {
     },
   },
   pl: {
-    subtitle: 'Zaloguj się przez Twitch, aby otworzyć planszę gry.',
-    description: 'Po zalogowaniu panel ładuje aktualną planszę gry z bazy danych.',
+    subtitle: 'Zaloguj się przez Twitch, aby otworzyć aplikację.',
+    description: 'Po zalogowaniu wrócisz na stronę, którą chcesz otworzyć.',
     button: 'Zaloguj się przez Twitch',
     processing: 'Kończenie logowania przez Twitch...',
     checkingSession: 'Sprawdzanie sesji...',

@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { Navigate } from 'react-router-dom'
-import { panelRootPath } from '../../routes/app-routes.ts'
+import { Navigate, useLocation } from 'react-router-dom'
+import { getSignInReturnTo } from '../../shared/auth/login-return-to.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher.tsx'
 import { huntAuthCardSx, huntBrassTitleSx, huntOverlineSx } from '../../shared/theme/surface-sx.ts'
@@ -10,13 +10,15 @@ import { AppButton, AuthScreenShell, CenteredProgress, SectionCard } from '../..
 export function AuthLandingPage() {
   const { t } = useTranslation()
   const { authStatus, isAuthenticated, startTwitchLogin } = useAuth()
+  const location = useLocation()
+  const returnTo = getSignInReturnTo(location)
 
   if (authStatus === 'checking') {
     return <CenteredProgress minHeight="100vh" message={t('auth.checkingSession')} />
   }
 
   if (isAuthenticated) {
-    return <Navigate to={panelRootPath} replace />
+    return <Navigate to={returnTo} replace />
   }
 
   return (
@@ -52,7 +54,12 @@ export function AuthLandingPage() {
             </Typography>
           </Box>
 
-          <AppButton size="large" onClick={startTwitchLogin} brand="twitch" sx={{ mt: 1 }}>
+          <AppButton
+            size="large"
+            onClick={() => startTwitchLogin(returnTo)}
+            brand="twitch"
+            sx={{ mt: 1 }}
+          >
             {t('auth.button')}
           </AppButton>
         </Stack>

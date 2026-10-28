@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { panelRootPath } from '../../routes/app-routes.ts'
+import {
+  clearLoginReturnTo,
+  getSignInPath,
+  readLoginReturnTo,
+} from '../../shared/auth/login-return-to.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 
 export function useTwitchAuthCallback() {
@@ -8,6 +12,7 @@ export function useTwitchAuthCallback() {
   const navigate = useNavigate()
   const { refreshSession } = useAuth()
   const [sessionRestoreFailed, setSessionRestoreFailed] = useState(false)
+  const [returnTo] = useState(readLoginReturnTo)
 
   const callbackParams = useMemo(() => new URLSearchParams(location.search), [location.search])
   const callbackStatus = callbackParams.get('status')
@@ -24,7 +29,8 @@ export function useTwitchAuthCallback() {
       if (isCancelled) return
 
       if (isSessionReady) {
-        navigate(panelRootPath, { replace: true })
+        clearLoginReturnTo()
+        navigate(returnTo, { replace: true })
         return
       }
 
@@ -34,12 +40,12 @@ export function useTwitchAuthCallback() {
     return () => {
       isCancelled = true
     }
-  }, [isSuccess, navigate, refreshSession])
+  }, [isSuccess, navigate, refreshSession, returnTo])
 
   return {
     callbackReason,
     isSuccess,
     sessionRestoreFailed,
-    navigateToLogin: () => navigate('/', { replace: true }),
+    navigateToLogin: () => navigate(getSignInPath(returnTo), { replace: true }),
   }
 }

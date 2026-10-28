@@ -189,7 +189,9 @@ for (const locale of [
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 640 })
-    await page.addInitScript((code) => localStorage.setItem('i18nextLng', code), locale.code)
+    await page.addInitScript((code) => {
+      if (!localStorage.getItem('i18nextLng')) localStorage.setItem('i18nextLng', code)
+    }, locale.code)
     const displayName = 'Охотник_с_очень_длинным_именем_DeadMans1896'
     let loggedOut = false
     await page.route(
@@ -240,6 +242,9 @@ for (const locale of [
     await trigger.click()
     await page.getByRole('dialog').getByRole('button', { name: 'Log out', exact: true }).click()
     await expect(page).toHaveURL(/\/$/)
+    await expect(
+      page.getByRole('button', { name: 'Sign in with Twitch', exact: true }),
+    ).toBeVisible()
     expect(loggedOut).toBe(true)
   })
 }
