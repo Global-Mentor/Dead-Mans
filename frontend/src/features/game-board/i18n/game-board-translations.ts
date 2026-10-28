@@ -420,7 +420,7 @@ const translations = {
     openConfirmSubject: '{{column}}: {{row}} (value: {{cost}} pts)',
     openPending: 'Opening',
     openConfirmDescription:
-      'Open this card for {{cost}} points? The card will become visible and the modifier-ordering phase will begin.',
+      'Open this card for {{cost}} points? The card will become visible. A moderator starts modifier ordering separately.',
     openSuccess: 'Card opened.',
     openActiveTeamRequired: 'Select the active team before opening cards.',
     openForbidden: 'Only administrators can open cards.',
@@ -874,7 +874,7 @@ const translations = {
     openConfirmSubject: '{{column}}: {{row}} (стоимость: {{cost}} очк.)',
     openPending: 'Открываем',
     openConfirmDescription:
-      'Открыть карточку стоимостью {{cost}} очк.? Карточка станет видна, и начнётся фаза заказа модификаторов.',
+      'Открыть карточку стоимостью {{cost}} очк.? Карточка станет видна. Заказ модификаторов модератор запускает отдельно.',
     openSuccess: 'Карточка открыта.',
     openActiveTeamRequired: 'Выберите активную команду, прежде чем открывать карточки.',
     openForbidden: 'Открывать карточки может только администратор.',
@@ -1325,7 +1325,7 @@ const translations = {
     openConfirmSubject: '{{column}}: {{row}} (вартість: {{cost}} очк.)',
     openPending: 'Відкриваємо',
     openConfirmDescription:
-      'Відкрити картку вартістю {{cost}} очк.? Картка стане видимою, і почнеться фаза замовлення модифікаторів.',
+      'Відкрити картку вартістю {{cost}} очк.? Картка стане видимою. Замовлення модифікаторів модератор запускає окремо.',
     openSuccess: 'Картку відкрито.',
     openActiveTeamRequired: 'Оберіть активну команду, перш ніж відкривати картки.',
     openForbidden: 'Відкривати картки може лише адміністратор.',
@@ -1780,7 +1780,7 @@ const translations = {
     openConfirmSubject: '{{column}}: {{row}} (wartość: {{cost}} pkt)',
     openPending: 'Otwieranie',
     openConfirmDescription:
-      'Otworzyć tę kartę za {{cost}} pkt? Karta stanie się widoczna i rozpocznie się faza zamawiania modyfikatorów.',
+      'Otworzyć tę kartę za {{cost}} pkt? Karta stanie się widoczna. Moderator osobno rozpoczyna zamawianie modyfikatorów.',
     openSuccess: 'Karta została otwarta.',
     openActiveTeamRequired: 'Wybierz aktywną drużynę przed otwieraniem kart.',
     openForbidden: 'Tylko administrator może otwierać karty.',
