@@ -22,7 +22,6 @@ COPY backend/ ./backend/
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet publish backend/backend.csproj \
     --configuration Release \
-    --no-restore \
     --output /out \
     /p:UseAppHost=false
 
