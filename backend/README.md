@@ -32,6 +32,7 @@ Guardrails:
 - контроллеры формируют error `IActionResult` через `ApiErrorResults` helper-методы (есть тест-запрет на прямой `ErrorResponseFactory.Create(...)` в `Controllers/`);
 - `DomainErrorHttpPolicy` задает единое отображение domain `*ErrorCode -> HTTP status + payload` и покрыт тестом полноты enum;
 - непойманные исключения обрабатываются централизованно в `ApiExceptionHandlingMiddleware` и возвращают единый 500 payload;
+- отмена операции после разрыва клиентского соединения не считается серверной ошибкой: middleware не пишет тело ошибки и отмечает еще не начатый ответ статусом 499 для request log; отмена без `RequestAborted` остается ошибкой 500;
 - error payload включает `requestId` для трассировки, а `ApiErrorMetrics` публикует счетчики backend ошибок по статусу/коду/источнику;
 - CI собирает `backend/backend.slnx`, поэтому нарушение границ ловится на PR.
 
@@ -78,6 +79,8 @@ dotnet run --project backend.csproj
 ## База данных и storage
 
 Игровое поле читается из PostgreSQL через EF Core. Открытие ячеек выполняется на backend с role-check по admin и публикует realtime-события через SignalR. Медиа-URL для ячеек строятся на основе `Storage:PublicBaseUrl`.
+
+При отсутствии `Maximum Pool Size` приложение ограничивает пул PostgreSQL 32 соединениями на экземпляр, чтобы всплески HTTP-запросов ожидали свободное соединение в пуле. Явное значение сохраняется. Если заданный `Minimum Pool Size` выше 32, верхняя граница не опускается ниже этого минимума. Для нескольких экземпляров суммарный бюджет пулов должен оставлять запас в `max_connections` для миграций, мониторинга и административных подключений. `DATABASE_URL` поддерживает тот же параметр через `maximum%20pool%20size`.
 
 Политика удаления/архивации данных: [`docs/architecture/data-retention.md`](../docs/architecture/data-retention.md).
 

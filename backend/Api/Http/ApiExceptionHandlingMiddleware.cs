@@ -26,7 +26,11 @@ public sealed class ApiExceptionHandlingMiddleware
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            throw;
+            // The client has gone away; do not report a server failure or write an error body.
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            }
         }
         catch (Exception exception)
         {

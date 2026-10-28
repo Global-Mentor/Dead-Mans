@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { useMutation, useMutationState, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -39,9 +40,9 @@ export function useActivateGameModifier() {
     onSuccess: () => {
       setToastMessage(null)
 
-      void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
-      void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
-      void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+      void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
+      void refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey)
+      void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
     },
     onError: (error, modifierId, context) => {
       setToastMessage(t(resolveActivationErrorKey(error)))
@@ -52,9 +53,9 @@ export function useActivateGameModifier() {
             ? applyActivationErrorState(current, modifierId, error)
             : current,
       )
-      void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
-      void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
-      void queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey })
+      void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
+      void refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey)
+      void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
     },
   })
 

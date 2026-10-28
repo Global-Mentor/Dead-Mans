@@ -10,10 +10,12 @@ import {
 export const gameModifierQueryKeys = {
   all: ['gameModifiers'] as const,
   catalog: () => [...gameModifierQueryKeys.all, 'catalog'] as const,
-  state: () => [...gameModifierQueryKeys.all, 'state'] as const,
-  adminPlayers: () => [...gameModifierQueryKeys.all, 'adminPlayers'] as const,
-  adminState: (userId: string) => [...gameModifierQueryKeys.all, 'adminState', userId] as const,
-  adminActivations: () => [...gameModifierQueryKeys.all, 'adminActivations'] as const,
+  runtime: () => [...gameModifierQueryKeys.all, 'runtime'] as const,
+  state: () => [...gameModifierQueryKeys.runtime(), 'state'] as const,
+  adminPlayers: () => [...gameModifierQueryKeys.runtime(), 'adminPlayers'] as const,
+  adminState: (userId: string) =>
+    [...gameModifierQueryKeys.runtime(), 'adminState', userId] as const,
+  adminActivations: () => [...gameModifierQueryKeys.runtime(), 'adminActivations'] as const,
 }
 
 export const gameModifierCatalogQueryOptions = queryOptions({

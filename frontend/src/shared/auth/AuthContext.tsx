@@ -4,6 +4,7 @@ import { panelRootPath } from '../../routes/app-routes.ts'
 import { getBackendOrigin } from '../api/config.ts'
 import { AuthContext, type AuthContextValue, type AuthUser } from './auth-context.ts'
 import { fetchAuthMe, logoutAuthSession } from './auth-api.ts'
+import { clearLoginReturnTo, rememberLoginReturnTo } from './login-return-to.ts'
 
 function shouldHydrateSessionOnBoot() {
   const { pathname } = window.location
@@ -29,14 +30,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const startTwitchLogin = useCallback(() => {
+  const startTwitchLogin = useCallback((returnTo = panelRootPath) => {
+    rememberLoginReturnTo(returnTo)
     window.location.href = `${getBackendOrigin()}/auth/twitch/login`
   }, [])
 
   const logout = useCallback(async () => {
     await logoutAuthSession()
-    setUser(null)
-    setAuthStatus('anonymous')
+    clearLoginReturnTo()
+    // Reload to clear session-scoped caches and realtime connections together.
+    window.location.replace('/')
   }, [])
 
   useEffect(() => {

@@ -24,6 +24,57 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
     }
 
     [Fact]
+    public async Task GetGameDetails_OrdersFrozenModifiersByCreationTimeAndIdentity()
+    {
+        var seeded = await SeedHistoryAsync();
+        var firstId = Guid.Parse("10000000-0000-0000-0000-000000000001");
+        var secondId = Guid.Parse("10000000-0000-0000-0000-000000000002");
+        Guid roundId;
+        Guid lastId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var original = await db.GameRoundModifierResults.SingleAsync();
+            var activation = await db.GameModifierActivations.SingleAsync();
+            roundId = original.RoundId;
+            lastId = original.Id;
+            original.ModifierNameSnapshot = "Later result";
+            original.ScoreDelta = 30;
+
+            foreach (var (id, name, points) in new[]
+                {
+                    (secondId, "Earlier B", 20),
+                    (firstId, "Earlier A", 10)
+                })
+            {
+                var copy = (GameModifierActivation)db.Entry(activation).CurrentValues.ToObject();
+                copy.Id = Guid.NewGuid();
+                db.GameModifierActivations.Add(copy);
+                var result = (GameRoundModifierResult)db.Entry(original).CurrentValues.ToObject();
+                result.Id = id;
+                result.GameModifierActivationId = copy.Id;
+                result.CreatedAtUtc = original.CreatedAtUtc.AddSeconds(-1);
+                result.ModifierNameSnapshot = name;
+                result.ScoreDelta = points;
+                db.GameRoundModifierResults.Add(result);
+                await db.SaveChangesAsync();
+            }
+        }
+
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>(
+            $"/api/game/history/games/{seeded.GameId}");
+        Assert.NotNull(details);
+        var round = Assert.Single(details.MainGame.Rounds, x => x.RoundId == roundId.ToString());
+        Assert.Equal(new[] { firstId, secondId, lastId }.Select(x => x.ToString()),
+            round.Modifiers.Select(x => x.ModifierResultId));
+        Assert.Equal(["Earlier A", "Earlier B", "Later result"],
+            round.ScoreDetails.CalculationLines.Where(x => x.ModifierId is not null).Select(x => x.ModifierName));
+        Assert.Equal([10, 20, 30],
+            round.ScoreDetails.CalculationLines.Where(x => x.ModifierId is not null).Select(x => x.PointsDelta));
+    }
+
+    [Fact]
     public async Task GetGameDetails_WhenAnonymous_ReturnsUnauthorized()
     {
         var seeded = await SeedHistoryAsync();

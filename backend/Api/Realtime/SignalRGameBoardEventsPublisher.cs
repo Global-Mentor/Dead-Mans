@@ -127,6 +127,14 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         );
     }
 
+    public Task PublishUserNotificationsReadAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardUserAudience(userId)).SendAsync(
+            RealtimeHubContracts.GameBoard.UserNotificationsReadEvent,
+            cancellationToken
+        );
+    }
+
     public Task PublishGameLifecycleChangedAsync(
         GameLifecycleChangedEvent payload,
         CancellationToken cancellationToken = default

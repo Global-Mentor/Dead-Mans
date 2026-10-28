@@ -38,6 +38,9 @@ public interface IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     );
 
+    Task PublishUserNotificationsReadAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
     Task PublishGameLifecycleChangedAsync(
         GameLifecycleChangedEvent payload,
         CancellationToken cancellationToken = default

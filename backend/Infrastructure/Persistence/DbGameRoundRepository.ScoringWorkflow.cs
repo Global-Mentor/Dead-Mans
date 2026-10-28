@@ -270,6 +270,7 @@ public sealed partial class DbGameRoundRepository
             GameRoundScoreCalculator.ToDetails(scoreBreakdown),
             round.ModifierResults
                 .OrderBy(x => x.CreatedAtUtc)
+                .ThenBy(x => x.Id)
                 .Select(ToModifierSnapshot)
                 .ToArray(),
             round.Version,
@@ -282,6 +283,7 @@ public sealed partial class DbGameRoundRepository
                     )
                 )
                 .OrderBy(result => result.CreatedAtUtc)
+                .ThenBy(result => result.Id)
                 .Select(CreateCalculationTrace)
                 .ToArray()
         );

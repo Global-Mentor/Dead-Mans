@@ -600,6 +600,8 @@ public static class AppMessages
             "Failed to publish game quiz realtime event. GameId: {GameId}, ChangeKind: {ChangeKind}.";
         public const string RealtimeGameNotificationPublishFailed =
             "Failed to publish game notification realtime event. UserId: {UserId}, NotificationId: {NotificationId}.";
+        public const string RealtimeGameNotificationsReadPublishFailed =
+            "Failed to publish game notifications read realtime event. UserId: {UserId}.";
         public const string RealtimeGameSetupDraftChangedPublishFailed =
             "Failed to publish game setup draft changed realtime event.";
 

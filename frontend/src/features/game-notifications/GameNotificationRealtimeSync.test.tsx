@@ -19,6 +19,7 @@ vi.mock('../../shared/realtime/index.ts', () => ({
     gameBoard: {
       events: {
         userNotificationCreated: 'userNotificationCreated',
+        userNotificationsRead: 'userNotificationsRead',
         registrationChanged: 'registrationChanged',
       },
     },
@@ -120,6 +121,25 @@ describe('live browser notification synchronization', () => {
       await mock.subscription!.onConnected()
     })
     expect(deliverBrowserNotifications).toHaveBeenCalledOnce()
+  })
+
+  it('refreshes read notifications from another session without displaying a browser notification', async () => {
+    const { setNotices, handlers, unsubscribe } = setup()
+    setNotices(['unread'])
+    await act(async () => {
+      await mock.subscription!.onConnected()
+    })
+    const refresh = vi.fn(async () => setNotices([]))
+    mock.refresh = refresh
+
+    await act(async () => {
+      handlers.get('userNotificationsRead')?.()
+    })
+
+    expect(refresh).toHaveBeenCalledOnce()
+    expect(deliverBrowserNotifications).not.toHaveBeenCalled()
+    unsubscribe()
+    expect(handlers.has('userNotificationsRead')).toBe(false)
   })
 
   it('drops a late response after unsubscribe', async () => {

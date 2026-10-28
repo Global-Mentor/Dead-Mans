@@ -107,7 +107,6 @@ export function GameSetupPage() {
           <GameSetupBoardNotices
             remoteChangeNotice={remoteChangeNotice}
             onDismissRemoteChange={dismissRemoteChangeNotice}
-            onReloadFromServer={() => void reloadFromServer()}
             saveErrorMessage={saveErrorMessage}
             resetErrorMessage={resetErrorMessage}
             cellMediaErrorKey={cellMediaErrorKey}

@@ -1,8 +1,10 @@
 const translations = {
   en: {
-    subtitle: 'Sign in with Twitch to open the game board.',
-    description: 'After sign-in the panel loads the current game board from the database.',
+    subtitle: 'Sign in with Twitch to open the app.',
+    description: 'After sign-in you will return to the page you wanted to open.',
     button: 'Sign in with Twitch',
+    dataRetentionNotice:
+      'If you request data deletion, your nickname, Twitch link and other personal information will be removed. Game data and history will remain in the database under “Deleted user”.',
     processing: 'Finishing Twitch sign-in...',
     checkingSession: 'Checking your session...',
     callbackFailedTitle: 'Unable to complete sign-in',
@@ -22,9 +24,11 @@ const translations = {
     },
   },
   ru: {
-    subtitle: 'Войдите через Twitch, чтобы открыть игровое поле.',
-    description: 'После входа панель загружает текущее игровое поле из базы данных.',
+    subtitle: 'Войдите через Twitch, чтобы открыть приложение.',
+    description: 'После входа вы вернётесь на страницу, которую хотели открыть.',
     button: 'Войти через Twitch',
+    dataRetentionNotice:
+      'По запросу на удаление данных никнейм, ссылка на Twitch и другие личные сведения будут удалены. Игровые данные и история останутся в базе данных под именем «Удалённый пользователь».',
     processing: 'Завершаем вход через Twitch...',
     checkingSession: 'Проверяем вашу сессию...',
     callbackFailedTitle: 'Не удалось завершить вход',
@@ -44,9 +48,11 @@ const translations = {
     },
   },
   uk: {
-    subtitle: 'Увійдіть через Twitch, щоб відкрити ігрове поле.',
-    description: 'Після входу панель завантажує поточне ігрове поле з бази даних.',
+    subtitle: 'Увійдіть через Twitch, щоб відкрити застосунок.',
+    description: 'Після входу ви повернетеся на сторінку, яку хотіли відкрити.',
     button: 'Увійти через Twitch',
+    dataRetentionNotice:
+      'На запит про видалення даних нікнейм, посилання на Twitch та інші особисті відомості буде видалено. Ігрові дані та історія залишаться в базі даних під іменем «Видалений користувач».',
     processing: 'Завершуємо вхід через Twitch...',
     checkingSession: 'Перевіряємо вашу сесію...',
     callbackFailedTitle: 'Не вдалося завершити вхід',
@@ -66,9 +72,11 @@ const translations = {
     },
   },
   pl: {
-    subtitle: 'Zaloguj się przez Twitch, aby otworzyć planszę gry.',
-    description: 'Po zalogowaniu panel ładuje aktualną planszę gry z bazy danych.',
+    subtitle: 'Zaloguj się przez Twitch, aby otworzyć aplikację.',
+    description: 'Po zalogowaniu wrócisz na stronę, którą chcesz otworzyć.',
     button: 'Zaloguj się przez Twitch',
+    dataRetentionNotice:
+      'Na prośbę o usunięcie danych pseudonim, link do Twitcha i inne dane osobowe zostaną usunięte. Dane gry i historia pozostaną w bazie danych pod nazwą „Usunięty użytkownik”.',
     processing: 'Kończenie logowania przez Twitch...',
     checkingSession: 'Sprawdzanie sesji...',
     callbackFailedTitle: 'Nie udało się zakończyć logowania',

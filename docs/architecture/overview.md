@@ -86,7 +86,13 @@ flowchart LR
 
 ## Frontend
 
-- `features/auth/` - Twitch login, callback, session restore
+- `features/auth/` - Twitch login, callback, session restore. При входе по ссылке на `/panel/*`
+  исходный путь и query сохраняются в `returnTo` на странице входа; fragment сохраняется браузером.
+  Перед переходом в Twitch проверенный локальный адрес панели записывается в `sessionStorage`
+  текущей вкладки, восстанавливается после входа и удаляется после успешного возврата.
+  Ошибка входа сохраняет адрес для повторной попытки; проверки ролей выполняются на целевой странице.
+  Явный выход очищает адрес возврата и заново загружает главную форму входа, сбрасывая кеши сессии
+  и realtime-соединения вместе.
 - `features/game-board/` - экран игрового поля, open-cell flow и realtime sync
 - `features/game-setup/` - настройка черновика игры, cell media, autosave/layout flow, realtime sync
 - `features/game-modifiers/` - shared feature API каталога модификаторов для game setup

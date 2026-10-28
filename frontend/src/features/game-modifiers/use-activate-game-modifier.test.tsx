@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import type { ReactNode } from 'react'
@@ -11,6 +11,7 @@ import { gameModifierQueryKeys } from './api/game-modifier-queries.ts'
 import { useActivateGameModifier } from './use-activate-game-modifier.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 
 const apiMocks = vi.hoisted(() => ({
   activateGameModifier: vi.fn(),
@@ -146,6 +147,52 @@ describe('useActivateGameModifier', () => {
     vi.clearAllMocks()
   })
 
+  it('coalesces purchase completion with its in-flight realtime refresh without aborting HTTP', async () => {
+    const queryClient = createQueryClient()
+    const activation = createDeferredPromise()
+    const responses: Array<(state: GameModifierState) => void> = []
+    const aborted = vi.fn()
+    const queryFn = vi.fn(({ signal }: { signal: AbortSignal }) => {
+      signal.addEventListener('abort', aborted)
+      return new Promise<GameModifierState>((resolve) => responses.push(resolve))
+    })
+    queryClient.setQueryData(gameModifierQueryKeys.state(), baseState)
+    const observer = new QueryObserver(queryClient, {
+      queryKey: gameModifierQueryKeys.state(),
+      queryFn,
+      staleTime: Infinity,
+    })
+    const unsubscribe = observer.subscribe(() => {})
+    apiMocks.activateGameModifier.mockReturnValue(activation.promise)
+    const { result, unmount } = renderHook(() => useActivateGameModifier(), {
+      wrapper: createWrapper(queryClient),
+    })
+    let refresh: Promise<void>
+    await act(async () => {
+      void result.current.activateAsync('modifier-1')
+      refresh = refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
+    })
+    await waitFor(() => expect(queryFn).toHaveBeenCalledOnce())
+    await act(async () => activation.resolve())
+    await waitFor(() => expect(result.current.isActivating).toBe(false))
+    expect(queryFn).toHaveBeenCalledOnce()
+    expect(aborted).not.toHaveBeenCalled()
+
+    await act(async () => responses[0]!({ ...baseState, availableQuizPoints: 7 }))
+    await waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2))
+    await act(async () => {
+      responses[1]!({ ...baseState, availableQuizPoints: 6 })
+      await refresh
+    })
+    expect(queryClient.getQueryData(gameModifierQueryKeys.state())).toMatchObject({
+      availableQuizPoints: 6,
+    })
+    expect(aborted).not.toHaveBeenCalled()
+    unsubscribe()
+    unmount()
+    queryClient.clear()
+  })
+
   it('clears pending state right after the activation request succeeds even if invalidations are still running', async () => {
     const queryClient = createQueryClient()
     const deferred = createDeferredPromise()
@@ -240,7 +287,7 @@ describe('useActivateGameModifier', () => {
 
     await waitFor(() => {
       expect(apiMocks.activateGameModifier).toHaveBeenCalledWith('modifier-1')
-      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: gameModifierQueryKeys.all })
+      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: gameModifierQueryKeys.runtime() })
       expect(invalidateQueries).toHaveBeenCalledWith({
         queryKey: currentGameBoardQueryOptions.queryKey,
       })

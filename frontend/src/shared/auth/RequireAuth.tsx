@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from './use-auth.ts'
+import { getSignInPath } from './login-return-to.ts'
 import { CenteredProgress } from '../ui/index.ts'
 
 interface RequireAuthProps {
@@ -10,6 +11,7 @@ interface RequireAuthProps {
 
 export function RequireAuth({ children }: RequireAuthProps) {
   const { isAuthenticated, authStatus } = useAuth()
+  const location = useLocation()
   const { t } = useTranslation()
 
   if (authStatus === 'checking') {
@@ -17,7 +19,12 @@ export function RequireAuth({ children }: RequireAuthProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />
+    return (
+      <Navigate
+        to={getSignInPath(`${location.pathname}${location.search}${location.hash}`)}
+        replace
+      />
+    )
   }
 
   return <>{children}</>

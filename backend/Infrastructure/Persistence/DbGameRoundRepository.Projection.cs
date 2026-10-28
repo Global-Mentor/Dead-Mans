@@ -58,6 +58,7 @@ public sealed partial class DbGameRoundRepository
             .AsNoTracking()
             .Where(x => x.RoundId == roundId)
             .OrderBy(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
             .Select(
                 x =>
                     new

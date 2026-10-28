@@ -83,8 +83,11 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
         );
     }
 
-    [Fact]
-    public async Task ProductionPanelRoute_WhenAnonymous_RedirectsToSignInPage()
+    [Theory]
+    [InlineData("/panel/game-board")]
+    [InlineData("/panel/game-guide?from=shared&section=rules")]
+    [InlineData("/panel/game-guide?query=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80%26rules")]
+    public async Task ProductionPanelRoute_WhenAnonymous_PreservesDestinationOnSignInPage(string path)
     {
         using var factory = CreateProductionFactory(new Dictionary<string, string?>());
         using var client = factory.CreateClient(
@@ -95,10 +98,10 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
             }
         );
 
-        var response = await client.GetAsync("/panel/game-board");
+        var response = await client.GetAsync(path);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal("/", response.Headers.Location?.OriginalString);
+        Assert.Equal($"/?returnTo={Uri.EscapeDataString(path)}", response.Headers.Location?.OriginalString);
     }
 
     [Fact]

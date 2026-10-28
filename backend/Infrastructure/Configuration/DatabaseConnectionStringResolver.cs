@@ -67,6 +67,13 @@ internal static class DatabaseConnectionStringResolver
         // Npgsql prefers GSS before TLS by default; this application uses password authentication.
         builder.GssEncryptionMode = GssEncryptionMode.Disable;
 
+        // Queue refresh bursts in the application pool instead of consuming every database slot.
+        // Explicit deployment budgets, including a larger minimum pool, remain authoritative.
+        if (!builder.ShouldSerialize("Maximum Pool Size"))
+        {
+            builder.MaxPoolSize = Math.Max(32, builder.MinPoolSize);
+        }
+
         return builder.ConnectionString;
     }
 

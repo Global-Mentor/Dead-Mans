@@ -12,18 +12,7 @@ import { useGameSetupSave } from './use-game-setup-save.ts'
 const apiMocks = vi.hoisted(() => ({
   saveDraftGameSetup: vi.fn(),
 }))
-const queryStateMocks = vi.hoisted(() => ({
-  loadGameSetupDraftQueryState: vi.fn(),
-}))
-
 vi.mock('./api/game-setup-api.ts', () => apiMocks)
-vi.mock('./model/game-setup-query-state.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./model/game-setup-query-state.ts')>()
-  return {
-    ...actual,
-    loadGameSetupDraftQueryState: queryStateMocks.loadGameSetupDraftQueryState,
-  }
-})
 
 const snapshot: GameSetupSnapshot = {
   gameId: 'game-1',
@@ -114,16 +103,12 @@ describe('useGameSetupSave', () => {
     expect(result.current.saveErrorMessage).toBeNull()
   })
 
-  it('loads the server state and exposes a conflict on stale version', async () => {
-    const remoteSnapshot = { ...snapshot, title: 'Remote title', version: 4 }
+  it('preserves local changes and their base version until an explicit reload after conflict', async () => {
     apiMocks.saveDraftGameSetup.mockRejectedValue(
       new ApiError('Conflict', {
         status: 409,
         details: { code: API_ERROR_CODES.gameSetupStaleVersion },
       }),
-    )
-    queryStateMocks.loadGameSetupDraftQueryState.mockResolvedValue(
-      createLoadedDraftState(remoteSnapshot),
     )
     const { result, applyLoadedDraftState, setRemoteChangeNotice } = renderSaveHook()
 
@@ -131,9 +116,17 @@ describe('useGameSetupSave', () => {
       await expect(result.current.saveDraft()).rejects.toThrow('Conflict')
     })
 
-    expect(applyLoadedDraftState).toHaveBeenCalledWith(createLoadedDraftState(remoteSnapshot))
+    expect(applyLoadedDraftState).not.toHaveBeenCalled()
     expect(setRemoteChangeNotice).toHaveBeenLastCalledWith(true)
     expect(result.current.syncStatus).toBe('conflict')
+
+    await act(async () => {
+      await expect(result.current.saveDraft()).rejects.toThrow('Conflict')
+    })
+    expect(apiMocks.saveDraftGameSetup).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedVersion: snapshot.version, title: 'Edited title' }),
+    )
+    expect(applyLoadedDraftState).not.toHaveBeenCalled()
   })
 
   it('rolls an optimistic layout edit back when saving fails', async () => {
@@ -194,6 +187,68 @@ describe('useGameSetupSave', () => {
     )
   })
 
+  it.each(['replacement', 'newer-edit', 'explicit-reload'] as const)(
+    'does not roll back the current draft when an old layout save fails after %s',
+    async (change) => {
+      let reject!: (error: Error) => void
+      apiMocks.saveDraftGameSetup.mockReturnValueOnce(
+        new Promise<GameSetupSnapshot>((_, fail) => {
+          reject = fail
+        }),
+      )
+      const setDraftOverride = vi.fn()
+      const applyLoadedDraftState = vi.fn()
+      const initialDraft = createDraftFromSnapshot(snapshot)
+      const hook = renderHook(
+        ({ currentSnapshot, currentDraft }) =>
+          useGameSetupSave({
+            draft: currentDraft,
+            snapshot: currentSnapshot,
+            snapshotDraftKey: currentSnapshot.gameId,
+            isDirty: true,
+            applyLoadedDraftState,
+            setDraftOverride,
+            setRemoteChangeNotice: vi.fn(),
+          }),
+        {
+          wrapper: createQueryWrapper(),
+          initialProps: { currentSnapshot: snapshot, currentDraft: initialDraft },
+        },
+      )
+      act(() =>
+        hook.result.current.applyLayoutChange((draft) => ({ ...draft, rowLabels: ['200'] })),
+      )
+      await waitFor(() => expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce())
+
+      const nextSnapshot = {
+        ...snapshot,
+        gameId: change === 'replacement' ? 'game-2' : snapshot.gameId,
+      }
+      const nextDraft = { ...createDraftFromSnapshot(nextSnapshot), title: 'Current draft' }
+      if (change === 'explicit-reload') act(() => hook.result.current.resetToSaved())
+      if (change === 'newer-edit') act(() => hook.result.current.handleDraftEdited(nextDraft))
+      hook.rerender({ currentSnapshot: nextSnapshot, currentDraft: nextDraft })
+      setDraftOverride.mockClear()
+
+      await act(async () => {
+        reject(new ApiError('Unavailable', { status: 503 }))
+      })
+
+      expect(setDraftOverride).not.toHaveBeenCalled()
+      expect(applyLoadedDraftState).not.toHaveBeenCalled()
+      apiMocks.saveDraftGameSetup.mockResolvedValueOnce({
+        ...nextSnapshot,
+        title: nextDraft.title,
+        version: 4,
+      })
+      act(() => hook.result.current.handleDraftEdited(nextDraft))
+      await act(async () => hook.result.current.saveDraft())
+      expect(apiMocks.saveDraftGameSetup).toHaveBeenLastCalledWith(
+        expect.objectContaining({ title: nextDraft.title, rowLabels: nextDraft.rowLabels }),
+      )
+    },
+  )
+
   it('saves an edit committed before the dirty prop rerenders', async () => {
     const initialDraft = createDraftFromSnapshot(snapshot)
     const editedDraft = { ...initialDraft, title: 'Immediate blur edit' }
@@ -225,15 +280,11 @@ describe('useGameSetupSave', () => {
   })
 
   it('discards queued saves after a version conflict', async () => {
-    const remoteSnapshot = { ...snapshot, title: 'Remote title', version: 4 }
     apiMocks.saveDraftGameSetup.mockRejectedValueOnce(
       new ApiError('Conflict', {
         status: 409,
         details: { code: API_ERROR_CODES.gameSetupStaleVersion },
       }),
-    )
-    queryStateMocks.loadGameSetupDraftQueryState.mockResolvedValue(
-      createLoadedDraftState(remoteSnapshot),
     )
     const { result, draft } = renderSaveHook()
     const queuedDraft = { ...draft, title: 'Queued local edit' }
@@ -278,4 +329,52 @@ describe('useGameSetupSave', () => {
       expect.objectContaining({ expectedVersion: 3, title: 'Local edit' }),
     )
   })
+
+  it.each(['success', 'missing'] as const)(
+    'ignores a late %s and queued saves after another game replaces the draft',
+    async (outcome) => {
+      let resolve!: (value: GameSetupSnapshot) => void
+      let reject!: (error: Error) => void
+      apiMocks.saveDraftGameSetup.mockReturnValue(
+        new Promise<GameSetupSnapshot>((done, fail) => {
+          resolve = done
+          reject = fail
+        }),
+      )
+      const applyLoadedDraftState = vi.fn()
+      const setDraftOverride = vi.fn()
+      const hook = renderHook(
+        ({ currentSnapshot }: { currentSnapshot: GameSetupSnapshot }) =>
+          useGameSetupSave({
+            draft: { ...createDraftFromSnapshot(currentSnapshot), title: 'Local edit' },
+            snapshot: currentSnapshot,
+            snapshotDraftKey: currentSnapshot.gameId,
+            isDirty: true,
+            applyLoadedDraftState,
+            setDraftOverride,
+            setRemoteChangeNotice: vi.fn(),
+          }),
+        { wrapper: createQueryWrapper(), initialProps: { currentSnapshot: snapshot } },
+      )
+      let completed!: Promise<PromiseSettledResult<void>[]>
+      act(() => {
+        completed = Promise.allSettled([
+          hook.result.current.saveDraft(),
+          hook.result.current.saveDraft(),
+        ])
+      })
+      await waitFor(() => expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce())
+      hook.rerender({ currentSnapshot: { ...snapshot, gameId: 'game-2', version: 1 } })
+
+      await act(async () => {
+        if (outcome === 'success') resolve({ ...snapshot, version: 4 })
+        else reject(new ApiError('Missing draft', { status: 404 }))
+        await completed
+      })
+
+      expect(applyLoadedDraftState).not.toHaveBeenCalled()
+      expect(setDraftOverride).not.toHaveBeenCalled()
+      expect(apiMocks.saveDraftGameSetup).toHaveBeenCalledOnce()
+    },
+  )
 })

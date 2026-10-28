@@ -44,7 +44,6 @@ export function PanelProfileMenu({ user, onLogout }: PanelProfileMenuProps) {
   const handleLogout = async () => {
     closeProfile()
     await onLogout()
-    navigate('/', { replace: true })
   }
 
   return (

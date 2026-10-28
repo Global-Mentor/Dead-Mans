@@ -16,6 +16,7 @@ export const realtimeHubs = {
       roundStateChanged: 'roundStateChanged',
       quizStateChanged: 'quizStateChanged',
       userNotificationCreated: 'userNotificationCreated',
+      userNotificationsRead: 'userNotificationsRead',
       gameLifecycleChanged: 'gameLifecycleChanged',
     },
   },

@@ -24,6 +24,11 @@ the admin snapshot when active, and the team queue. The shared subscription work
 on the application page and admin pages; reconnect also refreshes registration state.
 No private invitation details are broadcast. Publish failures do not undo committed writes.
 
+After notifications are marked read, `userNotificationsRead` is sent without a payload
+only to that user's game-board connections. Each session refetches its unread list;
+the read event does not trigger a new browser notification. Publishing is best effort
+after the database update, and reconnect resynchronizes the unread list.
+
 Question catalog edits also emit `draftChanged` after commit. Disabling or deleting
 questions removes draft selections and increments affected board versions atomically.
 Setup clients invalidate question catalogs on the event and on reconnect; local unsaved
@@ -68,6 +73,13 @@ not wait for subscribers' HTTP resyncs, so a slow request cannot block connectio
 Events received during a refresh request cause a trailing refresh after it completes,
 instead of cancelling and restarting it for every event. There is no timer debounce;
 inactive queries are invalidated without eager fetching. Existing polling fallbacks remain.
+Modifier purchase/cancel, manual award and quiz answer callbacks use the same refresh
+queue as their events,
+so an HTTP success does not cancel a refresh already started by SignalR. Game-scoped
+modifier queries share a runtime prefix separate from the global catalog. Purchases
+and refunds refresh runtime state, history and manual-award balances, without refetching
+the unchanged catalog, quiz question, question picker or Twitch delivery status.
+Reconnect and game lifecycle changes still resynchronize the full relevant state.
 Setup resyncs preserve request ordering across remounts, discard responses after unmount
 or game replacement, and compare versions only within the same game.
 

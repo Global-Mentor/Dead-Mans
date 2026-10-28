@@ -12,6 +12,20 @@ namespace Backend.Tests.Unit.Infrastructure.Realtime;
 public sealed class SignalRGameBoardEventsPublisherTests
 {
     [Fact]
+    public async Task PublishUserNotificationsReadAsync_TargetsOnlyTheUsersGroupWithoutPayload()
+    {
+        var clients = new FakeHubClients();
+        var publisher = new SignalRGameBoardEventsPublisher(new FakeHubContext(clients), new FakeOverlayHubContext());
+        var userId = Guid.NewGuid();
+
+        await publisher.PublishUserNotificationsReadAsync(userId);
+
+        Assert.Equal(RealtimeGroupNames.GameBoardUserAudience(userId), clients.LastGroupName);
+        Assert.Equal(RealtimeHubContracts.GameBoard.UserNotificationsReadEvent, clients.GroupProxy.Method);
+        Assert.Empty(Assert.IsType<object[]>(clients.GroupProxy.Args));
+    }
+
+    [Fact]
     public async Task PublishCellOpenedAsync_SendsCellOpenedEventToRealtimeGroup()
     {
         var clients = new FakeHubClients();

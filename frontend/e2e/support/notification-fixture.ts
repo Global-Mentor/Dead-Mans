@@ -94,11 +94,10 @@ export async function setupNotificationFixture(page: Page, locale = 'ru') {
     set notifications(value: GameUserNotification[]) {
       notifications = value
     },
-    async emit() {
+    async emit(event = 'registrationChanged') {
+      await expect.poll(() => connected).toBe(true)
       const before = reads
-      socket?.send(
-        JSON.stringify({ type: 1, target: 'registrationChanged', arguments: [] }) + '\u001e',
-      )
+      socket?.send(JSON.stringify({ type: 1, target: event, arguments: [] }) + '\u001e')
       await expect.poll(() => reads).toBeGreaterThan(before)
     },
     disconnect() {

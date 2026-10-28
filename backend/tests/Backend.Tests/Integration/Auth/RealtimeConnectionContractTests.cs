@@ -82,6 +82,28 @@ public sealed class RealtimeConnectionContractTests : IClassFixture<TestWebAppli
         Assert.Equal(HubConnectionState.Connected, connection.State);
     }
 
+    [Fact]
+    public async Task MarkNotificationsRead_RefreshesBothConnectedSessions()
+    {
+        using var authenticatedFactory = TestAuthClientFactory.CreateFactory(
+            _factory, [AuthRoleCodes.Viewer], Guid.NewGuid());
+        await using var first = CreateConnection(authenticatedFactory, RealtimeHubContracts.GameBoard.HubPath);
+        await using var second = CreateConnection(authenticatedFactory, RealtimeHubContracts.GameBoard.HubPath);
+        var firstReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var firstSubscription = first.On(RealtimeHubContracts.GameBoard.UserNotificationsReadEvent,
+            () => { firstReceived.TrySetResult(); });
+        using var secondSubscription = second.On(RealtimeHubContracts.GameBoard.UserNotificationsReadEvent,
+            () => { secondReceived.TrySetResult(); });
+        await Task.WhenAll(first.StartAsync(), second.StartAsync());
+
+        using var client = authenticatedFactory.CreateClient();
+        var response = await client.PostAsync("/api/game/notifications/read", null);
+
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
+        await Task.WhenAll(firstReceived.Task, secondReceived.Task).WaitAsync(EventTimeout);
+    }
+
     private static HubConnection CreateConnection(
         WebApplicationFactory<Program> factory,
         string hubPath

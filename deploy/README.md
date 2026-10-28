@@ -59,7 +59,14 @@ Copy the values from [`deploy/.env.example`](.env.example) into the Coolify envi
 3. The Twitch client ID, secret, and callback addresses.
 4. The trusted CIDR of the actual Coolify proxy network.
 
-Mount a persistent volume at `/var/lib/deadmans/keys` and make it writable by the application user. Mount the PostgreSQL CA certificate at `/run/secrets/postgres-ca.crt` with read permission only. Never store production secrets in this repository.
+Mount a persistent volume at `/var/lib/deadmans/keys` and make it writable by
+the application user. Mount the PostgreSQL CA certificate at
+`/run/secrets/postgres-ca.crt` with read permission only. Do not bind directly
+to Coolify's managed CA file: if startup replaces the source file, an existing
+file bind mount can remain attached to the old file. Keep a root-owned copy outside
+Coolify-managed directories and mount that stable file instead. If the CA is
+rotated, refresh the copy and redeploy the application. Never store production
+secrets in this repository.
 
 Also mount a named persistent volume at `/var/lib/deadmans/diagnostics` for this
 application. In Coolify, add a **Persistent Storage > Volume** entry with a stable
