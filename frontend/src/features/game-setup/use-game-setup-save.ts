@@ -9,11 +9,7 @@ import {
   getGameSetupDraftValidationError,
   type GameSetupDraftValidationError,
 } from './model/game-setup-draft-validation.ts'
-import {
-  createLoadedDraftState,
-  getSnapshotDraftKey,
-  loadGameSetupDraftQueryState,
-} from './model/game-setup-query-state.ts'
+import { createLoadedDraftState, getSnapshotDraftKey } from './model/game-setup-query-state.ts'
 import type { GameSetupDraftController } from './use-game-setup-draft.ts'
 
 export type GameSetupSyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict'
@@ -61,6 +57,7 @@ export function useGameSetupSave({
   const [saveErrorMessage, setSaveErrorMessage] = useState<GameSetupSaveErrorKey | null>(null)
   const draftRef = useRef(draft)
   const snapshotRef = useRef(snapshot)
+  const snapshotKeyRef = useRef(snapshotDraftKey)
   const dirtyRef = useRef(isDirty)
   const saveGenerationRef = useRef(0)
 
@@ -69,22 +66,29 @@ export function useGameSetupSave({
   }, [draft])
 
   useEffect(() => {
-    if (!isDirty) {
+    const replaced = snapshotKeyRef.current !== snapshotDraftKey
+    if (replaced) {
+      snapshotKeyRef.current = snapshotDraftKey
+      const generation = ++saveGenerationRef.current
+      queueMicrotask(() => {
+        if (generation !== saveGenerationRef.current) return
+        setSyncStatus('saved')
+        setSaveErrorMessage(null)
+      })
+    }
+    if (replaced || !isDirty) {
       snapshotRef.current = snapshot
     }
     dirtyRef.current = isDirty
-  }, [isDirty, snapshot])
+  }, [isDirty, snapshot, snapshotDraftKey])
 
-  const handleSaveConflict = useCallback(async () => {
+  const handleSaveConflict = useCallback(() => {
     saveGenerationRef.current += 1
-    const loaded = await loadGameSetupDraftQueryState()
-    snapshotRef.current = loaded.snapshot
-    draftRef.current = loaded.initialDraft
-    dirtyRef.current = false
-    applyLoadedDraftState(loaded)
+    // Keep the local draft and its base version until the user explicitly reloads.
+    // Adopting the remote version here would let a later auto-save overwrite it.
     setSyncStatus('conflict')
     setRemoteChangeNotice(true)
-  }, [applyLoadedDraftState, setRemoteChangeNotice])
+  }, [setRemoteChangeNotice])
 
   const { mutateAsync: saveDraftAsync, isPending: isSaving } = useMutation({
     scope: { id: `game-setup-save:${snapshotDraftKey ?? 'none'}` },
@@ -125,7 +129,7 @@ export function useGameSetupSave({
       setSyncStatus('saved')
       setRemoteChangeNotice(false)
     },
-    onError: async (error, { generation }) => {
+    onError: (error, { generation }) => {
       if (
         generation !== saveGenerationRef.current ||
         error instanceof SupersededGameSetupSaveError
@@ -134,7 +138,7 @@ export function useGameSetupSave({
       }
 
       if (isStaleVersionError(error)) {
-        await handleSaveConflict()
+        handleSaveConflict()
         return
       }
 

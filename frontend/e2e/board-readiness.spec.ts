@@ -97,6 +97,38 @@ async function setupBoard(page: Page, missingMedia = false, currentGame = false)
 }
 
 for (const width of [390, 768, 1440]) {
+  test(`conflicting save preserves local draft until explicit reload at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 950 })
+    const server = await setupBoard(page)
+    await page.goto('/panel/game-setup')
+    const title = page.getByRole('textbox', { name: 'Название игры', exact: true })
+    await expect(title).toHaveValue(server.board().title)
+    const remote = { ...server.board(), title: 'Remote update', version: 8 }
+    let conflicted = false
+    await page.route('**/api/game/setup', (route) => {
+      if (route.request().method() === 'PUT') {
+        conflicted = true
+        return route.fulfill({
+          status: 409,
+          json: { code: 'game_setup.stale_version', error: 'stale' },
+        })
+      }
+      return route.fulfill({ json: conflicted ? remote : server.board() })
+    })
+    await title.fill('Unsaved local title')
+    await title.press('Tab')
+    await expect(page.getByText('Конфликт изменений', { exact: true })).toBeVisible()
+    await expect(title).toHaveValue('Unsaved local title')
+    const reload = page.getByRole('button', { name: 'Обновить', exact: true })
+    await expect(reload).toHaveCount(1)
+    await page.screenshot({ path: info.outputPath('preserved-conflict.png'), fullPage: true })
+    await reload.click()
+    await expect(title).toHaveValue('Remote update')
+    await expect(page.getByText('Конфликт изменений', { exact: true })).toHaveCount(0)
+  })
+
   test('board readiness and separate consents at ' + width + 'px', async ({ page }, info) => {
     await page.setViewportSize({ width, height: 950 })
     const errors: string[] = []

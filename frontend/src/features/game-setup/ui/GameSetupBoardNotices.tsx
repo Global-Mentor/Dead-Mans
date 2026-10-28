@@ -8,7 +8,7 @@ import type { GameSetupSaveErrorKey } from '../use-game-setup-save.ts'
 interface GameSetupBoardNoticesProps {
   remoteChangeNotice: boolean
   onDismissRemoteChange: () => void
-  onReloadFromServer: () => void
+  onReloadFromServer?: () => void
   saveErrorMessage: GameSetupSaveErrorKey | null
   resetErrorMessage: GameSetupResetErrorKey | null
   cellMediaErrorKey: GameSetupCellMediaErrorKey | null
@@ -42,9 +42,11 @@ export function GameSetupBoardNotices({
           severity="warning"
           onClose={onDismissRemoteChange}
           action={
-            <AppButton tone="ghost" size="small" onClick={onReloadFromServer}>
-              {t('gameSetup.reloadFromServer')}
-            </AppButton>
+            onReloadFromServer ? (
+              <AppButton tone="ghost" size="small" onClick={onReloadFromServer}>
+                {t('gameSetup.reloadFromServer')}
+              </AppButton>
+            ) : null
           }
         >
           {t('gameSetup.remoteChangeNotice')}
