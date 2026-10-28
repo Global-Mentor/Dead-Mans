@@ -5,7 +5,13 @@ import { getSignInReturnTo } from '../../shared/auth/login-return-to.ts'
 import { useAuth } from '../../shared/auth/use-auth.ts'
 import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher.tsx'
 import { huntAuthCardSx, huntBrassTitleSx, huntOverlineSx } from '../../shared/theme/surface-sx.ts'
-import { AppButton, AuthScreenShell, CenteredProgress, SectionCard } from '../../shared/ui/index.ts'
+import {
+  AppButton,
+  AuthScreenShell,
+  CenteredProgress,
+  ItemCard,
+  SectionCard,
+} from '../../shared/ui/index.ts'
 
 export function AuthLandingPage() {
   const { t } = useTranslation()
@@ -62,6 +68,11 @@ export function AuthLandingPage() {
           >
             {t('auth.button')}
           </AppButton>
+          <ItemCard frame="corner" emphasis="available" role="note">
+            <Typography component="p" variant="caption" color="text.secondary">
+              {t('auth.dataRetentionNotice')}
+            </Typography>
+          </ItemCard>
         </Stack>
       </SectionCard>
     </AuthScreenShell>
