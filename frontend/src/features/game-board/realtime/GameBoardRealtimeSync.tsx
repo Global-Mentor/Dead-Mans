@@ -86,7 +86,7 @@ export function GameBoardRealtimeSync() {
         logger.debug('Game board realtime event received', event)
         void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
         void refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all)
-        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.all)
+        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
         queryClient.setQueryData<GameBoardSnapshot | null>(
           currentGameBoardQueryOptions.queryKey,
           (current) => applyCellOpenedEvent(current, event),
@@ -99,14 +99,14 @@ export function GameBoardRealtimeSync() {
         void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
         void refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey)
         void refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all)
-        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.all)
+        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
       }
 
       const handleModifierActivated = (event: ModifierActivatedEvent) => {
         logger.debug('Game board modifier realtime event received', event)
         void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
         void refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all)
-        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.all)
+        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
         queryClient.setQueryData<GameBoardSnapshot | null>(
           currentGameBoardQueryOptions.queryKey,
           (current) => applyModifierActivatedEvent(current, event),
@@ -118,7 +118,7 @@ export function GameBoardRealtimeSync() {
         logger.debug('Game board modifier cancel realtime event received', event)
         void refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey)
         void refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all)
-        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.all)
+        void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
         queryClient.setQueryData<GameBoardSnapshot | null>(
           currentGameBoardQueryOptions.queryKey,
           (current) => applyModifierActivationCancelledEvent(current, event),

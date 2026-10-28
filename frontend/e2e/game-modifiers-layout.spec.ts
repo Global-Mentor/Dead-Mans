@@ -273,12 +273,10 @@ async function mockModifiers(
     options.locale ?? 'ru',
   )
   let refreshFailed = false
-  let notifyChanged = () => {}
+  let notifyChanged: (event: string) => void = () => {}
   await page.routeWebSocket(/\/hubs\/game-board/, (socket) => {
-    notifyChanged = () =>
-      socket.send(
-        `${JSON.stringify({ type: 1, target: realtimeHubs.gameBoard.events.modifierAvailabilityChanged, arguments: [] })}\u001e`,
-      )
+    notifyChanged = (event) =>
+      socket.send(`${JSON.stringify({ type: 1, target: event, arguments: [] })}\u001e`)
     socket.onMessage((message) => {
       if (message.toString().includes('"protocol"')) socket.send('{}\u001e')
     })
@@ -420,12 +418,46 @@ async function mockModifiers(
     },
   )
   return {
+    quizChanged: () => notifyChanged(realtimeHubs.gameBoard.events.quizStateChanged),
     failRefresh: () => {
       refreshFailed = true
-      notifyChanged()
+      notifyChanged(realtimeHubs.gameBoard.events.modifierAvailabilityChanged)
     },
   }
 }
+
+test('quiz awards refresh the open modifier wallet without a page reload', async ({ page }) => {
+  const realtime = await mockModifiers(page)
+  let points = 0
+  await page.route('**/api/game/modifiers/state', (route) =>
+    route.fulfill({
+      json: {
+        gameId: 'game-1',
+        availableQuizPoints: points,
+        spentQuizPoints: 0,
+        earnedQuizPoints: points,
+        isOrderingOpen: true,
+        activeModifiers: [],
+        availableModifiers: modifiers.map((item) => ({
+          ...item,
+          isActive: false,
+          canActivate: points >= item.modifier.activationCost,
+          blockedReason: points >= item.modifier.activationCost ? null : 'insufficient_quiz_points',
+          activationsCount: 0,
+        })),
+      },
+    }),
+  )
+  await page.goto('/panel/game-modifiers')
+  const balance = page.getByTestId('modifier-available-points-cell')
+  const purchase = page.getByRole('button', { name: 'Активировать Модификатор 1', exact: true })
+  await expect(balance).toContainText('0 очк.')
+  await expect(purchase).toHaveCount(0)
+  points = 20
+  realtime.quizChanged()
+  await expect(balance).toContainText('20 очк.')
+  await expect(purchase).toBeEnabled()
+})
 
 for (const size of [
   { width: 1366, height: 768 },

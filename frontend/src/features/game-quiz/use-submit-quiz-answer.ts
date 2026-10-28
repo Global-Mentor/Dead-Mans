@@ -2,6 +2,7 @@ import { useIsMutating, useMutation, useQueryClient } from '@tanstack/react-quer
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
 import { gameModifierQueryKeys } from '../game-modifiers/api/game-modifier-queries.ts'
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { submitGameQuizAnswer } from './api/game-quiz-api.ts'
 import { gameQuizQueryKeys } from './api/game-quiz-queries.ts'
 
@@ -29,9 +30,9 @@ export function useSubmitQuizAnswer(gameId: string) {
     },
     onSettled: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: gameQuizQueryKeys.all }),
-        queryClient.invalidateQueries({ queryKey: gameHistoryQueryKeys.all }),
-        queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all }),
+        refreshRealtimeQueries(queryClient, gameQuizQueryKeys.all),
+        refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all),
+        refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime()),
       ])
     },
   })

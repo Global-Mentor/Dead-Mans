@@ -3,6 +3,9 @@ import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
+import { gameModifierQueryKeys } from '../game-modifiers/api/game-modifier-queries.ts'
+import { gameQuizQueryKeys } from '../game-quiz/api/game-quiz-queries.ts'
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { manualGameQuizAwardPlayersQueryOptions } from './api/game-board-queries.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
@@ -62,12 +65,12 @@ export function useManualQuizAward() {
           balance: award.availablePointsAfter,
         }),
       )
-      await queryClient.invalidateQueries({
-        queryKey: gameHistoryQueryKeys.all,
-      })
-      await queryClient.invalidateQueries({
-        queryKey: manualGameQuizAwardPlayersQueryOptions.queryKey,
-      })
+      await Promise.all([
+        refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all),
+        refreshRealtimeQueries(queryClient, manualGameQuizAwardPlayersQueryOptions.queryKey),
+        refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime()),
+        refreshRealtimeQueries(queryClient, gameQuizQueryKeys.all),
+      ])
     },
     onError: (error) => {
       setToastSeverity('error')

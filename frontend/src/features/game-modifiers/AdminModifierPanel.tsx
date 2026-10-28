@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../../shared/realtime/refresh-realtime-queries.ts'
 import { Stack } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -91,8 +92,8 @@ export function AdminModifierTool() {
   })
 
   const invalidateModifierCaches = () => {
-    void queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all })
-    void queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey })
+    void refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime())
+    void refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey)
   }
 
   const activateMutation = useMutation({

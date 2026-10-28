@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { useSignalrHubSubscription } from '../shared/realtime/use-signalr-hub-subscription.ts'
 import { GameBoardQuizRealtimeSync } from '../features/game-board/realtime/GameBoardQuizRealtimeSync.tsx'
 import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
+import { gameModifierQueryKeys } from '../features/game-modifiers/api/game-modifier-queries.ts'
 
 vi.mock('../shared/realtime/use-signalr-hub-subscription.ts', () => ({
   useSignalrHubSubscription: vi.fn(),
@@ -38,7 +39,7 @@ it.each([
       ['gameHistory', 'games'],
       ['gameHistory', 'games', 'game-1'],
       ['gameHistory', 'users', 'user-1'],
-      ['gameModifiers', 'available'],
+      gameModifierQueryKeys.state(),
     ]
     const queryFn = vi.fn().mockResolvedValue(1)
     const observers = keys.map((queryKey) => {
@@ -69,9 +70,7 @@ it.each([
           handler({ gameId: 'game-1', version: 2, cell: { id: 'cell-1' } })
     })
     for (const queryKey of keys.slice(0, 3)) expect(client.getQueryData(queryKey)).toBe(1)
-    if (!['quizStateChanged', 'teamStateChanged'].includes(event)) {
-      expect(client.getQueryData(keys[3]!)).toBe(1)
-    }
+    expect(client.getQueryData(keys[3]!)).toBe(event === 'teamStateChanged' ? 0 : 1)
     queryFn.mockResolvedValue(2)
     await act(async () => {
       await Promise.all(subscriptions.map((value) => value.onConnected()))

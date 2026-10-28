@@ -1,3 +1,4 @@
+import { refreshRealtimeQueries } from '../../../shared/realtime/refresh-realtime-queries.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -74,9 +75,9 @@ export function GameModifierActions({
     onError: () => setCancelMessage(t('gameModifiers.selfCancelFailed')),
     onSettled: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: gameModifierQueryKeys.all }),
-        queryClient.invalidateQueries({ queryKey: currentGameBoardQueryOptions.queryKey }),
-        queryClient.invalidateQueries({ queryKey: activeGameRoundQueryOptions.queryKey }),
+        refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime()),
+        refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey),
+        refreshRealtimeQueries(queryClient, activeGameRoundQueryOptions.queryKey),
       ])
     },
   })

@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { gameHistoryQueryKeys } from '../game-history/api/game-history-queries.ts'
+import { gameModifierQueryKeys } from '../game-modifiers/api/game-modifier-queries.ts'
 import {
   currentGameBoardQueryOptions,
   manualGameQuizAwardPlayersQueryOptions,
@@ -27,6 +28,7 @@ export function GameQuizRealtimeSync() {
           ? [
               refreshRealtimeQueries(queryClient, currentGameBoardQueryOptions.queryKey),
               refreshRealtimeQueries(queryClient, gameHistoryQueryKeys.all),
+              refreshRealtimeQueries(queryClient, gameModifierQueryKeys.runtime()),
             ]
           : []),
         refreshRealtimeQueries(queryClient, gameQuizQueryKeys.all),
@@ -40,8 +42,20 @@ export function GameQuizRealtimeSync() {
     (connection: HubConnection) => {
       const handlers = QUIZ_EVENTS.map((event) => {
         // Board events already refresh the shared snapshot/history in GameBoardRealtimeSync.
-        const handler = () =>
+        const handler = () => {
+          if (
+            event === realtimeHubs.gameBoard.events.modifierActivated ||
+            event === realtimeHubs.gameBoard.events.modifierActivationCancelled
+          ) {
+            // Purchases change wallets, not the question, its options or Twitch delivery.
+            void refreshRealtimeQueries(
+              queryClient,
+              manualGameQuizAwardPlayersQueryOptions.queryKey,
+            )
+            return
+          }
           void syncQuizState(event === realtimeHubs.gameBoard.events.quizStateChanged)
+        }
         connection.on(event, handler)
         return { event, handler }
       })
@@ -50,7 +64,7 @@ export function GameQuizRealtimeSync() {
         for (const { event, handler } of handlers) connection.off(event, handler)
       }
     },
-    [syncQuizState],
+    [queryClient, syncQuizState],
   )
 
   useSignalrHubSubscription({
