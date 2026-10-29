@@ -343,7 +343,10 @@ test("a missing tunnel is created with a pinned image and only the proxy upstrea
       stderr: "",
     };
   });
-  assert.equal(create.includes("http://host.docker.internal:5290"), true);
+  assert.equal(
+    create[create.indexOf("--url") + 1],
+    "http://host.docker.internal:5290",
+  );
   assert.equal(
     create.some((arg) =>
       /^cloudflare\/cloudflared@sha256:[a-f0-9]{64}$/.test(arg),
