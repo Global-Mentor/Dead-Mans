@@ -20,10 +20,12 @@ echo   [i] Checking Docker Engine and repairing stale transient runtime state...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0backend\scripts\ensure-docker-desktop.ps1"
 if errorlevel 1 goto :Fail
 
-echo   [i] Checking ports 5285 and 5180...
+echo   [i] Checking ports 5285, 5180 and 5290...
 call "%~dp0dev-common.bat" EnsurePortFree 5285 "API"
 if errorlevel 1 goto :Fail
 call "%~dp0dev-common.bat" EnsurePortFree 5180 "site"
+if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" EnsurePortFree 5290 "Twitch EventSub proxy"
 if errorlevel 1 goto :Fail
 
 call "%~dp0dev-common.bat" EnsureDeps

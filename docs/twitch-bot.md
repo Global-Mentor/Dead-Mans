@@ -77,13 +77,17 @@ The stand supports successful delivery, `is_sent=false`, HTTP 429, timeout/unkno
 ## Local real-channel testing
 
 1. Keep credentials in the ignored `backend/appsettings.Local.json` or .NET user secrets, never in tracked configuration. Use the localhost OAuth callback and frontend URLs from the fake stand, but the real Twitch origins and numeric account IDs.
-2. Start the application with `npm run dev`, then start `npm run dev:twitch-proxy` in a second terminal. The proxy listens on port 5290 and exposes only `POST /api/integrations/twitch/eventsub`, limits bodies to 256 KiB, and preserves the exact bytes used for signature verification. Other paths, query variants and methods are blocked. It binds all interfaces so a Docker tunnel can reach it; stop it when testing is finished.
-3. Point the HTTPS tunnel at port 5290, not the full API on port 5285. For a tunnel running inside Docker on Windows, the upstream is `http://host.docker.internal:5290`.
-4. Set `TwitchBot:WebhookCallbackUrl` to the tunnel HTTPS URL plus `/api/integrations/twitch/eventsub`, then restart the backend. A temporary tunnel URL can change after restarting the tunnel; update the callback accordingly. No Twitch Developer Console edit is needed for the webhook URL.
+2. Start the application with `npm run dev` or `dev-full.bat`. With `TwitchBot:Enabled=true`, the backend launcher also starts the webhook proxy on port 5290. `npm run dev:backend` and `dev-backend.bat` use the same launcher. The proxy exposes only `POST /api/integrations/twitch/eventsub`, limits bodies to 256 KiB, and preserves the exact bytes used for signature verification. Other paths, query variants and methods are blocked. It binds all interfaces so a Docker tunnel can reach it. API and proxy stop together; `dev-stop.bat` releases their ports and the frontend port.
+3. For a configured `https://*.trycloudflare.com` callback, the launcher reuses or starts the local `deadmans-twitch-quiz-tunnel` Docker container. If missing, it creates the container from a pinned Cloudflare image. It reads the URL from the current container startup and passes the fresh callback to the API process. If the startup address has rotated out of the recent logs, it restarts only this tunnel to obtain a new address. Saved secrets are not rewritten, and stale URLs from previous container runs are ignored. Docker must be available; the full-stack command starts the development infrastructure first.
+4. For another HTTPS domain, configure the tunnel separately and point it at port 5290, not the full API on port 5285. For Docker on Windows the upstream is `http://host.docker.internal:5290`. Set `TwitchBot:WebhookCallbackUrl` to that domain plus `/api/integrations/twitch/eventsub`. The launcher preserves custom callback domains. No Twitch Developer Console edit is needed for the webhook URL. Direct `dotnet run` bypasses local tunnel orchestration; use the repository startup commands for automatic recovery after a Docker restart.
 5. Open `/panel/game-quiz`, connect the two accounts if needed, and wait until bot, channel and EventSub are all connected. Existing encrypted grants survive normal application restarts.
 6. Run the acceptance scenario below. For production use a stable HTTPS domain, persisted Data Protection keys and production secrets, not this development proxy or temporary tunnel.
 
 Run `npm run test:twitch-proxy` and `npm run check:text-style` to verify the local proxy and the no-long-dash text rule. Both checks also run in CI.
+
+The launcher reads the API's configuration layers, including JSON comments and trailing commas, and applies environment overrides. The managed proxy always uses port 5290 to match the tunnel. `TWITCH_WEBHOOK_PROXY_PORT` remains available only for standalone `npm run dev:twitch-proxy` diagnostics.
+
+The worker restores EventSub automatically using the saved grants. If Twitch revokes a grant, reconnect the affected account in the panel. A disabled bot remains disabled; startup does not enable incomplete configurations or reconnect accounts on the operator's behalf.
 
 ## Operating rules
 

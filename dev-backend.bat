@@ -9,8 +9,14 @@ if errorlevel 1 exit /b 1
 
 call "%~dp0dev-common.bat" RequireCmd dotnet
 if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" RequireCmd node
+if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" RequireCmd npm
+if errorlevel 1 goto :Fail
 
 call "%~dp0dev-common.bat" EnsurePortFree 5285 "API"
+if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" EnsurePortFree 5290 "Twitch EventSub proxy"
 if errorlevel 1 goto :Fail
 
 if not exist "backend\backend.csproj" (
