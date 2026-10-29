@@ -12,7 +12,7 @@ echo   ------------------------------------------------------------
 call "%~dp0dev-common.bat" StopListenPort 5285 "API"
 call "%~dp0dev-common.bat" StopListenPort 5180 "site"
 echo   ------------------------------------------------------------
-echo   [OK] Готово.
+echo   [OK] Done.
 echo.
 pause
 exit /b 0
