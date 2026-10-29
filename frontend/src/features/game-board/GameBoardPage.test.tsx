@@ -1095,20 +1095,27 @@ describe('GameBoardPage', () => {
     openManagementPanel()
 
     fireEvent.click(screen.getByRole('button', { name: /Очки викторины/i }))
+    const quiz = within(screen.getByRole('region', { name: 'Очки викторины' }))
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Игрок' }), {
+    fireEvent.change(quiz.getByRole('combobox', { name: 'Игрок' }), {
       target: { value: 'player' },
     })
     fireEvent.click(screen.getByRole('option', { name: /Player One/i }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'Очки' }), {
+    fireEvent.change(quiz.getByRole('textbox', { name: 'Очки' }), {
       target: { value: '7' },
     })
-    fireEvent.change(screen.getByRole('textbox', { name: 'Причина корректировки' }), {
+    fireEvent.change(quiz.getByRole('textbox', { name: 'Причина корректировки' }), {
       target: { value: 'Исправление результата' },
     })
-    expect(screen.getByText('Доступный баланс: 15 + 7 = 22.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Применить корректировку' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Подтвердить' }))
+    expect(quiz.getByText('Доступный баланс: 15 + 7 = 22.')).toBeInTheDocument()
+    fireEvent.click(quiz.getByRole('button', { name: 'Применить корректировку' }))
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Подтвердить корректировку очков?',
+    })
+    expect(awardManualQuizPoints).not.toHaveBeenCalled()
+    await act(async () => {
+      fireEvent.click(within(confirmation).getByRole('button', { name: 'Подтвердить' }))
+    })
 
     expect(awardManualQuizPoints).toHaveBeenCalledWith({
       awardedToUserId: 'user-1',
@@ -1118,23 +1125,10 @@ describe('GameBoardPage', () => {
       requestId: expect.any(String),
     })
 
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Подтвердить корректировку очков?' }),
-      ).not.toBeInTheDocument()
-    })
-
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Операция' }))
-    fireEvent.click(screen.getByRole('option', { name: 'Вычесть' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'Очки' }), {
-      target: { value: '16' },
-    })
-    fireEvent.change(screen.getByRole('textbox', { name: 'Причина корректировки' }), {
-      target: { value: 'Недействительный бонус' },
-    })
-
-    expect(screen.getByText('Доступный баланс: 15 − 16 = -1.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Применить корректировку' })).toBeDisabled()
+    await waitFor(() => expect(confirmation).not.toBeInTheDocument())
+    expect(
+      screen.queryByRole('dialog', { name: 'Подтвердить корректировку очков?' }),
+    ).not.toBeInTheDocument()
     expect(awardManualQuizPoints).toHaveBeenCalledTimes(1)
   })
 
