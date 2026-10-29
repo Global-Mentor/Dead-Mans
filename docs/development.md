@@ -70,6 +70,12 @@ npm install
 npm run dev
 ```
 
+Если Twitch Bot включён в локальной конфигурации, API запускается вместе с EventSub-прокси
+на порту 5290. Для настроенного адреса `*.trycloudflare.com` запуск также поднимает или
+использует текущий Docker-туннель и передаёт API его актуальный URL. Это же поведение
+используют `npm run dev:backend` и `dev-backend.bat`; отдельная команда прокси не нужна.
+Подробности и настройка аккаунтов: [Twitch Bot](twitch-bot.md#local-real-channel-testing).
+
 ### Windows alternative
 
 ```bat

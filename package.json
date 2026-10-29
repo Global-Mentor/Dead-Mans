@@ -9,18 +9,19 @@
     "docker:logs": "docker compose logs -f",
     "generate:transport": "npm --prefix frontend run generate:transport",
     "validate:openapi": "redocly lint backend/openapi/deadmans.v1.yaml --config redocly.yaml",
-    "dev": "npm run docker:up && concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "dotnet run --project backend/backend.csproj",
+    "dev": "npm run docker:up && concurrently --kill-others -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "node tools/twitch-webhook-proxy/dev-backend.mjs",
     "dev:frontend": "npm --prefix frontend run dev",
     "fake:twitch": "node tools/fake-twitch/server.mjs",
     "dev:twitch-proxy": "node tools/twitch-webhook-proxy/server.mjs",
-    "test:twitch-proxy": "node --test tools/twitch-webhook-proxy/server.test.mjs",
+    "test:twitch-proxy": "node --test tools/twitch-webhook-proxy/server.test.mjs tools/twitch-webhook-proxy/dev-backend.test.mjs",
     "check:text-style": "node tools/check-text-style.mjs",
     "check:repository-hygiene": "node tools/check-repository-hygiene.mjs",
     "test:repository-hygiene": "node --test tools/check-repository-hygiene.test.mjs"
   },
   "devDependencies": {
     "@redocly/cli": "2.51.2",
-    "concurrently": "^10.0.6"
+    "concurrently": "^10.0.6",
+    "jsonc-parser": "3.3.1"
   }
 }

@@ -2,30 +2,36 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-title Dead Mans - только сервер
+title Dead Mans - API only
 
-call "%~dp0dev-common.bat" PrintBanner "Только сервер API" "http://localhost:5285"
+call "%~dp0dev-common.bat" PrintBanner "API only" "http://localhost:5285"
 if errorlevel 1 exit /b 1
 
 call "%~dp0dev-common.bat" RequireCmd dotnet
 if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" RequireCmd node
+if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" RequireCmd npm
+if errorlevel 1 goto :Fail
 
-call "%~dp0dev-common.bat" EnsurePortFree 5285 "сервер API"
+call "%~dp0dev-common.bat" EnsurePortFree 5285 "API"
+if errorlevel 1 goto :Fail
+call "%~dp0dev-common.bat" EnsurePortFree 5290 "Twitch EventSub proxy"
 if errorlevel 1 goto :Fail
 
 if not exist "backend\backend.csproj" (
-  echo   [ОШИБКА] Нет файла backend\backend.csproj.
+  echo   [ERROR] backend\backend.csproj was not found.
   goto :Fail
 )
 
 echo.
-echo   [^>^>] Запуск сервера...
+echo   [^>^>] Starting API...
 echo   ------------------------------------------------------------
 call npm run dev:backend
 set "EC=%ERRORLEVEL%"
 if not "%EC%"=="0" (
   echo.
-  echo   [ОШИБКА] Команда завершилась с кодом %EC%.
+  echo   [ERROR] Backend services exited with code %EC%.
   goto :Fail
 )
 exit /b 0
