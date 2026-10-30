@@ -14,6 +14,10 @@ const translations = {
     },
     start: {
       title: 'Как принять участие',
+      requirementsTitle: 'Условия для участия',
+      requirementsWeapons:
+        'У вас должно быть открыто как можно больше различных оружейных модификаций в Hunt: Showdown.',
+      requirementsBalance: 'На балансе должно быть не менее 4000 Hunt-долларов.',
       body: 'В одной игре можно состоять только в одной команде. Капитана нет: участники равноправны. Размер команды задаёт организатор.',
       ready: 'Если кто-то выйдет из команды, оставшимся игрокам нужно снова нажать «Готов».',
       description: 'От заявки до готовой команды.',
@@ -189,6 +193,10 @@ const translations = {
     },
     start: {
       title: 'How to take part',
+      requirementsTitle: 'Participation requirements',
+      requirementsWeapons:
+        'You must have as many different weapon variants unlocked in Hunt: Showdown as possible.',
+      requirementsBalance: 'You must have at least 4000 Hunt Dollars on your balance.',
       body: 'You can belong to one team per game. There is no captain: all members are equal. The organizer sets the team size.',
       ready:
         'If someone leaves the team, the remaining players need to mark themselves ready again.',
@@ -364,6 +372,10 @@ const translations = {
     },
     start: {
       title: 'Як узяти участь',
+      requirementsTitle: 'Умови для участі',
+      requirementsWeapons:
+        'У вас має бути відкрито якомога більше різних модифікацій зброї в Hunt: Showdown.',
+      requirementsBalance: 'На балансі має бути щонайменше 4000 Hunt-доларів.',
       body: 'В одній грі можна входити лише до однієї команди. Капітана немає: учасники рівноправні. Розмір команди задає організатор.',
       ready: 'Якщо хтось вийде з команди, решті гравців потрібно знову позначити себе готовими.',
       description: 'Від заявки до готової команди.',
@@ -539,6 +551,10 @@ const translations = {
     },
     start: {
       title: 'Jak wziąć udział',
+      requirementsTitle: 'Warunki udziału',
+      requirementsWeapons:
+        'Musisz mieć odblokowanych jak najwięcej różnych wariantów broni w Hunt: Showdown.',
+      requirementsBalance: 'Musisz mieć na koncie co najmniej 4000 dolarów Hunt.',
       body: 'W jednej grze możesz należeć tylko do jednej drużyny. Nie ma kapitana: wszyscy członkowie są równi. Organizator ustala wielkość drużyny.',
       ready: 'Jeśli ktoś odejdzie z drużyny, pozostali gracze muszą ponownie potwierdzić gotowość.',
       description: 'Od zgłoszenia do gotowej drużyny.',

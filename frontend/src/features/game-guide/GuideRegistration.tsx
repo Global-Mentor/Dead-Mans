@@ -4,6 +4,7 @@ import {
   AppAccordion,
   AppAccordionSummary,
   AppAccordionDetails,
+  BulletList,
   DetailBlock,
   InlineNotice,
   StatusBadge,
@@ -20,6 +21,27 @@ export function GuideRegistration() {
       title={t('gameGuide.start.title')}
       description={t('gameGuide.start.description')}
     >
+      <InlineNotice
+        severity="warning"
+        appearance="emphasized"
+        icon={false}
+        role="note"
+        aria-labelledby="participation-requirements-title"
+      >
+        <Stack spacing={1}>
+          <Typography component="h3" variant="h6" id="participation-requirements-title">
+            {t('gameGuide.start.requirementsTitle')}
+          </Typography>
+          <BulletList>
+            <Typography component="li" variant="body1">
+              {t('gameGuide.start.requirementsWeapons')}
+            </Typography>
+            <Typography component="li" variant="subtitle2">
+              {t('gameGuide.start.requirementsBalance')}
+            </Typography>
+          </BulletList>
+        </Stack>
+      </InlineNotice>
       <InlineNotice severity="info" role="note">
         <Typography variant="subtitle2" component="p">
           {t('gameGuide.start.windowTitle')}
