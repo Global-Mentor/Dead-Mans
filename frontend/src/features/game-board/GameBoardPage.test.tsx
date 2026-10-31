@@ -620,7 +620,7 @@ describe('GameBoardPage', () => {
     )
     expect(within(managementPanel).getByRole('button', { name: 'Запуск игры' })).toBeInTheDocument()
     expect(
-      within(managementPanel).queryByText(/Сначала запустите игру в секции запуска/),
+      within(managementPanel).queryByText('Открыта регистрация на игру'),
     ).not.toBeInTheDocument()
     expect(within(managementPanel).getAllByText('Запуск')[0]).toBeInTheDocument()
 
