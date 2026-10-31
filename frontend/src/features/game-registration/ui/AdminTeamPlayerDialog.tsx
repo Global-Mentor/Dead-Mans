@@ -97,7 +97,7 @@ export function AdminTeamPlayerDialog({
           density="compact"
           name={
             target.team.name ||
-            t('teamRegistrations.teamNumber', { slot: target.team.teamSlotIndex })
+            t('gameRegistration.teamNumber', { slot: target.team.teamSlotIndex })
           }
           members={target.team.members.map(({ player }) => ({
             id: player.userId,

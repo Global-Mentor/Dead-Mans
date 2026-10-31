@@ -69,7 +69,7 @@ export function AdminAssignPlayerDialog({
               value: team.teamId,
               label: team.name?.trim()
                 ? t('teamRegistrations.teamOption', { slot: team.teamSlotIndex, name: team.name })
-                : t('teamRegistrations.teamNumber', { slot: team.teamSlotIndex }),
+                : t('gameRegistration.teamNumber', { slot: team.teamSlotIndex }),
             }))}
           />
         ) : (

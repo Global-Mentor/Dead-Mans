@@ -8,7 +8,7 @@ import { useAdminTeamRoster } from './use-admin-team-roster.tsx'
 import { RegistrationTeamNameEditor } from './RegistrationTeamNameEditor.tsx'
 import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { AdminTeamActions } from './AdminTeamActions.tsx'
-import { AdminTeamNumber } from './AdminTeamNumber.tsx'
+import { RegistrationTeamMarker } from './RegistrationTeamMarker.tsx'
 import { AdminTeamStatusBlock } from './AdminTeamStatusBlock.tsx'
 
 export function AdminRegistrationTeamDetails({
@@ -84,7 +84,7 @@ export function AdminRegistrationTeamDetails({
       ) : null}
       <SectionCard surface="inset" sx={{ p: 1.5 }} data-testid="admin-team-briefing">
         <TeamPresentation
-          leading={<AdminTeamNumber team={team} capacity={snapshot.maxPlayersPerTeam} />}
+          leading={<RegistrationTeamMarker team={team} capacity={snapshot.maxPlayersPerTeam} />}
           name={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
           members={members}
           emptyLabel={t('gameApplication.adminPanel.emptyTeam')}

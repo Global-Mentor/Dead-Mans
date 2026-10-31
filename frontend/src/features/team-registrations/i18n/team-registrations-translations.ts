@@ -31,10 +31,6 @@ const translations = {
     playerActions: 'Actions for {{name}}',
     markPlayedConfirmTitle: 'Mark this team as played?',
     resetPlayedConfirmTitle: 'Return this team to the queue?',
-    teamNumber: 'Team {{slot}}',
-    closedTeam: 'Closed team',
-    closedTeamHint:
-      'Direct joining is closed. Players can only be added while the roster is forming.',
     teamNameLabel: 'Team',
     playersCountLabel: 'Players',
     disbandEffects:
@@ -55,7 +51,6 @@ const translations = {
     details: 'Team',
     workspace: 'Team workspace',
     roster: 'Roster',
-    rosterCount: 'Roster: {{count}} / {{max}}',
     selectTeam: 'Manage {{name}}',
     selectPrompt: 'Select a team to manage its roster.',
     canConfirm: 'Admit the team to the game, mark every player ready and lock its roster.',
@@ -126,10 +121,6 @@ const translations = {
     playerActions: 'Действия игрока {{name}}',
     markPlayedConfirmTitle: 'Отметить команду как отыгравшую?',
     resetPlayedConfirmTitle: 'Вернуть команду в очередь?',
-    teamNumber: 'Команда {{slot}}',
-    closedTeam: 'Закрытая команда',
-    closedTeamHint:
-      'Вступление напрямую закрыто. Добавлять игроков можно только во время формирования состава.',
     teamNameLabel: 'Команда',
     playersCountLabel: 'Игроков',
     disbandEffects:
@@ -150,7 +141,6 @@ const translations = {
     details: 'Команда',
     workspace: 'Управление составом',
     roster: 'Состав',
-    rosterCount: 'Состав: {{count}} / {{max}}',
     selectTeam: 'Управление: {{name}}',
     selectPrompt: 'Выберите команду для управления составом.',
     canConfirm: 'Допустить команду к игре, отметить всех игроков готовыми и закрепить состав.',
@@ -222,9 +212,6 @@ const translations = {
     playerActions: 'Дії гравця {{name}}',
     markPlayedConfirmTitle: 'Позначити команду як таку, що відіграла?',
     resetPlayedConfirmTitle: 'Повернути команду до черги?',
-    teamNumber: 'Команда {{slot}}',
-    closedTeam: 'Закрита команда',
-    closedTeamHint: 'Прямий вступ закрито. Додавати гравців можна лише під час формування складу.',
     teamNameLabel: 'Команда',
     playersCountLabel: 'Гравців',
     disbandEffects:
@@ -246,7 +233,6 @@ const translations = {
     details: 'Команда',
     workspace: 'Керування складом',
     roster: 'Склад',
-    rosterCount: 'Склад: {{count}} / {{max}}',
     selectTeam: 'Керування: {{name}}',
     selectPrompt: 'Виберіть команду для керування складом.',
     canConfirm: 'Допустити команду до гри, позначити всіх гравців готовими й закріпити склад.',
@@ -318,10 +304,6 @@ const translations = {
     playerActions: 'Działania dla {{name}}',
     markPlayedConfirmTitle: 'Oznaczyć drużynę jako zakończoną?',
     resetPlayedConfirmTitle: 'Przywrócić drużynę do kolejki?',
-    teamNumber: 'Drużyna {{slot}}',
-    closedTeam: 'Zamknięta drużyna',
-    closedTeamHint:
-      'Bezpośrednie dołączanie jest zamknięte. Graczy można dodawać tylko podczas tworzenia składu.',
     teamNameLabel: 'Drużyna',
     playersCountLabel: 'Graczy',
     disbandEffects:
@@ -341,7 +323,6 @@ const translations = {
     details: 'Drużyna',
     workspace: 'Zarządzanie składem',
     roster: 'Skład',
-    rosterCount: 'Skład: {{count}} / {{max}}',
     selectTeam: 'Zarządzaj: {{name}}',
     selectPrompt: 'Wybierz drużynę, aby zarządzać składem.',
     canConfirm: 'Dopuść drużynę do gry, oznacz wszystkich graczy jako gotowych i zablokuj skład.',

@@ -9,7 +9,6 @@ export function TeamPresentation({
   name,
   members,
   emptyLabel,
-  metadata,
   leading,
   status,
   actions,
@@ -18,7 +17,6 @@ export function TeamPresentation({
   name: string
   members: readonly TeamPresentationMember[]
   emptyLabel: string
-  metadata?: ReactNode
   leading?: ReactNode
   status?: ReactNode
   actions?: ReactNode
@@ -48,11 +46,6 @@ export function TeamPresentation({
             ) : null
           }
         />
-        {metadata ? (
-          <Stack direction="row" gap={0.75} flexWrap="wrap" justifyContent="center">
-            {metadata}
-          </Stack>
-        ) : null}
         <SectionDivider />
       </Stack>
       <TeamRoster members={members} emptyLabel={emptyLabel} density={density} />

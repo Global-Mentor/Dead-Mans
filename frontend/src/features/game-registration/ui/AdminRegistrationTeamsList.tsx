@@ -1,4 +1,4 @@
-import { AdminTeamNumber } from './AdminTeamNumber.tsx'
+import { RegistrationTeamMarker } from './RegistrationTeamMarker.tsx'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ItemCard, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
@@ -130,7 +130,9 @@ export function AdminRegistrationTeamsList({
                   ),
                 }))}
                 emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
-                leading={<AdminTeamNumber team={team} capacity={snapshot.maxPlayersPerTeam} />}
+                leading={
+                  <RegistrationTeamMarker team={team} capacity={snapshot.maxPlayersPerTeam} />
+                }
                 status={<AdminTeamStatusBlock team={team} />}
               />
             </SelectionRow>

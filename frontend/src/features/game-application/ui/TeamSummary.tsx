@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
 import { StatusBadge } from '../../../shared/ui/index.ts'
 import { TeamPresentation } from '../../../shared/game-ui/index.ts'
-import { formatRegistrationTeamStatus } from '../../game-registration/index.ts'
+import {
+  formatRegistrationTeamStatus,
+  RegistrationTeamMarker,
+} from '../../game-registration/index.ts'
 import { getTeamFreePlaces, isTeamJoinable } from '../model/team-availability.ts'
 
 interface TeamSummaryProps {
@@ -13,7 +16,6 @@ interface TeamSummaryProps {
   action?: ReactNode
   nameAction?: ReactNode
   showStatus?: boolean
-  showReadiness?: boolean
 }
 
 export function TeamSummary({
@@ -22,7 +24,6 @@ export function TeamSummary({
   action,
   nameAction,
   showStatus = true,
-  showReadiness = false,
 }: TeamSummaryProps) {
   const { t } = useTranslation()
   const pending = team.pendingInvitations ?? []
@@ -43,11 +44,7 @@ export function TeamSummary({
     <TeamPresentation
       name={team.name?.trim() || t('gameApplication.unnamedTeam')}
       emptyLabel={t('gameApplication.emptyTeamMembers')}
-      metadata={
-        <Typography variant="caption" color="text.secondary">
-          {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
-        </Typography>
-      }
+      leading={<RegistrationTeamMarker team={team} capacity={capacity} showNumber={false} />}
       status={
         showStatus ? (
           <Typography
@@ -68,18 +65,17 @@ export function TeamSummary({
         ...team.members.map(({ player, readyAtUtc }) => ({
           id: player.userId,
           name: player.displayName,
-          detail:
-            showReadiness && team.status === 'forming' ? (
-              <StatusBadge
-                density="tight"
-                size="small"
-                color={readyAtUtc ? 'success' : 'default'}
-                variant={readyAtUtc ? 'filled' : 'outlined'}
-                label={t(
-                  readyAtUtc ? 'gameApplication.playerReady' : 'gameApplication.playerNotReady',
-                )}
-              />
-            ) : null,
+          detail: (
+            <StatusBadge
+              density="tight"
+              size="small"
+              color={readyAtUtc ? 'success' : 'default'}
+              variant={readyAtUtc ? 'filled' : 'outlined'}
+              label={t(
+                readyAtUtc ? 'gameApplication.playerReady' : 'gameApplication.playerNotReady',
+              )}
+            />
+          ),
         })),
         ...pending.map((invitation) => ({
           id: invitation.invitationId,

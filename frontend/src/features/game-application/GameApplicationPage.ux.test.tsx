@@ -239,7 +239,7 @@ describe('Application decisions', () => {
       name: 'Ночной дозор',
     })
     const teamProfile = within(myTeamSection).getByTestId('team-presentation')
-    const capacity = within(myTeamSection).getByText('Игроки: 1 / 2')
+    const capacity = within(myTeamSection).getByLabelText('Состав: 1 / 2')
 
     const editNameButton = within(teamProfile).getByRole('button', {
       name: 'Изменить название команды',
