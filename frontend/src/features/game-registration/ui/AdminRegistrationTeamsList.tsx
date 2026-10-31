@@ -8,6 +8,7 @@ import { AdminTeamOrderHandle } from './AdminTeamOrderHandle.tsx'
 import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
 import { TeamIdentity } from '../../../shared/game-ui/index.ts'
 import { AdminTeamStatusBlock } from './AdminTeamStatusBlock.tsx'
+import { AdminTeamReadinessRoster } from './AdminTeamReadinessRoster.tsx'
 
 interface AdminRegistrationTeamsListProps {
   controls: AdminRegistrationPanelProps
@@ -126,9 +127,11 @@ export function AdminRegistrationTeamsList({
                   alignment="center"
                   divider
                   textFlow="singleLine"
-                  minimumParticipantRows={rosterRows}
                   name={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
                   participants={team.members.map(({ player }) => player.displayName)}
+                  roster={
+                    <AdminTeamReadinessRoster members={team.members} minimumRows={rosterRows} />
+                  }
                   emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
                   leading={<AdminTeamNumber team={team} />}
                   status={

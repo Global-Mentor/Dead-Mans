@@ -12,6 +12,7 @@ export function AdminTeamStatusBlock({
   reserveSpace?: boolean
 }) {
   const { t } = useTranslation()
+  const ready = team.status === 'forming' && team.isReady
   return (
     <SectionCard surface="inset" sx={{ p: 0.75, minWidth: 0 }}>
       <Stack
@@ -22,9 +23,13 @@ export function AdminTeamStatusBlock({
       >
         <StatusBadge
           textFlow="singleLine"
-          color={team.status === 'confirmed' ? 'success' : 'default'}
-          variant={team.status === 'confirmed' ? 'filled' : 'outlined'}
-          label={formatRegistrationTeamStatus(team.status, t)}
+          color={ready || team.status === 'confirmed' ? 'success' : 'default'}
+          variant={ready || team.status === 'confirmed' ? 'filled' : 'outlined'}
+          label={
+            ready
+              ? t('gameRegistration.teamStatus.ready')
+              : formatRegistrationTeamStatus(team.status, t)
+          }
         />
         {team.isActiveInGame || team.isPlayed ? (
           <StatusBadge

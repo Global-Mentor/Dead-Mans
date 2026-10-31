@@ -12,6 +12,7 @@ export function AdminRegistrationPlayerCard({
   alignment = 'start',
   actions,
   metadata,
+  metadataPlacement = 'end',
   footer,
   testId,
 }: {
@@ -19,6 +20,7 @@ export function AdminRegistrationPlayerCard({
   compact?: boolean
   alignment?: 'start' | 'center'
   metadata?: ReactNode
+  metadataPlacement?: 'start' | 'end'
   footer?: ReactNode
   actions?: ReactNode
   testId?: string
@@ -45,7 +47,15 @@ export function AdminRegistrationPlayerCard({
         })}
       >
         {actions ? (
-          <Box sx={{ gridColumn: 1, gridRow: 1, justifySelf: 'start' }}>{actions}</Box>
+          <Box
+            sx={{
+              gridColumn: metadataPlacement === 'start' ? 3 : 1,
+              gridRow: 1,
+              justifySelf: metadataPlacement === 'start' ? 'end' : 'start',
+            }}
+          >
+            {actions}
+          </Box>
         ) : null}
         <Box sx={{ minWidth: 0, gridColumn: metadata ? 2 : 1, gridRow: 1 }}>
           <ParticipantNamesList
@@ -58,7 +68,16 @@ export function AdminRegistrationPlayerCard({
           />
         </Box>
         {metadata ? (
-          <Box sx={{ gridColumn: 3, gridRow: 1, minWidth: 0, justifySelf: 'end' }}>{metadata}</Box>
+          <Box
+            sx={{
+              gridColumn: metadataPlacement === 'start' ? 1 : 3,
+              gridRow: 1,
+              minWidth: 0,
+              justifySelf: metadataPlacement,
+            }}
+          >
+            {metadata}
+          </Box>
         ) : null}
         {footer ? (
           <Box sx={{ gridColumn: '1 / -1', justifySelf: 'center', minWidth: 0 }}>{footer}</Box>

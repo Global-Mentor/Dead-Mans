@@ -10,6 +10,52 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed partial class PostgresPersistenceBoundaryTests
 {
+    [Fact]
+    public async Task ConfirmTeam_PersistsReadinessForCurrentMembersAndPreservesExistingTimestamps()
+    {
+        var (gameId, teamId, firstId, secondId) = await SeedReadinessRosterAsync();
+        DateTime previousReady;
+        Guid formerId;
+        await using (var seed = _database.CreateDbContext())
+        {
+            var first = await seed.GameTeamMembers.SingleAsync(member => member.UserId == firstId);
+            previousReady = first.JoinedAtUtc;
+            first.ReadyAtUtc = previousReady;
+            var former = CreateUser("former-member");
+            formerId = former.Id;
+            seed.Add(former);
+            seed.GameTeamMembers.Add(new GameTeamMember
+            {
+                Id = Guid.NewGuid(),
+                GameId = gameId,
+                TeamId = teamId,
+                UserId = formerId,
+                JoinedAtUtc = previousReady,
+                LeftAtUtc = previousReady
+            });
+            await seed.SaveChangesAsync();
+        }
+        await using var db = _database.CreateDbContext();
+        var persistence = new DbGameRegistrationPersistence(db, new GameRegistrationReadStore(db),
+            NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System);
+        var result = await persistence.PersistConfirmTeamAsync(gameId, firstId, teamId, 1, 2);
+        Assert.True(result.Success);
+        Assert.Equal(TeamStatusValue.Confirmed, result.Value!.Status);
+        Assert.All(result.Value.Members, member => Assert.NotNull(member.ReadyAtUtc));
+
+        await using var verify = _database.CreateDbContext();
+        var team = await verify.GameTeams.SingleAsync(candidate => candidate.Id == teamId);
+        var members = await verify.GameTeamMembers.Where(member => member.TeamId == teamId).ToListAsync();
+        Assert.Equal(previousReady, members.Single(member => member.UserId == firstId).ReadyAtUtc);
+        Assert.Equal(team.ConfirmedAtUtc, members.Single(member => member.UserId == secondId).ReadyAtUtc);
+        Assert.Null(members.Single(member => member.UserId == formerId).ReadyAtUtc);
+        var repeated = await persistence.PersistConfirmTeamAsync(gameId, firstId, teamId, 1, 2);
+        Assert.False(repeated.Success);
+        Assert.Equal(GameRegistrationErrorCode.TeamNotJoinable, repeated.Error);
+        await verify.Entry(team).ReloadAsync();
+        Assert.Equal(members.Single(member => member.UserId == secondId).ReadyAtUtc, team.ConfirmedAtUtc);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -55,6 +101,8 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var team = await verify.GameTeams.SingleAsync(candidate => candidate.Id == teamId);
         Assert.Equal(confirmFirst ? TeamStatusValue.Confirmed : TeamStatusValue.Forming, team.Status);
         Assert.Equal(confirmFirst, team.Name is not null);
+        var members = await verify.GameTeamMembers.Where(member => member.TeamId == teamId).ToListAsync();
+        Assert.All(members, member => Assert.Equal(confirmFirst, member.ReadyAtUtc.HasValue));
     }
 
     [Theory]
@@ -109,11 +157,15 @@ public sealed partial class PostgresPersistenceBoundaryTests
     public async Task Readiness_RechecksStartedGameAfterWaitingForRosterLock(bool isReady)
     {
         var (gameId, teamId, firstId, _) = await SeedReadinessRosterAsync();
+        DateTime? confirmedReadiness;
         await using (var confirmDb = _database.CreateDbContext())
         {
             var registration = new DbGameRegistrationPersistence(confirmDb, new GameRegistrationReadStore(confirmDb),
                 NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System);
-            Assert.True((await registration.PersistConfirmTeamAsync(gameId, firstId, teamId, 1, 2)).Success);
+            var confirmed = await registration.PersistConfirmTeamAsync(gameId, firstId, teamId, 1, 2);
+            Assert.True(confirmed.Success);
+            confirmedReadiness = confirmed.Value!.Members.Single(member => member.Player.UserId == firstId).ReadyAtUtc;
+            Assert.NotNull(confirmedReadiness);
         }
 
         var starting = new RosterLockInterceptor(holdLock: true);
@@ -142,7 +194,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var result = await readyTask!;
         Assert.False(result.Success);
         Assert.Equal(GameRegistrationErrorCode.GameNotInReady, result.Error);
-        Assert.Null((await readyDb.GameTeamMembers.SingleAsync(member => member.UserId == firstId)).ReadyAtUtc);
+        Assert.Equal(confirmedReadiness, (await readyDb.GameTeamMembers.SingleAsync(member => member.UserId == firstId)).ReadyAtUtc);
     }
 
     [Theory]

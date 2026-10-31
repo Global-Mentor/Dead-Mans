@@ -3881,6 +3881,7 @@ paths:
   /game/registration/teams/{teamId}/confirm:
     post:
       operationId: confirmRegistrationTeam
+      description: Confirms the team and marks all current roster members ready. Existing readiness timestamps are preserved.
       security:
         - cookieAuth: []
       parameters:

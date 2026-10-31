@@ -1482,6 +1482,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Confirms the team and marks all current roster members ready. Existing readiness timestamps are preserved. */
         post: operations["confirmRegistrationTeam"];
         delete?: never;
         options?: never;

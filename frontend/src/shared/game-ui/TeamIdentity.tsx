@@ -8,6 +8,7 @@ import { ParticipantNamesList } from './ParticipantNamesList.tsx'
 export function TeamIdentity({
   name,
   participants,
+  roster,
   emptyLabel,
   status,
   leading,
@@ -20,6 +21,7 @@ export function TeamIdentity({
 }: {
   name: string
   participants: readonly string[]
+  roster?: ReactNode
   emptyLabel: string
   status?: ReactNode
   leading?: ReactNode
@@ -44,16 +46,18 @@ export function TeamIdentity({
         textFlow={textFlow}
       />
       {divider ? <RoundBriefingDivider sx={{ my: 0.5 }} /> : null}
-      <ParticipantNamesList
-        names={participants}
-        textFlow={textFlow}
-        minimumRows={minimumParticipantRows}
-        emptyLabel={emptyLabel}
-        variant={compact ? 'caption' : 'body2'}
-        dense={compact}
-        leadingMarker={participantMarkers}
-        {...(alignment ? { alignment } : {})}
-      />
+      {roster ?? (
+        <ParticipantNamesList
+          names={participants}
+          textFlow={textFlow}
+          minimumRows={minimumParticipantRows}
+          emptyLabel={emptyLabel}
+          variant={compact ? 'caption' : 'body2'}
+          dense={compact}
+          leadingMarker={participantMarkers}
+          {...(alignment ? { alignment } : {})}
+        />
+      )}
     </Stack>
   )
 }

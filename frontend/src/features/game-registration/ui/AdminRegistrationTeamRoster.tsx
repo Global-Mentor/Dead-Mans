@@ -68,9 +68,10 @@ export function AdminRegistrationTeamRoster({
           player={member.player}
           compact
           alignment="center"
+          metadataPlacement="start"
           testId={`admin-player-${member.player.userId}`}
           metadata={
-            expanded && canEditRoster ? (
+            expanded ? (
               <StatusBadge
                 textFlow="wrap"
                 density="compact"

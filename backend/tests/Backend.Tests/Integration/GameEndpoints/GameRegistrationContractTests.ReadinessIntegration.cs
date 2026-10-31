@@ -120,7 +120,18 @@ public sealed partial class GameRegistrationContractTests
         await SetReadinessAsync(first, false);
         var response = await admin.PostAsync($"/api/game/registration/teams/{teamId}/confirm", null);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.False((await response.Content.ReadFromJsonAsync<ApiTeam>())!.IsReady);
+        var confirmed = (await response.Content.ReadFromJsonAsync<ApiTeam>())!;
+        Assert.False(confirmed.IsReady);
+        Assert.Equal("confirmed", confirmed.Status);
+        Assert.All(confirmed.Members, member => Assert.NotNull(member.ReadyAtUtc));
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var team = await db.GameTeams.SingleAsync(candidate => candidate.Id == teamId);
+            var members = await db.GameTeamMembers.Where(member => member.TeamId == teamId && member.LeftAtUtc == null).ToListAsync();
+            Assert.Equal(team.ConfirmedAtUtc, members.Single(member => member.UserId == firstId).ReadyAtUtc);
+            Assert.All(members, member => Assert.NotNull(member.ReadyAtUtc));
+        }
         using (var scope = _factory.Services.CreateScope())
         {
             var reads = scope.ServiceProvider.GetRequiredService<IGameLifecycleReadStore>();

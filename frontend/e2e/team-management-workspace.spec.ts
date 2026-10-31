@@ -173,7 +173,11 @@ async function openWorkspace(
         }
         if (path.endsWith('/confirm')) {
           const team = teams.find((team) => path.includes('/' + team.teamId + '/'))!
+          team.members.forEach((member) => {
+            member.readyAtUtc ??= '2026-10-31T00:00:00Z'
+          })
           team.status = 'confirmed'
+          team.isReady = false
           return route.fulfill({ json: team })
         }
         if (path.endsWith('/unconfirm')) {
@@ -221,6 +225,9 @@ async function openWorkspace(
   await page.evaluate(() => document.fonts.ready)
   return {
     teams,
+    setGameStatus: (status: 'ready' | 'active') => {
+      gameStatus = status
+    },
     requests,
     reads: () => snapshotReads,
     allowAssignment: () => {
@@ -238,6 +245,110 @@ async function openWorkspace(
 test.afterEach(async ({ page }) => {
   await expectUnifiedTypography(page)
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`readiness is visible in the roster and registration comes first at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const fixture = await openWorkspace(page, ['admin', 'viewer'], false, 'ready')
+    const row = page.getByTestId('admin-slot-1')
+    await expect(row.getByText('Формирование', { exact: true })).toBeVisible()
+    await expect(row.getByRole('listitem').nth(0)).toContainText('Готов')
+    await expect(row.getByRole('listitem').nth(1)).toContainText('Не готов')
+    const heading = await row.getByText('Ночной дозор', { exact: true }).boundingBox()
+    const number = await row.getByLabel('Команда 1', { exact: true }).boundingBox()
+    for (const index of [0, 1]) {
+      const member = row.getByRole('listitem').nth(index)
+      const name = await member.getByText(`Игрок 1.${index + 1}`, { exact: true }).boundingBox()
+      const readiness = await member
+        .getByText(index === 0 ? 'Готов' : 'Не готов', { exact: true })
+        .boundingBox()
+      expect(
+        Math.abs(name!.x + name!.width / 2 - heading!.x - heading!.width / 2),
+      ).toBeLessThanOrEqual(1)
+      expect(Math.abs(readiness!.x - number!.x)).toBeLessThanOrEqual(1)
+      expect(readiness!.x + readiness!.width).toBeLessThanOrEqual(name!.x)
+    }
+    await page.screenshot({ path: `../.tmp/agent-work/readiness/partial-${width}.png` })
+
+    const navigation = page.getByRole('navigation', { name: 'Основная навигация' })
+    if (width < 1200) {
+      await navigation.getByRole('button').click()
+      await expect(page.getByRole('menuitem').first()).toHaveText('Подать заявку')
+      await page.keyboard.press('Escape')
+    } else {
+      await expect(navigation.getByRole('link').first()).toHaveText('Подать заявку')
+    }
+    const team = fixture.teams[0]!
+    team.members.push({
+      player: { userId: 'third-player', login: 'third', displayName: 'Третий охотник' },
+      joinedAtUtc: '2026-10-30T12:00:00Z',
+      readyAtUtc: '2026-10-30T12:01:00Z',
+    })
+    team.members.forEach((member) => {
+      member.readyAtUtc = '2026-10-30T12:01:00Z'
+    })
+    team.isReady = true
+    await page.reload()
+    await expect(row.getByText('Готова', { exact: true })).toBeVisible()
+    await expect(row.getByText('Не готов', { exact: true })).toHaveCount(0)
+    await expect(row.getByText('Формирование', { exact: true })).toHaveCount(0)
+    await page.screenshot({ path: `../.tmp/agent-work/readiness/ready-${width}.png` })
+    await row.getByRole('button', { name: 'Управление: Ночной дозор', exact: true }).click()
+    const details = page.getByTestId('admin-team-details')
+    await expect(
+      details.getByTestId('admin-player-third-player').getByText('Готов', { exact: true }),
+    ).toBeVisible()
+    await expect(details.getByText('Готова', { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+
+    fixture.setGameStatus('active')
+    await page.reload()
+    if (width < 1200) {
+      await navigation.getByRole('button').click()
+      await expect(page.getByRole('menuitem').first()).toHaveText('Доска')
+      await expect(page.getByRole('menuitem', { name: 'Подать заявку' })).toHaveCount(0)
+    } else {
+      await expect(navigation.getByRole('link').first()).toHaveText('Доска')
+      await expect(navigation.getByRole('link', { name: 'Подать заявку' })).toHaveCount(0)
+    }
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`admin confirmation marks every player ready and preserves centered names at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const fixture = await openWorkspace(page, ['admin', 'viewer'], false, 'ready')
+    await page.getByRole('button', { name: 'Управление: Ночной дозор', exact: true }).click()
+    const details = page.getByTestId('admin-team-details')
+    const waiting = details.getByTestId('admin-player-member-0-1')
+    await expect(waiting.getByText('Не готов', { exact: true })).toBeVisible()
+    const name = await waiting.getByText('Игрок 1.2', { exact: true }).boundingBox()
+    const heading = await details
+      .getByTestId('admin-team-briefing')
+      .getByText('Ночной дозор', { exact: true })
+      .boundingBox()
+    const status = await waiting.getByText('Не готов', { exact: true }).boundingBox()
+    expect(
+      Math.abs(name!.x + name!.width / 2 - heading!.x - heading!.width / 2),
+    ).toBeLessThanOrEqual(1)
+    expect(status!.x + status!.width).toBeLessThanOrEqual(name!.x)
+    await page.screenshot({ path: `../.tmp/agent-work/readiness/aligned-details-${width}.png` })
+    await details.getByRole('button', { name: 'Готово: Подтвердить', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Подтвердить команду?' })
+    await expect(dialog).toContainText('отметить всех игроков готовыми')
+    await dialog.getByRole('button', { name: 'Подтвердить', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(details.getByText('Подтверждена', { exact: true })).toBeVisible()
+    await expect(details.getByText('Не готов', { exact: true })).toHaveCount(0)
+    await expect(waiting.getByText('Готов', { exact: true })).toBeVisible()
+    expect(fixture.requests.filter((request) => request.path.endsWith('/confirm'))).toHaveLength(1)
+    await page.screenshot({ path: `../.tmp/agent-work/readiness/confirmed-details-${width}.png` })
+  })
+}
 
 for (const size of [
   { width: 1440, height: 900 },
@@ -791,8 +902,8 @@ test('team refusal is shown once and confirmation help stays in the tooltip', as
   const details = page.getByTestId('admin-team-details')
   await expect(details.getByText('Команду можно подтвердить.', { exact: false })).toHaveCount(0)
   await details.getByRole('button', { name: 'Готово: Подтвердить', exact: true }).hover()
-  await expect(page.getByRole('tooltip')).toContainText(
-    'Допустить команду к игре и закрепить состав',
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Допустить команду к игре, отметить всех игроков готовыми и закрепить состав.',
   )
   await expect(details.getByText(/@hunter/)).toHaveCount(0)
   await expect(details.getByText(/Очередь.*Набор/)).toHaveCount(0)
@@ -904,7 +1015,7 @@ for (const width of [1440, 768, 390, 320]) {
       const playerBox = await player.boundingBox()
       expect(playerBox!.height).toBeLessThanOrEqual(70)
       await expect(player.getByText('Игрок 6.1', { exact: true })).toBeVisible()
-      await expect(player.getByText('Готов', { exact: true })).toHaveCount(0)
+      await expect(player.getByText('Готов', { exact: true })).toBeVisible()
       await expect(player.getByRole('button')).toHaveCount(0)
       await page.screenshot({
         path: testInfo.outputPath('compact-confirmed.png'),
@@ -1102,8 +1213,8 @@ for (const width of [1440, 768, 390, 320]) {
       expect(
         Math.abs(nickBox!.x + nickBox!.width / 2 - rowBox!.x - rowBox!.width / 2),
       ).toBeLessThanOrEqual(1)
-      expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(nickBox!.x)
-      expect(stateBox!.x).toBeGreaterThan(nickBox!.x + nickBox!.width / 2)
+      expect(stateBox!.x + stateBox!.width).toBeLessThanOrEqual(nickBox!.x)
+      expect(menuBox!.x).toBeGreaterThanOrEqual(nickBox!.x + nickBox!.width)
       expect(
         Math.abs(stateBox!.y + stateBox!.height / 2 - nickBox!.y - nickBox!.height / 2),
       ).toBeLessThanOrEqual(1)
@@ -1161,7 +1272,8 @@ for (const width of [1440, 768, 390, 320]) {
           for (const key of ['x', 'y', 'width', 'height'] as const)
             expect(Math.abs(rectangles[index]![key] - initial[index]![key])).toBeLessThanOrEqual(1)
         }
-        await expect(details.getByText(/^(Готов|Не готов)$/)).toHaveCount(0)
+        await expect(details.getByText('Готов', { exact: true })).toHaveCount(1)
+        await expect(details.getByText('Не готов', { exact: true })).toHaveCount(slot === 6 ? 0 : 1)
       }
       if (width < 1200) await page.getByRole('tab', { name: /^Команды/ }).click()
       await page
