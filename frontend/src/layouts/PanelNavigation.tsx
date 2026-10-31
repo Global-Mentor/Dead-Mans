@@ -35,6 +35,7 @@ import {
 } from '../routes/app-routes.ts'
 import { useAuth } from '../shared/auth/use-auth.ts'
 import { huntBrassTitleSx } from '../shared/theme/surface-sx.ts'
+import { uiTokens } from '../shared/theme/tokens.ts'
 import { PanelAdminNavigation } from './PanelAdminNavigation.tsx'
 import { PanelPrimaryNavigation } from './PanelPrimaryNavigation.tsx'
 import { PanelProfileMenu } from './PanelProfileMenu.tsx'
@@ -169,7 +170,7 @@ export function PanelNavigation() {
                 xs: 'auto minmax(0, 1fr) auto',
                 lg: 'minmax(0, 1fr) auto minmax(0, 1fr)',
               },
-              minHeight: { xs: 50, lg: 58 },
+              minHeight: uiTokens.navigation.headerHeight,
               columnGap: { xs: 0.5, sm: 1.75, xl: 3.5 },
               alignItems: 'center',
             }}

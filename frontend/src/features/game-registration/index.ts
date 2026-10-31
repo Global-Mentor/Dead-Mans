@@ -41,3 +41,4 @@ export {
 } from './model/team-name.ts'
 export { searchRegistrationPlayers } from './model/player-search.ts'
 export { formatRegistrationTeamStatus } from './model/registration-team-status.ts'
+export { RegistrationTeamMarker } from './ui/RegistrationTeamMarker.tsx'

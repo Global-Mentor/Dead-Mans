@@ -169,7 +169,6 @@ export function MyTeamSection({
           team={team}
           capacity={capacity}
           showStatus={false}
-          showReadiness
           nameAction={
             canEditName ? (
               <HelpTooltip title={t('gameApplication.editTeamName')} describeChild arrow>

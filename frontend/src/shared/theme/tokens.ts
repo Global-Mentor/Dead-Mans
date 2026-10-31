@@ -31,6 +31,7 @@ export const uiTokens = {
     },
   },
   navigation: {
+    headerHeight: { xs: 50, lg: 58 },
     fontSize: 14,
     menuItemHeight: 28,
   },

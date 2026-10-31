@@ -134,9 +134,6 @@ export function GameBoardPage() {
       >
         {title}
       </Typography>
-      {snapshot.status === 'ready' ? (
-        <InlineNotice role="note">{t('gameBoard.openGameNotActive')}</InlineNotice>
-      ) : null}
       <Box
         component="section"
         aria-labelledby="game-board-title"

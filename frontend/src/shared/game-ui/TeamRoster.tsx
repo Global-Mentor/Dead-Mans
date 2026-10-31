@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { CenteredIdentityRow } from './CenteredIdentityRow.tsx'
 import { SectionCard } from '../ui/index.ts'
 
 export interface TeamPresentationMember {
@@ -22,6 +23,8 @@ export function TeamRoster({
 }) {
   const columns = Math.min(Math.max(members.length, 1), 3)
   const compact = density === 'compact'
+  const hasMemberControls = members.some((member) => member.detail || member.actions)
+  const minColumnWidth = hasMemberControls ? 280 : compact ? 120 : 144
   return (
     <Box sx={{ width: '100%', minWidth: 0, containerType: 'inline-size' }}>
       {members.length ? (
@@ -34,29 +37,13 @@ export function TeamRoster({
             display: 'grid',
             gap: 0.75,
             gridTemplateColumns: 'minmax(0, 1fr)',
-            [`@container (min-width: ${columns * (compact ? 120 : 144)}px)`]: {
+            [`@container (min-width: ${columns * minColumnWidth}px)`]: {
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
             },
           }}
         >
-          {members.map((member) => (
-            <SectionCard
-              component="li"
-              surface="inset"
-              key={member.id}
-              data-testid={member.testId}
-              borderStyle={member.pending ? 'dashed' : 'solid'}
-              sx={{
-                minWidth: 0,
-                px: compact ? 0.75 : 1,
-                py: compact ? 0.5 : 0.75,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
+          {members.map((member) => {
+            const identity = (
               <Typography
                 variant={compact ? 'body2' : 'body1'}
                 fontWeight={600}
@@ -65,10 +52,39 @@ export function TeamRoster({
               >
                 {member.name}
               </Typography>
-              {member.detail}
-              {member.actions}
-            </SectionCard>
-          ))}
+            )
+            return (
+              <SectionCard
+                component="li"
+                surface="inset"
+                key={member.id}
+                data-testid={member.testId}
+                borderStyle={member.pending ? 'dashed' : 'solid'}
+                sx={{
+                  minWidth: 0,
+                  px: compact ? 0.75 : 1,
+                  py: compact ? 0.5 : 0.75,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+              >
+                {member.detail || member.actions ? (
+                  <CenteredIdentityRow
+                    leading={member.detail}
+                    trailing={member.actions}
+                    trailingWidthLimit={0.4}
+                  >
+                    {identity}
+                  </CenteredIdentityRow>
+                ) : (
+                  identity
+                )}
+              </SectionCard>
+            )
+          })}
         </Box>
       ) : (
         <Typography variant="body2" color="text.secondary" textAlign="center">

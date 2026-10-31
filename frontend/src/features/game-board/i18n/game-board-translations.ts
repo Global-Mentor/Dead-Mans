@@ -90,8 +90,7 @@ const translations = {
     flowSummary: {
       preparationCompleted: 'The team is ready. OBS is clear; start the game separately.',
       showingResults: 'The saved result stays in OBS until you end the presentation.',
-      waitingForLaunch:
-        'Start the game in the launch section first. After that you can assign the active team and begin the round flow.',
+      waitingForLaunch: 'Game registration is open',
       finished: 'Results are available',
       selectActiveTeam: 'Current step: choose the active team before opening the next card.',
       selectCard: 'Current step: open a card on the board for the selected team.',
@@ -536,8 +535,7 @@ const translations = {
     flowSummary: {
       preparationCompleted: 'Команда готова. Экран OBS очищен; начните игру отдельной кнопкой.',
       showingResults: 'Итоги сохранены и остаются в OBS до завершения показа.',
-      waitingForLaunch:
-        'Сначала запустите игру в секции запуска. После этого можно назначать активную команду и начинать цикл раунда.',
+      waitingForLaunch: 'Открыта регистрация на игру',
       finished: 'Результаты доступны',
       selectActiveTeam:
         'Текущий шаг: выберите активную команду перед открытием следующей карточки.',
@@ -991,8 +989,7 @@ const translations = {
     flowSummary: {
       preparationCompleted: 'Команда готова. Екран OBS очищено; почніть гру окремою кнопкою.',
       showingResults: 'Підсумки збережено. Вони залишаються в OBS до завершення показу.',
-      waitingForLaunch:
-        'Спочатку запустіть гру в секції запуску. Після цього можна призначати активну команду й починати цикл раунду.',
+      waitingForLaunch: 'Відкрита реєстрація на гру',
       finished: 'Результати доступні',
       selectActiveTeam: 'Поточний крок: оберіть активну команду перед відкриттям наступної картки.',
       selectCard: 'Поточний крок: відкрийте картку на полі для вибраної команди.',
@@ -1443,8 +1440,7 @@ const translations = {
       preparationCompleted:
         'Drużyna jest gotowa. Ekran OBS jest czysty; rozpocznij grę osobnym przyciskiem.',
       showingResults: 'Zapisane wyniki pozostają w OBS do zakończenia prezentacji.',
-      waitingForLaunch:
-        'Najpierw uruchom grę w sekcji startu. Dopiero potem można wybrać aktywną drużynę i rozpocząć cykl rundy.',
+      waitingForLaunch: 'Rejestracja do gry jest otwarta',
       finished: 'Wyniki są dostępne',
       selectActiveTeam: 'Bieżący krok: wybierz aktywną drużynę przed otwarciem następnej karty.',
       selectCard: 'Bieżący krok: otwórz kartę na planszy dla wybranej drużyny.',

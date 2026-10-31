@@ -119,8 +119,8 @@ describe('TeamRegistrationsPage', () => {
     const row = screen.getByTestId('admin-slot-1')
     expect(within(row).getByText('Формирование')).toBeInTheDocument()
     const players = within(row).getAllByRole('listitem')
-    expect(players[0]).toHaveTextContent('Первый охотникГотов')
-    expect(players[1]).toHaveTextContent('Второй охотникНе готов')
+    expect(players[0]).toHaveTextContent('ГотовПервый охотник')
+    expect(players[1]).toHaveTextContent('Не готовВторой охотник')
 
     const readyTeam = {
       ...team,

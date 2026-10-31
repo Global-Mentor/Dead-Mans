@@ -1,5 +1,5 @@
 import { expectTeamPresentation } from './team-presentation-assertions.ts'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type Locator } from '@playwright/test'
 import { expectUnifiedTypography } from './typography-assertions.ts'
 
 async function openWorkspace(
@@ -264,8 +264,10 @@ for (const width of [390, 768, 1440]) {
       const readiness = (await member
         .getByText(index === 0 ? 'Готов' : 'Не готов', { exact: true })
         .boundingBox())!
-      expect(readiness.y).toBeGreaterThanOrEqual(name.y + name.height)
-      expect(readiness.x + readiness.width / 2).toBeCloseTo(name.x + name.width / 2, 0)
+      expect(readiness.x + readiness.width).toBeLessThanOrEqual(name.x)
+      expect(readiness.y + readiness.height / 2).toBeCloseTo(name.y + name.height / 2, 0)
+      const cell = (await member.boundingBox())!
+      expect(name.x + name.width / 2).toBeCloseTo(cell.x + cell.width / 2, 0)
     }
     await page.screenshot({ path: `../.tmp/agent-work/readiness/partial-${width}.png` })
 
@@ -339,8 +341,18 @@ for (const width of [390, 768, 1440]) {
           (await waiting.boundingBox())!.width / 2,
       ),
     ).toBeLessThanOrEqual(1)
-    expect(status!.y).toBeGreaterThanOrEqual(name!.y + name!.height)
-    await page.screenshot({ path: `../.tmp/agent-work/readiness/aligned-details-${width}.png` })
+    expect(status!.x + status!.width).toBeLessThanOrEqual(name!.x)
+    expect(status!.y + status!.height / 2).toBeCloseTo(name!.y + name!.height / 2, 0)
+    const menu = (await waiting
+      .getByRole('button', { name: 'Действия игрока Игрок 1.2' })
+      .boundingBox())!
+    expect(menu.x).toBeGreaterThanOrEqual(name!.x + name!.width)
+    expect(menu.y + menu.height / 2).toBeCloseTo(name!.y + name!.height / 2, 0)
+    await page.mouse.move(0, 0)
+    await page.screenshot({
+      path: `../.tmp/agent-work/roster-inline/admin-${width}.png`,
+      animations: 'disabled',
+    })
     await details.getByRole('button', { name: 'Готово: Подтвердить', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Подтвердить команду?' })
     await expect(dialog).toContainText('отметить всех игроков готовыми')
@@ -1232,10 +1244,10 @@ for (const width of [1440, 768, 390, 320]) {
       expect(
         Math.abs(nickBox!.x + nickBox!.width / 2 - rowBox!.x - rowBox!.width / 2),
       ).toBeLessThanOrEqual(1)
-      expect(stateBox!.y).toBeGreaterThanOrEqual(nickBox!.y + nickBox!.height)
-      expect(menuBox!.y).toBeGreaterThanOrEqual(stateBox!.y + stateBox!.height)
+      expect(stateBox!.x + stateBox!.width).toBeLessThanOrEqual(nickBox!.x)
+      expect(menuBox!.x).toBeGreaterThanOrEqual(nickBox!.x + nickBox!.width)
       for (const box of [stateBox!, menuBox!]) {
-        expect(box.x + box.width / 2).toBeCloseTo(rowBox!.x + rowBox!.width / 2, 0)
+        expect(box.y + box.height / 2).toBeCloseTo(nickBox!.y + nickBox!.height / 2, 0)
         expect(box.x).toBeGreaterThanOrEqual(rowBox!.x)
         expect(box.x + box.width).toBeLessThanOrEqual(rowBox!.x + rowBox!.width)
       }
@@ -1255,18 +1267,17 @@ for (const width of [1440, 768, 390, 320]) {
           invitationName!.x + invitationName!.width / 2 - invitedBox.x - invitedBox.width / 2,
         ),
       ).toBeLessThanOrEqual(1)
-      expect(invitationState!.y).toBeGreaterThanOrEqual(invitationName!.y + invitationName!.height)
-      expect(invitationState!.x + invitationState!.width / 2).toBeCloseTo(
-        invitedBox.x + invitedBox.width / 2,
+      expect(invitationState!.x + invitationState!.width).toBeLessThanOrEqual(invitationName!.x)
+      expect(invitationState!.y + invitationState!.height / 2).toBeCloseTo(
+        invitationName!.y + invitationName!.height / 2,
+        0,
+      )
+      expect(cancel!.x).toBeGreaterThanOrEqual(invitationName!.x + invitationName!.width)
+      expect(cancel!.y + cancel!.height / 2).toBeCloseTo(
+        invitationName!.y + invitationName!.height / 2,
         0,
       )
       await expectTeamPresentation(details.getByTestId('team-presentation'), 3)
-      expect(cancel!.y).toBeGreaterThanOrEqual(
-        Math.max(
-          invitationName!.y + invitationName!.height,
-          invitationState!.y + invitationState!.height,
-        ),
-      )
       const actions = details.getByRole('group', { name: 'Действия', exact: true })
       await actions.scrollIntoViewIfNeeded()
       const first = (await actions.getByRole('button').all()).map(
@@ -1578,3 +1589,46 @@ test('ready-team refusal confirms, keeps failures inline and centers informative
   await expect(dialog).toHaveCount(0)
   expect(fixture.requests.at(-1)!.path).toBe('/api/game/registration/teams/team-1/reject')
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`inline member controls preserve long nickname centering at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const fixture = await openWorkspace(page, ['admin', 'viewer'], false, 'ready')
+    const name = 'VeryLongHunterNickname_1234567890'
+    fixture.teams[0]!.members[0]!.player.displayName = name
+    await page.reload()
+    const row = page.getByTestId('admin-slot-1')
+    await expectTeamPresentation(row.getByTestId('team-presentation'), 2)
+    const assertMember = async (member: Locator) => {
+      const cell = (await member.boundingBox())!
+      const nick = (await member.getByText(name, { exact: true }).boundingBox())!
+      const ready = (await member.getByText('Готов', { exact: true }).boundingBox())!
+      expect(nick.x + nick.width / 2).toBeCloseTo(cell.x + cell.width / 2, 0)
+      expect(ready.x + ready.width).toBeLessThanOrEqual(nick.x)
+      expect(ready.y + ready.height / 2).toBeCloseTo(nick.y + nick.height / 2, 0)
+      expect(await member.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+      return nick
+    }
+    await assertMember(row.getByRole('listitem').first())
+    await row.getByRole('button', { name: /^Управление:/ }).click()
+    const member = page.getByTestId('admin-player-member-0-0')
+    const nick = await assertMember(member)
+    const menu = (await member
+      .getByRole('button', { name: `Действия игрока ${name}` })
+      .boundingBox())!
+    expect(menu.x).toBeGreaterThanOrEqual(nick.x + nick.width)
+    expect(menu.y + menu.height / 2).toBeCloseTo(nick.y + nick.height / 2, 0)
+    await page.mouse.move(0, 0)
+    await page.getByTestId('admin-team-briefing').screenshot({
+      path: `../.tmp/agent-work/public-guide-teams/admin-long-${width}.png`,
+      animations: 'disabled',
+    })
+    await member.getByRole('button', { name: `Действия игрока ${name}` }).click()
+    await expect(
+      page.getByRole('menuitem', { name: `Переместить ${name} в другую команду` }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+  })
+}

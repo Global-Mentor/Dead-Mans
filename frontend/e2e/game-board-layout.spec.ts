@@ -389,7 +389,7 @@ async function expandProgress(page: Page) {
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`pre-start cards explain the lifecycle restriction without an HTTP error at ${width}px`, async ({
+  test(`open registration has a concise status and disabled cards without a notice at ${width}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 })
@@ -399,15 +399,18 @@ for (const width of [390, 768, 1440]) {
     })
     const writes = await mockGame(page, 'ready')
     await page.goto('/panel/game-board')
-    await expect(page.getByRole('note')).toHaveText(
-      'Карточки можно открывать только во время активной игры. Сначала запустите игру.',
-    )
+    await expect(page.getByTestId('game-board-phase')).toHaveText('Открыта регистрация на игру')
+    await expect(
+      page.getByText(
+        'Карточки можно открывать только во время активной игры. Сначала запустите игру.',
+      ),
+    ).toHaveCount(0)
     await expect(page.locator('[data-cell-id="card-5"]')).toBeDisabled()
     await expect(page.locator('[data-cell-id="card-0"]')).toBeEnabled()
     expect(writes).toEqual([])
     expect(errors).toEqual([])
     await page.screenshot({
-      path: info.outputPath('ready-card-restriction.png'),
+      path: info.outputPath('registration-board.png'),
       animations: 'disabled',
     })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)

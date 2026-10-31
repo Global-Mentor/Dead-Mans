@@ -1,5 +1,6 @@
 import { Stack } from '@mui/material'
 import type { ReactNode } from 'react'
+import { uiTokens } from '../../../theme/tokens.ts'
 
 /** Mobile section shortcuts aligned with the existing site header. */
 export function SectionNavigation({ label, children }: { label: string; children: ReactNode }) {
@@ -12,7 +13,7 @@ export function SectionNavigation({ label, children }: { label: string; children
       sx={(theme) => ({
         display: { xs: 'flex', md: 'none' },
         position: 'sticky',
-        top: { xs: 148, sm: 76 },
+        top: uiTokens.navigation.headerHeight,
         zIndex: theme.zIndex.appBar - 1,
         mx: { xs: -1, sm: 0 },
         p: 1,

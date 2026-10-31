@@ -156,7 +156,7 @@ export function OpenTeamsSection({
                 panelId={contentId}
                 onExpandedChange={isForming ? setFormingExpanded : setReadyExpanded}
               >
-                {group.map((team) => {
+                {group.map((team, index) => {
                   const isMine = team.teamId === myTeamId
                   const canJoin = canJoinTeams && isTeamJoinable(team, capacity)
                   return (
@@ -164,6 +164,7 @@ export function OpenTeamsSection({
                       component="article"
                       aria-label={team.name?.trim() || t('gameApplication.unnamedTeam')}
                       key={team.teamId}
+                      tone={index % 2 ? 'alternate' : 'default'}
                       emphasis={isMine ? 'selected' : canJoin ? 'available' : 'none'}
                     >
                       <TeamSummary

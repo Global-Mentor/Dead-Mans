@@ -61,6 +61,27 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
 })
 
+test('public guide loads built chunks anonymously under the production CSP', async ({ page }) => {
+  const errors: string[] = []
+  const gameRequests: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await serveProductionApp(page, async (route) => {
+    gameRequests.push(new URL(route.request().url()).pathname)
+    await route.fulfill({ status: 401 })
+  })
+  await page.route(`${origin}/auth/me`, (route) => route.fulfill({ status: 204 }))
+  await page.goto(`${origin}/panel/game-guide#score`)
+  await expect(
+    page.getByRole('heading', { name: 'How to play Dead Mans', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Points and the team result', exact: true }),
+  ).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Sign in with Twitch' })).toBeVisible()
+  expect(gameRequests).toEqual([])
+  expect(errors).toEqual([])
+})
+
 for (const intent of ['hover', 'focus'] as const) {
   test(`navigation preloads the destination on ${intent} without changing the route`, async ({
     page,

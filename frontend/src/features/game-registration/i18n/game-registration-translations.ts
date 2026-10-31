@@ -1,5 +1,10 @@
 const translations = {
   en: {
+    teamNumber: 'Team {{slot}}',
+    closedTeam: 'Closed team',
+    closedTeamHint:
+      'Direct joining is closed. Players can only be added while the roster is forming.',
+    rosterCount: 'Roster: {{count}} / {{max}}',
     teamStatus: {
       forming: 'Forming',
       ready: 'Ready',
@@ -46,6 +51,11 @@ const translations = {
     },
   },
   ru: {
+    teamNumber: 'Команда {{slot}}',
+    closedTeam: 'Закрытая команда',
+    closedTeamHint:
+      'Вступление напрямую закрыто. Добавлять игроков можно только во время формирования состава.',
+    rosterCount: 'Состав: {{count}} / {{max}}',
     teamStatus: {
       forming: 'Формирование',
       ready: 'Готова',
@@ -92,6 +102,10 @@ const translations = {
     },
   },
   uk: {
+    teamNumber: 'Команда {{slot}}',
+    closedTeam: 'Закрита команда',
+    closedTeamHint: 'Прямий вступ закрито. Додавати гравців можна лише під час формування складу.',
+    rosterCount: 'Склад: {{count}} / {{max}}',
     teamStatus: {
       forming: 'Формування',
       ready: 'Готова',
@@ -138,6 +152,11 @@ const translations = {
     },
   },
   pl: {
+    teamNumber: 'Drużyna {{slot}}',
+    closedTeam: 'Zamknięta drużyna',
+    closedTeamHint:
+      'Bezpośrednie dołączanie jest zamknięte. Graczy można dodawać tylko podczas tworzenia składu.',
+    rosterCount: 'Skład: {{count}} / {{max}}',
     teamStatus: {
       forming: 'Formowanie',
       ready: 'Gotowa',
