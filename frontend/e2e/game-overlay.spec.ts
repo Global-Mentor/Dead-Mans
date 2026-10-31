@@ -23,13 +23,16 @@ async function centeredSceneBounds(page: Page, scene: Locator) {
 }
 
 async function briefingBounds(page: Page, scene = page.getByTestId('overlay-round-layout')) {
-  const bounds = (await scene.boundingBox())!
-  const team = (await page.getByTestId('overlay-team').boundingBox())!
-  const region = (await page.getByTestId('overlay-scene-region').boundingBox())!
-  expect(bounds.y - (team.y + team.height)).toBeCloseTo(12, 0)
-  expect(bounds.x + bounds.width / 2).toBeCloseTo(team.x + team.width / 2, 0)
-  expect(bounds.y + bounds.height).toBeLessThanOrEqual(region.y + region.height + 1)
-  return bounds
+  // ResizeObserver fitting can finish after CSS animations and viewport resizing.
+  await expect(async () => {
+    const bounds = (await scene.boundingBox())!
+    const team = (await page.getByTestId('overlay-team').boundingBox())!
+    const region = (await page.getByTestId('overlay-scene-region').boundingBox())!
+    expect(bounds.y - (team.y + team.height)).toBeCloseTo(12, 0)
+    expect(bounds.x + bounds.width / 2).toBeCloseTo(team.x + team.width / 2, 0)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(region.y + region.height + 1)
+  }).toPass({ timeout: 5000 })
+  return (await scene.boundingBox())!
 }
 
 test.beforeEach(async ({ page }) => {
@@ -288,9 +291,8 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   ]) {
     await page.setViewportSize(viewport)
     await settleOverlay(page)
-    const resized = (await panel.boundingBox())!
+    const resized = await briefingBounds(page, panel)
     expect(resized.x + resized.width / 2).toBeCloseTo(viewport.width / 2, 0)
-    await briefingBounds(page, panel)
     expect(resized.y).toBeGreaterThanOrEqual(23)
     expect(resized.y + resized.height).toBeLessThanOrEqual(viewport.height - 23)
   }
