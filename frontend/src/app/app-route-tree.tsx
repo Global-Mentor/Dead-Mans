@@ -21,6 +21,10 @@ const MainLayout = lazy(() =>
   import('../layouts/MainLayout.tsx').then((module) => ({ default: module.MainLayout })),
 )
 
+const GameGuideLayout = lazy(() =>
+  import('../layouts/GameGuideLayout.tsx').then((module) => ({ default: module.GameGuideLayout })),
+)
+
 const AuthLandingPage = lazy(() =>
   import('../features/auth/AuthLandingPage.tsx').then((module) => ({
     default: module.AuthLandingPage,
@@ -74,7 +78,7 @@ function createPanelChildRoute(route: (typeof panelRouteConfig)[number]): RouteO
 
 const panelChildRoutes: RouteObject[] = [
   { index: true, element: <PanelIndexRedirect /> },
-  ...panelRouteConfig.map(createPanelChildRoute),
+  ...panelRouteConfig.filter((route) => route.id !== 'game-guide').map(createPanelChildRoute),
   ...(UiStateGallery
     ? [
         {
@@ -100,6 +104,17 @@ export const appRoutes: RouteObject[] = [
   },
   lazyAuthRoute('/', AuthLandingPage),
   lazyAuthRoute('/auth/callback', TwitchAuthCallbackPage),
+  ...panelRouteConfig
+    .filter((route) => route.id === 'game-guide')
+    .map(({ fullPath, Page }) => ({
+      path: fullPath,
+      element: (
+        <Suspense fallback={<CenteredProgress minHeight="100vh" />}>
+          <GameGuideLayout />
+        </Suspense>
+      ),
+      children: [{ index: true, element: <Page /> }],
+    })),
   {
     path: panelRootPath,
     element: (

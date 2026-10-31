@@ -21,6 +21,7 @@ export function AppButton({
   children,
   labelAlignment = 'lineBox',
   framePlacement = 'outset',
+  size,
   ...props
 }: AppButtonProps) {
   const toneProps = resolveAppButtonTone(tone)
@@ -28,6 +29,7 @@ export function AppButton({
     <Button
       {...toneProps}
       {...props}
+      size={size}
       sx={mergeSx(
         tone === 'subtle'
           ? (theme) => ({
@@ -42,7 +44,7 @@ export function AppButton({
           : undefined,
         brand === 'twitch'
           ? {
-              px: 4,
+              px: size === 'small' ? 2 : 4,
               py: 1.2,
               backgroundColor: uiTokens.brand.twitch,
               border: 'none',

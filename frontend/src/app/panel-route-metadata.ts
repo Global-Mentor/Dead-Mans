@@ -175,7 +175,6 @@ export const panelRoutes = definePanelRouteDefinitions([
     id: 'game-guide',
     path: 'game-guide',
     labelKey: 'navigation.items.gameGuide.label',
-    allowedRoles: authenticatedPanelRoles,
     group: 'profile',
   }),
   createPanelRouteDefinition({

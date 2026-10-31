@@ -3,7 +3,35 @@ import { mkdir } from 'node:fs/promises'
 import { supportedLanguages } from '../src/locales/index.ts'
 import guideTranslations from '../src/features/game-guide/i18n/game-guide-translations.ts'
 import navigationTranslations from '../src/layouts/i18n/navigation-translations.ts'
+import authTranslations from '../src/features/auth/i18n/auth-translations.ts'
 import { mockGuideGame } from './support/game-guide-fixture.ts'
+
+for (const language of supportedLanguages) {
+  test(`anonymous guide header fits a narrow screen in ${language}`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 })
+    await page.addInitScript((locale) => localStorage.setItem('i18nextLng', locale), language)
+    await page.route('**/auth/me', (route) => route.fulfill({ status: 204 }))
+    await page.goto('/panel/game-guide#score')
+    await expect(
+      page.getByRole('heading', { name: guideTranslations[language].title }),
+    ).toBeVisible()
+    await page.evaluate(() => document.fonts.ready)
+    const header = page.getByRole('banner')
+    const selector = (await header.getByRole('combobox').boundingBox())!
+    const login = header.getByRole('button', { name: authTranslations[language].button })
+    const loginBox = (await login.boundingBox())!
+    expect(selector.x + selector.width).toBeLessThanOrEqual(loginBox.x)
+    expect(loginBox.x + loginBox.width).toBeLessThanOrEqual(320)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const headerBox = (await header.boundingBox())!
+    const navBox = (await page.locator('#guide-navigation').boundingBox())!
+    expect(navBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height)
+    await page.screenshot({
+      path: `../.tmp/agent-work/public-guide-teams/public-guide-narrow-${language}.png`,
+      animations: 'disabled',
+    })
+  })
+}
 
 // Explicitly regenerate product illustrations from the real UI and deterministic data.
 // Run with UPDATE_GAME_GUIDE_IMAGES=1 and --grep "capture guide".
@@ -351,3 +379,61 @@ test('guide top index remains usable in a short desktop window', async ({ page }
   await nav.getByRole('link', { name: guideTranslations.ru.sections.start }).click()
   await expect(page.locator('#start-title')).toBeInViewport()
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`anonymous guide opens directly without game requests at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
+    const gameRequests: string[] = []
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.route('**/auth/me', (route) => route.fulfill({ status: 204 }))
+    await page.route(
+      (url) => url.pathname.startsWith('/api/') || url.pathname.startsWith('/hubs/'),
+      (route) => {
+        gameRequests.push(new URL(route.request().url()).pathname)
+        return route.fulfill({ status: 401 })
+      },
+    )
+    const destination = '/panel/game-guide?from=shared#score'
+    await page.goto(destination)
+    await expect(page).toHaveURL(destination)
+    await expect(page.getByRole('heading', { name: guideTranslations.ru.title })).toBeVisible()
+    await expect(page.locator('#score-title')).toBeInViewport()
+    await page.reload()
+    await expect(page).toHaveURL(destination)
+    await expect(page.locator('#score-title')).toBeInViewport()
+    const headerBox = (await page.getByRole('banner').boundingBox())!
+    const navigationBox = (await page.locator('#guide-navigation').boundingBox())!
+    expect(navigationBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height)
+    const scoreBox = (await page.locator('#score-title').boundingBox())!
+    expect(scoreBox.y).toBeGreaterThanOrEqual(navigationBox.y + navigationBox.height)
+
+    const nav = page.getByRole('navigation', { name: guideTranslations.ru.contents })
+    await nav.getByRole('link', { name: guideTranslations.ru.sections.round, exact: true }).click()
+    const enlarge = page.getByRole('button', {
+      name: `Увеличить: ${guideTranslations.ru.images.board}`,
+    })
+    await enlarge.click()
+    const dialog = page.getByRole('dialog', { name: guideTranslations.ru.images.board })
+    await expect(dialog.getByRole('img')).toBeVisible()
+    expect(
+      await dialog.getByRole('img').evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    ).toBeGreaterThan(0)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await expect(enlarge).toBeFocused()
+    await page.evaluate(() => scrollTo(0, 0))
+    await page.evaluate(() => document.fonts.ready)
+    await expect(page.getByRole('button', { name: 'Войти через Twitch' })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/agent-work/public-guide-teams/public-guide-${width}.png`,
+      animations: 'disabled',
+    })
+    expect(gameRequests).toEqual([])
+    expect(errors).toEqual([])
+    await page.goto('/panel/game-board')
+    await expect(page).toHaveURL('/?returnTo=%2Fpanel%2Fgame-board')
+  })
+}

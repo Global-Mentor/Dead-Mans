@@ -189,6 +189,7 @@ try
     {
         app.MapFallbackToFile("/overlay", "index.html");
         app.MapFallbackToFile("/auth/callback", "index.html");
+        app.MapFallbackToFile("/panel/game-guide", "index.html").AllowAnonymous();
         app.MapFallbackToFile("/panel/{*path:nonfile}", "index.html")
             .RequireAuthorization();
     }

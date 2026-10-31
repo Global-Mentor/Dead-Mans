@@ -85,8 +85,9 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
 
     [Theory]
     [InlineData("/panel/game-board")]
-    [InlineData("/panel/game-guide?from=shared&section=rules")]
-    [InlineData("/panel/game-guide?query=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80%26rules")]
+    [InlineData("/panel/game-application?from=shared&section=rules")]
+    [InlineData("/panel/game-setup?query=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80%26rules")]
+    [InlineData("/panel/game-guide/extra")]
     public async Task ProductionPanelRoute_WhenAnonymous_PreservesDestinationOnSignInPage(string path)
     {
         using var factory = CreateProductionFactory(new Dictionary<string, string?>());
@@ -102,6 +103,38 @@ public sealed class ProductionConfigurationContractTests : IClassFixture<TestWeb
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal($"/?returnTo={Uri.EscapeDataString(path)}", response.Headers.Location?.OriginalString);
+    }
+
+    [Theory]
+    [InlineData("/panel/game-guide")]
+    [InlineData("/panel/game-guide/?from=shared")]
+    public async Task ProductionGuide_WhenAnonymous_ServesTheApplication(string path)
+    {
+        var webRoot = Directory.CreateTempSubdirectory("deadmans-guide-").FullName;
+        const string page = "<!doctype html><title>Public guide</title><div id=\"root\"></div>";
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(webRoot, "index.html"), page);
+            using var factory = CreateProductionFactory(new Dictionary<string, string?>())
+                .WithWebHostBuilder(builder => builder.UseWebRoot(webRoot));
+            using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://api.example.com")
+            });
+
+            var response = await client.GetAsync(path);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+            Assert.Equal(page, await response.Content.ReadAsStringAsync());
+            Assert.Null(response.Headers.Location);
+        }
+        finally
+        {
+            File.Delete(Path.Combine(webRoot, "index.html"));
+            Directory.Delete(webRoot);
+        }
     }
 
     [Fact]
