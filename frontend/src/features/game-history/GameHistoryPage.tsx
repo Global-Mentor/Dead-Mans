@@ -5,15 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { urlTabSelection } from '../../shared/routing/url-tab-selection.ts'
 import { useUrlSearchParams } from '../../shared/routing/use-url-search-params.ts'
 import type { components } from '../../shared/api/contracts/generated'
-import {
-  HistoryWorkspace,
-  PlayedCardPreviewDialog,
-  RoundBriefingPanel,
-} from '../../shared/game-ui/index.ts'
+import { PlayedCardPreviewDialog, RoundBriefingPanel } from '../../shared/game-ui/index.ts'
 import {
   AppButton,
   AsyncSection,
   FormTextField,
+  FormSelect,
   PageShell,
   PageStatePanel,
   SectionCard,
@@ -26,11 +23,10 @@ import {
   gameHistoryGamesQueryOptions,
 } from './api/game-history-queries.ts'
 import { sortTeamLeaderboardEntries } from './model/game-history-team-leaderboard.ts'
-import { normalizeStatus } from './model/game-history-view.ts'
+import { formatGameTimeLabel, normalizeStatus } from './model/game-history-view.ts'
 import { CurrentGameLeaderboard } from './ui/CurrentGameLeaderboard.tsx'
 import { HistoryBoardView } from './ui/HistoryBoardView.tsx'
 import { GameDetailsPanel } from './ui/GameHistoryDetailsPanel.tsx'
-import { GameSummaryButton } from './ui/GameHistoryOverview.tsx'
 
 type GameHistoryRound = components['schemas']['GameHistoryRoundItemDto']
 type GameHistoryBoard = 'realtime' | 'history'
@@ -48,7 +44,7 @@ export function GameHistoryPage({
   initialBoard = 'history',
   lockedBoard = 'history',
 }: GameHistoryPageProps = {}) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useUrlSearchParams()
   const selectTeam = (teamId: string) =>
     setSearchParams((current) => {
@@ -58,7 +54,6 @@ export function GameHistoryPage({
     })
   const requestedGameId = searchParams.get('gameId')
   const search = searchParams.get('q') ?? ''
-  const [pickerOpen, setPickerOpen] = useState(false)
   const [previewRound, setPreviewRound] = useState<GameHistoryRound | null>(null)
   const [activeBoardState, setActiveBoardState] = useState<GameHistoryBoard>(initialBoard)
   const activeBoard = lockedBoard ?? activeBoardState
@@ -263,109 +258,131 @@ export function GameHistoryPage({
               flexDirection: 'column',
             }}
           >
-            <HistoryWorkspace
-              title={t('gameHistory.completedGamesListTitle')}
-              selectedLabel={selectedGame?.gameTitle}
-              hasSelection={selectedCompletedGameId !== null}
-              pickerOpen={pickerOpen}
-              onPickerOpenChange={setPickerOpen}
-              tools={
-                <FormTextField
-                  density="compact"
-                  label={t('gameHistory.searchGames')}
-                  value={search}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    setSearchParams(
-                      (current) => {
-                        const next = new URLSearchParams(current)
-                        if (value) next.set('q', value)
-                        else next.delete('q')
-                        return next
-                      },
-                      { replace: true },
-                    )
-                  }}
-                  fullWidth
-                />
-              }
-              records={
-                <AsyncSection
-                  isLoading={gamesQuery.isLoading}
-                  isError={gamesQuery.isError}
-                  hasData={gamesQuery.data != null}
-                  isEmpty={visibleGames.length === 0}
-                  loadingMessage={t('gameHistory.loadingGames')}
-                  errorMessage={t('gameHistory.errorGames')}
-                  emptyMessage={t(
-                    search.trim() ? 'gameHistory.searchEmpty' : 'gameHistory.completedGamesEmpty',
-                  )}
-                  retryAction={
-                    <AppButton tone="ghost" onClick={() => void gamesQuery.refetch()}>
-                      {t('common.actions.retry')}
-                    </AppButton>
-                  }
-                >
-                  <Stack gap={0.6}>
-                    {visibleGames.map((game, index) => (
-                      <GameSummaryButton
-                        key={game.gameId}
-                        game={game}
-                        tone={index % 2 === 0 ? 'default' : 'alternate'}
-                        isSelected={game.gameId === selectedCompletedGameId}
-                        onClick={() => {
-                          setSearchParams((current) => {
-                            const next = new URLSearchParams(current)
-                            next.set('gameId', game.gameId)
-                            next.delete('teamId')
-                            next.delete('view')
-                            return next
-                          })
-                          setPickerOpen(false)
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                </AsyncSection>
-              }
+            <RoundBriefingPanel
+              component="section"
+              aria-label={t('gameHistory.completedGamesListTitle')}
+              data-testid="completed-game-picker"
+              sx={{ flexShrink: 0, mb: 1 }}
             >
-              <Box
-                key={selectedCompletedGameId}
-                sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+              <AsyncSection
+                isLoading={gamesQuery.isLoading}
+                isError={gamesQuery.isError}
+                hasData={gamesQuery.data != null}
+                loadingMessage={t('gameHistory.loadingGames')}
+                errorMessage={t('gameHistory.errorGames')}
+                isEmpty={completedGames.length === 0}
+                emptyMessage={t('gameHistory.completedGamesEmpty')}
+                retryAction={
+                  <AppButton tone="ghost" onClick={() => void gamesQuery.refetch()}>
+                    {t('common.actions.retry')}
+                  </AppButton>
+                }
               >
-                <AsyncSection
-                  isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
-                  isError={selectedGameDetailsQuery.isError}
-                  hasData={selectedGameDetailsQuery.data != null}
-                  isEmpty={selectedCompletedGameId === null}
-                  loadingMessage={t('gameHistory.loadingGameDetails')}
-                  errorMessage={t('gameHistory.errorGameDetails')}
-                  emptyMessage={t('gameHistory.completedGameSelectPrompt')}
-                  retryAction={
-                    <AppButton tone="ghost" onClick={() => void selectedGameDetailsQuery.refetch()}>
-                      {t('common.actions.retry')}
-                    </AppButton>
-                  }
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: 'minmax(0, 1fr)',
+                      sm: 'minmax(180px, 1fr) minmax(0, 3fr)',
+                    },
+                    gap: 1,
+                    alignItems: 'start',
+                  }}
                 >
-                  <GameDetailsPanel
-                    tabs={urlTabSelection(searchParams, setSearchParams, 'teams')}
-                    selectedTeamId={searchParams.get('teamId')}
-                    onSelectTeam={selectTeam}
-                    game={selectedGameDetailsQuery.data ?? null}
-                    onPreviewCard={setPreviewRound}
-                    onViewBoard={() => {
-                      if (selectedCompletedGameId)
-                        setSearchParams((current) => {
+                  <FormTextField
+                    density="compact"
+                    label={t('gameHistory.searchGames')}
+                    value={search}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      setSearchParams(
+                        (current) => {
                           const next = new URLSearchParams(current)
-                          next.set('gameId', selectedCompletedGameId)
-                          next.set('view', 'board')
+                          if (value) next.set('q', value)
+                          else next.delete('q')
                           return next
-                        })
+                        },
+                        { replace: true },
+                      )
                     }}
+                    fullWidth
                   />
-                </AsyncSection>
-              </Box>
-            </HistoryWorkspace>
+                  <FormSelect
+                    density="compact"
+                    label={t('gameHistory.completedGamesListTitle')}
+                    value={
+                      visibleGames.some((game) => game.gameId === selectedCompletedGameId)
+                        ? (selectedCompletedGameId ?? '')
+                        : ''
+                    }
+                    options={visibleGames.map((game) => ({
+                      value: game.gameId,
+                      label: `${game.gameTitle} · ${formatGameTimeLabel(game, t, i18n.resolvedLanguage)}`,
+                    }))}
+                    slotProps={{
+                      select: {
+                        displayEmpty: true,
+                        renderValue: () =>
+                          selectedGame
+                            ? `${selectedGame.gameTitle} · ${formatGameTimeLabel(selectedGame, t, i18n.resolvedLanguage)}`
+                            : '',
+                      },
+                      inputLabel: { shrink: true },
+                    }}
+                    disabled={visibleGames.length === 0}
+                    helperText={
+                      visibleGames.length === 0 ? t('gameHistory.searchEmpty') : undefined
+                    }
+                    onChange={(gameId) => {
+                      setSearchParams((current) => {
+                        const next = new URLSearchParams(current)
+                        next.set('gameId', gameId)
+                        next.delete('teamId')
+                        next.delete('view')
+                        return next
+                      })
+                    }}
+                    fullWidth
+                  />
+                </Box>
+              </AsyncSection>
+            </RoundBriefingPanel>
+            <Box
+              key={selectedCompletedGameId}
+              sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+            >
+              <AsyncSection
+                isLoading={selectedCompletedGameId !== null && selectedGameDetailsQuery.isLoading}
+                isError={selectedGameDetailsQuery.isError}
+                hasData={selectedGameDetailsQuery.data != null}
+                isEmpty={selectedCompletedGameId === null}
+                loadingMessage={t('gameHistory.loadingGameDetails')}
+                errorMessage={t('gameHistory.errorGameDetails')}
+                emptyMessage={t('gameHistory.completedGameSelectPrompt')}
+                retryAction={
+                  <AppButton tone="ghost" onClick={() => void selectedGameDetailsQuery.refetch()}>
+                    {t('common.actions.retry')}
+                  </AppButton>
+                }
+              >
+                <GameDetailsPanel
+                  tabs={urlTabSelection(searchParams, setSearchParams, 'teams')}
+                  selectedTeamId={searchParams.get('teamId')}
+                  onSelectTeam={selectTeam}
+                  game={selectedGameDetailsQuery.data ?? null}
+                  onPreviewCard={setPreviewRound}
+                  onViewBoard={() => {
+                    if (selectedCompletedGameId)
+                      setSearchParams((current) => {
+                        const next = new URLSearchParams(current)
+                        next.set('gameId', selectedCompletedGameId)
+                        next.set('view', 'board')
+                        return next
+                      })
+                  }}
+                />
+              </AsyncSection>
+            </Box>
           </Box>
           {showHistoryBoard ? (
             <AsyncSection

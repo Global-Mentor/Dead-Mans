@@ -128,7 +128,6 @@ export function GameDetailsPanel({
               <GameTeamResults
                 selectedTeamId={selectedTeamId}
                 onSelectTeam={onSelectTeam}
-                archived
                 boardLabels={game.board ?? undefined}
                 results={buildLeaderboardResults(teams, game.finalResult)}
                 onPreviewCard={onPreviewCard}
