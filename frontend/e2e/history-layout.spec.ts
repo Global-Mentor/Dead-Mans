@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectTeamPresentation } from './team-presentation-assertions.ts'
 
 const date = '2026-09-21T12:00:00Z'
 const games = Array.from({ length: 25 }, (_, index) => ({
@@ -203,7 +204,11 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
                 totalBonusDelta: 0,
                 totalKills: 5,
                 totalBounties: 2,
-                participantNames: ['Капитан Флинт', 'Энн Бонни'],
+                participantNames: [
+                  'Капитан Флинт',
+                  'Энн Бонни',
+                  'Охотник с очень длинным именем',
+                ].slice(0, index + 1),
                 finalScore: 100 - index * 10,
                 bestScore: 100,
                 penaltyTotal: index * 10,
@@ -306,19 +311,22 @@ for (const width of [390, 768, 1440, 2560]) {
     await page.goto('/panel/game-history')
     await expect(page.getByRole('heading', { name: 'Архивная игра 1', exact: true })).toBeVisible()
     const picker = page.getByRole('region', { name: 'Завершённые игры', exact: true })
-    if (width < 1000) {
-      await expect(page.locator('details').first()).not.toHaveAttribute('open', '')
-      await page.locator('details').first().locator('summary').click()
-    }
-    await page.getByRole('textbox', { name: 'Поиск игр' }).fill('игра 25')
-    const gameRow = picker.getByRole('button', { name: /Архивная игра 25/ })
-    const rowBox = await gameRow.boundingBox()
-    const searchBox = await page
-      .getByRole('textbox', { name: 'Поиск игр' })
-      .evaluate((input) => input.closest('.MuiFormControl-root')!.getBoundingClientRect().toJSON())
-    expect(Math.abs(rowBox!.x - searchBox.x)).toBeLessThanOrEqual(1)
-    expect(Math.abs(rowBox!.width - searchBox.width)).toBeLessThanOrEqual(1)
-    await gameRow.click()
+    const gamePicker = picker.getByRole('combobox', { name: 'Завершённые игры' })
+    const search = page.getByRole('textbox', { name: 'Поиск игр' })
+    await search.fill('несуществующая игра')
+    await expect(gamePicker).toHaveAttribute('aria-disabled', 'true')
+    await expect(page.getByRole('heading', { name: 'Архивная игра 1', exact: true })).toBeVisible()
+    await search.fill('игра 25')
+    await gamePicker.click()
+    await page.getByRole('option', { name: /Архивная игра 25/ }).click()
+    await expect(gamePicker).toBeFocused()
+    const pickerBox = (await picker.boundingBox())!
+    const tabsTop = (await page
+      .getByRole('tablist', { name: 'История завершённых игр' })
+      .boundingBox())!.y
+    expect(pickerBox.y + pickerBox.height).toBeLessThan(tabsTop)
+    expect(pickerBox.width).toBeGreaterThan(Math.min(width, 1800) * 0.85)
+    expect(Math.abs(pickerBox.x + pickerBox.width / 2 - width / 2)).toBeLessThanOrEqual(1)
     await expect(page.getByRole('heading', { name: 'Архивная игра 25', exact: true })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Игра', exact: true })).toHaveAttribute(
       'aria-selected',
@@ -337,7 +345,7 @@ for (const width of [390, 768, 1440, 2560]) {
     await expect(
       teamDetails.getByRole('heading', { name: 'Команда с длинным названием 2', exact: true }),
     ).toBeVisible()
-    if (width < 1400)
+    if (width < 1000)
       await page.getByRole('button', { name: 'Закрыть', exact: true }).last().click()
     await expect(page.getByText('Спасибо всем участникам!')).toBeHidden()
     const comment = page.getByRole('button', { name: 'Комментарий к игре', exact: true })
@@ -737,10 +745,8 @@ test('game archive retains tab and selected team while restoring games and searc
   await page.getByRole('row', { name: 'Команда с длинным названием 2', exact: true }).click()
   await page.getByRole('tab', { name: 'Викторина', exact: true }).click()
   const original = page.url()
-  await page
-    .getByRole('region', { name: 'Завершённые игры', exact: true })
-    .getByRole('button', { name: /Архивная игра 2 / })
-    .click()
+  await page.getByRole('combobox', { name: 'Завершённые игры' }).click()
+  await page.getByRole('option', { name: /^Архивная игра 2 ·/ }).click()
   await expect(page.getByRole('heading', { name: 'Архивная игра 2', exact: true })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Викторина', exact: true })).toHaveAttribute(
     'aria-selected',
@@ -762,20 +768,48 @@ test('game archive retains tab and selected team while restoring games and searc
   await expect(
     page.getByRole('row', { name: 'Команда с длинным названием 2', exact: true }),
   ).toHaveAttribute('aria-selected', 'true')
-  const picker = page.getByRole('region', { name: 'Завершённые игры', exact: true })
-  const rows = picker.getByRole('button')
-  const backgrounds = await rows.evaluateAll((elements) =>
-    elements.slice(0, 3).map((el) => getComputedStyle(el).backgroundImage),
+  const picker = page.getByRole('combobox', { name: 'Завершённые игры' })
+  await picker.click()
+  await expect(page.getByRole('option', { name: /^Архивная игра 1 ·/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
   )
-  expect(backgrounds[0]).not.toEqual(backgrounds[1])
-  expect(backgrounds[0]).toEqual(backgrounds[2])
+  await page.keyboard.press('Escape')
+  await expect(picker).toBeFocused()
   await page.screenshot({
     path: testInfo.outputPath('game-picker-centered.png'),
     animations: 'disabled',
   })
   await page.getByRole('textbox', { name: 'Поиск игр' }).fill('игра 25')
-  await picker.getByRole('button', { name: /Архивная игра 25/ }).click()
+  await picker.click()
+  await page.getByRole('option', { name: /Архивная игра 25/ }).click()
   await page.reload()
   await expect(page.getByRole('textbox', { name: 'Поиск игр' })).toHaveValue('игра 25')
   await expect(page.getByRole('heading', { name: 'Архивная игра 25', exact: true })).toBeVisible()
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`archived team identity balances one to three players at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockHistory(page)
+    await page.goto('/panel/game-history')
+    for (const count of [1, 2, 3]) {
+      await page
+        .getByRole('row', { name: `Команда с длинным названием ${count}`, exact: true })
+        .click()
+      const profile = page
+        .getByTestId('current-leaderboard-team-details')
+        .getByTestId('team-presentation')
+      await expectTeamPresentation(profile, count)
+      await profile.screenshot({
+        path: info.outputPath(`history-team-${count}.png`),
+        animations: 'disabled',
+      })
+      if (width < 1000)
+        await page.getByRole('button', { name: 'Закрыть', exact: true }).last().click()
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}

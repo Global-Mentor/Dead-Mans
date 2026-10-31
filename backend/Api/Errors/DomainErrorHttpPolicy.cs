@@ -8,6 +8,21 @@ namespace backend.Api.Errors;
 public static class DomainErrorHttpPolicy
 {
 #pragma warning disable CS8524
+    public static ApiErrorDescriptor FromOpenGameCell(OpenGameCellErrorCode error) =>
+        error switch
+        {
+            OpenGameCellErrorCode.None => new(StatusCodes.Status500InternalServerError,
+                AppMessages.Client.UnexpectedServerError, AppMessages.ErrorCodes.UnexpectedServerError),
+            OpenGameCellErrorCode.GameNotActive => new(StatusCodes.Status409Conflict,
+                AppMessages.Client.GameBoardGameNotActive, AppMessages.ErrorCodes.GameBoardGameNotActive),
+            OpenGameCellErrorCode.CellNotFound => new(StatusCodes.Status404NotFound,
+                AppMessages.Client.GameCellNotFound, AppMessages.ErrorCodes.GameBoardCellNotFound),
+            OpenGameCellErrorCode.ActiveTeamRequired => new(StatusCodes.Status409Conflict,
+                AppMessages.Client.GameActiveTeamRequired, AppMessages.ErrorCodes.GameBoardActiveTeamRequired),
+            OpenGameCellErrorCode.RoundInProgress => new(StatusCodes.Status409Conflict,
+                AppMessages.Client.GameRoundAlreadyInProgress, AppMessages.ErrorCodes.GameRoundAlreadyInProgress),
+        };
+
     public static ApiErrorDescriptor FromRegistration(GameRegistrationErrorCode error) =>
         error switch
         {

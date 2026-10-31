@@ -1,4 +1,4 @@
-import { TeamIdentity } from '../../../../shared/game-ui/index.ts'
+import { TeamPresentation } from '../../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../../shared/api/contracts/index.ts'
@@ -212,17 +212,19 @@ function TeamSpotlight({ team }: { team: GameTeamQueueItem | null }) {
   return (
     <SectionCard surface="inset" sx={{ minWidth: 0, p: 1.25 }}>
       <Stack spacing={1}>
-        <TeamIdentity
-          compact
-          alignment="center"
-          participantMarkers
-          divider
+        <TeamPresentation
+          density="compact"
           name={
             team
               ? formatManagementTeamName(t, team.teamName, team.teamSlotIndex)
               : t('gameBoard.managementActiveTeamNone')
           }
-          participants={team?.participants.map((participant) => participant.displayName) ?? []}
+          members={
+            team?.participants.map((participant) => ({
+              id: participant.userId,
+              name: participant.displayName,
+            })) ?? []
+          }
           emptyLabel={team ? t('gameBoard.roundSummaryNoParticipants') : ''}
         />
       </Stack>
@@ -248,24 +250,25 @@ function CompactTeamRow({
       selected={false}
       density="compact"
       onClick={onSelect}
-      sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 0.8 }}
+      sx={{ width: '100%', minWidth: 0 }}
     >
-      <StatusBadge
-        size="small"
-        density="tight"
-        variant="outlined"
-        label={`#${team.teamSlotIndex}`}
+      <TeamPresentation
+        density="compact"
+        name={formatManagementTeamName(t, team.teamName, team.teamSlotIndex)}
+        leading={
+          <StatusBadge
+            size="small"
+            density="compact"
+            variant="outlined"
+            label={team.teamSlotIndex}
+          />
+        }
+        members={team.participants.map((participant) => ({
+          id: participant.userId,
+          name: participant.displayName,
+        }))}
+        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
       />
-      <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={700} lineHeight={1.25}>
-          {formatManagementTeamName(t, team.teamName, team.teamSlotIndex)}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" lineHeight={1.25}>
-          {team.participants.length
-            ? team.participants.map((participant) => participant.displayName).join(', ')
-            : t('gameBoard.roundSummaryNoParticipants')}
-        </Typography>
-      </Stack>
     </SelectionRow>
   )
 }

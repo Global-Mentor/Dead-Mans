@@ -12,7 +12,7 @@ interface ImageFrameProps {
   loadingLabel: string
   errorLabel: string
   fit?: 'contain' | 'cover'
-  sizing?: 'intrinsic' | 'fill'
+  sizing?: 'intrinsic' | 'fill' | 'full-width'
   decorative?: boolean
   loading?: 'lazy' | 'eager'
   reveal?: 'instant' | 'fade'
@@ -93,7 +93,12 @@ function ImageFrameContent({
             : {}),
           ...(fit === 'cover' || sizing === 'fill'
             ? { position: 'absolute', inset: 0, width: '100%', height: '100%' }
-            : { maxWidth: '100%', maxHeight: 'inherit', width: 'auto', height: 'auto' }),
+            : {
+                maxWidth: '100%',
+                maxHeight: sizing === 'full-width' ? 'none' : 'inherit',
+                width: sizing === 'full-width' ? '100%' : 'auto',
+                height: 'auto',
+              }),
           objectFit: fit,
         }}
       />

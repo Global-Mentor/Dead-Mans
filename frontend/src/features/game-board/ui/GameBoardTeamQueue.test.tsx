@@ -67,16 +67,12 @@ it('marks membership and labels played positions', () => {
       ]}
     />,
   )
-  expect(screen.getByText('Ваша команда')).toHaveStyle({
-    clipPath: 'inset(50%)',
-    width: '1px',
-    height: '1px',
-  })
+  expect(screen.queryByText('Ваша команда')).not.toBeInTheDocument()
   expect(screen.getByLabelText('Место 1')).toHaveTextContent('1')
   expect(screen.getByRole('region', { name: 'В очереди · 0' })).toBeVisible()
 })
 
-it('ranks played teams by result and shows a diamond instead of a waiting slot number', () => {
+it('ranks played teams by result and shows the waiting queue number', () => {
   renderWithAppProviders(
     <GameBoardTeamQueue
       {...props}
@@ -106,7 +102,7 @@ it('ranks played teams by result and shows a diamond instead of a waiting slot n
 
   const waiting = screen.getByRole('region', { name: 'В очереди · 1' })
   expect(within(waiting).getByText('Ждут')).toBeVisible()
-  expect(within(waiting).queryByText('9')).not.toBeInTheDocument()
+  expect(within(waiting).getByText('9')).toBeVisible()
 
   const rows = within(screen.getByRole('region', { name: 'Сыграли' })).getAllByRole('listitem')
   const expectedNames = ['Лучший', 'Равный первый', 'Равный второй', 'Низкий', 'Без результата']

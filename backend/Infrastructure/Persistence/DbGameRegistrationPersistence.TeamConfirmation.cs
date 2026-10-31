@@ -76,11 +76,10 @@ public sealed partial class DbGameRegistrationPersistence
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameRequired);
         }
 
-        var memberCount = await _dbContext.GameTeamMembers.CountAsync(
-            member => member.TeamId == team.Id && member.LeftAtUtc == null,
-            cancellationToken
-        );
-        if (memberCount < minPlayersPerTeam || memberCount > maxPlayersPerTeam)
+        var members = await _dbContext.GameTeamMembers
+            .Where(member => member.TeamId == team.Id && member.LeftAtUtc == null)
+            .ToListAsync(cancellationToken);
+        if (members.Count < minPlayersPerTeam || members.Count > maxPlayersPerTeam)
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNotJoinable);
         }
@@ -97,6 +96,10 @@ public sealed partial class DbGameRegistrationPersistence
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        foreach (var member in members)
+        {
+            member.ReadyAtUtc ??= utcNow;
+        }
         team.Status = TeamStatusValue.Confirmed;
         team.ConfirmedAtUtc = utcNow;
         team.ConfirmedByUserId = adminUserId;

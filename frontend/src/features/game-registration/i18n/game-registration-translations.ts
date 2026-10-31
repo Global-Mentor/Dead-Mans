@@ -2,6 +2,7 @@ const translations = {
   en: {
     teamStatus: {
       forming: 'Forming',
+      ready: 'Ready',
       confirmed: 'Confirmed',
       disbanded: 'Disbanded',
     },
@@ -47,6 +48,7 @@ const translations = {
   ru: {
     teamStatus: {
       forming: 'Формирование',
+      ready: 'Готова',
       confirmed: 'Подтверждена',
       disbanded: 'Расформирована',
     },
@@ -92,6 +94,7 @@ const translations = {
   uk: {
     teamStatus: {
       forming: 'Формування',
+      ready: 'Готова',
       confirmed: 'Підтверджена',
       disbanded: 'Розформована',
     },
@@ -137,6 +140,7 @@ const translations = {
   pl: {
     teamStatus: {
       forming: 'Formowanie',
+      ready: 'Gotowa',
       confirmed: 'Potwierdzona',
       disbanded: 'Rozwiązana',
     },

@@ -71,6 +71,78 @@ afterEach(() => {
 })
 
 describe('TeamRegistrationsPage', () => {
+  it('shows player readiness in the team list and distinguishes ready from confirmed on refresh', () => {
+    const team = {
+      teamId: 'readiness-team',
+      name: 'Ночной дозор',
+      teamSlotIndex: 1,
+      teamSlotType: 'public',
+      recruitmentOpen: true,
+      status: 'forming',
+      isReady: false,
+      isActiveInGame: false,
+      isPlayed: false,
+      hasOpenedCard: false,
+      pendingInvitations: [],
+      members: [
+        {
+          player: { userId: 'ready-player', login: 'ready', displayName: 'Первый охотник' },
+          joinedAtUtc: '2026-10-30T12:00:00Z',
+          readyAtUtc: '2026-10-30T12:01:00Z',
+        },
+        {
+          player: { userId: 'waiting-player', login: 'waiting', displayName: 'Второй охотник' },
+          joinedAtUtc: '2026-10-30T12:00:00Z',
+          readyAtUtc: null as string | null,
+        },
+      ],
+    }
+    const snapshot = {
+      gameId: 'g',
+      gameStatus: 'ready',
+      minPlayersPerTeam: 2,
+      maxPlayersPerTeam: 2,
+      teams: [team],
+      availablePlayers: [],
+      teamSlots: [
+        {
+          teamSlotId: 'slot',
+          teamSlotIndex: 1,
+          teamSlotType: 'public',
+          teamId: team.teamId,
+          isAvailableForNewTeam: false,
+        },
+      ],
+    }
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(createPageController(snapshot))
+    const { rerender } = renderPage()
+    const row = screen.getByTestId('admin-slot-1')
+    expect(within(row).getByText('Формирование')).toBeInTheDocument()
+    const players = within(row).getAllByRole('listitem')
+    expect(players[0]).toHaveTextContent('Первый охотникГотов')
+    expect(players[1]).toHaveTextContent('Второй охотникНе готов')
+
+    const readyTeam = {
+      ...team,
+      isReady: true,
+      members: team.members.map((member) => ({ ...member, readyAtUtc: '2026-10-30T12:02:00Z' })),
+    }
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController({ ...snapshot, teams: [readyTeam] }),
+    )
+    rerender(<TeamRegistrationsPage />)
+    expect(within(row).getByText('Готова', { exact: true })).toBeInTheDocument()
+    expect(within(row).queryByText('Формирование')).not.toBeInTheDocument()
+
+    pageMocks.useTeamRegistrationsPage.mockReturnValue(
+      createPageController({ ...snapshot, teams: [{ ...team, status: 'confirmed' }] }),
+    )
+    rerender(<TeamRegistrationsPage />)
+    expect(within(row).getByText('Подтверждена')).toBeInTheDocument()
+    expect(within(row).queryByText('Готова', { exact: true })).not.toBeInTheDocument()
+    expect(screen.getByTestId('admin-player-waiting-player')).toHaveTextContent('Не готов')
+  })
+
   it('requires a ready roster and confirms refusal before notifying its members', () => {
     const rejectTeam = { isPending: false, variables: undefined, mutate: vi.fn() }
     const team = {

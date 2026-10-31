@@ -14,6 +14,14 @@ import { currentGameBoardQueryOptions } from './api/game-board-queries.ts'
 function getOpenCellErrorMessage(error: unknown, t: TFunction<'translation'>) {
   if (error instanceof ApiError) {
     if (
+      typeof error.details === 'object' &&
+      error.details !== null &&
+      'code' in error.details &&
+      error.details.code === API_ERROR_CODES.gameBoardGameNotActive
+    ) {
+      return t('gameBoard.openGameNotActive')
+    }
+    if (
       error.status === 409 &&
       typeof error.details === 'object' &&
       error.details !== null &&
@@ -75,7 +83,8 @@ export function useOpenGameBoardCell({
     () => hasPanelCapability('openGameBoardCell', user?.roles),
     [user?.roles],
   )
-  const hasActiveTeam = gameStatus !== 'active' || activeTeamId != null
+  const isGameActive = gameStatus === 'active'
+  const hasActiveTeam = activeTeamId != null
 
   const openCellMutation = useMutation({
     mutationFn: (cellId: string) => openGameBoardCell(cellId),
@@ -108,6 +117,10 @@ export function useOpenGameBoardCell({
       return
     }
 
+    if (!isGameActive) {
+      setToastMessage(t('gameBoard.openGameNotActive'))
+      return
+    }
     if (!hasActiveTeam) {
       setToastMessage(t('gameBoard.openActiveTeamRequired'))
       return
@@ -122,6 +135,11 @@ export function useOpenGameBoardCell({
 
   const confirmOpenCell = () => {
     if (!pendingCell || !confirmationOpen || submissionInFlight.current) {
+      return
+    }
+
+    if (!isGameActive) {
+      setConfirmationError(t('gameBoard.openGameNotActive'))
       return
     }
 
@@ -149,6 +167,7 @@ export function useOpenGameBoardCell({
     toastMessage,
     canOpenCells:
       canOpenCells &&
+      isGameActive &&
       hasActiveTeam &&
       !hasActiveRound &&
       !openCellMutation.isPending &&

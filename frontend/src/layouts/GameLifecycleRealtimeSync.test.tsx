@@ -3,7 +3,13 @@ import { cleanup, render, act } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
 
-const mocks = vi.hoisted(() => ({ subscribe: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  subscribe: vi.fn(),
+  refresh: vi.fn().mockResolvedValue(undefined),
+}))
+vi.mock('../features/game-board/api/refresh-game-lifecycle.ts', () => ({
+  refreshGameLifecycle: mocks.refresh,
+}))
 vi.mock('../shared/realtime/index.ts', () => ({
   realtimeHubs: {
     gameBoard: {
@@ -43,20 +49,10 @@ describe('GameLifecycleRealtimeSync', () => {
     await act(async () => {
       handlers.get('gameLifecycleChanged')!()
     })
-    for (const queryKey of [
-      ['gameSetup', 'draftSnapshot'],
-      ['gameBoard', 'currentSnapshot'],
-      ['gameBoard', 'currentTeamQueue'],
-      ['gameRegistration', 'snapshot'],
-      ['gameRegistration', 'adminSnapshot'],
-    ]) {
-      expect(invalidate).toHaveBeenCalledWith({ queryKey })
-    }
-    invalidate.mockClear()
+    expect(mocks.refresh).toHaveBeenCalledExactlyOnceWith(client)
     await subscription.onConnected()
-    expect(invalidate).toHaveBeenCalledTimes(4)
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
-    invalidate.mockClear()
+    expect(mocks.refresh).toHaveBeenCalledTimes(2)
+    expect(invalidate).not.toHaveBeenCalled()
     await act(async () => {
       handlers.get('registrationChanged')!()
     })

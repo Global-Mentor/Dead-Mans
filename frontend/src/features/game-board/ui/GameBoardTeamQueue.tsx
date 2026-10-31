@@ -1,7 +1,14 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
-import { AppButton, AsyncSection, RankBadge, StatusBadge } from '../../../shared/ui/index.ts'
+import {
+  AppButton,
+  AsyncSection,
+  RankBadge,
+  StatusBadge,
+  ItemCard,
+} from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { groupTeamQueueTeams, sortPlayedTeamsByScore } from '../model/team-queue-order.ts'
 import { GameBoardOrnamentDivider } from './GameBoardOrnamentDivider.tsx'
@@ -120,100 +127,45 @@ function QueueList({
         const score = team.finalScore ?? null
         const formatted = score === null ? null : new Intl.NumberFormat(i18n.language).format(score)
         return (
-          <Stack
+          <ItemCard
             component="li"
             key={team.teamId}
-            direction="row"
-            alignItems="center"
-            spacing={1}
-            sx={{
-              minWidth: 0,
-              py: 0.5,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              '&:first-of-type': { borderTop: '1px solid', borderTopColor: 'divider' },
-              ...(own
-                ? {
-                    borderLeft: '3px solid',
-                    borderLeftColor: 'primary.light',
-                    pl: 0.75,
-                    bgcolor: 'action.hover',
-                  }
-                : {}),
-            }}
+            density="compact"
+            emphasis={own ? 'selected' : 'none'}
+            sx={{ minWidth: 0, mb: 0.75 }}
           >
-            {ranked ? (
-              <RankBadge
-                rank={index + 1}
-                compact
-                ariaLabel={t('gameBoard.progress.place', { place: index + 1 })}
-              />
-            ) : (
-              <Box
-                component="span"
-                aria-hidden
-                sx={{
-                  width: 7,
-                  height: 7,
-                  flexShrink: 0,
-                  transform: 'rotate(45deg)',
-                  border: '1px solid',
-                  borderColor: own ? 'primary.light' : 'text.secondary',
-                  mx: 1,
-                }}
-              />
-            )}
-            <Typography
-              variant="body2"
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                position: 'relative',
-                fontWeight: own ? 700 : 500,
-                color: own ? 'primary.light' : 'text.primary',
-                overflowWrap: 'anywhere',
-              }}
-            >
-              {formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))}
-              {own ? (
-                <Box
-                  component="span"
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '1px',
-                    height: '1px',
-                    overflow: 'hidden',
-                    clipPath: 'inset(50%)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {t('gameBoard.progress.yourTeam')}
-                </Box>
-              ) : null}
-            </Typography>
-            {team.isPlayed ? (
-              <Stack spacing={0.5} alignItems="flex-end" sx={{ flexShrink: 0, maxWidth: '50%' }}>
-                <StatusBadge
-                  size="small"
-                  density="compact"
-                  variant="outlined"
-                  color={
-                    score === null || score === 0 ? 'default' : score > 0 ? 'success' : 'error'
-                  }
-                  aria-label={
-                    formatted === null
-                      ? t('gameBoard.teamQueueNoFinalScore')
-                      : t('gameBoard.teamQueueFinalScoreLabel', { score: formatted })
-                  }
-                  label={
+            <TeamPresentation
+              density="compact"
+              name={formatTeamNameWithFallback(team.teamName, t('gameBoard.teamQueueUnnamedTeam'))}
+              members={team.participants.map((player) => ({
+                id: player.userId,
+                name: player.displayName,
+              }))}
+              emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
+              leading={
+                ranked ? (
+                  <RankBadge
+                    rank={index + 1}
+                    compact
+                    ariaLabel={t('gameBoard.progress.place', { place: index + 1 })}
+                  />
+                ) : (
+                  <StatusBadge density="compact" variant="outlined" label={team.teamSlotIndex} />
+                )
+              }
+              status={
+                <>
+                  {team.isPlayed ? (
                     <Typography
-                      component="span"
-                      variant="inherit"
+                      variant="caption"
+                      aria-label={
+                        formatted === null
+                          ? t('gameBoard.teamQueueNoFinalScore')
+                          : t('gameBoard.teamQueueFinalScoreLabel', { score: formatted })
+                      }
                       color={
                         score === null || score === 0
-                          ? 'text.primary'
+                          ? 'text.secondary'
                           : score > 0
                             ? 'success.main'
                             : 'error.main'
@@ -223,16 +175,11 @@ function QueueList({
                         ? '-'
                         : t('boardCard.cellPlayedPoints', { score: formatted })}
                     </Typography>
-                  }
-                  sx={{
-                    flexShrink: 0,
-                    maxWidth: '100%',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                />
-              </Stack>
-            ) : null}
-          </Stack>
+                  ) : null}
+                </>
+              }
+            />
+          </ItemCard>
         )
       })}
     </Stack>

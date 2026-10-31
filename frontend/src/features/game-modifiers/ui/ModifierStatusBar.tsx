@@ -2,7 +2,7 @@ import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameModifierState } from '../../../shared/api/contracts/index.ts'
 import {
-  ParticipantNamesList,
+  TeamPresentation,
   RoundBriefingPanel,
   RoundBriefingDivider,
 } from '../../../shared/game-ui/index.ts'
@@ -133,24 +133,25 @@ export function ModifierStatusBar({
           sx={{ gridColumn: '1 / -1', '@media (min-width: 1000px)': { display: 'none' } }}
         />
         <Box sx={{ ...summaryCellSx, '@media (max-width: 359px)': { gridColumn: '1 / -1' } }}>
-          <Metric
-            appearance="summary"
-            density="compact"
-            label={t('gameModifiers.summaryCurrentTeam')}
-            value={currentTeamLabel}
-            help={t('gameModifiers.summaryCurrentTeamTooltip')}
-            description={
-              <ParticipantNamesList
-                names={currentTeamParticipantNames}
-                emptyLabel={currentTeamParticipantsEmptyLabel}
-                variant="body2"
-                direction="column"
-                dense
-                decorated
-                markerPlacement="leading"
-              />
-            }
-          />
+          <Box sx={{ width: '100%', minWidth: 0 }}>
+            <Metric
+              appearance="summary"
+              density="compact"
+              label={t('gameModifiers.summaryCurrentTeam')}
+              help={t('gameModifiers.summaryCurrentTeamTooltip')}
+              value={
+                <TeamPresentation
+                  density="compact"
+                  name={currentTeamLabel}
+                  members={currentTeamParticipantNames.map((name, index) => ({
+                    id: String(index),
+                    name,
+                  }))}
+                  emptyLabel={currentTeamParticipantsEmptyLabel}
+                />
+              }
+            />
+          </Box>
         </Box>
         <SectionDivider
           orientation="vertical"

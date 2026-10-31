@@ -318,7 +318,7 @@ describe('GameModifiersPage', () => {
     expect(within(summary).getByText('Битва в порту')).toBeInTheDocument()
     expect(within(summary).getByRole('button', { name: /^Просмотр карточки/ })).toBeVisible()
     expect(within(summary).queryByRole('button', { expanded: false })).not.toBeInTheDocument()
-    expect(within(summary).getByRole('list')).toHaveStyle({ flexDirection: 'column' })
+    expect(within(summary).getByRole('list')).toHaveStyle({ display: 'grid' })
 
     const pointsMetric = within(summary).getByRole('group', { name: 'Доступно очков' })
     expect(pointsMetric).toHaveAttribute('tabindex', '0')

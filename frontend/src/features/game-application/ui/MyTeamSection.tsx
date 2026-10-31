@@ -169,8 +169,6 @@ export function MyTeamSection({
           team={team}
           capacity={capacity}
           showStatus={false}
-          emphasizeName
-          capacityBelowName
           showReadiness
           nameAction={
             canEditName ? (
@@ -181,7 +179,6 @@ export function MyTeamSection({
                   disabled={disabled}
                   aria-label={t('gameApplication.editTeamName')}
                   sx={{
-                    ml: 'auto',
                     minWidth: 0,
                     flexShrink: 0,
                     gap: 0.5,

@@ -1,7 +1,7 @@
-import { Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { ParticipantNamesList } from '../../../shared/game-ui/index.ts'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { StatusBadge } from '../../../shared/ui/index.ts'
 import { buildModifierRuntimeUnits } from '../../game-modifiers/index.ts'
 import {
@@ -27,13 +27,17 @@ export function GameRoundContext({ activeRound }: { activeRound: GameRoundDetail
 
   return (
     <Stack direction="row" spacing={1} alignItems="flex-start" flexWrap="wrap" useFlexGap>
-      <StatusBadge
-        size="small"
-        variant="outlined"
-        label={formatTeamNameWithFallback(
+      <TeamPresentation
+        density="compact"
+        name={formatTeamNameWithFallback(
           activeRound.teamName,
           t('common.teamWithSlot', { slot: activeRound.teamSlotIndex }),
         )}
+        members={activeRound.participants.map((participant) => ({
+          id: participant.userId,
+          name: participant.displayName,
+        }))}
+        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
       />
       <StatusBadge
         size="small"
@@ -70,15 +74,6 @@ export function GameRoundContext({ activeRound }: { activeRound: GameRoundDetail
           label={t('gameBoard.roundSummaryExpiredTimer', { modifier: timer.modifierName })}
         />
       ))}
-      <Stack spacing={0.35}>
-        <Typography variant="caption" color="text.secondary">
-          {t('common.entities.players')}
-        </Typography>
-        <ParticipantNamesList
-          names={activeRound.participants.map((participant) => participant.displayName)}
-          emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
-        />
-      </Stack>
     </Stack>
   )
 }

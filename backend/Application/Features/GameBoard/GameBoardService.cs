@@ -95,44 +95,33 @@ public sealed class GameBoardService : IGameBoardService
             teamId
         );
 
-    public Task<bool> CurrentActiveGameHasActiveTeamAsync(CancellationToken cancellationToken = default)
-    {
-        return _repository.CurrentActiveGameHasActiveTeamAsync(cancellationToken);
-    }
-
-    public Task<bool> CurrentActiveGameHasActiveRoundAsync(CancellationToken cancellationToken = default)
-    {
-        return _repository.CurrentActiveGameHasActiveRoundAsync(cancellationToken);
-    }
-
-    public Task<bool> IsCurrentActiveGameCellAsync(
+    public async Task<OpenGameCellErrorCode> TryOpenCellAsync(
         Guid cellId,
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.IsCurrentActiveGameCellAsync(cellId, cancellationToken);
-    }
+        if (!await _repository.IsCurrentActiveGameCellAsync(cellId, cancellationToken))
+        {
+            return await ClassifyUnavailableCellAsync(cancellationToken);
+        }
 
-    public async Task<OpenGameCellResult?> TryOpenCellAsync(
-        Guid cellId,
-        CancellationToken cancellationToken = default
-    )
-    {
         if (!await _repository.CurrentActiveGameHasActiveTeamAsync(cancellationToken))
         {
-            return null;
+            return OpenGameCellErrorCode.ActiveTeamRequired;
         }
 
         if (await _repository.CurrentActiveGameHasActiveRoundAsync(cancellationToken))
         {
-            return null;
+            return OpenGameCellErrorCode.RoundInProgress;
         }
 
         var result = await _repository.TryOpenCellAsync(cellId, cancellationToken);
-        if (result is null || !result.StateChanged)
+        if (result is null)
         {
-            return result;
+            return await ClassifyUnavailableCellAsync(cancellationToken, checkRuntime: true);
         }
+
+        if (!result.StateChanged) return OpenGameCellErrorCode.None;
 
         await RealtimePublishGuard.TryPublishAsync(
             publishToken => _eventsPublisher.PublishCellOpenedAsync(
@@ -144,6 +133,19 @@ public sealed class GameBoardService : IGameBoardService
             cellId
         );
 
-        return result;
+        return OpenGameCellErrorCode.None;
+    }
+
+    private async Task<OpenGameCellErrorCode> ClassifyUnavailableCellAsync(
+        CancellationToken cancellationToken,
+        bool checkRuntime = false)
+    {
+        var board = await GetCurrentBoardAsync(cancellationToken);
+        if (board?.Status != GameStatusValue.Active) return OpenGameCellErrorCode.GameNotActive;
+        if (checkRuntime && !await _repository.CurrentActiveGameHasActiveTeamAsync(cancellationToken))
+            return OpenGameCellErrorCode.ActiveTeamRequired;
+        if (checkRuntime && await _repository.CurrentActiveGameHasActiveRoundAsync(cancellationToken))
+            return OpenGameCellErrorCode.RoundInProgress;
+        return OpenGameCellErrorCode.CellNotFound;
     }
 }

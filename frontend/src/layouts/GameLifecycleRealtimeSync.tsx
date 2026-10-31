@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   currentGameBoardQueryOptions,
   currentGameTeamQueueQueryOptions,
+  refreshGameLifecycle,
 } from '../features/game-board/index.ts'
-import { gameSetupDraftQueryOptions } from '../features/game-setup/index.ts'
 import {
   gameRegistrationAdminSnapshotQueryOptions,
   gameRegistrationSnapshotQueryOptions,
@@ -19,26 +19,12 @@ const eventName = realtimeHubs.gameBoard.events.gameLifecycleChanged
 // Shared navigation and registration state must update even outside the board page.
 export function GameLifecycleRealtimeSync() {
   const queryClient = useQueryClient()
-  const invalidate = useCallback(
-    async (includeBoard = true) => {
-      await Promise.all(
-        [
-          ...(includeBoard ? [currentGameBoardQueryOptions] : []),
-          currentGameTeamQueueQueryOptions,
-          gameSetupDraftQueryOptions,
-          gameRegistrationSnapshotQueryOptions,
-          gameRegistrationAdminSnapshotQueryOptions,
-        ].map(({ queryKey }) => refreshRealtimeQueries(queryClient, queryKey)),
-      )
-    },
-    [queryClient],
-  )
   const registerEventHandlers = useCallback(
     (connection: {
       on: (name: string, handler: () => void) => void
       off: (name: string, handler: () => void) => void
     }) => {
-      const handler = () => void invalidate()
+      const handler = () => void refreshGameLifecycle(queryClient)
       const registrationHandler = () => {
         void Promise.all(
           [
@@ -78,13 +64,12 @@ export function GameLifecycleRealtimeSync() {
         connection.off(realtimeHubs.gameBoard.events.twitchQuizStateChanged, twitchQuizHandler)
       }
     },
-    [invalidate, queryClient],
+    [queryClient],
   )
   useSignalrHubSubscription({
     hub: 'gameBoard',
     logLabel: 'Game lifecycle',
-    // The board subscriber performs its version-aware HTTP resync on reconnect.
-    onConnected: useCallback(() => invalidate(false), [invalidate]),
+    onConnected: useCallback(() => refreshGameLifecycle(queryClient), [queryClient]),
     registerEventHandlers,
   })
   return null

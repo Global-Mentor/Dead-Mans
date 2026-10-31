@@ -58,8 +58,7 @@ const translations = {
     rosterCount: 'Roster: {{count}} / {{max}}',
     selectTeam: 'Manage {{name}}',
     selectPrompt: 'Select a team to manage its roster.',
-    canConfirm:
-      'Admit the team to the game and lock its roster. Player readiness is not required for administrative confirmation.',
+    canConfirm: 'Admit the team to the game, mark every player ready and lock its roster.',
     addPlayer: 'Add player',
     create: 'Create team',
     title: 'Team management',
@@ -154,8 +153,7 @@ const translations = {
     rosterCount: 'Состав: {{count}} / {{max}}',
     selectTeam: 'Управление: {{name}}',
     selectPrompt: 'Выберите команду для управления составом.',
-    canConfirm:
-      'Допустить команду к игре и закрепить состав. Администратор может подтвердить её, даже если не все игроки отметили готовность.',
+    canConfirm: 'Допустить команду к игре, отметить всех игроков готовыми и закрепить состав.',
     addPlayer: 'Добавить игрока',
     create: 'Создать команду',
     title: 'Управление командами',
@@ -251,8 +249,7 @@ const translations = {
     rosterCount: 'Склад: {{count}} / {{max}}',
     selectTeam: 'Керування: {{name}}',
     selectPrompt: 'Виберіть команду для керування складом.',
-    canConfirm:
-      'Допустити команду до гри й закріпити склад. Адміністратор може підтвердити її, навіть якщо не всі гравці позначили готовність.',
+    canConfirm: 'Допустити команду до гри, позначити всіх гравців готовими й закріпити склад.',
     addPlayer: 'Додати гравця',
     create: 'Створити команду',
     title: 'Керування командами',
@@ -347,8 +344,7 @@ const translations = {
     rosterCount: 'Skład: {{count}} / {{max}}',
     selectTeam: 'Zarządzaj: {{name}}',
     selectPrompt: 'Wybierz drużynę, aby zarządzać składem.',
-    canConfirm:
-      'Dopuść drużynę do gry i zablokuj skład. Administrator może zatwierdzić drużynę bez gotowości wszystkich graczy.',
+    canConfirm: 'Dopuść drużynę do gry, oznacz wszystkich graczy jako gotowych i zablokuj skład.',
     addPlayer: 'Dodaj gracza',
     create: 'Utwórz drużynę',
     title: 'Zarządzanie drużynami',

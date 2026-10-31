@@ -1,17 +1,11 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../api/contracts/generated'
-import {
-  DisclosureSection,
-  InlineNotice,
-  ItemCard,
-  SectionCard,
-  SectionDivider,
-} from '../ui/index.ts'
+import { DisclosureSection, InlineNotice, ItemCard, SectionCard } from '../ui/index.ts'
 import { RoundScoreBreakdown } from './RoundScoreBreakdown.tsx'
 import { RoundScoreTotal } from './RoundScoreTotal.tsx'
 import { getPlayedCardModifierPoints } from './played-card-modifiers.ts'
-import { ParticipantNamesList } from './ParticipantNamesList.tsx'
+import { TeamPresentation } from './TeamPresentation.tsx'
 
 type PlayedCardPreviewRound = components['schemas']['GameHistoryRoundItemDto']
 
@@ -54,9 +48,9 @@ export function PlayedCardResultPanel({
               <Typography component="h3" variant="subtitle1" fontWeight={700}>
                 {t('gameHistory.cardPlayResultTitle')}
               </Typography>
-              <SectionDivider />
-              <PlayedCardTeam round={round} />
-              <SectionDivider />
+              <ItemCard frame="corner">
+                <PlayedCardTeam round={round} />
+              </ItemCard>
               <Box
                 sx={{
                   display: 'grid',
@@ -101,39 +95,14 @@ export function PlayedCardResultPanel({
 function PlayedCardTeam({ round }: { round: PlayedCardPreviewRound }) {
   const { t } = useTranslation()
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr)',
-        flex: 1,
-        alignContent: 'center',
-        alignItems: 'center',
-        textAlign: 'center',
-        gap: 2,
-      }}
-    >
-      <Stack spacing={0.5}>
-        <Typography component="h4" variant="body2" color="text.secondary">
-          {t('gameHistory.participantsLabel')}
-        </Typography>
-        <Typography component="h4" variant="h5" fontWeight={700}>
-          {round.teamName?.trim() || t('common.teamWithSlot', { slot: round.teamSlotIndex })}
-        </Typography>
-      </Stack>
-      {round.participants.length > 0 ? (
-        <ParticipantNamesList
-          names={round.participants.map((participant) => participant.displayName)}
-          emptyLabel={t('gameHistory.noParticipants')}
-          variant="body1"
-          decorated
-          markerPlacement="leading"
-        />
-      ) : (
-        <Typography variant="body2" color="text.secondary">
-          {t('gameHistory.noParticipants')}
-        </Typography>
-      )}
-    </Box>
+    <TeamPresentation
+      name={round.teamName?.trim() || t('common.teamWithSlot', { slot: round.teamSlotIndex })}
+      members={round.participants.map((participant) => ({
+        id: participant.userId,
+        name: participant.displayName,
+      }))}
+      emptyLabel={t('gameHistory.noParticipants')}
+    />
   )
 }
 

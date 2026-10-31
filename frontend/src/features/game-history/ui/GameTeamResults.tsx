@@ -14,19 +14,16 @@ export function GameTeamResults({
   results,
   boardLabels,
   onPreviewCard,
-  archived = false,
 }: {
   selectedTeamId: string | null
   onSelectTeam: (teamId: string) => void
   results: readonly LeaderboardResult[]
   boardLabels?: GameHistoryBoardLabels | undefined
   onPreviewCard: (round: components['schemas']['GameHistoryRoundItemDto']) => void
-  archived?: boolean
 }) {
   const { t } = useTranslation()
   const [teamDialogOpen, setTeamDialogOpen] = useState(false)
-  // The archive also reserves a 300px picker beside this workspace.
-  const isWide = useMediaQuery(archived ? '(min-width: 1400px)' : '(min-width: 1000px)')
+  const isWide = useMediaQuery('(min-width: 1000px)')
   const isPhone = useMediaQuery('(max-width: 599px)')
   const selectedEntry =
     results.find((entry) => entry.teamId === selectedTeamId) ?? results[0] ?? null

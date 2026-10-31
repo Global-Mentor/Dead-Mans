@@ -316,6 +316,8 @@ public sealed partial class GameRegistrationContractTests
             content: null
         );
         Assert.Equal(HttpStatusCode.OK, confirmedResponse.StatusCode);
+        var confirmed = (await confirmedResponse.Content.ReadFromJsonAsync<RegistrationTeamDto>())!;
+        Assert.All(confirmed.Members, member => Assert.NotNull(member.ReadyAtUtc));
 
         await ClearRegistrationDataAsync();
         var unnamedPlayerId = Guid.NewGuid();
@@ -333,6 +335,12 @@ public sealed partial class GameRegistrationContractTests
             content: null
         );
         Assert.Equal(HttpStatusCode.Conflict, unnamedResponse.StatusCode);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.All(await db.GameTeamMembers.Where(member => member.TeamId == unnamedTeamId).ToListAsync(),
+                member => Assert.Null(member.ReadyAtUtc));
+        }
         Assert.Equal(
             AppMessages.ErrorCodes.GameRegistrationTeamNameRequired,
             (await unnamedResponse.Content.ReadFromJsonAsync<ErrorResponse>())!.Code

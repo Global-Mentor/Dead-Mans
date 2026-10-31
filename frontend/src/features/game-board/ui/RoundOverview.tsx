@@ -8,7 +8,7 @@ import type {
   GameTeamQueueItem,
 } from '../../../shared/api/contracts/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
-import { TeamBriefing, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
+import { TeamPresentation, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
 import { AppButton, InlineNotice, ItemCard } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/model/team-name.ts'
 import { buildGameManagementFlow } from '../model/game-management-flow.ts'
@@ -232,13 +232,15 @@ export function RoundOverview({
               }}
             >
               {team ? (
-                <TeamBriefing
-                  participantMarkerPlacement="none"
+                <TeamPresentation
                   name={formatTeamNameWithFallback(
                     team.teamName,
                     t('common.teamWithSlot', { slot: team.teamSlotIndex }),
                   )}
-                  participants={team.participants.map((participant) => participant.displayName)}
+                  members={team.participants.map((participant) => ({
+                    id: participant.userId,
+                    name: participant.displayName,
+                  }))}
                   emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
                 />
               ) : teamError && snapshot.activeTeamId ? (

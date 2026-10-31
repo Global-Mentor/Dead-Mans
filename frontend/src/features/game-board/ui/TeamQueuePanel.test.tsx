@@ -186,7 +186,7 @@ it('identifies active and personal teams and distinguishes signed, zero and miss
   )
   const active = screen.getByRole('article', { name: 'Активные' })
   expect(within(active).getByText('Играет')).toBeVisible()
-  expect(within(active).getByText('Ваша команда')).toBeVisible()
+  expect(within(active).queryByText('Ваша команда')).not.toBeInTheDocument()
   expect(screen.getByLabelText('Итоговый результат: -20 очков')).toHaveTextContent('-20')
   expect(screen.getByLabelText('Итоговый результат: 0 очков')).toHaveTextContent('0')
   expect(screen.getByLabelText('Нет завершённого раунда')).toHaveTextContent('-')

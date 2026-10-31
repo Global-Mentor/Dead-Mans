@@ -144,6 +144,24 @@ afterEach(() => {
 })
 
 describe('AdminModifierPanel quick wins', () => {
+  it.each(['ready', 'finished'])(
+    'does not fetch activation state while the game is %s',
+    async (status) => {
+      const catalog = await apiMocks.fetchGameModifierCatalog()
+      apiMocks.fetchGameModifierCatalog.mockResolvedValue(catalog)
+      apiMocks.fetchAdminGameModifierState.mockClear()
+      apiMocks.fetchCurrentGameBoardSnapshot.mockResolvedValue({
+        ...(await apiMocks.fetchCurrentGameBoardSnapshot()),
+        status,
+      })
+      renderPanel()
+      await screen.findByRole('combobox', { name: 'Игрок' })
+      await waitFor(() => expect(apiMocks.fetchCurrentGameBoardSnapshot).toHaveBeenCalled())
+      expect(apiMocks.fetchAdminGameModifierState).not.toHaveBeenCalled()
+      expect(apiMocks.fetchAdminActiveGameModifierActivations).not.toHaveBeenCalled()
+    },
+  )
+
   it('omits the player counter and redundant instruction', async () => {
     renderPanel()
 

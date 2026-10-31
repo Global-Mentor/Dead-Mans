@@ -103,11 +103,7 @@ it('keeps phase and team visible while details are collapsed, then shows the ros
   expect(within(activeTeam).getByRole('listitem')).toHaveTextContent('Игрок')
   expect(screen.getByText('Этап раунда')).toBeVisible()
   expect(screen.getByRole('region', { name: 'Очередь команд' })).toBeVisible()
-  expect(within(activeTeam).getByText('Ваша команда')).toHaveStyle({
-    clipPath: 'inset(50%)',
-    width: '1px',
-    height: '1px',
-  })
+  expect(within(activeTeam).queryByText('Ваша команда')).not.toBeInTheDocument()
   expect(screen.getByRole('region', { name: 'В очереди · 1' })).toBeVisible()
   expect(screen.getByTestId('game-board-phase')).toHaveTextContent('Выбор карточки')
   expect(
