@@ -154,9 +154,7 @@ const OverlayFrame = memo(function OverlayFrame({
                 position: 'relative',
                 minHeight: 0,
                 containerType: 'size',
-                '--overlay-scene-height': 'min(900px, 100cqh)',
-                '--overlay-content-height': 'min(720px, var(--overlay-scene-height))',
-                '--overlay-card-height': 'min(650px, calc(var(--overlay-scene-height) - 216px))',
+                '--overlay-scene-height': '100cqh',
               }}
             >
               <Box sx={{ ...centeredSceneSx, width: 'min(1600px, 100%)', height: '100%' }}>
@@ -177,6 +175,8 @@ const OverlayFrame = memo(function OverlayFrame({
                       key={frame.summary.roundId}
                       summary={frame.summary}
                       labels={{
+                        phaseLabel: t('gameOverlay.phaseLabel'),
+                        breakdown: t('common.scoreBreakdown.title'),
                         heading: t(
                           frame.summary.isFinal
                             ? 'gameOverlay.summaryFinal'

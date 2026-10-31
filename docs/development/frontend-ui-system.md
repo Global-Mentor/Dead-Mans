@@ -246,7 +246,7 @@ The architecture check also rejects local corner-radius recipes in features, lay
 
 ## Game board compositions
 
-- `ImageFrame` owns image loading/failure and resets on source changes. Card backgrounds are decorative and fail silently; preview and setup images show localized feedback. Consumers own the frame geometry, while the shared component owns the image fit and visibility. The default intrinsic sizing preserves existing media layouts; `sizing="fill"` scales an image into a bounded frame while preserving contain/cover behavior. Media messages belong to the common locale bundle. Optional `reveal="fade"` starts a 700ms opacity reveal only after the image loads, including cached images. Same-source refreshes retain the image without restarting the reveal; reduced motion disables it. The default remains instant.
+- `ImageFrame` owns image loading/failure and resets on source changes. Card backgrounds are decorative and fail silently; preview and setup images show localized feedback. Consumers own the frame geometry, while the shared component owns the image fit and visibility. The default intrinsic sizing preserves existing media layouts; `sizing="fill"` scales an image into a bounded frame while preserving contain/cover behavior. `sizing="full-width"` uses the entire available width and derives height from the image aspect ratio. Media messages belong to the common locale bundle. Optional `reveal="fade"` starts a 700ms opacity reveal only after the image loads, including cached images. Same-source refreshes retain the image without restarting the reveal; reduced motion disables it. The default remains instant.
 - `FormNumberField` composes the existing text field and action buttons for integer quantities. Manual input remains editable, including an empty value; native/schema validation remains authoritative. Step actions respect the current minimum/maximum and do not submit the form. `ControlledFormNumberField` integrates those edits with React Hook Form dirty tracking and reset. Use these fields for board result counts. Compact manual quiz adjustments use plain numeric text entry without step actions.
 - `TeamIdentity` shares team name, roster and a status slot between queue cards and the active team. Its optional `roster` slot accepts feature-owned participant details; the default participant-name list stays unchanged. Management quick-selection rows use compact name and participant text within the shared SelectionRow. Features provide translated names/statuses and keep ordering and actions; the shared content does not depend on API types.
 - The round assistant renders the flow model as a read-only sequence inside `StepDisclosure`. Player-facing phase labels describe the current state: active team selection, card selection, card opened, modifier selection, game preparation, gameplay and result summary. The management panel keeps imperative actions separate: start modifier selection, close ordering, start the game, finish gameplay and open the result form in that order. Modifier selection appears to players only after the start action succeeds.
@@ -311,8 +311,8 @@ results, retains its participant snapshot and shows the compact score breakdown 
 The summary uses two separate panels with a transparent gap. The left panel contains
 card metadata and its image; the right panel contains the result heading and score list.
 Card metadata and the result heading share the top grid row with equal height. Both panels
-share the same width, top and bottom edges. Card value uses the same typography as column
-and row. Below the headers, the image begins on the left and the top-aligned score list
+share the same width, top and bottom edges. Card metadata uses the same heading, ornamental
+divider and value typography during opening, modifier selection and results. Below the headers, the image begins on the left and the top-aligned score list
 begins on the right. Only scoring-capable
 modifiers receive initial zero rows; pure runtime rules never pad the score breakdown.
 Saving enters `showing_results` and holds the immutable result in OBS until the operator ends
@@ -371,8 +371,10 @@ the next centered scene enters; reduced motion makes this immediate. Only modifi
 right-hand gameplay region, starting at the 24px top margin.
 The board is centered in the available scene region. Round briefing and summary are
 horizontally centered and top-aligned, keeping a consistent 12px gap below the team strip. Round and
-summary are at most 1152px wide and 900px high, with a 720px minimum composition height
-limited by the region, a 24px column gap and a shared image-height budget. Dense content
+summary are at most 1152px wide, with a 24px column gap. Their natural height follows
+the full-width card image and the detail content; the whole composition scales only
+when needed to fit the available scene region. `BroadcastBriefing` owns the shared phase row,
+equal columns and card presentation for both scenes. Dense content
 still scales to fit. The board can use up to 1600px of width and all remaining height,
 without reserving empty sidebars for the team. Its width follows card proportions and
 available height. It appears only during card selection.
@@ -380,9 +382,11 @@ Cards retain 2:3 proportions. Dense boards scale as a complete composition to st
 the reserved region; very large boards consequently have smaller text. Document transparency
 is scoped to `/overlay` and is removed on navigation to ordinary application routes.
 During `card_opened`, `awaiting_modifiers` and `preparing`, `BroadcastRound` shows the saved card image
-on the right and active modifier names and icons in the adjacent column.
+on the left and active modifier names and icons on the right. Results keep the card on
+the left and replace the right column with the score breakdown.
 One shared briefing panel above both columns displays the server's current round phase,
 using the application phase names and updating in place through modifier selection and preparation.
+The same phase row is present during result review and final presentation, preserving panel geometry.
 The phase label and value share the same heading typography. Empty modifier lists show
 only the zero total, without an additional empty-state caption.
 The round composition is centered horizontally and anchored directly below
@@ -390,8 +394,11 @@ the horizontal team strip, without an additional vertical centering gap. Its two
 the same height, including when labels wrap. The card summary shows `column: row` and
 a localized `value: amount` line with units; column and row names come from the published
 board at the round's saved indices. Modifier entries appear below their summary panel.
-The round image uses intrinsic proportions and the shared overlay image-height limit; its frame follows
-the rendered image height instead of forcing a 2:3 canvas with empty vertical bands.
+The card image uses `ImageFrame` with `sizing="full-width"` and `fit="contain"` in both
+scenes: its width fills the media area and its height follows the original proportions,
+without a fixed height cap, cropping or distortion. The adjacent panel stretches to the
+same height. A taller score or modifier list can increase both panel heights; images
+remain proportional. The shared scene fitting uses all height available below the team strip.
 It disappears when gameplay starts. Missing media retains the card title and a localized fallback.
 During `preparation_completed`, all broadcast content and the backdrop are hidden.
 The management panel offers a separate gameplay-start command; modifier timers have not started.

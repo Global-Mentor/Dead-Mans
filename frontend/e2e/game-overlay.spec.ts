@@ -42,6 +42,12 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   await page.clock.install({ time: new Date('2030-01-01T00:00:00Z') })
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'ru'))
   const notify = await connectOverlayEvents(page)
+  await page.route('**/media/overlay-portrait.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="570" height="642"><rect width="570" height="642" fill="#282827"/><rect x="24" y="24" width="522" height="594" fill="#626052"/></svg>',
+    }),
+  )
   const score: components['schemas']['GameRoundScoreDetailsDto'] = {
     scoreUnit: 100,
     killsScore: 0,
@@ -76,7 +82,7 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
       id: 'review-round',
       title: 'Открытая карточка',
       cost: 100,
-      imageUrl: '/brand/share-card.png',
+      imageUrl: '/media/overlay-portrait.svg',
       columnLabel: 'Охота',
       rowLabel: '100',
       modifiers: [],
@@ -97,6 +103,8 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   })
   await page.goto(`/overlay#key=${key}`)
   const centralBounds = []
+  const cardBounds = []
+  const mediaBounds = []
   const board = page.getByTestId('overlay-board')
   await expect(board).toBeVisible()
   await settleOverlay(page)
@@ -116,6 +124,8 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
     await settleOverlay(page)
     await expect(page.getByTestId('overlay-backdrop')).toHaveCSS('opacity', '0.9')
     centralBounds.push(await briefingBounds(page))
+    cardBounds.push((await page.getByTestId('overlay-card').boundingBox())!)
+    mediaBounds.push((await page.getByTestId('overlay-card-image').boundingBox())!)
   }
   frame = { ...snapshot, phase: 'reviewing_results', board: null, summary }
   notify()
@@ -146,7 +156,7 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
       Math.min(...centralBounds.map((scene) => scene.height)),
   ).toBeLessThanOrEqual(240)
   expect(bounds.width).toBeCloseTo(1152, 0)
-  expect(bounds.height).toBeCloseTo(720, 0)
+  expect(bounds.height).toBeGreaterThan(720)
   expect(image.width).toBeGreaterThan(480)
   expect(team.y).toBeLessThan(image.y)
   expect(team.y).toBeCloseTo(24, 0)
@@ -155,7 +165,7 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   await expect(page.getByRole('heading', { name: 'Охотники болот' })).toHaveCount(1)
   const cardTitle = panel.getByRole('heading', { name: 'Охота: 100' })
   const cardHeader = cardTitle.locator('..').locator('..')
-  const scoreHeader = panel.getByRole('heading', { name: 'Подведение итогов' }).locator('..')
+  const scoreHeader = panel.getByRole('heading', { name: 'Как рассчитан итог' }).locator('..')
   const cardHeaderBounds = (await cardHeader.boundingBox())!
   const scoreHeaderBounds = (await scoreHeader.boundingBox())!
   const scoreBounds = (await breakdown.boundingBox())!
@@ -164,10 +174,24 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   const leftSection = panel
     .locator('section')
     .filter({ has: page.getByRole('heading', { name: 'Охота: 100' }) })
-  const rightSection = panel.getByRole('region', { name: 'Подведение итогов' })
+  const rightSection = panel.getByRole('region', { name: 'Как рассчитан итог' })
   await expect(rightSection).not.toContainText('Охотники болот')
   const leftBounds = (await leftSection.boundingBox())!
   const rightBounds = (await rightSection.boundingBox())!
+  const summaryMedia = (await panel.getByTestId('overlay-card-image').boundingBox())!
+  expect(leftBounds.x + leftBounds.width).toBeLessThan(rightBounds.x)
+  for (const card of cardBounds) {
+    expect(card.x).toBeCloseTo(leftBounds.x, 0)
+    expect(card.y).toBeCloseTo(leftBounds.y, 0)
+    expect(card.width).toBeCloseTo(leftBounds.width, 0)
+    expect(card.height).toBeCloseTo(leftBounds.height, 0)
+  }
+  for (const media of [...mediaBounds, summaryMedia]) {
+    expect(media.y).toBeCloseTo(summaryMedia.y, 0)
+    expect(media.height).toBeCloseTo(summaryMedia.height, 0)
+    // Only the panel padding and border remain below the full-height media frame.
+    expect(leftBounds.y + leftBounds.height - media.y - media.height).toBeCloseTo(13, 0)
+  }
   expect(leftBounds.y).toBeCloseTo(rightBounds.y, 0)
   expect(leftBounds.height).toBeCloseTo(rightBounds.height, 0)
   expect(leftBounds.width).toBeCloseTo(rightBounds.width, 0)
@@ -179,8 +203,8 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
     const style = getComputedStyle(element)
     return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight]
   }
-  expect(await panel.getByText('Стоимость: 100 очк.').evaluate(typography)).toEqual(
-    await cardTitle.evaluate(typography),
+  expect(await cardTitle.evaluate(typography)).toEqual(
+    await panel.getByTestId('overlay-summary-total').getByRole('heading').evaluate(typography),
   )
   expect(Math.abs(bounds.x + bounds.width / 2 - 960)).toBeLessThan(2)
   await mkdir('../.tmp/agent-work/overlay', { recursive: true })
@@ -237,7 +261,7 @@ test('summary starts with zero modifier rows, updates a partial total and holds 
   const finalFooter = panel.getByTestId('overlay-summary-total')
   await expect(finalFooter.getByRole('status')).toHaveText('Заработано: 445 очк.')
   const footerBounds = (await finalFooter.boundingBox())!
-  const resultsBounds = (await panel.getByRole('region', { name: 'Итоги раунда' }).boundingBox())!
+  const resultsBounds = (await panel.getByTestId('overlay-results').boundingBox())!
   expect(
     resultsBounds.y + resultsBounds.height - footerBounds.y - footerBounds.height,
   ).toBeLessThan(20)
@@ -633,11 +657,12 @@ test('modifier events update the card immediately, coalesce bursts and preserve 
     naturalRatio: el.naturalWidth / el.naturalHeight,
     frameHeight: el.parentElement!.parentElement!.getBoundingClientRect().height,
   }))
+  await expect(image).toHaveCSS('object-fit', 'contain')
   expect(imageSize.width / imageSize.height).toBeCloseTo(imageSize.naturalRatio, 2)
   expect(imageSize.frameHeight - imageSize.height).toBeLessThanOrEqual(27)
   const card = await page.getByTestId('overlay-card').boundingBox()
   const modifiers = await page.getByTestId('overlay-modifiers').boundingBox()
-  expect(modifiers!.x + modifiers!.width).toBeLessThan(card!.x)
+  expect(card!.x + card!.width).toBeLessThan(modifiers!.x)
   expect(card!.x + card!.width).toBeLessThanOrEqual(1920)
   expect(card!.y + card!.height).toBeLessThanOrEqual(1080)
   const description = (await page.getByTestId('overlay-card-description').boundingBox())!
@@ -701,7 +726,7 @@ test('modifier events update the card immediately, coalesce bursts and preserve 
   await expect(page.getByTestId('overlay-backdrop')).toHaveCSS('opacity', '0')
 })
 
-test('opened portrait card fits its frame without vertical letterboxing', async ({ page }) => {
+test('opened portrait card fills the available media frame without cropping', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 })
   await page.route('**/media/overlay-portrait.svg', (route) =>
     route.fulfill({
@@ -742,6 +767,7 @@ test('opened portrait card fits its frame without vertical letterboxing', async 
     height: el.getBoundingClientRect().height,
     frameHeight: el.parentElement!.parentElement!.getBoundingClientRect().height,
   }))
+  await expect(image).toHaveCSS('object-fit', 'contain')
   expect(size.width / size.height).toBeCloseTo(570 / 642, 2)
   expect(size.frameHeight - size.height).toBeLessThanOrEqual(27)
   const card = (await page.getByTestId('overlay-card').boundingBox())!
