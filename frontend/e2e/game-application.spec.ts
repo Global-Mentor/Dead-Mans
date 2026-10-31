@@ -174,16 +174,30 @@ for (const viewport of [
     await expect.poll(() => handshaken).toBe(true)
     const sectionNavigation = page.getByRole('navigation', { name: 'Разделы заявки' })
     if (width < 900) {
+      // The initial fixture is short; leave enough scroll range to reach the header.
+      await page.setViewportSize({ width, height: Math.min(height, 600) })
       await expect(sectionNavigation).toBeVisible()
       await expect(sectionNavigation).toHaveCSS('position', 'sticky')
+      await page.evaluate(() => document.fonts.ready)
+      const initialNavigationY = (await sectionNavigation.boundingBox())!.y
+      const headerBottom = await page
+        .getByRole('banner')
+        .evaluate((header) => header.getBoundingClientRect().bottom)
+      await page.evaluate(
+        (top) => window.scrollTo({ top, behavior: 'instant' }),
+        initialNavigationY - headerBottom - 20,
+      )
+      expect((await sectionNavigation.boundingBox())!.y).toBeCloseTo(headerBottom + 20, 0)
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
       await expect(sectionNavigation).toBeInViewport()
       const globalHeaderBox = await page.getByRole('banner').boundingBox()
       const sectionNavigationBox = await sectionNavigation.boundingBox()
-      expect(sectionNavigationBox!.y).toBeGreaterThanOrEqual(
-        globalHeaderBox!.y + globalHeaderBox!.height - 1,
-      )
+      expect(sectionNavigationBox!.y).toBeCloseTo(globalHeaderBox!.y + globalHeaderBox!.height, 0)
+      await page.screenshot({ path: testInfo.outputPath('application-navigation-sticky.png') })
       await page.evaluate(() => window.scrollTo(0, 0))
+      expect((await sectionNavigation.boundingBox())!.y).toBeCloseTo(initialNavigationY, 0)
+      await page.setViewportSize({ width, height })
+      await page.screenshot({ path: testInfo.outputPath('application-navigation-top.png') })
     }
     if (width >= 1024) {
       const roster = await page.locator('#application-roster').boundingBox()
