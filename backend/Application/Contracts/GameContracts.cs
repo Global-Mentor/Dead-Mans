@@ -65,6 +65,15 @@ public sealed record OpenGameCellResult(
     bool StateChanged
 );
 
+public enum OpenGameCellErrorCode
+{
+    None,
+    GameNotActive,
+    CellNotFound,
+    ActiveTeamRequired,
+    RoundInProgress,
+}
+
 public enum SetActiveGameTeamOutcome
 {
     Updated,

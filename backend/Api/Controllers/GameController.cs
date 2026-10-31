@@ -1,6 +1,8 @@
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Auth;
 using backend.Api.Contracts;
+using backend.Api.Errors;
+using backend.Application.Contracts;
 using backend.Api.Http;
 using backend.Api.Mapping;
 using backend.Messaging;
@@ -173,34 +175,9 @@ public sealed class GameController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> OpenCell(Guid cellId, CancellationToken cancellationToken)
     {
-        if (!await _gameBoardService.CurrentActiveGameHasActiveTeamAsync(cancellationToken))
-        {
-            if (await _gameBoardService.IsCurrentActiveGameCellAsync(cellId, cancellationToken))
-            {
-                return this.ConflictError(
-                    AppMessages.Client.GameActiveTeamRequired,
-                    AppMessages.ErrorCodes.GameBoardActiveTeamRequired
-                );
-            }
-        }
-        else if (await _gameBoardService.CurrentActiveGameHasActiveRoundAsync(cancellationToken)
-            && await _gameBoardService.IsCurrentActiveGameCellAsync(cellId, cancellationToken))
-        {
-            return this.ConflictError(
-                AppMessages.Client.GameRoundAlreadyInProgress,
-                AppMessages.ErrorCodes.GameRoundAlreadyInProgress
-            );
-        }
-
-        var openResult = await _gameBoardService.TryOpenCellAsync(cellId, cancellationToken);
-        if (openResult is null)
-        {
-            return this.NotFoundError(
-                AppMessages.Client.GameCellNotFound,
-                AppMessages.ErrorCodes.GameBoardCellNotFound
-            );
-        }
-
-        return NoContent();
+        var error = await _gameBoardService.TryOpenCellAsync(cellId, cancellationToken);
+        return error == OpenGameCellErrorCode.None
+            ? NoContent()
+            : this.Error(DomainErrorHttpPolicy.FromOpenGameCell(error));
     }
 }

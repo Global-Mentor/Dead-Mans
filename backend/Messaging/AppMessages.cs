@@ -31,6 +31,7 @@ public static class AppMessages
         public const string NoActiveOrFinishedGame = "No active or finished game was found.";
         public const string UnableToLoadCurrentGame = "Unable to load the current game.";
         public const string GameCellNotFound = "Requested game cell was not found.";
+        public const string GameBoardGameNotActive = "Cards can only be opened while the game is active.";
         public const string UnableToOpenGameCell = "Unable to open the requested game cell.";
         public const string GameActiveTeamRequired =
             "Select the active team before opening cards.";
@@ -253,6 +254,7 @@ public static class AppMessages
         public const string PermanentSuperAdminProtected =
             "role_administration.permanent_superadmin_protected";
         public const string GameBoardCellNotFound = "game_board.cell_not_found";
+        public const string GameBoardGameNotActive = "game_board.game_not_active";
         public const string GameBoardActiveTeamRequired = "game_board.active_team_required";
         public const string GameBoardActiveTeamNoActiveGame = "game_board.active_team_no_active_game";
         public const string GameBoardActiveTeamNotFound = "game_board.active_team_not_found";

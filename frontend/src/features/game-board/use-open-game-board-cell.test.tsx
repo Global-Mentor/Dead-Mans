@@ -7,6 +7,7 @@ import i18n from '../../i18n.ts'
 import type { GameBoardCell } from '../../shared/api/contracts/index.ts'
 import { AuthContext } from '../../shared/auth/auth-context.ts'
 import { useOpenGameBoardCell } from './use-open-game-board-cell.ts'
+import { ApiError } from '../../shared/api/errors/ApiError.ts'
 
 const apiMocks = vi.hoisted(() => ({
   openGameBoardCell: vi.fn(),
@@ -75,7 +76,10 @@ beforeEach(() => {
 
 describe('useOpenGameBoardCell', () => {
   it('keeps card content until the dismissal transition ends', () => {
-    const { result } = renderHook(() => useOpenGameBoardCell(), { wrapper: createWrapper() })
+    const { result } = renderHook(
+      () => useOpenGameBoardCell({ gameStatus: 'active', activeTeamId: 'team-1' }),
+      { wrapper: createWrapper() },
+    )
     act(() => result.current.requestOpenCell(cell))
     act(() => result.current.dismissPendingCell())
     expect(result.current.confirmationOpen).toBe(false)
@@ -162,7 +166,38 @@ describe('useOpenGameBoardCell', () => {
     await waitFor(() => expect(result.current.confirmationOpen).toBe(false))
   })
 
-  it.each(['game', 'team', 'round'] as const)(
+  it.each(['ready', 'finished', null])(
+    'does not request a card when the game is %s',
+    (gameStatus) => {
+      const { result } = renderHook(
+        () => useOpenGameBoardCell({ gameStatus, activeTeamId: 'team-1' }),
+        { wrapper: createWrapper() },
+      )
+      expect(result.current.canOpenCells).toBe(false)
+      act(() => result.current.requestOpenCell(cell))
+      expect(result.current.confirmationOpen).toBe(false)
+      expect(result.current.toastMessage).toBe(i18n.t('gameBoard.openGameNotActive'))
+      expect(apiMocks.openGameBoardCell).not.toHaveBeenCalled()
+    },
+  )
+
+  it('explains a server lifecycle conflict while preserving the card confirmation', async () => {
+    apiMocks.openGameBoardCell.mockRejectedValueOnce(
+      new ApiError('Conflict', { status: 409, details: { code: 'game_board.game_not_active' } }),
+    )
+    const { result } = renderHook(
+      () => useOpenGameBoardCell({ gameStatus: 'active', activeTeamId: 'team-1' }),
+      { wrapper: createWrapper() },
+    )
+    act(() => result.current.requestOpenCell(cell))
+    act(() => result.current.confirmOpenCell())
+    await waitFor(() =>
+      expect(result.current.confirmationError).toBe(i18n.t('gameBoard.openGameNotActive')),
+    )
+    expect(result.current.pendingCell).toEqual(cell)
+  })
+
+  it.each(['game', 'team', 'round', 'status'] as const)(
     'does not submit an outdated confirmation after the %s changes',
     (changed) => {
       const { result, rerender } = renderHook((props) => useOpenGameBoardCell(props), {
@@ -178,7 +213,7 @@ describe('useOpenGameBoardCell', () => {
       rerender({
         gameId: changed === 'game' ? 'game-2' : 'game-1',
         activeTeamId: changed === 'team' ? 'team-2' : 'team-1',
-        gameStatus: 'active',
+        gameStatus: changed === 'status' ? 'finished' : 'active',
         hasActiveRound: changed === 'round',
       })
       act(() => result.current.confirmOpenCell())

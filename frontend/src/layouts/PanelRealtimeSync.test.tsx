@@ -6,13 +6,30 @@ import { useSignalrHubSubscription } from '../shared/realtime/use-signalr-hub-su
 import { GameBoardQuizRealtimeSync } from '../features/game-board/realtime/GameBoardQuizRealtimeSync.tsx'
 import { GameLifecycleRealtimeSync } from './GameLifecycleRealtimeSync.tsx'
 import { gameModifierQueryKeys } from '../features/game-modifiers/api/game-modifier-queries.ts'
+import type { GameBoardSnapshot } from '../shared/api/contracts/index.ts'
 
 vi.mock('../shared/realtime/use-signalr-hub-subscription.ts', () => ({
   useSignalrHubSubscription: vi.fn(),
 }))
 vi.mock('../features/game-board/api/game-board-data-access.ts', async (original) => ({
   ...(await original<typeof import('../features/game-board/api/game-board-data-access.ts')>()),
-  fetchCurrentGameBoardSnapshot: vi.fn(async () => null),
+  fetchCurrentGameBoardSnapshot: vi.fn(
+    async () =>
+      ({
+        gameId: 'game-1',
+        title: 'Active game',
+        description: null,
+        status: 'active',
+        version: 2,
+        rows: 1,
+        cols: 1,
+        rowLabels: ['1'],
+        colLabels: ['A'],
+        cells: [],
+        enabledModifierIds: [],
+        activeModifiers: [],
+      }) satisfies GameBoardSnapshot,
+  ),
 }))
 afterEach(() => {
   cleanup()

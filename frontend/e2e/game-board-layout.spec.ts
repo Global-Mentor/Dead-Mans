@@ -386,6 +386,76 @@ async function expandProgress(page: Page) {
   await page.evaluate(() => document.fonts.ready)
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`pre-start cards explain the lifecycle restriction without an HTTP error at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const errors: string[] = []
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text())
+    })
+    const writes = await mockGame(page, 'ready')
+    await page.goto('/panel/game-board')
+    await expect(page.getByRole('note')).toHaveText(
+      'Карточки можно открывать только во время активной игры. Сначала запустите игру.',
+    )
+    await expect(page.locator('[data-cell-id="card-5"]')).toBeDisabled()
+    await expect(page.locator('[data-cell-id="card-0"]')).toBeEnabled()
+    expect(writes).toEqual([])
+    expect(errors).toEqual([])
+    await page.screenshot({
+      path: info.outputPath('ready-card-restriction.png'),
+      animations: 'disabled',
+    })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+test('a lifecycle event disables cards before refreshing active-game endpoints', async ({
+  page,
+}) => {
+  let sendEvent: ((message: string) => void) | undefined
+  const writes = await mockGame(page, 'active', 'admin', 'Ночные странники', (send) => {
+    sendEvent = send
+  })
+  let status = 'active'
+  const unavailableRequests: string[] = []
+  await page.route('**/api/game', (route) => route.fulfill({ json: { ...board, status } }))
+  page.on('request', (request) => {
+    if (
+      status === 'finished' &&
+      /\/registration\/admin|\/modifiers\/admin\/(state|activations)|finish-preview/.test(
+        request.url(),
+      )
+    )
+      unavailableRequests.push(request.url())
+  })
+  await page.goto('/panel/game-board')
+  await expect(page.locator('[data-cell-id="card-2"]')).toBeEnabled()
+  await page.locator('[data-cell-id="card-2"]').click()
+  const confirmation = page.getByRole('dialog', { name: 'Открыть карточку?' })
+  await expect(confirmation).toBeVisible()
+  await expect.poll(() => Boolean(sendEvent)).toBe(true)
+  status = 'finished'
+  sendEvent!(
+    JSON.stringify({
+      type: 1,
+      target: 'gameLifecycleChanged',
+      arguments: [
+        { gameId: board.gameId, status, boardVersion: 8, occurredAtUtc: '2026-10-30T12:00:00Z' },
+      ],
+    }) + '\u001e',
+  )
+  await expect(page.locator('[data-cell-id="card-2"]')).toBeDisabled()
+  await confirmation.getByRole('button', { name: 'Открыть', exact: true }).click()
+  await expect(confirmation).toContainText(
+    'Карточки можно открывать только во время активной игры.',
+  )
+  expect(writes).toEqual([])
+  expect(unavailableRequests).toEqual([])
+})
+
 const activeRoundFixture = {
   roundId: 'round-one',
   gameId: board.gameId,
@@ -4365,3 +4435,74 @@ for (const width of [390, 768, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   })
 }
+
+test('finishing a game closes the preview without refetching unavailable endpoints', async ({
+  page,
+}) => {
+  await mockGame(page)
+  let status = 'active'
+  let finishRequests = 0
+  const unavailableRequests: string[] = []
+  const errors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text())
+  })
+  page.on('request', (request) => {
+    if (
+      status === 'finished' &&
+      /\/registration\/admin|\/modifiers\/admin\/(state|activations)|finish-preview/.test(
+        request.url(),
+      )
+    )
+      unavailableRequests.push(request.url())
+  })
+  const summary = {
+    gameId: board.gameId,
+    gameTitle: board.title,
+    gameStatus: 'active',
+    boardVersion: board.version,
+    calculationVersion: 1,
+    completedRoundCount: 0,
+    cancelledRoundCount: 0,
+    totalKills: 0,
+    totalBounties: 0,
+    quizTotalPoints: 0,
+    pendingQuizQuestionCount: 0,
+    skippedQuizQuestionCount: 0,
+    teams: [],
+  }
+  await page.route('**/api/game', (route) => route.fulfill({ json: { ...board, status } }))
+  await page.route('**/api/game/lifecycle/games/board-layout/finish-preview', (route) =>
+    route.fulfill({
+      json: {
+        canFinish: true,
+        blockers: [],
+        warnings: [],
+        summary,
+      },
+    }),
+  )
+  await page.route('**/api/game/lifecycle/games/board-layout/finish', (route) => {
+    status = 'finished'
+    finishRequests++
+    return route.fulfill({
+      json: {
+        alreadyFinished: false,
+        summary: { ...summary, gameStatus: 'finished', finishedAtUtc: '2026-10-30T12:00:00Z' },
+      },
+    })
+  })
+  await page.goto('/panel/game-board')
+  await page.getByRole('button', { name: 'Управление игрой' }).click()
+  const section = page.getByTestId('management-finish-game-section')
+  await section.getByRole('button').first().click()
+  await section.getByRole('button', { name: 'Проверить и завершить игру', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Завершить всю игру' })
+  await dialog.getByRole('checkbox').check()
+  await dialog.getByRole('button', { name: 'Завершить игру навсегда', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.locator('[data-cell-id="card-2"]')).toBeDisabled()
+  expect(finishRequests).toBe(1)
+  expect(unavailableRequests).toEqual([])
+  expect(errors).toEqual([])
+})

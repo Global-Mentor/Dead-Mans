@@ -848,6 +848,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task OpenCell_WhenAdminAndCellMissing_ReturnsNotFound()
     {
+        await SeedSingleCellAsync();
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
 
         var response = await adminClient.PostAsync($"/api/game/cells/{Guid.NewGuid()}/open", content: null);
@@ -857,6 +858,42 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
         Assert.NotNull(payload);
         Assert.Equal(AppMessages.Client.GameCellNotFound, payload.Error);
         Assert.Equal(AppMessages.ErrorCodes.GameBoardCellNotFound, payload.Code);
+    }
+
+    [Theory]
+    [InlineData(GameStatusValue.Ready)]
+    [InlineData(GameStatusValue.Finished)]
+    public async Task OpenCell_WhenGameIsNotActive_ReturnsLifecycleConflictWithoutOpening(string status)
+    {
+        var cellId = await SeedSingleCellAsync();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var game = await db.BoardCells.Where(cell => cell.Id == cellId)
+            .Select(cell => cell.Board.Game).SingleAsync();
+        game.Status = status;
+        await db.SaveChangesAsync();
+        var publisher = new RecordingGameBoardEventsPublisher();
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin], publisher: publisher);
+
+        var response = await adminClient.PostAsync($"/api/game/cells/{cellId}/open", content: null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal(AppMessages.ErrorCodes.GameBoardGameNotActive, payload?.Code);
+        Assert.Empty(publisher.PublishedEvents);
+        db.ChangeTracker.Clear();
+        Assert.Empty(await db.GameRounds.ToListAsync());
+        Assert.Equal(BoardCellState.Closed, (await db.BoardCells.SingleAsync(cell => cell.Id == cellId)).State);
+    }
+
+    [Fact]
+    public async Task OpenCell_WhenNoGameExists_ReturnsLifecycleConflict()
+    {
+        using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        var response = await adminClient.PostAsync($"/api/game/cells/{Guid.NewGuid()}/open", content: null);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal(AppMessages.ErrorCodes.GameBoardGameNotActive, payload?.Code);
     }
 
     [Fact]
@@ -4500,20 +4537,7 @@ public sealed class GameContractTests : IClassFixture<TestWebApplicationFactory>
             CancellationToken cancellationToken = default
         ) => throw new InvalidOperationException("Simulated game board failure.");
 
-        public Task<bool> CurrentActiveGameHasActiveTeamAsync(
-            CancellationToken cancellationToken = default
-        ) => throw new InvalidOperationException("Simulated game board failure.");
-
-        public Task<bool> CurrentActiveGameHasActiveRoundAsync(
-            CancellationToken cancellationToken = default
-        ) => throw new InvalidOperationException("Simulated game board failure.");
-
-        public Task<bool> IsCurrentActiveGameCellAsync(
-            Guid cellId,
-            CancellationToken cancellationToken = default
-        ) => throw new InvalidOperationException("Simulated game board failure.");
-
-        public Task<OpenGameCellResult?> TryOpenCellAsync(
+        public Task<OpenGameCellErrorCode> TryOpenCellAsync(
             Guid cellId,
             CancellationToken cancellationToken = default
         ) => throw new InvalidOperationException("Simulated game board failure.");

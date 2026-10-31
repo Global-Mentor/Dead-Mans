@@ -190,7 +190,7 @@ describe('GameBoardRealtimeSync', () => {
 
     expect(mocks.fetchSnapshot).toHaveBeenCalledOnce()
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRounds', 'active'] })
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameModifiers'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameModifiers'], refetchType: 'none' })
   })
 
   it('resynchronizes the board after another client opens a card', async () => {
@@ -214,46 +214,5 @@ describe('GameBoardRealtimeSync', () => {
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gameRounds', 'active'] })
-  })
-
-  it('refreshes board-specific completion views without repeating the shared lifecycle invalidation', async () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined)
-    render(
-      <QueryClientProvider client={queryClient}>
-        <GameBoardRealtimeSync />
-      </QueryClientProvider>,
-    )
-    const options = mocks.useSignalrHubSubscription.mock.calls[0]?.[0]
-    const handlers = new Map<string, (event: unknown) => void>()
-    const connection = {
-      on: vi.fn((name: string, handler: (event: unknown) => void) => handlers.set(name, handler)),
-      off: vi.fn(),
-    }
-    const unregister = options.registerEventHandlers(connection)
-
-    await act(async () => {
-      handlers.get('gameLifecycleChanged')?.({
-        gameId: 'game-1',
-        status: 'finished',
-        boardVersion: 8,
-        occurredAtUtc: '2026-09-06T00:00:00Z',
-      })
-      await Promise.resolve()
-    })
-
-    for (const queryKey of [
-      ['gameRounds', 'active'],
-      ['gameHistory'],
-      ['gameModifiers'],
-      ['gameFinish'],
-    ]) {
-      expect(invalidate).toHaveBeenCalledWith({ queryKey })
-    }
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['gameBoard', 'currentSnapshot'] })
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['gameRegistration'] })
-
-    unregister()
-    expect(connection.off).toHaveBeenCalledWith('gameLifecycleChanged', expect.any(Function))
   })
 })

@@ -69,13 +69,14 @@ export function AdminModifierTool() {
   const catalogQuery = useQuery({ ...gameModifierCatalogQueryOptions, enabled: isAdmin })
   const gameQuery = useQuery({ ...currentGameBoardQueryOptions, enabled: isAdmin })
   const currentGameId = gameQuery.data?.gameId ?? null
+  const isGameActive = gameQuery.data?.status === 'active'
   const adminPlayersQuery = useQuery({
     ...adminGameModifierPlayersQueryOptions,
     enabled: isAdmin,
   })
   const adminActivationsQuery = useQuery({
     ...adminGameModifierActivationsQueryOptions,
-    enabled: isAdmin,
+    enabled: isAdmin && isGameActive,
   })
   const players = adminPlayersQuery.data?.players ?? emptyAdminPlayers
   const summary = adminPlayersQuery.data?.summary ?? emptyAdminPlayersSummary
@@ -88,7 +89,7 @@ export function AdminModifierTool() {
 
   const adminStateQuery = useQuery({
     ...adminGameModifierStateQueryOptions(effectiveSelectedPlayerId),
-    enabled: isAdmin && effectiveSelectedPlayerId.length > 0,
+    enabled: isAdmin && isGameActive && effectiveSelectedPlayerId.length > 0,
   })
 
   const invalidateModifierCaches = () => {
@@ -153,8 +154,8 @@ export function AdminModifierTool() {
     return null
   }
 
-  const state = adminStateQuery.data ?? null
-  const activeActivations = adminActivationsQuery.data ?? []
+  const state = isGameActive ? (adminStateQuery.data ?? null) : null
+  const activeActivations = isGameActive ? (adminActivationsQuery.data ?? []) : []
   const effectiveSelectedAvailableModifierId =
     selectedAvailableModifierId.length > 0 &&
     (state?.availableModifiers.some((item) => item.modifier.id === selectedAvailableModifierId) ??
