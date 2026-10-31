@@ -171,6 +171,7 @@ describe('PanelNavigation', () => {
     for (const label of ['Доска', 'Текущий раунд', 'Лидерборд', 'Подать заявку']) {
       expect(within(navigation).getByRole('link', { name: label })).toBeInTheDocument()
     }
+    expect(within(navigation).getAllByRole('link')[0]).toHaveAccessibleName('Подать заявку')
     expect(within(navigation).queryByRole('link', { name: 'Модификаторы' })).not.toBeInTheDocument()
     expect(within(navigation).queryByRole('link', { name: 'Викторина' })).not.toBeInTheDocument()
 

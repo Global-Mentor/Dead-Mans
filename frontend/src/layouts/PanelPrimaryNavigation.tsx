@@ -13,7 +13,12 @@ import {
 import type { GameBoardSnapshot } from '../shared/api/contracts/index.ts'
 import { NavigationChevron } from './NavigationChevron.tsx'
 
-const primaryRoutes = panelRoutes.filter((route) => route.group === 'player')
+const primaryRoutes = [
+  gameApplicationRoute,
+  ...panelRoutes.filter(
+    (route) => route.group === 'player' && route.id !== gameApplicationRoute.id,
+  ),
+]
 const historyRoutes = primaryRoutes.filter((route) => route.id.endsWith('history'))
 
 interface PanelPrimaryNavigationProps {
