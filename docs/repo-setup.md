@@ -81,6 +81,13 @@ emergencies) and rely on real reviews.
 
 ## Merge policy
 
+For an explicitly approved emergency release, the CI workflow can be dispatched
+on `main` with `release_only=true`. This skips quality gates for that manual run,
+builds and publishes the production image, then uses the normal immutable-image
+deployment and release verification. Push and pull-request checks stay unchanged.
+The production environment gate, deployment enable flag and superseded-release
+check still apply. Do not use this mode as the normal release path.
+
 Configured in **Settings → General → Pull Requests**.
 
 - **Squash merging only** - merge commits and rebase merging are disabled, so

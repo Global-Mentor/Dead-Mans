@@ -4,9 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      release_only:
+        description: 'Build and deploy main without quality gates (explicit emergency approval required)'
+        type: boolean
+        default: false
 
 jobs:
   backend-architecture:
+    if: ${{ !inputs.release_only }}
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +29,7 @@ jobs:
         run: dotnet test backend/tests/Backend.Tests/Backend.Tests.csproj --filter "FullyQualifiedName~Architecture|FullyQualifiedName~DomainErrorHttpPolicyTests"
 
   build:
+    if: ${{ !inputs.release_only }}
     runs-on: ubuntu-latest
     needs: backend-architecture
 
@@ -130,6 +138,7 @@ jobs:
         run: node deploy/verify-runtime-diagnostics.mjs deadmans-ci:pr
 
   dependency-audit:
+    if: ${{ !inputs.release_only }}
     runs-on: ubuntu-latest
 
     steps:
@@ -166,7 +175,10 @@ jobs:
           fi
 
   publish-image:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() && !cancelled() && github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'push' && needs.build.result == 'success' && needs.dependency-audit.result == 'success') ||
+       (github.event_name == 'workflow_dispatch' && inputs.release_only))
     runs-on: ubuntu-latest
     needs: [build, dependency-audit]
     permissions:
@@ -216,7 +228,7 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
   deploy-production:
-    if: vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    if: ${{ always() && !cancelled() && needs.publish-image.result == 'success' && vars.PRODUCTION_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     needs: publish-image
     timeout-minutes: 20
