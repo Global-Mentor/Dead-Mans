@@ -1,3 +1,4 @@
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -92,10 +93,18 @@ export function AdminTeamPlayerDialog({
       }
     >
       <Stack gap={1} sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>
-        <Typography textAlign="center" fontWeight={700} noWrap>
-          {target.team.name ||
-            t('teamRegistrations.teamNumber', { slot: target.team.teamSlotIndex })}
-        </Typography>
+        <TeamPresentation
+          density="compact"
+          name={
+            target.team.name ||
+            t('teamRegistrations.teamNumber', { slot: target.team.teamSlotIndex })
+          }
+          members={target.team.members.map(({ player }) => ({
+            id: player.userId,
+            name: player.displayName,
+          }))}
+          emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
+        />
         {errorMessage ? (
           <InlineNotice severity="error" sx={{ textAlign: 'center' }}>
             {errorMessage}

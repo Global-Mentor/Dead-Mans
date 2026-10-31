@@ -5,6 +5,7 @@ import type {
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
 import { AppButton, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
+import { TeamHeading } from '../../../shared/game-ui/index.ts'
 interface PendingInvitationsSectionProps {
   invitations: RegistrationInvitation[]
   teams: RegistrationTeam[]
@@ -59,21 +60,24 @@ export function PendingInvitationsSection({
               surface="inset"
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
+                flexDirection: 'column',
                 gap: 1.5,
-                alignItems: { xs: 'stretch', sm: 'center' },
+                alignItems: 'stretch',
                 justifyContent: 'space-between',
               }}
             >
               <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-                <Typography component="h3" variant="subtitle2" sx={{ overflowWrap: 'anywhere' }}>
-                  {teams.find((team) => team.teamId === invitation.teamId)?.name?.trim() ||
-                    t('gameApplication.unnamedTeam')}
-                </Typography>
+                <TeamHeading
+                  compact
+                  name={
+                    teams.find((team) => team.teamId === invitation.teamId)?.name?.trim() ||
+                    t('gameApplication.unnamedTeam')
+                  }
+                />
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ overflowWrap: 'anywhere' }}
+                  sx={{ overflowWrap: 'anywhere', textAlign: 'center' }}
                 >
                   {invitation.invitedByDisplayName
                     ? t('gameApplication.invitedBy', { player: invitation.invitedByDisplayName })
@@ -81,7 +85,7 @@ export function PendingInvitationsSection({
                 </Typography>
               </Stack>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center">
                 <AppButton
                   size="small"
                   disabled={disabled}

@@ -232,19 +232,22 @@ describe('Application decisions', () => {
     const mine = team('Ночной дозор')
     const value = controller(snapshot({ myTeam: mine, teams: [mine] }))
     render(value)
-    const myTeamSection = screen.getByRole('heading', { name: 'Ваша команда' }).closest('section')!
+    const myTeamSection = screen
+      .getByRole('heading', { name: 'Состав команды' })
+      .closest('section')!
     const teamNameHeading = within(myTeamSection).getByRole('heading', {
       name: 'Ночной дозор',
     })
-    const teamNameRow = teamNameHeading.parentElement!
+    const teamProfile = within(myTeamSection).getByTestId('team-presentation')
     const capacity = within(myTeamSection).getByText('Игроки: 1 / 2')
 
-    const editNameButton = within(teamNameRow).getByRole('button', {
+    const editNameButton = within(teamProfile).getByRole('button', {
       name: 'Изменить название команды',
     })
     expect(editNameButton).toHaveTextContent('Изменить')
     expect(within(myTeamSection).queryByText('Название:')).not.toBeInTheDocument()
-    expect(teamNameRow.nextElementSibling).toBe(capacity)
+    expect(teamProfile).toContainElement(teamNameHeading)
+    expect(teamProfile).toContainElement(capacity)
     expect(screen.queryByRole('textbox', { name: 'Название команды' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Изменить название команды' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Название команды' }), {
@@ -439,7 +442,7 @@ describe('Application decisions', () => {
     expect(screen.getByText('Состав подтверждён')).toBeInTheDocument()
     expect(screen.getByText('Ваш состав утверждён. Ожидайте начала игры.')).toBeInTheDocument()
     expect(
-      within(screen.getByRole('heading', { name: 'Ваша команда' }).closest('header')!).getByText(
+      within(screen.getByRole('heading', { name: 'Состав команды' }).closest('header')!).getByText(
         'Состав подтверждён',
       ),
     ).toBeInTheDocument()

@@ -1,70 +1,56 @@
-import { Stack } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { HelpTooltip, SectionCard, StatusBadge } from '../../../shared/ui/index.ts'
+import { HelpTooltip } from '../../../shared/ui/index.ts'
 import { formatRegistrationTeamStatus } from '../model/registration-team-status.ts'
 
-export function AdminTeamStatusBlock({
-  team,
-  reserveSpace = true,
-}: {
-  team: RegistrationTeam
-  reserveSpace?: boolean
-}) {
+export function AdminTeamStatusBlock({ team }: { team: RegistrationTeam }) {
   const { t } = useTranslation()
   const ready = team.status === 'forming' && team.isReady
   return (
-    <SectionCard surface="inset" sx={{ p: 0.75, minWidth: 0 }}>
-      <Stack
-        role="group"
-        aria-label={t('teamRegistrations.status')}
-        gap={0.5}
-        sx={{ minHeight: reserveSpace ? 52 : 0 }}
+    <Stack
+      role="group"
+      aria-label={t('teamRegistrations.status')}
+      gap={0.25}
+      sx={{ minWidth: 0, textAlign: 'right', overflowWrap: 'anywhere' }}
+    >
+      <Typography
+        variant="caption"
+        color={ready || team.status === 'confirmed' ? 'success.main' : 'text.secondary'}
       >
-        <StatusBadge
-          textFlow="singleLine"
-          color={ready || team.status === 'confirmed' ? 'success' : 'default'}
-          variant={ready || team.status === 'confirmed' ? 'filled' : 'outlined'}
-          label={
-            ready
-              ? t('gameRegistration.teamStatus.ready')
-              : formatRegistrationTeamStatus(team.status, t)
+        {ready
+          ? t('gameRegistration.teamStatus.ready')
+          : formatRegistrationTeamStatus(team.status, t)}
+      </Typography>
+      {team.isActiveInGame || team.isPlayed ? (
+        <Typography
+          variant="caption"
+          color={team.isActiveInGame ? 'warning.main' : 'text.secondary'}
+        >
+          {t(
+            team.isActiveInGame
+              ? 'gameApplication.adminPanel.activeTeamChip'
+              : 'gameApplication.adminPanel.playedTeamChip',
+          )}
+        </Typography>
+      ) : null}
+      {team.disbandRequestedAtUtc ? (
+        <HelpTooltip
+          describeChild
+          arrow
+          title={
+            team.disbandRequestedByDisplayName
+              ? t('gameApplication.adminPanel.disbandRequestDescription', {
+                  player: team.disbandRequestedByDisplayName,
+                })
+              : t('gameApplication.adminPanel.disbandRequestTitle')
           }
-        />
-        {team.isActiveInGame || team.isPlayed ? (
-          <StatusBadge
-            textFlow="singleLine"
-            color={team.isActiveInGame ? 'warning' : 'default'}
-            variant="outlined"
-            label={t(
-              team.isActiveInGame
-                ? 'gameApplication.adminPanel.activeTeamChip'
-                : 'gameApplication.adminPanel.playedTeamChip',
-            )}
-          />
-        ) : null}
-        {team.disbandRequestedAtUtc ? (
-          <HelpTooltip
-            title={
-              team.disbandRequestedByDisplayName
-                ? t('gameApplication.adminPanel.disbandRequestDescription', {
-                    player: team.disbandRequestedByDisplayName,
-                  })
-                : t('gameApplication.adminPanel.disbandRequestTitle')
-            }
-            describeChild
-            arrow
-          >
-            <StatusBadge
-              tabIndex={0}
-              textFlow="singleLine"
-              color="warning"
-              variant="outlined"
-              label={t('gameApplication.adminPanel.disbandRequestedChip')}
-            />
-          </HelpTooltip>
-        ) : null}
-      </Stack>
-    </SectionCard>
+        >
+          <Typography variant="caption" color="warning.main" tabIndex={0}>
+            {t('gameApplication.adminPanel.disbandRequestedChip')}
+          </Typography>
+        </HelpTooltip>
+      ) : null}
+    </Stack>
   )
 }

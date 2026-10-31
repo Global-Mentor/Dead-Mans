@@ -1,3 +1,4 @@
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
@@ -51,14 +52,22 @@ export function CancelledRoundsSection({
                   <Typography variant="subtitle2">
                     {round.cellTitle?.trim() || t('gameHistory.cardDialogFallbackTitle')}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatHistoryTeamName(t, round.teamName, round.teamSlotIndex)}
-                  </Typography>
                 </Box>
                 <AppButton size="small" tone="secondary" onClick={() => onPreviewCard(round)}>
                   {t('common.actions.openCard')}
                 </AppButton>
               </Stack>
+              <ItemCard frame="corner" density="compact">
+                <TeamPresentation
+                  density="compact"
+                  name={formatHistoryTeamName(t, round.teamName, round.teamSlotIndex)}
+                  members={round.participants.map((participant) => ({
+                    id: participant.userId,
+                    name: participant.displayName,
+                  }))}
+                  emptyLabel={t('gameHistory.noParticipants')}
+                />
+              </ItemCard>
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                 <StatusBadge
                   size="small"

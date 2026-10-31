@@ -1,8 +1,9 @@
-import { Box, Stack, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { BulletList, StatusBadge } from '../../../shared/ui/index.ts'
+import { StatusBadge } from '../../../shared/ui/index.ts'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { formatRegistrationTeamStatus } from '../../game-registration/index.ts'
 import { getTeamFreePlaces, isTeamJoinable } from '../model/team-availability.ts'
 
@@ -12,8 +13,6 @@ interface TeamSummaryProps {
   action?: ReactNode
   nameAction?: ReactNode
   showStatus?: boolean
-  emphasizeName?: boolean
-  capacityBelowName?: boolean
   showReadiness?: boolean
 }
 
@@ -23,8 +22,6 @@ export function TeamSummary({
   action,
   nameAction,
   showStatus = true,
-  emphasizeName = false,
-  capacityBelowName = false,
   showReadiness = false,
 }: TeamSummaryProps) {
   const { t } = useTranslation()
@@ -43,114 +40,63 @@ export function TeamSummary({
           )
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: 'minmax(0, 1fr)',
-          sm: action ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
-        },
-        gap: 1.25,
-        alignItems: 'center',
-        minWidth: 0,
-      }}
-    >
-      <Stack spacing={1} sx={{ minWidth: 0 }}>
-        <Stack spacing={capacityBelowName ? 0 : 1}>
-          <Stack
-            direction="row"
-            spacing={1}
-            justifyContent="space-between"
-            alignItems={nameAction ? 'center' : 'baseline'}
-            flexWrap={nameAction ? 'nowrap' : 'wrap'}
-            useFlexGap
+    <TeamPresentation
+      name={team.name?.trim() || t('gameApplication.unnamedTeam')}
+      emptyLabel={t('gameApplication.emptyTeamMembers')}
+      metadata={
+        <Typography variant="caption" color="text.secondary">
+          {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
+        </Typography>
+      }
+      status={
+        showStatus ? (
+          <Typography
+            variant="caption"
+            color={
+              isOpen
+                ? 'primary.light'
+                : team.status === 'confirmed'
+                  ? 'success.main'
+                  : 'text.secondary'
+            }
           >
-            <Typography
-              component="h3"
-              variant="h5"
-              sx={{
-                minWidth: 0,
-                flex: nameAction ? 1 : undefined,
-                overflowWrap: 'anywhere',
-                color: emphasizeName ? 'primary.light' : 'inherit',
-              }}
-            >
-              {team.name?.trim() || t('gameApplication.unnamedTeam')}
-            </Typography>
+            {state}
+          </Typography>
+        ) : null
+      }
+      members={[
+        ...team.members.map(({ player, readyAtUtc }) => ({
+          id: player.userId,
+          name: player.displayName,
+          detail:
+            showReadiness && team.status === 'forming' ? (
+              <StatusBadge
+                density="tight"
+                size="small"
+                color={readyAtUtc ? 'success' : 'default'}
+                variant={readyAtUtc ? 'filled' : 'outlined'}
+                label={t(
+                  readyAtUtc ? 'gameApplication.playerReady' : 'gameApplication.playerNotReady',
+                )}
+              />
+            ) : null,
+        })),
+        ...pending.map((invitation) => ({
+          id: invitation.invitationId,
+          name: t('gameApplication.pendingInvitedPlayerChip', {
+            player: invitation.player.displayName,
+          }),
+          pending: true,
+        })),
+      ]}
+      actions={
+        nameAction || action ? (
+          <>
             {nameAction}
-            {!capacityBelowName ? (
-              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                {t('gameApplication.rosterCapacity', {
-                  count: team.members.length,
-                  max: capacity,
-                })}
-              </Typography>
-            ) : null}
-          </Stack>
-          {capacityBelowName ? (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ lineHeight: 1.1, whiteSpace: 'nowrap' }}
-            >
-              {t('gameApplication.rosterCapacity', { count: team.members.length, max: capacity })}
-            </Typography>
-          ) : null}
-        </Stack>
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="space-between"
-          alignItems="baseline"
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <BulletList>
-            {team.members.map(({ player, readyAtUtc }) => (
-              <Box component="li" key={player.userId}>
-                <Typography component="span" variant="body2">
-                  {player.displayName}
-                </Typography>
-                {showReadiness && team.status === 'forming' ? (
-                  <StatusBadge
-                    textFlow="singleLine"
-                    size="small"
-                    color={readyAtUtc ? 'success' : 'default'}
-                    variant={readyAtUtc ? 'filled' : 'outlined'}
-                    label={t(
-                      readyAtUtc ? 'gameApplication.playerReady' : 'gameApplication.playerNotReady',
-                    )}
-                  />
-                ) : null}
-              </Box>
-            ))}
-            {pending.map((invitation) => (
-              <Box component="li" key={invitation.invitationId}>
-                <Typography component="span" variant="body2" color="text.secondary">
-                  {t('gameApplication.pendingInvitedPlayerChip', {
-                    player: invitation.player.displayName,
-                  })}
-                </Typography>
-              </Box>
-            ))}
-            {team.members.length === 0 && pending.length === 0 ? (
-              <li>
-                <Typography component="span" variant="body2" color="text.secondary">
-                  {t('gameApplication.emptyTeamMembers')}
-                </Typography>
-              </li>
-            ) : null}
-          </BulletList>
-          <Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap" useFlexGap>
-            {showStatus ? (
-              <Typography variant="caption" color={isOpen ? 'primary.light' : 'text.secondary'}>
-                {state}
-              </Typography>
-            ) : null}
-          </Stack>
-        </Stack>
-      </Stack>
-      {action ? <Box sx={{ justifySelf: 'end' }}>{action}</Box> : null}
-    </Box>
+            {action}
+          </>
+        ) : null
+      }
+    />
   )
 }

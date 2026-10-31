@@ -1,3 +1,4 @@
+import { TeamHeading } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { scrollRegionSx } from '../../../shared/theme/layout-sx.ts'
 import type { ReactNode } from 'react'
@@ -223,13 +224,14 @@ export function CurrentGameStatistics({
                           >
                             {formatCurrentCardLabel(record.round, boardLabels, t)}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {formatHistoryTeamName(
+                          <TeamHeading
+                            compact
+                            name={formatHistoryTeamName(
                               t,
                               record.round.teamName,
                               record.round.teamSlotIndex,
                             )}
-                          </Typography>
+                          />
                         </>
                       ) : null}
                     </Stack>

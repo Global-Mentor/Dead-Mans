@@ -1,14 +1,12 @@
 import { AdminTeamNumber } from './AdminTeamNumber.tsx'
-import { Box } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ItemCard, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
 import type { OrderedAdminTeamEntry } from './admin-registration-components.tsx'
 import { AdminTeamOrderHandle } from './AdminTeamOrderHandle.tsx'
 import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
-import { TeamIdentity } from '../../../shared/game-ui/index.ts'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { AdminTeamStatusBlock } from './AdminTeamStatusBlock.tsx'
-import { AdminTeamReadinessRoster } from './AdminTeamReadinessRoster.tsx'
 
 interface AdminRegistrationTeamsListProps {
   controls: AdminRegistrationPanelProps
@@ -33,7 +31,6 @@ export function AdminRegistrationTeamsList({
     setTargetSlot(null)
   }
   const { snapshot, isAssigningPlayer, isMovingTeam, onMoveTeam } = controls
-  const rosterRows = Math.max(1, ...orderedTeamEntries.map(({ team }) => team.members.length))
   const canReorderTeams =
     !isMovingTeam &&
     !isAssigningPlayer &&
@@ -43,7 +40,6 @@ export function AdminRegistrationTeamsList({
     <>
       {orderedTeamEntries.map(({ slot, team }, index) => {
         if (!visibleTeamIds.has(team.teamId)) return null
-        const membersCount = team.members.length
 
         return (
           <ItemCard
@@ -113,42 +109,30 @@ export function AdminRegistrationTeamsList({
               })}
               sx={{ flex: 1, minWidth: 0 }}
             >
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) 168px' },
-                  gap: 1,
-                  width: '100%',
-                  alignItems: 'start',
-                }}
-              >
-                <TeamIdentity
-                  compact
-                  alignment="center"
-                  divider
-                  textFlow="singleLine"
-                  name={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
-                  participants={team.members.map(({ player }) => player.displayName)}
-                  roster={
-                    <AdminTeamReadinessRoster members={team.members} minimumRows={rosterRows} />
-                  }
-                  emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
-                  leading={<AdminTeamNumber team={team} />}
-                  status={
+              <TeamPresentation
+                density="compact"
+                name={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
+                members={team.members.map(({ player, readyAtUtc }) => ({
+                  id: player.userId,
+                  name: player.displayName,
+                  detail: (
                     <StatusBadge
-                      density="compact"
-                      variant="outlined"
-                      textFlow="singleLine"
-                      label={membersCount + '/' + snapshot.maxPlayersPerTeam}
-                      aria-label={t('teamRegistrations.rosterCount', {
-                        count: membersCount,
-                        max: snapshot.maxPlayersPerTeam,
-                      })}
+                      density="tight"
+                      size="small"
+                      color={readyAtUtc ? 'success' : 'default'}
+                      variant={readyAtUtc ? 'filled' : 'outlined'}
+                      label={t(
+                        readyAtUtc
+                          ? 'gameApplication.playerReady'
+                          : 'gameApplication.playerNotReady',
+                      )}
                     />
-                  }
-                />
-                <AdminTeamStatusBlock team={team} />
-              </Box>
+                  ),
+                }))}
+                emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
+                leading={<AdminTeamNumber team={team} capacity={snapshot.maxPlayersPerTeam} />}
+                status={<AdminTeamStatusBlock team={team} />}
+              />
             </SelectionRow>
           </ItemCard>
         )

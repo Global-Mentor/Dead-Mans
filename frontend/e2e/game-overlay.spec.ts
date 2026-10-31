@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Locator } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
+import { expectTeamPresentation } from './team-presentation-assertions.ts'
 import type { components } from '../src/shared/api/contracts/generated'
 
 import {
@@ -1326,11 +1327,12 @@ test('board has a backdrop, readable row names and live revealed-card results', 
   expect(heading.y + heading.height).toBeLessThan(name.y)
   const players = await team.getByRole('listitem').all()
   expect(players).toHaveLength(3)
-  let previousRight = name.x + name.width
+  await expectTeamPresentation(team.getByTestId('team-presentation'), 3)
+  let previousRight = teamBounds.x
   for (const player of players) {
     const bounds = (await player.boundingBox())!
     expect(bounds.x).toBeGreaterThanOrEqual(previousRight)
-    expect(bounds.y).toBeGreaterThanOrEqual(teamBounds.y)
+    expect(bounds.y).toBeGreaterThan(name.y + name.height)
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(teamBounds.y + teamBounds.height)
     previousRight = bounds.x + bounds.width
   }
@@ -1498,52 +1500,55 @@ for (const [language, cost, played, points, activeTeam] of [
   })
 }
 
-test('horizontal team strip wraps long names and reserves board space', async ({ page }) => {
-  const team = {
-    ...snapshot.team!,
-    name: 'Очень длинное название команды охотников из далёких болот',
-    players: [
-      'LongHunterNameWithoutSpaces123456789',
-      'ЕщёОдинОченьДлинныйНикОхотника',
-      'ThirdHunterWithLongDisplayName',
-    ],
-  }
-  await page.route('**/api/overlay/snapshot', (route) =>
-    route.fulfill({ json: { ...snapshot, team } }),
-  )
-  await page.goto(`/overlay?lng=ru#key=${key}`)
-  for (const viewport of [
-    { width: 1920, height: 1080 },
-    { width: 1280, height: 720 },
-  ]) {
-    await page.setViewportSize(viewport)
-    const strip = page.getByTestId('overlay-team')
-    const board = page.getByTestId('overlay-board')
-    await expect(strip.getByRole('heading', { name: team.name })).toBeVisible()
-    await expect(board).toBeVisible()
-    await settleOverlay(page)
-    const stripBounds = (await strip.boundingBox())!
-    const boardBounds = await centeredSceneBounds(page, board)
-    expect(Math.abs(stripBounds.width - boardBounds.width)).toBeLessThan(1)
-    expect(Math.abs(stripBounds.x - boardBounds.x)).toBeLessThan(1)
-    expect(stripBounds.x + stripBounds.width / 2).toBeCloseTo(viewport.width / 2, 0)
-    expect(stripBounds.y).toBeCloseTo(24, 0)
-    expect(stripBounds.height).toBeLessThan(180)
-    expect(boardBounds.y).toBeGreaterThanOrEqual(stripBounds.y + stripBounds.height + 10)
-    expect(boardBounds.y + boardBounds.height).toBeLessThanOrEqual(viewport.height - 23)
-    for (const name of team.players) {
-      const player = strip.getByText(name, { exact: true })
-      await expect(player).toBeVisible()
-      expect(
-        await player.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
-      ).toBe(true)
+for (const count of [1, 2, 3]) {
+  test(`team strip balances ${count} players and reserves board space`, async ({ page }) => {
+    const team = {
+      ...snapshot.team!,
+      name: 'Очень длинное название команды охотников из далёких болот',
+      players: [
+        'LongHunterNameWithoutSpaces123456789',
+        'ЕщёОдинОченьДлинныйНикОхотника',
+        'ThirdHunterWithLongDisplayName',
+      ].slice(0, count),
     }
-    await page.screenshot({
-      path: `../.tmp/agent-work/overlay/team-strip-${viewport.width}.png`,
-      omitBackground: true,
-    })
-  }
-})
+    await page.route('**/api/overlay/snapshot', (route) =>
+      route.fulfill({ json: { ...snapshot, team } }),
+    )
+    await page.goto(`/overlay?lng=ru#key=${key}`)
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 1280, height: 720 },
+    ]) {
+      await page.setViewportSize(viewport)
+      const strip = page.getByTestId('overlay-team')
+      const board = page.getByTestId('overlay-board')
+      await expect(strip.getByRole('heading', { name: team.name })).toBeVisible()
+      await expect(board).toBeVisible()
+      await settleOverlay(page)
+      await expectTeamPresentation(strip.getByTestId('team-presentation'), count)
+      const stripBounds = (await strip.boundingBox())!
+      const boardBounds = await centeredSceneBounds(page, board)
+      expect(Math.abs(stripBounds.width - boardBounds.width)).toBeLessThan(1)
+      expect(Math.abs(stripBounds.x - boardBounds.x)).toBeLessThan(1)
+      expect(stripBounds.x + stripBounds.width / 2).toBeCloseTo(viewport.width / 2, 0)
+      expect(stripBounds.y).toBeCloseTo(24, 0)
+      expect(stripBounds.height).toBeLessThan(180)
+      expect(boardBounds.y).toBeGreaterThanOrEqual(stripBounds.y + stripBounds.height + 10)
+      expect(boardBounds.y + boardBounds.height).toBeLessThanOrEqual(viewport.height - 23)
+      for (const name of team.players) {
+        const player = strip.getByText(name, { exact: true })
+        await expect(player).toBeVisible()
+        expect(
+          await player.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+        ).toBe(true)
+      }
+      await page.screenshot({
+        path: `../.tmp/agent-work/overlay/team-strip-${count}-${viewport.width}.png`,
+        omitBackground: true,
+      })
+    }
+  })
+}
 
 test('completed preparation clears OBS until gameplay starts, including after reload', async ({
   page,

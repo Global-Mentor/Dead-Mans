@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
+import { expectTeamPresentation } from './team-presentation-assertions.ts'
+import { TEAM_NAME_MAX_LENGTH } from '../src/features/game-registration/model/team-name.ts'
 
 const categories = ['Охота', 'Оружие', 'Легенды', 'Болота', 'Контракты']
 const board: GameBoardSnapshot = {
@@ -694,7 +696,13 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
         return [labelRect.top - headerRect.top, headerRect.bottom - labelRect.bottom]
       })
       for (const gap of labelSpacing) expect(gap).toBeCloseTo(8, 0)
-      expect(await geometry()).toEqual(initialGeometry)
+      const currentGeometry = await geometry()
+      const teamGrowth = currentGeometry[0]![2]! - initialGeometry[0]![2]!
+      expect(currentGeometry[0]!.slice(0, 2)).toEqual(initialGeometry[0]!.slice(0, 2))
+      expect(currentGeometry[1]![0]).toBe(initialGeometry[1]![0])
+      expect(currentGeometry[1]![1]).toBe(initialGeometry[1]![1]! + teamGrowth)
+      expect(currentGeometry[1]![2]).toBe(initialGeometry[1]![2]! - (width >= 768 ? teamGrowth : 0))
+      expect(currentGeometry[2]).toEqual(initialGeometry[2])
       if (width >= 768) {
         const widths = await Promise.all(
           [frame, phasePanel, team, modifiers].map((panel) =>
@@ -730,7 +738,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     activeTeamId = 'team-one'
     update()
     await expect(team).toContainText('Ночные странники')
-    await expect(team.locator('h3')).toHaveCSS('font-size', '20px')
+    await expect(team.locator('h3')).toHaveCSS('font-size', '24px')
     expect(await team.evaluate((element) => getComputedStyle(element).borderImageSource)).not.toBe(
       'none',
     )
@@ -744,11 +752,7 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     update()
     await expect(overview).toContainText('Карточка открыта')
     await expect(team).toContainText('Тихий охотник')
-    const participantPositions = await team
-      .getByRole('listitem')
-      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect().left))
-    expect(participantPositions[1]).toBeGreaterThan(participantPositions[0] ?? 0)
-    expect(participantPositions[2]).toBeGreaterThan(participantPositions[1] ?? 0)
+    await expectTeamPresentation(team.getByTestId('team-presentation'), 3)
     await expect(teamContent).toHaveCSS('overflow-y', 'visible')
     expect(await team.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
       true,
@@ -766,31 +770,18 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
       }
       const teamSpacing = await team.evaluate((element) => {
         const name = element.querySelector('h3')!.getBoundingClientRect()
-        const divider = element.querySelector('hr')!.getBoundingClientRect()
+        const header = element
+          .querySelector('[data-testid="team-heading"]')!
+          .getBoundingClientRect()
         const roster = element.querySelector('ul')!.getBoundingClientRect()
-        return [divider.top - name.bottom, roster.top - divider.bottom]
+        return {
+          gap: roster.top - header.bottom,
+          titleFits: name.top >= header.top && name.bottom <= header.bottom,
+        }
       })
-      for (const gap of teamSpacing) expect(gap).toBeCloseTo(10, 0)
-      const roster = await team.getByRole('list').evaluate((element) => ({
-        width: element.getBoundingClientRect().width,
-        players: [...element.children].map((player) => ({
-          width: player.getBoundingClientRect().width,
-          fits: player.scrollWidth <= player.clientWidth + 1,
-        })),
-      }))
-      for (const player of roster.players) {
-        expect(player.width).toBeCloseTo(count === 2 ? roster.width : roster.width / count, 0)
-        expect(player.fits).toBe(true)
-      }
-      if (count === 2) {
-        const rows = await team.getByRole('listitem').evaluateAll((items) =>
-          items.map((item) => {
-            const rect = item.getBoundingClientRect()
-            return { top: rect.top, bottom: rect.bottom }
-          }),
-        )
-        expect(rows[1]?.top).toBeGreaterThanOrEqual(rows[0]?.bottom ?? 0)
-      }
+      expect(teamSpacing.gap).toBeCloseTo(10, 0)
+      expect(teamSpacing.titleFits).toBe(true)
+      await expectTeamPresentation(team.getByTestId('team-presentation'), count)
       await expectStable()
       if ([390, 768, 1440].includes(width)) {
         await team.screenshot({
@@ -829,8 +820,8 @@ for (const width of [320, 390, 600, 768, 1077, 1440, 1920, 2560]) {
     expect(Math.abs(summaryBounds!.height - phaseBounds!.height)).toBeLessThanOrEqual(1)
     expect(teamBounds!.y - phaseBounds!.y - phaseBounds!.height).toBeCloseTo(12, 0)
     if (width >= 768) {
-      expect(teamBounds!.height).toBeLessThanOrEqual(width < 900 ? 176 : 144)
-      expect((await modifiers.boundingBox())!.height).toBeGreaterThan(teamBounds!.height * 2)
+      // The roster may stack in a narrow column; modifiers retain the larger content region.
+      expect((await modifiers.boundingBox())!.height).toBeGreaterThan(teamBounds!.height)
       expect(Math.abs(summaryBounds!.y - phaseBounds!.y)).toBeLessThanOrEqual(1)
       expect(teamBounds!.y).toBeCloseTo(frameBounds!.y, 0)
       expect(summaryBounds!.x + summaryBounds!.width).toBeLessThan(phaseBounds!.x)
@@ -2502,10 +2493,7 @@ for (const touch of [false, true]) {
     await expect(roster).toContainText('Ночные странники')
     await expect(roster.getByRole('listitem')).toHaveText(['Искатель приключений', 'Ворон'])
     await expect(roster).not.toContainText('Стрелок')
-    const rows = await roster.getByRole('listitem').all()
-    const first = (await rows[0]!.boundingBox())!
-    const second = (await rows[1]!.boundingBox())!
-    expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
+    await expectTeamPresentation(roster.getByTestId('team-presentation'), 2)
     expect(await roster.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
     await page.getByTestId('game-board-context').screenshot({
       path: `../.tmp/game-board-design/progress-expanded-${touch ? 390 : 1440}.png`,
@@ -2538,7 +2526,6 @@ test('board progress separates the active team from waiting teams and shows fina
         const label = group.firstElementChild!
         const styles = getComputedStyle(group)
         return {
-          height: value.getBoundingClientRect().height,
           labelGap: value.getBoundingClientRect().top - label.getBoundingClientRect().bottom,
           paddingTop: styles.paddingTop,
           paddingBottom: styles.paddingBottom,
@@ -2553,11 +2540,7 @@ test('board progress separates the active team from waiting teams and shows fina
   await expect(queue).not.toContainText('Ночные странники')
   const activeTeam = context.getByRole('region', { name: 'Активная команда' })
   await expect(activeTeam).toContainText('Ночные странники')
-  expect(
-    await activeTeam
-      .getByText('Ночные странники')
-      .evaluate((element) => getComputedStyle(element).color),
-  ).toBe(await activeTeam.getByText('Ворон').evaluate((element) => getComputedStyle(element).color))
+  await expectTeamPresentation(activeTeam.getByTestId('team-presentation'), 2)
   expect(
     await activeTeam.evaluate((element) => {
       const styles = getComputedStyle(element)
@@ -2566,13 +2549,21 @@ test('board progress separates the active team from waiting teams and shows fina
   ).toBe(true)
   await expect(activeTeam).not.toContainText('Ваша команда')
   await expect(queue.getByText('Команда 3')).toBeVisible()
-  const ownPlayedTeam = queue.getByRole('listitem').last()
+  const ownPlayedTeam = queue.locator('li:has(> [data-testid="team-presentation"])').last()
   await expect(ownPlayedTeam).toContainText('Последний рубеж')
-  await expect(ownPlayedTeam).toHaveCSS('border-left-width', '3px')
+  await expect(ownPlayedTeam).not.toContainText('Ваша команда')
+  await expect(ownPlayedTeam).not.toHaveCSS(
+    'background-image',
+    await queue
+      .locator('li:has(> [data-testid="team-presentation"])')
+      .first()
+      .evaluate((element) => getComputedStyle(element).backgroundImage),
+  )
   await expect(queue.getByLabel('Итоговый результат: 75 очков')).toHaveText('75 очк.')
-  await expect(
-    queue.getByLabel('Итоговый результат: 75 очков').getByText('75 очк.', { exact: true }),
-  ).toHaveCSS('color', 'rgb(144, 151, 128)')
+  await expect(queue.getByLabel('Итоговый результат: 75 очков')).toHaveCSS(
+    'color',
+    'rgb(144, 151, 128)',
+  )
   const contextBox = (await context.boundingBox())!
   const fieldBox = (await page.locator('[data-board-field]').boundingBox())!
   expect(contextBox.x).toBeGreaterThanOrEqual(16)
@@ -2594,13 +2585,12 @@ test('expanded progress keeps a Full HD board free of page scrollbars', async ({
   await expandProgress(page)
 
   const queueScroll = page.getByTestId('game-board-team-queue').locator('..')
-  expect(
-    await page.getByText('Ваша команда').evaluate((element) => ({
-      width: getComputedStyle(element).width,
-      height: getComputedStyle(element).height,
-    })),
-  ).toEqual({ width: '1px', height: '1px' })
-  await expect(page.getByTestId('game-board-team-queue').getByRole('listitem')).toHaveCount(19)
+  await expect(page.getByText('Ваша команда')).toHaveCount(0)
+  await expect(
+    page
+      .getByTestId('game-board-team-queue')
+      .locator('li:has(> [data-testid="team-presentation"])'),
+  ).toHaveCount(19)
   expect(await queueScroll.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
     true,
   )
@@ -2614,7 +2604,10 @@ test('expanded progress keeps a Full HD board free of page scrollbars', async ({
     element.scrollTop = element.scrollHeight
   })
   await expect(
-    page.getByTestId('game-board-team-queue').getByRole('listitem').last(),
+    page
+      .getByTestId('game-board-team-queue')
+      .locator('li:has(> [data-testid="team-presentation"])')
+      .last(),
   ).toBeInViewport()
 })
 
@@ -2818,11 +2811,7 @@ for (const width of [320, 1440]) {
     }
     const queue = page.getByTestId('game-board-team-queue')
     await expect(queue.getByText(longName)).toBeVisible()
-    expect(
-      await queue
-        .getByText('Ваша команда')
-        .evaluate((element) => getComputedStyle(element).clipPath),
-    ).toBe('inset(50%)')
+    await expect(queue.getByText('Ваша команда')).toHaveCount(0)
     const row = queue.getByRole('listitem').filter({ hasText: longName })
     if (width === 320) {
       await queue.getByText('Охотники 5', { exact: true }).scrollIntoViewIfNeeded()
@@ -2979,6 +2968,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1440, 1920, 2560]) {
       else expect(valueSize).toBeGreaterThanOrEqual(24)
       const statusSize = await page
         .getByTestId('game-board-status-title')
+        .getByRole('heading')
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
       expect(statusSize).toBe(18)
     }
@@ -3168,7 +3158,7 @@ for (const width of [320, 390, 768, 1440]) {
       const active = panel.getByRole('article', { name: 'Ночные странники' })
       const personal = panel.getByRole('article', { name: 'Последний рубеж' })
       await expect(active.getByText('Играет', { exact: true })).toBeVisible()
-      await expect(personal.getByText('Ваша команда', { exact: true })).toBeVisible()
+      await expect(personal.getByText('Ваша команда', { exact: true })).toHaveCount(0)
       await expect(
         personal.getByLabel(
           score === null ? 'Нет завершённого раунда' : 'Итоговый результат: ' + score + ' очков',
@@ -3184,38 +3174,38 @@ for (const width of [320, 390, 768, 1440]) {
       const activeName = (await active
         .getByText('Ночные странники', { exact: true })
         .boundingBox())!
-      const activeBounds = (await active.boundingBox())!
-      expect(Math.abs(slotBounds!.y - activeName.y)).toBeLessThan(2)
-      expect(slotBounds!.x - activeBounds.x).toBeLessThan(14)
-      expect(slotBounds!.y - activeBounds.y).toBeLessThan(14)
-      const playing = (await active.getByText('Играет', { exact: true }).boundingBox())!
-      expect(Math.abs(playing.y - activeName.y)).toBeLessThan(2)
-      expect(playing.x).toBeGreaterThan(activeName.x + activeName.width)
-      const personalBounds = (await personal.boundingBox())!
-      expect(activeName.x + activeName.width / 2).toBeCloseTo(
-        activeBounds.x + activeBounds.width / 2,
+      const header = (await active.getByTestId('team-heading').boundingBox())!
+      expect(slotBounds!.x - header.x).toBeLessThanOrEqual(12)
+      expect(slotBounds!.x + slotBounds!.width).toBeLessThan(activeName.x)
+      expect(slotBounds!.y + slotBounds!.height / 2).toBeCloseTo(
+        activeName.y + activeName.height / 2,
         0,
       )
-      const ownBadge = (await personal.getByText('Ваша команда', { exact: true }).boundingBox())!
-      expect(personalBounds.x + personalBounds.width - ownBadge.x - ownBadge.width).toBeLessThan(14)
-      expect(ownBadge.y).toBeLessThan(
-        (await personal.getByRole('listitem').first().boundingBox())!.y,
+      const playing = (await active.getByText('Играет', { exact: true }).boundingBox())!
+      expect(playing.x).toBeGreaterThan(activeName.x + activeName.width)
+      expect(playing.y + playing.height / 2).toBeCloseTo(activeName.y + activeName.height / 2, 0)
+      expect(header.x + header.width - playing.x - playing.width).toBeLessThanOrEqual(1)
+      expect(activeName.width).toBeLessThanOrEqual(header.width)
+      expect(activeName.x + activeName.width / 2).toBeCloseTo(header.x + header.width / 2, 0)
+      await expect(slot).toHaveCSS('border-top-style', 'solid')
+      const personalHeading = (await personal.getByRole('heading').boundingBox())!
+      const personalStatus = (await personal.getByTestId('team-status').boundingBox())!
+      expect(personalStatus.y + personalStatus.height / 2).toBeCloseTo(
+        personalHeading.y + personalHeading.height / 2,
+        0,
       )
       await expect(
         active.getByRole('listitem').first().locator('[aria-hidden="true"]'),
-      ).toHaveCount(1)
+      ).toHaveCount(0)
       const scoreBounds = await personal
         .getByLabel(
           score === null ? 'Нет завершённого раунда' : 'Итоговый результат: ' + score + ' очков',
         )
         .boundingBox()
       const nameBounds = await personal.getByText('Последний рубеж', { exact: true }).boundingBox()
-      expect(nameBounds!.x + nameBounds!.width / 2).toBeCloseTo(
-        personalBounds.x + personalBounds.width / 2,
-        0,
-      )
-      expect(scoreBounds!.x).toBeGreaterThanOrEqual(nameBounds!.x + nameBounds!.width)
-      expect(Math.abs(scoreBounds!.y - nameBounds!.y)).toBeLessThan(2)
+      expect(scoreBounds!.x).toBeGreaterThan(nameBounds!.x + nameBounds!.width)
+      await expectTeamPresentation(active.getByTestId('team-presentation'), 2)
+      await expectTeamPresentation(personal.getByTestId('team-presentation'), 1)
       expect(await personal.evaluate((el) => getComputedStyle(el).borderImageSource)).toBe('none')
       expect(
         await personal.evaluate((el) => getComputedStyle(el, '::after').backgroundImage),
@@ -3271,7 +3261,7 @@ for (const width of [390, 1440]) {
       const panel = page.getByTestId('team-queue-panel')
       const active = panel.getByRole('article', { name: 'Ночные странники' })
       await expect(active.getByText('Играет', { exact: true })).toBeVisible()
-      await expect(active.getByText('Ваша команда', { exact: true })).toBeVisible()
+      await expect(active.getByText('Ваша команда', { exact: true })).toHaveCount(0)
       expect(await active.evaluate((el) => getComputedStyle(el).borderImageSource)).toBe('none')
       expect(
         await active.evaluate((el) => getComputedStyle(el, '::after').backgroundImage),
@@ -3284,29 +3274,65 @@ for (const width of [390, 1440]) {
         await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
       ).toBe(true)
       await panel.screenshot({ path: info.outputPath('own-active-frame.png') })
+      await active.screenshot({ path: info.outputPath('team-card.png') })
       expect(writes).toEqual([])
     },
   )
 }
 
-for (const width of [320, 1440]) {
-  test(`long team names fit the queue at ${width}px`, async ({ page }) => {
-    const teamName = 'Ночные странники с очень длинным названием команды и дальним маршрутом'
-    await mockGame(page, 'active', 'viewer', teamName)
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto('/panel/game-team-queue')
-    const queue = page.getByTestId('team-queue-panel')
-    const team = queue.getByRole('article', { name: teamName })
-    await expect(team).toBeVisible()
-    expect(await team.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
-      true,
-    )
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.screenshot({
-      path: `../.tmp/game-board-design/queue-long-name-${width}.png`,
-      animations: 'disabled',
+for (const width of [320, 390, 768, 1440]) {
+  for (const [kind, teamName] of [
+    ['short', 'Эхо'],
+    ['maximum unbroken', 'Ш'.repeat(TEAM_NAME_MAX_LENGTH)],
+    ['maximum spaced', 'Ш'.repeat(8) + ' ' + 'Ш'.repeat(9)],
+    ['long', 'Ночные странники с очень длинным названием команды и дальним маршрутом'],
+  ] as const) {
+    test(`${kind} team names fit the queue at ${width}px`, async ({ page }, info) => {
+      await mockGame(page, 'active', 'viewer', teamName, undefined, 2, 75, 'active')
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/panel/game-team-queue')
+      const queue = page.getByTestId('team-queue-panel')
+      const team = queue.getByRole('article', { name: teamName })
+      await expect(team).toBeVisible()
+      expect(await team.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+        true,
+      )
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      const title = team.getByRole('heading', { name: teamName })
+      const plaque = await title.evaluate((element) => {
+        const style = getComputedStyle(element)
+        const range = document.createRange()
+        range.selectNodeContents(element)
+        return {
+          width: element.getBoundingClientRect().width,
+          textWidth: range.getBoundingClientRect().width,
+          padding: parseFloat(style.paddingLeft) + parseFloat(style.paddingRight),
+          border: parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth),
+          fits: element.scrollWidth <= element.clientWidth + 1,
+        }
+      })
+      expect(plaque.fits).toBe(true)
+      const heading = (await title.boundingBox())!
+      const slot = (await team.getByLabel('Место в очереди 1').boundingBox())!
+      const statuses = (await team.getByTestId('team-status').boundingBox())!
+      const card = (await team.boundingBox())!
+      expect(heading.x + heading.width / 2).toBeCloseTo(card.x + card.width / 2, 0)
+      expect(slot.x + slot.width).toBeLessThan(heading.x)
+      expect(heading.x + heading.width).toBeLessThan(statuses.x)
+      expect(slot.y + slot.height / 2).toBeCloseTo(heading.y + heading.height / 2, 0)
+      expect(statuses.y + statuses.height / 2).toBeCloseTo(heading.y + heading.height / 2, 0)
+      expect(
+        await team
+          .getByTestId('team-status')
+          .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+      ).toBe(true)
+      if (kind === 'short')
+        expect(plaque.width).toBeCloseTo(plaque.textWidth + plaque.padding + plaque.border, 0)
+      await team.screenshot({ path: info.outputPath('team-name.png'), animations: 'disabled' })
     })
-  })
+  }
 }
 
 for (const role of ['admin', 'viewer'] as const) {
@@ -3327,8 +3353,10 @@ for (const role of ['admin', 'viewer'] as const) {
         await expect(panel.getByRole('article')).toHaveCount(16)
         const centeredTitles = await panel.getByRole('article').evaluateAll((elements) =>
           elements.every((article) => {
-            const card = article.getBoundingClientRect()
-            const name = article.querySelector('p')!.getBoundingClientRect()
+            const card = article
+              .querySelector('[data-testid="team-title"]')!
+              .getBoundingClientRect()
+            const name = article.querySelector('h3')!.getBoundingClientRect()
             return Math.abs(card.left + card.width / 2 - (name.left + name.width / 2)) < 0.5
           }),
         )
@@ -3349,7 +3377,7 @@ for (const role of ['admin', 'viewer'] as const) {
         expect(await participant.evaluate((el) => getComputedStyle(el).justifyContent)).toBe(
           'center',
         )
-        await expect(first.locator('hr')).toHaveCount(1)
+        await expect(first.getByTestId('team-heading')).toHaveCount(1)
         await list.focus()
         await page.keyboard.press('End')
         await list.getByRole('article', { name: 'Команда 16' }).scrollIntoViewIfNeeded()

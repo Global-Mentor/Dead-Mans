@@ -4,7 +4,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
 import {
-  TeamBriefing,
+  TeamPresentation,
   RoundBriefingDivider,
   RoundBriefingPanel,
 } from '../../../shared/game-ui/index.ts'
@@ -77,11 +77,10 @@ export function CurrentLeaderboardTeamDetails({
       }
     >
       <Stack spacing={1.15} sx={{ minHeight: 0, ...scrollRegionSx }}>
-        <ItemCard>
-          <TeamBriefing
-            participantMarkerPlacement="leading"
+        <ItemCard frame="corner">
+          <TeamPresentation
             name={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
-            participants={entry.participantNames}
+            members={entry.participantNames.map((name, index) => ({ id: String(index), name }))}
             emptyLabel={t('gameHistory.noParticipants')}
           />
         </ItemCard>

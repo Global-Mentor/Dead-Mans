@@ -1,7 +1,7 @@
-import { Stack } from '@mui/material'
+import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameTeamQueueItem } from '../../../shared/api/contracts/index.ts'
-import { TeamIdentity } from '../../../shared/game-ui/index.ts'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { ItemCard, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatTeamNameWithFallback } from '../../game-registration/index.ts'
 
@@ -30,62 +30,55 @@ export function TeamQueueCard({
       frame={isActive || own ? 'corner' : 'standard'}
       sx={{ p: 1.25, width: '100%', minWidth: 0 }}
     >
-      <TeamIdentity
-        compact
-        participantMarkers
-        alignment="center"
-        divider
+      <TeamPresentation
         leading={
           <StatusBadge
             density="compact"
             variant="outlined"
-            label={team.teamSlotIndex.toLocaleString(i18n.resolvedLanguage)}
+            sx={{ flexShrink: 0 }}
             aria-label={t('gameBoard.teamQueueSlotLabel', { slot: team.teamSlotIndex })}
+            label={team.teamSlotIndex.toLocaleString(i18n.resolvedLanguage)}
           />
         }
-        name={name}
-        participants={team.participants.map((participant) => participant.displayName)}
-        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
         status={
-          isActive || team.isPlayed || own ? (
-            <Stack gap={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+          isActive || team.isPlayed ? (
+            <>
               {isActive ? (
-                <StatusBadge
-                  density="tight"
-                  variant="outlined"
-                  color="warning"
-                  label={t('gameBoard.teamQueueActiveChip')}
-                />
+                <Typography variant="caption" color="warning.main" fontWeight={600}>
+                  {t('gameBoard.teamQueueActiveChip')}
+                </Typography>
               ) : null}
               {team.isPlayed ? (
-                <StatusBadge
-                  density="tight"
-                  variant="outlined"
+                <Typography
+                  variant="caption"
+                  fontWeight={600}
                   color={
-                    score === null || score === 0 ? 'default' : score > 0 ? 'success' : 'error'
+                    score === null || score === 0
+                      ? 'text.secondary'
+                      : score > 0
+                        ? 'success.main'
+                        : 'error.main'
                   }
                   aria-label={
                     formattedScore === null
                       ? t('gameBoard.teamQueueNoFinalScore')
                       : t('gameBoard.teamQueueFinalScoreLabel', { score: formattedScore })
                   }
-                  label={
-                    formattedScore === null
-                      ? '-'
-                      : t('boardCard.cellPlayedPoints', { score: formattedScore })
-                  }
-                />
+                >
+                  {formattedScore === null
+                    ? '-'
+                    : t('boardCard.cellPlayedPoints', { score: formattedScore })}
+                </Typography>
               ) : null}
-              {own ? (
-                <StatusBadge
-                  density="tight"
-                  variant="outlined"
-                  label={t('gameBoard.progress.yourTeam')}
-                />
-              ) : null}
-            </Stack>
+            </>
           ) : null
         }
+        name={name}
+        members={team.participants.map((participant) => ({
+          id: participant.userId,
+          name: participant.displayName,
+        }))}
+        emptyLabel={t('gameBoard.roundSummaryNoParticipants')}
       />
     </ItemCard>
   )

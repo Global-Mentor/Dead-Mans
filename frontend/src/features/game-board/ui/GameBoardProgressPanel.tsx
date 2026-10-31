@@ -1,3 +1,4 @@
+import { TeamHeading } from '../../../shared/game-ui/index.ts'
 import { Box, Collapse, Stack, Typography, useMediaQuery } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useId, useRef, useState } from 'react'
@@ -93,7 +94,11 @@ export function GameBoardProgressPanel({
     lineHeight: 1.2,
     textAlign: 'center',
   } as const
-  const teamTitle = (
+  const teamTitle = activeTeam ? (
+    <Box data-testid="game-board-status-title" sx={{ width: '100%', minWidth: 0 }}>
+      <TeamHeading compact name={title} />
+    </Box>
+  ) : (
     <Typography
       component="span"
       variant="h6"

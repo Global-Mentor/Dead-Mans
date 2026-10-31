@@ -1,22 +1,42 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
-import { ParticipantNamesList, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
-import { HelpTooltip, RankBadge, SelectionRow } from '../../../shared/ui/index.ts'
+import { TeamPresentation, RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
+import { HelpTooltip, ItemCard, RankBadge, SelectionRow } from '../../../shared/ui/index.ts'
 import { formatHistoryTeamName } from '../model/game-history-formatters.ts'
 import type { LeaderboardResult } from '../model/leaderboard-results.ts'
 
 const columns = '44px minmax(0, 1fr) minmax(44px, 0.35fr)'
+const rankCellSx = {
+  display: 'flex',
+  alignSelf: 'stretch',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRight: '1px solid',
+  borderColor: 'divider',
+} as const
+const statisticCellSx = {
+  minWidth: 0,
+  alignSelf: 'stretch',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderLeft: '1px solid',
+  borderColor: 'divider',
+  pl: 0.5,
+  fontVariantNumeric: 'tabular-nums',
+} as const
+
 const roundsVisibility = {
   display: 'none',
-  '@container standings (min-width: 480px)': { display: 'block' },
+  '@container standings (min-width: 480px)': { display: 'flex' },
 }
 const rowLayout = {
   display: 'grid',
   gridTemplateColumns: columns,
   '@container standings (min-width: 480px)': {
     gridTemplateColumns:
-      '44px minmax(0, 1fr) minmax(48px, 0.3fr) repeat(2, minmax(60px, 0.4fr)) minmax(56px, 0.35fr)',
+      '44px minmax(0, 1.2fr) minmax(48px, 0.3fr) repeat(2, minmax(60px, 0.4fr)) minmax(56px, 0.35fr)',
   },
   gap: 0.5,
   alignItems: 'center',
@@ -82,7 +102,12 @@ export function CurrentLeaderboardTable({
               role="columnheader"
               variant="caption"
               textAlign="center"
-              sx={{ fontWeight: 700, ...(index >= 2 && index <= 4 ? roundsVisibility : {}) }}
+              sx={{
+                fontWeight: 700,
+                ...(index === 0 ? rankCellSx : {}),
+                ...(index >= 2 ? statisticCellSx : {}),
+                ...(index >= 2 && index <= 4 ? roundsVisibility : {}),
+              }}
             >
               {label}
             </Typography>
@@ -111,7 +136,6 @@ export function CurrentLeaderboardTable({
                 data-own-team={ownTeam || undefined}
                 emphasis={ownTeam ? 'selected' : 'none'}
                 selected={selected}
-                selectionAppearance="outline"
                 aria-label={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
                 aria-controls={inlineDetails ? 'leaderboard-team-details' : undefined}
                 aria-haspopup={inlineDetails ? undefined : 'dialog'}
@@ -119,36 +143,36 @@ export function CurrentLeaderboardTable({
                 tone={index % 2 ? 'alternate' : 'default'}
                 sx={{ ...rowLayout, width: '100%', flexShrink: 0 }}
               >
-                <Box role="cell" sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Box role="cell" sx={rankCellSx}>
                   {entry.rank ? (
                     <RankBadge rank={entry.rank} compact />
                   ) : (
                     t('gameHistory.notAvailable')
                   )}
                 </Box>
-                <Box role="cell" sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
-                    textAlign="center"
-                    sx={{ fontWeight: 700, overflowWrap: 'anywhere', minWidth: 0, mb: 0.5 }}
-                  >
-                    {formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
-                  </Typography>
-                  <ParticipantNamesList
-                    names={entry.participantNames}
+                <ItemCard
+                  role="cell"
+                  frame={selected ? 'corner' : 'standard'}
+                  transparent
+                  density="compact"
+                  data-testid="leaderboard-team-frame"
+                  sx={{ minWidth: 0 }}
+                >
+                  <TeamPresentation
+                    density="compact"
+                    name={formatHistoryTeamName(t, entry.teamName, entry.teamSlotIndex)}
+                    members={entry.participantNames.map((name, index) => ({
+                      id: String(index),
+                      name,
+                    }))}
                     emptyLabel={t('gameHistory.noParticipants')}
-                    variant="caption"
-                    leadingMarker
-                    alignment="center"
-                    direction="column"
-                    dense
                   />
-                </Box>
+                </ItemCard>
                 <Typography
                   role="cell"
                   variant="body2"
                   textAlign="center"
-                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                  sx={{ ...statisticCellSx, ...roundsVisibility }}
                 >
                   {entry.roundsPlayed}
                 </Typography>
@@ -156,7 +180,7 @@ export function CurrentLeaderboardTable({
                   role="cell"
                   variant="body2"
                   textAlign="center"
-                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                  sx={{ ...statisticCellSx, ...roundsVisibility }}
                 >
                   {entry.totalKills}
                 </Typography>
@@ -164,7 +188,7 @@ export function CurrentLeaderboardTable({
                   role="cell"
                   variant="body2"
                   textAlign="center"
-                  sx={{ fontVariantNumeric: 'tabular-nums', ...roundsVisibility }}
+                  sx={{ ...statisticCellSx, ...roundsVisibility }}
                 >
                   {entry.totalBounties}
                 </Typography>
@@ -172,7 +196,7 @@ export function CurrentLeaderboardTable({
                   role="cell"
                   variant="body2"
                   textAlign="center"
-                  sx={{ fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}
+                  sx={{ ...statisticCellSx, overflowWrap: 'anywhere' }}
                 >
                   {entry.finalScore ?? t('gameHistory.finalResultDidNotPlay')}
                 </Typography>

@@ -1,12 +1,12 @@
-import { Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationPlayer, RegistrationTeam } from '../../../shared/api/contracts/index.ts'
 import { AppButton, SectionCard } from '../../../shared/ui/index.ts'
 import type { AdminRegistrationPanelProps } from './AdminRegistrationPanel.tsx'
 import type { OrderedAdminTeamEntry } from './admin-registration-components.tsx'
-import { AdminRegistrationTeamRoster } from './AdminRegistrationTeamRoster.tsx'
+import { useAdminTeamRoster } from './use-admin-team-roster.tsx'
 import { RegistrationTeamNameEditor } from './RegistrationTeamNameEditor.tsx'
-import { TeamBriefing } from '../../../shared/game-ui/index.ts'
+import { TeamPresentation } from '../../../shared/game-ui/index.ts'
 import { AdminTeamActions } from './AdminTeamActions.tsx'
 import { AdminTeamNumber } from './AdminTeamNumber.tsx'
 import { AdminTeamStatusBlock } from './AdminTeamStatusBlock.tsx'
@@ -44,6 +44,15 @@ export function AdminRegistrationTeamDetails({
   const { team } = entry
   const { snapshot } = controls
   const forming = team.status === 'forming'
+  const members = useAdminTeamRoster({
+    team,
+    isRemovingPlayer: controls.isRemovingPlayer,
+    isCancellingTeamInvitation: controls.isCancellingTeamInvitation,
+    onRequestRemove,
+    onMovePlayer,
+    isMovingPlayer: controls.isAssigningPlayer,
+    onCancelTeamInvitation: controls.onCancelTeamInvitation,
+  })
   const invitations = team.pendingInvitations?.length ?? 0
   const canAdd =
     forming &&
@@ -74,58 +83,32 @@ export function AdminRegistrationTeamDetails({
         />
       ) : null}
       <SectionCard surface="inset" sx={{ p: 1.5 }} data-testid="admin-team-briefing">
-        <TeamBriefing
-          leading={<AdminTeamNumber team={team} />}
-          status={
-            <Typography
-              component="p"
-              variant="subtitle2"
-              sx={{ lineHeight: 1.5 }}
-              aria-label={t('teamRegistrations.rosterCount', {
-                count: team.members.length,
-                max: snapshot.maxPlayersPerTeam,
-              })}
-            >
-              {team.members.length} / {snapshot.maxPlayersPerTeam}
-            </Typography>
-          }
+        <TeamPresentation
+          leading={<AdminTeamNumber team={team} capacity={snapshot.maxPlayersPerTeam} />}
           name={team.name || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
-          participants={[]}
+          members={members}
           emptyLabel={t('gameApplication.adminPanel.emptyTeam')}
-          roster={
-            <Stack gap={1}>
-              {forming ? (
-                <AppButton
-                  tone="secondary"
-                  framePlacement="inset"
-                  size="small"
-                  disabled={
-                    !canAdd ||
-                    controls.isCreatingInvitation(team.teamId) ||
-                    controls.isAssigningPlayer
-                  }
-                  onClick={() => onInvite(entry)}
-                >
-                  {t(
-                    team.recruitmentOpen
-                      ? 'teamRegistrations.addPlayer'
-                      : 'gameApplication.adminPanel.invitePlayer',
-                  )}
-                </AppButton>
-              ) : null}
-
-              <AdminTeamStatusBlock team={team} reserveSpace={false} />
-              <AdminRegistrationTeamRoster
-                team={team}
-                expanded
-                isRemovingPlayer={controls.isRemovingPlayer}
-                isCancellingTeamInvitation={controls.isCancellingTeamInvitation}
-                onRequestRemove={onRequestRemove}
-                onMovePlayer={onMovePlayer}
-                isMovingPlayer={controls.isAssigningPlayer}
-                onCancelTeamInvitation={controls.onCancelTeamInvitation}
-              />
-            </Stack>
+          status={<AdminTeamStatusBlock team={team} />}
+          actions={
+            forming ? (
+              <AppButton
+                tone="secondary"
+                framePlacement="inset"
+                size="small"
+                disabled={
+                  !canAdd ||
+                  controls.isCreatingInvitation(team.teamId) ||
+                  controls.isAssigningPlayer
+                }
+                onClick={() => onInvite(entry)}
+              >
+                {t(
+                  team.recruitmentOpen
+                    ? 'teamRegistrations.addPlayer'
+                    : 'gameApplication.adminPanel.invitePlayer',
+                )}
+              </AppButton>
+            ) : null
           }
         />
       </SectionCard>

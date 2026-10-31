@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectTeamPresentation } from './team-presentation-assertions.ts'
 
 const date = '2026-09-21T12:00:00Z'
 const games = Array.from({ length: 25 }, (_, index) => ({
@@ -203,7 +204,11 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
                 totalBonusDelta: 0,
                 totalKills: 5,
                 totalBounties: 2,
-                participantNames: ['Капитан Флинт', 'Энн Бонни'],
+                participantNames: [
+                  'Капитан Флинт',
+                  'Энн Бонни',
+                  'Охотник с очень длинным именем',
+                ].slice(0, index + 1),
                 finalScore: 100 - index * 10,
                 bestScore: 100,
                 penaltyTotal: index * 10,
@@ -779,3 +784,29 @@ test('game archive retains tab and selected team while restoring games and searc
   await expect(page.getByRole('textbox', { name: 'Поиск игр' })).toHaveValue('игра 25')
   await expect(page.getByRole('heading', { name: 'Архивная игра 25', exact: true })).toBeVisible()
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`archived team identity balances one to three players at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockHistory(page)
+    await page.goto('/panel/game-history')
+    for (const count of [1, 2, 3]) {
+      await page
+        .getByRole('row', { name: `Команда с длинным названием ${count}`, exact: true })
+        .click()
+      const profile = page
+        .getByTestId('current-leaderboard-team-details')
+        .getByTestId('team-presentation')
+      await expectTeamPresentation(profile, count)
+      await profile.screenshot({
+        path: info.outputPath(`history-team-${count}.png`),
+        animations: 'disabled',
+      })
+      if (width < 1400)
+        await page.getByRole('button', { name: 'Закрыть', exact: true }).last().click()
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}

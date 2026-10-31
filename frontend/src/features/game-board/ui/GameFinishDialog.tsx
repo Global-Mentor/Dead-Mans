@@ -1,3 +1,4 @@
+import { TeamHeading } from '../../../shared/game-ui/index.ts'
 import { Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
@@ -218,15 +219,20 @@ function FinishPreviewContent({
             spacing={1}
             sx={{ py: 0.7, borderBottom: 1, borderColor: 'divider' }}
           >
-            <Typography>
-              {team.placement ? `${team.placement}. ` : ''}
-              {team.teamName || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
-            </Typography>
-            <Typography fontWeight={800}>
-              {team.finalScore == null
-                ? t('gameBoard.finishDidNotPlay')
-                : t('gameBoard.finishPoints', { count: team.finalScore })}
-            </Typography>
+            <TeamHeading
+              compact
+              name={team.teamName || t('common.teamWithSlot', { slot: team.teamSlotIndex })}
+              leading={
+                team.placement ? <Typography variant="caption">{team.placement}</Typography> : null
+              }
+              status={
+                <Typography variant="caption" fontWeight={700}>
+                  {team.finalScore == null
+                    ? t('gameBoard.finishDidNotPlay')
+                    : t('gameBoard.finishPoints', { count: team.finalScore })}
+                </Typography>
+              }
+            />
           </Stack>
         ))}
       </Stack>

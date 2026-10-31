@@ -10,6 +10,7 @@ export function ItemCard({
   tone = 'default',
   leadingAccent = false,
   frame = 'standard',
+  transparent = false,
   sx,
   ...props
 }: Omit<ComponentProps<typeof SectionCard>, 'surface'> & {
@@ -18,12 +19,14 @@ export function ItemCard({
   tone?: 'default' | 'alternate'
   leadingAccent?: boolean | 'success' | 'error'
   frame?: 'standard' | 'corner'
+  transparent?: boolean
 }) {
   return (
     <SectionCard
       {...props}
       sx={mergeSx(
         (theme) => itemCardSx(theme, emphasis, tone),
+        transparent ? { backgroundColor: 'transparent', backgroundImage: 'none' } : null,
         density === 'flush' ? { p: 0 } : density === 'compact' ? { px: 1.25, py: 0.75 } : null,
         frame === 'corner'
           ? (theme) => ({ ...cornerFrameSx(theme, 'strong'), borderImage: 'none' })

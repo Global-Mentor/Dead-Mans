@@ -577,7 +577,9 @@ for (const width of [390, 768, 1440]) {
       expect(upper!.y).toBeLessThan(lower!.y)
     }
     for (const record of await statistics.getByRole('article').all()) {
-      await expect(record.getByRole('heading')).toHaveCSS('text-align', 'center')
+      for (const heading of await record.getByRole('heading').all()) {
+        await expect(heading).toHaveCSS('text-align', 'center')
+      }
     }
     await expect(page.getByRole('tab')).toHaveText([
       'Команды',
@@ -722,6 +724,24 @@ for (const size of [
     await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true')
     await expect(table.locator('[data-own-team]')).toHaveCount(1)
     await expect(table.locator('[data-own-team]')).toHaveAttribute('aria-selected', 'false')
+    const ownRow = table.locator('[data-own-team]')
+    const ordinaryRow = rows.nth(2)
+    expect(await ownRow.evaluate((el) => getComputedStyle(el).backgroundImage)).not.toBe(
+      await ordinaryRow.evaluate((el) => getComputedStyle(el).backgroundImage),
+    )
+    const teamFrame = ownRow.getByTestId('leaderboard-team-frame')
+    await expect(teamFrame).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(teamFrame).toHaveCSS('background-image', 'none')
+    await expect(teamFrame.getByRole('heading')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    const ownCells = ownRow.getByRole('cell')
+    await expect(ownCells.first()).toHaveCSS('border-right-width', '1px')
+    for (const cell of await ownCells.all()) {
+      await expect(cell).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+      await expect(cell).toHaveCSS('background-image', 'none')
+    }
+    for (const cell of (await ownCells.all()).slice(2)) {
+      await expect(cell).toHaveCSS('border-left-width', '1px')
+    }
     await expect(details.getByRole('heading', { level: 2 })).toHaveText('Итоги команды')
     await expect(details.getByRole('heading', { level: 3 })).toHaveText(
       'Команда с длинным названием 2',

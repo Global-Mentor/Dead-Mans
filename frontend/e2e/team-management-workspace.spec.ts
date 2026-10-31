@@ -1,3 +1,4 @@
+import { expectTeamPresentation } from './team-presentation-assertions.ts'
 import { expect, test, type Page } from '@playwright/test'
 import { expectUnifiedTypography } from './typography-assertions.ts'
 
@@ -256,19 +257,15 @@ for (const width of [390, 768, 1440]) {
     await expect(row.getByText('Формирование', { exact: true })).toBeVisible()
     await expect(row.getByRole('listitem').nth(0)).toContainText('Готов')
     await expect(row.getByRole('listitem').nth(1)).toContainText('Не готов')
-    const heading = await row.getByText('Ночной дозор', { exact: true }).boundingBox()
-    const number = await row.getByLabel('Команда 1', { exact: true }).boundingBox()
+    await expectTeamPresentation(row.getByTestId('team-presentation'), 2)
     for (const index of [0, 1]) {
       const member = row.getByRole('listitem').nth(index)
-      const name = await member.getByText(`Игрок 1.${index + 1}`, { exact: true }).boundingBox()
-      const readiness = await member
+      const name = (await member.getByText(`Игрок 1.${index + 1}`, { exact: true }).boundingBox())!
+      const readiness = (await member
         .getByText(index === 0 ? 'Готов' : 'Не готов', { exact: true })
-        .boundingBox()
-      expect(
-        Math.abs(name!.x + name!.width / 2 - heading!.x - heading!.width / 2),
-      ).toBeLessThanOrEqual(1)
-      expect(Math.abs(readiness!.x - number!.x)).toBeLessThanOrEqual(1)
-      expect(readiness!.x + readiness!.width).toBeLessThanOrEqual(name!.x)
+        .boundingBox())!
+      expect(readiness.y).toBeGreaterThanOrEqual(name.y + name.height)
+      expect(readiness.x + readiness.width / 2).toBeCloseTo(name.x + name.width / 2, 0)
     }
     await page.screenshot({ path: `../.tmp/agent-work/readiness/partial-${width}.png` })
 
@@ -332,10 +329,17 @@ for (const width of [390, 768, 1440]) {
       .getByText('Ночной дозор', { exact: true })
       .boundingBox()
     const status = await waiting.getByText('Не готов', { exact: true }).boundingBox()
+    const profile = (await details.getByTestId('team-presentation').boundingBox())!
+    expect(heading!.x + heading!.width / 2).toBeCloseTo(profile.x + profile.width / 2, 0)
     expect(
-      Math.abs(name!.x + name!.width / 2 - heading!.x - heading!.width / 2),
+      Math.abs(
+        name!.x +
+          name!.width / 2 -
+          (await waiting.boundingBox())!.x -
+          (await waiting.boundingBox())!.width / 2,
+      ),
     ).toBeLessThanOrEqual(1)
-    expect(status!.x + status!.width).toBeLessThanOrEqual(name!.x)
+    expect(status!.y).toBeGreaterThanOrEqual(name!.y + name!.height)
     await page.screenshot({ path: `../.tmp/agent-work/readiness/aligned-details-${width}.png` })
     await details.getByRole('button', { name: 'Готово: Подтвердить', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Подтвердить команду?' })
@@ -371,19 +375,14 @@ for (const size of [
         })),
       ).toEqual({ w: 0, h: 0 })
       expect(await region.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
-      const names = page.getByTestId('admin-slot-1').getByRole('listitem')
-      await expect(names).toHaveCount(2)
-      const first = await names.nth(0).boundingBox()
-      const second = await names.nth(1).boundingBox()
-      expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height - 1)
-      expect(Math.abs(first!.x - second!.x)).toBeLessThanOrEqual(1)
+      await expectTeamPresentation(
+        page.getByTestId('admin-slot-1').getByTestId('team-presentation'),
+        2,
+      )
       const nameBox = await page
         .getByTestId('admin-slot-1')
-        .getByText('Ночной дозор', { exact: true })
+        .getByRole('heading', { name: 'Ночной дозор' })
         .boundingBox()
-      expect(
-        Math.abs(first!.x + first!.width / 2 - nameBox!.x - nameBox!.width / 2),
-      ).toBeLessThanOrEqual(1)
       const numberBox = await page
         .getByTestId('admin-slot-1')
         .getByLabel('Команда 1', { exact: true })
@@ -392,29 +391,31 @@ for (const size of [
         .getByTestId('admin-slot-1')
         .getByLabel('Состав: 2 / 3', { exact: true })
         .boundingBox()
-      expect(Math.abs(numberBox!.y - nameBox!.y)).toBeLessThanOrEqual(1)
-      expect(Math.abs(countBox!.y - nameBox!.y)).toBeLessThanOrEqual(1)
+      expect(numberBox!.y + numberBox!.height / 2).toBeCloseTo(nameBox!.y + nameBox!.height / 2, 0)
+      expect(countBox!.y + countBox!.height / 2).toBeCloseTo(
+        numberBox!.y + numberBox!.height / 2,
+        0,
+      )
       expect(numberBox!.x).toBeLessThan(nameBox!.x)
-      expect(countBox!.x).toBeGreaterThan(nameBox!.x)
+      expect(countBox!.x).toBeGreaterThanOrEqual(numberBox!.x + numberBox!.width)
+      expect(countBox!.x + countBox!.width).toBeLessThan(nameBox!.x)
       const statuses = page
         .getByTestId('admin-slot-6')
         .getByRole('group', { name: 'Статус', exact: true })
       await expect(statuses.getByText('Подтверждена', { exact: true })).toBeVisible()
       await expect(statuses.getByText('Отыграла', { exact: true })).toBeVisible()
       await expect(statuses.getByText('Запрос на роспуск', { exact: true })).toHaveCount(0)
-      const positions = await statuses.locator('.MuiChip-root').evaluateAll((chips) =>
+      const positions = await statuses.locator(':scope > *').evaluateAll((chips) =>
         chips.map((chip) => {
           const box = chip.getBoundingClientRect()
           return { y: box.y, bottom: box.bottom }
         }),
       )
       expect(positions).toHaveLength(2)
-      expect(positions[1]!.y - positions[0]!.bottom).toBeGreaterThanOrEqual(4)
-      expect((await statuses.boundingBox())!.height).toBe(52)
-      const heights = await region
-        .locator('[data-testid^="admin-slot-"]')
-        .evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height))
-      expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1)
+      expect(positions[1]!.y).toBeGreaterThanOrEqual(positions[0]!.bottom)
+      for (const profile of await region.getByTestId('team-presentation').all()) {
+        expect(await profile.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+      }
       await expect(
         page.getByTestId('admin-slot-4').getByText('Отыграла', { exact: true }),
       ).toBeVisible()
@@ -436,9 +437,9 @@ for (const size of [
               return p && r.top >= p.top && r.bottom <= p.bottom
             }).length,
         )
-        expect(visibleRows).toBeGreaterThanOrEqual(6)
+        expect(visibleRows).toBeGreaterThanOrEqual(3)
         expect((await page.getByTestId('admin-slot-1').boundingBox())!.height).toBeLessThanOrEqual(
-          90,
+          180,
         )
         const columns = await page.locator('[id$="-teams-panel"]').boundingBox()
         const details = await page.locator('[id$="-detail-panel"]').boundingBox()
@@ -536,8 +537,23 @@ for (const width of [1440, 390]) {
         .getByRole('group', { name: 'Статус', exact: true })
       await expect(statuses.getByText('Подтверждена', { exact: true })).toBeVisible()
       await expect(statuses.getByText('Запрос на роспуск', { exact: true })).toBeVisible()
-      await expect(statuses.locator('.MuiChip-root')).toHaveCount(2)
-      expect((await statuses.boundingBox())!.height).toBe(52)
+      await expect(statuses.locator(':scope > *')).toHaveCount(2)
+      const statusRows = await statuses.locator(':scope > *').evaluateAll((elements) =>
+        elements.map((element) => {
+          const rect = element.getBoundingClientRect()
+          return {
+            top: rect.top,
+            bottom: rect.bottom,
+            fits: element.scrollWidth <= element.clientWidth + 1,
+          }
+        }),
+      )
+      expect(statusRows[1]!.top).toBeGreaterThanOrEqual(statusRows[0]!.bottom)
+      expect(statusRows.every((row) => row.fits)).toBe(true)
+      const title = (await page.getByTestId('admin-slot-6').getByRole('heading').boundingBox())!
+      const statusBox = (await statuses.boundingBox())!
+      expect(statusBox.x).toBeGreaterThan(title.x + title.width)
+      expect(statusBox.y + statusBox.height / 2).toBeCloseTo(title.y + title.height / 2, 0)
       await expect(page.getByText('Активная команда', { exact: true })).toHaveCount(0)
       await expect(
         page
@@ -1010,7 +1026,10 @@ for (const width of [1440, 768, 390, 320]) {
       expect(
         Math.abs(nameBox!.x + nameBox!.width / 2 - header!.x - header!.width / 2),
       ).toBeLessThanOrEqual(1)
-      expect(Math.abs(nameBox!.y - countBox!.y)).toBeLessThanOrEqual(1)
+      expect(countBox!.y + countBox!.height / 2).toBeCloseTo(nameBox!.y + nameBox!.height / 2, 0)
+      const numberBox = (await details.getByLabel('Команда 6', { exact: true }).boundingBox())!
+      expect(countBox!.x).toBeGreaterThanOrEqual(numberBox.x + numberBox.width)
+      expect(countBox!.x + countBox!.width).toBeLessThan(nameBox!.x)
       const player = details.getByTestId('admin-player-member-5-0')
       const playerBox = await player.boundingBox()
       expect(playerBox!.height).toBeLessThanOrEqual(70)
@@ -1213,11 +1232,13 @@ for (const width of [1440, 768, 390, 320]) {
       expect(
         Math.abs(nickBox!.x + nickBox!.width / 2 - rowBox!.x - rowBox!.width / 2),
       ).toBeLessThanOrEqual(1)
-      expect(stateBox!.x + stateBox!.width).toBeLessThanOrEqual(nickBox!.x)
-      expect(menuBox!.x).toBeGreaterThanOrEqual(nickBox!.x + nickBox!.width)
-      expect(
-        Math.abs(stateBox!.y + stateBox!.height / 2 - nickBox!.y - nickBox!.height / 2),
-      ).toBeLessThanOrEqual(1)
+      expect(stateBox!.y).toBeGreaterThanOrEqual(nickBox!.y + nickBox!.height)
+      expect(menuBox!.y).toBeGreaterThanOrEqual(stateBox!.y + stateBox!.height)
+      for (const box of [stateBox!, menuBox!]) {
+        expect(box.x + box.width / 2).toBeCloseTo(rowBox!.x + rowBox!.width / 2, 0)
+        expect(box.x).toBeGreaterThanOrEqual(rowBox!.x)
+        expect(box.x + box.width).toBeLessThanOrEqual(rowBox!.x + rowBox!.width)
+      }
       const invited = details.getByTestId('admin-invitation-invitation-first')
       const invitationName = await invited
         .getByText('Приглашённый игрок', { exact: true })
@@ -1234,7 +1255,12 @@ for (const width of [1440, 768, 390, 320]) {
           invitationName!.x + invitationName!.width / 2 - invitedBox.x - invitedBox.width / 2,
         ),
       ).toBeLessThanOrEqual(1)
-      expect(invitationState!.x).toBeGreaterThan(invitationName!.x + invitationName!.width / 2)
+      expect(invitationState!.y).toBeGreaterThanOrEqual(invitationName!.y + invitationName!.height)
+      expect(invitationState!.x + invitationState!.width / 2).toBeCloseTo(
+        invitedBox.x + invitedBox.width / 2,
+        0,
+      )
+      await expectTeamPresentation(details.getByTestId('team-presentation'), 3)
       expect(cancel!.y).toBeGreaterThanOrEqual(
         Math.max(
           invitationName!.y + invitationName!.height,
