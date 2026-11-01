@@ -112,6 +112,7 @@ describe('GameSetupPage', () => {
           enabledModifierIds: [],
           enabledQuestionIds: [],
           quizAnswerDurationSeconds: 60,
+          teamLimit: 10,
         },
         draft: {
           title: 'Draft',

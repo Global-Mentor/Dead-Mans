@@ -1928,6 +1928,7 @@ export interface components {
             quizAnswerDurationSeconds: number;
         };
         GameSetupSnapshotDto: {
+            readonly teamLimit: number | null;
             gameId: string;
             title: string;
             description?: string | null;

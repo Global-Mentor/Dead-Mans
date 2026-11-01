@@ -33,6 +33,27 @@ public sealed class GameSetupContractTests : IClassFixture<TestWebApplicationFac
         _client = factory.CreateClient();
     }
 
+    [Theory]
+    [InlineData(10)]
+    [InlineData(6)]
+    [InlineData(null)]
+    public async Task GetSetup_ReportsTheSavedTeamLimit(int? limit)
+    {
+        await ClearGamesAsync();
+        using var client = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
+        var created = await client.PostAsJsonAsync("/api/game/setup", new CreateGameSetupRequestDto("Limit summary"));
+        var initial = await created.Content.ReadFromJsonAsync<GameSetupSnapshotDto>();
+        Assert.Equal(10, initial!.TeamLimit);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.Games.Single(game => game.Id == Guid.Parse(initial.GameId)).TeamLimit = limit;
+            await db.SaveChangesAsync();
+        }
+        var loaded = await client.GetFromJsonAsync<GameSetupSnapshotDto>("/api/game/setup");
+        Assert.Equal(limit, loaded!.TeamLimit);
+    }
+
     [Fact]
     public async Task GetSetup_WhenAnonymous_ReturnsUnauthorized()
     {

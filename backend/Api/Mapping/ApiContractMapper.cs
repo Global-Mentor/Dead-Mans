@@ -84,7 +84,8 @@ public static partial class ApiContractMapper
             snapshot.Cells.Select(ToDto).ToArray(),
             snapshot.EnabledModifierIds.Select(id => id.ToString()).ToArray(),
             snapshot.EnabledQuestionIds.ToArray(),
-            snapshot.QuizAnswerDurationSeconds
+            snapshot.QuizAnswerDurationSeconds,
+            snapshot.TeamLimit
         );
     }
 

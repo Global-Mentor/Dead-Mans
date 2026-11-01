@@ -4924,8 +4924,14 @@ components:
     GameSetupSnapshotDto:
       type: object
       required:
-        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
+        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds, teamLimit]
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+          readOnly: true
         gameId:
           type: string
         title:

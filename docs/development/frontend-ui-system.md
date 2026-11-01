@@ -13,7 +13,7 @@ The application page is the visual and behavioral reference for the shared compo
 
 All application controls are composed through `src/shared/ui/index.ts`. MUI/Emotion is the implementation engine, not a second public control library. The language remains Alegreya typography, dark textured surfaces, brass accents and clear semantic actions. Application registration is a protected visual reference.
 
-Team management owns the team-limit control. Place its compact summary and change action below the heading and divider above the team/player search and status filters. Stack these blocks in the same order on narrow screens. Show the current limit or Unlimited and the existing team count. The edit dialog explains that lowering capacity preserves existing teams and invitations.
+Team management owns the team-limit control. Place its compact summary and change action below the heading and divider above the team/player search and status filters. Stack these blocks in the same order on narrow screens. Show the current limit or Unlimited and the existing team count. The edit dialog explains that lowering capacity preserves existing teams and invitations. The board setup sidebar also shows the saved team limit as the last read-only readiness metric, directly below answer time.
 
 ## Game guide
 

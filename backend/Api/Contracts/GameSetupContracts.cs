@@ -28,5 +28,6 @@ public sealed record GameSetupSnapshotDto(
     IReadOnlyList<GameBoardCellDto> Cells,
     IReadOnlyList<string> EnabledModifierIds,
     IReadOnlyList<string> EnabledQuestionIds,
-    int QuizAnswerDurationSeconds = 60
+    int QuizAnswerDurationSeconds = 60,
+    int? TeamLimit = 10
 );
