@@ -267,6 +267,81 @@ for (const status of ['ready', 'active'] as const) {
   }
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`finished game shows an informational team queue state at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockGame(page, 'finished', 'viewer')
+    await page.route('**/api/game/team-queue', (route) =>
+      route.fulfill({
+        json: {
+          gameId: null,
+          teams: [],
+          summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+        },
+      }),
+    )
+    await page.goto('/panel/game-team-queue')
+    const panel = page.getByTestId('page-state-panel')
+    await expect(panel.getByRole('heading', { name: 'Очередь команд', level: 1 })).toBeVisible()
+    await expect(panel.getByRole('status')).toHaveText(
+      'Игра завершена. Активной очереди команд сейчас нет.',
+    )
+    await expect(page.getByRole('alert')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0)
+    await expect(page.getByTestId('team-queue-panel')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({ path: info.outputPath('finished-team-queue.png') })
+  })
+}
+
+test('team queue clears cached teams when the game finishes', async ({ page }) => {
+  let notify: (message: string) => void = () => {}
+  await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+    notify = send
+  })
+  let status: 'active' | 'finished' = 'active'
+  await page.route('**/api/game', (route) => route.fulfill({ json: { ...board, status } }))
+  await page.route('**/api/game/team-queue', (route) =>
+    status === 'finished'
+      ? route.fulfill({
+          json: {
+            gameId: null,
+            teams: [],
+            summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+          },
+        })
+      : route.fallback(),
+  )
+  await page.goto('/panel/game-team-queue')
+  await expect(page.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+  status = 'finished'
+  notify(
+    `${JSON.stringify({ type: 1, target: realtimeHubs.gameBoard.events.gameLifecycleChanged, arguments: [] })}\u001e`,
+  )
+  await expect(
+    page.getByText('Игра завершена. Активной очереди команд сейчас нет.', { exact: true }),
+  ).toBeVisible()
+  await expect(page.getByRole('article')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0)
+})
+
+test('active game team queue keeps a real loading error and retry action', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/team-queue', (route) =>
+    route.fulfill({ status: 500, json: { error: 'Unavailable' } }),
+  )
+  await page.goto('/panel/game-team-queue')
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить очередь команд.')
+  await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toBeVisible()
+  await expect(
+    page.getByText('Игра завершена. Активной очереди команд сейчас нет.', { exact: true }),
+  ).toHaveCount(0)
+})
+
 async function mockGame(
   page: Page,
   status: 'active' | 'ready' | 'finished' = 'active',

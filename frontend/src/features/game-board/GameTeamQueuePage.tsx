@@ -14,13 +14,14 @@ export function GameTeamQueuePage() {
   const { user } = useAuth()
   const snapshotQuery = useQuery(currentGameBoardQueryOptions)
   const snapshot = snapshotQuery.data ?? null
+  const isFinished = snapshot?.status === 'finished'
   const roundQuery = useQuery({
     ...activeGameRoundQueryOptions,
-    enabled: snapshot !== null,
+    enabled: snapshot !== null && !isFinished,
   })
   const queueQuery = useQuery({
     ...currentGameTeamQueueForGameQueryOptions(snapshot?.gameId ?? 'none'),
-    enabled: snapshot !== null,
+    enabled: snapshot !== null && !isFinished,
   })
   const queue = queueQuery.data?.gameId === snapshot?.gameId ? queueQuery.data : undefined
 
@@ -49,12 +50,12 @@ export function GameTeamQueuePage() {
       />
     )
   }
-  if (!snapshot) {
+  if (!snapshot || isFinished) {
     return (
       <PageStatePanel
         variant="page"
         title={t('gameBoard.teamQueueTitle')}
-        message={t('gameBoard.teamQueueNoGame')}
+        message={t(isFinished ? 'gameBoard.teamQueueFinished' : 'gameBoard.teamQueueNoGame')}
       />
     )
   }
