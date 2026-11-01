@@ -19,7 +19,7 @@ export function AdminRegistrationHeader({
         flexShrink: 0,
         overflowY: 'auto',
         scrollbarWidth: 'thin',
-        scrollbarGutter: 'stable both-edges',
+        scrollbarGutter: 'stable',
       }}
     >
       <Box sx={{ mb: 1.5 }}>

@@ -468,8 +468,8 @@ for (const size of [
         expect((await page.getByTestId('admin-slot-1').boundingBox())!.height).toBeLessThanOrEqual(
           180,
         )
-        const columns = await page.locator('[id$="-teams-panel"]').boundingBox()
-        const details = await page.locator('[id$="-detail-panel"]').boundingBox()
+        const columns = await page.getByTestId('admin-team-list-panel').boundingBox()
+        const details = await page.getByTestId('admin-team-inspector-panel').boundingBox()
         expect(
           Math.abs((columns!.x + columns!.width + details!.x) / 2 - size.width / 2),
         ).toBeLessThanOrEqual(2)
@@ -565,6 +565,13 @@ for (const width of [1440, 390]) {
       await expect(statuses.getByText('Подтверждена', { exact: true })).toBeVisible()
       await expect(statuses.getByText('Запрос на роспуск', { exact: true })).toBeVisible()
       await expect(statuses.locator(':scope > *')).toHaveCount(2)
+      const request = statuses.getByText('Запрос на роспуск', { exact: true }).locator('..')
+      await expect(request).toHaveClass(/MuiChip-colorError/)
+      await expect(request).toHaveCSS('border-top-style', 'solid')
+      await request.focus()
+      await expect(page.getByRole('tooltip')).toContainText('Игрок 6')
+      await request.blur()
+
       const statusRows = await statuses.locator(':scope > *').evaluateAll((elements) =>
         elements.map((element) => {
           const rect = element.getBoundingClientRect()
@@ -791,6 +798,22 @@ test('team statuses stay visible and only team order is draggable', async ({ pag
   await expect(
     page.getByTestId('admin-slot-2').getByText('Активная команда', { exact: true }),
   ).toBeVisible()
+  for (const [slot, text, color] of [
+    [1, 'Формирование', 'Warning'],
+    [2, 'Подтверждена', 'Success'],
+    [2, 'Активная команда', 'Warning'],
+    [4, 'Отыграла', 'Default'],
+  ] as const) {
+    const badge = page
+      .getByTestId(`admin-slot-${slot}`)
+      .getByText(text, { exact: true })
+      .locator('..')
+    await expect(badge).toHaveClass(new RegExp(`MuiChip-color${color}`))
+    await expect(badge).toHaveCSS('border-top-style', 'solid')
+    expect(
+      await badge.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth)),
+    ).toBeGreaterThan(0)
+  }
   await expect(page.locator('[draggable="true"]')).toHaveCount(24)
   await page.getByRole('tab', { name: 'Игроки (30)', exact: true }).click()
   await expect(
@@ -1368,6 +1391,19 @@ for (const width of [1440, 1200, 768, 390, 320]) {
     async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 })
       const fixture = await openWorkspace(page)
+      const left = page.getByTestId('admin-team-list-panel')
+      const right = page.getByTestId('admin-team-inspector-panel')
+      const leftBox = (await left.boundingBox())!
+      const toolbar = (await page.getByTestId('admin-registration-toolbar').boundingBox())!
+      const teamRow = (await page.getByTestId('admin-slot-1').boundingBox())!
+      const limit = (await page
+        .getByRole('region', { name: 'Лимит команд', exact: true })
+        .boundingBox())!
+      expect(Math.abs(teamRow.x - toolbar.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(teamRow.width - toolbar.width)).toBeLessThanOrEqual(1)
+      expect(Math.abs(limit.x - toolbar.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(limit.width - toolbar.width)).toBeLessThanOrEqual(1)
+      expect(teamRow.y).toBeGreaterThan(toolbar.y + toolbar.height)
       await page
         .getByTestId('admin-slot-1')
         .getByRole('button', { name: /^Управление:/ })
@@ -1389,29 +1425,29 @@ for (const width of [1440, 1200, 768, 390, 320]) {
       const create = (await page
         .getByRole('button', { name: 'Создать команду', exact: true })
         .boundingBox())!
-      const toolbar = (await page.getByTestId('admin-registration-toolbar').boundingBox())!
-      expect(Math.abs(create.x + create.width - (toolbar.x + toolbar.width))).toBeLessThanOrEqual(1)
       expect(Math.abs(create.x + create.width - (header.x + header.width))).toBeLessThanOrEqual(1)
-      if (width >= 1200) {
-        const teamRow = (await page.getByTestId('admin-slot-1').boundingBox())!
-        expect(Math.abs(teamRow.x - toolbar.x)).toBeLessThanOrEqual(1)
-        expect(Math.abs(teamRow.width - header.width)).toBeLessThanOrEqual(1)
-        expect(Math.abs(teamRow.y - create.y)).toBeLessThanOrEqual(1)
+      const rightBox = (await right.boundingBox())!
+      for (const panel of [left, right]) {
         expect(
-          Math.abs((teamRow.x + teamRow.width + header.x) / 2 - width / 2),
+          await panel.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth)),
+        ).toBeGreaterThan(0)
+      }
+      expect(Math.abs(leftBox.width - rightBox.width)).toBeLessThanOrEqual(1)
+      if (width >= 1200) {
+        expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThanOrEqual(1)
+        expect(rightBox.x - (leftBox.x + leftBox.width)).toBeGreaterThanOrEqual(16)
+        expect(create.y).toBeLessThan(toolbar.y)
+        expect(Math.abs(teamRow.width - header.width)).toBeLessThanOrEqual(1)
+        expect(
+          Math.abs((leftBox.x + leftBox.width + rightBox.x) / 2 - width / 2),
         ).toBeLessThanOrEqual(1)
       } else {
-        expect(Math.abs(header.x - toolbar.x)).toBeLessThanOrEqual(1)
-        expect(Math.abs(header.width - toolbar.width)).toBeLessThanOrEqual(1)
-      }
-      if (width < 1200) {
+        expect(Math.abs(leftBox.x - rightBox.x)).toBeLessThanOrEqual(1)
+        await expect(left).toBeHidden()
         const tabs = (await page
           .getByRole('tablist', { name: 'Управление командами', exact: true })
           .boundingBox())!
-        expect(Math.abs(tabs.y - (toolbar.y + toolbar.height) - 8)).toBeLessThanOrEqual(1)
-        expect(
-          Math.abs(tabs.x + tabs.width / 2 - (header.x + header.width / 2)),
-        ).toBeLessThanOrEqual(1)
+        expect(tabs.y + tabs.height).toBeLessThan(rightBox.y)
       }
       if (width >= 1200) {
         const tabs = page.getByTestId('admin-team-workspace-header').getByRole('tablist')
