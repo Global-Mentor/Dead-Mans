@@ -230,6 +230,65 @@ public sealed class GameLifecycleContractTests : IClassFixture<TestWebApplicatio
         Assert.Equal(HttpStatusCode.Forbidden, finish.StatusCode);
     }
 
+    [Theory]
+    [InlineData(AppMessages.ErrorCodes.GameFinishUnconfirmedTeams)]
+    [InlineData(AppMessages.ErrorCodes.GameFinishPendingInvitations)]
+    [InlineData(AppMessages.ErrorCodes.GameFinishPendingDisbandRequests)]
+    [InlineData(AppMessages.ErrorCodes.GameFinishInvalidConfirmedTeamRoster)]
+    public async Task Finish_WhenRosterIsUnsettled_PreviewAndCommandReportSpecificBlocker(string code)
+    {
+        await ClearGamesAsync();
+        var (adminClient, board) = await CreateActiveGameAsync("finish-roster");
+        using (adminClient)
+        {
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var team = await db.GameTeams.Include(x => x.Members).SingleAsync();
+                switch (code)
+                {
+                    case AppMessages.ErrorCodes.GameFinishUnconfirmedTeams:
+                        team.Status = TeamStatusValue.Forming;
+                        break;
+                    case AppMessages.ErrorCodes.GameFinishPendingDisbandRequests:
+                        team.DisbandRequestedAtUtc = DateTime.UtcNow;
+                        team.DisbandRequestedByUserId = team.CreatedByUserId;
+                        break;
+                    case AppMessages.ErrorCodes.GameFinishInvalidConfirmedTeamRoster:
+                        team.Members.Single().LeftAtUtc = DateTime.UtcNow;
+                        break;
+                    case AppMessages.ErrorCodes.GameFinishPendingInvitations:
+                        var invited = CreateUser(Guid.NewGuid(), "finish-invite");
+                        db.Users.Add(invited);
+                        db.GameTeamInvitations.Add(new GameTeamInvitation
+                        {
+                            Id = Guid.NewGuid(),
+                            GameId = team.GameId,
+                            SlotId = team.SlotId,
+                            TeamId = team.Id,
+                            InvitedByUserId = team.CreatedByUserId!.Value,
+                            InvitedUserId = invited.Id,
+                            InvitedByKind = InvitedByKindValue.Admin,
+                            Status = TeamInvitationStatusValue.Pending,
+                            CreatedAtUtc = DateTime.UtcNow
+                        });
+                        break;
+                }
+                await db.SaveChangesAsync();
+            }
+            var preview = await adminClient.GetFromJsonAsync<GameFinishPreviewDto>(
+                $"/api/game/lifecycle/games/{board.GameId}/finish-preview");
+            Assert.NotNull(preview);
+            Assert.False(preview.CanFinish);
+            Assert.Equal(code, Assert.Single(preview.Blockers).Code);
+            var response = await adminClient.PostAsJsonAsync(
+                $"/api/game/lifecycle/games/{board.GameId}/finish",
+                new FinishGameRequestDto(preview.Summary.BoardVersion, Guid.NewGuid(), [], null));
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal(code, (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Code);
+        }
+    }
+
     [Fact]
     public async Task Finish_WhenWarningsAreNotAcknowledged_ReturnsConflict()
     {

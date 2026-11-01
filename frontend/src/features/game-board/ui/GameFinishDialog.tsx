@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../../shared/api/contracts/generated'
-import { ApiError } from '../../../shared/api/errors/ApiError.ts'
+import { GameFinishErrorNotice } from './GameFinishErrorNotice.tsx'
 import {
   AppAccordion,
   AppAccordionDetails,
@@ -66,7 +66,9 @@ export function GameFinishDialog({
     allWarningsAcknowledged &&
     irreversibleConfirmed &&
     note.length <= 2000 &&
-    !isFinishing
+    !isFinishing &&
+    !previewQuery.isError &&
+    !previewQuery.isFetching
 
   const close = useDirtyClose({ dirty: note.length > 0, busy: isFinishing, onClose })
 
@@ -112,16 +114,10 @@ export function GameFinishDialog({
             <Typography color="text.secondary">{t('gameBoard.finishPreviewLoading')}</Typography>
           </Stack>
         ) : previewQuery.isError ? (
-          <InlineNotice
-            severity="error"
-            action={
-              <AppButton tone="ghost" size="small" onClick={() => void previewQuery.refetch()}>
-                {t('common.actions.retry')}
-              </AppButton>
-            }
-          >
-            {t('gameBoard.finishPreviewError')}
-          </InlineNotice>
+          <GameFinishErrorNotice
+            error={previewQuery.error}
+            onRefresh={() => void previewQuery.refetch()}
+          />
         ) : preview ? (
           <FinishPreviewContent
             preview={preview}
@@ -175,7 +171,6 @@ function FinishPreviewContent({
   onRefresh: () => void
 }) {
   const { t } = useTranslation()
-  const stale = finishError instanceof ApiError && finishError.status === 409
 
   return (
     <Stack spacing={2}>
@@ -281,20 +276,7 @@ function FinishPreviewContent({
         label={t('gameBoard.finishIrreversibleConfirmation')}
       />
 
-      {finishError ? (
-        <InlineNotice
-          severity="error"
-          action={
-            stale ? (
-              <AppButton tone="ghost" size="small" onClick={onRefresh}>
-                {t('gameBoard.finishRefreshPreview')}
-              </AppButton>
-            ) : undefined
-          }
-        >
-          {stale ? t('gameBoard.finishStaleError') : t('gameBoard.finishSubmitError')}
-        </InlineNotice>
-      ) : null}
+      {finishError ? <GameFinishErrorNotice error={finishError} onRefresh={onRefresh} /> : null}
     </Stack>
   )
 }
@@ -309,6 +291,15 @@ function getFinishIssueTranslationKey(code: string) {
       return 'gameBoard.finishIssue.roundInProgress'
     case 'game_finish.modifier_state_invalid':
       return 'gameBoard.finishIssue.modifierStateInvalid'
+    case 'game_finish.unconfirmed_teams':
+      return 'gameBoard.finishIssue.unconfirmedTeams'
+    case 'game_finish.pending_invitations':
+      return 'gameBoard.finishIssue.pendingInvitations'
+    case 'game_finish.pending_disband_requests':
+      return 'gameBoard.finishIssue.pendingDisbandRequests'
+    case 'game_finish.invalid_confirmed_team_roster':
+      return 'gameBoard.finishIssue.invalidRoster'
+
     default:
       return 'gameBoard.finishIssue.unknown'
   }

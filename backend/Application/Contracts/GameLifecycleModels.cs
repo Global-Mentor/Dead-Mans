@@ -40,6 +40,10 @@ public enum GameLifecycleErrorCode
     FinishWarningsNotAcknowledged,
     FinishModifierStateInvalid,
     FinishInvalidRequest,
+    FinishUnconfirmedTeams,
+    FinishPendingInvitations,
+    FinishPendingDisbandRequests,
+    FinishInvalidConfirmedTeamRoster,
 }
 
 public sealed record GameLifecycleResult(bool Success, Guid? GameId, GameLifecycleErrorCode Error, int BoardVersion = 0);
@@ -54,6 +58,10 @@ public static class GameFinishBlockerCodes
 {
     public const string RoundInProgress = AppMessages.GameFinishConditions.RoundInProgress;
     public const string ModifierStateInvalid = AppMessages.GameFinishConditions.ModifierStateInvalid;
+    public const string UnconfirmedTeams = AppMessages.ErrorCodes.GameFinishUnconfirmedTeams;
+    public const string PendingInvitations = AppMessages.ErrorCodes.GameFinishPendingInvitations;
+    public const string PendingDisbandRequests = AppMessages.ErrorCodes.GameFinishPendingDisbandRequests;
+    public const string InvalidConfirmedTeamRoster = AppMessages.ErrorCodes.GameFinishInvalidConfirmedTeamRoster;
 }
 
 public sealed record GameFinishIssue(string Code, int Count = 1);

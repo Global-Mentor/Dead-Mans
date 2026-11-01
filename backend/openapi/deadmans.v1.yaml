@@ -4935,6 +4935,7 @@ components:
           type: string
           enum: [ready, active, finished]
     GameFinishIssueDto:
+      description: Finish blockers include unfinished rounds, invalid modifier state, forming teams, pending invitations, pending disband requests and invalid confirmed rosters. Warnings cover unplayed teams and no completed rounds.
       type: object
       required: [code, count]
       properties:
@@ -8517,6 +8518,10 @@ components:
             - game_finish.warnings_not_acknowledged
             - game_finish.modifier_state_invalid
             - game_finish.invalid_request
+            - game_finish.unconfirmed_teams
+            - game_finish.pending_invitations
+            - game_finish.pending_disband_requests
+            - game_finish.invalid_confirmed_team_roster
             - game_common.unexpected_server_error
             - game_common.too_many_requests
             - game_registration.not_open

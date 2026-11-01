@@ -284,6 +284,26 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameFinishModifierStateInvalid,
                 AppMessages.ErrorCodes.GameFinishModifierStateInvalid
             ),
+            GameLifecycleErrorCode.FinishUnconfirmedTeams => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishUnconfirmedTeams,
+                AppMessages.ErrorCodes.GameFinishUnconfirmedTeams
+            ),
+            GameLifecycleErrorCode.FinishPendingInvitations => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishPendingInvitations,
+                AppMessages.ErrorCodes.GameFinishPendingInvitations
+            ),
+            GameLifecycleErrorCode.FinishPendingDisbandRequests => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishPendingDisbandRequests,
+                AppMessages.ErrorCodes.GameFinishPendingDisbandRequests
+            ),
+            GameLifecycleErrorCode.FinishInvalidConfirmedTeamRoster => new(
+                StatusCodes.Status409Conflict,
+                AppMessages.Client.GameFinishInvalidConfirmedTeamRoster,
+                AppMessages.ErrorCodes.GameFinishInvalidConfirmedTeamRoster
+            ),
             GameLifecycleErrorCode.FinishInvalidRequest => new(
                 StatusCodes.Status400BadRequest,
                 AppMessages.Client.GameFinishInvalidRequest,

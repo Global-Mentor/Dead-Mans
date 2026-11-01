@@ -72,7 +72,10 @@ display order inside a tie. Quiz points are reported separately and never enter 
 placement.
 
 An unfinished round or an unarchived modifier purchase attached to a terminal round is a
-hard blocker. Unplayed teams and a game with zero completed rounds are warnings that must
+hard blocker. The finished-game roster must also be settled: no forming teams, pending
+invitations or confirmed-team disband requests, and every confirmed team must meet the
+game's roster size limits. Preview lists all blockers with counts; the command returns
+the first applicable stable error code. Unplayed teams and a game with zero completed rounds are warnings that must
 be acknowledged using their stable codes. The commit recomputes all conditions after
 acquiring the database lock, so a preview is advisory rather than a security boundary.
 
@@ -81,7 +84,7 @@ acquiring the database lock, so a preview is advisory rather than a security bou
 Finalization locks the target `games` row, rechecks active status and board version, then
 in one transaction:
 
-1. validates round and modifier state and warning acknowledgements;
+1. validates round, modifier and roster state and warning acknowledgements;
 2. closes every expired quiz question session and awards its correct submissions, then marks any
    still-open question session as `skipped` without awarding points;
 3. writes one `game_finalizations` row plus results for teams that opened a card in `game_team_final_results`;
@@ -110,6 +113,13 @@ The admin game-management panel opens a server preview and requires each warning
 explicit irreversible-action confirmation. After success the board stays visible and
 read-only and links to `/panel/game-history?gameId={gameId}`. All authenticated users can
 read that history and the public note.
+
+Finish errors use localized reasons for domain conflicts, authentication/authorization,
+request validation, rate limits, network failures and unexpected server failures. Only
+`game_finish.stale_version` means the board version is outdated. Unexpected failures show
+the response request ID when available; backend diagnostic text is never shown. Refreshing
+the preview preserves the public note and confirmations, and submission is disabled while
+the preview is loading or has failed.
 
 After the transaction commits, the server best-effort publishes
 `gameLifecycleChanged { gameId, status, boardVersion, occurredAtUtc }`. Clients invalidate

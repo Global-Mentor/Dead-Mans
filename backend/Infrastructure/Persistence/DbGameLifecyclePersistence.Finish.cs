@@ -104,14 +104,20 @@ public sealed partial class DbGameLifecyclePersistence
             return new FinishGameResult(GameLifecycleErrorCode.GameNotActive, null);
         }
 
-        if (preview.Blockers.Any(x => x.Code == GameFinishBlockerCodes.RoundInProgress))
+        if (preview.Blockers.Count > 0)
         {
-            return new FinishGameResult(GameLifecycleErrorCode.FinishRoundInProgress, null);
-        }
-
-        if (preview.Blockers.Any(x => x.Code == GameFinishBlockerCodes.ModifierStateInvalid))
-        {
-            return new FinishGameResult(GameLifecycleErrorCode.FinishModifierStateInvalid, null);
+            var blocker = preview.Blockers[0];
+            var error = blocker.Code switch
+            {
+                GameFinishBlockerCodes.RoundInProgress => GameLifecycleErrorCode.FinishRoundInProgress,
+                GameFinishBlockerCodes.ModifierStateInvalid => GameLifecycleErrorCode.FinishModifierStateInvalid,
+                GameFinishBlockerCodes.UnconfirmedTeams => GameLifecycleErrorCode.FinishUnconfirmedTeams,
+                GameFinishBlockerCodes.PendingInvitations => GameLifecycleErrorCode.FinishPendingInvitations,
+                GameFinishBlockerCodes.PendingDisbandRequests => GameLifecycleErrorCode.FinishPendingDisbandRequests,
+                GameFinishBlockerCodes.InvalidConfirmedTeamRoster => GameLifecycleErrorCode.FinishInvalidConfirmedTeamRoster,
+                _ => throw new InvalidOperationException($"Unknown game finish blocker: {blocker.Code}")
+            };
+            return new FinishGameResult(error, null);
         }
 
         if (preview.Warnings.Any(x => !input.AcknowledgedWarningCodes.Contains(x.Code)))
@@ -234,6 +240,8 @@ public sealed partial class DbGameLifecyclePersistence
             {
                 x.Id,
                 x.Title,
+                x.MinPlayersPerTeam,
+                x.MaxPlayersPerTeam,
                 BoardVersion = x.Board != null ? x.Board.Version : 0
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -360,6 +368,32 @@ public sealed partial class DbGameLifecyclePersistence
                 new GameFinishIssue(GameFinishBlockerCodes.ModifierStateInvalid, invalidModifierCount)
             );
         }
+
+        var rosterCounts = await _dbContext.GameTeams.AsNoTracking()
+            .Where(team => team.GameId == gameId)
+            .Select(team => new
+            {
+                team.Status,
+                HasDisbandRequest = team.DisbandRequestedAtUtc != null,
+                MemberCount = team.Members.Count(member => member.LeftAtUtc == null)
+            })
+            .ToArrayAsync(cancellationToken);
+        var formingTeams = rosterCounts.Count(team => team.Status == TeamStatusValue.Forming);
+        var pendingInvitations = await _dbContext.GameTeamInvitations.AsNoTracking()
+            .CountAsync(invitation => invitation.GameId == gameId
+                && invitation.Status == TeamInvitationStatusValue.Pending, cancellationToken);
+        var pendingDisbandRequests = rosterCounts.Count(team =>
+            team.Status == TeamStatusValue.Confirmed && team.HasDisbandRequest);
+        var invalidRosters = rosterCounts.Count(team => team.Status == TeamStatusValue.Confirmed
+            && (team.MemberCount < game.MinPlayersPerTeam || team.MemberCount > game.MaxPlayersPerTeam));
+        if (formingTeams > 0)
+            blockers.Add(new GameFinishIssue(GameFinishBlockerCodes.UnconfirmedTeams, formingTeams));
+        if (pendingInvitations > 0)
+            blockers.Add(new GameFinishIssue(GameFinishBlockerCodes.PendingInvitations, pendingInvitations));
+        if (pendingDisbandRequests > 0)
+            blockers.Add(new GameFinishIssue(GameFinishBlockerCodes.PendingDisbandRequests, pendingDisbandRequests));
+        if (invalidRosters > 0)
+            blockers.Add(new GameFinishIssue(GameFinishBlockerCodes.InvalidConfirmedTeamRoster, invalidRosters));
 
         var warnings = new List<GameFinishIssue>();
         var unplayedTeamCount = teams.Count(x => !x.IsPlayed);
