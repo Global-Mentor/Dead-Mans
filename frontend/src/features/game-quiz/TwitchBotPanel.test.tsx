@@ -42,6 +42,7 @@ describe('TwitchBotPanel', () => {
         status={status}
         canAdmin
         busy={false}
+        onConnectEventSub={vi.fn()}
         onRetry={onRetry}
         onCancel={onCancel}
         onSkipOutcome={vi.fn()}
@@ -76,6 +77,7 @@ describe('TwitchBotPanel', () => {
         }}
         canAdmin
         busy={false}
+        onConnectEventSub={vi.fn()}
         onRetry={vi.fn()}
         onCancel={vi.fn()}
         onSkipOutcome={onSkip}

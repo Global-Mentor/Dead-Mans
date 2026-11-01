@@ -4,12 +4,14 @@ namespace backend.Application.Abstractions.Repositories;
 
 public interface IGameRegistrationPersistence
 {
+    Task<GameRegistrationResult<bool>> PersistUpdateTeamLimitAsync(Guid gameId, int? teamLimit, CancellationToken cancellationToken = default);
+
     Task<GameRegistrationResult<RegistrationTeamDto>> PersistCancelTeamDisbandRequestAsync(
         Guid gameId, Guid userId, Guid teamId, CancellationToken cancellationToken = default);
     Task<GameRegistrationResult<RegistrationTeamDto>> PersistCreateTeamAsync(
         Guid gameId,
         Guid userId,
-        Guid teamSlotId,
+        Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
         CancellationToken cancellationToken = default

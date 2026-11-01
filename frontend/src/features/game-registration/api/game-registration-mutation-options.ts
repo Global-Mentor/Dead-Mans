@@ -1,6 +1,7 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query'
 import { currentGameTeamQueueQueryOptions } from '../../game-board/index.ts'
 import {
+  updateGameTeamLimit,
   acceptGameRegistrationInvitation,
   assignGameRegistrationPlayerToTeam,
   cancelGameRegistrationTeamInvitation,
@@ -25,7 +26,11 @@ import {
   updateMyGameRegistrationTeamName,
   updateMyGameRegistrationReadiness,
 } from './game-registration-api.ts'
-import { gameRegistrationQueryKeys } from './game-registration-queries.ts'
+import {
+  gameRegistrationQueryKeys,
+  gameRegistrationAdminSnapshotQueryOptions,
+  gameRegistrationSnapshotQueryOptions,
+} from './game-registration-queries.ts'
 
 export type GameRegistrationMutationErrorHandler = (error: Error) => void
 
@@ -46,6 +51,28 @@ function registrationMutationHandlers(
     },
     onError: (error: Error) => onError(error),
   }
+}
+
+export function updateGameTeamLimitMutationOptions(
+  queryClient: QueryClient,
+  onError: GameRegistrationMutationErrorHandler,
+) {
+  const handlers = registrationMutationHandlers(queryClient, onError)
+  return mutationOptions({
+    mutationFn: updateGameTeamLimit,
+    ...handlers,
+    onSuccess: async (_, { gameId, teamLimit }) => {
+      await queryClient.cancelQueries({ queryKey: gameRegistrationQueryKeys.all })
+      // Keep the committed value if refresh fails; creation waits for authoritative capacity.
+      queryClient.setQueryData(gameRegistrationAdminSnapshotQueryOptions.queryKey, (snapshot) =>
+        snapshot?.gameId === gameId ? { ...snapshot, teamLimit, canCreateTeam: false } : snapshot,
+      )
+      queryClient.setQueryData(gameRegistrationSnapshotQueryOptions.queryKey, (snapshot) =>
+        snapshot?.gameId === gameId ? { ...snapshot, teamLimit, canCreateTeam: false } : snapshot,
+      )
+      await handlers.onSuccess()
+    },
+  })
 }
 
 export function createGameRegistrationTeamMutationOptions(

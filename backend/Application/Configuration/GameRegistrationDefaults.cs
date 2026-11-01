@@ -6,7 +6,8 @@ public static class GameRegistrationDefaults
 {
     public const short MinPlayersPerTeam = 1;
     public const short MaxPlayersPerTeam = 2;
-    public const int DefaultSlotCount = 6;
+    public const int DefaultSlotCount = 10;
+    public const int MaxTeamLimit = 1000;
 
     public static IReadOnlyList<(int TeamSlotIndex, string TeamSlotType)> BuildDefaultTeamSlots()
     {

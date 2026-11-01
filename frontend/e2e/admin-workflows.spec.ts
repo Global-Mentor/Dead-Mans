@@ -7,6 +7,7 @@ async function mockAdmin(
   roles = ['viewer', 'admin'],
   locale = 'en',
   hostPerformers = false,
+  teamLimit: number | null = 10,
 ) {
   await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), locale)
   await page.routeWebSocket(/\/hubs\//, (socket) =>
@@ -81,6 +82,7 @@ async function mockAdmin(
     enabledModifierIds: ['modifier-0'],
     enabledQuestionIds: ['question-0'],
     quizAnswerDurationSeconds: 60,
+    teamLimit,
   }
   let writes = 0
   let refuseSave = false
@@ -1051,4 +1053,30 @@ for (const width of [320, 390, 768, 1440]) {
       )
     },
   )
+}
+
+for (const [width, limit] of [
+  [390, 6],
+  [768, null],
+  [1440, 10],
+] as const) {
+  test(`setup shows the saved team limit below answer time at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await mockAdmin(page, ['viewer', 'admin'], 'ru', false, limit)
+    await page.goto('/panel/game-setup')
+    const metric = page
+      .locator('dl')
+      .filter({ has: page.getByText('Лимит команд', { exact: true }) })
+    await expect(metric).toContainText(limit === null ? 'Без ограничений' : String(limit))
+    const answer = page
+      .locator('dl')
+      .filter({ has: page.getByText('Время на ответ', { exact: true }) })
+    await metric.scrollIntoViewIfNeeded()
+    expect((await metric.boundingBox())!.y).toBeGreaterThan((await answer.boundingBox())!.y)
+    await expect(metric.locator('button, input')).toHaveCount(0)
+    await page.screenshot({
+      path: `../.tmp/agent-work/team-limit/setup-summary-${width}.png`,
+      animations: 'disabled',
+    })
+  })
 }

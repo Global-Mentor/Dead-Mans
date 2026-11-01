@@ -186,6 +186,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         CancellationToken cancellationToken
     )
     {
+        if (!teamId.HasValue && !await HasTeamCapacityAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationInvitationDto>(GameRegistrationErrorCode.NoAvailableSlot);
+        }
+
         var invitation = new GameTeamInvitation
         {
             Id = Guid.NewGuid(),

@@ -14,6 +14,60 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed partial class PostgresPersistenceBoundaryTests
 {
+    [Fact]
+    public async Task FinalizeGame_ReportsLateFormingTeamsBeforeDatabaseCommitAndSucceedsAfterResolution()
+    {
+        await _database.ResetAsync();
+        await using var db = _database.CreateDbContext();
+        var player = CreateUser("late-finish-player");
+        var slotIds = new List<Guid>();
+        var seeded = await SeedPlayableRoundGraphAsync(db, async (context, now, gameId, _) =>
+        {
+            foreach (var index in new[] { 2, 3 })
+            {
+                var slot = CreateSlot(gameId, index, now);
+                slotIds.Add(slot.Id);
+                context.Add(slot);
+            }
+            context.Add(player);
+            await context.SaveChangesAsync();
+        });
+        var registration = new DbGameRegistrationPersistence(db, new GameRegistrationReadStore(db),
+            NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System);
+        foreach (var slotId in slotIds)
+            Assert.True((await registration.PersistCreateEmptyTeamAsync(
+                seeded.GameId, seeded.UserId, slotId, true, $"Late team {slotIds.IndexOf(slotId)}")).Success);
+        var formingTeams = await db.GameTeams.Where(team => team.Status == TeamStatusValue.Forming).ToArrayAsync();
+        Assert.True((await registration.PersistAssignPlayerAsync(
+            seeded.GameId, seeded.UserId, formingTeams[0].Id, player.Id, 2)).Success);
+        db.ChangeTracker.Clear();
+
+        var lifecycle = new DbGameLifecyclePersistence(db, NullLogger<DbGameLifecyclePersistence>.Instance, TimeProvider.System);
+        var preview = Assert.IsType<GameFinishPreview>((await lifecycle.GetFinishPreviewAsync(seeded.GameId)).Preview);
+        Assert.False(preview.CanFinish);
+        var blocker = Assert.Single(preview.Blockers);
+        Assert.Equal(GameFinishBlockerCodes.UnconfirmedTeams, blocker.Code);
+        Assert.Equal(2, blocker.Count);
+        var rejected = await lifecycle.FinishGameAsync(seeded.GameId,
+            new FinishGameInput(preview.Summary.BoardVersion, Guid.NewGuid(), preview.Warnings.Select(x => x.Code).ToHashSet(), null),
+            seeded.UserId);
+        Assert.Equal(GameLifecycleErrorCode.FinishUnconfirmedTeams, rejected.Error);
+        Assert.Equal(GameStatusValue.Active, (await db.Games.AsNoTracking().SingleAsync()).Status);
+        Assert.Empty(await db.GameFinalizations.ToArrayAsync());
+
+        foreach (var team in formingTeams)
+            Assert.True((await registration.PersistDisbandTeamAsync(seeded.GameId, seeded.UserId, team.Id)).Success);
+        db.ChangeTracker.Clear();
+        var resolved = Assert.IsType<GameFinishPreview>((await lifecycle.GetFinishPreviewAsync(seeded.GameId)).Preview);
+        Assert.True(resolved.CanFinish);
+        var finished = await lifecycle.FinishGameAsync(seeded.GameId,
+            new FinishGameInput(resolved.Summary.BoardVersion, Guid.NewGuid(), resolved.Warnings.Select(x => x.Code).ToHashSet(), null),
+            seeded.UserId);
+        Assert.Equal(GameLifecycleErrorCode.None, finished.Error);
+        Assert.Equal(GameStatusValue.Finished, (await db.Games.AsNoTracking().SingleAsync()).Status);
+        Assert.Single(await db.GameFinalizations.ToArrayAsync());
+    }
+
     [Theory]
     [InlineData(GameRoundStatusValue.AwaitingModifiers)]
     [InlineData(GameRoundStatusValue.Preparing)]
@@ -198,7 +252,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         try
         {
             await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
-            var game = await db.Games.SingleAsync();
+            var game = db.Games.Local.Single();
             var now = DateTime.UtcNow;
             game.Status = GameStatusValue.Finished;
             game.FinishedAtUtc = now;

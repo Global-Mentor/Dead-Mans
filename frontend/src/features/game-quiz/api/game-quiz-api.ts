@@ -21,6 +21,7 @@ type QuizPaths = Pick<
   | '/game/quiz/questions/{questionId}/ask'
   | '/game/quiz/question-sessions/{questionSessionId}/submissions'
   | '/integrations/twitch/status'
+  | '/integrations/twitch/eventsub/connect'
   | '/integrations/twitch/quiz/questions/prepare'
   | '/integrations/twitch/quiz/publications/{publicationId}/retry'
   | '/integrations/twitch/quiz/publications/{publicationId}/cancel'
@@ -28,6 +29,10 @@ type QuizPaths = Pick<
 >
 
 const client = createApiClient<QuizPaths>()
+
+export function connectTwitchEventSub(): Promise<TwitchBotStatus> {
+  return unwrapOpenApiData(client.POST('/integrations/twitch/eventsub/connect'))
+}
 
 export function fetchAvailableGameQuizQuestions(): Promise<AvailableGameQuizQuestion[]> {
   return unwrapOpenApiData(client.GET('/game/quiz/questions/available'))

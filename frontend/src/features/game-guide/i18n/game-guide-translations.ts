@@ -151,7 +151,9 @@ const translations = {
       influence:
         'Зрители и другие участники тоже влияют на раунд: с помощью модификаторов они меняют условия, в которых команда проходит испытание.',
       goal: 'Цель команды - показать лучший результат.',
-      how: 'Команды по очереди выбирают карточку с лодаутом - набором оружия и снаряжения, с которым предстоит сыграть. Карточки разделены по сложности и категориям, названия которых лишь намекают на содержимое. Чем выше сложность, тем труднее реализовать лодаут: риски больше, но и возможная награда выше.',
+      turnOrder:
+        'Команды играют в порядке очереди, друг за другом. Одна команда - одна игровая сессия. Команды не запускаются вместе в одном лобби.',
+      how: 'В свой ход команда выбирает карточку с лодаутом - набором оружия и снаряжения, с которым предстоит сыграть. Карточки разделены по сложности и категориям, названия которых лишь намекают на содержимое. Чем выше сложность, тем труднее реализовать лодаут: риски больше, но и возможная награда выше.',
       essenceTitle: 'Суть игры',
       roles:
         'Участвовать можно в двух ролях: играть в команде или быть зрителем. Игроки проходят испытания, а зрители отвечают на викторину и используют заработанные очки для активации модификаторов.',
@@ -330,7 +332,9 @@ const translations = {
       influence:
         'Spectators and other participants also influence the round: modifiers let them change the conditions in which the team tackles its challenge.',
       goal: 'Your team’s goal is to achieve the best result.',
-      how: 'Teams take turns choosing a card with a loadout: the weapons and equipment they will play with. Cards are grouped by difficulty and categories whose names only hint at their contents. Higher difficulty means a harder loadout to put to use: greater risks, but also a higher potential reward.',
+      turnOrder:
+        'Teams play in queue order, one after another. One team - one game session. Teams do not join the same lobby to play together.',
+      how: 'On its turn, a team chooses a card with a loadout: the weapons and equipment it will play with. Cards are grouped by difficulty and categories whose names only hint at their contents. Higher difficulty means a harder loadout to put to use: greater risks, but also a higher potential reward.',
       essenceTitle: 'How the game works',
       roles:
         'You can take part as a team player or a spectator. Players tackle the challenges, while spectators answer quiz questions and spend their earned points on modifiers.',
@@ -509,7 +513,9 @@ const translations = {
       influence:
         'Глядачі та інші учасники теж впливають на раунд: за допомогою модифікаторів вони змінюють умови, у яких команда проходить випробування.',
       goal: 'Мета команди - показати найкращий результат.',
-      how: 'Команди по черзі обирають картку з лодаутом - набором зброї та спорядження, з яким доведеться грати. Картки поділені за складністю та категоріями, назви яких лише натякають на вміст. Що вища складність, то важче реалізувати лодаут: ризики більші, але й можлива нагорода вища.',
+      turnOrder:
+        'Команди грають у порядку черги, одна за одною. Одна команда - одна ігрова сесія. Команди не запускаються разом в одному лобі.',
+      how: 'У свій хід команда обирає картку з лодаутом - набором зброї та спорядження, з яким доведеться грати. Картки поділені за складністю та категоріями, назви яких лише натякають на вміст. Що вища складність, то важче реалізувати лодаут: ризики більші, але й можлива нагорода вища.',
       essenceTitle: 'Суть гри',
       roles:
         'Брати участь можна у двох ролях: грати в команді або бути глядачем. Гравці проходять випробування, а глядачі відповідають на вікторину та використовують зароблені бали для активації модифікаторів.',
@@ -687,7 +693,9 @@ const translations = {
       influence:
         'Widzowie i inni uczestnicy również wpływają na rundę: modyfikatory pozwalają im zmieniać warunki, w których drużyna wykonuje wyzwanie.',
       goal: 'Celem drużyny jest osiągnięcie najlepszego wyniku.',
-      how: 'Drużyny kolejno wybierają kartę z zestawem broni i wyposażenia, z którym będą grać. Karty są podzielone według trudności i kategorii, których nazwy jedynie sugerują zawartość. Im wyższa trudność, tym trudniej wykorzystać zestaw: ryzyko rośnie, ale potencjalna nagroda również.',
+      turnOrder:
+        'Drużyny grają zgodnie z kolejką, jedna po drugiej. Jedna drużyna - jedna sesja gry. Drużyny nie rozpoczynają gry razem we wspólnym lobby.',
+      how: 'W swojej turze drużyna wybiera kartę z zestawem broni i wyposażenia, z którym będzie grać. Karty są podzielone według trudności i kategorii, których nazwy jedynie sugerują zawartość. Im wyższa trudność, tym trudniej wykorzystać zestaw: ryzyko rośnie, ale potencjalna nagroda również.',
       essenceTitle: 'Na czym polega gra',
       roles:
         'Możesz uczestniczyć jako gracz w drużynie lub jako widz. Gracze wykonują wyzwania, a widzowie odpowiadają na pytania quizu i wydają zdobyte punkty na modyfikatory.',

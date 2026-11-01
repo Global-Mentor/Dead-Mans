@@ -185,12 +185,24 @@ public sealed partial class ProductionBaselineMigrationTests
         var user = CreateUser(now);
         var game = CreateGame(GameStatusValue.Draft, now);
         var category = new QuestionCategory { Id = Guid.NewGuid(), Name = "Legacy", CreatedAtUtc = now, UpdatedAtUtc = now };
-        db.AddRange(user, game, category,
-            new UserRole { UserId = user.Id, RoleId = 1, AssignedAtUtc = now },
-            new UserRoleAuditEvent { Id = Guid.NewGuid(), UserId = user.Id, RoleId = 1, Action = UserRoleAuditEvent.GrantedAction, OccurredAtUtc = now },
-            new MediaAsset { Id = Guid.NewGuid(), Bucket = "test", ObjectKey = "card.png", MimeType = "image/png", SizeBytes = 1, CreatedAtUtc = now });
-        AddValidSetup(db, game, now, user);
-        await db.SaveChangesAsync();
+        // Seed only columns present in the historical schema, then track later state transitions.
+        await using (var transaction = await db.Database.BeginTransactionAsync())
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO games (id, title, status, created_at_utc, is_deleted,
+                    min_players_per_team, max_players_per_team, quiz_answer_duration_seconds)
+                VALUES ({game.Id}, {game.Title}, {game.Status}, {now}, FALSE,
+                    {game.MinPlayersPerTeam}, {game.MaxPlayersPerTeam}, {game.QuizAnswerDurationSeconds});
+                """);
+            db.Attach(game);
+            db.AddRange(user, category,
+                new UserRole { UserId = user.Id, RoleId = 1, AssignedAtUtc = now },
+                new UserRoleAuditEvent { Id = Guid.NewGuid(), UserId = user.Id, RoleId = 1, Action = UserRoleAuditEvent.GrantedAction, OccurredAtUtc = now },
+                new MediaAsset { Id = Guid.NewGuid(), Bucket = "test", ObjectKey = "card.png", MimeType = "image/png", SizeBytes = 1, CreatedAtUtc = now });
+            AddValidSetup(db, game, now, user);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
 
         var modifierId = Guid.NewGuid();
         var versionId = Guid.NewGuid();

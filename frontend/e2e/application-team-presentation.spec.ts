@@ -38,6 +38,8 @@ for (const width of [390, 768, 1440]) {
     const snapshot: GameRegistrationSnapshot = {
       gameId: 'guide-game',
       gameStatus: 'ready',
+      teamLimit: 10,
+      canCreateTeam: true,
       minPlayersPerTeam: 2,
       maxPlayersPerTeam: 2,
       teamSlots: [],

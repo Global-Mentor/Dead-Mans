@@ -521,6 +521,7 @@ public sealed class BackendProjectDependencyRulesTests
         {
             "DbGameRegistrationPersistence.cs",
             "DbGameRegistrationPersistence.AdminTeams.cs",
+            "DbGameRegistrationPersistence.TeamLimit.cs",
             "DbGameRegistrationPersistence.TeamConfirmation.cs",
             "DbGameRegistrationPersistence.Invitations.cs",
             "DbGameRegistrationPersistence.InvitationValidation.cs",
@@ -945,6 +946,7 @@ public sealed class BackendProjectDependencyRulesTests
         {
             "GameRegistrationService.cs",
             "GameRegistrationService.AdminTeams.cs",
+            "GameRegistrationService.TeamLimit.cs",
             "GameRegistrationService.TeamConfirmation.cs",
             "GameRegistrationService.Invitations.cs",
             "GameRegistrationService.Queries.cs"
@@ -1201,6 +1203,7 @@ public sealed class BackendProjectDependencyRulesTests
         {
             "GameRegistrationController.cs",
             "GameRegistrationController.AdminTeams.cs",
+            "GameRegistrationController.TeamLimit.cs",
             "GameRegistrationController.Invitations.cs",
             "GameRegistrationController.PlayerTeams.cs"
         };

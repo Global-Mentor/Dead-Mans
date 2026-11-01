@@ -29,6 +29,7 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
                     "ck_games_team_size_limits",
                     GameStatusValue.CheckSqlTeamSizeLimits
                 );
+                tableBuilder.HasCheckConstraint("ck_games_team_limit", "team_limit IS NULL OR team_limit BETWEEN 1 AND 1000");
                 tableBuilder.HasCheckConstraint(
                     "ck_games_quiz_answer_duration",
                     "quiz_answer_duration_seconds BETWEEN 5 AND 3600"
@@ -66,6 +67,7 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.Property(x => x.MinPlayersPerTeam).HasDefaultValue((short)1);
         builder.Property(x => x.MaxPlayersPerTeam).HasDefaultValue((short)2);
         builder.Property(x => x.QuizAnswerDurationSeconds).HasDefaultValue(60).IsRequired();
+        builder.Property(x => x.TeamLimit);
         builder.Property(x => x.ActiveTeamId);
 
         builder

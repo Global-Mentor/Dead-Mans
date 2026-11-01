@@ -37,6 +37,8 @@ function snapshot(overrides: Partial<GameRegistrationSnapshot> = {}): GameRegist
   return {
     gameId: 'game',
     gameStatus: 'ready',
+    teamLimit: 10,
+    canCreateTeam: true,
     minPlayersPerTeam: 1,
     maxPlayersPerTeam: 2,
     teamSlots: [
@@ -391,6 +393,7 @@ describe('Application decisions', () => {
   it('does not create a team in reserved or occupied slots', () => {
     const value = controller(
       snapshot({
+        canCreateTeam: false,
         teamSlots: [
           {
             teamSlotId: 'reserved',

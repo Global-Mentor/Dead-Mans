@@ -10,8 +10,9 @@ async function openWorkspace(
   closedFirst = false,
   pendingFirst = false,
   allConfirmed = false,
+  teamCount = 24,
 ) {
-  const teams = Array.from({ length: 24 }, (_, index) => ({
+  const teams = Array.from({ length: teamCount }, (_, index) => ({
     teamId: 'team-' + (index + 1),
     teamSlotIndex: index + 1,
     teamSlotType: 'public',
@@ -69,6 +70,8 @@ async function openWorkspace(
     teamStatus: team.status,
   }))
   const requests: { path: string; body: unknown }[] = []
+  let teamLimit: number | null = full ? teamCount : Math.max(10, teamCount + 1)
+  let rejectLimit = false
   let snapshotReads = 0
   let rejectAssignment = true
   let rejectRefresh = false
@@ -106,6 +109,8 @@ async function openWorkspace(
           json: {
             gameId: '3f93a420-ef68-4cb0-9c39-5fa46c921001',
             gameStatus,
+            teamLimit,
+            canCreateTeam: teamLimit === null || teams.length < teamLimit,
             minPlayersPerTeam: 1,
             maxPlayersPerTeam: 3,
             launchSummary: {
@@ -134,6 +139,13 @@ async function openWorkspace(
             availablePlayers,
           },
         })
+      }
+      if (route.request().method() === 'PUT' && path.endsWith('/team-limit')) {
+        if (rejectLimit) return route.fulfill({ status: 503, json: { error: 'Unavailable' } })
+        const body = route.request().postDataJSON() as { teamLimit: number | null }
+        teamLimit = body.teamLimit
+        requests.push({ path, body })
+        return route.fulfill({ status: 204 })
       }
       if (route.request().method() === 'PATCH' && path.endsWith('/name')) {
         const team = teams.find((team) => path.includes('/' + team.teamId + '/'))!
@@ -226,6 +238,9 @@ async function openWorkspace(
   await page.evaluate(() => document.fonts.ready)
   return {
     teams,
+    rejectLimit: (reject: boolean) => {
+      rejectLimit = reject
+    },
     setGameStatus: (status: 'ready' | 'active') => {
       gameStatus = status
     },
@@ -453,8 +468,8 @@ for (const size of [
         expect((await page.getByTestId('admin-slot-1').boundingBox())!.height).toBeLessThanOrEqual(
           180,
         )
-        const columns = await page.locator('[id$="-teams-panel"]').boundingBox()
-        const details = await page.locator('[id$="-detail-panel"]').boundingBox()
+        const columns = await page.getByTestId('admin-team-list-panel').boundingBox()
+        const details = await page.getByTestId('admin-team-inspector-panel').boundingBox()
         expect(
           Math.abs((columns!.x + columns!.width + details!.x) / 2 - size.width / 2),
         ).toBeLessThanOrEqual(2)
@@ -550,6 +565,13 @@ for (const width of [1440, 390]) {
       await expect(statuses.getByText('Подтверждена', { exact: true })).toBeVisible()
       await expect(statuses.getByText('Запрос на роспуск', { exact: true })).toBeVisible()
       await expect(statuses.locator(':scope > *')).toHaveCount(2)
+      const request = statuses.getByText('Запрос на роспуск', { exact: true }).locator('..')
+      await expect(request).toHaveClass(/MuiChip-colorError/)
+      await expect(request).toHaveCSS('border-top-style', 'solid')
+      await request.focus()
+      await expect(page.getByRole('tooltip')).toContainText('Игрок 6')
+      await request.blur()
+
       const statusRows = await statuses.locator(':scope > *').evaluateAll((elements) =>
         elements.map((element) => {
           const rect = element.getBoundingClientRect()
@@ -776,6 +798,22 @@ test('team statuses stay visible and only team order is draggable', async ({ pag
   await expect(
     page.getByTestId('admin-slot-2').getByText('Активная команда', { exact: true }),
   ).toBeVisible()
+  for (const [slot, text, color] of [
+    [1, 'Формирование', 'Warning'],
+    [2, 'Подтверждена', 'Success'],
+    [2, 'Активная команда', 'Warning'],
+    [4, 'Отыграла', 'Default'],
+  ] as const) {
+    const badge = page
+      .getByTestId(`admin-slot-${slot}`)
+      .getByText(text, { exact: true })
+      .locator('..')
+    await expect(badge).toHaveClass(new RegExp(`MuiChip-color${color}`))
+    await expect(badge).toHaveCSS('border-top-style', 'solid')
+    expect(
+      await badge.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth)),
+    ).toBeGreaterThan(0)
+  }
   await expect(page.locator('[draggable="true"]')).toHaveCount(24)
   await page.getByRole('tab', { name: 'Игроки (30)', exact: true }).click()
   await expect(
@@ -844,24 +882,7 @@ for (const role of ['admin', 'superadmin', 'moderator']) {
   test(role + ' creation capability when every configured slot is full', async ({ page }) => {
     await openWorkspace(page, [role, 'viewer'], true)
     const create = page.getByRole('button', { name: 'Создать команду', exact: true })
-    if (role === 'moderator') await expect(create).toBeDisabled()
-    else {
-      await expect(create).toBeEnabled()
-      await create.click()
-      await expect(
-        page.getByRole('menuitem', { name: 'Создать открытую команду', exact: true }),
-      ).toBeEnabled()
-      await expect(
-        page.getByRole('menuitem', { name: 'Создать закрытую команду', exact: true }),
-      ).toBeEnabled()
-      const sent = page.waitForRequest(
-        (request) =>
-          request.method() === 'POST' &&
-          new URL(request.url()).pathname === '/api/game/registration/admin/teams',
-      )
-      await page.getByRole('menuitem', { name: 'Создать открытую команду', exact: true }).click()
-      expect((await sent).postDataJSON()).toMatchObject({ recruitmentOpen: true })
-    }
+    await expect(create).toBeDisabled()
   })
 }
 
@@ -1370,6 +1391,19 @@ for (const width of [1440, 1200, 768, 390, 320]) {
     async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 })
       const fixture = await openWorkspace(page)
+      const left = page.getByTestId('admin-team-list-panel')
+      const right = page.getByTestId('admin-team-inspector-panel')
+      const leftBox = (await left.boundingBox())!
+      const toolbar = (await page.getByTestId('admin-registration-toolbar').boundingBox())!
+      const teamRow = (await page.getByTestId('admin-slot-1').boundingBox())!
+      const limit = (await page
+        .getByRole('region', { name: 'Лимит команд', exact: true })
+        .boundingBox())!
+      expect(Math.abs(teamRow.x - toolbar.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(teamRow.width - toolbar.width)).toBeLessThanOrEqual(1)
+      expect(Math.abs(limit.x - toolbar.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(limit.width - toolbar.width)).toBeLessThanOrEqual(1)
+      expect(teamRow.y).toBeGreaterThan(toolbar.y + toolbar.height)
       await page
         .getByTestId('admin-slot-1')
         .getByRole('button', { name: /^Управление:/ })
@@ -1391,29 +1425,29 @@ for (const width of [1440, 1200, 768, 390, 320]) {
       const create = (await page
         .getByRole('button', { name: 'Создать команду', exact: true })
         .boundingBox())!
-      const toolbar = (await page.getByTestId('admin-registration-toolbar').boundingBox())!
-      expect(Math.abs(create.x + create.width - (toolbar.x + toolbar.width))).toBeLessThanOrEqual(1)
       expect(Math.abs(create.x + create.width - (header.x + header.width))).toBeLessThanOrEqual(1)
-      if (width >= 1200) {
-        const teamRow = (await page.getByTestId('admin-slot-1').boundingBox())!
-        expect(Math.abs(teamRow.x - toolbar.x)).toBeLessThanOrEqual(1)
-        expect(Math.abs(teamRow.width - header.width)).toBeLessThanOrEqual(1)
-        expect(Math.abs(teamRow.y - create.y)).toBeLessThanOrEqual(1)
+      const rightBox = (await right.boundingBox())!
+      for (const panel of [left, right]) {
         expect(
-          Math.abs((teamRow.x + teamRow.width + header.x) / 2 - width / 2),
+          await panel.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth)),
+        ).toBeGreaterThan(0)
+      }
+      expect(Math.abs(leftBox.width - rightBox.width)).toBeLessThanOrEqual(1)
+      if (width >= 1200) {
+        expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThanOrEqual(1)
+        expect(rightBox.x - (leftBox.x + leftBox.width)).toBeGreaterThanOrEqual(16)
+        expect(create.y).toBeLessThan(toolbar.y)
+        expect(Math.abs(teamRow.width - header.width)).toBeLessThanOrEqual(1)
+        expect(
+          Math.abs((leftBox.x + leftBox.width + rightBox.x) / 2 - width / 2),
         ).toBeLessThanOrEqual(1)
       } else {
-        expect(Math.abs(header.x - toolbar.x)).toBeLessThanOrEqual(1)
-        expect(Math.abs(header.width - toolbar.width)).toBeLessThanOrEqual(1)
-      }
-      if (width < 1200) {
+        expect(Math.abs(leftBox.x - rightBox.x)).toBeLessThanOrEqual(1)
+        await expect(left).toBeHidden()
         const tabs = (await page
           .getByRole('tablist', { name: 'Управление командами', exact: true })
           .boundingBox())!
-        expect(Math.abs(tabs.y - (toolbar.y + toolbar.height) - 8)).toBeLessThanOrEqual(1)
-        expect(
-          Math.abs(tabs.x + tabs.width / 2 - (header.x + header.width / 2)),
-        ).toBeLessThanOrEqual(1)
+        expect(tabs.y + tabs.height).toBeLessThan(rightBox.y)
       }
       if (width >= 1200) {
         const tabs = page.getByTestId('admin-team-workspace-header').getByRole('tablist')
@@ -1632,3 +1666,106 @@ for (const width of [390, 768, 1440]) {
     await page.keyboard.press('Escape')
   })
 }
+
+for (const width of [390, 768, 1440]) {
+  test(`team limit can be lowered and removed without changing teams at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 1000 })
+    const fixture = await openWorkspace(
+      page,
+      ['admin', 'viewer'],
+      false,
+      'active',
+      false,
+      false,
+      false,
+      6,
+    )
+    const region = page.getByRole('region', { name: 'Лимит команд', exact: true })
+    await expect(region).toContainText('Лимит команд: 10')
+    await expect(region).toContainText('Создано команд: 6')
+    const heading = await page
+      .getByRole('heading', { name: 'Управление командами', exact: true })
+      .boundingBox()
+    const limitBox = await region.boundingBox()
+    const search = await page.getByRole('textbox', { name: 'Поиск команд и игроков' }).boundingBox()
+    expect(limitBox!.y).toBeGreaterThan(heading!.y + heading!.height)
+    expect(search!.y).toBeGreaterThan(limitBox!.y + limitBox!.height)
+    expect(Math.abs(search!.x - limitBox!.x)).toBeLessThan(2)
+
+    await region.getByRole('button', { name: 'Изменить лимит команд' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Изменить лимит команд' })
+    await dialog.getByRole('textbox', { name: 'Лимит команд', exact: true }).fill('4')
+    await page.screenshot({
+      path: `../.tmp/agent-work/team-limit/management-dialog-${width}.png`,
+      animations: 'disabled',
+    })
+    await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click()
+    await expect(dialog).toBeHidden()
+    await expect(region).toContainText('Лимит команд: 4')
+    expect(fixture.teams).toHaveLength(6)
+    await page.reload()
+    await expect(region).toContainText('Лимит команд: 4')
+    await expect(region).toContainText('Создано команд: 6')
+    await page.screenshot({ path: `../.tmp/agent-work/team-limit/management-${width}.png` })
+    if (width < 1200) await page.getByRole('tab', { name: 'Команда', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Создать команду', exact: true })).toBeDisabled()
+    if (width < 1200) await page.getByRole('tab', { name: 'Команды (6)', exact: true }).click()
+    await region.getByRole('button', { name: 'Изменить лимит команд' }).click()
+    await dialog.getByRole('switch', { name: 'Без ограничений' }).check()
+    await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click()
+    await expect(dialog).toBeHidden()
+    await expect(region).toContainText('Без ограничений')
+    if (width < 1200) await page.getByRole('tab', { name: 'Команда', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Создать команду', exact: true })).toBeEnabled()
+    await page.reload()
+    await expect(region).toContainText('Без ограничений')
+    expect(fixture.teams).toHaveLength(6)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+test('team limit preserves invalid and failed edits and supports retry during registration', async ({
+  page,
+}) => {
+  const fixture = await openWorkspace(page, ['moderator', 'viewer'], false, 'ready')
+  await page.getByRole('button', { name: 'Изменить лимит команд' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Изменить лимит команд' })
+  const input = dialog.getByRole('textbox', { name: 'Лимит команд', exact: true })
+  await input.fill('0')
+  await expect(dialog.getByRole('button', { name: 'Сохранить', exact: true })).toBeDisabled()
+  await input.fill('4')
+  fixture.rejectLimit(true)
+  await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(dialog.getByRole('alert')).toBeVisible()
+  await expect(input).toHaveValue('4')
+  fixture.rejectLimit(false)
+  await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Лимит команд', exact: true })).toContainText(
+    'Лимит команд: 4',
+  )
+})
+
+test('a saved team limit remains visible when snapshot refresh fails', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const fixture = await openWorkspace(page)
+  await page.getByRole('button', { name: 'Изменить лимит команд' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Изменить лимит команд' })
+  await dialog.getByRole('textbox', { name: 'Лимит команд', exact: true }).fill('4')
+  fixture.failRefresh()
+  await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить команды.')
+  await expect(page.getByRole('region', { name: 'Лимит команд', exact: true })).toContainText(
+    'Лимит команд: 4',
+  )
+  await expect(page.getByRole('button', { name: 'Создать команду', exact: true })).toBeDisabled()
+  fixture.allowRefresh()
+  await page.getByRole('button', { name: 'Повторить', exact: true }).click()
+  await expect(page.getByRole('alert')).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Лимит команд', exact: true })).toContainText(
+    'Лимит команд: 4',
+  )
+})

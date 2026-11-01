@@ -38,7 +38,6 @@ export function useAdminRegistrationCatalog(snapshot: GameRegistrationAdminSnaps
     [sortedTeamSlots, teamsById],
   )
 
-  const hasAvailableCreateTeamSlot = sortedTeamSlots.some((slot) => slot.isAvailableForNewTeam)
   const disbandRequestsCount = orderedTeamEntries.filter(
     ({ team }) => team.disbandRequestedAtUtc != null,
   ).length
@@ -81,7 +80,6 @@ export function useAdminRegistrationCatalog(snapshot: GameRegistrationAdminSnaps
     status,
     setStatus,
     orderedTeamEntries,
-    hasAvailableCreateTeamSlot,
     disbandRequestsCount,
     visibleEntries,
     assignableTeams,

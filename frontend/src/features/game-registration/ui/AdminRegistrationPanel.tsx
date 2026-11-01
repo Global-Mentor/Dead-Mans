@@ -6,7 +6,7 @@ import type {
   RegistrationPlayer,
   RegistrationTeam,
 } from '../../../shared/api/contracts/index.ts'
-import { SectionCard, SectionHeader, TabStrip, TabOption } from '../../../shared/ui/index.ts'
+import { SectionCard, TabStrip, TabOption } from '../../../shared/ui/index.ts'
 import { AdminAvailablePlayersPanel } from './AdminAvailablePlayersPanel.tsx'
 import { AdminTeamPlayerDialog, type AdminTeamTarget } from './AdminTeamPlayerDialog.tsx'
 import { AdminRegistrationConfirmations } from './AdminRegistrationConfirmations.tsx'
@@ -15,13 +15,18 @@ import { AdminRegistrationTeamDetails } from './AdminRegistrationTeamDetails.tsx
 import { AdminRegistrationTeamsList } from './AdminRegistrationTeamsList.tsx'
 import { AdminTeamRejectionConfirmation } from './AdminTeamRejectionConfirmation.tsx'
 import { AdminTeamWorkspaceHeader } from './AdminTeamWorkspaceHeader.tsx'
-import { AdminRegistrationToolbar } from './AdminRegistrationToolbar.tsx'
+import { AdminRegistrationHeader } from './AdminRegistrationHeader.tsx'
 import { getGameRegistrationMutationErrorMessage } from '../api/game-registration-mutation-errors.ts'
 import { AdminTeamPlayedConfirmation } from './AdminTeamPlayedConfirmation.tsx'
 import { AdminAssignPlayerDialog } from './AdminAssignPlayerDialog.tsx'
 
 export interface AdminRegistrationPanelProps {
-  canCreateAdditionalTeams?: boolean
+  isUpdatingTeamLimit: boolean
+  onUpdateTeamLimit: (
+    limit: number | null,
+    onSuccess: () => void,
+    onError: (error: Error) => void,
+  ) => void
   snapshot: GameRegistrationAdminSnapshot
   isCreatingTeam: boolean
   isCreatingInvitation: (teamId: string) => boolean
@@ -99,7 +104,6 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
     status,
     setStatus,
     orderedTeamEntries,
-    hasAvailableCreateTeamSlot,
     disbandRequestsCount,
     visibleEntries,
     assignableTeams,
@@ -177,7 +181,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
 
   return (
     <>
-      <SectionCard
+      <Box
         sx={{
           flex: '1 1 0%',
           minHeight: 0,
@@ -188,33 +192,10 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
       >
         <Box
           sx={{
-            maxHeight: '45%',
-            flexShrink: 0,
-            overflowY: 'auto',
-            scrollbarWidth: 'thin',
-            scrollbarGutter: 'stable both-edges',
-          }}
-        >
-          <Box sx={{ mb: 1.5 }}>
-            <SectionHeader headingLevel="h1" title={t('teamRegistrations.title')} />
-          </Box>
-          <AdminRegistrationToolbar
-            search={search}
-            onSearch={setSearch}
-            status={status}
-            onStatus={setStatus}
-            requestsCount={disbandRequestsCount}
-            onReset={resetFilters}
-          />
-        </Box>
-        <Box
-          sx={{
             display: { xs: 'block', lg: 'none' },
-            mt: 1,
+            mb: 1,
             flexShrink: 0,
             overflow: 'hidden',
-            scrollbarWidth: 'thin',
-            scrollbarGutter: 'stable both-edges',
           }}
         >
           <TabStrip
@@ -258,10 +239,10 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
             gap: 2,
             flex: '1 1 0%',
             minHeight: 0,
-            mt: { xs: 1, lg: 1.5 },
           }}
         >
-          <Box
+          <SectionCard
+            data-testid="admin-team-list-panel"
             id={workspaceId + '-teams-panel'}
             role={isDesktop ? undefined : 'tabpanel'}
             aria-labelledby={isDesktop ? undefined : workspaceId + '-teams-tab'}
@@ -270,8 +251,23 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
               flexDirection: 'column',
               minHeight: 0,
               minWidth: 0,
+              overflow: 'hidden',
+              gap: 1.5,
             }}
           >
+            <AdminRegistrationHeader
+              search={search}
+              onSearch={setSearch}
+              status={status}
+              onStatus={setStatus}
+              requestsCount={disbandRequestsCount}
+              onReset={resetFilters}
+              limit={{
+                snapshot,
+                isSaving: props.isUpdatingTeamLimit,
+                onSave: props.onUpdateTeamLimit,
+              }}
+            />
             <Box
               role="region"
               aria-label={t('teamRegistrations.list')}
@@ -282,7 +278,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                 overflowY: 'auto',
                 overscrollBehavior: 'contain',
                 scrollbarWidth: 'thin',
-                scrollbarGutter: 'stable both-edges',
+                scrollbarGutter: 'stable',
               }}
             >
               <Stack gap={0.5}>
@@ -306,8 +302,9 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                 />
               </Stack>
             </Box>
-          </Box>
-          <Box
+          </SectionCard>
+          <SectionCard
+            data-testid="admin-team-inspector-panel"
             sx={{
               overflow: 'hidden',
               display: { xs: activePanel === 'teams' ? 'none' : 'flex', lg: 'flex' },
@@ -321,7 +318,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
               activePanel={activePanel}
               onPanelChange={setActivePanel}
               playerCount={snapshot.availablePlayers.length}
-              canCreate={hasAvailableCreateTeamSlot || Boolean(props.canCreateAdditionalTeams)}
+              canCreate={snapshot.canCreateTeam}
               isCreating={isCreatingTeam}
               onCreate={onCreateTeam}
             />
@@ -346,7 +343,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                   overflowY: 'auto',
                   overscrollBehavior: 'contain',
                   scrollbarWidth: 'thin',
-                  scrollbarGutter: 'stable both-edges',
+                  scrollbarGutter: 'stable',
                   pb: 1,
                   pt: 0,
                 }}
@@ -365,7 +362,7 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                   minHeight: 0,
                   overflow: 'hidden',
                   scrollbarWidth: 'thin',
-                  scrollbarGutter: 'stable both-edges',
+                  scrollbarGutter: 'stable',
                   pb: 1,
                   pt: 0,
                 }}
@@ -373,9 +370,9 @@ export function AdminRegistrationPanel(props: AdminRegistrationPanelProps) {
                 {playersPanel}
               </Box>
             </Box>
-          </Box>
+          </SectionCard>
         </Box>
-      </SectionCard>
+      </Box>
       {pendingPlayedTeam ? (
         <AdminTeamPlayedConfirmation
           team={pendingPlayedTeam}

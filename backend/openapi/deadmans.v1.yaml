@@ -1656,6 +1656,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TwitchBotStatusDto'
+  /integrations/twitch/eventsub/connect:
+    post:
+      operationId: connectTwitchEventSub
+      description: Admin-only subscription recovery using the configured bot and channel grants. A pending webhook verification remains disconnected until confirmed by a subsequent health check.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current connection state after the subscription attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwitchBotStatusDto'
+        '401':
+          description: Authentication required
+        '403':
+          description: Administrator role and API client header required
+        '404':
+          description: Twitch bot integration is disabled
   /integrations/twitch/oauth/{role}:
     get:
       operationId: connectTwitchBotAccount
@@ -3608,6 +3627,50 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/registration/admin/games/{gameId}/team-limit:
+    put:
+      operationId: updateRegistrationTeamLimit
+      description: Set the team capacity during registration or active play. Null removes the limit. Existing teams and invitations are preserved when lowering it.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamLimitRequestDto'
+      responses:
+        '204':
+          description: Limit saved
+        '400':
+          description: Invalid limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game is not ready or active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/registration/admin:
     get:
       operationId: getGameRegistrationAdminSnapshot
@@ -3643,7 +3706,7 @@ paths:
   /game/registration/admin/teams:
     post:
       operationId: createAdminRegistrationTeam
-      description: Admins and superadmins may create an additional reserved slot when all public slots are occupied and no explicit slot is requested. Moderators require an available slot. Additional slots do not expand public self-registration capacity. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot.
+      description: Team creation respects the configured game limit for all roles. Slots are allocated as needed. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot.
       security:
         - cookieAuth: []
       requestBody:
@@ -4861,8 +4924,14 @@ components:
     GameSetupSnapshotDto:
       type: object
       required:
-        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
+        [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds, teamLimit]
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+          readOnly: true
         gameId:
           type: string
         title:
@@ -4916,6 +4985,7 @@ components:
           type: string
           enum: [ready, active, finished]
     GameFinishIssueDto:
+      description: Finish blockers include unfinished rounds, invalid modifier state, forming teams, pending invitations, pending disband requests and invalid confirmed rosters. Warnings cover unplayed teams and no completed rounds.
       type: object
       required: [code, count]
       properties:
@@ -5235,9 +5305,21 @@ components:
         invitedUserDisplayName:
           type: string
           nullable: true
+    UpdateTeamLimitRequestDto:
+      type: object
+      required:
+        - teamLimit
+      properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
     GameRegistrationSnapshotDto:
       type: object
       required:
+        - teamLimit
+        - canCreateTeam
         - gameId
         - gameStatus
         - minPlayersPerTeam
@@ -5249,6 +5331,13 @@ components:
         - canInvitePlayersToMyTeam
         - invitablePlayers
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+        canCreateTeam:
+          type: boolean
         gameId:
           type: string
           format: uuid
@@ -5288,6 +5377,8 @@ components:
     GameRegistrationAdminSnapshotDto:
       type: object
       required:
+        - teamLimit
+        - canCreateTeam
         - gameId
         - gameStatus
         - minPlayersPerTeam
@@ -5297,6 +5388,13 @@ components:
         - teams
         - availablePlayers
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+        canCreateTeam:
+          type: boolean
         gameId:
           type: string
           format: uuid
@@ -8498,9 +8596,14 @@ components:
             - game_finish.warnings_not_acknowledged
             - game_finish.modifier_state_invalid
             - game_finish.invalid_request
+            - game_finish.unconfirmed_teams
+            - game_finish.pending_invitations
+            - game_finish.pending_disband_requests
+            - game_finish.invalid_confirmed_team_roster
             - game_common.unexpected_server_error
             - game_common.too_many_requests
             - game_registration.not_open
+            - game_registration.invalid_team_limit
             - game_registration.no_slots
             - game_registration.already_on_team
             - game_registration.team_not_found

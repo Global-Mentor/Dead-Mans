@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  updateGameTeamLimitMutationOptions,
   acceptGameRegistrationInvitationMutationOptions,
   assignGameRegistrationPlayerToTeamMutationOptions,
   cancelGameRegistrationTeamInvitationMutationOptions,
@@ -25,6 +26,10 @@ import {
   updateMyGameRegistrationTeamNameMutationOptions,
   updateMyGameRegistrationReadinessMutationOptions,
 } from './game-registration-mutation-options.ts'
+
+export function useUpdateGameTeamLimitMutation(onError: GameRegistrationMutationErrorHandler) {
+  return useMutation(updateGameTeamLimitMutationOptions(useQueryClient(), onError))
+}
 
 export function useCreateGameRegistrationTeamMutation(
   onError: GameRegistrationMutationErrorHandler,

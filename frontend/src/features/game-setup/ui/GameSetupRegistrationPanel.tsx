@@ -142,6 +142,12 @@ function RegistrationPanelContent({
             count: snapshot.quizAnswerDurationSeconds,
           })}
         />
+        <Metric
+          appearance="row"
+          density="compact"
+          label={t('gameSetup.registration.teamLimit')}
+          value={snapshot.teamLimit ?? t('gameSetup.registration.unlimitedTeams')}
+        />
       </Stack>
       <Stack direction="row" spacing={1}>
         <AppLinkButton tone="secondary" to={adminModifiersRoute.fullPath} disabled={isOpening}>

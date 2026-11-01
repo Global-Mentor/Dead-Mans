@@ -1,7 +1,7 @@
-import { Stack, Typography } from '@mui/material'
+import { Stack } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { RegistrationTeam } from '../../../shared/api/contracts/index.ts'
-import { HelpTooltip } from '../../../shared/ui/index.ts'
+import { HelpTooltip, StatusBadge } from '../../../shared/ui/index.ts'
 import { formatRegistrationTeamStatus } from '../model/registration-team-status.ts'
 
 export function AdminTeamStatusBlock({ team }: { team: RegistrationTeam }) {
@@ -11,28 +11,39 @@ export function AdminTeamStatusBlock({ team }: { team: RegistrationTeam }) {
     <Stack
       role="group"
       aria-label={t('teamRegistrations.status')}
-      gap={0.25}
+      gap={0.5}
+      alignItems="flex-end"
       sx={{ minWidth: 0, textAlign: 'right', overflowWrap: 'anywhere' }}
     >
-      <Typography
-        variant="caption"
-        color={ready || team.status === 'confirmed' ? 'success.main' : 'text.secondary'}
-      >
-        {ready
-          ? t('gameRegistration.teamStatus.ready')
-          : formatRegistrationTeamStatus(team.status, t)}
-      </Typography>
+      <StatusBadge
+        size="small"
+        density="tight"
+        variant="outlined"
+        color={
+          ready || team.status === 'confirmed'
+            ? 'success'
+            : team.status === 'forming'
+              ? 'warning'
+              : 'error'
+        }
+        label={
+          ready
+            ? t('gameRegistration.teamStatus.ready')
+            : formatRegistrationTeamStatus(team.status, t)
+        }
+      />
       {team.isActiveInGame || team.isPlayed ? (
-        <Typography
-          variant="caption"
-          color={team.isActiveInGame ? 'warning.main' : 'text.secondary'}
-        >
-          {t(
+        <StatusBadge
+          size="small"
+          density="tight"
+          variant="outlined"
+          color={team.isActiveInGame ? 'warning' : 'default'}
+          label={t(
             team.isActiveInGame
               ? 'gameApplication.adminPanel.activeTeamChip'
               : 'gameApplication.adminPanel.playedTeamChip',
           )}
-        </Typography>
+        />
       ) : null}
       {team.disbandRequestedAtUtc ? (
         <HelpTooltip
@@ -46,9 +57,14 @@ export function AdminTeamStatusBlock({ team }: { team: RegistrationTeam }) {
               : t('gameApplication.adminPanel.disbandRequestTitle')
           }
         >
-          <Typography variant="caption" color="warning.main" tabIndex={0}>
-            {t('gameApplication.adminPanel.disbandRequestedChip')}
-          </Typography>
+          <StatusBadge
+            size="small"
+            density="tight"
+            variant="outlined"
+            color="error"
+            tabIndex={0}
+            label={t('gameApplication.adminPanel.disbandRequestedChip')}
+          />
         </HelpTooltip>
       ) : null}
     </Stack>

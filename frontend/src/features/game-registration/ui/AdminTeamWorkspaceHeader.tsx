@@ -32,7 +32,7 @@ export function AdminTeamWorkspaceHeader({
         mb: 1,
         overflow: 'hidden',
         scrollbarWidth: 'thin',
-        scrollbarGutter: 'stable both-edges',
+        scrollbarGutter: 'stable',
       }}
       data-testid="admin-team-workspace-header"
     >

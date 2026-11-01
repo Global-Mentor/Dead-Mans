@@ -47,6 +47,8 @@ async function openTeamManagement(
         const snapshot = {
           gameId,
           gameStatus: 'active',
+          teamLimit: state === 'editable' ? 10 : 1,
+          canCreateTeam: disbanded || state === 'editable',
           minPlayersPerTeam: 1,
           maxPlayersPerTeam: 3,
           launchSummary: {

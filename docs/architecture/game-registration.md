@@ -80,9 +80,13 @@ browser validation bubbles.
 Leaving requires confirmation. The dialog stays open while the request is pending and
 after a failed request, allowing a retry; it closes only after success or cancellation.
 
-## Additional administrator teams
+## Team limits and queue slots
 
-Admins and superadmins can create empty teams beyond the initial slot count in ready and active games. Automatic placement reuses an available slot or creates a new reserved slot at the end of the queue. Slot and team creation share the game roster lock and transaction, including concurrent requests. Moderators still need an available public slot or an explicitly selected available slot; clients cannot grant themselves overflow permission. Reserved overflow slots do not increase public self-registration capacity. Explicit occupied or invalid slot requests still fail.
+New games default to a team limit of 10. Staff can change it in team management during registration or active play using `PUT /api/game/registration/admin/games/{gameId}/team-limit`. A number from 1 to 1000 sets the capacity; explicit null removes the limit. The value persists separately from queue slots. Existing games retain their initial public capacity on migration.
+
+Forming and confirmed teams, plus slots reserved by pending invitations, count towards capacity. Lowering the limit never disbands teams, changes memberships, or cancels invitations. Existing teams can still be filled and existing invitations accepted. Further creation is blocked until capacity is available or the limit is raised/removed. All creation roles use the same limit. Finished game limits are immutable.
+
+Slot allocation and limit changes use the same game row lock. Public queue slots are allocated as needed in the team creation transaction and reused after release. Published slot identity remains immutable; unscoped inserts still fail. Automatic placement preserves existing team order; explicit occupied or invalid slot requests still fail.
 
 ## Refusal of admission
 
@@ -97,6 +101,7 @@ an admission-refusal message. Refusal is a team decision, not an account ban.
 
 ## Registration API
 
+- `PUT /api/game/registration/admin/games/{gameId}/team-limit` - change or remove the current game team limit
 - `GET /api/game/registration` - snapshot for the ready game
 - `POST /api/game/registration/teams` - create team on a public team slot
 - `PATCH /api/game/registration/my-team/readiness` - mark or withdraw the current player's own readiness for a forming team

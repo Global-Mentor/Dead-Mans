@@ -67,6 +67,7 @@ const translations = {
     activeTeamRoundBadge: 'Round for team #{{teamSlot}}',
     teamQueueTitle: 'Team queue',
     teamQueueNoGame: 'There is no current game yet. Teams will appear after registration opens.',
+    teamQueueFinished: 'The game has ended. There is no active team queue.',
     teamQueueLoading: 'Loading teams...',
     teamQueueError: 'Failed to load team queue.',
     teamQueueEmpty: 'No confirmed teams in the queue yet.',
@@ -212,7 +213,6 @@ const translations = {
     finishDialogDescription:
       'The final standings will be saved as an immutable snapshot. This action cannot be undone.',
     finishPreviewLoading: 'Calculating the official result...',
-    finishPreviewError: 'The finish preview could not be loaded.',
     finishSubmitting: 'Finishing...',
     finishConfirmAction: 'Finish game permanently',
     finishRankingTitle: 'Final team standings',
@@ -227,12 +227,46 @@ const translations = {
       'I understand that the game cannot be reopened in this version.',
     finishRefreshPreview: 'Refresh preview',
     finishStaleError: 'The game changed. Refresh the preview and confirm the current result again.',
-    finishSubmitError: 'The game could not be finished. Review the current state and try again.',
     finishSuccess: 'The game has been finished and its official result saved.',
     finishedTitle: 'Game finished',
     finishedDescription: 'The board is now read-only. The official result is available in history.',
     openResultsAction: 'Open results',
+    finishErrors: {
+      roundInProgress:
+        'Finish the current round, including its results presentation, or technically cancel it.',
+      modifierStateInvalid:
+        'Modifier purchases remain open for completed rounds. Their server state must be repaired.',
+      unconfirmedTeams: 'There are unconfirmed teams. Confirm or disband them in team management.',
+      pendingInvitations:
+        'There are unanswered team invitations. Resolve or cancel them in team management.',
+      pendingDisbandRequests:
+        'There are pending team disband requests. Resolve them in team management.',
+      invalidRoster:
+        'A confirmed team is outside the player limits. Correct its roster in team management.',
+      warningsNotAcknowledged:
+        'The warnings changed or were not acknowledged. Refresh the preview and confirm each warning.',
+      invalidRequest:
+        'The finish request is invalid. Keep the comment within 2000 characters, then reopen the dialog.',
+      notActive: 'This game is no longer active. Refresh the page to check its current state.',
+      notFound: 'The game was deleted or is no longer available. Refresh the page.',
+      signIn: 'Your session expired. Sign in again and reopen the finish dialog.',
+      forbidden:
+        'Access denied. Finishing a game requires administrator permissions and an active account.',
+      rateLimited: 'Too many requests. Wait a moment, then refresh the preview.',
+      internal:
+        'An internal server error prevented confirmation of the result. Refresh the preview to check whether the game finished. If it happens again, contact the administrator.',
+      network:
+        'No response from the server. Check your connection and refresh the preview to check whether the game finished.',
+      unknown:
+        'The server rejected the operation for an unrecognized reason. Refresh the preview. If it happens again, contact the administrator.',
+      requestId: 'Error reference: {{requestId}}',
+    },
     finishIssue: {
+      unconfirmedTeams: 'Unconfirmed teams: {{count}}. Confirm or disband them in team management.',
+      pendingInvitations: 'Pending invitations: {{count}}. Resolve or cancel them.',
+      pendingDisbandRequests:
+        'Pending disband requests: {{count}}. Resolve them in team management.',
+      invalidRoster: 'Confirmed teams outside player limits: {{count}}. Correct their rosters.',
       unplayedTeams: '{{count}} team(s) have not been marked as played. Finish anyway.',
       noCompletedRounds: 'No completed rounds exist. The result will contain no scored teams.',
       roundInProgress: '{{count}} unfinished round(s) block game completion.',
@@ -512,6 +546,7 @@ const translations = {
     activeTeamRoundBadge: 'Идёт раунд команды #{{teamSlot}}',
     teamQueueTitle: 'Очередь команд',
     teamQueueNoGame: 'Текущей игры пока нет. Команды появятся после открытия регистрации.',
+    teamQueueFinished: 'Игра завершена. Активной очереди команд сейчас нет.',
     teamQueueLoading: 'Загрузка команд...',
     teamQueueError: 'Не удалось загрузить очередь команд.',
     teamQueueEmpty: 'В очереди пока нет подтверждённых команд.',
@@ -661,7 +696,6 @@ const translations = {
     finishDialogDescription:
       'Финальный рейтинг будет сохранён как неизменяемый снимок. Действие нельзя отменить.',
     finishPreviewLoading: 'Рассчитываем официальный итог...',
-    finishPreviewError: 'Не удалось загрузить предварительный итог.',
     finishSubmitting: 'Завершаем...',
     finishConfirmAction: 'Завершить игру навсегда',
     finishRankingTitle: 'Итоговый рейтинг команд',
@@ -676,12 +710,48 @@ const translations = {
       'Я понимаю, что в этой версии игру нельзя вернуть в активное состояние.',
     finishRefreshPreview: 'Обновить итог',
     finishStaleError: 'Игра изменилась. Обновите итог и подтвердите актуальный результат заново.',
-    finishSubmitError: 'Не удалось завершить игру. Проверьте её состояние и повторите попытку.',
     finishSuccess: 'Игра завершена, официальный итог сохранён.',
     finishedTitle: 'Игра завершена',
     finishedDescription: 'Доска доступна только для чтения. Официальный итог сохранён в истории.',
     openResultsAction: 'Открыть результаты',
+    finishErrors: {
+      roundInProgress:
+        'Завершите текущий раунд, включая показ результатов, или технически отмените его.',
+      modifierStateInvalid:
+        'Не закрыты покупки модификаторов завершённых раундов. Требуется исправление состояния на сервере.',
+      unconfirmedTeams:
+        'Есть неподтверждённые команды. Подтвердите их или расформируйте в управлении командами.',
+      pendingInvitations:
+        'Есть приглашения в команды без ответа. Завершите их обработку или отмените в управлении командами.',
+      pendingDisbandRequests:
+        'Есть необработанные запросы на расформирование команд. Рассмотрите их в управлении командами.',
+      invalidRoster:
+        'Состав подтверждённой команды не соответствует лимитам игроков. Исправьте состав в управлении командами.',
+      warningsNotAcknowledged:
+        'Предупреждения изменились или не подтверждены. Обновите итог и подтвердите каждое предупреждение.',
+      invalidRequest:
+        'Некорректный запрос завершения. Проверьте, что комментарий не длиннее 2000 символов, и заново откройте окно завершения.',
+      notActive: 'Игра уже не активна. Обновите страницу, чтобы увидеть её текущее состояние.',
+      notFound: 'Игра удалена или больше недоступна. Обновите страницу.',
+      signIn: 'Сеанс входа истёк. Войдите снова и откройте окно завершения.',
+      forbidden: 'Нет доступа. Завершать игру может администратор с активной учётной записью.',
+      rateLimited: 'Слишком много запросов. Немного подождите и обновите итог.',
+      internal:
+        'Внутренняя ошибка сервера: результат операции не подтверждён. Обновите итог, чтобы проверить, завершилась ли игра. Если ошибка повторится, обратитесь к администратору.',
+      network:
+        'Нет ответа от сервера. Проверьте соединение и обновите итог, чтобы проверить, завершилась ли игра.',
+      unknown:
+        'Сервер отклонил операцию по неизвестной причине. Обновите итог. Если ошибка повторится, обратитесь к администратору.',
+      requestId: 'Код обращения: {{requestId}}',
+    },
     finishIssue: {
+      unconfirmedTeams:
+        'Неподтверждённых команд: {{count}}. Подтвердите их или расформируйте в управлении командами.',
+      pendingInvitations: 'Приглашений без ответа: {{count}}. Завершите их обработку или отмените.',
+      pendingDisbandRequests:
+        'Запросов на расформирование: {{count}}. Рассмотрите их в управлении командами.',
+      invalidRoster:
+        'Подтверждённых команд с недопустимым числом игроков: {{count}}. Исправьте их состав.',
       unplayedTeams: 'Не отмечены отыгравшими команд: {{count}}. Всё равно завершить игру.',
       noCompletedRounds: 'Нет завершённых раундов. В результате не будет команд со счётом.',
       roundInProgress: 'Незавершённых раундов: {{count}}. Они блокируют завершение игры.',
@@ -966,6 +1036,7 @@ const translations = {
     activeTeamRoundBadge: 'Триває раунд команди #{{teamSlot}}',
     teamQueueTitle: 'Черга команд',
     teamQueueNoGame: 'Поточної гри поки немає. Команди з’являться після відкриття реєстрації.',
+    teamQueueFinished: 'Гру завершено. Активної черги команд зараз немає.',
     teamQueueLoading: 'Завантаження команд...',
     teamQueueError: 'Не вдалося завантажити чергу команд.',
     teamQueueEmpty: 'У черзі ще немає підтверджених команд.',
@@ -1113,7 +1184,6 @@ const translations = {
     finishDialogDescription:
       'Фінальний рейтинг буде збережено як незмінний знімок. Дію не можна скасувати.',
     finishPreviewLoading: 'Розраховуємо офіційний підсумок...',
-    finishPreviewError: 'Не вдалося завантажити попередній підсумок.',
     finishSubmitting: 'Завершуємо...',
     finishConfirmAction: 'Завершити гру назавжди',
     finishRankingTitle: 'Підсумковий рейтинг команд',
@@ -1128,12 +1198,48 @@ const translations = {
       'Я розумію, що в цій версії гру не можна повернути до активного стану.',
     finishRefreshPreview: 'Оновити підсумок',
     finishStaleError: 'Гра змінилася. Оновіть підсумок і знову підтвердьте актуальний результат.',
-    finishSubmitError: 'Не вдалося завершити гру. Перевірте її стан і повторіть спробу.',
     finishSuccess: 'Гру завершено, офіційний підсумок збережено.',
     finishedTitle: 'Гру завершено',
     finishedDescription: 'Дошка доступна лише для читання. Офіційний підсумок є в історії.',
     openResultsAction: 'Відкрити результати',
+    finishErrors: {
+      roundInProgress:
+        'Завершіть поточний раунд, включно з показом результатів, або технічно скасуйте його.',
+      modifierStateInvalid:
+        'Не закрито покупки модифікаторів завершених раундів. Потрібно виправити стан на сервері.',
+      unconfirmedTeams:
+        'Є непідтверджені команди. Підтвердьте або розформуйте їх у керуванні командами.',
+      pendingInvitations:
+        'Є запрошення до команд без відповіді. Опрацюйте або скасуйте їх у керуванні командами.',
+      pendingDisbandRequests:
+        'Є неопрацьовані запити на розформування команд. Розгляньте їх у керуванні командами.',
+      invalidRoster:
+        'Склад підтвердженої команди не відповідає лімітам гравців. Виправте його в керуванні командами.',
+      warningsNotAcknowledged:
+        'Попередження змінилися або не підтверджені. Оновіть підсумок і підтвердьте кожне попередження.',
+      invalidRequest:
+        'Некоректний запит завершення. Перевірте, що коментар не довший за 2000 символів, і знову відкрийте вікно завершення.',
+      notActive: 'Гра вже не активна. Оновіть сторінку, щоб побачити її поточний стан.',
+      notFound: 'Гру видалено або вона більше недоступна. Оновіть сторінку.',
+      signIn: 'Сеанс входу закінчився. Увійдіть знову й відкрийте вікно завершення.',
+      forbidden: 'Немає доступу. Завершувати гру може адміністратор з активним обліковим записом.',
+      rateLimited: 'Забагато запитів. Трохи зачекайте й оновіть підсумок.',
+      internal:
+        'Внутрішня помилка сервера: результат операції не підтверджено. Оновіть підсумок, щоб перевірити, чи завершилась гра. Якщо помилка повториться, зверніться до адміністратора.',
+      network:
+        'Немає відповіді від сервера. Перевірте з’єднання й оновіть підсумок, щоб перевірити, чи завершилась гра.',
+      unknown:
+        'Сервер відхилив операцію з невідомої причини. Оновіть підсумок. Якщо помилка повториться, зверніться до адміністратора.',
+      requestId: 'Код звернення: {{requestId}}',
+    },
     finishIssue: {
+      unconfirmedTeams:
+        'Непідтверджених команд: {{count}}. Підтвердьте або розформуйте їх у керуванні командами.',
+      pendingInvitations: 'Запрошень без відповіді: {{count}}. Опрацюйте або скасуйте їх.',
+      pendingDisbandRequests:
+        'Запитів на розформування: {{count}}. Розгляньте їх у керуванні командами.',
+      invalidRoster:
+        'Підтверджених команд із неприпустимою кількістю гравців: {{count}}. Виправте їхній склад.',
       unplayedTeams: 'Не позначено як зіграні команд: {{count}}. Усе одно завершити гру.',
       noCompletedRounds: 'Немає завершених раундів. У результаті не буде команд із рахунком.',
       roundInProgress: 'Незавершених раундів: {{count}}. Вони блокують завершення гри.',
@@ -1416,6 +1522,7 @@ const translations = {
     activeTeamRoundBadge: 'Trwa runda drużyny #{{teamSlot}}',
     teamQueueTitle: 'Kolejka drużyn',
     teamQueueNoGame: 'Nie ma jeszcze bieżącej gry. Drużyny pojawią się po otwarciu zapisów.',
+    teamQueueFinished: 'Gra się zakończyła. Nie ma teraz aktywnej kolejki drużyn.',
     teamQueueLoading: 'Ładowanie drużyn...',
     teamQueueError: 'Nie udało się załadować kolejki drużyn.',
     teamQueueEmpty: 'W kolejce nie ma jeszcze zatwierdzonych drużyn.',
@@ -1567,7 +1674,6 @@ const translations = {
     finishDialogDescription:
       'Ranking końcowy zostanie zapisany jako niezmienna migawka. Tej operacji nie można cofnąć.',
     finishPreviewLoading: 'Obliczanie oficjalnego wyniku...',
-    finishPreviewError: 'Nie udało się wczytać podglądu wyniku.',
     finishSubmitting: 'Kończenie...',
     finishConfirmAction: 'Zakończ grę na stałe',
     finishRankingTitle: 'Końcowy ranking drużyn',
@@ -1581,12 +1687,48 @@ const translations = {
     finishIrreversibleConfirmation: 'Rozumiem, że w tej wersji gry nie można ponownie aktywować.',
     finishRefreshPreview: 'Odśwież podgląd',
     finishStaleError: 'Gra uległa zmianie. Odśwież podgląd i ponownie potwierdź aktualny wynik.',
-    finishSubmitError: 'Nie udało się zakończyć gry. Sprawdź jej stan i spróbuj ponownie.',
     finishSuccess: 'Gra została zakończona, a oficjalny wynik zapisany.',
     finishedTitle: 'Gra zakończona',
     finishedDescription: 'Plansza jest tylko do odczytu. Oficjalny wynik znajduje się w historii.',
     openResultsAction: 'Otwórz wyniki',
+    finishErrors: {
+      roundInProgress:
+        'Zakończ bieżącą rundę, w tym prezentację wyników, lub anuluj ją technicznie.',
+      modifierStateInvalid:
+        'Zakupy modyfikatorów zakończonych rund nie zostały zamknięte. Trzeba naprawić ich stan na serwerze.',
+      unconfirmedTeams:
+        'Są niepotwierdzone drużyny. Potwierdź je lub rozwiąż w zarządzaniu drużynami.',
+      pendingInvitations:
+        'Są zaproszenia do drużyn bez odpowiedzi. Rozpatrz je lub anuluj w zarządzaniu drużynami.',
+      pendingDisbandRequests:
+        'Są nierozpatrzone wnioski o rozwiązanie drużyn. Rozpatrz je w zarządzaniu drużynami.',
+      invalidRoster:
+        'Skład potwierdzonej drużyny nie spełnia limitów graczy. Popraw go w zarządzaniu drużynami.',
+      warningsNotAcknowledged:
+        'Ostrzeżenia zmieniły się lub nie zostały potwierdzone. Odśwież podgląd i potwierdź każde ostrzeżenie.',
+      invalidRequest:
+        'Nieprawidłowe żądanie zakończenia. Sprawdź, czy komentarz ma do 2000 znaków, i ponownie otwórz okno zakończenia.',
+      notActive: 'Gra nie jest już aktywna. Odśwież stronę, aby sprawdzić jej obecny stan.',
+      notFound: 'Gra została usunięta lub jest niedostępna. Odśwież stronę.',
+      signIn: 'Sesja wygasła. Zaloguj się ponownie i otwórz okno zakończenia.',
+      forbidden: 'Brak dostępu. Grę może zakończyć administrator z aktywnym kontem.',
+      rateLimited: 'Zbyt wiele żądań. Poczekaj chwilę i odśwież podgląd.',
+      internal:
+        'Wewnętrzny błąd serwera: wynik operacji nie został potwierdzony. Odśwież podgląd, aby sprawdzić, czy gra się zakończyła. Jeśli błąd się powtórzy, skontaktuj się z administratorem.',
+      network:
+        'Brak odpowiedzi serwera. Sprawdź połączenie i odśwież podgląd, aby sprawdzić, czy gra się zakończyła.',
+      unknown:
+        'Serwer odrzucił operację z nieznanego powodu. Odśwież podgląd. Jeśli błąd się powtórzy, skontaktuj się z administratorem.',
+      requestId: 'Numer zgłoszenia: {{requestId}}',
+    },
     finishIssue: {
+      unconfirmedTeams:
+        'Niepotwierdzone drużyny: {{count}}. Potwierdź je lub rozwiąż w zarządzaniu drużynami.',
+      pendingInvitations: 'Zaproszenia bez odpowiedzi: {{count}}. Rozpatrz je lub anuluj.',
+      pendingDisbandRequests:
+        'Wnioski o rozwiązanie: {{count}}. Rozpatrz je w zarządzaniu drużynami.',
+      invalidRoster:
+        'Potwierdzone drużyny z nieprawidłową liczbą graczy: {{count}}. Popraw ich składy.',
       unplayedTeams: '{{count}} drużyn nie oznaczono jako rozegrane. Mimo to zakończ grę.',
       noCompletedRounds: 'Brak zakończonych rund. Wynik nie będzie zawierał punktowanych drużyn.',
       roundInProgress: '{{count}} niezakończonych rund blokuje zakończenie gry.',

@@ -12,7 +12,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
     public async Task<GameRegistrationResult<RegistrationTeamDto>> PersistCreateTeamAsync(
         Guid gameId,
         Guid userId,
-        Guid teamSlotId,
+        Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
         CancellationToken cancellationToken = default
@@ -27,6 +27,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
+        if (!await HasTeamCapacityAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NoAvailableSlot);
+        }
+
         if (await TeamNameTakenAsync(gameId, null, name, cancellationToken))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameTaken);
@@ -37,7 +42,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         {
             Id = Guid.NewGuid(),
             GameId = gameId,
-            SlotId = teamSlotId,
+            SlotId = teamSlotId ?? await ResolveAdditionalTeamSlotAsync(gameId, utcNow, cancellationToken, publicOnly: true),
             Name = TeamNameValue.Normalize(name),
             RecruitmentOpen = recruitmentOpen,
             Status = TeamStatusValue.Forming,
@@ -97,14 +102,18 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.GameNotInReady);
         }
 
+        if (!await HasTeamCapacityAsync(gameId, cancellationToken))
+        {
+            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NoAvailableSlot);
+        }
+
         if (await TeamNameTakenAsync(gameId, null, name, cancellationToken))
         {
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.TeamNameTaken);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        // A null slot is reserved for authorized administrative overflow creation.
-        // The game lock serializes allocation with other roster and lifecycle mutations.
+        // The game lock serializes allocation with limit and other roster changes.
         var resolvedSlotId = teamSlotId ?? await ResolveAdditionalTeamSlotAsync(gameId, utcNow, cancellationToken);
         var team = new GameTeam
         {
@@ -372,11 +381,11 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
         return await LoadTeamResultAsync(team.Id, cancellationToken);
     }
 
-    private async Task<Guid> ResolveAdditionalTeamSlotAsync(Guid gameId, DateTime utcNow, CancellationToken cancellationToken)
+    private async Task<Guid> ResolveAdditionalTeamSlotAsync(Guid gameId, DateTime utcNow, CancellationToken cancellationToken, bool publicOnly = false)
     {
         var blockedSlotIds = await _reads.GetBlockedTeamSlotIdsAsync(gameId, cancellationToken);
         var availableSlotId = await _dbContext.GameTeamSlots.AsNoTracking()
-            .Where(slot => slot.GameId == gameId && !blockedSlotIds.Contains(slot.Id))
+            .Where(slot => slot.GameId == gameId && (!publicOnly || slot.SlotType == TeamSlotTypeValue.Public) && !blockedSlotIds.Contains(slot.Id))
             .OrderBy(slot => slot.SlotIndex)
             .Select(slot => (Guid?)slot.Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -389,8 +398,7 @@ public sealed partial class DbGameRegistrationPersistence : IGameRegistrationPer
             Id = Guid.NewGuid(),
             GameId = gameId,
             SlotIndex = checked(lastIndex + 1),
-            SlotType = TeamSlotTypeValue.Reserved,
-            ReservedLabel = $"#{checked(lastIndex + 1)}",
+            SlotType = TeamSlotTypeValue.Public,
             CreatedAtUtc = utcNow
         };
         if (_dbContext.Database.IsRelational())

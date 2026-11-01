@@ -6,6 +6,61 @@ import navigationTranslations from '../src/layouts/i18n/navigation-translations.
 import authTranslations from '../src/features/auth/i18n/auth-translations.ts'
 import { mockGuideGame } from './support/game-guide-fixture.ts'
 
+for (const { width, language } of [
+  { width: 390, language: 'ru' },
+  { width: 768, language: 'ru' },
+  { width: 1440, language: 'ru' },
+  { width: 390, language: 'en' },
+  { width: 390, language: 'uk' },
+  { width: 390, language: 'pl' },
+] as const) {
+  test(`sign-in page links to the public guide in ${language} at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.addInitScript((locale) => localStorage.setItem('i18nextLng', locale), language)
+    await page.route('**/auth/me', (route) => route.fulfill({ status: 204 }))
+    const protectedRequests: string[] = []
+    await page.route(
+      (url) => url.pathname.startsWith('/api/') || url.pathname.startsWith('/hubs/'),
+      (route) => {
+        protectedRequests.push(route.request().url())
+        return route.fulfill({ status: 401 })
+      },
+    )
+    await page.goto('/')
+    const login = page.getByRole('button', { name: authTranslations[language].button, exact: true })
+    const about = page.getByRole('link', {
+      name: authTranslations[language].aboutGame,
+      exact: true,
+    })
+    await expect(login).toBeVisible()
+    await expect(about).toHaveAttribute('href', '/panel/game-guide')
+    const loginBox = (await login.boundingBox())!
+    const aboutBox = (await about.boundingBox())!
+    expect(aboutBox.y).toBeGreaterThanOrEqual(loginBox.y + loginBox.height)
+    expect(aboutBox.width).toBeCloseTo(loginBox.width, 0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.evaluate(() => document.fonts.ready)
+    await page.screenshot({
+      path: `../.tmp/agent-work/auth-guide/sign-in-${language}-${width}.png`,
+      animations: 'disabled',
+    })
+    await about.focus()
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/\/panel\/game-guide$/)
+    await expect(
+      page.getByRole('heading', { name: guideTranslations[language].title }),
+    ).toBeVisible()
+    await expect(
+      page.getByText(guideTranslations[language].overview.how, { exact: true }),
+    ).toBeVisible()
+    await page.reload()
+    await expect(
+      page.getByRole('heading', { name: guideTranslations[language].title }),
+    ).toBeVisible()
+    expect(protectedRequests).toEqual([])
+  })
+}
+
 for (const language of supportedLanguages) {
   test(`anonymous guide header fits a narrow screen in ${language}`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 })

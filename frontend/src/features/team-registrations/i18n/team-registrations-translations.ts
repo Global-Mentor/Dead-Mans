@@ -1,5 +1,14 @@
 const translations = {
   en: {
+    teamLimit: {
+      label: 'Team limit',
+      change: 'Change team limit',
+      unlimited: 'Unlimited',
+      count: 'Existing teams: {{count}}',
+      hint: 'Lowering the limit preserves existing teams and invitations. New teams can be created only while capacity is available.',
+      invalid: 'Enter a whole number from 1 to 1000.',
+      reached: 'The limit is reached. Raise or remove it to create a team.',
+    },
     teamsPane: 'Teams',
     playerActionsHint: 'Player actions: move to another team or remove from this roster.',
     rejectEffects:
@@ -64,7 +73,6 @@ const translations = {
     filterConfirmed: 'Confirmed',
     filterRequests: 'Disband requests ({{count}})',
     filterPlayed: 'Played',
-    noSlots: 'No free team slots.',
     noMatches: 'No teams match these filters.',
     resetFilters: 'Reset filters',
     resetFiltersShort: 'Reset',
@@ -91,6 +99,15 @@ const translations = {
     reject: 'Reject',
   },
   ru: {
+    teamLimit: {
+      label: 'Лимит команд',
+      change: 'Изменить лимит команд',
+      unlimited: 'Без ограничений',
+      count: 'Создано команд: {{count}}',
+      hint: 'Снижение лимита сохраняет существующие команды и приглашения. Новые команды можно создавать, пока есть свободные места.',
+      invalid: 'Введите целое число от 1 до 1000.',
+      reached: 'Лимит достигнут. Увеличьте или снимите его, чтобы создать команду.',
+    },
     teamsPane: 'Команды',
     playerActionsHint: 'Действия игрока: переместить в другую команду или исключить из состава.',
     rejectEffects:
@@ -154,7 +171,6 @@ const translations = {
     filterConfirmed: 'Подтверждены',
     filterRequests: 'Запросы на роспуск ({{count}})',
     filterPlayed: 'Отыгравшие',
-    noSlots: 'Нет свободных мест для новых команд.',
     noMatches: 'По этим фильтрам команды не найдены.',
     resetFilters: 'Сбросить фильтры',
     resetFiltersShort: 'Сбросить',
@@ -182,6 +198,15 @@ const translations = {
     reject: 'Отклонить',
   },
   uk: {
+    teamLimit: {
+      label: 'Ліміт команд',
+      change: 'Змінити ліміт команд',
+      unlimited: 'Без обмежень',
+      count: 'Створено команд: {{count}}',
+      hint: 'Зменшення ліміту зберігає наявні команди та запрошення. Нові команди можна створювати, поки є вільні місця.',
+      invalid: 'Введіть ціле число від 1 до 1000.',
+      reached: 'Ліміт досягнуто. Збільште або зніміть його, щоб створити команду.',
+    },
     teamsPane: 'Команди',
     playerActionsHint: 'Дії гравця: перемістити до іншої команди або виключити зі складу.',
     rejectEffects:
@@ -246,7 +271,6 @@ const translations = {
     filterConfirmed: 'Підтверджені',
     filterRequests: 'Запити на розпуск ({{count}})',
     filterPlayed: 'Відіграли',
-    noSlots: 'Немає вільних місць для нових команд.',
     noMatches: 'За цими фільтрами команд не знайдено.',
     resetFilters: 'Скинути фільтри',
     resetFiltersShort: 'Скинути',
@@ -274,6 +298,15 @@ const translations = {
     reject: 'Відхилити',
   },
   pl: {
+    teamLimit: {
+      label: 'Limit drużyn',
+      change: 'Zmień limit drużyn',
+      unlimited: 'Bez ograniczeń',
+      count: 'Utworzono drużyn: {{count}}',
+      hint: 'Zmniejszenie limitu zachowuje istniejące drużyny i zaproszenia. Nowe drużyny można tworzyć, dopóki są wolne miejsca.',
+      invalid: 'Wpisz liczbę całkowitą od 1 do 1000.',
+      reached: 'Osiągnięto limit. Zwiększ go lub usuń, aby utworzyć drużynę.',
+    },
     teamsPane: 'Drużyny',
     playerActionsHint: 'Działania gracza: przenieś do innej drużyny lub usuń ze składu.',
     rejectEffects:
@@ -336,7 +369,6 @@ const translations = {
     filterConfirmed: 'Zatwierdzone',
     filterRequests: 'Prośby o rozwiązanie ({{count}})',
     filterPlayed: 'Po rozegraniu',
-    noSlots: 'Brak wolnych miejsc na nowe drużyny.',
     noMatches: 'Żadna drużyna nie pasuje do filtrów.',
     resetFilters: 'Wyczyść filtry',
     resetFiltersShort: 'Wyczyść',

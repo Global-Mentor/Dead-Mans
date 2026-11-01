@@ -9,6 +9,7 @@ const REGISTRATION_ERROR_I18N_KEYS: Partial<Record<NonNullable<ErrorResponse['co
     [API_ERROR_CODES.gameRegistrationDisbandRequestNotOwned]:
       'gameRegistration.errors.disbandRequestNotOwned',
     [API_ERROR_CODES.gameRegistrationNotOpen]: 'gameRegistration.errors.notOpen',
+    [API_ERROR_CODES.gameRegistrationInvalidTeamLimit]: 'teamRegistrations.teamLimit.invalid',
     [API_ERROR_CODES.gameRegistrationNoSlots]: 'gameRegistration.errors.noSlots',
     [API_ERROR_CODES.gameRegistrationAlreadyOnTeam]: 'gameRegistration.errors.alreadyOnTeam',
     [API_ERROR_CODES.gameRegistrationTeamNotFound]: 'gameRegistration.errors.teamNotFound',

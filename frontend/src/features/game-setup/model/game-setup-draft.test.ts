@@ -34,6 +34,7 @@ const snapshot: GameSetupSnapshot = {
   enabledModifierIds: ['10000000-0000-0000-0000-0000000000a1'],
   enabledQuestionIds: [],
   quizAnswerDurationSeconds: 60,
+  teamLimit: 10,
 }
 
 function createDraft(): GameSetupDraftState {

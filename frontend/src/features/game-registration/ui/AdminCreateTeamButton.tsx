@@ -18,7 +18,7 @@ export function AdminCreateTeamButton({
   return (
     <>
       <HelpTooltip
-        title={!canCreate ? t('teamRegistrations.noSlots') : ''}
+        title={!canCreate ? t('teamRegistrations.teamLimit.reached') : ''}
         describeChild
         arrow
         disableInteractive

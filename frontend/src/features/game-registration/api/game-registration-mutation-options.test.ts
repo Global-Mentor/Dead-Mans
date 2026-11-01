@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import { currentGameTeamQueueQueryOptions } from '../../game-board/index.ts'
 import {
+  updateGameTeamLimitMutationOptions,
   acceptGameRegistrationInvitationMutationOptions,
   assignGameRegistrationPlayerToTeamMutationOptions,
   cancelGameRegistrationTeamInvitationMutationOptions,
@@ -90,6 +91,73 @@ describe('game registration mutation options', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: currentGameTeamQueueQueryOptions.queryKey,
     })
+  })
+
+  it('keeps a committed limit in matching caches without overwriting another game', async () => {
+    const client = new QueryClient()
+    const adminKey = gameRegistrationQueryKeys.adminSnapshot()
+    const publicKey = gameRegistrationQueryKeys.snapshot()
+    client.setQueryData(adminKey, { gameId: 'current', teamLimit: 10, canCreateTeam: true })
+    client.setQueryData(publicKey, { gameId: 'other', teamLimit: 8, canCreateTeam: true })
+    const options = updateGameTeamLimitMutationOptions(client, vi.fn())
+    await options.onSuccess?.(
+      undefined,
+      { gameId: 'current', teamLimit: 4 },
+      undefined,
+      undefined as never,
+    )
+    expect(client.getQueryData(adminKey)).toEqual({
+      gameId: 'current',
+      teamLimit: 4,
+      canCreateTeam: false,
+    })
+    expect(client.getQueryData(publicKey)).toEqual({
+      gameId: 'other',
+      teamLimit: 8,
+      canCreateTeam: true,
+    })
+    expect(client.getQueryState(adminKey)?.isInvalidated).toBe(true)
+    client.clear()
+  })
+
+  it('updates public capacity without changing a newer administrative game', async () => {
+    const client = new QueryClient()
+    const adminKey = gameRegistrationQueryKeys.adminSnapshot()
+    const publicKey = gameRegistrationQueryKeys.snapshot()
+    client.setQueryData(adminKey, { gameId: 'new', teamLimit: 10, canCreateTeam: true })
+    client.setQueryData(publicKey, { gameId: 'current', teamLimit: 4, canCreateTeam: false })
+    const options = updateGameTeamLimitMutationOptions(client, vi.fn())
+    await options.onSuccess?.(
+      undefined,
+      { gameId: 'current', teamLimit: null },
+      undefined,
+      undefined as never,
+    )
+    expect(client.getQueryData(publicKey)).toEqual({
+      gameId: 'current',
+      teamLimit: null,
+      canCreateTeam: false,
+    })
+    expect(client.getQueryData(adminKey)).toEqual({
+      gameId: 'new',
+      teamLimit: 10,
+      canCreateTeam: true,
+    })
+    client.clear()
+  })
+
+  it('does not invent registration snapshots when saving without cached data', async () => {
+    const client = new QueryClient()
+    const options = updateGameTeamLimitMutationOptions(client, vi.fn())
+    await options.onSuccess?.(
+      undefined,
+      { gameId: 'current', teamLimit: 4 },
+      undefined,
+      undefined as never,
+    )
+    expect(client.getQueryData(gameRegistrationQueryKeys.adminSnapshot())).toBeUndefined()
+    expect(client.getQueryData(gameRegistrationQueryKeys.snapshot())).toBeUndefined()
+    client.clear()
   })
 
   it('uses the shared error handler for each concrete mutation', () => {

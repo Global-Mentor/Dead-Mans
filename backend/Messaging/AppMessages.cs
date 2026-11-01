@@ -100,7 +100,12 @@ public static class AppMessages
         public const string GameFinishModifierStateInvalid =
             "The game contains unresolved modifier state and cannot be finished safely.";
         public const string GameFinishInvalidRequest = "Game finish request is invalid.";
+        public const string GameFinishUnconfirmedTeams = "Resolve all forming teams before finishing the game.";
+        public const string GameFinishPendingInvitations = "Resolve all pending team invitations before finishing the game.";
+        public const string GameFinishPendingDisbandRequests = "Resolve all pending team disband requests before finishing the game.";
+        public const string GameFinishInvalidConfirmedTeamRoster = "Confirmed teams must match the configured player limits before finishing the game.";
         public const string GameRegistrationNotOpen = "Registration is not open for a ready game.";
+        public const string GameRegistrationInvalidTeamLimit = "Team limit must be between 1 and 1000, or null for unlimited.";
         public const string GameRegistrationNoSlots = "No team slots are available.";
         public const string GameRegistrationAlreadyOnTeam = "You are already on a team for this game.";
         public const string GameRegistrationTeamNotFound = "Team was not found.";
@@ -318,9 +323,14 @@ public static class AppMessages
             "game_finish.warnings_not_acknowledged";
         public const string GameFinishModifierStateInvalid = "game_finish.modifier_state_invalid";
         public const string GameFinishInvalidRequest = "game_finish.invalid_request";
+        public const string GameFinishUnconfirmedTeams = "game_finish.unconfirmed_teams";
+        public const string GameFinishPendingInvitations = "game_finish.pending_invitations";
+        public const string GameFinishPendingDisbandRequests = "game_finish.pending_disband_requests";
+        public const string GameFinishInvalidConfirmedTeamRoster = "game_finish.invalid_confirmed_team_roster";
         public const string UnexpectedServerError = "game_common.unexpected_server_error";
         public const string TooManyRequests = "game_common.too_many_requests";
         public const string GameRegistrationNotOpen = "game_registration.not_open";
+        public const string GameRegistrationInvalidTeamLimit = "game_registration.invalid_team_limit";
         public const string GameRegistrationNoSlots = "game_registration.no_slots";
         public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
         public const string GameRegistrationTeamNotFound = "game_registration.team_not_found";

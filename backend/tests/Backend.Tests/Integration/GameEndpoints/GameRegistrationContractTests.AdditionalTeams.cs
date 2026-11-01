@@ -18,10 +18,16 @@ public sealed partial class GameRegistrationContractTests
     [InlineData(AuthRoleCodes.SuperAdmin, GameStatusValue.Ready)]
     [InlineData(AuthRoleCodes.Admin, GameStatusValue.Active)]
     [InlineData(AuthRoleCodes.SuperAdmin, GameStatusValue.Active)]
-    public async Task CreateAdminTeam_WhenFull_AdminRolesCreateAdditionalReservedSlots(string role, string status)
+    public async Task CreateAdminTeam_AllocatesPublicSlotsWithinConfiguredLimit(string role, string status)
     {
         await ClearRegistrationDataAsync();
         await SeedReadyGameAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            (await db.Games.SingleAsync()).TeamLimit = 3;
+            await db.SaveChangesAsync();
+        }
         using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         var initial = await admin.PostAsJsonAsync("/api/game/registration/admin/teams", new CreateAdminRegistrationTeamRequestDto(null, true, "Initial"));
         Assert.Equal(HttpStatusCode.Created, initial.StatusCode);
@@ -39,18 +45,20 @@ public sealed partial class GameRegistrationContractTests
             var team = await response.Content.ReadFromJsonAsync<RegistrationTeamDto>();
             Assert.NotNull(team);
             Assert.Equal(index, team.TeamSlotIndex);
-            Assert.Equal(TeamSlotTypeValue.Reserved, team.TeamSlotType);
+            Assert.Equal(TeamSlotTypeValue.Public, team.TeamSlotType);
             Assert.Equal(index == 2, team.RecruitmentOpen);
             Assert.Empty(team.Members);
         }
         using var verifyScope = _factory.Services.CreateScope();
         var verify = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        Assert.Equal(1, await verify.GameTeamSlots.CountAsync(slot => slot.SlotType == TeamSlotTypeValue.Public));
+        Assert.Equal(3, await verify.GameTeamSlots.CountAsync(slot => slot.SlotType == TeamSlotTypeValue.Public));
         Assert.Equal(3, await verify.GameTeams.CountAsync());
     }
 
     [Theory]
     [InlineData(AuthRoleCodes.Moderator, HttpStatusCode.Conflict)]
+    [InlineData(AuthRoleCodes.Admin, HttpStatusCode.Conflict)]
+    [InlineData(AuthRoleCodes.SuperAdmin, HttpStatusCode.Conflict)]
     [InlineData(AuthRoleCodes.Viewer, HttpStatusCode.Forbidden)]
     public async Task CreateAdminTeam_WhenFull_OtherRolesCannotExpandCapacity(string role, HttpStatusCode expected)
     {
@@ -58,6 +66,7 @@ public sealed partial class GameRegistrationContractTests
         await SeedReadyGameAsync();
         using var admin = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Admin]);
         Assert.Equal(HttpStatusCode.Created, (await admin.PostAsJsonAsync("/api/game/registration/admin/teams", new CreateAdminRegistrationTeamRequestDto(null, true))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PutAsJsonAsync($"/api/game/registration/admin/games/{await GetReadyGameIdAsync()}/team-limit", new { teamLimit = 1 })).StatusCode);
         using var denied = TestAuthClientFactory.CreateClient(_factory, [role]);
         var response = await denied.PostAsJsonAsync("/api/game/registration/admin/teams", new { recruitmentOpen = true, allowAdditionalSlot = true });
         Assert.Equal(expected, response.StatusCode);

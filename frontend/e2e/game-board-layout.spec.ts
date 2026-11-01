@@ -267,6 +267,81 @@ for (const status of ['ready', 'active'] as const) {
   }
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`finished game shows an informational team queue state at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockGame(page, 'finished', 'viewer')
+    await page.route('**/api/game/team-queue', (route) =>
+      route.fulfill({
+        json: {
+          gameId: null,
+          teams: [],
+          summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+        },
+      }),
+    )
+    await page.goto('/panel/game-team-queue')
+    const panel = page.getByTestId('page-state-panel')
+    await expect(panel.getByRole('heading', { name: 'Очередь команд', level: 1 })).toBeVisible()
+    await expect(panel.getByRole('status')).toHaveText(
+      'Игра завершена. Активной очереди команд сейчас нет.',
+    )
+    await expect(page.getByRole('alert')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0)
+    await expect(page.getByTestId('team-queue-panel')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({ path: info.outputPath('finished-team-queue.png') })
+  })
+}
+
+test('team queue clears cached teams when the game finishes', async ({ page }) => {
+  let notify: (message: string) => void = () => {}
+  await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+    notify = send
+  })
+  let status: 'active' | 'finished' = 'active'
+  await page.route('**/api/game', (route) => route.fulfill({ json: { ...board, status } }))
+  await page.route('**/api/game/team-queue', (route) =>
+    status === 'finished'
+      ? route.fulfill({
+          json: {
+            gameId: null,
+            teams: [],
+            summary: { totalTeams: 0, playedTeams: 0, remainingTeams: 0 },
+          },
+        })
+      : route.fallback(),
+  )
+  await page.goto('/panel/game-team-queue')
+  await expect(page.getByRole('article', { name: 'Ночные странники' })).toBeVisible()
+  status = 'finished'
+  notify(
+    `${JSON.stringify({ type: 1, target: realtimeHubs.gameBoard.events.gameLifecycleChanged, arguments: [] })}\u001e`,
+  )
+  await expect(
+    page.getByText('Игра завершена. Активной очереди команд сейчас нет.', { exact: true }),
+  ).toBeVisible()
+  await expect(page.getByRole('article')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0)
+})
+
+test('active game team queue keeps a real loading error and retry action', async ({ page }) => {
+  await mockGame(page, 'active', 'viewer')
+  await page.route('**/api/game/team-queue', (route) =>
+    route.fulfill({ status: 500, json: { error: 'Unavailable' } }),
+  )
+  await page.goto('/panel/game-team-queue')
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить очередь команд.')
+  await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toBeVisible()
+  await expect(
+    page.getByText('Игра завершена. Активной очереди команд сейчас нет.', { exact: true }),
+  ).toHaveCount(0)
+})
+
 async function mockGame(
   page: Page,
   status: 'active' | 'ready' | 'finished' = 'active',
@@ -4467,10 +4542,129 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
+for (const width of [390, 768, 1440]) {
+  test(`finish preview explains roster blockers at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await mockGame(page)
+    await mockFinishPreview(page, [
+      { code: 'game_finish.unconfirmed_teams', count: 2 },
+      { code: 'game_finish.pending_invitations', count: 3 },
+      { code: 'game_finish.pending_disband_requests', count: 1 },
+      { code: 'game_finish.invalid_confirmed_team_roster', count: 1 },
+    ])
+    const dialog = await openFinishPreview(page)
+    await expect(dialog.getByText(/Неподтверждённых команд: 2/)).toBeVisible()
+    await expect(dialog.getByText(/Приглашений без ответа: 3/)).toBeVisible()
+    await expect(dialog.getByText(/Запросов на расформирование: 1/)).toBeVisible()
+    await expect(dialog.getByText(/недопустимым числом игроков: 1/)).toBeVisible()
+    await dialog.getByRole('checkbox').check()
+    await expect(
+      dialog.getByRole('button', { name: 'Завершить игру навсегда', exact: true }),
+    ).toBeDisabled()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/agent-work/reviews/game-finish/blockers-${width}.png`,
+      fullPage: true,
+    })
+  })
+
+  test(`finish failure preserves draft and explains the actual reason at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await mockGame(page)
+    await mockFinishPreview(page, [])
+    await page.route('**/api/game/lifecycle/games/board-layout/finish', (route) =>
+      route.fulfill({
+        status: 409,
+        json: {
+          code: 'game_finish.unconfirmed_teams',
+          error: 'private database diagnostic',
+          requestId: 'finish-test-request-123',
+        },
+      }),
+    )
+    const dialog = await openFinishPreview(page)
+    const note = dialog.getByLabel(/Общий публичный комментарий/)
+    await note.fill('Комментарий к результатам')
+    await dialog.getByRole('checkbox').check()
+    await dialog.getByRole('button', { name: 'Завершить игру навсегда', exact: true }).click()
+    await expect(dialog.getByText(/Есть неподтверждённые команды/)).toBeVisible()
+    await expect(dialog.getByText('Код обращения: finish-test-request-123')).toBeVisible()
+    await expect(dialog.getByText(/Игра изменилась|private database diagnostic/)).toHaveCount(0)
+    await dialog.getByRole('button', { name: 'Обновить итог' }).click()
+    await expect(note).toHaveValue('Комментарий к результатам')
+    await expect(dialog.getByRole('checkbox')).toBeChecked()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `../.tmp/agent-work/reviews/game-finish/error-${width}.png`,
+      fullPage: true,
+    })
+  })
+}
+
+async function openFinishPreview(page: Page) {
+  await page.goto('/panel/game-board')
+  await page.getByRole('button', { name: 'Управление игрой' }).click()
+  const section = page.getByTestId('management-finish-game-section')
+  await section.getByRole('button').first().click()
+  await section.getByRole('button', { name: 'Проверить и завершить игру', exact: true }).click()
+  return page.getByRole('dialog', { name: 'Завершить всю игру' })
+}
+
+async function mockFinishPreview(page: Page, blockers: { code: string; count: number }[]) {
+  await page.route('**/api/game/registration/admin', (route) =>
+    route.fulfill({
+      json: {
+        gameId: board.gameId,
+        gameStatus: 'active',
+        minPlayersPerTeam: 1,
+        maxPlayersPerTeam: 3,
+        launchSummary: {
+          canStartGame: false,
+          confirmedTeamsCount: 0,
+          formingTeamsCount: 0,
+          pendingInvitationsCount: 0,
+          disbandRequestsCount: 0,
+          invalidConfirmedRostersCount: 0,
+        },
+        teamSlots: [],
+        teams: [],
+        availablePlayers: [],
+      },
+    }),
+  )
+  await page.route('**/api/game/lifecycle/games/board-layout/finish-preview', (route) =>
+    route.fulfill({
+      json: {
+        canFinish: blockers.length === 0,
+        blockers,
+        warnings: [],
+        summary: {
+          gameId: board.gameId,
+          gameTitle: board.title,
+          gameStatus: 'active',
+          boardVersion: board.version,
+          calculationVersion: 1,
+          completedRoundCount: 0,
+          cancelledRoundCount: 0,
+          totalKills: 0,
+          totalBounties: 0,
+          quizTotalPoints: 0,
+          pendingQuizQuestionCount: 0,
+          skippedQuizQuestionCount: 0,
+          teams: [],
+        },
+      },
+    }),
+  )
+}
+
 test('finishing a game closes the preview without refetching unavailable endpoints', async ({
   page,
 }) => {
   await mockGame(page)
+  await mockFinishPreview(page, [])
   let status = 'active'
   let finishRequests = 0
   const unavailableRequests: string[] = []

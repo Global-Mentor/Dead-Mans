@@ -13,7 +13,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AdditionalAdminTeams_ConcurrentCreationAllocatesDistinctReservedSlotsAndReusesFreedSlot(bool hasSparePublicSlot)
+    public async Task AdditionalAdminTeams_ConcurrentCreationAllocatesDistinctPublicSlotsAndReusesFreedSlot(bool hasSparePublicSlot)
     {
         await _database.ResetAsync();
         await using var seedDb = _database.CreateDbContext();
@@ -36,8 +36,8 @@ public sealed partial class PostgresPersistenceBoundaryTests
         await using var verify = _database.CreateDbContext();
         var slots = await verify.GameTeamSlots.OrderBy(slot => slot.SlotIndex).ToListAsync();
         Assert.Equal(new[] { 1, 2, 3 }, slots.Select(slot => slot.SlotIndex));
-        Assert.Equal(hasSparePublicSlot ? TeamSlotTypeValue.Public : TeamSlotTypeValue.Reserved, slots[1].SlotType);
-        Assert.Equal(TeamSlotTypeValue.Reserved, slots[2].SlotType);
+        Assert.Equal(TeamSlotTypeValue.Public, slots[1].SlotType);
+        Assert.Equal(TeamSlotTypeValue.Public, slots[2].SlotType);
         var reads = new GameRegistrationReadStore(verify);
         Assert.Null(await reads.FindAvailablePublicSlotAsync(seeded.GameId, default));
         var persistence = new DbGameRegistrationPersistence(verify, reads, NullLogger<DbGameRegistrationPersistence>.Instance, TimeProvider.System);

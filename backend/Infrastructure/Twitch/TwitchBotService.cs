@@ -14,6 +14,7 @@ namespace backend.Infrastructure.Twitch;
 
 internal sealed class TwitchBotService : ITwitchBotService
 {
+    private static readonly SemaphoreSlim SubscriptionGate = new(1, 1);
     private readonly ApplicationDbContext _db;
     private readonly TwitchBotOptions _options;
     private readonly TwitchBotApiClient _api;
@@ -425,8 +426,10 @@ internal sealed class TwitchBotService : ITwitchBotService
         }
     }
 
-    internal async Task<bool> EnsureSubscriptionAsync(CancellationToken cancellationToken)
+    public async Task<bool> EnsureSubscriptionAsync(CancellationToken cancellationToken = default)
     {
+        if (!IsEnabled) return false;
+        await SubscriptionGate.WaitAsync(cancellationToken);
         try
         {
             var connected = await _api.EnsureEventSubSubscriptionAsync(cancellationToken);
@@ -437,6 +440,10 @@ internal sealed class TwitchBotService : ITwitchBotService
         {
             _eventSubHealth.SetConnected(false);
             throw;
+        }
+        finally
+        {
+            SubscriptionGate.Release();
         }
     }
 
