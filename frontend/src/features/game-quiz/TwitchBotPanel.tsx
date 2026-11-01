@@ -1,5 +1,4 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TwitchBotStatus } from '../../shared/api/contracts/index.ts'
 import { RoundBriefingDivider, RoundBriefingPanel } from '../../shared/game-ui/index.ts'
@@ -8,6 +7,7 @@ type Props = {
   status: TwitchBotStatus
   canAdmin: boolean
   busy: boolean
+  onConnectEventSub: () => void
   onRetry: () => void
   onCancel: () => void
   onSkipOutcome: () => void
@@ -17,12 +17,12 @@ export function TwitchBotPanel({
   status,
   canAdmin,
   busy,
+  onConnectEventSub,
   onRetry,
   onCancel,
   onSkipOutcome,
 }: Props) {
   const { t } = useTranslation()
-  if (!status.enabled) return null
   const publication = status.publication
   const needsRecovery = publication?.status === 'failed' || publication?.status === 'uncertain'
   const unresolvedOutcome =
@@ -37,67 +37,22 @@ export function TwitchBotPanel({
       aria-label={t('gameQuiz.twitch.title')}
       sx={{ px: 1, py: 0 }}
     >
-      <Box>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: 'minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr)',
-              sm: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-            },
-            gap: 1,
-            alignItems: 'center',
-            py: 1,
-          }}
-        >
-          <Box sx={{ minWidth: 0, display: 'flex', justifyContent: 'flex-start' }}>
-            {canAdmin && !status.botConnected ? (
-              <AppButton
-                size="small"
-                sx={{ maxWidth: '100%' }}
-                aria-label={t('gameQuiz.twitch.connectBot')}
-                onClick={() => window.location.assign('/api/integrations/twitch/oauth/bot')}
-              >
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  {t('gameQuiz.twitch.connectBot')}
-                </Box>
-                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                  {t('gameQuiz.twitch.botLabel')}
-                </Box>
-              </AppButton>
-            ) : null}
-          </Box>
-          <Typography
-            component="h2"
-            variant="h6"
-            color="primary.light"
-            fontWeight={700}
-            textAlign="center"
-            sx={{ minWidth: 0 }}
-          >
-            {t('gameQuiz.twitch.title')}
-          </Typography>
-          <Box sx={{ minWidth: 0, display: 'flex', justifyContent: 'flex-end' }}>
-            {canAdmin && !status.broadcasterConnected ? (
-              <AppButton
-                size="small"
-                tone="secondary"
-                sx={{ maxWidth: '100%' }}
-                aria-label={t('gameQuiz.twitch.connectChannel')}
-                onClick={() => window.location.assign('/api/integrations/twitch/oauth/broadcaster')}
-              >
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  {t('gameQuiz.twitch.connectChannel')}
-                </Box>
-                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                  {t('gameQuiz.twitch.channelLabel')}
-                </Box>
-              </AppButton>
-            ) : null}
-          </Box>
-        </Box>
-        <RoundBriefingDivider />
-        <Stack direction="row" spacing={1} alignItems="stretch" sx={{ py: 1, minHeight: 48 }}>
+      <Typography
+        component="h3"
+        variant="h6"
+        color="primary.light"
+        textAlign="center"
+        sx={{ py: 1 }}
+      >
+        {t('gameQuiz.twitch.title')}
+      </Typography>
+      <RoundBriefingDivider />
+      {!status.enabled ? (
+        <InlineNotice severity="info" sx={{ my: 1 }}>
+          {t('gameQuiz.twitch.disabled')}
+        </InlineNotice>
+      ) : (
+        <Stack spacing={1} divider={<SectionDivider />} sx={{ py: 1 }}>
           {[
             {
               label: t('gameQuiz.twitch.botLabel'),
@@ -107,6 +62,9 @@ export function TwitchBotPanel({
                   ? 'gameQuiz.twitch.botConnected'
                   : 'gameQuiz.twitch.botDisconnected',
               ),
+              action: t('gameQuiz.twitch.connectBot'),
+              onClick: () => window.location.assign('/api/integrations/twitch/oauth/bot'),
+              disabled: busy,
             },
             {
               label: t('gameQuiz.twitch.channelLabel'),
@@ -116,6 +74,9 @@ export function TwitchBotPanel({
                   ? 'gameQuiz.twitch.channelConnected'
                   : 'gameQuiz.twitch.channelDisconnected',
               ),
+              action: t('gameQuiz.twitch.connectChannel'),
+              onClick: () => window.location.assign('/api/integrations/twitch/oauth/broadcaster'),
+              disabled: busy,
             },
             {
               label: t('gameQuiz.twitch.eventSubLabel'),
@@ -125,11 +86,22 @@ export function TwitchBotPanel({
                   ? 'gameQuiz.twitch.eventSubConnected'
                   : 'gameQuiz.twitch.eventSubDisconnected',
               ),
+              action: t('gameQuiz.twitch.connectEventSub'),
+              onClick: onConnectEventSub,
+              disabled: busy || !status.botConnected || !status.broadcasterConnected,
             },
-          ].map(({ label, connected, value }, index) => (
-            <Fragment key={label}>
-              {index > 0 ? <SectionDivider orientation="vertical" flexItem /> : null}
-              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+          ].map(({ label, connected, value, action, onClick, disabled }) => (
+            <Box
+              key={label}
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+              }}
+            >
+              <Box sx={{ flex: '1 1 150px', minWidth: 0 }}>
                 <StatusReadout
                   density="compact"
                   label={label}
@@ -137,10 +109,20 @@ export function TwitchBotPanel({
                   tone={connected ? 'success' : 'error'}
                 />
               </Box>
-            </Fragment>
+              {canAdmin && !connected ? (
+                <AppButton size="small" tone="secondary" disabled={disabled} onClick={onClick}>
+                  {action}
+                </AppButton>
+              ) : null}
+            </Box>
           ))}
+          {!status.eventSubConnected && (!status.botConnected || !status.broadcasterConnected) ? (
+            <Typography variant="body2" color="text.secondary">
+              {t('gameQuiz.twitch.accountsRequired')}
+            </Typography>
+          ) : null}
         </Stack>
-      </Box>
+      )}
       {hasDetails ? (
         <Stack spacing={1} sx={{ pb: 1 }}>
           {publication?.status === 'uncertain' ? (

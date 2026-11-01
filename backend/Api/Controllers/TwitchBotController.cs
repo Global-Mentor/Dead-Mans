@@ -29,6 +29,15 @@ public sealed class TwitchBotController : ControllerBase
     public async Task<IActionResult> GetStatus(CancellationToken cancellationToken) =>
         Ok(await _service.GetStatusAsync(cancellationToken));
 
+    [HttpPost("eventsub/connect")]
+    [Authorize(Roles = AuthRoleCodes.AdminOrSuperAdmin)]
+    public async Task<IActionResult> ConnectEventSub(CancellationToken cancellationToken)
+    {
+        if (!_options.Enabled) return NotFound();
+        await _service.EnsureSubscriptionAsync(cancellationToken);
+        return Ok(await _service.GetStatusAsync(cancellationToken));
+    }
+
     [HttpGet("oauth/{role}")]
     [Authorize(Roles = AuthRoleCodes.AdminOrSuperAdmin)]
     public IActionResult Connect(string role)

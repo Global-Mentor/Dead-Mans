@@ -1656,6 +1656,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TwitchBotStatusDto'
+  /integrations/twitch/eventsub/connect:
+    post:
+      operationId: connectTwitchEventSub
+      description: Admin-only subscription recovery using the configured bot and channel grants. A pending webhook verification remains disconnected until confirmed by a subsequent health check.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current connection state after the subscription attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwitchBotStatusDto'
+        '401':
+          description: Authentication required
+        '403':
+          description: Administrator role and API client header required
+        '404':
+          description: Twitch bot integration is disabled
   /integrations/twitch/oauth/{role}:
     get:
       operationId: connectTwitchBotAccount

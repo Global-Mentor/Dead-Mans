@@ -341,7 +341,9 @@ for (const width of [390, 768, 1440]) {
     await page.goto('/panel/game-quiz')
     const grid = page.getByTestId('quiz-sections-grid')
     await expect(grid).toBeVisible()
+    await openQuizManagement(page)
     await expect(page.getByTestId('quiz-twitch-panel')).toContainText('EventSub подключён')
+    await page.getByRole('button', { name: 'Закрыть инструменты управления', exact: true }).click()
     const before = await grid.boundingBox()
     expect(before).not.toBeNull()
     const readsBefore = { quiz: quizReads, history: historyReads }
@@ -465,7 +467,8 @@ for (const { role, width } of [
     const grid = page.getByTestId('quiz-sections-grid')
     await expect(grid).toBeVisible()
     const panel = page.getByTestId('quiz-twitch-panel')
-    if (role === 'admin' || role === 'superadmin') {
+    if (role !== 'viewer') {
+      await openQuizManagement(page)
       await expect(panel.getByText('Статус Twitch-бота', { exact: true })).toBeVisible()
       for (const name of width === 390
         ? ['Бот не подключён', 'Канал не подключён', 'EventSub не подключён']
@@ -475,12 +478,13 @@ for (const { role, width } of [
       await expect(panel.getByText('Проверьте подключение', { exact: true })).toHaveCount(0)
       await expect(panel.locator('details')).toHaveCount(0)
       const panelBounds = await panel.boundingBox()
-      const gridBounds = await grid.boundingBox()
+      const launchBounds = await page
+        .getByRole('button', { name: 'Задать конкретный вопрос', exact: true })
+        .boundingBox()
       expect(panelBounds).not.toBeNull()
-      expect(gridBounds).not.toBeNull()
-      expect(panelBounds!.y + panelBounds!.height).toBeLessThanOrEqual(gridBounds!.y)
-      expect(Math.abs(panelBounds!.x - gridBounds!.x)).toBeLessThan(1)
-      expect(Math.abs(panelBounds!.width - gridBounds!.width)).toBeLessThan(1)
+      expect(launchBounds).not.toBeNull()
+      expect(panelBounds!.y + panelBounds!.height).toBeLessThanOrEqual(launchBounds!.y)
+      if (role === 'moderator') await expect(panel.getByRole('button')).toHaveCount(0)
       await page.screenshot({ path: info.outputPath('quiz-twitch-admin.png'), fullPage: true })
     } else {
       await expect(panel).toHaveCount(0)
@@ -490,7 +494,7 @@ for (const { role, width } of [
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`Twitch connection actions preserve the centered heading at ${width}px`, async ({
+  test(`Twitch connection actions fit the management drawer at ${width}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 })
@@ -511,6 +515,7 @@ for (const width of [390, 768, 1440]) {
       botConnected = bot
       broadcasterConnected = channel
       await page.goto('/panel/game-quiz')
+      await openQuizManagement(page)
       const panel = page.getByTestId('quiz-twitch-panel')
       const heading = panel.getByRole('heading', { name: 'Статус Twitch-бота' })
       await expect(heading).toBeVisible()
@@ -520,9 +525,9 @@ for (const width of [390, 768, 1440]) {
       expect(
         Math.abs(titleRect.x + titleRect.width / 2 - panelRect.x - panelRect.width / 2),
       ).toBeLessThanOrEqual(1)
-      for (const [name, connected, side] of [
-        ['Подключить бота', bot, 'left'],
-        ['Авторизовать канал', channel, 'right'],
+      for (const [name, connected] of [
+        ['Подключить бота', bot],
+        ['Авторизовать канал', channel],
       ] as const) {
         const button = panel.getByRole('button', { name, exact: true })
         await expect(button).toHaveCount(connected ? 0 : 1)
@@ -531,12 +536,12 @@ for (const width of [390, 768, 1440]) {
         await button.focus()
         await expect(button).toBeFocused()
         const rect = (await button.boundingBox())!
-        expect(
-          Math.abs(rect.y + rect.height / 2 - titleRect.y - titleRect.height / 2),
-        ).toBeLessThanOrEqual(1)
-        if (side === 'left') expect(rect.x + rect.width).toBeLessThanOrEqual(titleRect.x)
-        else expect(rect.x).toBeGreaterThanOrEqual(titleRect.x + titleRect.width)
+        expect(rect.x).toBeGreaterThanOrEqual(panelRect.x)
+        expect(rect.x + rect.width).toBeLessThanOrEqual(panelRect.x + panelRect.width)
       }
+      const eventSub = panel.getByRole('button', { name: 'Подключить EventSub', exact: true })
+      if (bot && channel) await expect(eventSub).toBeEnabled()
+      else await expect(eventSub).toBeDisabled()
       expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true,
       )
@@ -1357,3 +1362,188 @@ for (const width of [390, 768, 1440]) {
     }
   })
 }
+
+test('EventSub activation keeps pending and failed states honest and survives reload', async ({
+  page,
+}) => {
+  const fixture = await mockQuiz(page)
+  let connected = false
+  let fail = true
+  let calls = 0
+  let finishConnect = () => {}
+  const status = () => ({
+    enabled: true,
+    botConnected: true,
+    broadcasterConnected: true,
+    eventSubConnected: connected,
+  })
+  await page.route('**/integrations/twitch/status', (route) => route.fulfill({ json: status() }))
+  await page.route('**/integrations/twitch/eventsub/connect', async (route) => {
+    calls++
+    if (calls === 1)
+      await new Promise<void>((resolve) => {
+        finishConnect = resolve
+      })
+    expect(route.request().method()).toBe('POST')
+    expect(route.request().headers()['x-dead-mans-api-client']).toBe('1')
+    await route.fulfill(
+      fail ? { status: 500, json: { error: 'private backend diagnostic' } } : { json: status() },
+    )
+  })
+  await page.goto('/panel/game-quiz')
+  await openQuizManagement(page)
+  const panel = page.getByTestId('quiz-twitch-panel')
+  const button = panel.getByRole('button', { name: 'Подключить EventSub', exact: true })
+  await button.click()
+  await expect(button).toBeDisabled()
+  await expect.poll(() => calls).toBe(1)
+  finishConnect()
+  await expect(panel.getByText('Не удалось подключить EventSub. Повторите попытку.')).toBeVisible()
+  await expect(panel).not.toContainText('private backend diagnostic')
+  fail = false
+  await button.click()
+  await expect(
+    panel.getByText('Подключение запрошено. Ожидаем подтверждения вебхука от Twitch.'),
+  ).toBeVisible()
+  await expect(panel.getByText('EventSub не подключён', { exact: true })).toBeVisible()
+  connected = true
+  fixture.notifyTwitchChanged()
+  await expect(panel.getByText('EventSub подключён', { exact: true })).toBeVisible()
+  await expect(button).toHaveCount(0)
+  expect(calls).toBe(2)
+  await page.reload()
+  await openQuizManagement(page)
+  await expect(panel.getByText('EventSub подключён', { exact: true })).toBeVisible()
+})
+
+test('Twitch status supports no game, disabled integration and refresh failure', async ({
+  page,
+}) => {
+  const fixture = await mockQuiz(page)
+  await page.route('**/api/game', (route) => route.fulfill({ status: 204 }))
+  let fail = false
+  let enabled = false
+  await page.route('**/integrations/twitch/status', (route) =>
+    route.fulfill(
+      fail
+        ? { status: 500, json: { error: 'private diagnostic' } }
+        : {
+            json: {
+              enabled,
+              botConnected: false,
+              broadcasterConnected: false,
+              eventSubConnected: false,
+            },
+          },
+    ),
+  )
+  await page.goto('/panel/game-quiz')
+  await openQuizManagement(page)
+  const panel = page.getByTestId('quiz-twitch-panel')
+  await expect(panel.getByText('Интеграция Twitch отключена на сервере.')).toBeVisible()
+  await expect(panel.getByRole('button')).toHaveCount(0)
+  enabled = true
+  fixture.notifyTwitchChanged()
+  await expect(panel.getByRole('button', { name: 'Подключить бота', exact: true })).toBeVisible()
+  fail = true
+  fixture.notifyTwitchChanged()
+  await expect(
+    panel.getByText('Не удалось обновить статус Twitch. Повторите попытку.'),
+  ).toBeVisible({ timeout: 15000 })
+  await expect(panel.getByText('Бот не подключён', { exact: true })).toBeVisible()
+  await expect(panel.getByRole('button', { name: 'Подключить бота', exact: true })).toBeDisabled()
+  fail = false
+  await panel.getByRole('button', { name: 'Повторить', exact: true }).click()
+  await expect(panel.getByRole('button', { name: 'Подключить бота', exact: true })).toBeEnabled()
+})
+
+for (const [label, role] of [
+  ['Подключить бота', 'bot'],
+  ['Авторизовать канал', 'broadcaster'],
+] as const) {
+  test(`Twitch authorization uses the existing ${role} flow`, async ({ page }) => {
+    await mockQuiz(page)
+    await page.route('**/integrations/twitch/status', (route) =>
+      route.fulfill({
+        json: {
+          enabled: true,
+          botConnected: false,
+          broadcasterConnected: false,
+          eventSubConnected: false,
+        },
+      }),
+    )
+    await page.route(`**/api/integrations/twitch/oauth/${role}`, (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<p>OAuth redirect</p>' }),
+    )
+    await page.goto('/panel/game-quiz')
+    await openQuizManagement(page)
+    await page.getByRole('button', { name: label, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/api/integrations/twitch/oauth/${role}$`))
+  })
+}
+
+test('a late publication recovery response preserves a newer publication', async ({ page }) => {
+  const fixture = await mockQuiz(page)
+  let publication = {
+    publicationId: 'old-publication',
+    status: 'failed',
+    outcomeDeliveryStatus: 'pending',
+  }
+  let failRefresh = false
+  let release = () => {}
+  await page.route('**/integrations/twitch/status', (route) =>
+    route.fulfill(
+      failRefresh
+        ? { status: 500, json: { error: 'refresh failed' } }
+        : {
+            json: {
+              enabled: true,
+              botConnected: true,
+              broadcasterConnected: true,
+              eventSubConnected: true,
+              publication,
+            },
+          },
+    ),
+  )
+  await page.route(
+    '**/integrations/twitch/quiz/publications/old-publication/retry',
+    async (route) => {
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await route.fulfill({
+        json: {
+          publicationId: 'old-publication',
+          status: 'publishing',
+          outcomeDeliveryStatus: 'pending',
+        },
+      })
+    },
+  )
+  await page.goto('/panel/game-quiz')
+  await openQuizManagement(page)
+  const panel = page.getByTestId('quiz-twitch-panel')
+  const retry = panel.getByRole('button', { name: 'Повторить отправку', exact: true })
+  await retry.click()
+  await expect(retry).toBeDisabled()
+  publication = {
+    publicationId: 'new-publication',
+    status: 'uncertain',
+    outcomeDeliveryStatus: 'pending',
+  }
+  const refreshed = page.waitForResponse('**/integrations/twitch/status')
+  fixture.notifyTwitchChanged()
+  await refreshed
+  await expect(
+    panel.getByRole('status').filter({ hasText: 'Twitch не подтвердил доставку.' }),
+  ).toBeVisible()
+  failRefresh = true
+  release()
+  await expect(
+    panel.getByText('Не удалось обновить статус Twitch. Повторите попытку.'),
+  ).toBeVisible({ timeout: 15000 })
+  await expect(retry).toBeVisible()
+  await expect(retry).toBeDisabled()
+})
