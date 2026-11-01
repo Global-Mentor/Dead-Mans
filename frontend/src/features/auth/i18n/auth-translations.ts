@@ -1,5 +1,6 @@
 const translations = {
   en: {
+    aboutGame: 'About the game',
     subtitle: 'Sign in with Twitch to open the app.',
     description: 'After sign-in you will return to the page you wanted to open.',
     button: 'Sign in with Twitch',
@@ -24,6 +25,7 @@ const translations = {
     },
   },
   ru: {
+    aboutGame: 'Об игре',
     subtitle: 'Войдите через Twitch, чтобы открыть приложение.',
     description: 'После входа вы вернётесь на страницу, которую хотели открыть.',
     button: 'Войти через Twitch',
@@ -48,6 +50,7 @@ const translations = {
     },
   },
   uk: {
+    aboutGame: 'Про гру',
     subtitle: 'Увійдіть через Twitch, щоб відкрити застосунок.',
     description: 'Після входу ви повернетеся на сторінку, яку хотіли відкрити.',
     button: 'Увійти через Twitch',
@@ -72,6 +75,7 @@ const translations = {
     },
   },
   pl: {
+    aboutGame: 'O grze',
     subtitle: 'Zaloguj się przez Twitch, aby otworzyć aplikację.',
     description: 'Po zalogowaniu wrócisz na stronę, którą chcesz otworzyć.',
     button: 'Zaloguj się przez Twitch',

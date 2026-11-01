@@ -25,6 +25,9 @@ export function GameGuidePage() {
           <Typography component="h2" variant="h5" color="primary.light">
             {t('gameGuide.overview.essenceTitle')}
           </Typography>
+          <Typography variant="body1">
+            <strong>{t('gameGuide.overview.turnOrder')}</strong>
+          </Typography>
           <Typography variant="body1">{t('gameGuide.overview.how')}</Typography>
           <Typography variant="body1">{t('gameGuide.overview.influence')}</Typography>
           <Typography component="p" variant="subtitle1" color="primary.light">
