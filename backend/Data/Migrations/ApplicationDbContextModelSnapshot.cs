@@ -202,6 +202,10 @@ namespace backend.Data.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("status");
 
+                    b.Property<int?>("TeamLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("team_limit");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -243,6 +247,8 @@ namespace backend.Data.Migrations
                             t.HasCheckConstraint("ck_games_soft_delete_semantics", "(is_deleted = FALSE AND deleted_at_utc IS NULL) OR (is_deleted = TRUE AND deleted_at_utc IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_games_status_allowed", "status IN ('draft','ready','active','finished')");
+
+                            t.HasCheckConstraint("ck_games_team_limit", "team_limit IS NULL OR team_limit BETWEEN 1 AND 1000");
 
                             t.HasCheckConstraint("ck_games_team_size_limits", "min_players_per_team > 0 AND max_players_per_team >= min_players_per_team");
 

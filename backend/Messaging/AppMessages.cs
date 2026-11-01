@@ -105,6 +105,7 @@ public static class AppMessages
         public const string GameFinishPendingDisbandRequests = "Resolve all pending team disband requests before finishing the game.";
         public const string GameFinishInvalidConfirmedTeamRoster = "Confirmed teams must match the configured player limits before finishing the game.";
         public const string GameRegistrationNotOpen = "Registration is not open for a ready game.";
+        public const string GameRegistrationInvalidTeamLimit = "Team limit must be between 1 and 1000, or null for unlimited.";
         public const string GameRegistrationNoSlots = "No team slots are available.";
         public const string GameRegistrationAlreadyOnTeam = "You are already on a team for this game.";
         public const string GameRegistrationTeamNotFound = "Team was not found.";
@@ -329,6 +330,7 @@ public static class AppMessages
         public const string UnexpectedServerError = "game_common.unexpected_server_error";
         public const string TooManyRequests = "game_common.too_many_requests";
         public const string GameRegistrationNotOpen = "game_registration.not_open";
+        public const string GameRegistrationInvalidTeamLimit = "game_registration.invalid_team_limit";
         public const string GameRegistrationNoSlots = "game_registration.no_slots";
         public const string GameRegistrationAlreadyOnTeam = "game_registration.already_on_team";
         public const string GameRegistrationTeamNotFound = "game_registration.team_not_found";

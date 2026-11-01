@@ -1488,6 +1488,7 @@ public sealed partial class GameRegistrationContractTests : IClassFixture<TestWe
             {
                 Id = gameId,
                 Title = "Ready game",
+                TeamLimit = 1,
                 Status = GameStatusValue.Ready,
                 CreatedAtUtc = utc,
                 ReadyAtUtc = utc,
@@ -1544,6 +1545,7 @@ public sealed partial class GameRegistrationContractTests : IClassFixture<TestWe
                 CreatedAtUtc = DateTime.UtcNow
             }
         );
+        (await dbContext.Games.SingleAsync(game => game.Id == gameId)).TeamLimit = slotIndex;
         await dbContext.SaveChangesAsync();
         return slotId;
     }

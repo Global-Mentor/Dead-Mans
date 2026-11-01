@@ -3627,6 +3627,50 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /game/registration/admin/games/{gameId}/team-limit:
+    put:
+      operationId: updateRegistrationTeamLimit
+      description: Set the team capacity during registration or active play. Null removes the limit. Existing teams and invitations are preserved when lowering it.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamLimitRequestDto'
+      responses:
+        '204':
+          description: Limit saved
+        '400':
+          description: Invalid limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Missing moderator/admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game is not ready or active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /game/registration/admin:
     get:
       operationId: getGameRegistrationAdminSnapshot
@@ -3662,7 +3706,7 @@ paths:
   /game/registration/admin/teams:
     post:
       operationId: createAdminRegistrationTeam
-      description: Admins and superadmins may create an additional reserved slot when all public slots are occupied and no explicit slot is requested. Moderators require an available slot. Additional slots do not expand public self-registration capacity. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot.
+      description: Team creation respects the configured game limit for all roles. Slots are allocated as needed. Automatic placement appends the team to the queue while preserving the relative order of existing teams; explicit slot placement honors the requested slot.
       security:
         - cookieAuth: []
       requestBody:
@@ -5255,9 +5299,21 @@ components:
         invitedUserDisplayName:
           type: string
           nullable: true
+    UpdateTeamLimitRequestDto:
+      type: object
+      required:
+        - teamLimit
+      properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
     GameRegistrationSnapshotDto:
       type: object
       required:
+        - teamLimit
+        - canCreateTeam
         - gameId
         - gameStatus
         - minPlayersPerTeam
@@ -5269,6 +5325,13 @@ components:
         - canInvitePlayersToMyTeam
         - invitablePlayers
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+        canCreateTeam:
+          type: boolean
         gameId:
           type: string
           format: uuid
@@ -5308,6 +5371,8 @@ components:
     GameRegistrationAdminSnapshotDto:
       type: object
       required:
+        - teamLimit
+        - canCreateTeam
         - gameId
         - gameStatus
         - minPlayersPerTeam
@@ -5317,6 +5382,13 @@ components:
         - teams
         - availablePlayers
       properties:
+        teamLimit:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+        canCreateTeam:
+          type: boolean
         gameId:
           type: string
           format: uuid
@@ -8525,6 +8597,7 @@ components:
             - game_common.unexpected_server_error
             - game_common.too_many_requests
             - game_registration.not_open
+            - game_registration.invalid_team_limit
             - game_registration.no_slots
             - game_registration.already_on_team
             - game_registration.team_not_found

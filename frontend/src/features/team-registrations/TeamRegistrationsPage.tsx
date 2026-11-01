@@ -6,15 +6,13 @@ import {
   PageStatePanel,
 } from '../../shared/ui/index.ts'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../../shared/auth/use-auth.ts'
-import { hasPanelCapability } from '../../shared/auth/panel-capabilities.ts'
 import { AdminRegistrationPanel } from '../game-registration/index.ts'
 import { useTeamRegistrationsPage } from './use-team-registrations-page.ts'
 
 export function TeamRegistrationsPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const {
+    updateTeamLimit,
     adminSnapshotQuery,
     createAdminTeam,
     createAdminInvitation,
@@ -99,8 +97,15 @@ export function TeamRegistrationsPage() {
       ) : null}
 
       <AdminRegistrationPanel
-        canCreateAdditionalTeams={hasPanelCapability('createAdditionalTeams', user?.roles)}
+        key={adminSnapshotQuery.data.gameId}
         snapshot={adminSnapshotQuery.data}
+        isUpdatingTeamLimit={updateTeamLimit.isPending}
+        onUpdateTeamLimit={(teamLimit, onSuccess, onError) =>
+          updateTeamLimit.mutate(
+            { gameId: adminSnapshotQuery.data!.gameId, teamLimit },
+            { onSuccess, onError },
+          )
+        }
         isCreatingTeam={createAdminTeam.isPending}
         isCreatingInvitation={(teamId) =>
           createAdminInvitation.isPending && createAdminInvitation.variables?.teamId === teamId

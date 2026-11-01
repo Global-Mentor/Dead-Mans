@@ -114,7 +114,9 @@ public sealed record GameRegistrationSnapshot(
     IReadOnlyList<RegistrationInvitationDto> MyPendingInvitations,
     IReadOnlyList<RegistrationInvitationDto> MyOutgoingInvitations,
     bool CanInvitePlayersToMyTeam,
-    IReadOnlyList<RegistrationPlayerDto> InvitablePlayers
+    IReadOnlyList<RegistrationPlayerDto> InvitablePlayers,
+    int? TeamLimit = 10,
+    bool CanCreateTeam = true
 );
 
 public sealed record GameRegistrationAdminSnapshot(
@@ -125,7 +127,9 @@ public sealed record GameRegistrationAdminSnapshot(
     GameRegistrationLaunchSummary LaunchSummary,
     IReadOnlyList<RegistrationTeamSlotDto> TeamSlots,
     IReadOnlyList<RegistrationTeamDto> Teams,
-    IReadOnlyList<RegistrationPlayerDto> AvailablePlayers
+    IReadOnlyList<RegistrationPlayerDto> AvailablePlayers,
+    int? TeamLimit = 10,
+    bool CanCreateTeam = true
 );
 
 public sealed record GameRegistrationLaunchSummary(
@@ -143,6 +147,7 @@ public enum GameRegistrationErrorCode
     GameNotInReady,
     UserAlreadyOnTeam,
     NoAvailableSlot,
+    InvalidTeamLimit,
     TeamNotFound,
     TeamNotJoinable,
     TeamRosterLocked,

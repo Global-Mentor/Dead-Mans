@@ -112,10 +112,10 @@ public sealed partial class DbGameRegistrationPersistence
             );
         }
 
-        var game = await _dbContext.Games.AsNoTracking().FirstOrDefaultAsync(
-            candidate => candidate.Id == gameId && !candidate.IsDeleted,
-            cancellationToken
-        );
+        var game = await _dbContext.Games.AsNoTracking()
+            .Where(candidate => candidate.Id == gameId && !candidate.IsDeleted)
+            .Select(candidate => new { candidate.Status, candidate.ActiveTeamId })
+            .FirstOrDefaultAsync(cancellationToken);
         if (game is null || (game.Status != GameStatusValue.Ready && game.Status != GameStatusValue.Active))
         {
             return Fail<bool>(GameRegistrationErrorCode.GameNotInReady);

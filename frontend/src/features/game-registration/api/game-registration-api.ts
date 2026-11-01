@@ -15,6 +15,7 @@ const gameRegistrationApiClient =
       | '/game/registration/teams'
       | '/game/registration/my-team/name'
       | '/game/registration/my-team/readiness'
+      | '/game/registration/admin/games/{gameId}/team-limit'
       | '/game/registration/admin'
       | '/game/registration/teams/{teamId}/join'
       | '/game/registration/teams/leave'
@@ -37,6 +38,15 @@ const gameRegistrationApiClient =
       | '/game/lifecycle/start'
     >
   >()
+
+export function updateGameTeamLimit(input: { gameId: string; teamLimit: number | null }) {
+  return ensureOpenApiSuccess(
+    gameRegistrationApiClient.PUT('/game/registration/admin/games/{gameId}/team-limit', {
+      params: { path: { gameId: input.gameId } },
+      body: { teamLimit: input.teamLimit },
+    }),
+  )
+}
 
 export function fetchGameRegistrationSnapshot() {
   return unwrapOpenApiDataOrNullOnNoContent(gameRegistrationApiClient.GET('/game/registration'))

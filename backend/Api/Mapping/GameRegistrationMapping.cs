@@ -19,7 +19,9 @@ public static class GameRegistrationMapping
             snapshot.MyPendingInvitations.Select(ToDto).ToArray(),
             snapshot.MyOutgoingInvitations.Select(ToDto).ToArray(),
             snapshot.CanInvitePlayersToMyTeam,
-            snapshot.InvitablePlayers.Select(ToDto).ToArray()
+            snapshot.InvitablePlayers.Select(ToDto).ToArray(),
+            snapshot.TeamLimit,
+            snapshot.CanCreateTeam
         );
 
     public static ApiContracts.GameRegistrationAdminSnapshotDto ToDto(
@@ -33,7 +35,9 @@ public static class GameRegistrationMapping
             snapshot.LaunchSummary.ToDto(),
             snapshot.TeamSlots.Select(ToDto).ToArray(),
             snapshot.Teams.Select(ToDto).ToArray(),
-            snapshot.AvailablePlayers.Select(ToDto).ToArray()
+            snapshot.AvailablePlayers.Select(ToDto).ToArray(),
+            snapshot.TeamLimit,
+            snapshot.CanCreateTeam
         );
 
     public static ApiContracts.GameRegistrationLaunchSummaryDto ToDto(

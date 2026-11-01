@@ -22,8 +22,9 @@ function createPageController(data: unknown, overrides: Record<string, unknown> 
     adminSnapshotQuery: {
       isLoading: false,
       isError: false,
-      data,
+      data: data ? { teamLimit: 10, canCreateTeam: true, ...(data as object) } : data,
     },
+    updateTeamLimit: { isPending: false, mutate: vi.fn() },
     createAdminTeam: { isPending: false, mutate: vi.fn() },
     createAdminInvitation: { isPending: false, variables: undefined, mutate: vi.fn() },
     assignPlayerToTeam: { isPending: false, mutate: vi.fn() },

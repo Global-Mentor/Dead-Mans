@@ -51,16 +51,10 @@ public sealed partial class GameRegistrationService : IGameRegistrationService
             return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.UserAlreadyOnTeam);
         }
 
-        var slot = await _reads.FindAvailablePublicSlotAsync(game.GameId, cancellationToken);
-        if (slot is null)
-        {
-            return Fail<RegistrationTeamDto>(GameRegistrationErrorCode.NoAvailableSlot);
-        }
-
         return await CompleteMutationAsync(_persistence.PersistCreateTeamAsync(
             game.GameId,
             userId,
-            slot.TeamSlotId,
+            null,
             recruitmentOpen,
             normalizedName,
             cancellationToken

@@ -6,6 +6,7 @@ export {
   gameRegistrationSnapshotQueryOptions,
 } from './api/game-registration-queries.ts'
 export {
+  useUpdateGameTeamLimitMutation,
   useAcceptGameRegistrationInvitationMutation,
   useAssignGameRegistrationPlayerToTeamMutation,
   useCancelGameRegistrationTeamInvitationMutation,

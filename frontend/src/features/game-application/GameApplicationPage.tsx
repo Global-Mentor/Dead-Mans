@@ -108,9 +108,7 @@ export function GameApplicationPage() {
     updateTeamName,
     updateReadiness,
   ].some((mutation) => mutation.isPending)
-  const hasAvailableSlot = snapshot.teamSlots.some(
-    (slot) => slot.teamSlotType === 'public' && slot.isAvailableForNewTeam,
-  )
+  const hasAvailableSlot = snapshot.canCreateTeam
 
   return (
     <PageShell sx={{ maxWidth: 1280, width: '100%', px: { xs: 0, md: 1 }, pb: { xs: 0, md: 1 } }}>

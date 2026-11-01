@@ -28,6 +28,8 @@ public class Game
 
     public short MaxPlayersPerTeam { get; set; } = 2;
 
+    public int? TeamLimit { get; set; } = 10;
+
     public int QuizAnswerDurationSeconds { get; set; } = 60;
 
     public Guid? ActiveTeamId { get; set; }

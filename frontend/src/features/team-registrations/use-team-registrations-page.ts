@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  useUpdateGameTeamLimitMutation,
   gameRegistrationAdminSnapshotQueryOptions,
   useAssignGameRegistrationPlayerToTeamMutation,
   useCancelGameRegistrationTeamInvitationMutation,
@@ -19,6 +20,7 @@ import { useGameTeamPlayedState } from '../game-board/use-game-team-played-state
 
 export function useTeamRegistrationsPage() {
   const { toastMessage, onMutationError, dismissToast } = useGameRegistrationToast()
+  const updateTeamLimit = useUpdateGameTeamLimitMutation(() => {})
   const createAdminTeam = useCreateAdminGameRegistrationTeamMutation(onMutationError)
   const createAdminInvitation = useCreateAdminGameRegistrationInvitationMutation(() => {})
   const assignPlayerToTeam = useAssignGameRegistrationPlayerToTeamMutation(() => {})
@@ -54,6 +56,7 @@ export function useTeamRegistrationsPage() {
   }
 
   return {
+    updateTeamLimit,
     adminSnapshotQuery,
     createAdminTeam,
     createAdminInvitation,

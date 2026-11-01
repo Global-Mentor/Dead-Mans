@@ -1,4 +1,5 @@
 export const API_ERROR_CODES = {
+  gameRegistrationInvalidTeamLimit: 'game_registration.invalid_team_limit',
   gameLifecycleCellMediaRequired: 'game_lifecycle.cell_media_required',
   gameLifecycleEmptyModifiersNotAcknowledged: 'game_lifecycle.empty_modifiers_not_acknowledged',
   gameLifecycleEmptyQuestionsNotAcknowledged: 'game_lifecycle.empty_questions_not_acknowledged',

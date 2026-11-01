@@ -252,7 +252,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         try
         {
             await db.GetService<IMigrator>().MigrateAsync("20260908003848_ProductionBaseline");
-            var game = await db.Games.SingleAsync();
+            var game = db.Games.Local.Single();
             var now = DateTime.UtcNow;
             game.Status = GameStatusValue.Finished;
             game.FinishedAtUtc = now;

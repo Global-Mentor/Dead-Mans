@@ -64,7 +64,9 @@ public sealed record GameRegistrationAdminSnapshotDto(
     GameRegistrationLaunchSummaryDto LaunchSummary,
     IReadOnlyList<RegistrationTeamSlotDto> TeamSlots,
     IReadOnlyList<RegistrationTeamDto> Teams,
-    IReadOnlyList<RegistrationPlayerDto> AvailablePlayers
+    IReadOnlyList<RegistrationPlayerDto> AvailablePlayers,
+    int? TeamLimit = 10,
+    bool CanCreateTeam = true
 );
 
 public sealed record GameRegistrationLaunchSummaryDto(
@@ -87,8 +89,12 @@ public sealed record GameRegistrationSnapshotDto(
     IReadOnlyList<RegistrationInvitationDto> MyPendingInvitations,
     IReadOnlyList<RegistrationInvitationDto> MyOutgoingInvitations,
     bool CanInvitePlayersToMyTeam,
-    IReadOnlyList<RegistrationPlayerDto> InvitablePlayers
+    IReadOnlyList<RegistrationPlayerDto> InvitablePlayers,
+    int? TeamLimit = 10,
+    bool CanCreateTeam = true
 );
+
+public sealed record UpdateTeamLimitRequestDto([property: JsonRequired] int? TeamLimit);
 
 public sealed record CreateRegistrationTeamRequestDto(bool RecruitmentOpen, string? Name = null);
 

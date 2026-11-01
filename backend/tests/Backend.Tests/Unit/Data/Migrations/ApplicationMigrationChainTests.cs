@@ -56,7 +56,8 @@ public sealed class ApplicationMigrationChainTests
                 "20261013140621_AddRoundBroadcastDrafts",
                 "20261013195519_AddRoundResultPresentation",
                 "20261013234918_AddRoundPreparationCompleted",
-                "20261014185916_AddOverlayTestMode"
+                "20261014185916_AddOverlayTestMode",
+                "20261101194050_AddDynamicTeamLimit"
             ],
             migrations
         );

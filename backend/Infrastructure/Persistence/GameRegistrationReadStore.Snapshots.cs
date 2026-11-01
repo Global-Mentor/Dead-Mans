@@ -52,6 +52,7 @@ public sealed partial class GameRegistrationReadStore
                     slot.SlotType,
                     slot.ReservedLabel,
                     slot.SlotType == TeamSlotTypeValue.Public
+                        && (game.TeamLimit is null || blockedSlotIds.Count < game.TeamLimit)
                         && !blocked
                         && occupyingTeam is null,
                     occupyingTeam?.Id,
@@ -139,7 +140,9 @@ public sealed partial class GameRegistrationReadStore
             myInvites,
             myOutgoingInvitations,
             canInvitePlayersToMyTeam,
-            invitablePlayers
+            invitablePlayers,
+            game.TeamLimit,
+            game.TeamLimit is null || blockedSlotIds.Count < game.TeamLimit
         );
     }
 
@@ -167,7 +170,9 @@ public sealed partial class GameRegistrationReadStore
             BuildLaunchSummary(teamDtos, game.MinPlayersPerTeam, game.MaxPlayersPerTeam),
             slotDtos,
             teamDtos,
-            availablePlayers
+            availablePlayers,
+            game.TeamLimit,
+            game.TeamLimit is null || (await GetBlockedTeamSlotIdsAsync(gameId, cancellationToken)).Count < game.TeamLimit
         );
     }
 

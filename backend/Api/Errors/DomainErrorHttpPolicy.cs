@@ -36,6 +36,11 @@ public static class DomainErrorHttpPolicy
                 AppMessages.Client.GameRegistrationNotOpen,
                 AppMessages.ErrorCodes.GameRegistrationNotOpen
             ),
+            GameRegistrationErrorCode.InvalidTeamLimit => new(
+                StatusCodes.Status400BadRequest,
+                AppMessages.Client.GameRegistrationInvalidTeamLimit,
+                AppMessages.ErrorCodes.GameRegistrationInvalidTeamLimit
+            ),
             GameRegistrationErrorCode.NoAvailableSlot => new(
                 StatusCodes.Status409Conflict,
                 AppMessages.Client.GameRegistrationNoSlots,

@@ -4,6 +4,8 @@ namespace backend.Application.Abstractions;
 
 public interface IGameRegistrationService
 {
+    Task<GameRegistrationResult<bool>> UpdateTeamLimitAsync(Guid gameId, int? teamLimit, CancellationToken cancellationToken = default);
+
     Task<GameRegistrationSnapshot?> GetRegistrationSnapshotAsync(
         Guid userId,
         CancellationToken cancellationToken = default
@@ -60,7 +62,6 @@ public interface IGameRegistrationService
         Guid? teamSlotId,
         bool recruitmentOpen,
         string? name = null,
-        bool allowAdditionalSlot = false,
         CancellationToken cancellationToken = default
     );
 
