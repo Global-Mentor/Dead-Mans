@@ -48,7 +48,7 @@ public sealed class GameQuestionControllerTests
 
     private static GameQuestionController CreateController(IGameQuestionService service)
     {
-        var controller = new GameQuestionController(service)
+        var controller = new GameQuestionController(service, Microsoft.Extensions.Options.Options.Create(new backend.Application.Configuration.MediaStorageSettings { PublicBaseUrl = "https://media.test" }))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

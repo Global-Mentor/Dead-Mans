@@ -43,6 +43,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<QuestionCategory> QuestionCategories => Set<QuestionCategory>();
     public DbSet<QuestionDefinition> QuestionDefinitions => Set<QuestionDefinition>();
     public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
+    public DbSet<HuntMap> HuntMaps => Set<HuntMap>();
+    public DbSet<HuntLocation> HuntLocations => Set<HuntLocation>();
+    public DbSet<HuntMapTranslation> HuntMapTranslations => Set<HuntMapTranslation>();
+    public DbSet<HuntLocationTranslation> HuntLocationTranslations => Set<HuntLocationTranslation>();
 
     public DbSet<GameQuizQuestionSession> GameQuizQuestionSessions => Set<GameQuizQuestionSession>();
     public DbSet<GameQuizSubmission> GameQuizSubmissions => Set<GameQuizSubmission>();
@@ -125,6 +129,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new QuestionCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionDefinitionConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionOptionConfiguration());
+        modelBuilder.ApplyConfiguration(new HuntMapConfiguration());
+        modelBuilder.ApplyConfiguration(new QuestionScreenshotConfiguration());
+        modelBuilder.ApplyConfiguration(new GameQuizPresentationConfiguration());
+        modelBuilder.ApplyConfiguration(new HuntLocationConfiguration());
+        modelBuilder.ApplyConfiguration(new HuntMapTranslationConfiguration());
+        modelBuilder.ApplyConfiguration(new HuntLocationTranslationConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizQuestionSessionConfiguration());
         modelBuilder.ApplyConfiguration(new GameQuizSubmissionConfiguration());
         modelBuilder.ApplyConfiguration(new TwitchBotConnectionConfiguration());

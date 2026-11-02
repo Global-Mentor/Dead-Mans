@@ -2,6 +2,8 @@ namespace backend.Data.Entities;
 
 public class QuestionDefinition
 {
+    public string? ImageSnapshotJson { get; set; }
+
     public Guid Id { get; set; }
 
     public string ExternalCode { get; set; } = string.Empty;

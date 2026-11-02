@@ -34,6 +34,33 @@ function question(
   }
 }
 describe('question catalog', () => {
+  it.each([
+    ['en', 'Stillwater Bayou', 'Port Reeker'],
+    ['ru', 'Болото Стиллуотер', 'Порт-Рикер'],
+    ['uk', 'Болото Стілвотер', 'Порт-Рікер'],
+    ['pl', 'Stillwater Bayou', 'Port Reeker'],
+  ] as const)('finds screenshot maps and answers in %s', (locale, map, location) => {
+    const imageQuestion = question('image', {
+      image: {
+        imageUrl: '/image.png',
+        mapNames: {
+          en: 'Stillwater Bayou',
+          ru: 'Болото Стиллуотер',
+          uk: 'Болото Стілвотер',
+          pl: 'Stillwater Bayou',
+        },
+        optionNames: {
+          a: { en: 'Port Reeker', ru: 'Порт-Рикер', uk: 'Порт-Рікер', pl: 'Port Reeker' },
+        },
+      },
+    })
+    for (const search of [map, location, 'code-image']) {
+      expect(
+        filterCatalogQuestions([question('text'), imageQuestion], { ...filters, search }, locale),
+      ).toEqual([imageQuestion])
+    }
+  })
+
   it('intersects category, availability and answer search', () => {
     const items = [
       question('a'),

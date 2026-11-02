@@ -60,7 +60,10 @@ public sealed class ApplicationMigrationChainTests
                 "20261101194050_AddDynamicTeamLimit",
                 "20261101231721_AddOverlayLeaderboardAndSavedKeys",
                 "20261102014434_AddOverlayLeaderboardPage",
-                "20261102023047_AddOverlayQuizLeaderboard"
+                "20261102023047_AddOverlayQuizLeaderboard",
+                "20261102173557_AddHuntLocationCatalog",
+                "20261102190414_AddScreenshotQuiz",
+                "20261102195810_HardenScreenshotOptionIntegrity"
             ],
             migrations
         );

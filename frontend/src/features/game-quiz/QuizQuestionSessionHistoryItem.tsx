@@ -1,3 +1,4 @@
+import { QuizScreenshotImage, quizOptionText } from '../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
@@ -75,9 +76,10 @@ export function QuizQuestionSessionHistoryItem({
         </Stack>
         {showQuestionText ? (
           <Typography variant="body1" fontWeight={700} sx={{ lineHeight: 1.35 }}>
-            {questionSession.questionText}
+            {questionSession.image ? t('common.quizImage.question') : questionSession.questionText}
           </Typography>
         ) : null}
+        {questionSession.image ? <QuizScreenshotImage image={questionSession.image} /> : null}
         {showOptions ? (
           <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 0.75 }}>
             {questionSession.options.map((option, index) => (
@@ -90,7 +92,12 @@ export function QuizQuestionSessionHistoryItem({
                 marker={`!${index + 1}`}
                 selected={own?.selectedOptionId === option.optionId}
                 aria-label={[
-                  option.text,
+                  quizOptionText(
+                    questionSession.image,
+                    option.optionId,
+                    option.text,
+                    i18n.language,
+                  ),
                   option.optionId === questionSession.correctOptionId
                     ? t('gameQuiz.answerCorrectStatus')
                     : null,
@@ -106,14 +113,26 @@ export function QuizQuestionSessionHistoryItem({
                       : undefined
                 }
               >
-                <span>{option.text}</span>
+                <span>
+                  {quizOptionText(
+                    questionSession.image,
+                    option.optionId,
+                    option.text,
+                    i18n.language,
+                  )}
+                </span>
               </SelectionAction>
             ))}
           </Box>
         ) : null}
         {correctOption ? (
           <QuizTextBlock label={t('gameQuiz.correctAnswerHeading')} inline>
-            {correctOption.text}
+            {quizOptionText(
+              questionSession.image,
+              correctOption.optionId,
+              correctOption.text,
+              i18n.language,
+            )}
           </QuizTextBlock>
         ) : null}
         {own ? (
@@ -122,7 +141,14 @@ export function QuizQuestionSessionHistoryItem({
             icon={false}
             appearance="textured"
           >
-            {t('gameQuiz.answerLabel', { answer: own.selectedOptionText })}
+            {t('gameQuiz.answerLabel', {
+              answer: quizOptionText(
+                questionSession.image,
+                own.selectedOptionId,
+                own.selectedOptionText,
+                i18n.language,
+              ),
+            })}
             {' · '}
             {own.isCorrect
               ? t('gameQuiz.resultCorrect', { points: own.awardedPoints })
@@ -178,7 +204,12 @@ function QuizAnswerResults({ questionSession }: { questionSession: QuestionSessi
                     <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
                       {submission.displayName}:
                     </Box>{' '}
-                    {submission.selectedOptionText}
+                    {quizOptionText(
+                      questionSession.image,
+                      submission.selectedOptionId,
+                      submission.selectedOptionText,
+                      i18n.language,
+                    )}
                   </Typography>
                   <StatusBadge
                     size="small"

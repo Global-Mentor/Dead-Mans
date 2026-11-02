@@ -14,6 +14,8 @@
 - `DELETE /api/game/setup/cells/{cellId}/media` -> hard-delete media-объекта для draft-ячейки + unlink из draft snapshot.
 - `DELETE /api/game/lifecycle/games/{gameId}` -> **soft-delete** для non-draft игр (`games.is_deleted`, `games.deleted_at_utc`).
 - `DELETE /api/game/questions/{questionId}` -> **soft-delete** вопроса (`question_definitions.is_deleted`, `question_definitions.deleted_at_utc`).
+- `hunt_maps`, `hunt_locations` и их переводы -> глобальный [справочник Hunt](hunt-location-catalog.md),
+  отключение через `is_enabled`; удаление игры не удаляет карты, локации или их названия.
 - каталог модификаторов -> **soft archive** через `modifier_definitions.is_archived` и
   admin `DELETE /api/game/modifiers/{modifierId}`; definition из active game content-locked.
   `modifier_definition_versions` и их conflict-name snapshots - append-only: прикладные и
@@ -39,6 +41,13 @@
   round audit, modifier revision и finalization rows.
 
 ## Правило для новых изменений
+
+- `question_screenshots` и связанные `media_assets` сохраняются после архивирования
+  вопроса. Изображение, его путь и варианты ответа неизменяемы; снимки переводов
+  сохраняются в настройке игры, публикации Twitch и игровой сессии.
+- `game_quiz_presentations` - временный указатель сцены OBS. Его можно удалить
+  при скрытии результата или заменить при запуске следующего вопроса. Это не
+  удаляет сессию, изображение, ответы или начисления.
 
 - `game_overlay_keys.test_enabled` - настройка тестового экрана персональной OBS-ссылки,
   не часть истории игры. Перевыпуск ссылки сбрасывает её, отзыв удаляет вместе с ключом.

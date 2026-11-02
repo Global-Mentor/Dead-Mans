@@ -32,7 +32,8 @@ public sealed record GameBoardSnapshot(
     string? ActiveTeamId,
     IReadOnlyList<string> EnabledQuestionIds,
     int QuizAnswerDurationSeconds = 60,
-    int? TeamLimit = 10
+    int? TeamLimit = 10,
+    int ScreenshotAnswerDurationSeconds = 60
 );
 
 public sealed record GameTeamQueueParticipant(Guid UserId, string DisplayName);

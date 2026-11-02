@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/game/questions/hunt-maps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Enabled maps and locations with exact game names. Admin only. */
+        get: operations["getHuntMaps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/questions/screenshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Upload one image and create a six-option location question. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only. */
+        post: operations["uploadQuizScreenshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/game/quiz/question-sessions/{questionSessionId}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Hide a completed screenshot and restore the underlying overlay. Repeating a successful hide is safe. A stale session cannot hide a newer one. Moderator or admin only. */
+        post: operations["hideQuizScreenshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/overlay/test": {
         parameters: {
             query?: never;
@@ -68,7 +119,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user IDs, questions or management data. Responses are not cacheable. */
+        /** @description Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user identities or management data. An explicitly presented screenshot includes public options and reveals its answer only after settlement. Responses are not cacheable. */
         get: operations["getGameOverlaySnapshot"];
         put?: never;
         post?: never;
@@ -1805,6 +1856,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        LocalizedHuntNames: {
+            en: string;
+            ru: string;
+            uk: string;
+            pl: string;
+        };
+        HuntLocationItemDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            names: components["schemas"]["LocalizedHuntNames"];
+        };
+        HuntMapItemDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            names: components["schemas"]["LocalizedHuntNames"];
+            locations: components["schemas"]["HuntLocationItemDto"][];
+        };
+        /** @description Frozen image and localized names for every option. Contains no correct-answer information. */
+        GameQuizImageDto: {
+            imageUrl: string;
+            mapNames: components["schemas"]["LocalizedHuntNames"];
+            optionNames: {
+                [key: string]: components["schemas"]["LocalizedHuntNames"];
+            };
+        };
+        UploadQuizScreenshotResponseDto: {
+            /** Format: uuid */
+            questionId: string;
+        };
         GameOverlaySavedKeyDto: {
             key: string | null;
         };
@@ -1930,6 +2012,7 @@ export interface components {
             scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
         };
         GameOverlaySnapshotDto: {
+            quizQuestion?: components["schemas"]["CurrentGameQuizStateDto"] | null;
             /**
              * @description Operator-selected zero-based page of six entries.
              * @default 0
@@ -1944,7 +2027,7 @@ export interface components {
              * @description Test mode replaces all game content with the static brand preview; it does not change the round phase.
              * @enum {string}
              */
-            phase: "leaderboard" | "quiz_leaderboard" | "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
+            phase: "screenshot" | "leaderboard" | "quiz_leaderboard" | "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
             team: components["schemas"]["GameOverlayTeamDto"] | null;
             board: components["schemas"]["GameOverlayBoardDto"] | null;
             /** @description Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts. */
@@ -1984,6 +2067,8 @@ export interface components {
             cost: number;
         };
         UpdateGameSetupRequestDto: {
+            /** @default 60 */
+            screenshotAnswerDurationSeconds: number;
             /** @description Board version the client last loaded; save fails with 409 when the draft changed elsewhere */
             expectedVersion: number;
             title: string;
@@ -1996,6 +2081,8 @@ export interface components {
             quizAnswerDurationSeconds: number;
         };
         GameSetupSnapshotDto: {
+            /** @default 60 */
+            screenshotAnswerDurationSeconds: number;
             readonly teamLimit: number | null;
             gameId: string;
             title: string;
@@ -2680,6 +2767,7 @@ export interface components {
             sortOrder: number;
         };
         GameQuestionCatalogItemDto: {
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionId: string;
             questionCode: string;
@@ -2862,6 +2950,7 @@ export interface components {
             priority: number;
         };
         AskedQuizQuestionDto: {
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionSessionId: string;
             /** Format: uuid */
@@ -2886,6 +2975,7 @@ export interface components {
             displayOrder: number;
         };
         AvailableGameQuizQuestionDto: {
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionId: string;
             questionCode: string;
@@ -2917,6 +3007,9 @@ export interface components {
             percentage: number;
         };
         CurrentGameQuizStateDto: {
+            /** @default false */
+            presentationVisible: boolean;
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionSessionId: string;
             /** Format: uuid */
@@ -2995,7 +3088,7 @@ export interface components {
             /** Format: uuid */
             gameId: string;
             /** @enum {string} */
-            changeKind: "question_asked" | "question_closed" | "manual_adjustment_applied";
+            changeKind: "question_asked" | "question_closed" | "manual_adjustment_applied" | "presentation_hidden";
             /** Format: date-time */
             occurredAtUtc: string;
         };
@@ -3006,6 +3099,7 @@ export interface components {
             activatedAtUtc: string;
         };
         UserGameQuestionAnswerHistoryItemDto: {
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionSessionId: string;
             /** Format: uuid */
@@ -3087,7 +3181,15 @@ export interface components {
             /** Format: date-time */
             lastActivityAtUtc?: string | null;
         };
+        /** @description Closed-answer statistics for one question format. Manual adjustments and spending remain in the shared totals. */
+        GameQuizFormatStatisticsDto: {
+            attempts: number;
+            correctAnswers: number;
+            points: number;
+        };
         GameHistoryQuizPlayerSummaryDto: {
+            textStatistics?: components["schemas"]["GameQuizFormatStatisticsDto"] | null;
+            screenshotStatistics?: components["schemas"]["GameQuizFormatStatisticsDto"] | null;
             /** Format: uuid */
             userId: string;
             displayName: string;
@@ -3240,6 +3342,7 @@ export interface components {
             submittedAtUtc: string;
         };
         GameHistoryQuizQuestionSessionItemDto: {
+            image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionSessionId: string;
             /** Format: uuid */
@@ -3581,7 +3684,7 @@ export interface components {
              * @description Stable machine-readable error code.
              * @enum {string|null}
              */
-            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "role_administration.self_block_protected" | "game_board.cell_not_found" | "game_board.game_not_active" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_active_team" | "game_board.team_played_state_no_opened_card" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.cell_media_required" | "game_lifecycle.empty_modifiers_not_acknowledged" | "game_lifecycle.empty_questions_not_acknowledged" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_finish.unconfirmed_teams" | "game_finish.pending_invitations" | "game_finish.pending_disband_requests" | "game_finish.invalid_confirmed_team_roster" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.invalid_team_limit" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.team_not_ready" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
+            code?: "auth.api_client_header_required" | "role_administration.invalid_request" | "role_administration.user_not_found" | "role_administration.permanent_superadmin_protected" | "role_administration.self_block_protected" | "game_board.cell_not_found" | "game_board.game_not_active" | "game_board.active_team_required" | "game_board.active_team_no_active_game" | "game_board.active_team_not_found" | "game_board.active_team_not_confirmed" | "game_board.active_team_already_played" | "game_board.active_team_has_no_active_members" | "game_board.active_team_round_in_progress" | "game_board.team_played_state_no_active_game" | "game_board.team_played_state_not_found" | "game_board.team_played_state_not_confirmed" | "game_board.team_played_state_active_team" | "game_board.team_played_state_no_opened_card" | "game_setup.no_draft" | "game_setup.draft_exists" | "game_setup.invalid_title" | "game_setup.invalid_save_request" | "game_setup.cell_not_found" | "game_setup.cell_media_not_found" | "game_setup.invalid_cell_media_upload" | "game_setup.stale_version" | "game_lifecycle.draft_not_found" | "game_lifecycle.current_already_exists" | "game_lifecycle.active_already_exists" | "game_lifecycle.game_not_ready" | "game_lifecycle.game_not_active" | "game_lifecycle.registration_slots_required" | "game_lifecycle.cell_media_required" | "game_lifecycle.empty_modifiers_not_acknowledged" | "game_lifecycle.empty_questions_not_acknowledged" | "game_lifecycle.questions_unavailable" | "game_lifecycle.invalid_team_size_limits" | "game_lifecycle.no_confirmed_teams" | "game_lifecycle.unconfirmed_teams" | "game_lifecycle.pending_invitations" | "game_lifecycle.pending_disband_requests" | "game_lifecycle.invalid_confirmed_team_roster" | "game_lifecycle.operation_failed" | "game_lifecycle.draft_delete_not_allowed" | "game_lifecycle.archive_not_allowed" | "game_lifecycle.game_not_found" | "game_finish.round_in_progress" | "game_finish.stale_version" | "game_finish.warnings_not_acknowledged" | "game_finish.modifier_state_invalid" | "game_finish.invalid_request" | "game_finish.unconfirmed_teams" | "game_finish.pending_invitations" | "game_finish.pending_disband_requests" | "game_finish.invalid_confirmed_team_roster" | "game_common.unexpected_server_error" | "game_common.too_many_requests" | "game_registration.not_open" | "game_registration.invalid_team_limit" | "game_registration.no_slots" | "game_registration.already_on_team" | "game_registration.team_not_found" | "game_registration.team_not_joinable" | "game_registration.team_roster_locked" | "game_registration.not_team_member" | "game_registration.invitation_invalid" | "game_registration.slot_not_found" | "game_registration.slot_not_available" | "game_registration.user_not_found" | "game_registration.pending_invitation" | "game_registration.pending_outgoing_invitation" | "game_registration.team_invite_not_allowed" | "game_registration.team_active_in_game" | "game_registration.team_already_played" | "game_registration.invalid_team_name" | "game_registration.team_name_taken" | "game_registration.team_name_required" | "game_registration.team_not_full" | "game_registration.team_not_ready" | "game_registration.disband_request_not_owned" | "game_registration.operation_failed" | "game_modifier.game_not_active" | "game_modifier.not_enabled" | "game_modifier.emergency_disabled" | "game_modifier_content_locked" | "game_modifier_revision_stale" | "game_modifier_compatibility_locked" | "game_modifier_archived" | "game_modifier_version_binding_missing" | "game_modifier.conflict_active" | "game_modifier.limit_reached" | "game_modifier.ordering_closed" | "game_modifier.active_team_member" | "game_modifier.insufficient_quiz_points" | "game_modifier.player_not_found" | "game_modifier.activation_not_found" | "game_modifier.activation_cancel_forbidden" | "game_modifier.activation_cancel_invalid_state" | "game_modifier.activation_cancel_reason_required" | "game_modifier.user_not_resolved" | "game_modifier.invalid_request" | "game_modifier_not_found" | "game_round.no_active_game" | "game_round.cell_not_found" | "game_round.cell_not_open" | "game_round.team_not_found" | "game_round.team_not_confirmed" | "game_round.team_has_no_active_members" | "game_round.awaiting_modifiers_required" | "game_round.already_in_progress" | "game_round.invalid_request" | "game_round.not_found" | "game_round.not_in_progress" | "game_round.stale_version" | "game_round.modifier_result_not_found" | "modifier_resolution.duplicate_group" | "modifier_resolution.duplicate_result" | "modifier_resolution.result_set_mismatch" | "modifier_resolution.group_set_mismatch" | "modifier_resolution.group_missing" | "modifier_resolution.group_members_mismatch" | "modifier_resolution.violation_comment_required" | "modifier_resolution.automatic_input_forbidden" | "modifier_resolution.boolean_required" | "modifier_resolution.non_negative_count_required" | "modifier_resolution.unsupported" | "modifier_resolution.missing" | "modifier_calculation.failed" | "behavior.invalid" | "behavior.rule_incompatible" | "formula.unsupported" | "formula.incompatible" | "resolution.invalid" | "round_facts.invalid" | "activation.duplicate" | "resolution.rule_status_required" | "resolution.automatic_required" | "resolution.boolean_required" | "resolution.non_negative_count_required" | "resolution.count_exceeds_resolved_kills" | "resolution.count_exceeds_activation_limit" | "resolution.per_activation_required" | "game_question.invalid_request" | "game_question.invalid_screenshot" | "game_question.screenshot_upload_conflict" | "game_quiz.presentation_busy" | "game_question.duplicate_code" | "game_question.not_found" | "game_question.category_not_found" | "game_question.category_not_empty" | "game_question.category_protected" | "game_question.import_invalid_fields" | "game_question.import_duplicate_code_in_file" | "game_question.import_category_unresolved" | "game_question.import_duplicate_code_existing" | "game_quiz.no_active_game" | "game_quiz.no_available_questions" | "game_quiz.modifier_ordering_active" | "game_quiz.answer_player_not_found" | "game_quiz.question_session_not_found" | "game_quiz.question_session_closed" | "game_quiz.already_answered" | "game_quiz.option_not_found" | "game_quiz.manual_award_player_not_found" | "game_quiz.manual_award_invalid_points" | "game_quiz.manual_award_invalid_operation" | "game_quiz.manual_award_invalid_reason" | "game_quiz.manual_award_insufficient_points" | "game_quiz.manual_award_duplicate_request_conflict" | "twitch_bot.disabled" | "twitch_bot.not_connected" | "twitch_quiz.publication_in_progress" | "twitch_quiz.pending_outcome" | "twitch_quiz.incompatible_question" | "twitch_quiz.question_message_too_long" | "twitch_quiz.options_message_too_long" | "twitch_quiz.result_message_too_long" | null;
             /** @description Server request correlation identifier for diagnostics. */
             requestId?: string | null;
         };
@@ -3702,6 +3805,161 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getHuntMaps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Location catalogue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuntMapItemDto"][];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    uploadQuizScreenshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: uuid */
+                    requestId: string;
+                    /** Format: uuid */
+                    locationId: string;
+                    /** Format: uuid */
+                    categoryId: string;
+                    reward: number;
+                    priority: number;
+                    isEnabled: boolean;
+                    /**
+                     * Format: binary
+                     * @description JPEG, PNG, GIF or WebP; up to 5 MiB.
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created or previously created question */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadQuizScreenshotResponseDto"];
+                };
+            };
+            /** @description Invalid file or selection */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request identifier was used for different content */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description File exceeds upload limit */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    hideQuizScreenshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                questionSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Screenshot hidden */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Question is open, unavailable or superseded */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getGameOverlayTestState: {
         parameters: {
             query?: never;
@@ -6391,7 +6649,9 @@ export interface operations {
     };
     askNextGameQuizQuestion: {
         parameters: {
-            query?: never;
+            query?: {
+                format?: "text" | "screenshot";
+            };
             header?: never;
             path?: never;
             cookie?: never;

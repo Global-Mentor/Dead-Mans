@@ -5,6 +5,7 @@ export {
   adminQuestionsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
+  catalogScreenshotsRoute,
   gameApplicationRoute,
   gameBoardRoute,
   gameGuideRoute,

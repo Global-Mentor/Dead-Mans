@@ -148,6 +148,14 @@ export const panelRoutes = definePanelRouteDefinitions([
     adminSection: 'catalog',
   }),
   createPanelRouteDefinition({
+    id: 'catalog-screenshots',
+    path: 'catalog-screenshots',
+    labelKey: 'navigation.items.catalogScreenshots.label',
+    allowedRoles: ['admin', 'superadmin'],
+    group: 'admin',
+    adminSection: 'catalog',
+  }),
+  createPanelRouteDefinition({
     id: 'team-registrations',
     path: 'team-registrations',
     labelKey: 'common.entities.teams',
@@ -212,6 +220,7 @@ export const adminModifiersRoute = requirePanelRoute('admin-modifiers')
 export const adminQuestionsRoute = requirePanelRoute('admin-questions')
 export const catalogModifiersRoute = requirePanelRoute('catalog-modifiers')
 export const catalogQuestionsRoute = requirePanelRoute('catalog-questions')
+export const catalogScreenshotsRoute = requirePanelRoute('catalog-screenshots')
 export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
 export const roleAdministrationRoute = requirePanelRoute('role-administration')
 

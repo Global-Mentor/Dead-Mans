@@ -19,6 +19,7 @@ import {
   teamRegistrationsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
+  catalogScreenshotsRoute,
 } from '../routes/app-routes.ts'
 import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 import { ModifierCatalogRealtimeSync } from '../features/modifier-history/ModifierCatalogRealtimeSync.tsx'
@@ -72,6 +73,7 @@ function MainLayoutContent() {
     teamRegistrationsRoute.fullPath,
     catalogModifiersRoute.fullPath,
     catalogQuestionsRoute.fullPath,
+    catalogScreenshotsRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
     !isAdministration &&

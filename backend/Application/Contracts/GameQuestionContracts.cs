@@ -1,3 +1,5 @@
+using backend.Domain.Questions;
+
 namespace backend.Application.Contracts;
 
 public sealed record GameQuestionOption(Guid OptionId, string Text, bool IsCorrect, int SortOrder);
@@ -21,6 +23,8 @@ public sealed record GameQuestionCatalogItem(
     DateTime? LastAskedAtUtc
 )
 {
+    public QuizImageSnapshot? Image { get; init; }
+
     public TwitchQuizMessageSet TwitchPreview => TwitchQuizMessageFormatter.FormatForValidation(
         Text, Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(), 3600, Reward);
 }
@@ -90,7 +94,10 @@ public sealed record AvailableGameQuizQuestion(
     string QuestionCode,
     string CategoryName,
     string Text
-);
+)
+{
+    public QuizImageSnapshot? Image { get; init; }
+}
 
 public sealed record AskedQuizQuestion(
     Guid QuestionSessionId,
@@ -104,9 +111,15 @@ public sealed record AskedQuizQuestion(
     int Reward,
     DateTime AskedAtUtc,
     DateTime ClosesAtUtc
-);
+)
+{
+    public QuizImageSnapshot? Image { get; init; }
+}
 
-public abstract record GameQuizQuestionDelivery;
+public abstract record GameQuizQuestionDelivery
+{
+    public bool Screenshot { get; init; }
+}
 public sealed record ManualGameQuizQuestionDelivery(Guid AskedByUserId) : GameQuizQuestionDelivery;
 public sealed record TwitchGameQuizQuestionDelivery(string SourceChannelId, string? SourceMessageId = null)
     : GameQuizQuestionDelivery;
@@ -160,7 +173,11 @@ public sealed record CurrentGameQuizState(
     int? MyAwardedPoints,
     int? TotalSubmissions,
     IReadOnlyList<GameQuizOptionResult>? OptionResults
-);
+)
+{
+    public bool PresentationVisible { get; init; }
+    public QuizImageSnapshot? Image { get; init; }
+}
 
 
 public sealed record ManualQuizAwardInput(
@@ -198,6 +215,7 @@ public sealed record ManualQuizAwardSummary(
 
 public static class GameQuizStateChangeKinds
 {
+    public const string PresentationHidden = "presentation_hidden";
     public const string QuestionAsked = "question_asked";
     public const string QuestionClosed = "question_closed";
     public const string ManualAdjustmentApplied = "manual_adjustment_applied";

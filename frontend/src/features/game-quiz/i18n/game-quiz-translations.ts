@@ -1,5 +1,13 @@
 const translations = {
   en: {
+    historyFormat: 'Question format',
+    allFormats: 'All formats',
+    textQuestions: 'Text questions',
+    screenshots: 'Screenshots',
+    nextScreenshot: 'Next screenshot',
+    specificScreenshot: 'Choose screenshot',
+    hideScreenshot: 'Hide screenshot',
+    screenshotRetained: 'The result stays on screen. Hide it before starting modifier ordering.',
     correctAnswerHeading: 'Correct answer:',
     adjustmentReasonHeading: 'Reason:',
     manualAwardFor: 'Manual award for {{player}}',
@@ -142,6 +150,15 @@ const translations = {
       'Ask the next available question or select one manually. Questions are grouped by category. Wait for the open question to finish; launching is unavailable during modifier ordering.',
   },
   ru: {
+    historyFormat: 'Формат вопросов',
+    allFormats: 'Все форматы',
+    textQuestions: 'Текстовые вопросы',
+    screenshots: 'Скриншоты',
+    nextScreenshot: 'Следующий скриншот',
+    specificScreenshot: 'Выбрать скриншот',
+    hideScreenshot: 'Скрыть скриншот',
+    screenshotRetained:
+      'Результат остаётся на экране. Перед заказом модификаторов скройте скриншот.',
     correctAnswerHeading: 'Правильный ответ:',
     adjustmentReasonHeading: 'Причина:',
     manualAwardFor: 'Ручное начисление для {{player}}',
@@ -284,6 +301,15 @@ const translations = {
       'Запустите следующий доступный вопрос или выберите конкретный. Вопросы сгруппированы по категориям. Дождитесь завершения открытого вопроса; во время выбора модификаторов запуск недоступен.',
   },
   uk: {
+    historyFormat: 'Формат запитань',
+    allFormats: 'Усі формати',
+    textQuestions: 'Текстові запитання',
+    screenshots: 'Знімки екрана',
+    nextScreenshot: 'Наступний знімок',
+    specificScreenshot: 'Вибрати знімок',
+    hideScreenshot: 'Приховати знімок',
+    screenshotRetained:
+      'Результат залишається на екрані. Перед замовленням модифікаторів приховайте знімок.',
     correctAnswerHeading: 'Правильна відповідь:',
     adjustmentReasonHeading: 'Причина:',
     manualAwardFor: 'Ручне нарахування для {{player}}',
@@ -429,6 +455,15 @@ const translations = {
       'Запустіть наступне доступне питання або оберіть конкретне. Питання згруповано за категоріями. Дочекайтеся завершення відкритого питання; під час вибору модифікаторів запуск недоступний.',
   },
   pl: {
+    historyFormat: 'Format pytań',
+    allFormats: 'Wszystkie formaty',
+    textQuestions: 'Pytania tekstowe',
+    screenshots: 'Zrzuty ekranu',
+    nextScreenshot: 'Następny zrzut',
+    specificScreenshot: 'Wybierz zrzut',
+    hideScreenshot: 'Ukryj zrzut',
+    screenshotRetained:
+      'Wynik pozostaje na ekranie. Ukryj go przed rozpoczęciem zamawiania modyfikatorów.',
     correctAnswerHeading: 'Poprawna odpowiedź:',
     adjustmentReasonHeading: 'Powód:',
     manualAwardFor: 'Ręczne przyznanie dla {{player}}',

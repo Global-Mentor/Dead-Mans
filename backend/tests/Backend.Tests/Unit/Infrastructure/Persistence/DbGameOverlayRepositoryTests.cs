@@ -15,6 +15,55 @@ public sealed class DbGameOverlayRepositoryTests
     private static readonly Microsoft.AspNetCore.DataProtection.IDataProtectionProvider OverlayProtection =
         new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
 
+    [Theory]
+    [InlineData("teams", "leaderboard")]
+    [InlineData("quiz", "quiz_leaderboard")]
+    public async Task ScreenshotOverridesLeaderboardAndTestScene_AndHideRestoresTheirSettings(string kind, string expectedPhase)
+    {
+        await using var db = CreateContext();
+        var game = new Game { Id = Guid.NewGuid(), Status = GameStatusValue.Active, OverlayLeaderboardEnabled = true, OverlayLeaderboardKind = kind };
+        var key = new string('a', 64);
+        var overlayKey = new GameOverlayKey
+        {
+            OwnerId = Guid.NewGuid(),
+            KeyHash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key))),
+            TestEnabled = true
+        };
+        var ids = Enumerable.Range(0, 6).Select(_ => Guid.NewGuid()).ToArray();
+        IReadOnlyDictionary<string, string> names = new Dictionary<string, string> { ["en"] = "Location", ["ru"] = "Локация", ["uk"] = "Локація", ["pl"] = "Lokacja" };
+        var session = new GameQuizQuestionSession
+        {
+            Id = Guid.NewGuid(),
+            GameId = game.Id,
+            Status = GameQuizQuestionSessionStatusValue.Closed,
+            OptionIdsSnapshot = ids,
+            OptionTextsSnapshot = ids.Select(_ => "Location").ToArray(),
+            CorrectOptionIdSnapshot = ids[0],
+            ImageSnapshotJson = new backend.Domain.Questions.QuizImageSnapshot(Guid.NewGuid(), "quiz/image.png", names,
+                ids.ToDictionary(id => id, _ => names)).ToJson()
+        };
+        db.AddRange(game, overlayKey, session, new GameQuizPresentation { GameId = game.Id, QuestionSessionId = session.Id });
+        await db.SaveChangesAsync();
+        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
+            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection);
+        var service = new backend.Application.Features.GameOverlay.GameOverlayService(repository, new OverlayTestEventsPublisher(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<backend.Application.Features.GameOverlay.GameOverlayService>.Instance);
+
+        var frame = await service.ReadAsync(key, default);
+        Assert.Equal("screenshot", frame.Phase);
+        Assert.Equal(ids[0], frame.QuizQuestion!.CorrectOptionId);
+        Assert.Null(frame.Leaderboard);
+        Assert.Null(frame.QuizLeaderboard);
+        await new DbGameQuizRepository(db, TimeProvider.System).HideScreenshotAsync(session.Id);
+        Assert.Equal(expectedPhase, (await service.ReadAsync(key, default)).Phase);
+        Assert.True(game.OverlayLeaderboardEnabled);
+        Assert.True(overlayKey.TestEnabled);
+        game.OverlayLeaderboardEnabled = false;
+        await db.SaveChangesAsync();
+        Assert.Equal("test", (await service.ReadAsync(key, default)).Phase);
+        Assert.Equal(GameStatusValue.Active, game.Status);
+    }
+
     [Fact]
     public async Task QuizLeaderboard_UsesClosedAnswersAndAdjustments_BeforeSpending_AndExcludesOtherGames()
     {

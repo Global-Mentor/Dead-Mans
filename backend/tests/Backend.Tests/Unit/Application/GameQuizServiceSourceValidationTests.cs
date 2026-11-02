@@ -71,6 +71,8 @@ public sealed class GameQuizServiceSourceValidationTests
     {
         public bool WasCalled { get; private set; }
 
+        public Task<Guid?> HideScreenshotAsync(Guid sessionId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
         public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
             CancellationToken cancellationToken = default
         ) => throw new NotSupportedException();

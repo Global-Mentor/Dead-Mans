@@ -20,8 +20,7 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
     .transform(trimQuestionAnswer)
     .pipe(z.string().min(1, messages.required).max(500, messages.tooLong))
 
-  return z.object({
-    categoryId: z.string().trim().min(1, messages.required),
+  return createQuestionMetadataSchema(messages).extend({
     text: z.string().trim().min(1, messages.required).max(2000, messages.tooLong),
     options: z
       .array(z.object({ text: answerValueSchema, isCorrect: z.boolean() }))
@@ -51,6 +50,14 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
           context.addIssue({ code: z.ZodIssueCode.custom, message: messages.correctAnswer })
         }
       }),
+  })
+}
+
+export function createQuestionMetadataSchema(
+  messages: Pick<QuestionFormSchemaMessages, 'required' | 'number'>,
+) {
+  return z.object({
+    categoryId: z.string().trim().min(1, messages.required),
     reward: z
       .string()
       .regex(/^\d+$/, messages.number)

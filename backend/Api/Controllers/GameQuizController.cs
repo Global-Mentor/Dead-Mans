@@ -1,3 +1,5 @@
+using backend.Application.Configuration;
+using Microsoft.Extensions.Options;
 using backend.Api.Contracts;
 using backend.Api.Http;
 using backend.Api.Mapping;
@@ -17,12 +19,15 @@ public sealed class GameQuizController : ControllerBase
 {
     private readonly IGameQuizService _gameQuizService;
     private readonly ITwitchBotService? _twitchBot;
+    private readonly string _mediaBaseUrl;
 
     public GameQuizController(
         IGameQuizService gameQuizService,
+        IOptions<MediaStorageSettings> media,
         ITwitchBotService? twitchBot = null)
     {
         _gameQuizService = gameQuizService;
+        _mediaBaseUrl = media.Value.PublicBaseUrl;
         _twitchBot = twitchBot;
     }
 
@@ -34,7 +39,7 @@ public sealed class GameQuizController : ControllerBase
     public async Task<IActionResult> GetAvailableQuestions(CancellationToken cancellationToken)
     {
         var questions = await _gameQuizService.GetAvailableQuizQuestionsAsync(cancellationToken);
-        return Ok(questions.Select(question => question.ToDto()).ToArray());
+        return Ok(questions.Select(question => question.ToDto(_mediaBaseUrl)).ToArray());
     }
 
     [HttpPost("questions/ask-next")]
@@ -46,10 +51,12 @@ public sealed class GameQuizController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AskNextQuestion(CancellationToken cancellationToken)
+    public async Task<IActionResult> AskNextQuestion(CancellationToken cancellationToken, [FromQuery] string format = "text")
     {
+        if (format is not ("text" or "screenshot"))
+            return this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest, AppMessages.ErrorCodes.GameQuestionInvalidRequest);
         if (_twitchBot?.IsEnabled == true)
-            return MapTwitchPreparation(await _twitchBot.PrepareQuestionAsync(null, cancellationToken));
+            return MapTwitchPreparation(await _twitchBot.PrepareQuestionAsync(null, format == "screenshot", cancellationToken));
         var askedByUserId = HttpContext.TryGetUserId();
         if (!askedByUserId.HasValue)
         {
@@ -58,13 +65,13 @@ public sealed class GameQuizController : ControllerBase
 
         var result = await _gameQuizService.AskQuizQuestionAsync(
             null,
-            new ManualGameQuizQuestionDelivery(askedByUserId.Value),
+            new ManualGameQuizQuestionDelivery(askedByUserId.Value) { Screenshot = format == "screenshot" },
             cancellationToken
         );
         return result.Outcome switch
         {
             AskGameQuizQuestionOutcome.Asked when result.AskedQuestion is not null =>
-                Ok(result.AskedQuestion.ToDto()),
+                Ok(result.AskedQuestion.ToDto(_mediaBaseUrl)),
             AskGameQuizQuestionOutcome.NoActiveGame => this.NotFoundError(
                 AppMessages.Client.GameQuizNoActiveGame,
                 AppMessages.ErrorCodes.GameQuizNoActiveGame
@@ -91,7 +98,7 @@ public sealed class GameQuizController : ControllerBase
     public async Task<IActionResult> AskQuestion(Guid questionId, CancellationToken cancellationToken)
     {
         if (_twitchBot?.IsEnabled == true)
-            return MapTwitchPreparation(await _twitchBot.PrepareQuestionAsync(questionId, cancellationToken));
+            return MapTwitchPreparation(await _twitchBot.PrepareQuestionAsync(questionId, cancellationToken: cancellationToken));
         var askedByUserId = HttpContext.TryGetUserId();
         if (!askedByUserId.HasValue)
         {
@@ -106,7 +113,7 @@ public sealed class GameQuizController : ControllerBase
         return result.Outcome switch
         {
             AskGameQuizQuestionOutcome.Asked when result.AskedQuestion is not null =>
-                Ok(result.AskedQuestion.ToDto()),
+                Ok(result.AskedQuestion.ToDto(_mediaBaseUrl)),
             AskGameQuizQuestionOutcome.NoActiveGame => this.NotFoundError(
                 AppMessages.Client.GameQuizNoActiveGame,
                 AppMessages.ErrorCodes.GameQuizNoActiveGame
@@ -133,6 +140,12 @@ public sealed class GameQuizController : ControllerBase
         _ => this.BadRequestError(TwitchBotController.GetPreparationMessage(result.Outcome), result.ErrorCode ?? TwitchBotController.GetPreparationCode(result.Outcome))
     };
 
+    [HttpPost("question-sessions/{questionSessionId:guid}/hide")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> HideScreenshot(Guid questionSessionId, CancellationToken cancellationToken) =>
+        await _gameQuizService.HideScreenshotAsync(questionSessionId, cancellationToken) ? NoContent()
+            : this.ConflictError(AppMessages.Client.GameQuestionInvalidRequest, AppMessages.ErrorCodes.GameQuizPresentationBusy);
+
     [HttpGet("current")]
     [ProducesResponseType(typeof(CurrentGameQuizStateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -145,7 +158,7 @@ public sealed class GameQuizController : ControllerBase
         }
 
         var state = await _gameQuizService.GetCurrentQuizStateAsync(userId.Value, cancellationToken);
-        return state is null ? NoContent() : Ok(state.ToDto());
+        return state is null ? NoContent() : Ok(state.ToDto(_mediaBaseUrl));
     }
 
     [HttpPost("question-sessions/{questionSessionId:guid}/submissions")]

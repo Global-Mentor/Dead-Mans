@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
-import { RoundBriefingDivider } from '../../shared/game-ui/index.ts'
+import { RoundBriefingDivider, QuizFormatStatistics } from '../../shared/game-ui/index.ts'
 import { RankingList, SectionCard, TabOption, TabStrip } from '../../shared/ui/index.ts'
 
 export function QuizLeaderboardPanel({
@@ -110,10 +110,15 @@ export function QuizLeaderboardPanel({
                   : 'gameQuiz.earnedPointsValue',
                 { points: mode === 'available' ? entry.availablePoints : entry.points },
               ),
-              detail: t('gameQuiz.answerRatio', {
-                attempts: entry.attempts,
-                correct: entry.correctAnswers,
-              }),
+              detail:
+                entry.textStatistics && entry.screenshotStatistics ? (
+                  <QuizFormatStatistics entry={entry} />
+                ) : (
+                  t('gameQuiz.answerRatio', {
+                    attempts: entry.attempts,
+                    correct: entry.correctAnswers,
+                  })
+                ),
             }))}
           />
         )}

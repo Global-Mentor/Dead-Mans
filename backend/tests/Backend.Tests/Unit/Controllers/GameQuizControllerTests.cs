@@ -118,7 +118,7 @@ public sealed class GameQuizControllerTests
             );
         }
 
-        return new GameQuizController(service)
+        return new GameQuizController(service, Microsoft.Extensions.Options.Options.Create(new backend.Application.Configuration.MediaStorageSettings { PublicBaseUrl = "https://media.test" }))
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext }
         };
@@ -132,6 +132,8 @@ public sealed class GameQuizControllerTests
         public Guid? LastAwardedByUserId { get; private set; }
         public ManualQuizAwardResult ManualQuizAwardResult { get; init; } =
             new(ManualQuizAwardOutcome.InvalidPoints);
+
+        public Task<bool> HideScreenshotAsync(Guid sessionId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
             CancellationToken cancellationToken = default

@@ -157,6 +157,11 @@ public sealed partial class DbGameQuestionRepository
             return null;
         }
 
+        if (entity.ImageSnapshotJson is not null && (input.Text != entity.Text
+            || !input.Options.SequenceEqual(entity.Options.OrderBy(x => x.SortOrder)
+                .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect)))))
+            return null;
+
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         entity.CategoryId = input.CategoryId;
         entity.Text = input.Text;
@@ -166,12 +171,15 @@ public sealed partial class DbGameQuestionRepository
         entity.Revision += 1;
         entity.UpdatedAtUtc = now;
 
-        var existingOptions = entity.Options.ToList();
-        var nextOptions = BuildOptions(entity.Id, input.Options, now);
-        _dbContext.QuestionOptions.RemoveRange(existingOptions);
-        foreach (var option in nextOptions)
+        if (entity.ImageSnapshotJson is null)
         {
-            entity.Options.Add(option);
+            var existingOptions = entity.Options.ToList();
+            var nextOptions = BuildOptions(entity.Id, input.Options, now);
+            _dbContext.QuestionOptions.RemoveRange(existingOptions);
+            foreach (var option in nextOptions)
+            {
+                entity.Options.Add(option);
+            }
         }
 
         if (!entity.IsEnabled)

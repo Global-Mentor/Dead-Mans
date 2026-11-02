@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
     {
         var usesInMemoryStorage = environment.IsEnvironment("Testing");
         services.AddScoped<IGameOverlayRepository, DbGameOverlayRepository>();
+        services.AddScoped<IQuizScreenshotRepository, DbQuizScreenshotRepository>();
         var requiresHttpsExternalUrls = !environment.IsDevelopment() && !usesInMemoryStorage;
 
         services

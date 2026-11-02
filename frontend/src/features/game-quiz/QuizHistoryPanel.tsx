@@ -1,3 +1,4 @@
+import { FormSelect } from '../../shared/ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { scrollRegionSx } from '../../shared/theme/layout-sx.ts'
 import { useEffect, useRef, useState } from 'react'
@@ -38,23 +39,36 @@ export function QuizHistoryPanel({
   currentUserId: string | null
 }) {
   const { t } = useTranslation()
+  const [format, setFormat] = useState('all')
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastSessionRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [format])
   useEffect(() => {
     if (current && current.questionSessionId !== lastSessionRef.current) {
       lastSessionRef.current = current.questionSessionId
       if (scrollRef.current) scrollRef.current.scrollTop = 0
     }
   }, [current])
+  const visibleCurrent =
+    current &&
+    (current.status === 'open' ||
+      format === 'all' ||
+      Boolean(current.image) === (format === 'screenshot'))
+      ? current
+      : null
   const history = getQuizHistoryItems(
-    quiz?.questionSessions ?? [],
+    (quiz?.questionSessions ?? []).filter(
+      (session) => format === 'all' || Boolean(session.image) === (format === 'screenshot'),
+    ),
     quiz?.manualAwards ?? [],
   ).filter(
     (item) =>
       item.kind !== 'questionSession' ||
-      item.questionSession.questionSessionId !== current?.questionSessionId,
+      item.questionSession.questionSessionId !== visibleCurrent?.questionSessionId,
   )
-  const latestHistory = current
+  const latestHistory = visibleCurrent
     ? undefined
     : history.find((item) => item.kind === 'questionSession')
   const latestHistoryId = latestHistory?.id
@@ -86,6 +100,18 @@ export function QuizHistoryPanel({
       >
         {t('gameQuiz.historyTitle')}
       </Typography>
+      <Box sx={{ px: 1.5, pb: 1 }}>
+        <FormSelect
+          value={format}
+          onChange={setFormat}
+          label={t('gameQuiz.historyFormat')}
+          options={[
+            { value: 'all', label: t('gameQuiz.allFormats') },
+            { value: 'text', label: t('gameQuiz.textQuestions') },
+            { value: 'screenshot', label: t('gameQuiz.screenshots') },
+          ]}
+        />
+      </Box>
       <RoundBriefingDivider sx={{ mb: 0.75 }} />
       <Box
         ref={scrollRef}
@@ -104,10 +130,10 @@ export function QuizHistoryPanel({
         }}
       >
         <Stack spacing={0.5}>
-          {current ? (
+          {visibleCurrent ? (
             <QuizTimelineQuestion
-              key={current.questionSessionId}
-              current={current}
+              key={visibleCurrent.questionSessionId}
+              current={visibleCurrent}
               {...(currentHistory ? { questionSession: currentHistory } : {})}
               currentUserId={currentUserId}
               {...actions}
@@ -119,7 +145,7 @@ export function QuizHistoryPanel({
                 key={item.questionSession.questionSessionId}
                 questionSession={item.questionSession}
                 latest={item.id === latestHistoryId}
-                tone={(index + (current ? 1 : 0)) % 2 ? 'alternate' : 'default'}
+                tone={(index + (visibleCurrent ? 1 : 0)) % 2 ? 'alternate' : 'default'}
                 currentUserId={currentUserId}
                 {...actions}
               />
@@ -127,12 +153,12 @@ export function QuizHistoryPanel({
               <ManualAwardHistoryItem
                 key={item.id}
                 award={item.award}
-                tone={(index + (current ? 1 : 0)) % 2 ? 'alternate' : 'default'}
+                tone={(index + (visibleCurrent ? 1 : 0)) % 2 ? 'alternate' : 'default'}
                 currentUserId={currentUserId}
               />
             ),
           )}
-          {!current && history.length === 0 ? (
+          {!visibleCurrent && history.length === 0 ? (
             <Typography color="text.secondary" sx={{ p: 1 }}>
               {t('gameQuiz.noHistory')}
             </Typography>
@@ -160,7 +186,10 @@ function QuizTimelineQuestion({
   const { t } = useTranslation()
   const pinned = current != null || latest
   const [expanded, setExpanded] = useState(false)
-  const title = current?.text ?? questionSession?.questionText ?? ''
+  const title =
+    current?.image || questionSession?.image
+      ? t('common.quizImage.question')
+      : (current?.text ?? questionSession?.questionText ?? '')
   const correctAnswers =
     questionSession?.submissions.filter((answer) => answer.isCorrect).length ?? 0
   const reward = current?.reward ?? questionSession?.reward

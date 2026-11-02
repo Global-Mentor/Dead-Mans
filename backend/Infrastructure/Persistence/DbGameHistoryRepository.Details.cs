@@ -378,6 +378,15 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                 .Concat(manualQuizAwards.Select(row => new GameQuizLeaderboardFact(row.AwardedToUserId,
                     ResolveDisplayName(row.AwardedToDisplayName, userDisplayNames, row.AwardedToUserId), row.Points, false, false, row.AwardedAtUtc))),
             spentQuizPointsByUserId);
+        var imageSessionIds = quizQuestionSessions.Where(x => x.ImageSnapshotJson is not null).Select(x => x.Id).ToHashSet();
+        var formatStatistics = historySubmissions.GroupBy(x => (x.UserId, IsScreenshot: imageSessionIds.Contains(x.QuestionSessionId)))
+            .ToDictionary(group => group.Key, group => new GameQuizFormatStatistics(group.Count(), group.Count(x => x.IsCorrect),
+                SaturatingInt32.From(group.Sum(x => (long)x.AwardedPoints))));
+        quizPlayerStats = quizPlayerStats.Select(player => player with
+        {
+            TextStatistics = formatStatistics.GetValueOrDefault((player.UserId, false), new(0, 0, 0)),
+            ScreenshotStatistics = formatStatistics.GetValueOrDefault((player.UserId, true), new(0, 0, 0))
+        }).ToArray();
 
         var mainModifierActivations = modifierActivations
             .Select(
@@ -505,7 +514,8 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                         submission.UserId, ResolveDisplayName(submission.DisplayNameSnapshot, userDisplayNames, submission.UserId),
                         submission.SelectedOptionId, submission.SelectedOptionTextSnapshot,
                         submission.IsCorrect, submission.AwardedPoints, submission.SubmittedAtUtc)).ToArray()
-                )).ToArray(),
+                )
+                { Image = backend.Domain.Questions.QuizImageSnapshot.FromJson(session.ImageSnapshotJson) }).ToArray(),
                 manualQuizAwards
                     .Select(
                         x =>

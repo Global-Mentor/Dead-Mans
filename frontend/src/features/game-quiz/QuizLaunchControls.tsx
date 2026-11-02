@@ -7,34 +7,16 @@ import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { AppButton, InlineNotice, HelpTooltip } from '../../shared/ui/index.ts'
 import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
-export function QuizLaunchControls({
-  state,
-  questions,
-  questionsLoading = false,
-  questionsError = false,
-  onRetryQuestions,
-  isStarting,
-  isLaunching = false,
+export function QuizLaunchStatus({
+  open,
   modifierOrderingActive = false,
   error,
-  onAskNext,
-  onAskSpecific,
 }: {
-  state: { questionId: string; status: string } | null
-  questions: readonly components['schemas']['AvailableGameQuizQuestionDto'][]
-  questionsLoading?: boolean
-  questionsError?: boolean
-  onRetryQuestions?: () => void
-  isStarting: boolean
-  isLaunching?: boolean
+  open: boolean
   modifierOrderingActive?: boolean
   error: Error | null
-  onAskNext: () => void
-  onAskSpecific: (questionId: string) => void | Promise<unknown>
 }) {
   const { t } = useTranslation()
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const isOpen = state?.status === 'open'
   const errorCode =
     error instanceof ApiError && error.details && typeof error.details === 'object'
       ? Reflect.get(error.details, 'code')
@@ -47,23 +29,57 @@ export function QuizLaunchControls({
         : 'gameQuiz.actionError'
   return (
     <>
+      {open || modifierOrderingActive ? (
+        <InlineNotice severity="info">
+          {t(
+            modifierOrderingActive
+              ? 'gameQuiz.modifierOrderingActive'
+              : 'gameQuiz.waitForQuestionEnd',
+          )}
+        </InlineNotice>
+      ) : null}
+      {error ? (
+        <InlineNotice
+          severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
+        >
+          {t(errorKey)}
+        </InlineNotice>
+      ) : null}
+    </>
+  )
+}
+
+export function QuizLaunchControls({
+  state,
+  screenshot = false,
+  questions,
+  questionsLoading = false,
+  questionsError = false,
+  onRetryQuestions,
+  isStarting,
+  isLaunching = false,
+  modifierOrderingActive = false,
+  onAskNext,
+  onAskSpecific,
+}: {
+  screenshot?: boolean
+  state: { questionId: string; status: string } | null
+  questions: readonly components['schemas']['AvailableGameQuizQuestionDto'][]
+  questionsLoading?: boolean
+  questionsError?: boolean
+  onRetryQuestions?: () => void
+  isStarting: boolean
+  isLaunching?: boolean
+  modifierOrderingActive?: boolean
+  onAskNext: () => void
+  onAskSpecific: (questionId: string) => void | Promise<unknown>
+}) {
+  const { t } = useTranslation()
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const isOpen = state?.status === 'open'
+  return (
+    <>
       <Stack spacing={1}>
-        {isOpen || modifierOrderingActive ? (
-          <InlineNotice severity="info">
-            {t(
-              modifierOrderingActive
-                ? 'gameQuiz.modifierOrderingActive'
-                : 'gameQuiz.waitForQuestionEnd',
-            )}
-          </InlineNotice>
-        ) : null}
-        {error ? (
-          <InlineNotice
-            severity={errorCode === API_ERROR_CODES.gameQuizNoAvailableQuestions ? 'info' : 'error'}
-          >
-            {t(errorKey)}
-          </InlineNotice>
-        ) : null}
         <AppButton
           loading={isLaunching}
           disabled={isOpen || isStarting || modifierOrderingActive}
@@ -71,7 +87,7 @@ export function QuizLaunchControls({
         >
           <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
             <Box component="span" tabIndex={0}>
-              {t('gameQuiz.nextQuestion')}
+              {t(screenshot ? 'gameQuiz.nextScreenshot' : 'gameQuiz.nextQuestion')}
             </Box>
           </HelpTooltip>
         </AppButton>
@@ -82,12 +98,13 @@ export function QuizLaunchControls({
         >
           <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
             <Box component="span" tabIndex={0}>
-              {t('gameQuiz.askSpecificQuestion')}
+              {t(screenshot ? 'gameQuiz.specificScreenshot' : 'gameQuiz.askSpecificQuestion')}
             </Box>
           </HelpTooltip>
         </AppButton>
       </Stack>
       <QuizQuestionPickerDialog
+        screenshot={screenshot}
         open={pickerOpen}
         questions={questions.filter((question) => question.questionId !== state?.questionId)}
         loading={questionsLoading}

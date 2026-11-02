@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gameQuestionCatalogQueryOptions } from '../game-questions/index.ts'
+import { quizImageSearchTerms } from '../../shared/game-ui/index.ts'
 
 export function useGameSetupQuestionsCatalog() {
   const { i18n } = useTranslation()
@@ -35,9 +36,12 @@ export function useGameSetupQuestionsCatalog() {
     return questions.filter(
       (question) =>
         (activeCategory === 'all' || question.categoryId === activeCategory) &&
-        [question.text, ...question.options.map((option) => option.text)].some((text) =>
-          text.toLocaleLowerCase(locale).includes(needle),
-        ),
+        [
+          question.text,
+          question.questionCode,
+          ...quizImageSearchTerms(question.image, locale ?? 'en'),
+          ...question.options.map((option) => option.text),
+        ].some((text) => text.toLocaleLowerCase(locale).includes(needle)),
     )
   }, [activeCategory, locale, questions, search])
   return {

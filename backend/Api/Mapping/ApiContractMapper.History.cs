@@ -7,7 +7,7 @@ namespace backend.Api.Mapping;
 
 public static partial class ApiContractMapper
 {
-    public static UserGameHistoryItemDto ToDto(this UserGameHistoryItem item)
+    public static UserGameHistoryItemDto ToDto(this UserGameHistoryItem item, string mediaBaseUrl)
     {
         return new UserGameHistoryItemDto(
             item.GameId.ToString(),
@@ -17,7 +17,7 @@ public static partial class ApiContractMapper
             item.StartedAtUtc,
             item.FinishedAtUtc,
             item.ModifierActivations.Select(ToDto).ToArray(),
-            item.QuestionAnswers.Select(ToDto).ToArray(),
+            item.QuestionAnswers.Select(answer => answer.ToDto(mediaBaseUrl)).ToArray(),
             item.ManualQuizAwards.Select(ToDto).ToArray()
         );
     }
@@ -30,7 +30,7 @@ public static partial class ApiContractMapper
     }
 
     public static UserGameQuestionAnswerHistoryItemDto ToDto(
-        this UserGameQuestionAnswerHistoryItem item
+        this UserGameQuestionAnswerHistoryItem item, string mediaBaseUrl
     )
     {
         return new UserGameQuestionAnswerHistoryItemDto(
@@ -43,7 +43,8 @@ public static partial class ApiContractMapper
             item.AwardedPoints,
             item.SubmittedAnswer,
             item.AnsweredByUserId?.ToString()
-        );
+        )
+        { Image = item.Image?.ToDto(mediaBaseUrl) };
     }
 
     public static UserGameQuizManualAwardHistoryItemDto ToDto(
@@ -93,7 +94,7 @@ public static partial class ApiContractMapper
         );
     }
 
-    public static GameHistoryGameDetailsDto ToDto(this GameHistoryGameDetails item)
+    public static GameHistoryGameDetailsDto ToDto(this GameHistoryGameDetails item, string mediaBaseUrl)
     {
         return new GameHistoryGameDetailsDto(
             item.GameId.ToString(),
@@ -103,7 +104,7 @@ public static partial class ApiContractMapper
             item.StartedAtUtc,
             item.FinishedAtUtc,
             item.MainGame.ToDto(),
-            item.Quiz.ToDto(),
+            item.Quiz.ToDto(mediaBaseUrl),
             item.FinalResult?.ToDto(),
             item.ModifierSnapshotStatus,
             item.ModifierSnapshots.Select(ToDto).ToArray(),
@@ -121,12 +122,12 @@ public static partial class ApiContractMapper
         );
     }
 
-    public static GameHistoryQuizSectionDto ToDto(this GameHistoryQuizSection item)
+    public static GameHistoryQuizSectionDto ToDto(this GameHistoryQuizSection item, string mediaBaseUrl)
     {
         return new GameHistoryQuizSectionDto(
             item.TotalPoints,
             item.PlayerStats.Select(ToDto).ToArray(),
-            item.QuestionSessions.Select(ToDto).ToArray(),
+            item.QuestionSessions.Select(session => session.ToDto(mediaBaseUrl)).ToArray(),
             item.ManualAwards.Select(ToDto).ToArray()
         );
     }
@@ -153,7 +154,11 @@ public static partial class ApiContractMapper
             item.Attempts,
             item.CorrectAnswers,
             item.LastActivityAtUtc
-        );
+        )
+        {
+            TextStatistics = item.TextStatistics is { } text ? new(text.Attempts, text.CorrectAnswers, text.Points) : null,
+            ScreenshotStatistics = item.ScreenshotStatistics is { } image ? new(image.Attempts, image.CorrectAnswers, image.Points) : null
+        };
     }
 
     public static GameHistoryModifierActivationItemDto ToDto(
@@ -255,7 +260,7 @@ public static partial class ApiContractMapper
         );
     }
 
-    public static GameHistoryQuizQuestionSessionItemDto ToDto(this GameHistoryQuizQuestionSessionItem item)
+    public static GameHistoryQuizQuestionSessionItemDto ToDto(this GameHistoryQuizQuestionSessionItem item, string mediaBaseUrl)
     {
         return new GameHistoryQuizQuestionSessionItemDto(
             item.QuestionSessionId.ToString(),
@@ -274,7 +279,8 @@ public static partial class ApiContractMapper
                 submission.UserId.ToString(), submission.DisplayName,
                 submission.SelectedOptionId.ToString(), submission.SelectedOptionText,
                 submission.IsCorrect, submission.AwardedPoints, submission.SubmittedAtUtc)).ToArray()
-        );
+        )
+        { Image = item.Image?.ToDto(mediaBaseUrl) };
     }
 
     public static GameHistoryQuizManualAwardItemDto ToDto(this GameHistoryQuizManualAwardItem item)

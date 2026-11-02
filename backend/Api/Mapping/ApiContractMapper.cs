@@ -65,7 +65,8 @@ public static partial class ApiContractMapper
             (request.EnabledQuestionIds ?? Array.Empty<string>())
                 .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
                 .ToArray(),
-            request.QuizAnswerDurationSeconds
+            request.QuizAnswerDurationSeconds,
+            request.ScreenshotAnswerDurationSeconds
         );
     }
 
@@ -85,7 +86,8 @@ public static partial class ApiContractMapper
             snapshot.EnabledModifierIds.Select(id => id.ToString()).ToArray(),
             snapshot.EnabledQuestionIds.ToArray(),
             snapshot.QuizAnswerDurationSeconds,
-            snapshot.TeamLimit
+            snapshot.TeamLimit,
+            snapshot.ScreenshotAnswerDurationSeconds
         );
     }
 

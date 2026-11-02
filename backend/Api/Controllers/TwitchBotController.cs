@@ -76,7 +76,7 @@ public sealed class TwitchBotController : ControllerBase
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     public async Task<IActionResult> Prepare([FromBody] PrepareTwitchQuestionRequest request, CancellationToken cancellationToken)
     {
-        var result = await _service.PrepareQuestionAsync(request.QuestionId, cancellationToken);
+        var result = await _service.PrepareQuestionAsync(request.QuestionId, cancellationToken: cancellationToken);
         return result.Outcome == PrepareTwitchQuizQuestionOutcome.Prepared
             ? Accepted(result)
             : result.Outcome is PrepareTwitchQuizQuestionOutcome.PublicationInProgress or PrepareTwitchQuizQuestionOutcome.PendingOutcome or PrepareTwitchQuizQuestionOutcome.ModifierOrderingActive

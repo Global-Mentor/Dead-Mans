@@ -43,6 +43,10 @@
   более одного submission пользователя через любой transport, а после таймера
   атомарно закрываются, начисляют награды и публикуют результат через
   `/api/game/quiz/*` и SignalR
+- Hunt geography: [справочник карт и локаций](hunt-location-catalog.md) с устойчивыми
+  идентификаторами и игровыми названиями на en/ru/uk/pl; наполняется миграцией БД.
+- [Викторина по скриншотам](screenshot-quiz.md): пакетная загрузка, шесть локаций,
+  общий баланс викторины, отдельный таймер и сохраняемая до скрытия сцена OBS.
 - game history (phase 1): user-centric API `GET /api/game/history/users/{userId}` возвращает активность пользователя по играм (какие модификаторы активировал и какие вопросы были зачтены как ответы пользователя)
 - lifecycle archive (phase 1): `DELETE /api/game/lifecycle/games/{gameId}` выполняет soft-delete для non-draft игр; draft остаётся отдельным hard-delete сценарием через game setup
 - game registration: приём заявок в статусе `ready`, команды и инвайты (см. `docs/architecture/game-registration.md`)

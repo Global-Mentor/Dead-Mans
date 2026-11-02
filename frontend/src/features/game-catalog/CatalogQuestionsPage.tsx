@@ -27,14 +27,27 @@ import { QuestionCatalogMenu } from './ui/QuestionCatalogMenu.tsx'
 import { QuestionCategoryDialog } from './ui/QuestionCategoryDialog.tsx'
 import { QuestionFormDialog } from './ui/QuestionFormDialog.tsx'
 import { useCatalogFeedback } from './use-catalog-feedback.ts'
+import { ScreenshotUploadDialog } from './ui/ScreenshotUploadDialog.tsx'
 import { useCatalogQuestions } from './use-catalog-questions.ts'
+import { ScreenshotEditDialog } from './ui/ScreenshotEditDialog.tsx'
 
 export function CatalogQuestionsPage() {
+  return <QuizCatalogPage format="text" />
+}
+
+export function CatalogScreenshotsPage() {
+  return <QuizCatalogPage format="screenshot" />
+}
+
+function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
   const { t, i18n } = useTranslation()
+  const screenshots = format === 'screenshot'
+  const copy = screenshots ? 'gameCatalog.screenshots' : 'gameCatalog.questions'
   const theme = useTheme()
   const wide = useMediaQuery(theme.breakpoints.up('lg'))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const [status, setStatus] = useState<QuestionCatalogStatus>('all')
   const [sort, setSort] = useState<QuestionCatalogSort>('category')
   const {
@@ -92,7 +105,10 @@ export function CatalogQuestionsPage() {
     }
   }
 
-  const questions = catalogQuery.data
+  const questions = useMemo(
+    () => catalogQuery.data?.filter((question) => Boolean(question.image) === screenshots),
+    [catalogQuery.data, screenshots],
+  )
   const locale = i18n.resolvedLanguage ?? 'en'
   const visible = useMemo(
     () =>
@@ -122,10 +138,10 @@ export function CatalogQuestionsPage() {
     ? {
         message: t(
           catalogQuery.isLoading
-            ? 'gameCatalog.questions.loading'
+            ? `${copy}.loading`
             : catalogQuery.isError
-              ? 'gameCatalog.questions.error'
-              : 'gameCatalog.questions.empty',
+              ? `${copy}.error`
+              : `${copy}.empty`,
         ),
         isLoading: catalogQuery.isLoading,
         isError: catalogQuery.isError,
@@ -221,6 +237,9 @@ export function CatalogQuestionsPage() {
         gap: 1.5,
       }}
     >
+      {uploadOpen ? (
+        <ScreenshotUploadDialog categories={categories} onClose={() => setUploadOpen(false)} />
+      ) : null}
       <QuestionImportFeedback
         listError={deleteTarget ? null : listError}
         successMessage={successMessage}
@@ -240,6 +259,7 @@ export function CatalogQuestionsPage() {
         tools={
           <Box sx={{ minWidth: 0 }}>
             <QuestionCatalogMenu
+              screenshots={screenshots}
               {...(catalogState ? { catalogState } : {})}
               canAddQuestion={canAddQuestion}
               isCategoriesLoading={categoriesQuery.isLoading}
@@ -247,6 +267,7 @@ export function CatalogQuestionsPage() {
               isImportingQuestions={isImportingQuestions}
               isDownloadingTemplate={isDownloadingTemplate}
               onCreateQuestion={openCreate}
+              onUploadScreenshots={() => setUploadOpen(true)}
               onDownloadTemplate={() => void handleDownloadTemplate()}
               onUploadQuestions={() => importInputRef.current?.click()}
               onManageCategories={openCategoryManagement}
@@ -254,6 +275,7 @@ export function CatalogQuestionsPage() {
             >
               {!showCatalogState ? (
                 <QuestionCatalogFilters
+                  screenshots={screenshots}
                   search={search}
                   onSearchChange={setSearch}
                   categories={categories}
@@ -279,9 +301,9 @@ export function CatalogQuestionsPage() {
             isError={catalogQuery.isError}
             hasData={catalogQuery.data != null}
             isEmpty={(questions?.length ?? 0) === 0}
-            loadingMessage={t('gameCatalog.questions.loading')}
-            errorMessage={t('gameCatalog.questions.error')}
-            emptyMessage={t('gameCatalog.questions.empty')}
+            loadingMessage={t(`${copy}.loading`)}
+            errorMessage={t(`${copy}.error`)}
+            emptyMessage={t(`${copy}.empty`)}
             retryAction={
               <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
                 {t('common.actions.retry')}
@@ -299,6 +321,7 @@ export function CatalogQuestionsPage() {
               }}
             >
               <QuestionCatalogList
+                screenshots={screenshots}
                 questions={visible}
                 totalCount={questions?.length ?? 0}
                 selectedId={wide ? (selected?.questionId ?? null) : null}
@@ -308,7 +331,11 @@ export function CatalogQuestionsPage() {
                 <SectionCard
                   component="section"
                   role="region"
-                  aria-label={t('gameCatalog.questions.catalog.details')}
+                  aria-label={t(
+                    screenshots
+                      ? 'gameCatalog.screenshots.details'
+                      : 'gameCatalog.questions.catalog.details',
+                  )}
                   tabIndex={0}
                   sx={{
                     minWidth: 0,
@@ -335,7 +362,9 @@ export function CatalogQuestionsPage() {
           !categoryDialog &&
           deleteTarget === null
         }
-        title={t('gameCatalog.questions.catalog.details')}
+        title={t(
+          screenshots ? 'gameCatalog.screenshots.details' : 'gameCatalog.questions.catalog.details',
+        )}
         contentDensity="compact"
         onClose={() => setPreviewOpen(false)}
         actions={
@@ -346,20 +375,30 @@ export function CatalogQuestionsPage() {
       >
         {!wide ? details : null}
       </AppDialog>
-      <QuestionFormDialog
-        open={dialog !== null}
-        mode={dialog?.mode ?? 'create'}
-        initial={dialog?.mode === 'edit' ? dialog.question : undefined}
-        categories={categories}
-        defaultCategoryId={selectedCategoryId ?? undefined}
-        isBusy={isSaving}
-        onClose={closeDialog}
-        onSubmit={async (request) => {
-          const saved = await submitQuestion(request)
-          setSelectedId(saved.questionId)
-          setPreviewOpen(true)
-        }}
-      />
+      {screenshots && dialog?.mode === 'edit' ? (
+        <ScreenshotEditDialog
+          question={dialog.question}
+          categories={categories}
+          isBusy={isSaving}
+          onClose={closeDialog}
+          onSubmit={submitQuestion}
+        />
+      ) : !screenshots ? (
+        <QuestionFormDialog
+          open={dialog !== null}
+          mode={dialog?.mode ?? 'create'}
+          initial={dialog?.mode === 'edit' ? dialog.question : undefined}
+          categories={categories}
+          defaultCategoryId={selectedCategoryId ?? undefined}
+          isBusy={isSaving}
+          onClose={closeDialog}
+          onSubmit={async (request) => {
+            const saved = await submitQuestion(request)
+            setSelectedId(saved.questionId)
+            setPreviewOpen(true)
+          }}
+        />
+      ) : null}
       <QuestionCategoryDialog
         open={categoryDialog}
         categories={categories}
@@ -370,8 +409,8 @@ export function CatalogQuestionsPage() {
       <ConfirmDialog
         errorMessage={listError}
         open={deleteTarget !== null}
-        title={t('gameCatalog.questions.deleteTitle')}
-        description={t('gameCatalog.questions.deleteConfirm')}
+        title={t(`${copy}.deleteTitle`)}
+        description={t(`${copy}.deleteConfirm`)}
         subject={deleteTarget?.text}
         confirmLabel={t('gameCatalog.actions.delete')}
         cancelLabel={t('common.actions.cancel')}

@@ -53,11 +53,13 @@ function renderQuestions(enabledQuestionIds: string[] = []) {
         enabledModifierIds: [],
         enabledQuestionIds,
         quizAnswerDurationSeconds: 60,
+        screenshotAnswerDurationSeconds: 60,
       }}
       isSaving={false}
       onToggle={onToggle}
       onBulkSetEnabled={onBulkSetEnabled}
       onDurationChange={vi.fn()}
+      onScreenshotDurationChange={vi.fn()}
       onDurationCommit={vi.fn()}
     />,
   )

@@ -130,7 +130,7 @@ public sealed class GameSetupService : IGameSetupService
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidEnabledQuestions);
         }
 
-        if (update.QuizAnswerDurationSeconds is < 5 or > 3600)
+        if (update.QuizAnswerDurationSeconds is < 5 or > 3600 || update.ScreenshotAnswerDurationSeconds is < 5 or > 3600)
         {
             return new UpdateDraftGameSetupResult(UpdateDraftGameSetupOutcome.InvalidQuizAnswerDuration);
         }
@@ -143,7 +143,8 @@ public sealed class GameSetupService : IGameSetupService
             normalizedCells,
             normalizedEnabledModifierIds,
             normalizedEnabledQuestionIds,
-            update.QuizAnswerDurationSeconds
+            update.QuizAnswerDurationSeconds,
+            update.ScreenshotAnswerDurationSeconds
         );
 
         var saveResult = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);

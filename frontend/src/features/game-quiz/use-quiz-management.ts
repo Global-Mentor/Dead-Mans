@@ -8,7 +8,7 @@ import { gameHistoryQueryKeys, gameHistoryGameDetailsQueryOptions } from '../gam
 import {
   askNextGameQuizQuestion,
   askSpecificGameQuizQuestion,
-  prepareTwitchQuizQuestion,
+  hideGameQuizScreenshot,
 } from './api/game-quiz-api.ts'
 import {
   availableGameQuizQuestionsQueryOptions,
@@ -51,16 +51,13 @@ export function useQuizManagement() {
   }
   const askNext = useMutation({
     ...mutationOptions,
-    mutationFn: () =>
-      twitch.data?.enabled ? prepareTwitchQuizQuestion() : askNextGameQuizQuestion(),
+    mutationFn: (format: 'text' | 'screenshot') => askNextGameQuizQuestion(format),
   })
   const askSpecific = useMutation({
     ...mutationOptions,
-    mutationFn: (questionId: string) =>
-      twitch.data?.enabled
-        ? prepareTwitchQuizQuestion(questionId)
-        : askSpecificGameQuizQuestion(questionId),
+    mutationFn: (questionId: string) => askSpecificGameQuizQuestion(questionId),
   })
+  const hide = useMutation({ ...mutationOptions, mutationFn: hideGameQuizScreenshot })
   const modifierOrderingActive =
     round.data?.gameId === gameId && round.data.status === 'awaiting_modifiers'
   const hasLoadError =
@@ -87,7 +84,10 @@ export function useQuizManagement() {
     (round.data != null && round.data.gameId !== gameId) ||
     twitch.isPending ||
     twitch.isError ||
-    twitch.data?.publication?.status === 'publishing' ||
+    ['publishing', 'failed', 'uncertain', 'cancel_pending'].includes(
+      twitch.data?.publication?.status ?? '',
+    ) ||
+    hide.isPending ||
     askNext.isPending ||
     askSpecific.isPending
   return {
@@ -105,7 +105,19 @@ export function useQuizManagement() {
     isLaunching: askNext.isPending,
     modifierOrderingActive,
     error: actionError?.gameId === gameId ? actionError.error : null,
-    onAskNext: () => askNext.mutate(),
+    onAskNext: (format: 'text' | 'screenshot') => askNext.mutate(format),
+    onHide: () => {
+      if (current.data) hide.mutate(current.data.questionSessionId)
+    },
+    hiding: hide.isPending,
+    hideDisabled:
+      !canManage ||
+      snapshot.data?.status !== 'active' ||
+      current.isError ||
+      current.data?.status === 'open' ||
+      hide.isPending ||
+      askNext.isPending ||
+      askSpecific.isPending,
     onAskSpecific: (questionId: string) => askSpecific.mutateAsync(questionId),
   }
 }

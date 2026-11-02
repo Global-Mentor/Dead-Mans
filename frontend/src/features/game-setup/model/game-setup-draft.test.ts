@@ -34,6 +34,7 @@ const snapshot: GameSetupSnapshot = {
   enabledModifierIds: ['10000000-0000-0000-0000-0000000000a1'],
   enabledQuestionIds: [],
   quizAnswerDurationSeconds: 60,
+  screenshotAnswerDurationSeconds: 60,
   teamLimit: 10,
 }
 
@@ -53,6 +54,7 @@ describe('game setup draft', () => {
       enabledModifierIds: ['10000000-0000-0000-0000-0000000000a1'],
       enabledQuestionIds: [],
       quizAnswerDurationSeconds: 60,
+      screenshotAnswerDurationSeconds: 60,
     })
     expect(draft.rowLabels).not.toBe(snapshot.rowLabels)
     expect(draft.enabledModifierIds).not.toBe(snapshot.enabledModifierIds)
@@ -93,6 +95,7 @@ describe('game setup draft', () => {
         ],
         enabledQuestionIds: [],
         quizAnswerDurationSeconds: 60,
+        screenshotAnswerDurationSeconds: 60,
       }),
     ).toBe(true)
     expect(
@@ -149,6 +152,7 @@ describe('game setup draft', () => {
       ],
       enabledQuestionIds: [],
       quizAnswerDurationSeconds: 60,
+      screenshotAnswerDurationSeconds: 60,
     })
   })
 })

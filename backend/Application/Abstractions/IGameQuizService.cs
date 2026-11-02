@@ -54,6 +54,7 @@ public sealed record ManualQuizAwardResult(
 
 public interface IGameQuizService
 {
+    Task<bool> HideScreenshotAsync(Guid sessionId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
         CancellationToken cancellationToken = default
     );

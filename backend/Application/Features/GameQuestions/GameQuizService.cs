@@ -29,6 +29,16 @@ public sealed class GameQuizService : IGameQuizService
         _logger = logger;
     }
 
+    public async Task<bool> HideScreenshotAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        await CloseExpiredQuizQuestionSessionsAsync(cancellationToken);
+        var gameId = await _repository.HideScreenshotAsync(sessionId, cancellationToken);
+        if (gameId is null) return false;
+        await PublishQuizStateChangedBestEffortAsync(gameId.Value, GameQuizStateChangeKinds.PresentationHidden,
+            _timeProvider.GetUtcNow().UtcDateTime);
+        return true;
+    }
+
     public Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(
         CancellationToken cancellationToken = default
     ) => _repository.GetAvailableQuizQuestionsAsync(cancellationToken);

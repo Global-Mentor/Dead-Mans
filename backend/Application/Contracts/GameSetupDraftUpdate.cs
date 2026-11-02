@@ -10,5 +10,6 @@ public sealed record GameSetupDraftUpdate(
     IReadOnlyList<GameSetupCellUpdate> Cells,
     IReadOnlyList<Guid> EnabledModifierIds,
     IReadOnlyList<Guid> EnabledQuestionIds,
-    int QuizAnswerDurationSeconds = 60
+    int QuizAnswerDurationSeconds = 60,
+    int ScreenshotAnswerDurationSeconds = 60
 );

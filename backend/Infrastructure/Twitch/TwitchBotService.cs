@@ -1,4 +1,6 @@
 using System.Text.Json;
+using backend.Domain.Questions;
+using backend.Infrastructure.Persistence;
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Configuration;
@@ -73,7 +75,7 @@ internal sealed class TwitchBotService : ITwitchBotService
         );
     }
 
-    public async Task<PrepareTwitchQuizQuestionResult> PrepareQuestionAsync(Guid? questionId, CancellationToken cancellationToken = default)
+    public async Task<PrepareTwitchQuizQuestionResult> PrepareQuestionAsync(Guid? questionId, bool screenshot = false, CancellationToken cancellationToken = default)
     {
         if (!IsEnabled) return new(PrepareTwitchQuizQuestionOutcome.Disabled);
         var status = await GetStatusAsync(cancellationToken);
@@ -110,14 +112,14 @@ internal sealed class TwitchBotService : ITwitchBotService
 
         var candidates = await _db.GameEnabledQuestions.AsNoTracking()
             .Where(x => x.GameId == game.Id && x.QuestionDefinition.IsEnabled && !x.QuestionDefinition.IsDeleted
-                && (!questionId.HasValue || x.QuestionId == questionId)
+                && (questionId.HasValue ? x.QuestionId == questionId : (x.ImageSnapshotJson != null) == screenshot)
                 && !_db.GameQuizQuestionSessions.Any(s => s.GameId == game.Id && s.QuestionId == x.QuestionId)
                 && !_db.TwitchQuizPublications.Any(p => p.GameId == game.Id && p.QuestionId == x.QuestionId && p.Status != TwitchQuizPublicationStatuses.Cancelled))
             .ToArrayAsync(cancellationToken);
         if (candidates.Length == 0) return new(PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions);
         var compatibleCandidates = candidates.Where(candidate => TwitchQuizMessageFormatter.FormatForValidation(
             candidate.QuestionTextSnapshot, candidate.OptionTextsSnapshot,
-            game.QuizAnswerDurationSeconds, candidate.RewardSnapshot).IsCompatible).ToArray();
+            candidate.ImageSnapshotJson is null ? game.QuizAnswerDurationSeconds : game.ScreenshotAnswerDurationSeconds, candidate.RewardSnapshot).IsCompatible).ToArray();
         if (compatibleCandidates.Length == 0)
             return questionId.HasValue
                 ? new(PrepareTwitchQuizQuestionOutcome.IncompatibleQuestion, ErrorCode: "twitch_quiz.message_too_long")
@@ -135,22 +137,17 @@ internal sealed class TwitchBotService : ITwitchBotService
                 .GroupBy(x => x.QuestionId)
                 .Select(group => new { QuestionId = group.Key, Count = group.Count() })
                 .ToDictionaryAsync(x => x.QuestionId, x => x.Count, cancellationToken);
-            var minimumUsage = compatibleCandidates.Min(x => usage.GetValueOrDefault(x.QuestionId));
-            var maximumPriority = compatibleCandidates
-                .Where(x => usage.GetValueOrDefault(x.QuestionId) == minimumUsage)
-                .Max(x => x.PrioritySnapshot);
-            var prioritized = compatibleCandidates.Where(x =>
-                usage.GetValueOrDefault(x.QuestionId) == minimumUsage
-                && x.PrioritySnapshot == maximumPriority).ToArray();
-            selected = prioritized[Random.Shared.Next(prioritized.Length)];
+            selected = QuizQuestionSelection.Select(compatibleCandidates,
+                x => usage.GetValueOrDefault(x.QuestionId), x => x.PrioritySnapshot);
         }
+        var duration = selected.ImageSnapshotJson is null ? game.QuizAnswerDurationSeconds : game.ScreenshotAnswerDurationSeconds;
         var shuffled = selected.OptionIdsSnapshot.Zip(selected.OptionTextsSnapshot, (id, text) => (id, text)).ToArray();
         Random.Shared.Shuffle(shuffled);
         var askOrder = Math.Max(
             await _db.GameQuizQuestionSessions.Where(x => x.GameId == game.Id).MaxAsync(x => (int?)x.AskOrder, cancellationToken) ?? 0,
             await _db.TwitchQuizPublications.Where(x => x.GameId == game.Id).MaxAsync(x => (int?)x.AskOrder, cancellationToken) ?? 0) + 1;
         var validation = TwitchQuizMessageFormatter.FormatForValidation(
-            selected.QuestionTextSnapshot, shuffled.Select(x => x.text).ToArray(), game.QuizAnswerDurationSeconds, selected.RewardSnapshot);
+            selected.QuestionTextSnapshot, shuffled.Select(x => x.text).ToArray(), duration, selected.RewardSnapshot);
         if (!validation.IsCompatible)
             return new(PrepareTwitchQuizQuestionOutcome.IncompatibleQuestion, ErrorCode: validation.ErrorCode);
         var now = _clock.GetUtcNow().UtcDateTime;
@@ -160,17 +157,18 @@ internal sealed class TwitchBotService : ITwitchBotService
             GameId = game.Id,
             QuestionId = selected.QuestionId,
             AskOrder = askOrder,
-            DurationSeconds = game.QuizAnswerDurationSeconds,
+            DurationSeconds = duration,
             QuestionRevisionSnapshot = selected.QuestionRevisionSnapshot,
             QuestionCodeSnapshot = selected.QuestionCodeSnapshot,
             CategoryNameSnapshot = selected.CategoryNameSnapshot,
             QuestionTextSnapshot = selected.QuestionTextSnapshot,
+            ImageSnapshotJson = selected.ImageSnapshotJson,
             OptionIdsSnapshot = shuffled.Select(x => x.id).ToArray(),
             OptionTextsSnapshot = shuffled.Select(x => x.text).ToArray(),
             CorrectOptionIdSnapshot = selected.CorrectOptionIdSnapshot,
             RewardSnapshot = selected.RewardSnapshot,
             QuestionMessage = TwitchQuizMessageFormatter.FormatQuestion(askOrder, selected.QuestionTextSnapshot),
-            OptionsMessage = TwitchQuizMessageFormatter.FormatOptions(shuffled.Select(x => x.text).ToArray(), game.QuizAnswerDurationSeconds),
+            OptionsMessage = TwitchQuizMessageFormatter.FormatOptions(shuffled.Select(x => x.text).ToArray(), duration),
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -517,6 +515,7 @@ internal sealed class TwitchBotService : ITwitchBotService
             QuestionCodeSnapshot = row.QuestionCodeSnapshot,
             CategoryNameSnapshot = row.CategoryNameSnapshot,
             QuestionTextSnapshot = row.QuestionTextSnapshot,
+            ImageSnapshotJson = row.ImageSnapshotJson,
             OptionIdsSnapshot = row.OptionIdsSnapshot,
             OptionTextsSnapshot = row.OptionTextsSnapshot,
             CorrectOptionIdSnapshot = row.CorrectOptionIdSnapshot,
@@ -525,7 +524,9 @@ internal sealed class TwitchBotService : ITwitchBotService
             SourceChannelId = _options.ExpectedBroadcasterUserId,
             SourceMessageId = row.OptionsMessageId
         };
-        _db.Add(session); row.QuestionSessionId = session.Id; row.Status = TwitchQuizPublicationStatuses.Open; row.UpdatedAtUtc = now;
+        _db.Add(session);
+        await GameQuizActivity.PresentAsync(_db, session, cancellationToken);
+        row.QuestionSessionId = session.Id; row.Status = TwitchQuizPublicationStatuses.Open; row.UpdatedAtUtc = now;
         await _db.SaveChangesAsync(cancellationToken); if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         await _events.PublishQuizStateChangedAsync(new GameQuizStateChangedEvent(row.GameId, GameQuizStateChangeKinds.QuestionAsked, now), cancellationToken);
         await PublishStateChangedAsync(cancellationToken);

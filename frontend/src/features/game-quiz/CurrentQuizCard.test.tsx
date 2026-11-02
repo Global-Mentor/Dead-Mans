@@ -5,7 +5,7 @@ import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
-import { QuizLaunchControls } from './QuizLaunchControls.tsx'
+import { QuizLaunchControls, QuizLaunchStatus } from './QuizLaunchControls.tsx'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
 import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
@@ -53,7 +53,16 @@ function renderCard(state: CurrentGameQuizState | null, overrides: Partial<TestP
   renderWithAppProviders(
     <>
       <CurrentQuizCard {...props} error={props.canManage ? null : props.error} />
-      {props.canManage ? <QuizLaunchControls {...props} /> : null}
+      {props.canManage ? (
+        <>
+          <QuizLaunchStatus
+            open={state?.status === 'open'}
+            modifierOrderingActive={props.modifierOrderingActive ?? false}
+            error={props.error}
+          />
+          <QuizLaunchControls {...props} />
+        </>
+      ) : null}
     </>,
   )
   return props

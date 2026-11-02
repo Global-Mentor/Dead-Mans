@@ -116,6 +116,11 @@ const panelPages = {
     'CatalogQuestionsPage',
     [translations.gameCatalog],
   ),
+  'catalog-screenshots': lazyPanelPage(
+    () => import('../features/game-catalog/CatalogQuestionsPage.tsx'),
+    'CatalogScreenshotsPage',
+    [translations.gameCatalog],
+  ),
   'team-registrations': lazyPanelPage(
     () => import('../features/team-registrations/TeamRegistrationsPage.tsx'),
     'TeamRegistrationsPage',

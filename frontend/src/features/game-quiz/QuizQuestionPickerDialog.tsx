@@ -1,3 +1,4 @@
+import { QuizScreenshotImage, huntName } from '../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +16,7 @@ import {
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
 type Props = {
+  screenshot?: boolean
   open: boolean
   questions: readonly AvailableQuestion[]
   launchDisabled: boolean
@@ -29,6 +31,7 @@ type Props = {
 const allCategories = '__all__'
 
 export function QuizQuestionPickerDialog({
+  screenshot = false,
   open,
   questions,
   launchDisabled,
@@ -61,7 +64,12 @@ export function QuizQuestionPickerDialog({
       .filter(
         (question) =>
           (category === allCategories || question.categoryName === category) &&
-          (normalizedQuery === '' || normalizeSearch(question.text).includes(normalizedQuery)),
+          (normalizedQuery === '' ||
+            normalizeSearch(
+              question.image
+                ? `${huntName(question.image.mapNames, i18n.resolvedLanguage ?? 'en')} ${question.questionCode}`
+                : question.text,
+            ).includes(normalizedQuery)),
       )
       .sort(
         (left, right) =>
@@ -105,7 +113,7 @@ export function QuizQuestionPickerDialog({
       height="viewport"
       contentDensity="compact"
       slotProps={{ transition: { onEntered: () => searchRef.current?.focus() } }}
-      title={t('gameQuiz.questionPickerTitle')}
+      title={t(screenshot ? 'gameQuiz.specificScreenshot' : 'gameQuiz.questionPickerTitle')}
       actions={
         <>
           <AppButton tone="danger" onClick={close} disabled={pending}>
@@ -235,6 +243,9 @@ export function QuizQuestionPickerDialog({
                       spacing={0.75}
                       sx={{ minWidth: 0, flex: 1, alignItems: 'flex-start' }}
                     >
+                      {question.image ? (
+                        <QuizScreenshotImage image={question.image} thumbnail />
+                      ) : null}
                       <StatusBadge
                         component="span"
                         density="compact"
@@ -242,7 +253,9 @@ export function QuizQuestionPickerDialog({
                         label={question.categoryName}
                       />
                       <Typography component="span" variant="body1" fontWeight={700}>
-                        {question.text}
+                        {question.image
+                          ? `${huntName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+                          : question.text}
                       </Typography>
                     </Stack>
                   </SelectionRow>

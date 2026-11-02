@@ -8,6 +8,7 @@ public class GameEnabledQuestionConfiguration : IEntityTypeConfiguration<GameEna
 {
     public void Configure(EntityTypeBuilder<GameEnabledQuestion> builder)
     {
+        builder.Property(x => x.ImageSnapshotJson).HasColumnType("jsonb");
         builder.ToTable(
             "game_enabled_questions",
             table =>

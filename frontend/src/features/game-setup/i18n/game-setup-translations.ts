@@ -1,5 +1,6 @@
 const translations = {
   en: {
+    screenshotAnswerDuration: 'Screenshot answer time, seconds',
     registration: {
       title: 'Game readiness',
       mediaLabel: 'Cards with media',
@@ -178,6 +179,7 @@ const translations = {
     },
   },
   ru: {
+    screenshotAnswerDuration: 'Время ответа на скриншот, сек.',
     registration: {
       title: 'Готовность игры',
       mediaLabel: 'Карточки с медиа',
@@ -357,6 +359,7 @@ const translations = {
     },
   },
   uk: {
+    screenshotAnswerDuration: 'Час відповіді на знімок, с',
     registration: {
       title: 'Готовність гри',
       mediaLabel: 'Картки з медіа',
@@ -536,6 +539,7 @@ const translations = {
     },
   },
   pl: {
+    screenshotAnswerDuration: 'Czas odpowiedzi na zrzut, sekundy',
     registration: {
       title: 'Gotowość gry',
       mediaLabel: 'Karty z mediami',

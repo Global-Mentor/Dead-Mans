@@ -1,5 +1,62 @@
 import { expect, test, type Page } from '@playwright/test'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
+import { screenshotQuestion } from './support/screenshot-fixture.ts'
+
+for (const width of [390, 768, 1440]) {
+  test(`screenshot controls lock during answers and keep a manual hide action at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.clock.install({ time: new Date('2026-11-02T12:00:00Z') })
+    const quiz = await mockQuiz(page)
+    let state = structuredClone(screenshotQuestion)
+    let hides = 0
+    await page.route('**/api/game/quiz/current', (route) => route.fulfill({ json: state }))
+    await page.route('**/api/game/quiz/questions/available', (route) =>
+      route.fulfill({
+        json: [
+          ...questions,
+          {
+            questionId: 'next-screenshot',
+            questionCode: 'screen-2',
+            categoryName: 'Локации',
+            text: screenshotQuestion.text,
+            image: screenshotQuestion.image,
+          },
+        ],
+      }),
+    )
+    await page.route('**/api/game/quiz/question-sessions/screenshot-session/hide', (route) => {
+      hides++
+      state = { ...state, presentationVisible: false }
+      return route.fulfill({ status: 204 })
+    })
+    await page.goto('/panel/game-quiz')
+    await expect(page.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Винный завод', exact: true })).toBeEnabled()
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Следующий вопрос', exact: true })).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Следующий скриншот', exact: true }),
+    ).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Скрыть скриншот', exact: true })).toBeDisabled()
+    state = { ...state, status: 'closed', correctOptionId: 'location-0' }
+    quiz.notifyQuizChanged()
+    const hide = page.getByRole('button', { name: 'Скрыть скриншот', exact: true })
+    await expect(hide).toBeEnabled()
+    await expect(page.getByRole('button', { name: 'Следующий вопрос', exact: true })).toBeEnabled()
+    await expect(
+      page.getByRole('button', { name: 'Следующий скриншот', exact: true }),
+    ).toBeEnabled()
+    await page
+      .getByRole('complementary', { name: 'Инструменты управления игрой' })
+      .screenshot({ path: info.outputPath('screenshot-management.png'), animations: 'disabled' })
+    await hide.click()
+    await expect(hide).toHaveCount(0)
+    expect(hides).toBe(1)
+  })
+}
 
 const longAnswer =
   'Подробный ответ с несколькими условиями, который должен оставаться полностью доступным даже на узком экране. '.repeat(
@@ -558,6 +615,73 @@ async function openQuizManagement(page: Page) {
   await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
 }
 
+test('screenshot history filters by format while the leaderboard keeps shared points', async ({
+  page,
+}, info) => {
+  await mockQuiz(page)
+  const visual = {
+    ...screenshotQuestion,
+    questionText: screenshotQuestion.text,
+    status: 'closed',
+    correctOptionId: 'location-0',
+    closedAtUtc: screenshotQuestion.closesAtUtc,
+    submissions: [],
+  }
+  await page.route('**/api/game/quiz/current', (route) => route.fulfill({ json: visual }))
+  await page.route('**/api/game/history/games/quiz', (route) =>
+    route.fulfill({
+      json: {
+        gameId: 'quiz',
+        gameStatus: 'active',
+        quiz: {
+          totalPoints: 12,
+          manualAwards: [],
+          playerStats: [
+            {
+              userId: 'player',
+              displayName: 'Охотник',
+              points: 12,
+              availablePoints: 8,
+              spentPoints: 4,
+              attempts: 3,
+              correctAnswers: 2,
+              textStatistics: { attempts: 2, correctAnswers: 1, points: 5 },
+              screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 7 },
+            },
+          ],
+          questionSessions: [
+            visual,
+            {
+              ...visual,
+              image: null,
+              questionSessionId: 'text',
+              questionText: 'Обычный вопрос из истории',
+              askedAtUtc: '2026-11-02T11:00:00Z',
+            },
+          ],
+        },
+      },
+    }),
+  )
+  await page.goto('/panel/game-quiz')
+  await expect(page.getByText('Скриншоты: 1/1, 7 очк.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Вопросы: 1/2, 5 очк.', { exact: true })).toBeVisible()
+  const history = page.getByTestId('quiz-history-scroll')
+  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await page.getByRole('combobox', { name: /^Формат вопросов/ }).click()
+  await page.getByRole('option', { name: 'Скриншоты', exact: true }).click()
+  await expect(history.getByText('Обычный вопрос из истории')).toHaveCount(0)
+  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath('screenshot-history-statistics.png'),
+    animations: 'disabled',
+  })
+  await page.getByRole('combobox', { name: /^Формат вопросов/ }).click()
+  await page.getByRole('option', { name: 'Текстовые вопросы', exact: true }).click()
+  await expect(history.getByText('Обычный вопрос из истории')).toBeVisible()
+  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toHaveCount(0)
+})
+
 test('quiz launch is unavailable while modifiers are being ordered', async ({ page }) => {
   const mock = await mockQuiz(page, 'awaiting_modifiers')
   await page.goto('/panel/game-quiz')
@@ -878,7 +1002,7 @@ for (const role of ['viewer', 'admin']) {
         },
       }),
     )
-    await page.route('**/api/game/quiz/questions/ask-next', (route) => {
+    await page.route('**/api/game/quiz/questions/ask-next?format=text', (route) => {
       starts++
       state = { ...next, mySelectedOptionId: null }
       return route.fulfill({ json: {} })

@@ -8,6 +8,7 @@ public sealed class TwitchQuizPublicationConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<TwitchQuizPublication> builder)
     {
+        builder.Property(x => x.ImageSnapshotJson).HasColumnType("jsonb");
         builder.ToTable("twitch_quiz_publications");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.QuestionCodeSnapshot).HasMaxLength(64).IsRequired();

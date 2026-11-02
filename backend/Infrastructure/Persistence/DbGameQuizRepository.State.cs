@@ -1,5 +1,6 @@
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
+using backend.Domain.Questions;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -32,10 +33,14 @@ public sealed partial class DbGameQuizRepository
                 .Select(group => new { OptionId = group.Key, Count = group.Count() })
                 .ToDictionaryAsync(x => x.OptionId, x => x.Count, cancellationToken)
             : new Dictionary<Guid, int>();
-        return MapCurrentState(session, own, counts);
+        return MapCurrentState(session, own, counts) with
+        {
+            PresentationVisible = await _dbContext.Set<GameQuizPresentation>().AnyAsync(
+                x => x.GameId == session.GameId && x.QuestionSessionId == session.Id, cancellationToken)
+        };
     }
 
-    private static CurrentGameQuizState MapCurrentState(
+    internal static CurrentGameQuizState MapCurrentState(
         GameQuizQuestionSession session, GameQuizSubmission? own, IReadOnlyDictionary<Guid, int> counts)
     {
         var isClosed = session.Status == GameQuizQuestionSessionStatusValue.Closed;
@@ -75,7 +80,8 @@ public sealed partial class DbGameQuizRepository
             isClosed ? own?.AwardedPoints : null,
             isClosed ? counts.Values.Sum() : null,
             results
-        );
+        )
+        { Image = QuizImageSnapshot.FromJson(session.ImageSnapshotJson) };
     }
 
     private static GameQuizOption[] MapOptions(GameQuizQuestionSession session) =>

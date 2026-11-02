@@ -82,6 +82,7 @@ async function mockAdmin(
     enabledModifierIds: ['modifier-0'],
     enabledQuestionIds: ['question-0'],
     quizAnswerDurationSeconds: 60,
+    screenshotAnswerDurationSeconds: 60,
     teamLimit,
   }
   let writes = 0
@@ -161,6 +162,7 @@ async function mockAdmin(
     modifiers,
     questionIds: () => setup.enabledQuestionIds,
     duration: () => setup.quizAnswerDurationSeconds,
+    screenshotDuration: () => setup.screenshotAnswerDurationSeconds,
     writes: () => writes,
     enabledIds: () => setup.enabledModifierIds,
     refuseSave: (value: boolean) => {
@@ -600,6 +602,10 @@ for (const width of [390, 768, 1440]) {
       await page.goto('/panel/admin-questions')
       const search = page.getByRole('textbox', { name: 'Search questions and answers' })
       const duration = page.getByRole('textbox', { name: 'Answer time (seconds)' })
+      const screenshotDuration = page.getByRole('textbox', {
+        name: 'Screenshot answer time, seconds',
+        exact: true,
+      })
       const panel = page.getByRole('region', { name: 'Question selection', exact: true })
       await expect(panel.getByRole('checkbox')).toHaveCount(11)
       await page.evaluate(() => document.fonts.ready)
@@ -607,7 +613,7 @@ for (const width of [390, 768, 1440]) {
         const rect = element.closest('.MuiFormControl-root')!.getBoundingClientRect()
         return { left: rect.left }
       })
-      const durationRight = await duration.evaluate(
+      const durationRight = await screenshotDuration.evaluate(
         (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().right,
       )
       const rows = await panel.getByRole('listitem').evaluateAll((elements) =>
@@ -699,6 +705,15 @@ for (const width of [390, 768, 1440]) {
       await page.keyboard.press('Escape')
       await expect(details).toBeFocused()
       expect(server.writes()).toBe(3)
+      expect(server.screenshotDuration()).toBe(60)
+      await screenshotDuration.fill('75')
+      await screenshotDuration.press('Enter')
+      await expect.poll(server.screenshotDuration).toBe(75)
+      expect(server.duration()).toBe(90)
+      await expect.poll(server.writes).toBe(4)
+      await page.reload()
+      await expect(duration).toHaveValue('90')
+      await expect(screenshotDuration).toHaveValue('75')
       expect(errors).toEqual([])
     },
   )

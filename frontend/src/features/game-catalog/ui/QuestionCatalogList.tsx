@@ -1,15 +1,25 @@
+import { QuizScreenshotImage, huntName, quizOptionText } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/index.ts'
 import { ListPanel, PageStatePanel, SelectionRow, StatusBadge } from '../../../shared/ui/index.ts'
 
+function screenshotTitle(question: GameQuestionCatalogItem, language: string) {
+  const correct = question.options.find((option) => option.isCorrect)
+  return question.image && correct
+    ? `${huntName(question.image.mapNames, language)} · ${quizOptionText(question.image, correct.optionId, correct.text, language)}`
+    : question.text
+}
+
 export function QuestionCatalogList({
+  screenshots = false,
   questions,
   totalCount,
   selectedId,
   onSelect,
 }: {
+  screenshots?: boolean
   questions: readonly GameQuestionCatalogItem[]
   totalCount: number
   selectedId: string | null
@@ -23,7 +33,9 @@ export function QuestionCatalogList({
       <Box data-testid="question-catalog-list" sx={{ minWidth: 0 }}>
         <PageStatePanel
           headingLevel="h2"
-          title={t('gameCatalog.questions.catalog.list')}
+          title={t(
+            screenshots ? 'gameCatalog.screenshots.list' : 'gameCatalog.questions.catalog.list',
+          )}
           message={t('gameCatalog.workspace.results', {
             count: number(0),
             total: number(totalCount),
@@ -34,7 +46,7 @@ export function QuestionCatalogList({
   }
   return (
     <ListPanel
-      title={t('gameCatalog.questions.catalog.list')}
+      title={t(screenshots ? 'gameCatalog.screenshots.list' : 'gameCatalog.questions.catalog.list')}
       data-testid="question-catalog-list"
       summary={
         <Typography variant="body2" color="text.secondary" role="status">
@@ -54,13 +66,18 @@ export function QuestionCatalogList({
               selectionAppearance="outline"
               tone={index % 2 === 1 ? 'alternate' : 'default'}
               density="compact"
-              aria-label={question.text}
+              aria-label={
+                question.image
+                  ? `${screenshotTitle(question, i18n.language)} · ${question.questionCode}`
+                  : question.text
+              }
               aria-describedby={prefix + '-' + question.questionId}
               onClick={() => onSelect(question)}
             >
               <Stack gap={0.75} sx={{ minWidth: 0, width: '100%' }}>
+                {question.image ? <QuizScreenshotImage image={question.image} thumbnail /> : null}
                 <Typography component="span" variant="body1" fontWeight={700}>
-                  {question.text}
+                  {question.image ? screenshotTitle(question, i18n.language) : question.text}
                 </Typography>
                 <Stack
                   component="span"

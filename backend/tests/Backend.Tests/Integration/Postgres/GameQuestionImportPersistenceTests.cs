@@ -28,7 +28,8 @@ public sealed class GameQuestionImportPersistenceTests(PostgresTestDatabase data
         var category = await repository.CreateCategoryAsync("География");
         var publisher = new RecordingPublisher();
         var controller = new GameQuestionController(new GameQuestionService(repository, publisher,
-            NullLogger<GameQuestionService>.Instance))
+            NullLogger<GameQuestionService>.Instance), Microsoft.Extensions.Options.Options.Create(
+                new backend.Application.Configuration.MediaStorageSettings { PublicBaseUrl = "https://media.test" }))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
@@ -247,7 +248,8 @@ public sealed class GameQuestionImportPersistenceTests(PostgresTestDatabase data
 
     private static GameQuestionController Controller(backend.Data.ApplicationDbContext db, RecordingPublisher? publisher = null) =>
         new(new GameQuestionService(new DbGameQuestionRepository(db, TimeProvider.System),
-            publisher ?? new RecordingPublisher(), NullLogger<GameQuestionService>.Instance))
+            publisher ?? new RecordingPublisher(), NullLogger<GameQuestionService>.Instance),
+            Microsoft.Extensions.Options.Options.Create(new backend.Application.Configuration.MediaStorageSettings { PublicBaseUrl = "https://media.test" }))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

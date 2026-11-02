@@ -28,7 +28,8 @@ public sealed record GameOverlaySnapshot(
     GameOverlaySummary? Summary = null,
     IReadOnlyList<GameOverlayLeaderboardEntry>? Leaderboard = null,
     int LeaderboardPage = 0,
-    IReadOnlyList<GameOverlayQuizLeaderboardEntry>? QuizLeaderboard = null
+    IReadOnlyList<GameOverlayQuizLeaderboardEntry>? QuizLeaderboard = null,
+    CurrentGameQuizState? QuizQuestion = null
 );
 
 public sealed record GameOverlayModifier(string Id, string Name, string? IconEmoji, string ModifierId);

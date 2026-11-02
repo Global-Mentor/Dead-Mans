@@ -19,6 +19,7 @@ interface GameSetupQuestionsSectionProps {
   draft: GameSetupDraftState
   onToggle: (questionId: string, enabled: boolean) => void
   onBulkSetEnabled: (questionIds: readonly string[], enabled: boolean) => void
+  onScreenshotDurationChange: (seconds: number) => void
   onDurationChange: (seconds: number) => void
   onDurationCommit: () => void
   isSaving: boolean
@@ -30,6 +31,7 @@ export function GameSetupQuestionsSection({
   onToggle,
   onBulkSetEnabled,
   onDurationChange,
+  onScreenshotDurationChange,
   onDurationCommit,
   isSaving,
   actions,
@@ -101,6 +103,13 @@ export function GameSetupQuestionsSection({
               value={draft.quizAnswerDurationSeconds}
               disabled={isSaving}
               onChange={onDurationChange}
+              onCommit={onDurationCommit}
+            />
+            <GameSetupQuestionDuration
+              label={t('gameSetup.screenshotAnswerDuration')}
+              value={draft.screenshotAnswerDurationSeconds}
+              disabled={isSaving}
+              onChange={onScreenshotDurationChange}
               onCommit={onDurationCommit}
             />
           </Stack>

@@ -1,3 +1,4 @@
+import { QuizScreenshotImage, huntName } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +22,10 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
   onToggle: (questionId: string, enabled: boolean) => void
   onPreview: (questionId: string) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const label = question.image
+    ? `${huntName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+    : question.text
   return (
     <ItemCard component="li" density="flush" sx={{ minWidth: 0, listStyle: 'none' }}>
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ px: 0.5, py: 0.5 }}>
@@ -29,15 +33,16 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
           sx={{ m: 0, minWidth: 0, flex: 1, alignItems: 'center' }}
           control={
             <FormCheckbox
-              inputProps={{ 'aria-label': question.text }}
+              inputProps={{ 'aria-label': label }}
               checked={selected}
               onChange={(event) => onToggle(question.questionId, event.target.checked)}
             />
           }
           label={
             <Stack sx={{ textAlign: 'left' }}>
+              {question.image ? <QuizScreenshotImage image={question.image} thumbnail /> : null}
               <Typography variant="body2" sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>
-                {question.text}
+                {label}
               </Typography>
               <Typography
                 variant="caption"

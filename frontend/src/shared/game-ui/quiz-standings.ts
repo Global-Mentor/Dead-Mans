@@ -1,4 +1,6 @@
 export type QuizStanding = {
+  textStatistics?: { attempts: number; correctAnswers: number; points: number } | null
+  screenshotStatistics?: { attempts: number; correctAnswers: number; points: number } | null
   displayName: string
   points: number
   attempts: number

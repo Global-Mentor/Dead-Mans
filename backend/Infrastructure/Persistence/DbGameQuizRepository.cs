@@ -1,3 +1,4 @@
+using backend.Domain.Questions;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
 using backend.Data;
@@ -51,7 +52,8 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
                 enabled.QuestionCodeSnapshot,
                 enabled.CategoryNameSnapshot,
                 enabled.QuestionTextSnapshot
-            ))
+            )
+            { Image = QuizImageSnapshot.FromJson(enabled.ImageSnapshotJson) })
             .ToArrayAsync(cancellationToken);
     }
 
@@ -77,9 +79,9 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
 
         var answerDurationSeconds = await _dbContext.Games.AsNoTracking()
             .Where(x => x.Id == gameId && x.Status == GameStatusValue.Active && !x.IsDeleted)
-            .Select(x => (int?)x.QuizAnswerDurationSeconds)
+            .Select(x => new { x.QuizAnswerDurationSeconds, x.ScreenshotAnswerDurationSeconds })
             .FirstOrDefaultAsync(cancellationToken);
-        if (!answerDurationSeconds.HasValue)
+        if (answerDurationSeconds is null)
         {
             return new(AskQuizQuestionRepositoryOutcome.Unavailable);
         }
@@ -90,6 +92,9 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         {
             return new(AskQuizQuestionRepositoryOutcome.ModifierOrderingActive);
         }
+
+        if (await GameQuizActivity.HasPublicationAsync(_dbContext, gameId, cancellationToken))
+            return new(AskQuizQuestionRepositoryOutcome.Unavailable);
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var openSession = await _dbContext.GameQuizQuestionSessions
@@ -114,7 +119,8 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
                 enabledQuestion.GameId == gameId
                 && enabledQuestion.QuestionDefinition.IsEnabled
                 && !enabledQuestion.QuestionDefinition.IsDeleted
-                && (!questionId.HasValue || enabledQuestion.QuestionId == questionId.Value)
+                && (questionId.HasValue ? enabledQuestion.QuestionId == questionId.Value
+                    : (enabledQuestion.ImageSnapshotJson != null) == delivery.Screenshot)
                 && !_dbContext.GameQuizQuestionSessions.Any(session =>
                     session.GameId == gameId && session.QuestionId == enabledQuestion.QuestionId))
             .Select(enabledQuestion => new
@@ -154,13 +160,15 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             QuestionId = selectedQuestion.QuestionId,
             AskOrder = nextAskOrder,
             AskedAtUtc = now,
-            ClosesAtUtc = now.AddSeconds(answerDurationSeconds.Value),
+            ClosesAtUtc = now.AddSeconds(selectedQuestion.ImageSnapshotJson is null
+                ? answerDurationSeconds.QuizAnswerDurationSeconds : answerDurationSeconds.ScreenshotAnswerDurationSeconds),
             AskedByUserId = manualDelivery?.AskedByUserId,
             Status = GameQuizQuestionSessionStatusValue.Open,
             QuestionRevisionSnapshot = selectedQuestion.QuestionRevisionSnapshot,
             QuestionCodeSnapshot = selectedQuestion.QuestionCodeSnapshot,
             CategoryNameSnapshot = selectedQuestion.CategoryNameSnapshot,
             QuestionTextSnapshot = selectedQuestion.QuestionTextSnapshot,
+            ImageSnapshotJson = selectedQuestion.ImageSnapshotJson,
             OptionIdsSnapshot = shuffled.Select(x => x.Id).ToArray(),
             OptionTextsSnapshot = shuffled.Select(x => x.Text).ToArray(),
             CorrectOptionIdSnapshot = selectedQuestion.CorrectOptionIdSnapshot,
@@ -173,6 +181,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         };
 
         _dbContext.GameQuizQuestionSessions.Add(session);
+        await GameQuizActivity.PresentAsync(_dbContext, session, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null)
         {
@@ -194,19 +203,14 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         session.RewardSnapshot,
         session.AskedAtUtc,
         session.ClosesAtUtc
-    );
+    )
+    { Image = QuizImageSnapshot.FromJson(session.ImageSnapshotJson) };
 
     private static GameEnabledQuestion SelectAutomaticCandidate(
         IReadOnlyList<(GameEnabledQuestion Question, int AskedTotalCount)> candidates
     )
     {
-        var minimumAsked = candidates.Min(x => x.AskedTotalCount);
-        var maximumPriority = candidates.Where(x => x.AskedTotalCount == minimumAsked)
-            .Max(x => x.Question.PrioritySnapshot);
-        var prioritized = candidates.Where(x =>
-            x.AskedTotalCount == minimumAsked && x.Question.PrioritySnapshot == maximumPriority)
-            .ToArray();
-        return prioritized[Random.Shared.Next(prioritized.Length)].Question;
+        return QuizQuestionSelection.Select(candidates, x => x.AskedTotalCount, x => x.Question.PrioritySnapshot).Question;
     }
 
 }

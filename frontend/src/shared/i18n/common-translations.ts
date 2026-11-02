@@ -1,6 +1,19 @@
 const translations = {
   en: {
+    quizImage: {
+      alt: 'Location screenshot',
+      question: 'Which location is shown?',
+      loading: 'Loading image',
+      error: 'Image unavailable',
+      enlarge: 'Enlarge screenshot',
+      result: 'Results',
+      correct: 'Correct answer',
+      timer: 'Time remaining',
+    },
     quizStandings: {
+      formatStatistics: '{{format}}: {{correct}}/{{attempts}}, {{points}} pts',
+      text: 'Text',
+      screenshots: 'Screenshots',
       title: 'Quiz leaderboard',
       description: 'All quiz points earned during this game, before spending.',
       earned: 'Earned',
@@ -104,7 +117,20 @@ const translations = {
     },
   },
   ru: {
+    quizImage: {
+      alt: 'Скриншот локации',
+      question: 'Какая локация изображена?',
+      loading: 'Загрузка изображения',
+      error: 'Изображение недоступно',
+      enlarge: 'Увеличить скриншот',
+      result: 'Результаты',
+      correct: 'Правильный ответ',
+      timer: 'Оставшееся время',
+    },
     quizStandings: {
+      formatStatistics: '{{format}}: {{correct}}/{{attempts}}, {{points}} очк.',
+      text: 'Вопросы',
+      screenshots: 'Скриншоты',
       title: 'Лидерборд викторины',
       description: 'Все очки, заработанные в викторине за эту игру, без учёта трат.',
       earned: 'Заработано',
@@ -211,7 +237,20 @@ const translations = {
     },
   },
   uk: {
+    quizImage: {
+      alt: 'Знімок локації',
+      question: 'Яку локацію зображено?',
+      loading: 'Завантаження зображення',
+      error: 'Зображення недоступне',
+      enlarge: 'Збільшити знімок',
+      result: 'Результати',
+      correct: 'Правильна відповідь',
+      timer: 'Час, що залишився',
+    },
     quizStandings: {
+      formatStatistics: '{{format}}: {{correct}}/{{attempts}}, {{points}} оч.',
+      text: 'Запитання',
+      screenshots: 'Знімки',
       title: 'Лідерборд вікторини',
       description: 'Усі очки, зароблені у вікторині за цю гру, без урахування витрат.',
       earned: 'Зароблено',
@@ -318,7 +357,20 @@ const translations = {
     },
   },
   pl: {
+    quizImage: {
+      alt: 'Zrzut ekranu lokacji',
+      question: 'Jaka lokacja jest na zdjęciu?',
+      loading: 'Ładowanie obrazu',
+      error: 'Obraz niedostępny',
+      enlarge: 'Powiększ zrzut ekranu',
+      result: 'Wyniki',
+      correct: 'Poprawna odpowiedź',
+      timer: 'Pozostały czas',
+    },
     quizStandings: {
+      formatStatistics: '{{format}}: {{correct}}/{{attempts}}, {{points}} pkt',
+      text: 'Pytania',
+      screenshots: 'Zrzuty',
       title: 'Ranking quizu',
       description: 'Wszystkie punkty quizu zdobyte w tej grze, przed wydatkami.',
       earned: 'Zdobyte',

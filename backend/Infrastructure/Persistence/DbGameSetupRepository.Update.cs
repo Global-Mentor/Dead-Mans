@@ -207,7 +207,8 @@ public sealed partial class DbGameSetupRepository
                         .ToArray(),
                     question.Options.Where(option => option.IsCorrect).Select(option => option.Id).Single(),
                     question.Reward,
-                    question.Priority
+                    question.Priority,
+                    question.ImageSnapshotJson
                 ))
                 .ToDictionaryAsync(question => question.Id, cancellationToken);
 
@@ -248,6 +249,7 @@ public sealed partial class DbGameSetupRepository
 
             draftGame.Title = update.Title;
             draftGame.QuizAnswerDurationSeconds = update.QuizAnswerDurationSeconds;
+            draftGame.ScreenshotAnswerDurationSeconds = update.ScreenshotAnswerDurationSeconds;
             board.Rows = rowCount;
             board.Cols = colCount;
             board.RowLabels = update.RowLabels.ToArray();
@@ -301,6 +303,7 @@ public sealed partial class DbGameSetupRepository
         enabledQuestion.QuestionCodeSnapshot = question.ExternalCode;
         enabledQuestion.CategoryNameSnapshot = question.CategoryName;
         enabledQuestion.QuestionTextSnapshot = question.Text;
+        enabledQuestion.ImageSnapshotJson = question.ImageSnapshotJson;
         enabledQuestion.OptionIdsSnapshot = question.OptionIds;
         enabledQuestion.OptionTextsSnapshot = question.OptionTexts;
         enabledQuestion.CorrectOptionIdSnapshot = question.CorrectOptionId;

@@ -108,11 +108,10 @@ public sealed class SignalRGameBoardEventsPublisher : IGameBoardEventsPublisher
         CancellationToken cancellationToken = default
     )
     {
-        return _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
-            QuizStateChangedEventName,
-            payload.ToDto(),
-            cancellationToken
-        );
+        return Task.WhenAll(
+            _overlayContext.Clients.All.SendAsync(RealtimeHubContracts.GameOverlay.FrameChangedEvent, cancellationToken),
+            _hubContext.Clients.Group(RealtimeGroupNames.GameBoardAudience).SendAsync(
+                QuizStateChangedEventName, payload.ToDto(), cancellationToken));
     }
 
     public Task PublishUserNotificationCreatedAsync(

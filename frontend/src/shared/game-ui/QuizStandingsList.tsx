@@ -2,6 +2,7 @@ import { Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { RankingList } from '../ui/index.ts'
 import type { QuizStanding } from './quiz-standings.ts'
+import { QuizFormatStatistics } from './QuizFormatStatistics.tsx'
 
 export function QuizStandingsList({
   entries,
@@ -39,13 +40,15 @@ export function QuizStandingsList({
         highlighted: Boolean(compact && currentUserId && entry.userId === currentUserId),
         name: entry.displayName,
         value: t('common.quizStandings.points', { points: entry.points }),
-        detail: t(
-          compact ? 'common.quizStandings.answerRatio' : 'common.quizStandings.answerStats',
-          {
-            attempts: entry.attempts,
-            correct: entry.correctAnswers,
-          },
-        ),
+        detail:
+          entry.textStatistics && entry.screenshotStatistics ? (
+            <QuizFormatStatistics entry={entry} />
+          ) : (
+            t(compact ? 'common.quizStandings.answerRatio' : 'common.quizStandings.answerStats', {
+              attempts: entry.attempts,
+              correct: entry.correctAnswers,
+            })
+          ),
       }))}
     />
   )

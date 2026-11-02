@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { FormTextField } from '../../../shared/ui/index.ts'
 
 interface Props {
+  label?: string
   value: number
   disabled: boolean
   onChange: (seconds: number) => void
   onCommit: () => void
 }
 
-export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit }: Props) {
+export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit, label }: Props) {
   const { t } = useTranslation()
   const [input, setInput] = useState<string | null>(null)
   const text = input ?? String(value)
@@ -17,7 +18,7 @@ export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit 
   const valid = /^\d+$/.test(text) && seconds >= 5 && seconds <= 3600
   return (
     <FormTextField
-      label={t('gameSetup.questions.answerDuration')}
+      label={label ?? t('gameSetup.questions.answerDuration')}
       value={text}
       disabled={disabled}
       slotProps={{ htmlInput: { inputMode: 'numeric' } }}

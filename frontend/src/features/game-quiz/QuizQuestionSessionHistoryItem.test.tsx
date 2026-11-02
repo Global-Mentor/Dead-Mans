@@ -63,6 +63,34 @@ describe('quiz submission history', () => {
     expect(screen.getByRole('button', { name: /Paris/ })).toHaveTextContent('!2')
   })
 
+  it.each(['en', 'ru', 'uk', 'pl'] as const)(
+    'localizes every participant screenshot answer in %s',
+    async (locale) => {
+      await i18n.changeLanguage(locale)
+      const names = {
+        en: 'Port Reeker',
+        ru: 'Порт-Рикер',
+        uk: 'Порт-Рікер',
+        pl: 'Port Reeker',
+      }
+      const view = renderWithAppProviders(
+        <QuizQuestionSessionHistoryItem
+          questionSession={{
+            ...session,
+            image: { imageUrl: '/test.png', mapNames: names, optionNames: { right: names } },
+            submissions: [session.submissions[1]!],
+          }}
+          currentUserId={null}
+          resultsOnly
+        />,
+      )
+      const result = view.container.querySelector('[data-answer-result]')
+      expect(result).toHaveTextContent(`Alice: ${names[locale]}`)
+      expect(result).not.toHaveTextContent('Paris')
+      await i18n.changeLanguage('en')
+    },
+  )
+
   it('preserves each participant and the personal result after the next question starts', () => {
     const view = renderWithAppProviders(
       <QuizQuestionSessionHistoryItem questionSession={session} currentUserId="alice" />,

@@ -29,6 +29,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IGameModifierService, GameModifierService>();
         services.AddScoped<IGameNotificationService, GameNotificationService>();
         services.AddScoped<IGameQuestionService, GameQuestionService>();
+        services.AddScoped<IQuizScreenshotService, QuizScreenshotService>();
         services.AddScoped<IGameQuizService, GameQuizService>();
         services.AddScoped<IGameRegistrationService, GameRegistrationService>();
         services.AddScoped<IGameLifecycleService, GameLifecycleService>();

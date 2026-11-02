@@ -106,6 +106,7 @@ const translations = {
       catalogQuestions: {
         label: 'Question catalog',
       },
+      catalogScreenshots: { label: 'Screenshot catalog' },
       roleAdministration: {
         label: 'User roles',
       },
@@ -220,6 +221,7 @@ const translations = {
       catalogQuestions: {
         label: 'Каталог вопросов',
       },
+      catalogScreenshots: { label: 'Каталог скриншотов' },
       roleAdministration: {
         label: 'Роли пользователей',
       },
@@ -334,6 +336,7 @@ const translations = {
       catalogQuestions: {
         label: 'Каталог питань',
       },
+      catalogScreenshots: { label: 'Каталог знімків екрана' },
       roleAdministration: {
         label: 'Ролі користувачів',
       },
@@ -448,6 +451,7 @@ const translations = {
       catalogQuestions: {
         label: 'Katalog pytań',
       },
+      catalogScreenshots: { label: 'Katalog zrzutów ekranu' },
       roleAdministration: {
         label: 'Role użytkowników',
       },

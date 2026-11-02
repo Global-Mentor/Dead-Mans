@@ -2,6 +2,8 @@ namespace backend.Data.Entities;
 
 public class GameEnabledQuestion
 {
+    public string? ImageSnapshotJson { get; set; }
+
     public Guid GameId { get; set; }
 
     public Guid QuestionId { get; set; }

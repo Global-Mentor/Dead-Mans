@@ -13,6 +13,7 @@ import {
 } from '../../../shared/ui/index.ts'
 
 interface QuestionCatalogMenuProps {
+  screenshots?: boolean
   children: ReactNode
   catalogState?: { message: string; isLoading: boolean; isError: boolean; retry: () => void }
   canAddQuestion: boolean
@@ -20,6 +21,7 @@ interface QuestionCatalogMenuProps {
   isCategoriesError: boolean
   isImportingQuestions: boolean
   isDownloadingTemplate: boolean
+  onUploadScreenshots?: () => void
   onCreateQuestion: () => void
   onDownloadTemplate: () => void
   onUploadQuestions: () => void
@@ -28,6 +30,7 @@ interface QuestionCatalogMenuProps {
 }
 
 export function QuestionCatalogMenu({
+  screenshots = false,
   children,
   catalogState,
   canAddQuestion,
@@ -36,6 +39,7 @@ export function QuestionCatalogMenu({
   isImportingQuestions,
   isDownloadingTemplate,
   onCreateQuestion,
+  onUploadScreenshots,
   onDownloadTemplate,
   onUploadQuestions,
   onManageCategories,
@@ -50,27 +54,36 @@ export function QuestionCatalogMenu({
   }
   const actions = (
     <Stack direction="row" gap={1} flexWrap="wrap">
-      <AppButton tone="primary" onClick={onCreateQuestion} disabled={!canAddQuestion}>
-        {t('gameCatalog.questions.add')}
-      </AppButton>
-      <HelpTooltip title={t('gameCatalog.questions.importGroupDescription')}>
-        <AppButton
-          tone="secondary"
-          endIcon={
-            <SvgIcon fontSize="small">
-              <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            </SvgIcon>
-          }
-          loading={isImportingQuestions || isDownloadingTemplate}
-          aria-label={t('gameCatalog.questions.importGroupExpand')}
-          aria-haspopup="menu"
-          aria-expanded={menu !== null}
-          aria-controls={menu !== null ? menuId : undefined}
-          onClick={(event) => setMenu(event.currentTarget)}
-        >
-          {t('gameCatalog.questions.importGroupTitle')}
+      {!screenshots ? (
+        <AppButton tone="primary" onClick={onCreateQuestion} disabled={!canAddQuestion}>
+          {t('gameCatalog.questions.add')}
         </AppButton>
-      </HelpTooltip>
+      ) : null}
+      {screenshots && onUploadScreenshots ? (
+        <AppButton tone="secondary" onClick={onUploadScreenshots} disabled={!canAddQuestion}>
+          {t('gameCatalog.screenshots.title')}
+        </AppButton>
+      ) : null}
+      {!screenshots ? (
+        <HelpTooltip title={t('gameCatalog.questions.importGroupDescription')}>
+          <AppButton
+            tone="secondary"
+            endIcon={
+              <SvgIcon fontSize="small">
+                <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              </SvgIcon>
+            }
+            loading={isImportingQuestions || isDownloadingTemplate}
+            aria-label={t('gameCatalog.questions.importGroupExpand')}
+            aria-haspopup="menu"
+            aria-expanded={menu !== null}
+            aria-controls={menu !== null ? menuId : undefined}
+            onClick={(event) => setMenu(event.currentTarget)}
+          >
+            {t('gameCatalog.questions.importGroupTitle')}
+          </AppButton>
+        </HelpTooltip>
+      ) : null}
       <AppButton tone="secondary" onClick={onManageCategories}>
         {t('gameCatalog.questions.categoryManagement')}
       </AppButton>
@@ -131,7 +144,9 @@ export function QuestionCatalogMenu({
     return (
       <PageStatePanel
         headingLevel="h1"
-        title={t('gameCatalog.questions.title')}
+        title={t(
+          screenshots ? 'gameCatalog.screenshots.catalogTitle' : 'gameCatalog.questions.title',
+        )}
         message={catalogState.message}
         showSpinner={catalogState.isLoading}
         tone={catalogState.isError ? 'error' : 'default'}
@@ -143,7 +158,13 @@ export function QuestionCatalogMenu({
   }
   return (
     <SectionCard>
-      <SectionHeader headingLevel="h1" title={t('gameCatalog.questions.title')} actions={actions} />
+      <SectionHeader
+        headingLevel="h1"
+        title={t(
+          screenshots ? 'gameCatalog.screenshots.catalogTitle' : 'gameCatalog.questions.title',
+        )}
+        actions={actions}
+      />
       {content}
     </SectionCard>
   )

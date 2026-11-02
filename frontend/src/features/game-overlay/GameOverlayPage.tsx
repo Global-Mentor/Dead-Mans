@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   BroadcastBackdrop,
+  BroadcastScreenshot,
   BroadcastTeam,
   BroadcastBoard,
   BroadcastRound,
@@ -72,7 +73,15 @@ const OverlayFrame = memo(function OverlayFrame({
         pointerEvents: 'none',
       }}
     >
-      {frame?.phase === 'leaderboard' && frame.leaderboard ? (
+      {frame?.phase === 'screenshot' && frame.quizQuestion ? (
+        <>
+          <BroadcastBackdrop visible />
+          <BroadcastScreenshot
+            key={frame.quizQuestion.questionSessionId}
+            state={frame.quizQuestion}
+          />
+        </>
+      ) : frame?.phase === 'leaderboard' && frame.leaderboard ? (
         <>
           <BroadcastBackdrop visible />
           <BroadcastLeaderboard

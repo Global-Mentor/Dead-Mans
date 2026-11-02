@@ -17,7 +17,10 @@ public sealed record UserGameQuestionAnswerHistoryItem(
     int AwardedPoints,
     string? SubmittedAnswer,
     Guid? AnsweredByUserId
-);
+)
+{
+    public backend.Domain.Questions.QuizImageSnapshot? Image { get; init; }
+}
 
 public sealed record UserGameQuizManualAwardHistoryItem(
     Guid AwardId,
@@ -75,6 +78,8 @@ public sealed record GameHistoryPlayerSummary(
     DateTime? LastActivityAtUtc
 );
 
+public sealed record GameQuizFormatStatistics(int Attempts, int CorrectAnswers, int Points);
+
 public sealed record GameHistoryQuizPlayerSummary(
     Guid UserId,
     string DisplayName,
@@ -84,7 +89,11 @@ public sealed record GameHistoryQuizPlayerSummary(
     int Attempts,
     int CorrectAnswers,
     DateTime? LastActivityAtUtc
-);
+)
+{
+    public GameQuizFormatStatistics? TextStatistics { get; init; }
+    public GameQuizFormatStatistics? ScreenshotStatistics { get; init; }
+}
 
 public sealed record GameHistoryModifierActivationItem(
     Guid ActivationId,
@@ -223,7 +232,10 @@ public sealed record GameHistoryQuizQuestionSessionItem(
     Guid? CorrectOptionId,
     IReadOnlyList<GameQuizOption> Options,
     IReadOnlyList<GameHistoryQuizSubmissionItem> Submissions
-);
+)
+{
+    public backend.Domain.Questions.QuizImageSnapshot? Image { get; init; }
+}
 
 public sealed record GameHistoryQuizManualAwardItem(
     Guid AwardId,

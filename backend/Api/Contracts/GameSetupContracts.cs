@@ -12,7 +12,8 @@ public sealed record UpdateGameSetupRequestDto(
     IReadOnlyList<UpdateGameSetupCellDto> Cells,
     IReadOnlyList<string>? EnabledModifierIds = null,
     IReadOnlyList<string>? EnabledQuestionIds = null,
-    int QuizAnswerDurationSeconds = 60
+    int QuizAnswerDurationSeconds = 60,
+    int ScreenshotAnswerDurationSeconds = 60
 );
 
 public sealed record GameSetupSnapshotDto(
@@ -29,5 +30,6 @@ public sealed record GameSetupSnapshotDto(
     IReadOnlyList<string> EnabledModifierIds,
     IReadOnlyList<string> EnabledQuestionIds,
     int QuizAnswerDurationSeconds = 60,
-    int? TeamLimit = 10
+    int? TeamLimit = 10,
+    int ScreenshotAnswerDurationSeconds = 60
 );

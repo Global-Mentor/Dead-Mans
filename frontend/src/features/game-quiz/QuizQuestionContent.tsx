@@ -1,7 +1,11 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
-import { RoundBriefingPanel } from '../../shared/game-ui/index.ts'
+import {
+  RoundBriefingPanel,
+  QuizScreenshotImage,
+  quizOptionText,
+} from '../../shared/game-ui/index.ts'
 import {
   ImageFrame,
   InlineNotice,
@@ -11,7 +15,7 @@ import {
 } from '../../shared/ui/index.ts'
 import { QuizQuestionMetadata } from './QuizQuestionMetadata.tsx'
 import { QuizTextBlock } from './QuizTextBlock.tsx'
-import { useQuizCountdown } from './use-quiz-countdown.ts'
+import { useQuizCountdown } from '../../shared/game-ui/index.ts'
 
 export function QuizQuestionContent({
   state,
@@ -32,7 +36,7 @@ export function QuizQuestionContent({
   showQuestionText?: boolean
   showMetadata?: boolean
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const isOpen = state.status === 'open'
   const hasAnswered = state.mySelectedOptionId != null
   const countdown = useQuizCountdown(
@@ -54,7 +58,7 @@ export function QuizQuestionContent({
         ...(embedded ? { py: 1, whiteSpace: 'pre-wrap' } : {}),
       }}
     >
-      {state.text}
+      {state.image ? t('common.quizImage.question') : state.text}
     </Typography>
   )
 
@@ -166,6 +170,7 @@ export function QuizQuestionContent({
           {showQuestionText ? question : null}
         </>
       )}
+      {state.image ? <QuizScreenshotImage image={state.image} /> : null}
       <Box sx={{ containerType: 'inline-size' }}>
         <Box
           sx={{
@@ -201,7 +206,7 @@ export function QuizQuestionContent({
                 marker={`!${index + 1}`}
                 data-quiz-result={resultKind}
                 aria-label={[
-                  option.text,
+                  quizOptionText(state.image, option.optionId, option.text, i18n.language),
                   resultKind === 'correct' ? t('gameQuiz.answerCorrectStatus') : null,
                   isSelected ? t('gameQuiz.yourChoice') : null,
                   !isOpen && result ? `${result.answerCount} · ${result.percentage}%` : null,
@@ -225,7 +230,9 @@ export function QuizQuestionContent({
                       : undefined
                 }
               >
-                <span>{option.text}</span>
+                <span>
+                  {quizOptionText(state.image, option.optionId, option.text, i18n.language)}
+                </span>
                 {!isOpen && result ? (
                   <span>
                     {result.answerCount} · {result.percentage}%
@@ -238,7 +245,12 @@ export function QuizQuestionContent({
       </Box>
       {!embedded && !isOpen && state.correctOptionId ? (
         <QuizTextBlock label={t('gameQuiz.correctAnswerHeading')} inline>
-          {state.options.find((option) => option.optionId === state.correctOptionId)?.text}
+          {quizOptionText(
+            state.image,
+            state.correctOptionId,
+            state.options.find((option) => option.optionId === state.correctOptionId)?.text ?? '',
+            i18n.language,
+          )}
         </QuizTextBlock>
       ) : null}
       {isOpen && hasAnswered ? (

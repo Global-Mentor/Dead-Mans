@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using backend.Application.Contracts;
+using backend.Domain.Questions;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -117,7 +118,8 @@ public sealed partial class DbGameQuestionRepository
                 x.AskedInQuizQuestionSessions
                     .OrderByDescending(session => session.AskedAtUtc)
                     .Select(session => (DateTime?)session.AskedAtUtc)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                x.ImageSnapshotJson
             );
     }
 
@@ -134,7 +136,8 @@ public sealed partial class DbGameQuestionRepository
         int AskedTotalCount,
         int SubmissionTotalCount,
         int CorrectSubmissionTotalCount,
-        DateTime? LastAskedAtUtc
+        DateTime? LastAskedAtUtc,
+        string? ImageSnapshotJson
     )
     {
         public GameQuestionCatalogItem ToCatalogItem() => new(
@@ -143,7 +146,8 @@ public sealed partial class DbGameQuestionRepository
             CorrectSubmissionTotalCount,
             SubmissionTotalCount == 0 ? 0m : 100m * CorrectSubmissionTotalCount / SubmissionTotalCount,
             LastAskedAtUtc
-        );
+        )
+        { Image = QuizImageSnapshot.FromJson(ImageSnapshotJson) };
     }
 
     private static string NormalizeFilter(string? value)

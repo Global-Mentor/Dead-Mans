@@ -27,6 +27,7 @@ export function AdminGameQuestionsPage() {
     toggleQuestion,
     setQuestionsEnabled,
     setQuizAnswerDuration,
+    setScreenshotAnswerDuration,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -88,6 +89,7 @@ export function AdminGameQuestionsPage() {
         onToggle={toggleQuestion}
         onBulkSetEnabled={setQuestionsEnabled}
         onDurationChange={setQuizAnswerDuration}
+        onScreenshotDurationChange={setScreenshotAnswerDuration}
         onDurationCommit={commitDraft}
         actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
