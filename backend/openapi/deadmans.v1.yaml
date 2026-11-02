@@ -6696,6 +6696,11 @@ components:
         botConnected: { type: boolean }
         broadcasterConnected: { type: boolean }
         eventSubConnected: { type: boolean }
+        eventSubErrorCode:
+          type: string
+          nullable: true
+          enum: [subscription_limit, rate_limited, authorization_required, webhook_unreachable, invalid_configuration, unavailable]
+        eventSubRetryAtUtc: { type: string, format: date-time, nullable: true }
         accessRevoked: { type: boolean }
         botUserId: { type: string, nullable: true }
         broadcasterUserId: { type: string, nullable: true }

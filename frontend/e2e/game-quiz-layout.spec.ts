@@ -1369,6 +1369,35 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
+test('EventSub explains subscription limits and clears the warning after recovery', async ({
+  page,
+}, info) => {
+  const fixture = await mockQuiz(page)
+  let connected = false
+  await page.route('**/integrations/twitch/status', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        botConnected: true,
+        broadcasterConnected: true,
+        eventSubConnected: connected,
+        eventSubErrorCode: connected ? null : 'subscription_limit',
+        eventSubRetryAtUtc: '2026-11-02T15:30:00Z',
+      },
+    }),
+  )
+  await page.goto('/panel/game-quiz')
+  await openQuizManagement(page)
+  const panel = page.getByTestId('quiz-twitch-panel')
+  await expect(panel.getByText(/Достигнут лимит подписок Twitch/)).toBeVisible()
+  await expect(panel.getByText(/Следующая автоматическая попытка/)).toBeVisible()
+  await page.screenshot({ path: info.outputPath('eventsub-explanation.png') })
+  connected = true
+  fixture.notifyTwitchChanged()
+  await expect(panel.getByText('EventSub подключён', { exact: true })).toBeVisible()
+  await expect(panel.getByText(/Достигнут лимит подписок Twitch/)).toHaveCount(0)
+})
+
 test('EventSub activation keeps pending and failed states honest and survives reload', async ({
   page,
 }) => {

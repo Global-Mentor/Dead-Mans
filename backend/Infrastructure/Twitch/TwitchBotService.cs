@@ -46,7 +46,6 @@ internal sealed class TwitchBotService : ITwitchBotService
     }
 
     public bool IsEnabled => _options.Enabled;
-    internal bool IsEventSubConnected => _eventSubHealth.IsConnected;
 
     public async Task<TwitchBotStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
@@ -56,18 +55,21 @@ internal sealed class TwitchBotService : ITwitchBotService
         var broadcaster = connections.SingleOrDefault(x => x.Role == "broadcaster");
         var publication = await _db.TwitchQuizPublications.AsNoTracking()
             .OrderByDescending(x => x.CreatedAtUtc).FirstOrDefaultAsync(cancellationToken);
+        var eventSub = _eventSubHealth.Snapshot;
         return new(
             true,
             bot is { RevokedAtUtc: null } && bot.TwitchUserId == _options.ExpectedBotUserId
                 && TwitchBotOptions.BotScopes.All(bot.Scopes.Contains),
             broadcaster is { RevokedAtUtc: null } && broadcaster.TwitchUserId == _options.ExpectedBroadcasterUserId
                 && TwitchBotOptions.BroadcasterScopes.All(broadcaster.Scopes.Contains),
-            _eventSubHealth.IsConnected,
+            eventSub.Connected,
             connections.Any(x => x.RevokedAtUtc != null),
             bot?.TwitchUserId,
             broadcaster?.TwitchUserId,
             connections.Select(x => x.LastError).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? publication?.LastError,
-            publication is null ? null : Map(publication)
+            publication is null ? null : Map(publication),
+            eventSub.ErrorCode,
+            eventSub.RetryAtUtc
         );
     }
 
@@ -432,14 +434,38 @@ internal sealed class TwitchBotService : ITwitchBotService
         await SubscriptionGate.WaitAsync(cancellationToken);
         try
         {
+            if (_eventSubHealth.Snapshot.RetryAtUtc > _clock.GetUtcNow().UtcDateTime)
+                return _eventSubHealth.IsConnected;
             var connected = await _api.EnsureEventSubSubscriptionAsync(cancellationToken);
-            _eventSubHealth.SetConnected(connected);
+            _eventSubHealth.SetResult(connected, _clock.GetUtcNow().UtcDateTime);
             return connected;
         }
-        catch
+        catch (HttpRequestException exception)
         {
-            _eventSubHealth.SetConnected(false);
-            throw;
+            var failure = exception as TwitchEventSubConnectionException;
+            var code = failure?.Code ?? (exception.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden => "authorization_required",
+                System.Net.HttpStatusCode.TooManyRequests => "rate_limited",
+                _ => "unavailable"
+            });
+            _eventSubHealth.SetFailure(code, _clock.GetUtcNow().UtcDateTime, failure?.RetryAfter);
+            return false;
+        }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            _eventSubHealth.SetFailure("authorization_required", _clock.GetUtcNow().UtcDateTime);
+            return false;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _eventSubHealth.SetFailure("unavailable", _clock.GetUtcNow().UtcDateTime);
+            return false;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            _eventSubHealth.SetFailure("unavailable", _clock.GetUtcNow().UtcDateTime);
+            return false;
         }
         finally
         {
@@ -541,7 +567,19 @@ internal sealed class TwitchBotService : ITwitchBotService
 
 internal sealed class TwitchEventSubHealth
 {
-    private int _isConnected;
-    public bool IsConnected => Volatile.Read(ref _isConnected) == 1;
-    public void SetConnected(bool value) => Volatile.Write(ref _isConnected, value ? 1 : 0);
+    internal sealed record State(bool Connected, string? ErrorCode, DateTime? RetryAtUtc, int Failures);
+    private State _state = new(false, null, null, 0);
+    public State Snapshot => Volatile.Read(ref _state);
+    public bool IsConnected => Snapshot.Connected;
+    public void SetConnected(bool value) => Volatile.Write(ref _state, new(value, null, null, 0));
+    public void SetResult(bool connected, DateTime now) => Volatile.Write(ref _state,
+        new(connected, null, now.AddSeconds(connected ? 300 : 5), 0));
+    public void SetFailure(string code, DateTime now, TimeSpan? retryAfter = null)
+    {
+        var failures = Math.Min(Snapshot.Failures + 1, 5);
+        var delay = TimeSpan.FromSeconds(Math.Min(300, 30 * Math.Pow(2, failures - 1)));
+        if (code == "subscription_limit") delay = TimeSpan.FromMinutes(5);
+        if (retryAfter > delay) delay = retryAfter.Value;
+        Volatile.Write(ref _state, new(false, code, now.Add(delay), failures));
+    }
 }

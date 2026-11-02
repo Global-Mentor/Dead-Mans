@@ -2751,6 +2751,10 @@ export interface components {
             botConnected: boolean;
             broadcasterConnected: boolean;
             eventSubConnected: boolean;
+            /** @enum {string|null} */
+            eventSubErrorCode?: "subscription_limit" | "rate_limited" | "authorization_required" | "webhook_unreachable" | "invalid_configuration" | "unavailable" | null;
+            /** Format: date-time */
+            eventSubRetryAtUtc?: string | null;
             accessRevoked: boolean;
             botUserId?: string | null;
             broadcasterUserId?: string | null;

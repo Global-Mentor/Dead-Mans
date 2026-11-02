@@ -13,7 +13,6 @@ internal sealed class TwitchBotWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var subscriptionTick = 299;
         var cleanupTick = 299;
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         while (await timer.WaitForNextTickAsync(stoppingToken))
@@ -23,11 +22,7 @@ internal sealed class TwitchBotWorker : BackgroundService
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var service = (TwitchBotService)scope.ServiceProvider.GetRequiredService<backend.Application.Abstractions.ITwitchBotService>();
                 if (!service.IsEnabled) continue;
-                if (++subscriptionTick >= (service.IsEventSubConnected ? 300 : 5))
-                {
-                    subscriptionTick = 0;
-                    await service.EnsureSubscriptionAsync(stoppingToken);
-                }
+                await service.EnsureSubscriptionAsync(stoppingToken);
                 await service.ProcessNextAsync(stoppingToken);
                 if (++cleanupTick >= 300)
                 {

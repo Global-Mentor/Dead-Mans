@@ -34,7 +34,9 @@ public sealed record TwitchBotStatus(
     string? BotUserId,
     string? BroadcasterUserId,
     string? LastError,
-    TwitchQuizPublicationState? Publication
+    TwitchQuizPublicationState? Publication,
+    string? EventSubErrorCode = null,
+    DateTime? EventSubRetryAtUtc = null
 );
 
 public sealed record TwitchEventSubMessage(

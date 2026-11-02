@@ -87,7 +87,11 @@ Run `npm run test:twitch-proxy` and `npm run check:text-style` to verify the loc
 
 The launcher reads the API's configuration layers, including JSON comments and trailing commas, and applies environment overrides. The managed proxy always uses port 5290 to match the tunnel. `TWITCH_WEBHOOK_PROXY_PORT` remains available only for standalone `npm run dev:twitch-proxy` diagnostics.
 
-The worker restores EventSub automatically using the saved grants. If Twitch revokes a grant, reconnect the affected account in the panel. A disabled bot remains disabled; startup does not enable incomplete configurations or reconnect accounts on the operator's behalf.
+The worker restores EventSub automatically using the saved grants. Healthy connections are checked every five minutes; pending verification is checked after five seconds. Expected connection failures use exponential backoff from 30 seconds to five minutes and honor a longer Twitch retry delay. The manual connection button shares the same cooldown. The status includes a stable `eventSubErrorCode` and `eventSubRetryAtUtc`, which the panel localizes with an actionable explanation.
+
+Failed webhook subscriptions at the exact configured callback are removed before a delayed retry. Connections at other callback URLs are preserved. Twitch allows at most three subscriptions with the same type and condition; expired local quick tunnels can occupy this limit even while their subscriptions still report `enabled`. Inspect and remove only confirmed obsolete local subscriptions, preserving working environments.
+
+If Twitch revokes a grant, reconnect the affected account in the panel. A disabled bot remains disabled; startup does not enable incomplete configurations or reconnect accounts on the operator's behalf.
 
 ## Operating rules
 
