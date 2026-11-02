@@ -38,6 +38,7 @@ const GameAdminToolsHost = lazyPanelPage(
     translations.gameQuiz,
     translations.gameHistory,
     translations.gameRegistration,
+    translations.gameApplication,
   ],
 )
 const GameBoardQuizRealtimeSync = lazyPanelPage(
