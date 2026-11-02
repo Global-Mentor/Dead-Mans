@@ -6,6 +6,7 @@ import { RankBadge } from '../../primitives/metrics/RankBadge.tsx'
 
 interface RankingEntry {
   id: string
+  rank?: number
   name: string
   value: ReactNode
   detail: ReactNode
@@ -100,7 +101,7 @@ export function RankingList({
             }}
           >
             <Box role="cell">
-              <RankBadge rank={index + 1} compact={compact || !centered} />
+              <RankBadge rank={entry.rank ?? index + 1} compact={compact || !centered} />
             </Box>
             <Box role="cell" sx={{ minWidth: 0 }}>
               <Typography variant="body2" fontWeight={750}>

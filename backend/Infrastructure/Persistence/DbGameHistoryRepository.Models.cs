@@ -200,7 +200,6 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
 
         public long EventCount { get; set; }
 
-        public long CorrectAnswerCount { get; set; }
 
         public DateTime? LastActivityAtUtc { get; set; }
     }

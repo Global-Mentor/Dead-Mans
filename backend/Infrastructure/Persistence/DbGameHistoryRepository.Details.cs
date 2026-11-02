@@ -372,12 +372,13 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             successfulModifierActivations,
             userDisplayNames
         );
-        var quizPlayerStats = BuildQuizPlayerStats(
-            quizSubmissionRows,
-            manualQuizAwards,
-            userDisplayNames,
-            spentQuizPointsByUserId
-        );
+        var quizPlayerStats = GameQuizLeaderboardCalculator.Calculate(
+            quizSubmissionRows.Select(row => new GameQuizLeaderboardFact(row.UserId,
+                ResolveDisplayName(row.DisplayName, userDisplayNames, row.UserId), row.Points, true, row.IsCorrect, row.OccurredAtUtc))
+                .Concat(manualQuizAwards.Select(row => new GameQuizLeaderboardFact(row.AwardedToUserId,
+                    ResolveDisplayName(row.AwardedToDisplayName, userDisplayNames, row.AwardedToUserId), row.Points, false, false, row.AwardedAtUtc))),
+            spentQuizPointsByUserId);
+
         var mainModifierActivations = modifierActivations
             .Select(
                 x =>

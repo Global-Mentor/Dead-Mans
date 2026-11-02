@@ -24,3 +24,7 @@ export * from './BroadcastBackdrop.tsx'
 
 export * from './TeamHeading.tsx'
 export * from './TeamRoster.tsx'
+export * from './TeamStandingsTable.tsx'
+
+export { QuizStandingsList } from './QuizStandingsList.tsx'
+export { sortQuizStandings } from './quiz-standings.ts'
