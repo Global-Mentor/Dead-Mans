@@ -15,6 +15,32 @@ namespace backend.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class GameOverlayController(IGameOverlayService service) : ControllerBase
 {
+    [HttpGet("key")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> GetKey(CancellationToken cancellationToken)
+    {
+        var ownerId = HttpContext.TryGetUserId();
+        if (ownerId is null) return Unauthorized();
+        return Ok(new GameOverlaySavedKeyDto(await service.ReadKeyAsync(ownerId.Value, cancellationToken)));
+    }
+
+    [HttpGet("games/{gameId:guid}/leaderboard")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> GetLeaderboardState(Guid gameId, CancellationToken cancellationToken)
+    {
+        var state = await service.ReadLeaderboardStateAsync(gameId, cancellationToken);
+        return state is null ? NotFound() : Ok(new GameOverlayLeaderboardStateDto(state.Enabled, state.Page, state.PageCount, state.Kind));
+    }
+
+    [HttpPut("games/{gameId:guid}/leaderboard")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> SetLeaderboardState(Guid gameId, SetGameOverlayLeaderboardRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Enabled is not { } enabled || request.Page is < 0 || request.Kind is not ("teams" or "quiz")) return BadRequest();
+        var state = await service.SetLeaderboardStateAsync(gameId, enabled, cancellationToken, request.Page, request.Kind);
+        return state is null ? NotFound() : Ok(new GameOverlayLeaderboardStateDto(state.Enabled, state.Page, state.PageCount, state.Kind));
+    }
+
     [HttpPost("key")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     public async Task<IActionResult> RotateKey(CancellationToken cancellationToken)
@@ -67,7 +93,11 @@ public sealed class GameOverlayController(IGameOverlayService service) : Control
                 new GameOverlayRoundDto(summary.Card.Id, summary.Card.Title, summary.Card.Cost, summary.Card.ImageUrl,
                     [], summary.Card.ColumnLabel, summary.Card.RowLabel), summary.TeamName, summary.TeamSlotIndex,
                 summary.KillsCount, summary.BountyCount, summary.KillsScore, summary.BountyScore,
-                summary.ScoreDetails.ToDto()) : null));
+                summary.ScoreDetails.ToDto()) : null,
+            snapshot.Leaderboard?.Select(team => new GameOverlayLeaderboardEntryDto(team.Rank, team.Name,
+                team.SlotIndex, team.Players, team.RoundsPlayed, team.TotalKills, team.TotalBounties, team.FinalScore)).ToArray(), snapshot.LeaderboardPage,
+            snapshot.QuizLeaderboard?.Select(player => new GameOverlayQuizLeaderboardEntryDto(
+                player.DisplayName, player.Points, player.Attempts, player.CorrectAnswers)).ToArray()));
     }
 
     [HttpGet("test")]

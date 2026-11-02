@@ -1,6 +1,12 @@
 const translations = {
   en: {
-    savedLinkHelp: 'A link already exists. Use the one saved in OBS or create a new one.',
+    leaderboardPage: 'Page {{current}} of {{total}}',
+    savedLinkHelp:
+      'This older link cannot be retrieved. Create a new link once to enable copying after reload.',
+    keyHelp:
+      'Keep the link private. You can copy it again here. A new link disables the previous one.',
+    error: 'Unable to load or update the link. Try again.',
+
     replace: 'New link',
     create: 'Create link',
     setupHelp: 'In OBS, add a Browser source, paste the link and set its size to 1920 × 1080.',
@@ -28,21 +34,24 @@ const translations = {
     imageError: 'Image unavailable',
 
     title: 'OBS overlay',
-    keyHelp:
-      'Keep the link private and save it in OBS before leaving this page. A new link disables the previous one.',
     revoke: 'Revoke link',
     revoked: 'Link revoked.',
     link: 'Secret OBS link',
     copy: 'Copy link',
     copied: 'Copied',
     copyError: 'Copy failed. Select the link and copy it manually.',
-    error: 'Unable to update the link. Try again.',
     teamFallback: 'Team {{number}}',
     emptyRoster: 'No players',
     board: 'Game board',
   },
   ru: {
-    savedLinkHelp: 'Ссылка уже создана. Используйте сохранённую в OBS или создайте новую.',
+    leaderboardPage: 'Страница {{current}} из {{total}}',
+    savedLinkHelp:
+      'Эту старую ссылку восстановить нельзя. Один раз создайте новую, чтобы копировать её после обновления страницы.',
+    keyHelp:
+      'Не публикуйте ссылку. Её можно снова скопировать здесь. Новая ссылка отключит прежнюю.',
+    error: 'Не удалось загрузить или обновить ссылку. Попробуйте ещё раз.',
+
     replace: 'Новая ссылка',
     create: 'Создать ссылку',
     setupHelp: 'В OBS добавьте источник «Браузер», вставьте ссылку и задайте размер 1920 × 1080.',
@@ -70,21 +79,24 @@ const translations = {
     imageError: 'Изображение недоступно',
 
     title: 'Оверлей OBS',
-    keyHelp:
-      'Не публикуйте ссылку и сохраните её в OBS до ухода со страницы. Новая ссылка отключит прежнюю.',
     revoke: 'Отозвать ссылку',
     revoked: 'Ссылка отозвана.',
     link: 'Секретная ссылка OBS',
     copy: 'Копировать ссылку',
     copied: 'Скопировано',
     copyError: 'Не удалось скопировать. Выделите ссылку и скопируйте её вручную.',
-    error: 'Не удалось обновить ссылку. Попробуйте ещё раз.',
     teamFallback: 'Команда {{number}}',
     emptyRoster: 'Нет игроков',
     board: 'Игровая доска',
   },
   uk: {
-    savedLinkHelp: 'Посилання вже створено. Використовуйте збережене в OBS або створіть нове.',
+    leaderboardPage: 'Сторінка {{current}} з {{total}}',
+    savedLinkHelp:
+      'Це старе посилання відновити неможливо. Один раз створіть нове, щоб копіювати його після оновлення сторінки.',
+    keyHelp:
+      'Не публікуйте посилання. Його можна знову скопіювати тут. Нове посилання вимкне попереднє.',
+    error: 'Не вдалося завантажити або оновити посилання. Спробуйте ще раз.',
+
     replace: 'Нове посилання',
     create: 'Створити посилання',
     setupHelp: 'В OBS додайте джерело «Браузер», вставте посилання та задайте розмір 1920 × 1080.',
@@ -112,21 +124,24 @@ const translations = {
     imageError: 'Зображення недоступне',
 
     title: 'Оверлей OBS',
-    keyHelp:
-      'Не публікуйте посилання та збережіть його в OBS до виходу зі сторінки. Нове посилання вимкне попереднє.',
     revoke: 'Відкликати посилання',
     revoked: 'Посилання відкликано.',
     link: 'Секретне посилання OBS',
     copy: 'Копіювати посилання',
     copied: 'Скопійовано',
     copyError: 'Не вдалося скопіювати. Виділіть посилання та скопіюйте його вручну.',
-    error: 'Не вдалося оновити посилання. Спробуйте ще раз.',
     teamFallback: 'Команда {{number}}',
     emptyRoster: 'Немає гравців',
     board: 'Ігрова дошка',
   },
   pl: {
-    savedLinkHelp: 'Link już istnieje. Użyj zapisanego w OBS lub utwórz nowy.',
+    leaderboardPage: 'Strona {{current}} z {{total}}',
+    savedLinkHelp:
+      'Tego starego linku nie można odzyskać. Utwórz nowy jeden raz, aby kopiować go po odświeżeniu strony.',
+    keyHelp:
+      'Nie udostępniaj linku. Możesz go ponownie skopiować tutaj. Nowy link wyłączy poprzedni.',
+    error: 'Nie udało się wczytać lub zaktualizować linku. Spróbuj ponownie.',
+
     replace: 'Nowy link',
     create: 'Utwórz link',
     setupHelp: 'W OBS dodaj źródło „Przeglądarka”, wklej link i ustaw rozmiar 1920 × 1080.',
@@ -154,15 +169,12 @@ const translations = {
     imageError: 'Obraz niedostępny',
 
     title: 'Nakładka OBS',
-    keyHelp:
-      'Nie udostępniaj linku i zapisz go w OBS przed opuszczeniem strony. Nowy link wyłączy poprzedni.',
     revoke: 'Unieważnij link',
     revoked: 'Link unieważniony.',
     link: 'Prywatny link OBS',
     copy: 'Kopiuj link',
     copied: 'Skopiowano',
     copyError: 'Nie udało się skopiować. Zaznacz link i skopiuj go ręcznie.',
-    error: 'Nie udało się zaktualizować linku. Spróbuj ponownie.',
     teamFallback: 'Drużyna {{number}}',
     emptyRoster: 'Brak graczy',
     board: 'Plansza gry',

@@ -274,61 +274,6 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .ToArray();
     }
 
-    private static GameHistoryQuizPlayerSummary[] BuildQuizPlayerStats(
-        IReadOnlyList<LeaderboardQuizRow> quizSubmissions,
-        IReadOnlyList<QuizManualAwardRow> manualAwards,
-        IReadOnlyDictionary<Guid, string> userDisplayNames,
-        IReadOnlyDictionary<Guid, long> spentQuizPointsByUserId
-    )
-    {
-        var summary = new Dictionary<Guid, PlayerStatsAccumulator>();
-        foreach (var submission in quizSubmissions)
-        {
-            var row = GetOrCreatePlayerStatsEntry(
-                summary,
-                submission.UserId,
-                ResolveDisplayName(submission.DisplayName, userDisplayNames, submission.UserId)
-            );
-            row.Points += submission.Points;
-            row.EventCount += 1;
-            row.CorrectAnswerCount += submission.IsCorrect ? 1 : 0;
-            row.LastActivityAtUtc = Max(row.LastActivityAtUtc, submission.OccurredAtUtc);
-        }
-
-        foreach (var award in manualAwards)
-        {
-            var row = GetOrCreatePlayerStatsEntry(
-                summary,
-                award.AwardedToUserId,
-                ResolveDisplayName(award.AwardedToDisplayName, userDisplayNames, award.AwardedToUserId)
-            );
-            row.Points += award.Points;
-            row.LastActivityAtUtc = Max(row.LastActivityAtUtc, award.AwardedAtUtc);
-        }
-
-        return summary
-            .Select(x =>
-            {
-                var earnedPoints = SaturatingInt32.From(x.Value.Points);
-                var spentPoints = spentQuizPointsByUserId.GetValueOrDefault(x.Key);
-                return new GameHistoryQuizPlayerSummary(
-                    x.Key,
-                    x.Value.DisplayName,
-                    earnedPoints,
-                    SaturatingInt32.From(spentPoints),
-                    SaturatingInt32.From(Math.Max(0L, x.Value.Points - spentPoints)),
-                    SaturatingInt32.From(x.Value.EventCount),
-                    SaturatingInt32.From(x.Value.CorrectAnswerCount),
-                    x.Value.LastActivityAtUtc
-                );
-            })
-            .OrderByDescending(x => x.Points)
-            .ThenByDescending(x => x.CorrectAnswers)
-            .ThenByDescending(x => x.Attempts)
-            .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-    }
-
     private static void AddQuizLeaderboardRow(
         IDictionary<Guid, LeaderboardAccumulator> leaderboard,
         LeaderboardQuizRow row,

@@ -93,11 +93,6 @@ const translations = {
     title: 'Leaderboard',
     description:
       'Track the live standings of the current game separately from the archive of completed games.',
-    quizLeaderboardTitle: 'Quiz leaderboard',
-    quizLeaderboardDescription: 'All quiz points earned during this game, before spending.',
-    quizLeaderboardEarned: 'Earned',
-    quizLeaderboardEmpty: 'No quiz participants yet.',
-    quizLeaderboardAnswerStats: '{{correct}} correct of {{attempts}} attempts',
     archivePageTitle: 'Game history',
     archivePageDescription:
       'Archive of completed games with their final leaderboard, modifiers, quiz totals, and round history.',
@@ -139,7 +134,6 @@ const translations = {
     errorGameDetails: 'Failed to load the selected game.',
     selectGamePrompt: 'Choose a game from the list to view its history.',
     statusChipArchived: 'Archive',
-    currentTableTitle: 'Team standings',
     currentTableDescription:
       'Select a team to inspect its played cards without expanding the whole board.',
     noParticipants: 'No player list saved',
@@ -269,7 +263,6 @@ const translations = {
       totalBounties: 'Total bounties',
       recentRounds: 'Recent rounds',
       bestTeams: 'Team leaderboard',
-      bestTeamsDescription: 'Best card score minus all accumulated penalties inside this game.',
       allRoundsTitle: 'All played cards',
       allRoundsDescription:
         'Open each card to inspect kills, bounties, modifier impact, participants, and card media.',
@@ -401,11 +394,6 @@ const translations = {
     title: 'Лидерборд',
     description:
       'Следите отдельно за live-рейтингом текущей игры и отдельно за архивом завершённых игр.',
-    quizLeaderboardTitle: 'Лидерборд викторины',
-    quizLeaderboardDescription: 'Все очки, заработанные в викторине за эту игру, без учёта трат.',
-    quizLeaderboardEarned: 'Заработано',
-    quizLeaderboardEmpty: 'Участников викторины пока нет.',
-    quizLeaderboardAnswerStats: 'Верных ответов: {{correct}} из {{attempts}}',
     archivePageTitle: 'История игр',
     archivePageDescription:
       'Архив завершённых игр с финальным рейтингом, модификаторами, очками викторины и историей раундов.',
@@ -445,7 +433,6 @@ const translations = {
     errorGameDetails: 'Не удалось загрузить выбранную игру.',
     selectGamePrompt: 'Выберите игру в списке, чтобы посмотреть её историю.',
     statusChipArchived: 'Архив',
-    currentTableTitle: 'Таблица команд',
     currentTableDescription:
       'Выберите команду, чтобы посмотреть её сыгранные карточки без раскрытия всего списка.',
     noParticipants: 'Список игроков не сохранён',
@@ -575,7 +562,6 @@ const translations = {
       totalBounties: 'Всего наград',
       recentRounds: 'Последние раунды',
       bestTeams: 'Рейтинг команд',
-      bestTeamsDescription: 'Лучший счет карточки минус все накопленные штрафы в рамках этой игры.',
       allRoundsTitle: 'Все сыгранные карточки',
       allRoundsDescription:
         'Раскройте каждую карточку, чтобы увидеть убийства, награды, влияние модификаторов, участников и медиа.',
@@ -706,11 +692,6 @@ const translations = {
     title: 'Лідерборд',
     description:
       'Стежте окремо за live-рейтингом поточної гри та окремо за архівом завершених ігор.',
-    quizLeaderboardTitle: 'Лідерборд вікторини',
-    quizLeaderboardDescription: 'Усі очки, зароблені у вікторині за цю гру, без урахування витрат.',
-    quizLeaderboardEarned: 'Зароблено',
-    quizLeaderboardEmpty: 'Учасників вікторини ще немає.',
-    quizLeaderboardAnswerStats: 'Правильних відповідей: {{correct}} з {{attempts}}',
     archivePageTitle: 'Історія ігор',
     archivePageDescription:
       'Архів завершених ігор із фінальним рейтингом, модифікаторами, очками вікторини та історією раундів.',
@@ -751,7 +732,6 @@ const translations = {
     errorGameDetails: 'Не вдалося завантажити вибрану гру.',
     selectGamePrompt: 'Виберіть гру зі списку, щоб переглянути її історію.',
     statusChipArchived: 'Архів',
-    currentTableTitle: 'Таблиця команд',
     currentTableDescription:
       'Виберіть команду, щоб переглянути її зіграні картки без розкриття всього списку.',
     noParticipants: 'Список гравців не збережено',
@@ -881,8 +861,6 @@ const translations = {
       totalBounties: 'Усього нагород',
       recentRounds: 'Останні раунди',
       bestTeams: 'Рейтинг команд',
-      bestTeamsDescription:
-        'Найкращий рахунок картки мінус усі накопичені штрафи в межах цієї гри.',
       allRoundsTitle: 'Усі зіграні картки',
       allRoundsDescription:
         'Розкрийте кожну картку, щоб побачити вбивства, нагороди, вплив модифікаторів, учасників і медіа.',
@@ -1012,11 +990,6 @@ const translations = {
     searchEmpty: 'Nie znaleziono gier. Spróbuj innej nazwy.',
     title: 'Ranking',
     description: 'Śledź osobno ranking na żywo bieżącej gry i osobno archiwum zakończonych gier.',
-    quizLeaderboardTitle: 'Ranking quizu',
-    quizLeaderboardDescription: 'Wszystkie punkty quizu zdobyte w tej grze, przed wydatkami.',
-    quizLeaderboardEarned: 'Zdobyte',
-    quizLeaderboardEmpty: 'Nie ma jeszcze uczestników quizu.',
-    quizLeaderboardAnswerStats: 'Poprawne: {{correct}} z {{attempts}} prób',
     archivePageTitle: 'Historia gier',
     archivePageDescription:
       'Archiwum zakończonych gier z finalnym rankingiem, modyfikatorami, punktami quizu i historią rund.',
@@ -1058,7 +1031,6 @@ const translations = {
     errorGameDetails: 'Nie udało się załadować wybranej gry.',
     selectGamePrompt: 'Wybierz grę z listy, aby zobaczyć jej historię.',
     statusChipArchived: 'Archiwum',
-    currentTableTitle: 'Tabela drużyn',
     currentTableDescription:
       'Wybierz drużynę, aby zobaczyć jej rozegrane karty bez rozwijania całej listy.',
     noParticipants: 'Lista graczy nie została zapisana',
@@ -1188,7 +1160,6 @@ const translations = {
       totalBounties: 'Łącznie nagród',
       recentRounds: 'Ostatnie rundy',
       bestTeams: 'Ranking drużyn',
-      bestTeamsDescription: 'Najlepszy wynik karty minus wszystkie naliczone kary w tej grze.',
       allRoundsTitle: 'Wszystkie rozegrane karty',
       allRoundsDescription:
         'Rozwiń każdą kartę, aby zobaczyć zabójstwa, nagrody, wpływ modyfikatorów, uczestników i media.',

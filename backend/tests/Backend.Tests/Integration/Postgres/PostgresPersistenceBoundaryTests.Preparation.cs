@@ -60,7 +60,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         Assert.Single(await db.GameRoundTransitionAudits.Where(row => row.RoundId == round.Id).ToListAsync());
 
         await using var observer = _database.CreateDbContext();
-        var reader = new DbGameOverlayRepository(observer, Options.Create(new StorageOptions()), clock);
+        var reader = new DbGameOverlayRepository(observer, Options.Create(new StorageOptions()), clock, OverlayProtection);
         var frame = await reader.ReadAsync(default);
         Assert.Equal(GameRoundStatusValue.PreparationCompleted, frame.Phase);
         Assert.Null(frame.Board);

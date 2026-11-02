@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Stack, Typography } from '@mui/material'
-import { useMutation } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   AppButton,
@@ -10,22 +10,37 @@ import {
   OrnamentDivider,
   SectionCard,
 } from '../../shared/ui/index.ts'
-import { revokeOverlayKey, rotateOverlayKey } from './api/overlay-api.ts'
+import { fetchOverlayKey, revokeOverlayKey, rotateOverlayKey } from './api/overlay-api.ts'
 import { useOverlayTest } from './use-overlay-test.ts'
+import { useAuth } from '../../shared/auth/use-auth.ts'
 
 export function GameOverlaySettingsPage() {
   const { t, i18n } = useTranslation()
-  const [url, setUrl] = useState('')
+  const { user } = useAuth()
+  const client = useQueryClient()
+  const queryKey = ['overlay-key', user?.id] as const
+  const savedKey = useQuery(
+    queryOptions({
+      queryKey,
+      queryFn: ({ signal }) => fetchOverlayKey(signal),
+      enabled: Boolean(user),
+      gcTime: 0,
+      refetchInterval: 5000,
+    }),
+  )
+  const link = new URL('/overlay', window.location.origin)
+  link.searchParams.set('lng', i18n.resolvedLanguage ?? 'ru')
+  link.hash = new URLSearchParams({ key: savedKey.data?.key ?? '' }).toString()
+  const url = savedKey.data?.key ? link.toString() : ''
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [copyFailed, setCopyFailed] = useState(false)
   const test = useOverlayTest()
   const rotate = useMutation({
     mutationFn: rotateOverlayKey,
+    onMutate: () => client.cancelQueries({ queryKey }),
     onSuccess: async ({ key }) => {
-      const link = new URL('/overlay', window.location.origin)
-      link.searchParams.set('lng', i18n.resolvedLanguage ?? 'ru')
-      link.hash = new URLSearchParams({ key }).toString()
-      setUrl(link.toString())
+      await client.cancelQueries({ queryKey })
+      client.setQueryData(queryKey, { key })
       setCopiedUrl(null)
       setCopyFailed(false)
       await test.reset(true)
@@ -33,8 +48,10 @@ export function GameOverlaySettingsPage() {
   })
   const revoke = useMutation({
     mutationFn: revokeOverlayKey,
+    onMutate: () => client.cancelQueries({ queryKey }),
     onSuccess: async () => {
-      setUrl('')
+      await client.cancelQueries({ queryKey })
+      client.setQueryData(queryKey, { key: null })
       setCopiedUrl(null)
       setCopyFailed(false)
       await test.reset(false)
@@ -52,7 +69,7 @@ export function GameOverlaySettingsPage() {
           <Typography variant="body2" color="text.secondary" textAlign="center">
             {t('gameOverlay.setupHelp')}
           </Typography>
-          {rotate.isError || revoke.isError ? (
+          {savedKey.isError || rotate.isError || revoke.isError ? (
             <InlineNotice severity="error">{t('gameOverlay.error')}</InlineNotice>
           ) : null}
           {revoke.isSuccess && !url ? (
@@ -65,7 +82,7 @@ export function GameOverlaySettingsPage() {
               slotProps={{ input: { readOnly: true } }}
               fullWidth
             />
-          ) : test.state.data?.hasKey ? (
+          ) : savedKey.isSuccess && test.state.data?.hasKey ? (
             <Typography variant="body2" color="text.secondary" textAlign="center">
               {t('gameOverlay.savedLinkHelp')}
             </Typography>
@@ -90,7 +107,7 @@ export function GameOverlaySettingsPage() {
             </AppButton>
             <AppButton
               tone="secondary"
-              disabled={busy || !url}
+              disabled={busy || !url || savedKey.isError}
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(url)

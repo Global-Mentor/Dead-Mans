@@ -22,6 +22,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/overlay/games/{gameId}/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gameId: string;
+            };
+            cookie?: never;
+        };
+        /** @description Persistent leaderboard override for this active game. Moderator or admin only. */
+        get: operations["getGameOverlayLeaderboardState"];
+        /** @description Idempotently replaces all overlay scenes, including test mode, with the active game's team or quiz leaderboard. Disabling restores the current underlying scene. Does not change phases or timers. The game ID prevents stale commands affecting a later game. */
+        put: operations["setGameOverlayLeaderboardState"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/overlay/key": {
         parameters: {
             query?: never;
@@ -29,9 +49,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description Returns only the current user's saved key. Moderator or admin only. No-store. Null if absent or an older hash-only key cannot be recovered. Never log the key. */
+        get: operations["getGameOverlayKey"];
         put?: never;
-        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged. */
+        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The key is stored encrypted for owner-only retrieval and must not be logged. */
         post: operations["rotateGameOverlayKey"];
         /** @description Revokes the current user's broadcast key. Idempotent. Moderator or admin only. */
         delete: operations["revokeGameOverlayKey"];
@@ -1784,6 +1805,44 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GameOverlaySavedKeyDto: {
+            key: string | null;
+        };
+        GameOverlayLeaderboardStateDto: {
+            enabled: boolean;
+            /** @description Selected zero-based page of six entries. */
+            page: number;
+            pageCount: number;
+            /** @enum {string} */
+            kind: "teams" | "quiz";
+        };
+        SetGameOverlayLeaderboardRequest: {
+            enabled: boolean;
+            /** @description Zero-based page. Defaults to the first page and is clamped to available pages. Hiding resets to the first page. */
+            page?: number;
+            /**
+             * @description Only one leaderboard is visible at a time.
+             * @default teams
+             * @enum {string}
+             */
+            kind: "teams" | "quiz";
+        };
+        GameOverlayQuizLeaderboardEntryDto: {
+            displayName: string;
+            points: number;
+            attempts: number;
+            correctAnswers: number;
+        };
+        GameOverlayLeaderboardEntryDto: {
+            rank: number | null;
+            name: string | null;
+            slotIndex: number;
+            players: string[];
+            roundsPlayed: number;
+            totalKills: number;
+            totalBounties: number;
+            finalScore: number | null;
+        };
         GameOverlayTestStateDto: {
             hasKey: boolean;
             enabled: boolean;
@@ -1871,12 +1930,21 @@ export interface components {
             scoreDetails: components["schemas"]["GameRoundScoreDetailsDto"];
         };
         GameOverlaySnapshotDto: {
+            /**
+             * @description Operator-selected zero-based page of six entries.
+             * @default 0
+             */
+            leaderboardPage: number;
+            /** @description Quiz participants from closed questions and manual adjustments in the active game, before spending. No answer content or private account data is included. */
+            quizLeaderboard?: components["schemas"]["GameOverlayQuizLeaderboardEntryDto"][] | null;
+            /** @description Ranked confirmed teams with authoritative completed-round scores. Present only during the leaderboard override; all other scene fields are null. Teams without completed rounds have null rank and score. */
+            leaderboard?: components["schemas"]["GameOverlayLeaderboardEntryDto"][] | null;
             gameId: string | null;
             /**
              * @description Test mode replaces all game content with the static brand preview; it does not change the round phase.
              * @enum {string}
              */
-            phase: "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
+            phase: "leaderboard" | "quiz_leaderboard" | "test" | "idle" | "select_card" | "card_opened" | "awaiting_modifiers" | "preparing" | "preparation_completed" | "in_progress" | "reviewing_results" | "showing_results" | "completed";
             team: components["schemas"]["GameOverlayTeamDto"] | null;
             board: components["schemas"]["GameOverlayBoardDto"] | null;
             /** @description Opened card and active modifiers during card_opened, awaiting_modifiers and preparing. Hidden once gameplay starts. */
@@ -3692,6 +3760,137 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGameOverlayLeaderboardState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gameId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current override */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayLeaderboardStateDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Game is not active */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    setGameOverlayLeaderboardState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gameId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGameOverlayLeaderboardRequest"];
+            };
+        };
+        responses: {
+            /** @description Confirmed override */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlayLeaderboardStateDto"];
+                };
+            };
+            /** @description Missing enabled value or invalid enabled, page or kind */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Game is not active */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlaySavedKeyDto"];
+                };
             };
             /** @description Authentication required */
             401: {
