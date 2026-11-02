@@ -45,6 +45,24 @@ const session = {
 }
 
 describe('quiz submission history', () => {
+  it('preserves numbered answer order in history without moving the correct answer first', () => {
+    renderWithAppProviders(
+      <QuizQuestionSessionHistoryItem
+        questionSession={{
+          ...session,
+          options: [
+            { optionId: 'wrong', text: 'London', displayOrder: 0 },
+            { optionId: 'right', text: 'Paris', displayOrder: 1 },
+          ],
+        }}
+        currentUserId="bob"
+        showOptions
+      />,
+    )
+    expect(screen.getByRole('button', { name: /London/ })).toHaveTextContent('!1')
+    expect(screen.getByRole('button', { name: /Paris/ })).toHaveTextContent('!2')
+  })
+
   it('preserves each participant and the personal result after the next question starts', () => {
     const view = renderWithAppProviders(
       <QuizQuestionSessionHistoryItem questionSession={session} currentUserId="alice" />,

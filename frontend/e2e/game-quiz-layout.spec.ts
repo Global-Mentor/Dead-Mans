@@ -620,6 +620,11 @@ for (const width of [390, 768, 1440]) {
     })
     await page.goto('/panel/game-quiz')
     await expect(page.getByRole('heading', { name: state.text, exact: true })).toBeVisible()
+    for (const [index, option] of state.options.entries()) {
+      await expect(page.getByRole('button', { name: option.text, exact: true })).toContainText(
+        `!${index + 1}`,
+      )
+    }
     await expect(page.getByRole('timer')).toBeVisible()
     await expect(
       page.getByTestId('quiz-timeline-question').first().getByText('Награда: 5 очк.'),
@@ -632,6 +637,7 @@ for (const width of [390, 768, 1440]) {
     ).toBeVisible()
     await expect(page.getByRole('button', { name: 'Аптечка', exact: true })).toBeDisabled()
     expect(submissions).toBe(1)
+    expect(selected).toBe('one')
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       width,
     )

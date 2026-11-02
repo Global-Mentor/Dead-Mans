@@ -87,7 +87,7 @@ export function QuizQuestionSessionHistoryItem({
                 tone="secondary"
                 appearance="inset"
                 density="compact"
-                marker={index < 26 ? String.fromCharCode(65 + index) : `${index + 1}`}
+                marker={`!${index + 1}`}
                 selected={own?.selectedOptionId === option.optionId}
                 aria-label={[
                   option.text,

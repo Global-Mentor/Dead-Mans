@@ -198,7 +198,7 @@ export function QuizQuestionContent({
                 tone="secondary"
                 density="compact"
                 appearance="inset"
-                marker={optionMarker(index)}
+                marker={`!${index + 1}`}
                 data-quiz-result={resultKind}
                 aria-label={[
                   option.text,
@@ -269,8 +269,4 @@ export function QuizQuestionContent({
       ) : null}
     </Stack>
   )
-}
-
-function optionMarker(index: number): string {
-  return index < 26 ? String.fromCharCode(65 + index) : `${index + 1}`
 }
