@@ -69,6 +69,9 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.Property(x => x.QuizAnswerDurationSeconds).HasDefaultValue(60).IsRequired();
         builder.Property(x => x.TeamLimit);
         builder.Property(x => x.ActiveTeamId);
+        builder.Property(x => x.OverlayLeaderboardEnabled).HasDefaultValue(false);
+        builder.Property(x => x.OverlayLeaderboardPage).HasDefaultValue(0);
+        builder.Property(x => x.OverlayLeaderboardKind).HasMaxLength(16).HasDefaultValue("teams");
 
         builder
             .HasOne(x => x.ActiveTeam)

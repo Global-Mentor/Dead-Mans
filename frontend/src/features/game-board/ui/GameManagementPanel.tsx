@@ -20,6 +20,7 @@ import { SecondaryManagementSection } from './management-panel/ManagementPanelSu
 import { RoundAssistantSection } from './management-panel/RoundAssistantSection.tsx'
 import { TeamControlSection } from './management-panel/TeamControlSection.tsx'
 import { GameFinishDialog } from './GameFinishDialog.tsx'
+import { OverlayLeaderboardControl } from './OverlayLeaderboardControl.tsx'
 
 type ManualQuizAwardPlayer = components['schemas']['ManualQuizAwardPlayerDto']
 
@@ -216,6 +217,14 @@ export function GameManagementTool({
                 onSelectActiveTeam={handleSelectActiveTeam}
                 onSetTeamPlayedState={onSetTeamPlayedState}
               />
+
+              <SecondaryManagementSection
+                sectionId="overlay"
+                title={t('gameBoard.overlaySectionTitle')}
+                icon="round"
+              >
+                <OverlayLeaderboardControl key={snapshot.gameId} gameId={snapshot.gameId} />
+              </SecondaryManagementSection>
 
               <SecondaryManagementSection
                 sectionId="manual-quiz"

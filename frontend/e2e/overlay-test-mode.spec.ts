@@ -100,6 +100,7 @@ test('overlay test replaces the live scene, survives reloads and restores the cu
         }
         return route.fulfill({ json: { hasKey: true, enabled } })
       }
+      if (path === '/api/overlay/key') return route.fulfill({ json: { key } })
       if (path === '/api/overlay/snapshot') {
         if (revoked) return route.fulfill({ status: 401 })
         return route.fulfill({

@@ -1,5 +1,21 @@
 const translations = {
   en: {
+    overlayTeamsGroup: 'Team leaderboard',
+    overlayQuizGroup: 'Quiz leaderboard',
+    overlayShow: 'Show',
+    overlayHide: 'Hide',
+    overlayVisible: 'Shown in OBS',
+    overlayHidden: 'Hidden',
+    overlaySectionTitle: 'OBS overlay',
+    showOverlayQuizLeaderboard: 'Show quiz leaderboard',
+    hideOverlayQuizLeaderboard: 'Hide quiz leaderboard',
+    showOverlayLeaderboard: 'Show team leaderboard',
+    hideOverlayLeaderboard: 'Hide team leaderboard',
+    overlayLeaderboardPrevious: 'Previous',
+    overlayLeaderboardNext: 'Next',
+    overlayLeaderboardPage: 'Page {{current}} of {{total}}',
+    overlayLeaderboardError: 'Unable to load or change the leaderboard display. Try again.',
+
     progress: {
       title: 'Game progress',
       currentTeam: 'Active team',
@@ -464,6 +480,7 @@ const translations = {
     activeTeamAlreadyPlayed: 'A played team cannot become active again.',
     activeTeamRoundInProgress: 'Finish the active round before changing the active team.',
     managementHelp: {
+      overlay: 'Show team standings and quiz results in OBS. Switch pages manually.',
       round:
         'All round stages are shown here. Completed steps are dimmed; the current step is highlighted. The button advances to the next allowed stage.',
       team: 'Select the active team or mark whether it has played. Team changes are locked while a round is active.',
@@ -479,6 +496,23 @@ const translations = {
       'Reopens modifier ordering during preparation: cancels every activation in this round and refunds its owner. The card and team stay selected. Unavailable after results are recorded or while a quiz question is open.',
   },
   ru: {
+    overlayTeamsGroup: 'Лидерборд команд',
+    overlayQuizGroup: 'Лидерборд викторины',
+    overlayShow: 'Показать',
+    overlayHide: 'Убрать',
+    overlayVisible: 'Показан в OBS',
+    overlayHidden: 'Скрыт',
+    overlaySectionTitle: 'Оверлей OBS',
+    showOverlayQuizLeaderboard: 'Показать лидерборд викторины',
+    hideOverlayQuizLeaderboard: 'Убрать лидерборд викторины',
+    showOverlayLeaderboard: 'Показать лидерборд команд',
+    hideOverlayLeaderboard: 'Убрать лидерборд команд',
+    overlayLeaderboardPrevious: 'Назад',
+    overlayLeaderboardNext: 'Вперёд',
+    overlayLeaderboardPage: 'Страница {{current}} из {{total}}',
+    overlayLeaderboardError:
+      'Не удалось загрузить или изменить показ лидерборда. Попробуйте ещё раз.',
+
     progress: {
       title: 'Ход игры',
       currentTeam: 'Активная команда',
@@ -954,6 +988,8 @@ const translations = {
     activeTeamAlreadyPlayed: 'Отыгравшую команду нельзя снова сделать активной.',
     activeTeamRoundInProgress: 'Завершите текущий раунд, прежде чем менять активную команду.',
     managementHelp: {
+      overlay:
+        'Показ таблицы команд и результатов викторины в OBS. Страницы переключаются вручную.',
       round:
         'Здесь показаны все этапы раунда. Пройденные затемнены, текущий выделен. Кнопка переводит раунд на следующий доступный этап.',
       team: 'Выбор активной команды и отметка, сыграла ли она. Во время активного раунда смена команды заблокирована.',
@@ -969,6 +1005,23 @@ const translations = {
       'Возвращает подготовку к выбору модификаторов: отменяет все активации этого раунда и возвращает очки их владельцам. Карточка и команда сохраняются. Недоступно после записи результатов или пока открыт вопрос викторины.',
   },
   uk: {
+    overlayTeamsGroup: 'Лідерборд команд',
+    overlayQuizGroup: 'Лідерборд вікторини',
+    overlayShow: 'Показати',
+    overlayHide: 'Прибрати',
+    overlayVisible: 'Показано в OBS',
+    overlayHidden: 'Приховано',
+    overlaySectionTitle: 'Оверлей OBS',
+    showOverlayQuizLeaderboard: 'Показати лідерборд вікторини',
+    hideOverlayQuizLeaderboard: 'Прибрати лідерборд вікторини',
+    showOverlayLeaderboard: 'Показати лідерборд команд',
+    hideOverlayLeaderboard: 'Прибрати лідерборд команд',
+    overlayLeaderboardPrevious: 'Назад',
+    overlayLeaderboardNext: 'Вперед',
+    overlayLeaderboardPage: 'Сторінка {{current}} з {{total}}',
+    overlayLeaderboardError:
+      'Не вдалося завантажити або змінити показ лідерборда. Спробуйте ще раз.',
+
     progress: {
       title: 'Перебіг гри',
       currentTeam: 'Активна команда',
@@ -1440,6 +1493,7 @@ const translations = {
     activeTeamAlreadyPlayed: 'Відіграну команду не можна знову зробити активною.',
     activeTeamRoundInProgress: 'Завершіть поточний раунд, перш ніж змінювати активну команду.',
     managementHelp: {
+      overlay: 'Показ таблиці команд і результатів вікторини в OBS. Сторінки перемикаються вручну.',
       round:
         'Тут показано всі етапи раунду. Пройдені затемнено, поточний виділено. Кнопка переводить раунд на наступний доступний етап.',
       team: 'Вибір активної команди та позначка, чи зіграла вона. Під час активного раунду зміну команди заблоковано.',
@@ -1455,6 +1509,23 @@ const translations = {
       'Повертає підготовку до вибору модифікаторів: скасовує всі активації цього раунду й повертає очки власникам. Картка та команда зберігаються. Недоступно після запису результатів або поки відкрите питання вікторини.',
   },
   pl: {
+    overlayTeamsGroup: 'Ranking drużyn',
+    overlayQuizGroup: 'Ranking quizu',
+    overlayShow: 'Pokaż',
+    overlayHide: 'Ukryj',
+    overlayVisible: 'Widoczny w OBS',
+    overlayHidden: 'Ukryty',
+    overlaySectionTitle: 'Nakładka OBS',
+    showOverlayQuizLeaderboard: 'Pokaż ranking quizu',
+    hideOverlayQuizLeaderboard: 'Ukryj ranking quizu',
+    showOverlayLeaderboard: 'Pokaż ranking drużyn',
+    hideOverlayLeaderboard: 'Ukryj ranking drużyn',
+    overlayLeaderboardPrevious: 'Wstecz',
+    overlayLeaderboardNext: 'Dalej',
+    overlayLeaderboardPage: 'Strona {{current}} z {{total}}',
+    overlayLeaderboardError:
+      'Nie udało się wczytać lub zmienić wyświetlania tabeli wyników. Spróbuj ponownie.',
+
     progress: {
       title: 'Przebieg gry',
       currentTeam: 'Aktywna drużyna',
@@ -1930,6 +2001,7 @@ const translations = {
     activeTeamAlreadyPlayed: 'Rozegranej drużyny nie można ponownie ustawić jako aktywnej.',
     activeTeamRoundInProgress: 'Zakończ aktywną rundę przed zmianą aktywnej drużyny.',
     managementHelp: {
+      overlay: 'Pokaż tabelę drużyn i wyniki quizu w OBS. Strony zmieniasz ręcznie.',
       round:
         'Wszystkie etapy rundy są widoczne tutaj. Ukończone są przyciemnione, a bieżący jest wyróżniony. Przycisk przechodzi do następnego dostępnego etapu.',
       team: 'Wybierz aktywną drużynę lub oznacz, czy już grała. Zmiana drużyny jest zablokowana podczas aktywnej rundy.',

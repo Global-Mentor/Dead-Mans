@@ -9,11 +9,13 @@ using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
 using backend.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography;
 
 namespace backend.Infrastructure.Persistence;
 
 public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOptions<StorageOptions> storageOptions,
-    TimeProvider timeProvider) : IGameOverlayRepository
+    TimeProvider timeProvider, IDataProtectionProvider dataProtectionProvider) : IGameOverlayRepository
 {
     public Task<bool> ValidateKeyAsync(string hash, CancellationToken cancellationToken)
     {
@@ -26,12 +28,33 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
                     || assignment.Role.Code == AuthRoleCodes.SuperAdmin)), cancellationToken);
     }
 
-    public async Task ReplaceKeyAsync(Guid ownerId, string hash, CancellationToken cancellationToken)
+    public async Task ReplaceKeyAsync(Guid ownerId, string hash, string key, CancellationToken cancellationToken)
     {
+        var protectedKey = KeyProtector(ownerId).Protect(key);
         await db.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO game_overlay_keys (owner_id, key_hash) VALUES ({ownerId}, {hash})
-            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, test_enabled = false
+            INSERT INTO game_overlay_keys (owner_id, key_hash, protected_key) VALUES ({ownerId}, {hash}, {protectedKey})
+            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, protected_key = EXCLUDED.protected_key, test_enabled = false
             """, cancellationToken);
+    }
+
+    private IDataProtector KeyProtector(Guid ownerId) =>
+        dataProtectionProvider.CreateProtector("DeadMans.OverlayKey.v1", ownerId.ToString());
+
+    public async Task<string?> ReadKeyAsync(Guid ownerId, CancellationToken cancellationToken)
+    {
+        var protectedKey = await db.Set<GameOverlayKey>().AsNoTracking()
+            .Where(key => key.OwnerId == ownerId).Select(key => key.ProtectedKey)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (protectedKey is null) return null;
+        try
+        {
+            return KeyProtector(ownerId).Unprotect(protectedKey);
+        }
+        catch (CryptographicException)
+        {
+            // An old link remains valid by hash even when its encryption key is unavailable.
+            return null;
+        }
     }
 
     public async Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken)
@@ -63,11 +86,25 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
             : null;
         var game = await db.Games.AsNoTracking()
             .Where(game => !game.IsDeleted && game.Status == GameStatusValue.Active)
-            .Select(game => new { game.Id, game.ActiveTeamId, game.Status })
+            .Select(game => new { game.Id, game.ActiveTeamId, game.Status, game.OverlayLeaderboardEnabled, game.OverlayLeaderboardPage, game.OverlayLeaderboardKind })
             .FirstOrDefaultAsync(cancellationToken);
         if (game is null)
         {
             return new GameOverlaySnapshot(null, "idle", null, null);
+        }
+        if (game.OverlayLeaderboardEnabled && game.OverlayLeaderboardKind == "quiz")
+        {
+            var quiz = await ReadQuizLeaderboardAsync(game.Id, cancellationToken);
+            var pages = Math.Max(1, (quiz.Count + LeaderboardPageSize - 1) / LeaderboardPageSize);
+            return new GameOverlaySnapshot(game.Id.ToString(), "quiz_leaderboard", null, null,
+                LeaderboardPage: Math.Clamp(game.OverlayLeaderboardPage, 0, pages - 1), QuizLeaderboard: quiz);
+        }
+        if (game.OverlayLeaderboardEnabled)
+        {
+            var leaderboard = await ReadLeaderboardAsync(game.Id, cancellationToken);
+            var pages = Math.Max(1, (leaderboard.Count + LeaderboardPageSize - 1) / LeaderboardPageSize);
+            return new GameOverlaySnapshot(game.Id.ToString(), "leaderboard", null, null,
+                Leaderboard: leaderboard, LeaderboardPage: Math.Clamp(game.OverlayLeaderboardPage, 0, pages - 1));
         }
         if (game.Status != GameStatusValue.Active || game.ActiveTeamId is null)
         {

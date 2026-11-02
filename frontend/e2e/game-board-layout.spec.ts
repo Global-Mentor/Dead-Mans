@@ -3,6 +3,13 @@ import type { GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
 import { expectTeamPresentation } from './team-presentation-assertions.ts'
 import { TEAM_NAME_MAX_LENGTH } from '../src/features/game-registration/model/team-name.ts'
+import { mkdir } from 'node:fs/promises'
+import {
+  connectOverlayEvents,
+  key as overlayKey,
+  snapshot as overlaySnapshot,
+  type Snapshot,
+} from './support/overlay-fixture'
 
 const categories = ['Охота', 'Оружие', 'Легенды', 'Болота', 'Контракты']
 const board: GameBoardSnapshot = {
@@ -391,6 +398,8 @@ async function mockGame(
           },
         })
       if (path === '/api/game') return route.fulfill({ json: { ...board, status } })
+      if (path.endsWith('/leaderboard') && path.startsWith('/api/overlay/games/'))
+        return route.fulfill({ json: { enabled: false } })
       if (path === '/api/game/team-queue')
         return route.fulfill({
           json: {
@@ -4731,3 +4740,241 @@ test('finishing a game closes the preview without refetching unavailable endpoin
   expect(unavailableRequests).toEqual([])
   expect(errors).toEqual([])
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`management leaderboard overrides OBS and restores the current phase at ${width}px`, async ({
+    page,
+    context,
+  }) => {
+    test.setTimeout(60000)
+    await page.setViewportSize({ width, height: 900 })
+    const writes = await mockGame(page)
+    let enabled = false
+    let kind: 'teams' | 'quiz' = 'teams'
+    let selectedPage = 0
+    let pageCount = 2
+    let fail = false
+    let notify = () => {}
+    let live: Snapshot = overlaySnapshot
+    await page.route('**/api/overlay/games/*/leaderboard', async (route) => {
+      if (route.request().method() === 'PUT') {
+        expect(route.request().headers()['x-dead-mans-api-client']).toBe('1')
+        if (fail) return route.fulfill({ status: 503 })
+        enabled = route.request().postDataJSON().enabled
+        kind = route.request().postDataJSON().kind
+        selectedPage = route.request().postDataJSON().page ?? 0
+        await route.fulfill({ json: { enabled, page: selectedPage, pageCount, kind } })
+        notify()
+        return
+      }
+      return route.fulfill({ json: { enabled, page: selectedPage, pageCount, kind } })
+    })
+    const overlay = await context.newPage()
+    await overlay.setViewportSize({ width: 1920, height: 1080 })
+    await overlay.route('**/api/overlay/snapshot', (route) =>
+      route.fulfill({
+        json:
+          enabled && kind === 'quiz'
+            ? {
+                gameId: board.gameId,
+                phase: 'quiz_leaderboard',
+                team: null,
+                board: null,
+                round: null,
+                leaderboardPage: selectedPage,
+                quizLeaderboard: Array.from({ length: 7 }, (_, index) => ({
+                  displayName: `Участник викторины ${index + 1}`,
+                  points: 700 - index * 100,
+                  attempts: 10 - index,
+                  correctAnswers: 7 - index,
+                })),
+              }
+            : enabled
+              ? {
+                  gameId: board.gameId,
+                  phase: 'leaderboard',
+                  leaderboardPage: selectedPage,
+                  team: null,
+                  board: null,
+                  round: null,
+                  leaderboard: [
+                    {
+                      rank: 1,
+                      name: 'Ночные странники',
+                      slotIndex: 1,
+                      players: ['Искатель приключений', 'Ворон'],
+                      roundsPlayed: 2,
+                      totalKills: 0,
+                      totalBounties: 0,
+                      finalScore: 800,
+                    },
+                    {
+                      rank: 2,
+                      name: 'Последний рубеж',
+                      slotIndex: 2,
+                      players: ['Стрелок'],
+                      roundsPlayed: 1,
+                      totalKills: 0,
+                      totalBounties: 0,
+                      finalScore: 0,
+                    },
+                    {
+                      rank: 3,
+                      name: 'Очень длинное название команды охотников',
+                      slotIndex: 3,
+                      players: ['ДлинноеИмяПервогоОхотника', 'ВторойОхотник'],
+                      roundsPlayed: 3,
+                      totalKills: 0,
+                      totalBounties: 0,
+                      finalScore: -250,
+                    },
+                    {
+                      rank: null,
+                      name: null,
+                      slotIndex: 4,
+                      players: [],
+                      roundsPlayed: 0,
+                      totalKills: 0,
+                      totalBounties: 0,
+                      finalScore: null,
+                    },
+                    ...Array.from({ length: 3 }, (_, index) => ({
+                      rank: index + 5,
+                      slotIndex: index + 5,
+                      name: `Дополнительная команда ${index + 1}`,
+                      players: ['Охотник'],
+                      roundsPlayed: 1,
+                      totalKills: 1,
+                      totalBounties: 0,
+                      finalScore: 0,
+                    })),
+                  ],
+                }
+              : live,
+      }),
+    )
+    notify = await connectOverlayEvents(overlay)
+    await overlay.goto(`/overlay?lng=ru#key=${overlayKey}`)
+    await expect(overlay.getByTestId('overlay-board')).toBeVisible()
+    await page.goto('/panel/game-board')
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    const obsSection = page.getByRole('button', { name: 'Оверлей OBS', exact: true })
+    await expect(obsSection).toHaveAttribute('aria-expanded', 'false')
+    await obsSection.click()
+    const show = page.getByRole('button', { name: 'Показать лидерборд команд', exact: true })
+    await expect(show).toBeEnabled()
+    const teamBounds = (await page.getByTestId('management-team-section').boundingBox())!
+    const obsBounds = (await page.getByTestId('management-overlay-section').boundingBox())!
+    const quizPointsBounds = (await page
+      .getByTestId('management-manual-quiz-section')
+      .boundingBox())!
+    expect(teamBounds.y + teamBounds.height).toBeLessThan(obsBounds.y)
+    expect(obsBounds.y + obsBounds.height).toBeLessThan(quizPointsBounds.y)
+    const previous = page.getByRole('button', { name: 'Назад', exact: true })
+    const next = page.getByRole('button', { name: 'Вперёд', exact: true })
+    await expect(next).toHaveCount(0)
+    await show.click()
+    const hide = page.getByRole('button', { name: 'Убрать лидерборд команд', exact: true })
+    await expect(hide).toHaveAttribute('aria-pressed', 'true')
+    const leaderboard = overlay.getByTestId('overlay-leaderboard')
+    await expect(leaderboard).toBeVisible()
+    await expect(leaderboard).toContainText('Ночные странники')
+    await expect(leaderboard).toContainText('-250')
+    await expect(leaderboard).toContainText('Нет завершённых раундов')
+    await expect(previous).toBeDisabled()
+    await expect(next).toBeEnabled()
+    await next.click()
+    await expect(leaderboard).toContainText('Страница 2 из 2')
+    await expect(leaderboard).toContainText('Дополнительная команда 3')
+    await expect(next).toBeDisabled()
+    await expect(previous).toBeEnabled()
+    await expect(overlay.getByTestId('overlay-board')).toHaveCount(0)
+    await expect(overlay.getByTestId('overlay-team')).toHaveCount(0)
+    await mkdir('../.tmp/agent-work/overlay', { recursive: true })
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/management-leaderboard-${width}.png`,
+      fullPage: true,
+    })
+    await overlay.screenshot({ path: `../.tmp/agent-work/overlay/leaderboard-${width}.png` })
+    await page.reload()
+    await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+    await page.getByRole('button', { name: 'Оверлей OBS', exact: true }).click()
+    await expect(hide).toBeVisible()
+    await overlay.reload()
+    await expect(leaderboard).toBeVisible()
+    await expect(leaderboard).toContainText('Страница 2 из 2')
+    await expect(next).toBeDisabled()
+    fail = true
+    await previous.click()
+    await expect(
+      page.getByText('Не удалось загрузить или изменить показ лидерборда. Попробуйте ещё раз.'),
+    ).toBeVisible()
+    await expect(leaderboard).toContainText('Страница 2 из 2')
+    fail = false
+    await previous.click()
+    await expect(leaderboard).toContainText('Страница 1 из 2')
+    live = {
+      ...overlaySnapshot,
+      phase: 'card_opened',
+      board: null,
+      round: {
+        id: 'new-round',
+        title: 'Открытая карточка',
+        cost: 100,
+        imageUrl: null,
+        columnLabel: 'Охота',
+        rowLabel: '100',
+        modifiers: [],
+      },
+    }
+    fail = true
+    await hide.click()
+    await expect(
+      page.getByText('Не удалось загрузить или изменить показ лидерборда. Попробуйте ещё раз.'),
+    ).toBeVisible()
+    await expect(hide).toHaveAttribute('aria-pressed', 'true')
+    await expect(leaderboard).toBeVisible()
+    fail = false
+    await hide.click()
+    await expect(show).toHaveAttribute('aria-pressed', 'false')
+    await expect(leaderboard).toHaveCount(0)
+    await expect(overlay.getByTestId('overlay-round-layout')).toBeVisible()
+    await expect(next).toHaveCount(0)
+    pageCount = 1
+    await show.click()
+    await expect(hide).toBeVisible()
+    await expect(next).toHaveCount(0)
+    await expect(previous).toHaveCount(0)
+    pageCount = 2
+    const showQuiz = page.getByRole('button', { name: 'Показать лидерборд викторины', exact: true })
+    const hideQuiz = page.getByRole('button', { name: 'Убрать лидерборд викторины', exact: true })
+    await showQuiz.click()
+    const quiz = overlay.getByTestId('overlay-quiz-leaderboard')
+    await expect(quiz).toBeVisible()
+    await expect(leaderboard).toHaveCount(0)
+    await expect(show).toBeVisible()
+    await expect(hideQuiz).toHaveAttribute('aria-pressed', 'true')
+    await expect(quiz).toContainText('Участник викторины 1')
+    await next.click()
+    await expect(quiz).toContainText('Страница 2 из 2')
+    await expect(quiz.getByRole('row').nth(1).getByRole('cell').first()).toHaveText('7')
+    await obsSection.click()
+    await expect(hideQuiz).toBeHidden()
+    await expect(quiz).toBeVisible()
+    await obsSection.click()
+    await expect(page.getByText('Страница 2 из 2')).toBeVisible()
+    await page.screenshot({
+      path: `../.tmp/agent-work/overlay/management-quiz-${width}.png`,
+      fullPage: true,
+    })
+    await overlay.screenshot({ path: `../.tmp/agent-work/overlay/quiz-${width}.png` })
+    await overlay.reload()
+    await expect(quiz).toContainText('Страница 2 из 2')
+    await hideQuiz.click()
+    await expect(quiz).toHaveCount(0)
+    await expect(overlay.getByTestId('overlay-round-layout')).toBeVisible()
+    await expect(next).toHaveCount(0)
+    expect(writes).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}

@@ -1,6 +1,10 @@
 namespace backend.Application.Contracts;
 
 public sealed record GameOverlayTestState(bool HasKey, bool Enabled);
+public sealed record GameOverlayLeaderboardState(bool Enabled, int Page = 0, int PageCount = 1, string Kind = "teams");
+public sealed record GameOverlayQuizLeaderboardEntry(string DisplayName, int Points, int Attempts, int CorrectAnswers);
+public sealed record GameOverlayLeaderboardEntry(int? Rank, string? Name, int SlotIndex,
+    IReadOnlyList<string> Players, int RoundsPlayed, int TotalKills, int TotalBounties, int? FinalScore);
 
 public sealed record GameOverlayTeam(string? Name, int SlotIndex, IReadOnlyList<string> Players);
 
@@ -21,7 +25,10 @@ public sealed record GameOverlaySnapshot(
     GameOverlayBoard? Board,
     GameOverlayRound? Round = null,
     GameOverlayGameplay? Gameplay = null,
-    GameOverlaySummary? Summary = null
+    GameOverlaySummary? Summary = null,
+    IReadOnlyList<GameOverlayLeaderboardEntry>? Leaderboard = null,
+    int LeaderboardPage = 0,
+    IReadOnlyList<GameOverlayQuizLeaderboardEntry>? QuizLeaderboard = null
 );
 
 public sealed record GameOverlayModifier(string Id, string Name, string? IconEmoji, string ModifierId);

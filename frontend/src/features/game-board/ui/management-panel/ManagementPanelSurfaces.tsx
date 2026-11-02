@@ -35,7 +35,7 @@ export function SecondaryManagementSection({
   defaultExpanded = false,
   icon,
 }: {
-  sectionId: 'launch' | 'manual-quiz' | 'round-safety' | 'finish-game'
+  sectionId: 'launch' | 'manual-quiz' | 'round-safety' | 'finish-game' | 'overlay'
   title: string
   children: ReactNode
   defaultExpanded?: boolean

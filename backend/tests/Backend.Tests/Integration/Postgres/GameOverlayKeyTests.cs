@@ -9,6 +9,9 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassFixture<PostgresTestDatabase>
 {
+    private static readonly Microsoft.AspNetCore.DataProtection.IDataProtectionProvider OverlayProtection =
+        new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
+
     [Fact]
     public async Task TestMode_IsOwnerScoped_Durable_Idempotent_AndResetByKeyLifecycle()
     {
@@ -23,7 +26,7 @@ public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassF
         await db.SaveChangesAsync();
         var events = new OverlayTestEventsPublisher();
         GameOverlayService CreateService(backend.Data.ApplicationDbContext context) => new(
-            new DbGameOverlayRepository(context, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System),
+            new DbGameOverlayRepository(context, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection),
             events, NullLogger<GameOverlayService>.Instance);
         var service = CreateService(db);
         Assert.False((await service.SetTestEnabledAsync(ownerId, true, default)).HasKey);
@@ -81,7 +84,7 @@ public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassF
         db.UserRoles.Add(assignment);
         await db.SaveChangesAsync();
         var service = new GameOverlayService(new DbGameOverlayRepository(db,
-            Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), clock), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
+            Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), clock, OverlayProtection), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
         var key = await service.RotateKeyAsync(ownerId, default);
         Assert.True(await service.ValidateKeyAsync(key, default));
         clock.UtcNow = now.AddMinutes(1);
@@ -97,7 +100,7 @@ public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassF
     }
 
     [Fact]
-    public async Task RotateAndRevoke_PersistOnlyHashes_AndInvalidatePreviousLinks()
+    public async Task RotateAndRevoke_PersistEncryptedKeys_AndInvalidatePreviousLinks()
     {
         await using var db = database.CreateDbContext();
         var now = DateTime.UtcNow;
@@ -105,18 +108,31 @@ public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassF
         db.Users.Add(owner);
         db.UserRoles.Add(new UserRole { User = owner, RoleId = await db.Roles.Where(role => role.Code == "moderator").Select(role => role.Id).SingleAsync(), AssignedAtUtc = now });
         await db.SaveChangesAsync();
-        var service = new GameOverlayService(new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
+        var service = new GameOverlayService(new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
         var first = await service.RotateKeyAsync(owner.Id, default);
         Assert.Equal(64, first.Length);
-        Assert.NotEqual(first, (await db.Set<GameOverlayKey>().AsNoTracking().SingleAsync(key => key.OwnerId == owner.Id)).KeyHash);
+        var stored = await db.Set<GameOverlayKey>().AsNoTracking().SingleAsync(key => key.OwnerId == owner.Id);
+        Assert.NotEqual(first, stored.KeyHash);
+        Assert.NotNull(stored.ProtectedKey);
+        Assert.DoesNotContain(first, stored.ProtectedKey);
+        await using var reloaded = database.CreateDbContext();
+        var reader = new DbGameOverlayRepository(reloaded, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection);
+        Assert.Equal(first, await reader.ReadKeyAsync(owner.Id, default));
+        Assert.Null(await reader.ReadKeyAsync(Guid.NewGuid(), default));
+        Assert.True(await service.ValidateKeyAsync(first, default));
+        await db.Set<GameOverlayKey>().Where(key => key.OwnerId == owner.Id)
+            .ExecuteUpdateAsync(update => update.SetProperty(key => key.ProtectedKey, "unreadable"));
+        Assert.Null(await reader.ReadKeyAsync(owner.Id, default));
         Assert.True(await service.ValidateKeyAsync(first, default));
         var second = await service.RotateKeyAsync(owner.Id, default);
         Assert.NotEqual(first, second);
+        Assert.Equal(second, await reader.ReadKeyAsync(owner.Id, default));
         Assert.False(await service.ValidateKeyAsync(first, default));
         Assert.True(await service.ValidateKeyAsync(second, default));
         await service.RevokeKeyAsync(owner.Id, default);
         await service.RevokeKeyAsync(owner.Id, default);
         Assert.False(await service.ValidateKeyAsync(second, default));
+        Assert.Null(await reader.ReadKeyAsync(owner.Id, default));
     }
 
     [Fact]
@@ -133,11 +149,11 @@ public sealed class GameOverlayKeyTests(PostgresTestDatabase database) : IClassF
         async Task<string> Rotate()
         {
             await using var db = database.CreateDbContext();
-            return await new GameOverlayService(new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance).RotateKeyAsync(ownerId, default);
+            return await new GameOverlayService(new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance).RotateKeyAsync(ownerId, default);
         }
         var keys = await Task.WhenAll(Rotate(), Rotate());
         await using var reader = database.CreateDbContext();
-        var service = new GameOverlayService(new DbGameOverlayRepository(reader, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
+        var service = new GameOverlayService(new DbGameOverlayRepository(reader, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection), new OverlayTestEventsPublisher(), NullLogger<GameOverlayService>.Instance);
         var valid = 0;
         foreach (var key in keys)
         {

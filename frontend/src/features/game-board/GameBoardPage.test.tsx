@@ -190,6 +190,10 @@ vi.mock('./ui/GameQuizDrawer.tsx', () => ({
   GameQuizDrawer: () => null,
 }))
 
+vi.mock('./ui/OverlayLeaderboardControl.tsx', () => ({
+  OverlayLeaderboardControl: () => null,
+}))
+
 function renderBoard() {
   return renderWithAppProviders(
     <MemoryRouter>

@@ -5,6 +5,9 @@ namespace backend.Application.Abstractions;
 public interface IGameOverlayService
 {
     Task<string> RotateKeyAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<string?> ReadKeyAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<GameOverlayLeaderboardState?> ReadLeaderboardStateAsync(Guid gameId, CancellationToken cancellationToken);
+    Task<GameOverlayLeaderboardState?> SetLeaderboardStateAsync(Guid gameId, bool enabled, CancellationToken cancellationToken, int? page = null, string kind = "teams");
     Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken);
     Task<bool> ValidateKeyAsync(string key, CancellationToken cancellationToken);
     Task<GameOverlaySnapshot> ReadAsync(string key, CancellationToken cancellationToken);

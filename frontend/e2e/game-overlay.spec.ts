@@ -1176,6 +1176,10 @@ for (const width of [390, 768, 1440]) {
           return route.fulfill({ json: { hasKey: issued > 0 && !revoked, enabled: testEnabled } })
         }
         if (path === '/api/overlay/key') {
+          if (route.request().method() === 'GET')
+            return route.fulfill({
+              json: { key: issued > 0 && !revoked ? (issued === 1 ? 'a' : 'b').repeat(64) : null },
+            })
           testEnabled = false
           expect(route.request().headers()['x-dead-mans-api-client']).toBe('1')
           if (route.request().method() === 'DELETE') {
@@ -1203,9 +1207,16 @@ for (const width of [390, 768, 1440]) {
     await page.getByRole('button', { name: 'Копировать ссылку' }).click()
     await expect(page.getByRole('button', { name: 'Скопировано', exact: true })).toBeVisible()
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await link.inputValue())
+    await page.reload()
+    await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'a'.repeat(64)}`)
+    await page.getByRole('button', { name: 'Копировать ссылку' }).click()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await link.inputValue())
+    expect(issued).toBe(1)
     await page.getByRole('button', { name: 'Новая ссылка' }).click()
     await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'b'.repeat(64)}`)
     expect(issued).toBe(2)
+    await page.reload()
+    await expect(link).toHaveValue(`http://localhost:5180/overlay?lng=ru#key=${'b'.repeat(64)}`)
     await page.getByRole('button', { name: 'Запустить тест' }).click()
     await expect(page.getByRole('button', { name: 'Завершить тест' })).toHaveAttribute(
       'aria-pressed',
@@ -1231,6 +1242,9 @@ for (const width of [390, 768, 1440]) {
     await expect(page.getByText('Ссылка отозвана.')).toBeVisible()
     await expect(link).toHaveCount(0)
     expect(revoked).toBe(true)
+    await page.reload()
+    await expect(link).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Копировать ссылку' })).toBeDisabled()
   })
 }
 
