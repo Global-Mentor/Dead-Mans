@@ -34,6 +34,10 @@ public class Game
 
     public Guid? ActiveTeamId { get; set; }
 
+    public bool OverlayLeaderboardEnabled { get; set; }
+    public int OverlayLeaderboardPage { get; set; }
+    public string OverlayLeaderboardKind { get; set; } = "teams";
+
     public GameTeam? ActiveTeam { get; set; }
 
     public GameBoard? Board { get; set; }

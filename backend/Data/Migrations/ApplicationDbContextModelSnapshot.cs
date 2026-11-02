@@ -182,6 +182,26 @@ namespace backend.Data.Migrations
                         .HasDefaultValue((short)1)
                         .HasColumnName("min_players_per_team");
 
+                    b.Property<bool>("OverlayLeaderboardEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("overlay_leaderboard_enabled");
+
+                    b.Property<string>("OverlayLeaderboardKind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("teams")
+                        .HasColumnName("overlay_leaderboard_kind");
+
+                    b.Property<int>("OverlayLeaderboardPage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("overlay_leaderboard_page");
+
                     b.Property<int>("QuizAnswerDurationSeconds")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -702,6 +722,10 @@ namespace backend.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("key_hash");
+
+                    b.Property<string>("ProtectedKey")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_key");
 
                     b.Property<bool>("TestEnabled")
                         .ValueGeneratedOnAdd()

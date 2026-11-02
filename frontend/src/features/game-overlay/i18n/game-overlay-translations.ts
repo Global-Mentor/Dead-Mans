@@ -1,5 +1,6 @@
 const translations = {
   en: {
+    leaderboardPage: 'Page {{current}} of {{total}}',
     savedLinkHelp: 'A link already exists. Use the one saved in OBS or create a new one.',
     replace: 'New link',
     create: 'Create link',
@@ -42,6 +43,7 @@ const translations = {
     board: 'Game board',
   },
   ru: {
+    leaderboardPage: 'Страница {{current}} из {{total}}',
     savedLinkHelp: 'Ссылка уже создана. Используйте сохранённую в OBS или создайте новую.',
     replace: 'Новая ссылка',
     create: 'Создать ссылку',
@@ -84,6 +86,7 @@ const translations = {
     board: 'Игровая доска',
   },
   uk: {
+    leaderboardPage: 'Сторінка {{current}} з {{total}}',
     savedLinkHelp: 'Посилання вже створено. Використовуйте збережене в OBS або створіть нове.',
     replace: 'Нове посилання',
     create: 'Створити посилання',
@@ -126,6 +129,7 @@ const translations = {
     board: 'Ігрова дошка',
   },
   pl: {
+    leaderboardPage: 'Strona {{current}} z {{total}}',
     savedLinkHelp: 'Link już istnieje. Użyj zapisanego w OBS lub utwórz nowy.',
     replace: 'Nowy link',
     create: 'Utwórz link',

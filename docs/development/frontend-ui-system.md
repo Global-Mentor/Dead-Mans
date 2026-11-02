@@ -298,6 +298,33 @@ the closed card's title is hidden; the generic cell label does not identify the 
 
 ## Broadcast presentation
 
+The active-game management panel groups broadcast controls in the initially collapsed OBS overlay
+section below Active team and above Quiz points, using the same accordion as the other secondary tools.
+Teams and quiz use separate inset groups, each with a title and a visible Hidden/Shown in OBS status.
+Show uses the shared secondary button tone; Hide uses dangerSecondary, with the full leaderboard name
+retained in its accessible label and pressed state. Pagination belongs to the active group.
+A localized error remains visible on failure. Only one leaderboard can be visible at a time; switching
+kind resets to page one. Collapsing the section does not change the broadcast.
+The leaderboard replaces every other broadcast scene while enabled; hiding it restores the
+current underlying scene without pausing the game.
+
+`BroadcastLeaderboard` reuses `TeamStandingsTable` from the Teams leaderboard: rank, framed
+team roster, completed rounds, total kills (including modifier bonus kills), total bounties and
+final score. The broadcast shows the scoring description directly because OBS has no hover
+interaction. It stays centered horizontally, uses at most 1152px of width and anchors 24px from
+the top, including when scaled to fit a short or narrow source. All six columns remain visible
+in OBS, with pages of six teams and a page indicator. Pages never advance automatically.
+While the leaderboard is visible and has multiple pages, management shows Previous/Next
+buttons and the current page. Boundary buttons are disabled. Page selection persists on the
+server across panel/OBS reloads; hiding and showing the leaderboard resets to page one. The panel
+version retains responsive columns, team selection, membership emphasis and detail navigation.
+
+`BroadcastQuizLeaderboard` reuses `QuizStandingsList` from the quiz leaderboard, showing rank,
+player, correct answers / attempts and earned points with the same ordering and visible scoring
+description. It shares the top-anchored broadcast layout and manual pages of six participants.
+Only closed-question submissions and manual adjustments for the current game contribute;
+open or skipped questions and modifier spending are excluded. Global positions continue across pages.
+
 During `reviewing_results`, the shared top team strip sits above `BroadcastSummary`,
 which presents the frozen card and public score preview. The operator's summary dialog publishes numeric inputs after a 350ms
 debounce, serializes writes and excludes notes and violation comments from the overlay.

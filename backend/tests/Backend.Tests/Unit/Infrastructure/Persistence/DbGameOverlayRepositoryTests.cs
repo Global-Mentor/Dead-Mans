@@ -13,6 +13,68 @@ namespace Backend.Tests.Unit.Infrastructure.Persistence;
 public sealed class DbGameOverlayRepositoryTests
 {
     [Fact]
+    public async Task QuizLeaderboard_UsesClosedAnswersAndAdjustments_BeforeSpending_AndExcludesOtherGames()
+    {
+        await using var db = CreateContext();
+        var now = DateTime.UtcNow;
+        var game = new Game
+        {
+            Id = Guid.NewGuid(),
+            Status = GameStatusValue.Active,
+            OverlayLeaderboardEnabled = true,
+            OverlayLeaderboardKind = "quiz"
+        };
+        var user = new User { Id = Guid.NewGuid(), DisplayName = "Renamed player" };
+        var otherUser = new User { Id = Guid.NewGuid(), DisplayName = "Manual only" };
+        db.AddRange(game, user, otherUser);
+        void AddAnswer(string status, int points, bool correct, Guid? gameId = null)
+        {
+            var session = new GameQuizQuestionSession { Id = Guid.NewGuid(), GameId = gameId ?? game.Id, Status = status };
+            db.Add(new GameQuizSubmission
+            {
+                Id = Guid.NewGuid(),
+                GameId = session.GameId,
+                QuestionSession = session,
+                User = user,
+                DisplayNameSnapshot = "Frozen player",
+                IsCorrect = correct,
+                AwardedPoints = points,
+                SubmittedAtUtc = now
+            });
+        }
+        AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 100, true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 0, false);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Open, 900, true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Skipped, 900, true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 900, true, Guid.NewGuid());
+        foreach (var (target, type, delta) in new[] {
+            (user, GameQuizPointEntryTypeValue.ManualAdjustment, -20),
+            (user, GameQuizPointEntryTypeValue.ModifierPurchase, -70),
+            (otherUser, GameQuizPointEntryTypeValue.ManualAdjustment, 90) })
+        {
+            db.Add(new GameQuizPointLedgerEntry
+            {
+                Id = Guid.NewGuid(),
+                GameId = game.Id,
+                User = target,
+                EntryType = type,
+                PointsDelta = delta,
+                OccurredAtUtc = now
+            });
+        }
+        await db.SaveChangesAsync();
+        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
+            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System);
+        var frame = await repository.ReadAsync(default);
+        Assert.Equal("quiz_leaderboard", frame.Phase);
+        Assert.Null(frame.Leaderboard);
+        Assert.Null(frame.Round);
+        Assert.Equal(new[] { new GameOverlayQuizLeaderboardEntry("Manual only", 90, 0, 0),
+            new GameOverlayQuizLeaderboardEntry("Frozen player", 80, 2, 1) }, frame.QuizLeaderboard);
+        Assert.Equal(1, (await repository.ReadLeaderboardStateAsync(game.Id, default))!.PageCount);
+    }
+
+    [Fact]
     public async Task Summary_PublishesPartialAndCompleteDraftsWithoutChangingRound_ThenUsesSavedResults()
     {
         await using var db = CreateContext();
@@ -284,6 +346,64 @@ public sealed class DbGameOverlayRepositoryTests
         db.Remove(key);
         await db.SaveChangesAsync();
         Assert.False(await repository.ValidateKeyAsync("hash", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Leaderboard_UsesCompletedScoresAndCurrentLeaderboardPlaces_WithoutAnActiveTeam()
+    {
+        await using var db = CreateContext();
+        var game = new Game { Id = Guid.NewGuid(), Status = GameStatusValue.Active, OverlayLeaderboardEnabled = true };
+        var teams = Enumerable.Range(1, 4).Select(slot => new GameTeam
+        {
+            Id = Guid.NewGuid(),
+            Game = game,
+            Name = $"Team {slot}",
+            Status = TeamStatusValue.Confirmed,
+            Slot = new GameTeamSlot { Id = Guid.NewGuid(), Game = game, SlotIndex = slot }
+        }).ToArray();
+        db.AddRange(teams);
+        void AddRound(int team, int score, string status = GameRoundStatusValue.Completed) => db.Add(new GameRound
+        {
+            Id = Guid.NewGuid(),
+            Game = game,
+            Team = teams[team],
+            Status = status,
+            FinalScore = score,
+            KillsCount = 3,
+            BountyCount = 2,
+            ModifierResults = [new GameRoundModifierResult { Id = Guid.NewGuid(), KillDelta = 2 }],
+            Participants = [new GameRoundParticipant
+            {
+                Id = Guid.NewGuid(),
+                User = new User { Id = Guid.NewGuid(), DisplayName = "Renamed player" },
+                DisplayNameSnapshot = $"Player {team + 1}"
+            }],
+            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        });
+        AddRound(0, 500);
+        AddRound(0, -200);
+        AddRound(0, 100);
+        AddRound(1, 300);
+        AddRound(1, 9000, GameRoundStatusValue.Cancelled);
+        AddRound(2, -100);
+        AddRound(2, 5000, GameRoundStatusValue.ReviewingResults);
+        await db.SaveChangesAsync();
+        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
+            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System);
+        var frame = await repository.ReadAsync(default);
+        Assert.Equal("leaderboard", frame.Phase);
+        Assert.Null(frame.Team);
+        Assert.NotNull(frame.Leaderboard);
+        Assert.Equal([300, 300, -100, null], frame.Leaderboard!.Select(team => team.FinalScore));
+        Assert.Equal([1, 2, 3, null], frame.Leaderboard.Select(team => team.Rank));
+        Assert.Equal([3, 1, 1, 0], frame.Leaderboard.Select(team => team.RoundsPlayed));
+        Assert.Equal([15, 5, 5, 0], frame.Leaderboard.Select(team => team.TotalKills));
+        Assert.Equal([6, 2, 2, 0], frame.Leaderboard.Select(team => team.TotalBounties));
+        Assert.Equal([1, 2, 3, 4], frame.Leaderboard.Select(team => team.SlotIndex));
+        Assert.Equal(["Player 1"], frame.Leaderboard[0].Players);
+        game.OverlayLeaderboardEnabled = false;
+        await db.SaveChangesAsync();
+        Assert.Equal("idle", (await repository.ReadAsync(default)).Phase);
     }
 
     private static ApplicationDbContext CreateContext() => new(

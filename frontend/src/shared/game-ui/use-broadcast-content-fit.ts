@@ -23,9 +23,13 @@ export function useBroadcastContentFit(
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const stopMovement = () => movement?.cancel()
     reducedMotion.addEventListener('change', stopMovement)
-    const measure = () => {
-      const width = element.offsetWidth
-      const height = element.offsetHeight
+    let contentSize: { width: number; height: number } | undefined
+    const measure = (entries: ResizeObserverEntry[] = []) => {
+      const box = entries.find((entry) => entry.target === element)?.borderBoxSize[0]
+      if (box) contentSize = { width: box.inlineSize, height: box.blockSize }
+      // offsetHeight rounds fractional pixels and can make a fitted panel exceed its frame.
+      const width = Math.ceil(contentSize?.width ?? element.offsetWidth)
+      const height = Math.ceil(contentSize?.height ?? element.offsetHeight)
       const nextScale = Math.min(
         1,
         region.clientWidth / Math.max(1, width),

@@ -15,6 +15,40 @@ namespace Backend.Tests.Integration.GameEndpoints;
 
 public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData(null)]
+    public async Task Leaderboard_RejectsInvalidKind(string? kind)
+    {
+        using var client = TestAuthClientFactory.CreateClient(factory, ["moderator"]);
+        client.DefaultRequestHeaders.Add("X-Dead-Mans-Api-Client", "1");
+        using var response = await client.PutAsJsonAsync($"/api/overlay/games/{Guid.NewGuid()}/leaderboard",
+            new { enabled = true, kind });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Leaderboard_RejectsNegativePage()
+    {
+        using var client = TestAuthClientFactory.CreateClient(factory, ["moderator"]);
+        client.DefaultRequestHeaders.Add("X-Dead-Mans-Api-Client", "1");
+        using var response = await client.PutAsJsonAsync($"/api/overlay/games/{Guid.NewGuid()}/leaderboard",
+            new { enabled = true, page = -1 });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("GET", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
+    [InlineData("PUT", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
+    public async Task Viewer_CannotControlLeaderboard(string method, string path)
+    {
+        using var client = TestAuthClientFactory.CreateClient(factory, ["viewer"]);
+        client.DefaultRequestHeaders.Add("X-Dead-Mans-Api-Client", "1");
+        using var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), path)
+        { Content = JsonContent.Create(new { enabled = true }) });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     [Fact]
     public async Task OverlayHub_ReceivesInvalidations_AndRevalidatesRevokedKey()
     {
@@ -149,6 +183,8 @@ public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) 
 
     [Theory]
     [InlineData("GET", "/api/overlay/snapshot")]
+    [InlineData("GET", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
+    [InlineData("PUT", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
     [InlineData("POST", "/api/overlay/key")]
     [InlineData("DELETE", "/api/overlay/key")]
     [InlineData("GET", "/api/overlay/test")]

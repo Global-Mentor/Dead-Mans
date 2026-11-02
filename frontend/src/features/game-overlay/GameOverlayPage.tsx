@@ -10,6 +10,8 @@ import {
   BroadcastRound,
   BroadcastGameplay,
   BroadcastSummary,
+  BroadcastLeaderboard,
+  BroadcastQuizLeaderboard,
 } from '../../shared/game-ui/index.ts'
 import { useOverlayFrame } from './use-overlay-frame.ts'
 import { OverlayPresence } from './OverlayPresence.tsx'
@@ -70,7 +72,30 @@ const OverlayFrame = memo(function OverlayFrame({
         pointerEvents: 'none',
       }}
     >
-      {frame?.phase === 'test' ? (
+      {frame?.phase === 'leaderboard' && frame.leaderboard ? (
+        <>
+          <BroadcastBackdrop visible />
+          <BroadcastLeaderboard
+            key={frame.gameId}
+            entries={frame.leaderboard}
+            page={frame.leaderboardPage ?? 0}
+            labels={{
+              teamFallback: (number) => t('gameOverlay.teamFallback', { number }),
+              page: (current, total) => t('gameOverlay.leaderboardPage', { current, total }),
+            }}
+          />
+        </>
+      ) : frame?.phase === 'quiz_leaderboard' && frame.quizLeaderboard ? (
+        <>
+          <BroadcastBackdrop visible />
+          <BroadcastQuizLeaderboard
+            key={frame.gameId}
+            entries={frame.quizLeaderboard}
+            page={frame.leaderboardPage ?? 0}
+            pageLabel={(current, total) => t('gameOverlay.leaderboardPage', { current, total })}
+          />
+        </>
+      ) : frame?.phase === 'test' ? (
         <OverlayTestScene />
       ) : frame?.team ? (
         <>

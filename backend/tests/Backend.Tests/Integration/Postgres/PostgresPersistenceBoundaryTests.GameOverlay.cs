@@ -10,6 +10,151 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed partial class PostgresPersistenceBoundaryTests
 {
+    [Fact]
+    public async Task GameOverlay_ManualPagePersistsAcrossReaders_ClampsToAvailableTeams_AndResetsWhenHidden()
+    {
+        await _database.ResetAsync();
+        await using var db = _database.CreateDbContext();
+        var seed = await SeedPlayableRoundGraphAsync(db, async (context, now, gameId, ownerId) =>
+        {
+            for (var index = 2; index <= 7; index++)
+            {
+                var slot = CreateSlot(gameId, index, now);
+                var user = CreateUser($"overlay-page-{index}");
+                var team = CreateTeam(gameId, slot.Id, now, TeamStatusValue.Confirmed);
+                team.CreatedByUserId = ownerId;
+                team.ConfirmedAtUtc = now;
+                team.ConfirmedByUserId = ownerId;
+                context.AddRange(slot, user, team, new GameTeamMember
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = gameId,
+                    TeamId = team.Id,
+                    UserId = user.Id,
+                    JoinedAtUtc = now
+                });
+            }
+            await context.SaveChangesAsync();
+        });
+        DbGameOverlayRepository Repository(backend.Data.ApplicationDbContext context) =>
+            new(context, Options.Create(new StorageOptions()), TimeProvider.System);
+        var repository = Repository(db);
+        Assert.Equal(new GameOverlayLeaderboardState(false, 0, 2), await repository.ReadLeaderboardStateAsync(seed.GameId, default));
+        Assert.Equal(new GameOverlayLeaderboardState(true, 1, 2), await repository.SetLeaderboardStateAsync(seed.GameId, true, default, 1));
+        await using var observer = _database.CreateDbContext();
+        var reconnected = Repository(observer);
+        Assert.Equal(new GameOverlayLeaderboardState(true, 1, 2), await reconnected.ReadLeaderboardStateAsync(seed.GameId, default));
+        Assert.Equal(1, (await reconnected.ReadAsync(default)).LeaderboardPage);
+        Assert.Equal(1, (await repository.SetLeaderboardStateAsync(seed.GameId, true, default, int.MaxValue))!.Page);
+        Assert.Equal(0, (await repository.SetLeaderboardStateAsync(seed.GameId, true, default, -1))!.Page);
+        await repository.SetLeaderboardStateAsync(seed.GameId, true, default, 1);
+        Assert.Equal(new GameOverlayLeaderboardState(false, 0, 2), await repository.SetLeaderboardStateAsync(seed.GameId, false, default));
+        Assert.Equal(0, (await repository.SetLeaderboardStateAsync(seed.GameId, true, default))!.Page);
+        foreach (var member in await db.GameTeamMembers.Where(row => row.GameId == seed.GameId).ToArrayAsync())
+        {
+            db.Add(new GameQuizPointLedgerEntry
+            {
+                Id = Guid.NewGuid(),
+                GameId = seed.GameId,
+                UserId = member.UserId,
+                EntryType = GameQuizPointEntryTypeValue.ManualAdjustment,
+                PointsDelta = 100,
+                ManualRequestId = Guid.NewGuid(),
+                CreatedByUserId = seed.UserId,
+                Reason = "Quiz standings test",
+                AvailablePointsBefore = 0,
+                AvailablePointsAfter = 100,
+                OccurredAtUtc = seed.Now
+            });
+        }
+        await db.SaveChangesAsync();
+        Assert.Equal(new GameOverlayLeaderboardState(true, 1, 2, "quiz"),
+            await repository.SetLeaderboardStateAsync(seed.GameId, true, default, 1, "quiz"));
+        Assert.Equal("quiz", (await reconnected.ReadLeaderboardStateAsync(seed.GameId, default))!.Kind);
+        var quizFrame = await reconnected.ReadAsync(default);
+        Assert.Equal("quiz_leaderboard", quizFrame.Phase);
+        Assert.Null(quizFrame.Leaderboard);
+        Assert.Equal(7, quizFrame.QuizLeaderboard!.Count);
+        Assert.Equal(1, quizFrame.LeaderboardPage);
+        await repository.SetLeaderboardStateAsync(seed.GameId, true, default);
+        Assert.Null((await reconnected.ReadAsync(default)).QuizLeaderboard);
+    }
+
+    [Fact]
+    public async Task GameOverlay_LeaderboardOverridesTestAndRound_DurablyWithoutChangingGame_AndRejectsStaleGames()
+    {
+        await _database.ResetAsync();
+        await using var db = _database.CreateDbContext();
+        var seed = await SeedPlayableRoundGraphAsync(db);
+        var game = await db.Games.SingleAsync(row => row.Id == seed.GameId);
+        game.ActiveTeamId = seed.TeamId;
+        var round = new GameRound
+        {
+            Id = Guid.NewGuid(),
+            GameId = seed.GameId,
+            BoardId = seed.BoardId,
+            BoardCellId = seed.CellId,
+            TeamId = seed.TeamId,
+            Status = GameRoundStatusValue.CardOpened,
+            BaseScore = 100,
+            CellCostSnapshot = 100,
+            CellTitleSnapshot = "Test cell",
+            TeamSlotIndexSnapshot = 1,
+            CreatedAtUtc = seed.Now,
+            UpdatedAtUtc = seed.Now
+        };
+        db.Add(round);
+        await db.SaveChangesAsync();
+        var events = new Backend.Tests.Support.OverlayTestEventsPublisher();
+        backend.Application.Features.GameOverlay.GameOverlayService Service(backend.Data.ApplicationDbContext context) => new(
+            new DbGameOverlayRepository(context, Options.Create(new StorageOptions()), TimeProvider.System),
+            events, Microsoft.Extensions.Logging.Abstractions.NullLogger<backend.Application.Features.GameOverlay.GameOverlayService>.Instance);
+        var service = Service(db);
+        var key = await service.RotateKeyAsync(seed.UserId, default);
+        Assert.Equal("card_opened", (await service.ReadAsync(key, default)).Phase);
+        await service.SetTestEnabledAsync(seed.UserId, true, default);
+        Assert.Equal("test", (await service.ReadAsync(key, default)).Phase);
+        await service.SetLeaderboardStateAsync(seed.GameId, true, default, kind: "quiz");
+        Assert.Equal("quiz_leaderboard", (await service.ReadAsync(key, default)).Phase);
+        Assert.True((await service.SetLeaderboardStateAsync(seed.GameId, true, default))!.Enabled);
+        Assert.True((await service.SetLeaderboardStateAsync(seed.GameId, true, default))!.Enabled);
+        await using var observer = _database.CreateDbContext();
+        var reconnected = Service(observer);
+        Assert.True((await reconnected.ReadLeaderboardStateAsync(seed.GameId, default))!.Enabled);
+        var frame = await reconnected.ReadAsync(key, default);
+        Assert.Equal("leaderboard", frame.Phase);
+        Assert.NotEmpty(frame.Leaderboard!);
+        Assert.Null(frame.Team);
+        Assert.Null(frame.Board);
+        Assert.Null(frame.Round);
+        Assert.Null(frame.Gameplay);
+        Assert.Null(frame.Summary);
+        Assert.Equal(seed.TeamId, (await observer.Games.AsNoTracking().SingleAsync(row => row.Id == seed.GameId)).ActiveTeamId);
+        var unchanged = await observer.GameRounds.AsNoTracking().SingleAsync();
+        Assert.Equal(GameRoundStatusValue.CardOpened, unchanged.Status);
+        Assert.Equal(1, unchanged.Version);
+        Assert.Null(unchanged.GameplayStartedAtUtc);
+        events.Fail = true;
+        Assert.False((await service.SetLeaderboardStateAsync(seed.GameId, false, default))!.Enabled);
+        Assert.Equal("test", (await reconnected.ReadAsync(key, default)).Phase);
+        await service.SetTestEnabledAsync(seed.UserId, false, default);
+        Assert.Equal("card_opened", (await reconnected.ReadAsync(key, default)).Phase);
+        Assert.Null(await service.SetLeaderboardStateAsync(Guid.NewGuid(), true, default));
+        var cancelled = await new DbGameRoundRepository(db, TimeProvider.System).TechnicalCancelAsync(round.Id,
+            new TechnicalCancelGameRoundInput(1, "operator_error", "Round cancelled", "Test completed"), seed.UserId);
+        Assert.Equal(TransitionGameRoundOutcome.Transitioned, cancelled.Outcome);
+        db.ChangeTracker.Clear();
+        var lifecycle = new DbGameLifecyclePersistence(db,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DbGameLifecyclePersistence>.Instance, TimeProvider.System);
+        var preview = Assert.IsType<GameFinishPreview>((await lifecycle.GetFinishPreviewAsync(seed.GameId)).Preview);
+        var finished = await lifecycle.FinishGameAsync(seed.GameId,
+            new FinishGameInput(preview.Summary.BoardVersion, Guid.NewGuid(), preview.Warnings.Select(warning => warning.Code).ToHashSet(), null), seed.UserId);
+        Assert.Equal(GameLifecycleErrorCode.None, finished.Error);
+        Assert.Null(await service.SetLeaderboardStateAsync(seed.GameId, true, default));
+        Assert.Null(await service.ReadLeaderboardStateAsync(seed.GameId, default));
+        Assert.Equal("idle", (await reconnected.ReadAsync(key, default)).Phase);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

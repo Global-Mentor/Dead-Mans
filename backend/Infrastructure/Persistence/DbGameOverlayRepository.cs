@@ -63,11 +63,25 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
             : null;
         var game = await db.Games.AsNoTracking()
             .Where(game => !game.IsDeleted && game.Status == GameStatusValue.Active)
-            .Select(game => new { game.Id, game.ActiveTeamId, game.Status })
+            .Select(game => new { game.Id, game.ActiveTeamId, game.Status, game.OverlayLeaderboardEnabled, game.OverlayLeaderboardPage, game.OverlayLeaderboardKind })
             .FirstOrDefaultAsync(cancellationToken);
         if (game is null)
         {
             return new GameOverlaySnapshot(null, "idle", null, null);
+        }
+        if (game.OverlayLeaderboardEnabled && game.OverlayLeaderboardKind == "quiz")
+        {
+            var quiz = await ReadQuizLeaderboardAsync(game.Id, cancellationToken);
+            var pages = Math.Max(1, (quiz.Count + LeaderboardPageSize - 1) / LeaderboardPageSize);
+            return new GameOverlaySnapshot(game.Id.ToString(), "quiz_leaderboard", null, null,
+                LeaderboardPage: Math.Clamp(game.OverlayLeaderboardPage, 0, pages - 1), QuizLeaderboard: quiz);
+        }
+        if (game.OverlayLeaderboardEnabled)
+        {
+            var leaderboard = await ReadLeaderboardAsync(game.Id, cancellationToken);
+            var pages = Math.Max(1, (leaderboard.Count + LeaderboardPageSize - 1) / LeaderboardPageSize);
+            return new GameOverlaySnapshot(game.Id.ToString(), "leaderboard", null, null,
+                Leaderboard: leaderboard, LeaderboardPage: Math.Clamp(game.OverlayLeaderboardPage, 0, pages - 1));
         }
         if (game.Status != GameStatusValue.Active || game.ActiveTeamId is null)
         {

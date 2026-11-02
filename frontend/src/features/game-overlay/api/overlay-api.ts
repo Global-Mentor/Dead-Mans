@@ -1,4 +1,4 @@
-import type { paths } from '../../../shared/api/contracts/generated'
+import type { components, paths } from '../../../shared/api/contracts/generated'
 import {
   createApiClient,
   unwrapOpenApiData,
@@ -6,6 +6,28 @@ import {
 } from '../../../shared/api/client/openApiClient.ts'
 
 const client = createApiClient<paths>()
+
+export function fetchOverlayLeaderboardState(gameId: string, signal: AbortSignal) {
+  return unwrapOpenApiData(
+    client.GET('/overlay/games/{gameId}/leaderboard', {
+      params: { path: { gameId } },
+      signal,
+      cache: 'no-store',
+    }),
+  )
+}
+
+export function setOverlayLeaderboardState(
+  gameId: string,
+  state: components['schemas']['SetGameOverlayLeaderboardRequest'],
+) {
+  return unwrapOpenApiData(
+    client.PUT('/overlay/games/{gameId}/leaderboard', {
+      params: { path: { gameId } },
+      body: state,
+    }),
+  )
+}
 
 export function rotateOverlayKey() {
   return unwrapOpenApiData(client.POST('/overlay/key'))

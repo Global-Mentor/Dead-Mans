@@ -21,10 +21,28 @@ public sealed class GameOverlayService(IGameOverlayRepository repository,
     public Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken) =>
         repository.RevokeKeyAsync(ownerId, cancellationToken);
 
-    public async Task<GameOverlaySnapshot> ReadAsync(string key, CancellationToken cancellationToken) =>
-        await repository.IsTestEnabledAsync(Hash(key), cancellationToken)
+    public async Task<GameOverlaySnapshot> ReadAsync(string key, CancellationToken cancellationToken)
+    {
+        var frame = await repository.ReadAsync(cancellationToken);
+        if (frame.Leaderboard is not null || frame.QuizLeaderboard is not null) return frame;
+        return await repository.IsTestEnabledAsync(Hash(key), cancellationToken)
             ? new GameOverlaySnapshot(null, "test", null, null)
-            : await repository.ReadAsync(cancellationToken);
+            : frame;
+    }
+
+    public Task<GameOverlayLeaderboardState?> ReadLeaderboardStateAsync(Guid gameId, CancellationToken cancellationToken) =>
+        repository.ReadLeaderboardStateAsync(gameId, cancellationToken);
+
+    public async Task<GameOverlayLeaderboardState?> SetLeaderboardStateAsync(Guid gameId, bool enabled, CancellationToken cancellationToken, int? page = null, string kind = "teams")
+    {
+        var state = await repository.SetLeaderboardStateAsync(gameId, enabled, cancellationToken, page, kind);
+        if (state is not null)
+        {
+            await RealtimePublishGuard.TryPublishAsync(eventsPublisher.PublishOverlayFrameChangedAsync,
+                logger, "Failed to publish overlay leaderboard state change.");
+        }
+        return state;
+    }
 
     public Task<GameOverlayTestState> ReadTestStateAsync(Guid ownerId, CancellationToken cancellationToken) =>
         repository.ReadTestStateAsync(ownerId, cancellationToken);

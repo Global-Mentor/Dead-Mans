@@ -49,6 +49,49 @@ paths:
           description: Authentication required
         "403":
           description: Moderator or admin required
+  /overlay/games/{gameId}/leaderboard:
+    parameters:
+      - in: path
+        name: gameId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getGameOverlayLeaderboardState
+      description: Persistent leaderboard override for this active game. Moderator or admin only.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current override
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameOverlayLeaderboardStateDto'
+        "401": { description: Authentication required }
+        "403": { description: Moderator or admin required }
+        "404": { description: Game is not active }
+    put:
+      operationId: setGameOverlayLeaderboardState
+      description: Idempotently replaces all overlay scenes, including test mode, with the active game's team or quiz leaderboard. Disabling restores the current underlying scene. Does not change phases or timers. The game ID prevents stale commands affecting a later game.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetGameOverlayLeaderboardRequest'
+      responses:
+        "200":
+          description: Confirmed override
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameOverlayLeaderboardStateDto'
+        "400": { description: "Missing enabled value or invalid enabled, page or kind" }
+        "401": { description: Authentication required }
+        "403": { description: Moderator or admin required }
+        "404": { description: Game is not active }
   /overlay/key:
     post:
       operationId: rotateGameOverlayKey
@@ -4606,6 +4649,43 @@ components:
       in: cookie
       name: dm_auth
   schemas:
+    GameOverlayLeaderboardStateDto:
+      type: object
+      required: [enabled, page, pageCount, kind]
+      properties:
+        enabled: { type: boolean }
+        page: { type: integer, minimum: 0, description: Selected zero-based page of six entries. }
+        pageCount: { type: integer, minimum: 1 }
+        kind: { type: string, enum: [teams, quiz] }
+    SetGameOverlayLeaderboardRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        page: { type: integer, minimum: 0, description: Zero-based page. Defaults to the first page and is clamped to available pages. Hiding resets to the first page. }
+        kind: { type: string, enum: [teams, quiz], default: teams, description: Only one leaderboard is visible at a time. }
+    GameOverlayQuizLeaderboardEntryDto:
+      type: object
+      required: [displayName, points, attempts, correctAnswers]
+      properties:
+        displayName: { type: string }
+        points: { type: integer }
+        attempts: { type: integer, minimum: 0 }
+        correctAnswers: { type: integer, minimum: 0 }
+    GameOverlayLeaderboardEntryDto:
+      type: object
+      required: [rank, name, slotIndex, players, roundsPlayed, totalKills, totalBounties, finalScore]
+      properties:
+        rank: { type: integer, nullable: true }
+        name: { type: string, nullable: true }
+        slotIndex: { type: integer }
+        players:
+          type: array
+          items: { type: string }
+        roundsPlayed: { type: integer }
+        totalKills: { type: integer }
+        totalBounties: { type: integer }
+        finalScore: { type: integer, nullable: true }
     GameOverlayTestStateDto:
       type: object
       required: [hasKey, enabled]
@@ -4775,13 +4855,26 @@ components:
       type: object
       required: [gameId, phase, team, board, round]
       properties:
+        leaderboardPage: { type: integer, minimum: 0, default: 0, description: Operator-selected zero-based page of six entries. }
+        quizLeaderboard:
+          type: array
+          nullable: true
+          description: Quiz participants from closed questions and manual adjustments in the active game, before spending. No answer content or private account data is included.
+          items:
+            $ref: '#/components/schemas/GameOverlayQuizLeaderboardEntryDto'
+        leaderboard:
+          type: array
+          nullable: true
+          description: Ranked confirmed teams with authoritative completed-round scores. Present only during the leaderboard override; all other scene fields are null. Teams without completed rounds have null rank and score.
+          items:
+            $ref: '#/components/schemas/GameOverlayLeaderboardEntryDto'
         gameId:
           type: string
           nullable: true
         phase:
           type: string
           description: Test mode replaces all game content with the static brand preview; it does not change the round phase.
-          enum: [test, idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
+          enum: [leaderboard, quiz_leaderboard, test, idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
         team:
           type: object
           nullable: true
