@@ -7,6 +7,10 @@ import {
 
 const client = createApiClient<paths>()
 
+export function fetchOverlayKey(signal: AbortSignal) {
+  return unwrapOpenApiData(client.GET('/overlay/key', { signal, cache: 'no-store' }))
+}
+
 export function fetchOverlayLeaderboardState(gameId: string, signal: AbortSignal) {
   return unwrapOpenApiData(
     client.GET('/overlay/games/{gameId}/leaderboard', {

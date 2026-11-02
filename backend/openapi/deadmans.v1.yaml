@@ -93,9 +93,23 @@ paths:
         "403": { description: Moderator or admin required }
         "404": { description: Game is not active }
   /overlay/key:
+    get:
+      operationId: getGameOverlayKey
+      description: Returns only the current user's saved key. Moderator or admin only. No-store. Null if absent or an older hash-only key cannot be recovered. Never log the key.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Saved key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameOverlaySavedKeyDto'
+        "401": { description: Authentication required }
+        "403": { description: Moderator or admin required }
     post:
       operationId: rotateGameOverlayKey
-      description: Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged.
+      description: Replaces the current user's read-only broadcast key. Moderator or admin only. The key is stored encrypted for owner-only retrieval and must not be logged.
       security:
         - cookieAuth: []
       responses:
@@ -4649,6 +4663,11 @@ components:
       in: cookie
       name: dm_auth
   schemas:
+    GameOverlaySavedKeyDto:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, nullable: true, minLength: 64, maxLength: 64 }
     GameOverlayLeaderboardStateDto:
       type: object
       required: [enabled, page, pageCount, kind]

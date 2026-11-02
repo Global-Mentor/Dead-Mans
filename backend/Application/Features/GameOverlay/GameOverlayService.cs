@@ -14,12 +14,15 @@ public sealed class GameOverlayService(IGameOverlayRepository repository,
     public async Task<string> RotateKeyAsync(Guid ownerId, CancellationToken cancellationToken)
     {
         var key = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
-        await repository.ReplaceKeyAsync(ownerId, Hash(key), cancellationToken);
+        await repository.ReplaceKeyAsync(ownerId, Hash(key), key, cancellationToken);
         return key;
     }
 
     public Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken) =>
         repository.RevokeKeyAsync(ownerId, cancellationToken);
+
+    public Task<string?> ReadKeyAsync(Guid ownerId, CancellationToken cancellationToken) =>
+        repository.ReadKeyAsync(ownerId, cancellationToken);
 
     public async Task<GameOverlaySnapshot> ReadAsync(string key, CancellationToken cancellationToken)
     {

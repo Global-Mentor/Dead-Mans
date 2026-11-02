@@ -49,9 +49,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description Returns only the current user's saved key. Moderator or admin only. No-store. Null if absent or an older hash-only key cannot be recovered. Never log the key. */
+        get: operations["getGameOverlayKey"];
         put?: never;
-        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The raw key is returned once and must not be logged. */
+        /** @description Replaces the current user's read-only broadcast key. Moderator or admin only. The key is stored encrypted for owner-only retrieval and must not be logged. */
         post: operations["rotateGameOverlayKey"];
         /** @description Revokes the current user's broadcast key. Idempotent. Moderator or admin only. */
         delete: operations["revokeGameOverlayKey"];
@@ -1804,6 +1805,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GameOverlaySavedKeyDto: {
+            key: string | null;
+        };
         GameOverlayLeaderboardStateDto: {
             enabled: boolean;
             /** @description Selected zero-based page of six entries. */
@@ -3863,6 +3867,40 @@ export interface operations {
             };
             /** @description Game is not active */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGameOverlayKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameOverlaySavedKeyDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Moderator or admin required */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -10,6 +10,7 @@ using backend.Api.Contracts;
 using backend.Application.Abstractions.Realtime;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Backend.Tests.Integration.GameEndpoints;
 
@@ -37,10 +38,41 @@ public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SavedKey_IsOwnerOnly_Uncached_AndLegacyHashesRemainUnavailable()
+    {
+        var ownerId = Guid.NewGuid();
+        var key = new string('e', 64);
+        using var ownerFactory = TestAuthClientFactory.CreateFactory(factory, ["moderator"], ownerId);
+        using (var scope = ownerFactory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var protector = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>()
+                .CreateProtector("DeadMans.OverlayKey.v1", ownerId.ToString());
+            db.Add(new GameOverlayKey { Owner = CreateStaffOwner(db, ownerId), KeyHash = new string('d', 64), ProtectedKey = protector.Protect(key) });
+            await db.SaveChangesAsync();
+        }
+        using var owner = ownerFactory.CreateClient();
+        using var response = await owner.GetAsync("/api/overlay/key");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.Equal(key, (await response.Content.ReadFromJsonAsync<GameOverlaySavedKeyDto>())!.Key);
+        using var other = TestAuthClientFactory.CreateClient(factory, ["admin"], Guid.NewGuid());
+        Assert.Null((await other.GetFromJsonAsync<GameOverlaySavedKeyDto>("/api/overlay/key"))!.Key);
+        using (var scope = ownerFactory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            (await db.Set<GameOverlayKey>().FindAsync(ownerId))!.ProtectedKey = null;
+            await db.SaveChangesAsync();
+        }
+        Assert.Null((await owner.GetFromJsonAsync<GameOverlaySavedKeyDto>("/api/overlay/key"))!.Key);
+    }
+
     [Theory]
+    [InlineData("GET", "/api/overlay/key")]
     [InlineData("GET", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
     [InlineData("PUT", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
-    public async Task Viewer_CannotControlLeaderboard(string method, string path)
+    public async Task Viewer_CannotReadSavedKeysOrControlLeaderboard(string method, string path)
     {
         using var client = TestAuthClientFactory.CreateClient(factory, ["viewer"]);
         client.DefaultRequestHeaders.Add("X-Dead-Mans-Api-Client", "1");
@@ -183,6 +215,7 @@ public sealed class GameOverlayContractTests(TestWebApplicationFactory factory) 
 
     [Theory]
     [InlineData("GET", "/api/overlay/snapshot")]
+    [InlineData("GET", "/api/overlay/key")]
     [InlineData("GET", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
     [InlineData("PUT", "/api/overlay/games/00000000-0000-0000-0000-000000000001/leaderboard")]
     [InlineData("POST", "/api/overlay/key")]

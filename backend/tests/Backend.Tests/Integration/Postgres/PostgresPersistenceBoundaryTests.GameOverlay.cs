@@ -10,6 +10,9 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed partial class PostgresPersistenceBoundaryTests
 {
+    private static readonly Microsoft.AspNetCore.DataProtection.IDataProtectionProvider OverlayProtection =
+        new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
+
     [Fact]
     public async Task GameOverlay_ManualPagePersistsAcrossReaders_ClampsToAvailableTeams_AndResetsWhenHidden()
     {
@@ -37,7 +40,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
             await context.SaveChangesAsync();
         });
         DbGameOverlayRepository Repository(backend.Data.ApplicationDbContext context) =>
-            new(context, Options.Create(new StorageOptions()), TimeProvider.System);
+            new(context, Options.Create(new StorageOptions()), TimeProvider.System, OverlayProtection);
         var repository = Repository(db);
         Assert.Equal(new GameOverlayLeaderboardState(false, 0, 2), await repository.ReadLeaderboardStateAsync(seed.GameId, default));
         Assert.Equal(new GameOverlayLeaderboardState(true, 1, 2), await repository.SetLeaderboardStateAsync(seed.GameId, true, default, 1));
@@ -107,7 +110,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         await db.SaveChangesAsync();
         var events = new Backend.Tests.Support.OverlayTestEventsPublisher();
         backend.Application.Features.GameOverlay.GameOverlayService Service(backend.Data.ApplicationDbContext context) => new(
-            new DbGameOverlayRepository(context, Options.Create(new StorageOptions()), TimeProvider.System),
+            new DbGameOverlayRepository(context, Options.Create(new StorageOptions()), TimeProvider.System, OverlayProtection),
             events, Microsoft.Extensions.Logging.Abstractions.NullLogger<backend.Application.Features.GameOverlay.GameOverlayService>.Instance);
         var service = Service(db);
         var key = await service.RotateKeyAsync(seed.UserId, default);
@@ -199,7 +202,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var input = new BroadcastGameRoundSummaryInput(1, 2, 1, null);
         Assert.Equal(FinalizeGameRoundOutcome.Completed, (await writer.BroadcastSummaryAsync(round.Id, input, seed.UserId)).Outcome);
         await using var observer = _database.CreateDbContext();
-        var reader = new DbGameOverlayRepository(observer, Options.Create(new StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System);
+        var reader = new DbGameOverlayRepository(observer, Options.Create(new StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection);
         var partial = (await reader.ReadAsync(default))!.Summary!;
         Assert.Equal(200, partial.KillsScore);
         Assert.Equal(300, partial.ScoreDetails!.FinalScore);
@@ -334,7 +337,7 @@ public sealed partial class PostgresPersistenceBoundaryTests
             openedCell.State = BoardCellState.Cancelled;
             await db.SaveChangesAsync();
         }
-        var repository = new DbGameOverlayRepository(db, Options.Create(new StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System);
+        var repository = new DbGameOverlayRepository(db, Options.Create(new StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection);
         var snapshot = await repository.ReadAsync(default);
         if (!finalized)
         {

@@ -15,6 +15,15 @@ namespace backend.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class GameOverlayController(IGameOverlayService service) : ControllerBase
 {
+    [HttpGet("key")]
+    [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
+    public async Task<IActionResult> GetKey(CancellationToken cancellationToken)
+    {
+        var ownerId = HttpContext.TryGetUserId();
+        if (ownerId is null) return Unauthorized();
+        return Ok(new GameOverlaySavedKeyDto(await service.ReadKeyAsync(ownerId.Value, cancellationToken)));
+    }
+
     [HttpGet("games/{gameId:guid}/leaderboard")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
     public async Task<IActionResult> GetLeaderboardState(Guid gameId, CancellationToken cancellationToken)

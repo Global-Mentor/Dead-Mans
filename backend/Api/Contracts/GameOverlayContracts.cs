@@ -1,6 +1,7 @@
 namespace backend.Api.Contracts;
 
 public sealed record GameOverlayKeyDto(string Key);
+public sealed record GameOverlaySavedKeyDto(string? Key);
 public sealed record GameOverlayLeaderboardStateDto(bool Enabled, int Page, int PageCount, string Kind);
 public sealed record GameOverlayQuizLeaderboardEntryDto(string DisplayName, int Points, int Attempts, int CorrectAnswers);
 public sealed record SetGameOverlayLeaderboardRequest(bool? Enabled, int? Page = null, string Kind = "teams");

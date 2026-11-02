@@ -12,6 +12,9 @@ namespace Backend.Tests.Unit.Infrastructure.Persistence;
 
 public sealed class DbGameOverlayRepositoryTests
 {
+    private static readonly Microsoft.AspNetCore.DataProtection.IDataProtectionProvider OverlayProtection =
+        new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
+
     [Fact]
     public async Task QuizLeaderboard_UsesClosedAnswersAndAdjustments_BeforeSpending_AndExcludesOtherGames()
     {
@@ -64,7 +67,7 @@ public sealed class DbGameOverlayRepositoryTests
         }
         await db.SaveChangesAsync();
         var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
-            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System);
+            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection);
         var frame = await repository.ReadAsync(default);
         Assert.Equal("quiz_leaderboard", frame.Phase);
         Assert.Null(frame.Leaderboard);
@@ -109,7 +112,7 @@ public sealed class DbGameOverlayRepositoryTests
         var clock = new MutableTimeProvider(DateTimeOffset.UtcNow);
         var writer = new DbGameRoundRepository(db, clock);
         var reader = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
-            new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), clock);
+            new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), clock, OverlayProtection);
         var partial = new BroadcastGameRoundSummaryInput(5, 3, 1, null);
         Assert.Equal(FinalizeGameRoundOutcome.Completed, (await writer.BroadcastSummaryAsync(round.Id, partial, owner.Id)).Outcome);
         var summary = (await reader.ReadAsync(default))!.Summary!;
@@ -184,7 +187,7 @@ public sealed class DbGameOverlayRepositoryTests
         db.AddRange(rows);
         await db.SaveChangesAsync();
         var reader = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
-            new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System);
+            new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection);
         var initial = (await reader.ReadAsync(default))!.Summary!.ScoreDetails!;
         Assert.Equal(0, initial.FinalScore);
         Assert.Equal(3, initial.CalculationLines.Count(line => line.ModifierId is not null));
@@ -222,7 +225,7 @@ public sealed class DbGameOverlayRepositoryTests
             new GameTeamMember { Id = Guid.NewGuid(), GameId = game.Id, Team = team, User = owner },
             new GameTeamMember { Id = Guid.NewGuid(), GameId = game.Id, Team = team, User = owner, LeftAtUtc = DateTime.UtcNow });
         await db.SaveChangesAsync();
-        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System);
+        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection);
 
         var selecting = await repository.ReadAsync(CancellationToken.None);
         Assert.NotNull(selecting);
@@ -338,7 +341,7 @@ public sealed class DbGameOverlayRepositoryTests
         var key = new GameOverlayKey { Owner = new User { Id = Guid.NewGuid() }, KeyHash = "hash" };
         db.Add(key);
         await db.SaveChangesAsync();
-        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System);
+        var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(new backend.Infrastructure.Configuration.StorageOptions { PublicBaseUrl = "https://media.example.test" }), TimeProvider.System, OverlayProtection);
         var snapshot = await repository.ReadAsync(CancellationToken.None);
         Assert.Equal("idle", snapshot?.Phase);
         Assert.Null(snapshot?.Team);
@@ -389,7 +392,7 @@ public sealed class DbGameOverlayRepositoryTests
         AddRound(2, 5000, GameRoundStatusValue.ReviewingResults);
         await db.SaveChangesAsync();
         var repository = new DbGameOverlayRepository(db, Microsoft.Extensions.Options.Options.Create(
-            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System);
+            new backend.Infrastructure.Configuration.StorageOptions()), TimeProvider.System, OverlayProtection);
         var frame = await repository.ReadAsync(default);
         Assert.Equal("leaderboard", frame.Phase);
         Assert.Null(frame.Team);

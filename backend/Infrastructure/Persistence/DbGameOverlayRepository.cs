@@ -9,11 +9,13 @@ using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
 using backend.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography;
 
 namespace backend.Infrastructure.Persistence;
 
 public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOptions<StorageOptions> storageOptions,
-    TimeProvider timeProvider) : IGameOverlayRepository
+    TimeProvider timeProvider, IDataProtectionProvider dataProtectionProvider) : IGameOverlayRepository
 {
     public Task<bool> ValidateKeyAsync(string hash, CancellationToken cancellationToken)
     {
@@ -26,12 +28,33 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
                     || assignment.Role.Code == AuthRoleCodes.SuperAdmin)), cancellationToken);
     }
 
-    public async Task ReplaceKeyAsync(Guid ownerId, string hash, CancellationToken cancellationToken)
+    public async Task ReplaceKeyAsync(Guid ownerId, string hash, string key, CancellationToken cancellationToken)
     {
+        var protectedKey = KeyProtector(ownerId).Protect(key);
         await db.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO game_overlay_keys (owner_id, key_hash) VALUES ({ownerId}, {hash})
-            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, test_enabled = false
+            INSERT INTO game_overlay_keys (owner_id, key_hash, protected_key) VALUES ({ownerId}, {hash}, {protectedKey})
+            ON CONFLICT (owner_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, protected_key = EXCLUDED.protected_key, test_enabled = false
             """, cancellationToken);
+    }
+
+    private IDataProtector KeyProtector(Guid ownerId) =>
+        dataProtectionProvider.CreateProtector("DeadMans.OverlayKey.v1", ownerId.ToString());
+
+    public async Task<string?> ReadKeyAsync(Guid ownerId, CancellationToken cancellationToken)
+    {
+        var protectedKey = await db.Set<GameOverlayKey>().AsNoTracking()
+            .Where(key => key.OwnerId == ownerId).Select(key => key.ProtectedKey)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (protectedKey is null) return null;
+        try
+        {
+            return KeyProtector(ownerId).Unprotect(protectedKey);
+        }
+        catch (CryptographicException)
+        {
+            // An old link remains valid by hash even when its encryption key is unavailable.
+            return null;
+        }
     }
 
     public async Task RevokeKeyAsync(Guid ownerId, CancellationToken cancellationToken)
