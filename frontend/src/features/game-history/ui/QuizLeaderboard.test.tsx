@@ -1,5 +1,5 @@
-import { screen, within } from '@testing-library/react'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { cleanup, screen, within } from '@testing-library/react'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../../../i18n.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import { renderWithAppProviders } from '../../../test/render-with-app-providers.tsx'
@@ -12,6 +12,7 @@ vi.mock('../../../shared/auth/use-auth.ts', () => ({
 type QuizPlayer = components['schemas']['GameHistoryQuizPlayerSummaryDto']
 
 beforeAll(async () => i18n.changeLanguage('ru'))
+afterEach(cleanup)
 
 function player(overrides: Partial<QuizPlayer>): QuizPlayer {
   return {
@@ -47,6 +48,8 @@ describe('QuizLeaderboard', () => {
             availablePoints: 0,
             attempts: 4,
             correctAnswers: 3,
+            textStatistics: { attempts: 3, correctAnswers: 2, points: 15 },
+            screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 10 },
           }),
         ]}
       />,
@@ -55,7 +58,18 @@ describe('QuizLeaderboard', () => {
     const rows = screen.getAllByTestId('quiz-leaderboard-row')
     expect(within(rows[0]).getByText('Первый игрок')).toBeInTheDocument()
     expect(within(rows[0]).getByText('25 очк.')).toBeInTheDocument()
-    expect(within(rows[0]).getByText('Верных ответов: 3 из 4')).toBeInTheDocument()
+    expect(screen.getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual([
+      'Место',
+      'Игрок',
+      'Вопросы',
+      'Скриншоты',
+      'Заработано',
+    ])
+    expect(
+      within(rows[0])
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual(['1', 'Первый игрок', '2 из 3', '1 из 1', '25 очк.'])
     expect(within(rows[1]).getByText('Второй игрок')).toBeInTheDocument()
   })
 
@@ -73,6 +87,7 @@ describe('QuizLeaderboard', () => {
 
     expect(screen.getByText(displayName)).toBeVisible()
     expect(screen.getByText('0 очк.')).toBeVisible()
+    expect(screen.getAllByText('0 из 0')).toHaveLength(2)
     expect(container.querySelector('img')).toBeNull()
   })
 })

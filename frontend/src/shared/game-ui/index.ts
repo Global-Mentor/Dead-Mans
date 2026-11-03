@@ -34,5 +34,6 @@ export { BroadcastQuizLeaderboard } from './BroadcastQuizLeaderboard.tsx'
 export * from './QuizScreenshotImage.tsx'
 export * from './BroadcastScreenshot.tsx'
 export * from './use-quiz-countdown.ts'
-export * from './QuizFormatStatistics.tsx'
 export * from './quiz-image-text.ts'
+
+export { summarizeQuizFormats } from './quiz-statistics.ts'

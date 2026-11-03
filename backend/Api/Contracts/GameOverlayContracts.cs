@@ -3,7 +3,11 @@ namespace backend.Api.Contracts;
 public sealed record GameOverlayKeyDto(string Key);
 public sealed record GameOverlaySavedKeyDto(string? Key);
 public sealed record GameOverlayLeaderboardStateDto(bool Enabled, int Page, int PageCount, string Kind);
-public sealed record GameOverlayQuizLeaderboardEntryDto(string DisplayName, int Points, int Attempts, int CorrectAnswers);
+public sealed record GameOverlayQuizLeaderboardEntryDto(string DisplayName, int Points, int Attempts, int CorrectAnswers)
+{
+    public GameQuizFormatStatisticsDto TextStatistics { get; init; } = new(0, 0, 0);
+    public GameQuizFormatStatisticsDto ScreenshotStatistics { get; init; } = new(0, 0, 0);
+}
 public sealed record SetGameOverlayLeaderboardRequest(bool? Enabled, int? Page = null, string Kind = "teams");
 public sealed record GameOverlayLeaderboardEntryDto(int? Rank, string? Name, int SlotIndex,
     IReadOnlyList<string> Players, int RoundsPlayed, int TotalKills, int TotalBounties, int? FinalScore);

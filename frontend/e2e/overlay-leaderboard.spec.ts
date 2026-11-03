@@ -103,8 +103,14 @@ for (const width of [390, 768, 1440, 1920]) {
       quizLeaderboard: Array.from({ length: 7 }, (_, index) => ({
         displayName: `Игрок ${index + 1} с длинным именем охотника`,
         points: 700 - index * 100,
-        attempts: index + 1,
-        correctAnswers: index,
+        attempts: index + 3,
+        correctAnswers: index + 2,
+        textStatistics: {
+          attempts: index + 2,
+          correctAnswers: index + 1,
+          points: 400 - index * 50,
+        },
+        screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 300 - index * 50 },
       })),
     }
     await page.route('**/api/overlay/snapshot', (route) => route.fulfill({ json: frame }))
@@ -117,10 +123,18 @@ for (const width of [390, 768, 1440, 1920]) {
     await expect(quiz.getByRole('columnheader')).toHaveText([
       'Место',
       'Игрок',
-      'Верные ответы',
+      'Вопросы',
+      'Скриншоты',
       'Заработано',
     ])
     await expect(quiz.getByRole('row')).toHaveCount(7)
+    await expect(quiz.getByRole('row').nth(1).getByRole('cell')).toHaveText([
+      '1',
+      'Игрок 1 с длинным именем охотника',
+      '1 из 2',
+      '1 из 1',
+      '700 очк.',
+    ])
     const bounds = (await quiz.boundingBox())!
     expect(bounds.y).toBeCloseTo(24, 0)
     expect(bounds.x).toBeGreaterThanOrEqual(0)

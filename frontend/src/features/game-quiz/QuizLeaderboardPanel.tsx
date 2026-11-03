@@ -2,8 +2,8 @@ import { Box, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
-import { RoundBriefingDivider, QuizFormatStatistics } from '../../shared/game-ui/index.ts'
-import { RankingList, SectionCard, TabOption, TabStrip } from '../../shared/ui/index.ts'
+import { RoundBriefingDivider, QuizStandingsList } from '../../shared/game-ui/index.ts'
+import { SectionCard, TabOption, TabStrip } from '../../shared/ui/index.ts'
 
 export function QuizLeaderboardPanel({
   quiz,
@@ -87,39 +87,10 @@ export function QuizLeaderboardPanel({
             {t('gameQuiz.noLeaderboardEntries')}
           </Typography>
         ) : (
-          <RankingList
-            alignment="center"
-            density="compact"
-            highlightAppearance="selected"
-            detailLabel={t('gameQuiz.correctAnswersLabel')}
-            label={t('gameQuiz.leaderboardTitle')}
-            rankLabel={t('gameQuiz.rankLabel')}
-            nameLabel={t('common.entities.player')}
-            valueLabel={t(
-              mode === 'available'
-                ? 'gameQuiz.leaderboardAvailableTitle'
-                : 'gameQuiz.leaderboardEarnedTitle',
-            )}
-            entries={sorted.map((entry) => ({
-              id: entry.userId,
-              name: entry.displayName,
-              highlighted: entry.userId === currentUserId,
-              value: t(
-                mode === 'available'
-                  ? 'gameQuiz.availablePointsValue'
-                  : 'gameQuiz.earnedPointsValue',
-                { points: mode === 'available' ? entry.availablePoints : entry.points },
-              ),
-              detail:
-                entry.textStatistics && entry.screenshotStatistics ? (
-                  <QuizFormatStatistics entry={entry} />
-                ) : (
-                  t('gameQuiz.answerRatio', {
-                    attempts: entry.attempts,
-                    correct: entry.correctAnswers,
-                  })
-                ),
-            }))}
+          <QuizStandingsList
+            entries={sorted}
+            valueMode={mode}
+            {...(currentUserId ? { currentUserId } : {})}
           />
         )}
       </Box>

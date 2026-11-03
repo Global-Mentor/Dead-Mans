@@ -248,6 +248,8 @@ async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
                   points: 100,
                   availablePoints: 10,
                   spentPoints: 90,
+                  textStatistics: { attempts: 3, correctAnswers: 2, points: 60 },
+                  screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 40 },
                   attempts: 4,
                   correctAnswers: 3,
                 },
@@ -257,6 +259,8 @@ async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
                   points: 50,
                   availablePoints: 50,
                   spentPoints: 0,
+                  textStatistics: { attempts: 1, correctAnswers: 0, points: 0 },
+                  screenshotStatistics: { attempts: 3, correctAnswers: 2, points: 50 },
                   attempts: 4,
                   correctAnswers: 2,
                 },
@@ -664,8 +668,21 @@ test('screenshot history filters by format while the leaderboard keeps shared po
     }),
   )
   await page.goto('/panel/game-quiz')
-  await expect(page.getByText('Скриншоты: 1/1, 7 очк.', { exact: true })).toBeVisible()
-  await expect(page.getByText('Вопросы: 1/2, 5 очк.', { exact: true })).toBeVisible()
+  const standings = page.getByRole('tabpanel', { name: 'Заработано', exact: true })
+  await expect(standings.getByRole('columnheader')).toHaveText([
+    'Место',
+    'Игрок',
+    'Вопросы',
+    'Скриншоты',
+    'Заработано',
+  ])
+  await expect(standings.getByRole('rowgroup').getByRole('cell')).toHaveText([
+    '1',
+    'Охотник',
+    '1 из 2',
+    '1 из 1',
+    '12 очк.',
+  ])
   const history = page.getByTestId('quiz-history-scroll')
   await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
   await page.getByRole('combobox', { name: /^Формат вопросов/ }).click()
@@ -1121,6 +1138,8 @@ for (const width of [390, 768, 1440]) {
               {
                 userId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
                 displayName: 'Ведущий',
+                textStatistics: { attempts: 2, correctAnswers: 1, points: 100 },
+                screenshotStatistics: { attempts: 0, correctAnswers: 0, points: 0 },
                 points: 120,
                 availablePoints: 25,
                 spentPoints: 95,
@@ -1207,17 +1226,21 @@ for (const width of [390, 768, 1440]) {
     }
     await page.goto('/panel/game-quiz')
     const stats = page.getByRole('region', { name: 'Ваша статистика викторины', exact: true })
-    await expect(stats.getByRole('heading')).toHaveCount(0)
+    await expect(stats.getByRole('heading')).toHaveText(['Баланс', 'Вопросы', 'Скриншоты'])
     for (const [label, value] of [
       ['На руках', '25'],
       ['Заработано', '120'],
-      ['Верных ответов', '1'],
-      ['Неверных ответов', '1'],
-      ['Всего вопросов', '2'],
     ]) {
       await expect(stats.getByRole('group', { name: label, exact: true }).locator('dd')).toHaveText(
         value!,
       )
+    }
+    for (const [title, counts] of [
+      ['Вопросы', ['1 / 1', '2']],
+      ['Скриншоты', ['0 / 0', '0']],
+    ] as const) {
+      const formatStats = stats.getByRole('region', { name: title, exact: true })
+      await expect(formatStats.locator('dd')).toHaveText([...counts])
     }
     const history = page.getByTestId('quiz-history-scroll')
     const latest = history.getByTestId('quiz-timeline-question').first()
@@ -1275,7 +1298,7 @@ for (const width of [390, 768, 1440]) {
     await expect(history.getByText('Бонус за участие', { exact: false })).not.toBeVisible()
     await award.click()
     await expect(history.getByText('Бонус за участие', { exact: false })).toBeVisible()
-    const table = page.getByRole('table', { name: 'Таблица очков', exact: true })
+    const table = page.getByRole('table', { name: 'Лидерборд викторины', exact: true })
     await expect(page.getByRole('tab').filter({ hasText: /^(Заработано|На руках)$/ })).toHaveText([
       'Заработано',
       'На руках',
@@ -1315,7 +1338,7 @@ for (const width of [390, 768, 1440]) {
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`compact quiz rankings keep answers in a separate aligned column at ${width}px`, async ({
+  test(`compact quiz rankings keep question and screenshot columns aligned at ${width}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 })
@@ -1327,15 +1350,16 @@ for (const width of [390, 768, 1440]) {
       await expect(panel.getByRole('columnheader')).toHaveText([
         'Место',
         'Игрок',
-        'Верных ответов',
+        'Вопросы',
+        'Скриншоты',
         mode,
       ])
       const rows = panel.getByRole('rowgroup').getByRole('row')
       await expect(rows).toHaveCount(8)
       await expect(rows.first().getByRole('cell')).toHaveText(
         mode === 'Заработано'
-          ? ['1', 'Первый', '3 из 4', '100 очк.']
-          : ['1', 'Второй', '2 из 4', '50 очк.'],
+          ? ['1', 'Первый', '2 из 3', '1 из 1', '100 очк.']
+          : ['1', 'Второй', '0 из 1', '2 из 3', '50 очк.'],
       )
       const personalRow = rows.filter({ hasText: 'Первый' })
       const personalSurface = await personalRow.evaluate((el) => ({
@@ -1371,6 +1395,32 @@ for (const width of [390, 768, 1440]) {
           () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
         ),
       ).toBe(true)
+      const scrollRegion = panel.getByRole('region', { name: 'Лидерборд викторины', exact: true })
+      if (width === 390) {
+        await scrollRegion.focus()
+        await scrollRegion.press('ArrowRight')
+        await expect
+          .poll(() => scrollRegion.evaluate((element) => element.scrollLeft))
+          .toBeGreaterThan(0)
+        await scrollRegion.evaluate((element) => {
+          element.scrollLeft = element.scrollWidth
+        })
+        await expect(rows.first().getByRole('cell').last()).toBeInViewport()
+        await panel.screenshot({
+          path: info.outputPath(
+            `ranking-${mode === 'Заработано' ? 'earned' : 'balance'}-scrolled.png`,
+          ),
+        })
+        await scrollRegion.evaluate((element) => {
+          element.scrollLeft = 0
+        })
+      } else {
+        expect(
+          await scrollRegion.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+        ).toBe(true)
+      }
+      await page.mouse.move(0, 0)
+      await expect(page.getByRole('tooltip')).toBeHidden()
       await panel.screenshot({
         path: info.outputPath(`ranking-${mode === 'Заработано' ? 'earned' : 'balance'}.png`),
       })
@@ -1706,3 +1756,96 @@ test('a late publication recovery response preserves a newer publication', async
   await expect(retry).toBeVisible()
   await expect(retry).toBeDisabled()
 })
+
+for (const locale of ['en', 'ru', 'uk', 'pl']) {
+  test(`quiz headings fit on one line in ${locale}`, async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 900 })
+    await mockQuiz(page)
+    await page.goto(`/panel/game-quiz?lng=${locale}`)
+    const headers = page.getByRole('table').getByRole('columnheader')
+    await expect(headers).toHaveCount(5)
+    await page.evaluate(() => document.fonts.ready)
+    const geometry = await headers.evaluateAll((elements) =>
+      elements.map((element) => {
+        const text = document.createRange()
+        text.selectNodeContents(element)
+        return {
+          y: element.getBoundingClientRect().y,
+          height: element.getBoundingClientRect().height,
+          textHeight: text.getBoundingClientRect().height,
+          lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+          fits: element.scrollWidth <= element.clientWidth,
+        }
+      }),
+    )
+    for (const header of geometry) {
+      expect(header.y).toBe(geometry[0]!.y)
+      expect(header.height).toBe(44)
+      expect(header.textHeight).toBeLessThanOrEqual(header.lineHeight + 1)
+      expect(header.fits).toBe(true)
+    }
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`personal quiz statistics separate screenshot results at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockQuiz(page)
+    const completed = {
+      ...screenshotQuestion,
+      status: 'closed',
+      questionText: screenshotQuestion.text,
+      correctOptionId: 'location-0',
+      submissions: [],
+    }
+    await page.route('**/api/game/quiz/current', (route) =>
+      route.fulfill({ json: screenshotQuestion }),
+    )
+    await page.route('**/api/game/history/games/quiz', (route) =>
+      route.fulfill({
+        json: {
+          gameId: 'quiz',
+          gameStatus: 'active',
+          quiz: {
+            totalPoints: 20,
+            manualAwards: [],
+            playerStats: [
+              {
+                userId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
+                displayName: 'Ведущий',
+                points: 20,
+                spentPoints: 5,
+                availablePoints: 15,
+                attempts: 3,
+                correctAnswers: 2,
+                textStatistics: { attempts: 2, correctAnswers: 1, points: 7 },
+                screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 10 },
+              },
+            ],
+            questionSessions: [
+              { ...completed, questionSessionId: 'closed-image' },
+              { ...completed, questionSessionId: 'text', image: null },
+            ],
+          },
+        },
+      }),
+    )
+    await page.goto('/panel/game-quiz')
+    const stats = page.getByRole('region', { name: 'Ваша статистика викторины', exact: true })
+    await expect(
+      stats.getByRole('region', { name: 'Баланс', exact: true }).locator('dd'),
+    ).toHaveText(['15', '20'])
+    await expect(
+      stats.getByRole('region', { name: 'Вопросы', exact: true }).locator('dd'),
+    ).toHaveText(['1 / 1', '1'])
+    await expect(
+      stats.getByRole('region', { name: 'Скриншоты', exact: true }).locator('dd'),
+    ).toHaveText(['1 / 0', '2'])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await stats.screenshot({ path: info.outputPath('personal-format-statistics.png') })
+  })
+}

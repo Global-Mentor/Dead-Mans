@@ -1,3 +1,4 @@
+import { screenshotQuestion } from './support/screenshot-fixture.ts'
 import { expect, test, type Locator, type Page, type WebSocketRoute } from '@playwright/test'
 
 // Row metrics keep each label beside its value and share a numeric column.
@@ -16,6 +17,7 @@ async function expectMetricRows(scope: Locator) {
       return [
         {
           name: label.textContent,
+          columnLeft: cell.left,
           column: cell.right,
           labelLeft: text.left,
           labelRight: text.right,
@@ -34,7 +36,11 @@ async function expectMetricRows(scope: Locator) {
     expect(metric.labelRight, metric.name ?? '').toBeLessThan(metric.valueLeft)
     expect(Math.abs(metric.labelTop - metric.valueTop), metric.name ?? '').toBeLessThanOrEqual(1)
     expect(Math.abs(metric.gapAbove - metric.gapBelow), metric.name ?? '').toBeLessThanOrEqual(1)
-    for (const neighbour of metrics.filter((item) => Math.abs(item.column - metric.column) < 1)) {
+    for (const neighbour of metrics.filter(
+      (item) =>
+        Math.abs(item.column - metric.column) < 1 &&
+        Math.abs(item.columnLeft - metric.columnLeft) < 1,
+    )) {
       expect(
         Math.abs(metric.labelLeft - neighbour.labelLeft),
         metric.name ?? '',
@@ -390,6 +396,8 @@ async function mockLeaderboard(
                   points: quizPoints,
                   spentPoints: 10,
                   availablePoints: quizPoints - 10,
+                  textStatistics: { attempts: 3, correctAnswers: 2, points: quizPoints - 10 },
+                  screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 10 },
                   attempts: 4,
                   correctAnswers: 3,
                   lastActivityAtUtc: '2026-09-21T11:00:00Z',
@@ -400,6 +408,8 @@ async function mockLeaderboard(
                   points: 10,
                   spentPoints: 0,
                   availablePoints: 10,
+                  textStatistics: { attempts: 1, correctAnswers: 0, points: 0 },
+                  screenshotStatistics: { attempts: 2, correctAnswers: 1, points: 10 },
                   attempts: 3,
                   correctAnswers: 1,
                   lastActivityAtUtc: '2026-09-21T10:55:00Z',
@@ -411,6 +421,7 @@ async function mockLeaderboard(
                     questionId: 'question-' + index,
                     questionCode: 'Q' + index,
                     questionText: 'Исторический вопрос ' + index,
+                    image: index >= 3 ? screenshotQuestion.image : null,
                     categoryName: 'Общие знания',
                     reward: 10,
                     status: index === 4 ? 'skipped' : 'closed',
@@ -520,9 +531,14 @@ for (const width of [390, 768, 1440]) {
       statistics.getByRole('group', { name: 'Точность ответов', exact: true }),
     ).toContainText('57,1%')
     await expect(
-      statistics.getByRole('group', { name: 'Заданных вопросов', exact: true }),
+      statistics.getByRole('group', { name: 'Заданий викторины', exact: true }),
     ).toContainText('5')
-    await expect(statistics.getByRole('group')).toHaveCount(16)
+    await expect(statistics.getByRole('group')).toHaveCount(28)
+    const screenshotStats = statistics.getByRole('region', { name: 'Скриншоты', exact: true })
+    await expect(screenshotStats.locator('dd')).toHaveText(['2', '2', '2', '1', '66,7%', '20 очк.'])
+    const textStats = statistics.getByRole('region', { name: 'Вопросы', exact: true })
+    await expect(textStats.locator('dd')).toHaveText(['3', '2', '2', '2', '50%', '15 очк.'])
+
     for (const name of [
       'Итог команд',
       'Итог раундов',
@@ -588,6 +604,10 @@ for (const width of [390, 768, 1440]) {
       'Статистика',
     ])
     await page.screenshot({ path: testInfo.outputPath('statistics.png') })
+    await screenshotStats.scrollIntoViewIfNeeded()
+    await expectMetricRows(textStats)
+    await expectMetricRows(screenshotStats)
+    await page.screenshot({ path: testInfo.outputPath('statistics-formats.png') })
     await statistics
       .getByRole('article', { name: 'Больше всего наград', exact: true })
       .scrollIntoViewIfNeeded()
@@ -620,6 +640,60 @@ for (const width of [390, 768, 1440]) {
     await expect(statistics.getByRole('group', { name: 'Заработано', exact: true })).toContainText(
       '50 очк.',
     )
+  })
+}
+
+test('archived game retains screenshot statistics after reload', async ({ page }, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const server = await mockLeaderboard(page, 1, false, false, true)
+  server.finish()
+  await page.route('**/api/game/history/games', (route) =>
+    route.fulfill({
+      json: [
+        {
+          gameId,
+          gameTitle: 'Большая командная игра',
+          gameStatus: 'finished',
+          createdAtUtc: '2026-09-21T10:00:00Z',
+          startedAtUtc: '2026-09-21T10:01:00Z',
+          finishedAtUtc: '2026-09-21T12:00:00Z',
+          mainGameRoundCount: 4,
+          quizQuestionCount: 5,
+          uniquePlayerCount: 2,
+        },
+      ],
+    }),
+  )
+  await page.goto(`/panel/game-history?gameId=${gameId}&tab=statistics`)
+  const statistics = page.getByTestId('current-game-statistics')
+  const screenshots = statistics.getByRole('region', { name: 'Скриншоты', exact: true })
+  await expect(screenshots.locator('dd')).toHaveText(['2', '2', '2', '1', '66,7%', '20 очк.'])
+  await page.reload()
+  await expect(screenshots.locator('dd')).toHaveText(['2', '2', '2', '1', '66,7%', '20 очк.'])
+  await screenshots.scrollIntoViewIfNeeded()
+  await page.screenshot({ path: info.outputPath('archive-statistics-formats.png') })
+})
+
+for (const width of [390, 768, 1440]) {
+  test(`quiz standings separate formats at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockLeaderboard(page, 1)
+    await page.goto('/panel/game-leaderboard?tab=quiz')
+    const leaderboard = page.getByTestId('quiz-leaderboard')
+    await expect(leaderboard.getByRole('columnheader')).toHaveText([
+      'Место',
+      'Игрок',
+      'Вопросы',
+      'Скриншоты',
+      'Заработано',
+    ])
+    await expect(
+      leaderboard.getByRole('rowgroup').getByRole('row').first().getByRole('cell'),
+    ).toHaveText(['1', 'Лучший знаток', '2 из 3', '1 из 1', '25 очк.'])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    await page.screenshot({ path: info.outputPath('quiz-format-columns.png'), fullPage: true })
   })
 }
 
@@ -1082,7 +1156,7 @@ test('asked-question count includes the current session without mixing another g
   await page.getByRole('tab', { name: 'Статистика', exact: true }).click()
   const count = page
     .getByTestId('current-game-statistics')
-    .getByRole('group', { name: 'Заданных вопросов', exact: true })
+    .getByRole('group', { name: 'Заданий викторины', exact: true })
   await expect(count).toContainText('6')
   await expect.poll(server.connectionCount).toBe(1)
   sessionId = 'different-current-question'

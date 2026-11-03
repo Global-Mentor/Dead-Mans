@@ -1910,6 +1910,8 @@ export interface components {
             kind: "teams" | "quiz";
         };
         GameOverlayQuizLeaderboardEntryDto: {
+            textStatistics?: components["schemas"]["GameQuizFormatStatisticsDto"];
+            screenshotStatistics?: components["schemas"]["GameQuizFormatStatisticsDto"];
             displayName: string;
             points: number;
             attempts: number;

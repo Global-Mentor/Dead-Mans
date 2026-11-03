@@ -99,7 +99,11 @@ public sealed class GameOverlayController(IGameOverlayService service, IOptions<
             snapshot.Leaderboard?.Select(team => new GameOverlayLeaderboardEntryDto(team.Rank, team.Name,
                 team.SlotIndex, team.Players, team.RoundsPlayed, team.TotalKills, team.TotalBounties, team.FinalScore)).ToArray(), snapshot.LeaderboardPage,
             snapshot.QuizLeaderboard?.Select(player => new GameOverlayQuizLeaderboardEntryDto(
-                player.DisplayName, player.Points, player.Attempts, player.CorrectAnswers)).ToArray(), snapshot.QuizQuestion?.ToDto(media.Value.PublicBaseUrl)));
+                player.DisplayName, player.Points, player.Attempts, player.CorrectAnswers)
+            {
+                TextStatistics = new(player.TextStatistics.Attempts, player.TextStatistics.CorrectAnswers, player.TextStatistics.Points),
+                ScreenshotStatistics = new(player.ScreenshotStatistics.Attempts, player.ScreenshotStatistics.CorrectAnswers, player.ScreenshotStatistics.Points)
+            }).ToArray(), snapshot.QuizQuestion?.ToDto(media.Value.PublicBaseUrl)));
     }
 
     [HttpGet("test")]

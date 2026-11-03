@@ -87,7 +87,9 @@ export function CurrentGameLeaderboard({
             <CurrentGameStatistics
               game={gameDetails}
               boardLabels={boardLabels}
-              activeQuestionId={currentQuiz.data?.questionSessionId ?? null}
+              activeQuestion={
+                currentQuiz.data?.gameId === gameDetails.gameId ? currentQuiz.data : null
+              }
             >
               <CancelledRoundsSection rounds={cancelledRounds} onPreviewCard={onPreviewCard} />
             </CurrentGameStatistics>

@@ -26,7 +26,7 @@ public sealed partial class DbGameOverlayRepository
             .Select(row => new GameQuizLeaderboardFact(row.UserId,
                 !string.IsNullOrWhiteSpace(row.DisplayNameSnapshot) ? row.DisplayNameSnapshot
                     : !string.IsNullOrWhiteSpace(row.User.DisplayName) ? row.User.DisplayName : row.UserId.ToString(),
-                row.AwardedPoints, true, row.IsCorrect, row.SubmittedAtUtc)).ToArrayAsync(cancellationToken);
+                row.AwardedPoints, true, row.IsCorrect, row.SubmittedAtUtc, row.QuestionSession.ImageSnapshotJson != null)).ToArrayAsync(cancellationToken);
         var adjustments = await db.GameQuizPointLedgerEntries.AsNoTracking()
             .Where(row => row.GameId == gameId && row.EntryType == GameQuizPointEntryTypeValue.ManualAdjustment)
             .OrderBy(row => row.SequenceNumber)
@@ -34,6 +34,10 @@ public sealed partial class DbGameOverlayRepository
                 !string.IsNullOrWhiteSpace(row.User.DisplayName) ? row.User.DisplayName : row.UserId.ToString(),
                 row.PointsDelta, false, false, row.OccurredAtUtc)).ToArrayAsync(cancellationToken);
         return GameQuizLeaderboardCalculator.Calculate(answers.Concat(adjustments))
-            .Select(row => new GameOverlayQuizLeaderboardEntry(row.DisplayName, row.Points, row.Attempts, row.CorrectAnswers)).ToArray();
+            .Select(row => new GameOverlayQuizLeaderboardEntry(row.DisplayName, row.Points, row.Attempts, row.CorrectAnswers)
+            {
+                TextStatistics = row.TextStatistics ?? new(0, 0, 0),
+                ScreenshotStatistics = row.ScreenshotStatistics ?? new(0, 0, 0)
+            }).ToArray();
     }
 }

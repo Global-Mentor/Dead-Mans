@@ -4804,6 +4804,10 @@ components:
       type: object
       required: [displayName, points, attempts, correctAnswers]
       properties:
+        textStatistics:
+          $ref: '#/components/schemas/GameQuizFormatStatisticsDto'
+        screenshotStatistics:
+          $ref: '#/components/schemas/GameQuizFormatStatisticsDto'
         displayName: { type: string }
         points: { type: integer }
         attempts: { type: integer, minimum: 0 }

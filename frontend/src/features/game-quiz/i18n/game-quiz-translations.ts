@@ -23,8 +23,6 @@ const translations = {
     questionStartError: 'Could not start this question. Your selection is saved. Try again.',
     personalStatsTitle: 'Your quiz statistics',
     correctAnswersLabel: 'Correct answers',
-    incorrectAnswersLabel: 'Incorrect answers',
-    questionsAskedLabel: 'Questions asked',
     rankBy: 'Rank players by',
     refreshError:
       'Could not refresh quiz data. Showing the last available state. Refresh before continuing.',
@@ -174,8 +172,6 @@ const translations = {
     questionStartError: 'Не удалось запустить вопрос. Выбор сохранён. Попробуйте ещё раз.',
     personalStatsTitle: 'Ваша статистика викторины',
     correctAnswersLabel: 'Верных ответов',
-    incorrectAnswersLabel: 'Неверных ответов',
-    questionsAskedLabel: 'Всего вопросов',
     rankBy: 'Рейтинг игроков по',
     refreshError:
       'Не удалось обновить данные викторины. Показано последнее доступное состояние. Обновите данные, чтобы продолжить.',
@@ -325,8 +321,6 @@ const translations = {
     questionStartError: 'Не вдалося запустити запитання. Вибір збережено. Спробуйте ще раз.',
     personalStatsTitle: 'Ваша статистика вікторини',
     correctAnswersLabel: 'Правильних відповідей',
-    incorrectAnswersLabel: 'Неправильних відповідей',
-    questionsAskedLabel: 'Усього запитань',
     rankBy: 'Рейтинг гравців за',
     refreshError:
       'Не вдалося оновити дані вікторини. Показано останній доступний стан. Оновіть дані, щоб продовжити.',
@@ -480,8 +474,6 @@ const translations = {
       'Nie udało się uruchomić pytania. Wybór został zachowany. Spróbuj ponownie.',
     personalStatsTitle: 'Twoje statystyki quizu',
     correctAnswersLabel: 'Poprawne odpowiedzi',
-    incorrectAnswersLabel: 'Błędne odpowiedzi',
-    questionsAskedLabel: 'Zadane pytania',
     rankBy: 'Ranking graczy według',
     refreshError:
       'Nie udało się odświeżyć danych quizu. Wyświetlany jest ostatni dostępny stan. Odśwież dane, aby kontynuować.',

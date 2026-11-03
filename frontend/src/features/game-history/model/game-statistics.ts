@@ -1,3 +1,4 @@
+import { summarizeQuizFormats } from '../../../shared/game-ui/quiz-statistics.ts'
 import { getPlayedCardModifierPoints } from '../../../shared/game-ui/played-card-modifiers.ts'
 import type { components } from '../../../shared/api/contracts/generated'
 import { getRoundScore } from './game-history-team-leaderboard.ts'
@@ -6,7 +7,10 @@ import { isCountedRound } from './game-history-view.ts'
 type GameDetails = components['schemas']['GameHistoryGameDetailsDto']
 type Round = components['schemas']['GameHistoryRoundItemDto']
 
-export function buildGameStatistics(game: GameDetails, activeQuestionId: string | null = null) {
+export function buildGameStatistics(
+  game: GameDetails,
+  activeQuestion: Parameters<typeof summarizeQuizFormats>[1] = null,
+) {
   const rounds = game.mainGame.rounds.filter(isCountedRound)
   const sum = (select: (round: Round) => number) =>
     rounds.reduce((total, round) => total + select(round), 0)
@@ -21,6 +25,7 @@ export function buildGameStatistics(game: GameDetails, activeQuestionId: string 
   const players = game.quiz.playerStats
   const attempts = players.reduce((total, player) => total + player.attempts, 0)
   const correct = players.reduce((total, player) => total + player.correctAnswers, 0)
+  const formats = summarizeQuizFormats(game.quiz, activeQuestion)
   return {
     overview: {
       teams: new Set(rounds.map((round) => round.teamId)).size,
@@ -40,10 +45,8 @@ export function buildGameStatistics(game: GameDetails, activeQuestionId: string 
     },
     quiz: {
       players: players.length,
-      questions: new Set([
-        ...game.quiz.questionSessions.map((question) => question.questionSessionId),
-        ...(activeQuestionId ? [activeQuestionId] : []),
-      ]).size,
+      questions: formats.text.asked + formats.screenshot.asked,
+      formats,
       correct,
       incorrect: attempts - correct,
       accuracy: attempts ? (correct / attempts) * 100 : null,

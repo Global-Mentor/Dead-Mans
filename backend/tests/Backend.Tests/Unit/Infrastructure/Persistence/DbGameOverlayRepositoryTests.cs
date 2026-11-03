@@ -79,9 +79,9 @@ public sealed class DbGameOverlayRepositoryTests
         var user = new User { Id = Guid.NewGuid(), DisplayName = "Renamed player" };
         var otherUser = new User { Id = Guid.NewGuid(), DisplayName = "Manual only" };
         db.AddRange(game, user, otherUser);
-        void AddAnswer(string status, int points, bool correct, Guid? gameId = null)
+        void AddAnswer(string status, int points, bool correct, Guid? gameId = null, bool screenshot = false)
         {
-            var session = new GameQuizQuestionSession { Id = Guid.NewGuid(), GameId = gameId ?? game.Id, Status = status };
+            var session = new GameQuizQuestionSession { Id = Guid.NewGuid(), GameId = gameId ?? game.Id, Status = status, ImageSnapshotJson = screenshot ? "{}" : null };
             db.Add(new GameQuizSubmission
             {
                 Id = Guid.NewGuid(),
@@ -95,9 +95,9 @@ public sealed class DbGameOverlayRepositoryTests
             });
         }
         AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 100, true);
-        AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 0, false);
-        AddAnswer(GameQuizQuestionSessionStatusValue.Open, 900, true);
-        AddAnswer(GameQuizQuestionSessionStatusValue.Skipped, 900, true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 0, false, screenshot: true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Open, 900, true, screenshot: true);
+        AddAnswer(GameQuizQuestionSessionStatusValue.Skipped, 900, true, screenshot: true);
         AddAnswer(GameQuizQuestionSessionStatusValue.Closed, 900, true, Guid.NewGuid());
         foreach (var (target, type, delta) in new[] {
             (user, GameQuizPointEntryTypeValue.ManualAdjustment, -20),
@@ -122,7 +122,8 @@ public sealed class DbGameOverlayRepositoryTests
         Assert.Null(frame.Leaderboard);
         Assert.Null(frame.Round);
         Assert.Equal(new[] { new GameOverlayQuizLeaderboardEntry("Manual only", 90, 0, 0),
-            new GameOverlayQuizLeaderboardEntry("Frozen player", 80, 2, 1) }, frame.QuizLeaderboard);
+            new GameOverlayQuizLeaderboardEntry("Frozen player", 80, 2, 1)
+            { TextStatistics = new(1, 1, 100), ScreenshotStatistics = new(1, 0, 0) } }, frame.QuizLeaderboard);
         Assert.Equal(1, (await repository.ReadLeaderboardStateAsync(game.Id, default))!.PageCount);
     }
 

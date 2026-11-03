@@ -3,6 +3,7 @@ export type QuizStanding = {
   screenshotStatistics?: { attempts: number; correctAnswers: number; points: number } | null
   displayName: string
   points: number
+  availablePoints?: number
   attempts: number
   correctAnswers: number
   userId?: string
