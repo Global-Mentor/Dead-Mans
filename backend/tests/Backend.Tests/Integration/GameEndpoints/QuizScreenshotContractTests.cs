@@ -49,7 +49,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
                 Translations = locales.Select(locale => new HuntLocationTranslation { Locale = locale, Name = $"Location {index} {locale}" }).ToArray()
             }).ToArray()
         };
-        var category = new QuestionCategory { Id = Guid.NewGuid(), Name = "Locations", CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
+        var category = new QuestionCategory { Format = "screenshot", Id = Guid.NewGuid(), Name = "Locations", CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
         db.AddRange(map, category);
         await db.SaveChangesAsync();
         var maps = await client.GetFromJsonAsync<HuntMapItemDto[]>("/api/game/questions/hunt-maps");

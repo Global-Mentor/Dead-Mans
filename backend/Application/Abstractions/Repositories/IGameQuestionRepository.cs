@@ -13,10 +13,12 @@ public interface IGameQuestionRepository
     );
 
     Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 
     Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 
@@ -27,11 +29,13 @@ public interface IGameQuestionRepository
 
     Task<GameQuestionCategoryItem?> GetCategoryAsync(
         string categoryName,
+        string format,
         CancellationToken cancellationToken = default
     );
 
     Task<GameQuestionCategoryItem> CreateCategoryAsync(
         string categoryName,
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 
@@ -46,7 +50,7 @@ public interface IGameQuestionRepository
         CancellationToken cancellationToken = default
     );
 
-    Task<bool> CategoryExistsAsync(Guid categoryId, CancellationToken cancellationToken = default);
+    Task<bool> CategoryMatchesQuestionAsync(Guid categoryId, Guid? questionId, CancellationToken cancellationToken = default);
 
     Task<GameQuestionCatalogItem?> CreateQuestionAsync(
         CreateGameQuestionInput input,

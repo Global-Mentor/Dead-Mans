@@ -1305,17 +1305,31 @@ paths:
   /game/questions/categories:
     get:
       operationId: getGameQuestionCategories
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [text, screenshot]
+            default: text
       security:
         - cookieAuth: []
       responses:
         '200':
-          description: Global question categories
+          description: Independent categories for the selected quiz format
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/GameQuestionCategoryItemDto'
+        '400':
+          description: Invalid format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Not authenticated
           content:
@@ -1330,6 +1344,14 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
       operationId: createGameQuestionCategory
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [text, screenshot]
+            default: text
       security:
         - cookieAuth: []
       requestBody:

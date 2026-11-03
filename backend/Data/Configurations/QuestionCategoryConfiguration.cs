@@ -12,6 +12,7 @@ public class QuestionCategoryConfiguration : IEntityTypeConfiguration<QuestionCa
             "question_categories",
             tableBuilder =>
             {
+                tableBuilder.HasCheckConstraint("ck_question_categories_format", "format IN ('text', 'screenshot')");
                 tableBuilder.HasCheckConstraint(
                     "ck_question_categories_name_not_blank",
                     "length(trim(name)) > 0"
@@ -26,10 +27,11 @@ public class QuestionCategoryConfiguration : IEntityTypeConfiguration<QuestionCa
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.Format).HasMaxLength(16).HasDefaultValue("text").IsRequired();
         builder.Property(x => x.Name).HasColumnType("citext").HasMaxLength(64).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
 
-        builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasIndex(x => new { x.Format, x.Name }).IsUnique();
     }
 }

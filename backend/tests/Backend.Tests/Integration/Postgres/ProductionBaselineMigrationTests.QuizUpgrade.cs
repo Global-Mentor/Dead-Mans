@@ -36,7 +36,9 @@ public sealed partial class ProductionBaselineMigrationTests
             Assert.Equal(user.Id, (await db.UserRoles.SingleAsync()).UserId);
             Assert.Single(await db.UserRoleAuditEvents.ToArrayAsync());
             Assert.Single(await db.MediaAssets.ToArrayAsync());
-            Assert.Single(await db.QuestionCategories.ToArrayAsync());
+            Assert.Equal("Legacy", (await db.QuestionCategories.SingleAsync(x => x.Format == "text")).Name);
+            Assert.Equal(QuestionCatalogDefaults.UncategorizedScreenshotCategoryId,
+                (await db.QuestionCategories.SingleAsync(x => x.Format == "screenshot")).Id);
             Assert.Equal(16, await db.ModifierDefinitions.CountAsync());
             Assert.Equal(16, await db.ModifierDefinitionVersions.CountAsync());
             Assert.Empty(await db.Games.ToArrayAsync());
@@ -51,7 +53,7 @@ public sealed partial class ProductionBaselineMigrationTests
             // support normal publication, submission and exactly-once closure.
             var now = DateTime.UtcNow;
             var game = CreateGame(GameStatusValue.Draft, now);
-            var question = CreateQuestion(await db.QuestionCategories.Select(x => x.Id).SingleAsync(), now);
+            var question = CreateQuestion(await db.QuestionCategories.Where(x => x.Format == "text").Select(x => x.Id).SingleAsync(), now);
             var correctId = Guid.NewGuid();
             var wrongId = Guid.NewGuid();
             question.Options =
@@ -193,9 +195,11 @@ public sealed partial class ProductionBaselineMigrationTests
                     min_players_per_team, max_players_per_team, quiz_answer_duration_seconds)
                 VALUES ({game.Id}, {game.Title}, {game.Status}, {now}, FALSE,
                     {game.MinPlayersPerTeam}, {game.MaxPlayersPerTeam}, {game.QuizAnswerDurationSeconds});
+                INSERT INTO question_categories (id, name, created_at_utc, updated_at_utc)
+                VALUES ({category.Id}, {category.Name}, {now}, {now});
                 """);
             db.Attach(game);
-            db.AddRange(user, category,
+            db.AddRange(user,
                 new UserRole { UserId = user.Id, RoleId = 1, AssignedAtUtc = now },
                 new UserRoleAuditEvent { Id = Guid.NewGuid(), UserId = user.Id, RoleId = 1, Action = UserRoleAuditEvent.GrantedAction, OccurredAtUtc = now },
                 new MediaAsset { Id = Guid.NewGuid(), Bucket = "test", ObjectKey = "card.png", MimeType = "image/png", SizeBytes = 1, CreatedAtUtc = now });

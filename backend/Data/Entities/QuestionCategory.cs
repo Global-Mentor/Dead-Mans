@@ -4,6 +4,8 @@ public class QuestionCategory
 {
     public Guid Id { get; set; }
 
+    public string Format { get; set; } = "text";
+
     public string Name { get; set; } = string.Empty;
 
     public DateTime CreatedAtUtc { get; set; }

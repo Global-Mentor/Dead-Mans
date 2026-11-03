@@ -63,7 +63,8 @@ public sealed class ApplicationMigrationChainTests
                 "20261102023047_AddOverlayQuizLeaderboard",
                 "20261102173557_AddHuntLocationCatalog",
                 "20261102190414_AddScreenshotQuiz",
-                "20261102195810_HardenScreenshotOptionIntegrity"
+                "20261102195810_HardenScreenshotOptionIntegrity",
+                "20261103201543_SeparateScreenshotCategories"
             ],
             migrations
         );

@@ -19,12 +19,12 @@ public sealed partial class DbGameQuestionRepository
             ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
             : null;
         await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
-        await EnsureFallbackCategoryAsync(cancellationToken);
+        await EnsureFallbackCategoryAsync(cancellationToken: cancellationToken);
 
         var categoryIds = inputs.Select(input => input.Question.CategoryId).Distinct().ToArray();
         var existingCategoryIds = await _dbContext.QuestionCategories
             .AsNoTracking()
-            .Where(category => categoryIds.Contains(category.Id))
+            .Where(category => category.Format == "text" && categoryIds.Contains(category.Id))
             .Select(category => category.Id)
             .ToArrayAsync(cancellationToken);
         var validInputs = inputs

@@ -56,7 +56,8 @@ export function ScreenshotUploadDialog({
       text: '',
       mapId: '',
       locationId: '',
-      categoryId: categories[0]?.id ?? '',
+      categoryId:
+        categories.find((category) => category.isProtected)?.id ?? categories[0]?.id ?? '',
       reward: '1',
     },
   })

@@ -25,22 +25,24 @@ import { downloadQuestionImportTemplate, importQuestionsFile } from './api/quest
 type QuestionDialogState =
   { mode: 'create'; question: undefined } | { mode: 'edit'; question: GameQuestionCatalogItem }
 
-export function useCatalogQuestions() {
+export function useCatalogQuestions(format: 'text' | 'screenshot') {
   const queryClient = useQueryClient()
+  const categoryQueryKey = questionCategoryQueryOptions(format).queryKey
   const [search, setSearch] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const catalogQuery = useQuery(gameQuestionCatalogQueryOptions())
-  const categoriesQuery = useQuery(questionCategoryQueryOptions())
+  const categoriesQuery = useQuery(questionCategoryQueryOptions(format))
   const createMutation = useMutation(createGameQuestionMutationOptions(queryClient))
   const updateMutation = useMutation(updateGameQuestionMutationOptions(queryClient))
   const deleteMutation = useMutation(deleteGameQuestionMutationOptions(queryClient))
   const createCategoryMutation = useMutation({
-    mutationFn: (request: CreateGameQuestionCategoryRequest) => createQuestionCategory(request),
+    mutationFn: (request: CreateGameQuestionCategoryRequest) =>
+      createQuestionCategory(request, format),
     onSuccess: async (category) => {
-      queryClient.setQueryData<GameQuestionCategoryItem[]>(
-        questionCategoryQueryKey,
-        (categories) => [...(categories ?? []).filter((item) => item.id !== category.id), category],
-      )
+      queryClient.setQueryData<GameQuestionCategoryItem[]>(categoryQueryKey, (categories) => [
+        ...(categories ?? []).filter((item) => item.id !== category.id),
+        category,
+      ])
       await queryClient.invalidateQueries({ queryKey: questionCategoryQueryKey })
     },
   })
@@ -53,7 +55,7 @@ export function useCatalogQuestions() {
       request: CreateGameQuestionCategoryRequest
     }) => updateQuestionCategory(categoryId, request),
     onSuccess: async (category) => {
-      queryClient.setQueryData<GameQuestionCategoryItem[]>(questionCategoryQueryKey, (categories) =>
+      queryClient.setQueryData<GameQuestionCategoryItem[]>(categoryQueryKey, (categories) =>
         categories?.map((item) => (item.id === category.id ? category : item)),
       )
       queryClient.setQueriesData<GameQuestionCatalogItem[]>(
@@ -74,7 +76,7 @@ export function useCatalogQuestions() {
   const deleteCategoryMutation = useMutation({
     mutationFn: (categoryId: string) => deleteQuestionCategory(categoryId),
     onSuccess: async (_, categoryId) => {
-      queryClient.setQueryData<GameQuestionCategoryItem[]>(questionCategoryQueryKey, (categories) =>
+      queryClient.setQueryData<GameQuestionCategoryItem[]>(categoryQueryKey, (categories) =>
         categories?.filter((category) => category.id !== categoryId),
       )
       await Promise.all([

@@ -78,7 +78,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     isImportingQuestions,
     downloadTemplate,
     isDownloadingTemplate,
-  } = useCatalogQuestions()
+  } = useCatalogQuestions(format)
   const {
     listError,
     successMessage,
@@ -247,7 +247,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
         gap: 1.5,
       }}
     >
-      {uploadOpen ? (
+      {uploadOpen && categories.length > 0 ? (
         <ScreenshotUploadDialog categories={categories} onClose={() => setUploadOpen(false)} />
       ) : null}
       <QuestionImportFeedback

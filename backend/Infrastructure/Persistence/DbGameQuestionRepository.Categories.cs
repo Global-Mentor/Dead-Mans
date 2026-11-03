@@ -9,13 +9,15 @@ namespace backend.Infrastructure.Persistence;
 public sealed partial class DbGameQuestionRepository
 {
     public async Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
-        await EnsureFallbackCategoryAsync(cancellationToken);
+        await EnsureFallbackCategoryAsync(format, cancellationToken);
 
         return await _dbContext.QuestionCategories
             .AsNoTracking()
+            .Where(x => x.Format == format)
             .OrderBy(x => x.Name == QuestionCatalogDefaults.UncategorizedCategoryName ? 0 : 1)
             .ThenBy(x => x.Name)
             .Select(
@@ -30,6 +32,7 @@ public sealed partial class DbGameQuestionRepository
     }
 
     public async Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
@@ -39,13 +42,16 @@ public sealed partial class DbGameQuestionRepository
                 : null;
         await ModifierCatalogTransactionLock.AcquireAsync(_dbContext, cancellationToken);
 
-        var category = await GetCategoryAsync(QuestionCatalogDefaults.UncategorizedCategoryId, cancellationToken);
+        var fallbackId = format == "screenshot"
+            ? QuestionCatalogDefaults.UncategorizedScreenshotCategoryId
+            : QuestionCatalogDefaults.UncategorizedCategoryId;
+        var category = await GetCategoryAsync(fallbackId, cancellationToken);
         if (category is not null)
         {
             if (!string.Equals(category.Name, QuestionCatalogDefaults.UncategorizedCategoryName, StringComparison.Ordinal))
             {
                 var entity = await _dbContext.QuestionCategories.FirstAsync(
-                    x => x.Id == QuestionCatalogDefaults.UncategorizedCategoryId, cancellationToken);
+                    x => x.Id == fallbackId, cancellationToken);
                 entity.Name = QuestionCatalogDefaults.UncategorizedCategoryName;
                 entity.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
                 await _dbContext.SaveChangesAsync(cancellationToken);
@@ -54,13 +60,14 @@ public sealed partial class DbGameQuestionRepository
         }
         else
         {
-            category = await GetCategoryAsync(QuestionCatalogDefaults.UncategorizedCategoryName, cancellationToken);
+            category = await GetCategoryAsync(QuestionCatalogDefaults.UncategorizedCategoryName, format, cancellationToken);
             if (category is null)
             {
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
                 var entity = new QuestionCategory
                 {
-                    Id = QuestionCatalogDefaults.UncategorizedCategoryId,
+                    Id = fallbackId,
+                    Format = format,
                     Name = QuestionCatalogDefaults.UncategorizedCategoryName,
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now
@@ -103,6 +110,7 @@ public sealed partial class DbGameQuestionRepository
 
     public async Task<GameQuestionCategoryItem?> GetCategoryAsync(
         string categoryName,
+        string format,
         CancellationToken cancellationToken = default
     )
     {
@@ -114,7 +122,7 @@ public sealed partial class DbGameQuestionRepository
 
         return await _dbContext.QuestionCategories
             .AsNoTracking()
-            .Where(x => x.Name == normalizedName)
+            .Where(x => x.Name == normalizedName && x.Format == format)
             .Select(
                 x => new GameQuestionCategoryItem(
                     x.Id,
@@ -128,6 +136,7 @@ public sealed partial class DbGameQuestionRepository
 
     public async Task<GameQuestionCategoryItem> CreateCategoryAsync(
         string categoryName,
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
@@ -136,6 +145,7 @@ public sealed partial class DbGameQuestionRepository
         var entity = new QuestionCategory
         {
             Id = Guid.NewGuid(),
+            Format = format,
             Name = normalizedName,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
@@ -187,7 +197,7 @@ public sealed partial class DbGameQuestionRepository
             return DeleteGameQuestionCategoryOutcome.Protected;
         }
 
-        var fallbackCategory = await EnsureFallbackCategoryAsync(cancellationToken);
+        var fallbackCategory = await EnsureFallbackCategoryAsync(category.Format, cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         if (_dbContext.Database.IsRelational())
         {
@@ -253,14 +263,17 @@ public sealed partial class DbGameQuestionRepository
         );
     }
 
-    public Task<bool> CategoryExistsAsync(
+    public async Task<bool> CategoryMatchesQuestionAsync(
         Guid categoryId,
+        Guid? questionId,
         CancellationToken cancellationToken = default
     )
     {
-        return _dbContext.QuestionCategories
-            .AsNoTracking()
-            .AnyAsync(x => x.Id == categoryId, cancellationToken);
+        var screenshot = questionId.HasValue && await _dbContext.QuestionDefinitions
+            .AnyAsync(x => x.Id == questionId && x.ImageSnapshotJson != null, cancellationToken);
+        var format = screenshot ? "screenshot" : "text";
+        return await _dbContext.QuestionCategories.AsNoTracking()
+            .AnyAsync(x => x.Id == categoryId && x.Format == format, cancellationToken);
     }
 
     public async Task<bool> SetCategoryEnabledAsync(

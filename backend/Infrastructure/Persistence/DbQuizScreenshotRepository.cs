@@ -44,7 +44,7 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
         var maps = await GetMapsAsync(cancellationToken);
         var map = maps.SingleOrDefault(x => x.Locations.Any(location => location.Id == input.LocationId));
         if (map is null || map.Locations.Count < 6
-            || !await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId, cancellationToken))
+            || !await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId && x.Format == "screenshot", cancellationToken))
             return new(UploadQuizScreenshotOutcome.InvalidSelection);
         var correct = map.Locations.Single(x => x.Id == input.LocationId);
         var distractors = map.Locations.Where(x => x.Id != correct.Id).ToArray();
