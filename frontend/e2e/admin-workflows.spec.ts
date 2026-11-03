@@ -1,4 +1,4 @@
-import { screenshotQuestion } from './support/screenshot-fixture.ts'
+import { screenshotQuestion, screenshotLocationFixture } from './support/screenshot-fixture.ts'
 import { expect, test, type Page } from '@playwright/test'
 import { expectPanelPageInsets } from './layout-assertions.ts'
 import { recordDensity } from './density-metrics.ts'
@@ -1235,5 +1235,60 @@ for (const width of [390, 1440]) {
       .poll(() => images.last().evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBe(1920)
     expect(loaded.size).toBeGreaterThan(initial)
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`screenshot setup map and location filters scope bulk selection at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const server = await mockAdmin(page)
+    Object.assign(
+      server.questions[1]!,
+      screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+    )
+    Object.assign(
+      server.questions[2]!,
+      screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+    )
+    Object.assign(
+      server.questions[3]!,
+      screenshotLocationFixture('bayou', 'slaughter', 'Stillwater Bayou', 'Slaughterhouse'),
+    )
+    Object.assign(
+      server.questions[4]!,
+      screenshotLocationFixture('lawson', 'iron', 'Lawson Delta', 'Iron Works'),
+    )
+    await page.goto('/panel/admin-screenshots')
+    const panel = page.getByRole('region', { name: 'Screenshots for the game', exact: true })
+    const rows = panel.getByRole('checkbox')
+    const map = page.getByRole('combobox', { name: /^Map / })
+    const location = page.getByRole('combobox', { name: /^Location / })
+    await expect(rows).toHaveCount(4)
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await map.click()
+    await page.getByRole('option', { name: 'Stillwater Bayou', exact: true }).click()
+    await expect(rows).toHaveCount(3)
+    await location.click()
+    await expect(page.getByRole('option', { name: 'Darrow Livestock', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Port Reeker', exact: true }).click()
+    await expect(rows).toHaveCount(2)
+    await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+    await expect.poll(server.questionIds).toEqual(['question-0', 'question-1', 'question-2'])
+    await page.screenshot({ path: info.outputPath('setup-location-filter.png') })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await map.click()
+    await page.getByRole('option', { name: 'Lawson Delta', exact: true }).click()
+    await expect(location).toContainText('All locations')
+    await expect(rows).toHaveCount(1)
+    await expect(rows).not.toBeChecked()
+    await map.click()
+    await page.getByRole('option', { name: 'All maps', exact: true }).click()
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await expect(rows).toHaveCount(4)
+    await expect(rows.nth(0)).toBeChecked()
+    await expect(rows.nth(1)).toBeChecked()
+    await expect(rows.nth(2)).not.toBeChecked()
   })
 }

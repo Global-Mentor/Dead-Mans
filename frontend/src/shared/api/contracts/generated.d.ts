@@ -2769,6 +2769,16 @@ export interface components {
             sortOrder: number;
         };
         GameQuestionCatalogItemDto: {
+            /**
+             * Format: uuid
+             * @description Stable map identity for screenshot catalogue filters; null for text questions.
+             */
+            screenshotMapId?: string | null;
+            /**
+             * Format: uuid
+             * @description The screenshot's assigned correct location, not a distractor option.
+             */
+            screenshotLocationId?: string | null;
             image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionId: string;

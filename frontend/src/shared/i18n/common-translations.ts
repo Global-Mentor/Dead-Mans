@@ -1,6 +1,11 @@
 const translations = {
   en: {
     quizImage: {
+      map: 'Map',
+      location: 'Location',
+      allMaps: 'All maps',
+      allLocations: 'All locations',
+      chooseMapFirst: 'Choose a map first',
       alt: 'Location screenshot',
       loading: 'Loading image',
       error: 'Image unavailable',
@@ -126,6 +131,11 @@ const translations = {
   },
   ru: {
     quizImage: {
+      map: 'Карта',
+      location: 'Локация',
+      allMaps: 'Все карты',
+      allLocations: 'Все локации',
+      chooseMapFirst: 'Сначала выберите карту',
       alt: 'Скриншот локации',
       loading: 'Загрузка изображения',
       error: 'Изображение недоступно',
@@ -254,6 +264,11 @@ const translations = {
   },
   uk: {
     quizImage: {
+      map: 'Мапа',
+      location: 'Локація',
+      allMaps: 'Усі мапи',
+      allLocations: 'Усі локації',
+      chooseMapFirst: 'Спочатку виберіть мапу',
       alt: 'Знімок локації',
       loading: 'Завантаження зображення',
       error: 'Зображення недоступне',
@@ -382,6 +397,11 @@ const translations = {
   },
   pl: {
     quizImage: {
+      map: 'Mapa',
+      location: 'Lokacja',
+      allMaps: 'Wszystkie mapy',
+      allLocations: 'Wszystkie lokacje',
+      chooseMapFirst: 'Najpierw wybierz mapę',
       alt: 'Zrzut ekranu lokacji',
       loading: 'Ładowanie obrazu',
       error: 'Obraz niedostępny',

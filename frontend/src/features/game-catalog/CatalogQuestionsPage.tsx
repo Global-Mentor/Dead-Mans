@@ -1,3 +1,4 @@
+import { useScreenshotLocationFilters } from '../game-questions/index.ts'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -109,6 +110,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     () => catalogQuery.data?.filter((question) => Boolean(question.image) === screenshots),
     [catalogQuery.data, screenshots],
   )
+  const geography = useScreenshotLocationFilters(questions)
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>()
     for (const question of questions ?? [])
@@ -119,7 +121,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
   const visible = useMemo(
     () =>
       filterCatalogQuestions(
-        questions ?? [],
+        geography.filteredQuestions,
         {
           search,
           categoryId: selectedCategoryId,
@@ -128,7 +130,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
         },
         locale,
       ),
-    [questions, search, selectedCategoryId, status, sort, locale],
+    [geography.filteredQuestions, search, selectedCategoryId, status, sort, locale],
   )
   const selected =
     visible.find((question) => question.questionId === selectedId) ?? visible[0] ?? null
@@ -136,7 +138,8 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     search.trim().length > 0 ||
     selectedCategoryId !== null ||
     status !== 'all' ||
-    sort !== 'category'
+    sort !== 'category' ||
+    geography.activeCount > 0
   const isEmptyCatalog = questions?.length === 0 && !hasFilters && !catalogQuery.isError
   const showCatalogState =
     isEmptyCatalog || (questions == null && (catalogQuery.isLoading || catalogQuery.isError))
@@ -159,6 +162,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     setSelectedCategoryId(null)
     setStatus('all')
     setSort('category')
+    geography.reset()
   }
   const selectQuestion = (question: GameQuestionCatalogItem) => {
     setSelectedId(question.questionId)
@@ -282,6 +286,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
               {!showCatalogState ? (
                 <QuestionCatalogFilters
                   screenshots={screenshots}
+                  locationFilters={geography.controls}
                   search={search}
                   onSearchChange={setSearch}
                   categories={categories.map((category) => ({

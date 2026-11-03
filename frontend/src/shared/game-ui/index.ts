@@ -37,3 +37,8 @@ export * from './use-quiz-countdown.ts'
 export * from './quiz-image-text.ts'
 
 export { summarizeQuizFormats } from './quiz-statistics.ts'
+
+export {
+  ScreenshotLocationFilters,
+  type ScreenshotLocationFiltersProps,
+} from './ScreenshotLocationFilters.tsx'

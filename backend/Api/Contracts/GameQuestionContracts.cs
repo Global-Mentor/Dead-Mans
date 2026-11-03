@@ -40,6 +40,8 @@ public sealed record GameQuestionCatalogItemDto(
     string? TwitchCompatibilityErrorCode
 )
 {
+    public string? ScreenshotMapId { get; init; }
+    public string? ScreenshotLocationId { get; init; }
     public GameQuizImageDto? Image { get; init; }
 }
 

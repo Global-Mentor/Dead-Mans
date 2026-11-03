@@ -88,7 +88,7 @@ public sealed partial class DbGameQuestionRepository
         return $"q_{Guid.NewGuid():N}"[..10];
     }
 
-    private static Expression<Func<QuestionDefinition, CatalogItemRow>>
+    private Expression<Func<QuestionDefinition, CatalogItemRow>>
         ToCatalogItemSelector()
     {
         return x =>
@@ -119,7 +119,11 @@ public sealed partial class DbGameQuestionRepository
                     .OrderByDescending(session => session.AskedAtUtc)
                     .Select(session => (DateTime?)session.AskedAtUtc)
                     .FirstOrDefault(),
-                x.ImageSnapshotJson
+                x.ImageSnapshotJson,
+                _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
+                    .Select(screenshot => (Guid?)screenshot.Location.MapId).FirstOrDefault(),
+                _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
+                    .Select(screenshot => (Guid?)screenshot.LocationId).FirstOrDefault()
             );
     }
 
@@ -137,7 +141,9 @@ public sealed partial class DbGameQuestionRepository
         int SubmissionTotalCount,
         int CorrectSubmissionTotalCount,
         DateTime? LastAskedAtUtc,
-        string? ImageSnapshotJson
+        string? ImageSnapshotJson,
+        Guid? ScreenshotMapId,
+        Guid? ScreenshotLocationId
     )
     {
         public GameQuestionCatalogItem ToCatalogItem() => new(
@@ -147,7 +153,7 @@ public sealed partial class DbGameQuestionRepository
             SubmissionTotalCount == 0 ? 0m : 100m * CorrectSubmissionTotalCount / SubmissionTotalCount,
             LastAskedAtUtc
         )
-        { Image = QuizImageSnapshot.FromJson(ImageSnapshotJson) };
+        { Image = QuizImageSnapshot.FromJson(ImageSnapshotJson), ScreenshotMapId = ScreenshotMapId, ScreenshotLocationId = ScreenshotLocationId };
     }
 
     private static string NormalizeFilter(string? value)

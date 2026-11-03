@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
-import { screenshotQuestion } from './support/screenshot-fixture.ts'
+import { screenshotQuestion, screenshotLocationFixture } from './support/screenshot-fixture.ts'
 import type {
   CreateGameQuestionRequest,
   GameQuestionCatalogItem,
@@ -999,3 +999,58 @@ test('failed JSON import leaves the catalog intact and the same file can be retr
   await expect(page.getByRole('button', { name: 'Развернуть импорт из JSON' })).toBeEnabled()
   await expect(page.getByTestId('question-catalog-list').getByRole('button')).toHaveCount(24)
 })
+
+for (const width of [390, 768, 1440]) {
+  test(`screenshot catalogue filters by map then assigned location at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await mockCatalog(page)
+    state.items = [
+      {
+        ...catalog[0]!,
+        ...screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+      },
+      {
+        ...catalog[1]!,
+        ...screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+      },
+      {
+        ...catalog[2]!,
+        ...screenshotLocationFixture('bayou', 'slaughter', 'Stillwater Bayou', 'Slaughterhouse'),
+      },
+      {
+        ...catalog[3]!,
+        ...screenshotLocationFixture('lawson', 'iron', 'Lawson Delta', 'Iron Works'),
+      },
+    ]
+    await page.goto('/panel/catalog-screenshots')
+    const rows = page.getByTestId('question-catalog-list').getByRole('listitem')
+    const map = page.getByRole('combobox', { name: /^Карта / })
+    const location = page.getByRole('combobox', { name: /^Локация / })
+    await expect(rows).toHaveCount(4)
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await map.click()
+    await page.getByRole('option', { name: 'Stillwater Bayou', exact: true }).click()
+    await expect(rows).toHaveCount(3)
+    await location.click()
+    await expect(page.getByRole('option', { name: 'Darrow Livestock', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('option', { name: 'Iron Works', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Port Reeker', exact: true }).click()
+    await expect(rows).toHaveCount(2)
+    await page.screenshot({ path: info.outputPath('catalog-location-filter.png') })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await map.click()
+    await page.getByRole('option', { name: 'Lawson Delta', exact: true }).click()
+    await expect(location).toContainText('Все локации')
+    await expect(rows).toHaveCount(1)
+    await expect(rows).toContainText('Iron Works')
+    await location.click()
+    await page.getByRole('option', { name: 'Iron Works', exact: true }).click()
+    if (width < 600) await page.getByTestId('question-catalog-filters').getByRole('button').click()
+    await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
+    await expect(map).toContainText('Все карты')
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await expect(rows).toHaveCount(4)
+  })
+}

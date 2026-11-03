@@ -112,7 +112,7 @@ public static partial class ApiContractMapper
             item.TwitchPreview.IsCompatible,
             item.TwitchPreview.ErrorCode
         )
-        { Image = item.Image?.ToDto(mediaBaseUrl) };
+        { Image = item.Image?.ToDto(mediaBaseUrl), ScreenshotMapId = item.ScreenshotMapId?.ToString(), ScreenshotLocationId = item.ScreenshotLocationId?.ToString() };
     }
 
     public static AskedQuizQuestionDto ToDto(this AskedQuizQuestion question, string mediaBaseUrl)

@@ -6724,6 +6724,16 @@ components:
         - correctPercentage
         - twitchCompatible
       properties:
+        screenshotMapId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Stable map identity for screenshot catalogue filters; null for text questions.
+        screenshotLocationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The screenshot's assigned correct location, not a distractor option.
         image:
           type: object
           nullable: true

@@ -23,6 +23,8 @@ public sealed record GameQuestionCatalogItem(
     DateTime? LastAskedAtUtc
 )
 {
+    public Guid? ScreenshotMapId { get; init; }
+    public Guid? ScreenshotLocationId { get; init; }
     public QuizImageSnapshot? Image { get; init; }
 
     public TwitchQuizMessageSet TwitchPreview => TwitchQuizMessageFormatter.FormatForValidation(

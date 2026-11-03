@@ -66,6 +66,10 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         Assert.Equal(created, await repeated.Content.ReadFromJsonAsync<UploadQuizScreenshotResponseDto>());
         var question = await db.QuestionDefinitions.AsNoTracking().Include(x => x.Options).SingleAsync();
         Assert.Equal(created!.QuestionId, question.Id.ToString());
+        var catalog = await client.GetFromJsonAsync<GameQuestionCatalogItemDto[]>("/api/game/questions/catalog");
+        var item = Assert.Single(catalog!);
+        Assert.Equal(map.Id.ToString(), item.ScreenshotMapId);
+        Assert.Equal(locationId.ToString(), item.ScreenshotLocationId);
         Assert.Equal(7, question.Reward);
         Assert.Equal("Which compound is behind the tower?", question.Text);
         Assert.Equal(-2, question.Priority);

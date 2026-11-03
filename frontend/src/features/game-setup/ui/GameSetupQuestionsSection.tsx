@@ -1,3 +1,4 @@
+import { ScreenshotLocationFilters } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -45,6 +46,7 @@ export function GameSetupQuestionsSection({
     catalogQuery,
     categories,
     filteredQuestions,
+    geography,
   } = useGameSetupQuestionsCatalog(format)
   const [selection, setSelection] = useState('all')
   const [previewId, setPreviewId] = useState<string | null>(null)
@@ -63,7 +65,11 @@ export function GameSetupQuestionsSection({
   )
   const visibleIds = visibleQuestions.map((question) => question.questionId)
   const preview = catalogQuery.data?.find((question) => question.questionId === previewId) ?? null
-  const hasFilters = search.trim().length > 0 || activeCategory !== 'all' || selection !== 'all'
+  const hasFilters =
+    search.trim().length > 0 ||
+    activeCategory !== 'all' ||
+    selection !== 'all' ||
+    (format === 'screenshot' && geography.activeCount > 0)
   return (
     <SectionCard
       sx={{
@@ -122,6 +128,7 @@ export function GameSetupQuestionsSection({
               onCommit={onDurationCommit}
             />
           </Stack>
+          {format === 'screenshot' ? <ScreenshotLocationFilters {...geography.controls} /> : null}
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             gap={1.5}
@@ -247,6 +254,7 @@ export function GameSetupQuestionsSection({
               setSearch('')
               setActiveCategory('all')
               setSelection('all')
+              geography.reset()
             }}
           >
             {t('gameSetup.questions.resetFilters')}

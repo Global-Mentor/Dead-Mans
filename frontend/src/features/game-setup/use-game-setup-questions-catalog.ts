@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gameQuestionCatalogQueryOptions } from '../game-questions/index.ts'
+import {
+  gameQuestionCatalogQueryOptions,
+  useScreenshotLocationFilters,
+} from '../game-questions/index.ts'
 import { quizImageSearchTerms } from '../../shared/game-ui/index.ts'
 
 export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'text') {
@@ -19,6 +22,7 @@ export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'te
       ),
     [catalogQuery.data, format],
   )
+  const geography = useScreenshotLocationFilters(questions)
   const categories = useMemo(
     () =>
       Array.from(
@@ -36,7 +40,7 @@ export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'te
   )
   const filteredQuestions = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase(locale)
-    return questions.filter(
+    return geography.filteredQuestions.filter(
       (question) =>
         (activeCategory === 'all' || question.categoryId === activeCategory) &&
         [
@@ -46,7 +50,7 @@ export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'te
           ...question.options.map((option) => option.text),
         ].some((text) => text.toLocaleLowerCase(locale).includes(needle)),
     )
-  }, [activeCategory, locale, questions, search])
+  }, [activeCategory, locale, geography.filteredQuestions, search])
   return {
     search,
     setSearch,
@@ -55,5 +59,6 @@ export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'te
     catalogQuery,
     categories,
     filteredQuestions,
+    geography,
   }
 }

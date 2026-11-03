@@ -41,3 +41,25 @@ export const screenshotQuestion: CurrentGameQuizState = {
     displayOrder: index,
   })),
 }
+
+export function screenshotLocationFixture(
+  mapId: string,
+  locationId: string,
+  mapName: string,
+  locationName: string,
+) {
+  const names = (name: string) => ({ en: name, ru: name, uk: name, pl: name })
+  return {
+    screenshotMapId: mapId,
+    screenshotLocationId: locationId,
+    image: {
+      ...screenshotQuestion.image!,
+      mapNames: names(mapName),
+      optionNames: { wrong: names('Darrow Livestock'), correct: names(locationName) },
+    },
+    options: [
+      { optionId: 'wrong', text: 'Darrow Livestock', isCorrect: false, sortOrder: 0 },
+      { optionId: 'correct', text: locationName, isCorrect: true, sortOrder: 1 },
+    ],
+  }
+}

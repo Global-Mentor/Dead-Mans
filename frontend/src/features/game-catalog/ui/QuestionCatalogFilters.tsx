@@ -1,3 +1,7 @@
+import {
+  ScreenshotLocationFilters,
+  type ScreenshotLocationFiltersProps,
+} from '../../../shared/game-ui/index.ts'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +11,7 @@ import type { QuestionCatalogSort, QuestionCatalogStatus } from '../model/questi
 
 export function QuestionCatalogFilters({
   screenshots = false,
+  locationFilters,
   search,
   onSearchChange,
   categories,
@@ -21,6 +26,7 @@ export function QuestionCatalogFilters({
   onReset,
 }: {
   screenshots?: boolean
+  locationFilters: ScreenshotLocationFiltersProps
   search: string
   onSearchChange: (value: string) => void
   categories: readonly GameQuestionCategoryItem[]
@@ -38,7 +44,11 @@ export function QuestionCatalogFilters({
   const theme = useTheme()
   const expanded = useMediaQuery(theme.breakpoints.up('sm'))
   const [open, setOpen] = useState(false)
-  const count = Number(categoryId !== null) + Number(status !== 'all')
+  const count =
+    Number(categoryId !== null) +
+    Number(status !== 'all') +
+    Number(locationFilters.mapId !== null) +
+    Number(locationFilters.locationId !== null)
   const number = (value: number) => new Intl.NumberFormat(i18n.resolvedLanguage).format(value)
   return (
     <Box sx={{ display: 'grid', gap: 1.25, mt: 1.5 }}>
@@ -55,6 +65,7 @@ export function QuestionCatalogFilters({
         )}
         onChange={(event) => onSearchChange(event.target.value)}
       />
+      {screenshots ? <ScreenshotLocationFilters {...locationFilters} /> : null}
       <NativeDisclosure
         summary={t('gameCatalog.questions.catalog.filters', { count })}
         pinned={expanded}

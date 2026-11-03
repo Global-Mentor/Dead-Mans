@@ -53,6 +53,9 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         var ids = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Id).ToArray();
         var originalImage = question.ImageSnapshotJson;
         var repository = new DbGameQuestionRepository(db, TimeProvider.System);
+        var catalogItem = Assert.Single(await repository.GetCatalogAsync(input.CategoryId, null, true));
+        Assert.Equal(input.LocationId, catalogItem.ScreenshotLocationId);
+        Assert.Equal(await db.HuntLocations.Where(x => x.Id == input.LocationId).Select(x => x.MapId).SingleAsync(), catalogItem.ScreenshotMapId);
         var updated = await repository.UpdateQuestionAsync(question.Id,
             new(input.CategoryId, "Which compound is behind the tower?", options, 42, true, 5));
         Assert.NotNull(updated);
