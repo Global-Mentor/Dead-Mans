@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
 import { feedbackSurfaceSx } from '../../../theme/feedback-surface-sx.ts'
 import { getAppSurfaceSx } from '../../../theme/surface-sx.ts'
+import { ChoiceMarker } from './ChoiceMarker.tsx'
 import { AppButton } from '../buttons/AppButton.tsx'
 
 export function SelectionAction({
@@ -101,19 +102,6 @@ export function SelectionAction({
           ...(marker
             ? {
                 justifyContent: 'flex-start',
-                '& > .selection-action-marker': {
-                  flexShrink: 0,
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 28,
-                  height: 28,
-                  fontSize: '0.875rem',
-                  lineHeight: 1,
-                  fontWeight: 700,
-                  color: theme.palette.primary.light,
-                  border: `1px solid ${alpha(theme.palette.primary.light, 0.35)}`,
-                  backgroundColor: alpha(theme.palette.common.black, 0.2),
-                },
                 '& > .selection-action-content': {
                   flex: 1,
                   display: 'flex',
@@ -134,9 +122,7 @@ export function SelectionAction({
     >
       {marker ? (
         <>
-          <Box component="span" className="selection-action-marker" aria-hidden>
-            {marker}
-          </Box>
+          <ChoiceMarker decorative>{marker}</ChoiceMarker>
           <Box component="span" className="selection-action-content">
             {children}
           </Box>

@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../api/contracts/generated'
 import { resolveBackendMediaUrl } from '../api/media-url.ts'
-import { ImageFrame, ItemCard, StatusBadge, TaskProgress } from '../ui/index.ts'
+import { ChoiceMarker, ImageFrame, ItemCard, TaskProgress } from '../ui/index.ts'
 import { quizOptionText } from './quiz-image-text.ts'
 import { useQuizCountdown } from './use-quiz-countdown.ts'
 
@@ -20,6 +20,9 @@ export function BroadcastScreenshot({
     open ? state.closesAtUtc : null,
     deadline,
   )
+  const clock = `${Math.floor(countdown.secondsLeft / 60)
+    .toString()
+    .padStart(2, '0')}:${(countdown.secondsLeft % 60).toString().padStart(2, '0')}`
   if (!state.image) return null
   return (
     <Box sx={{ position: 'absolute', inset: 24, display: 'grid', placeItems: 'center' }}>
@@ -28,12 +31,40 @@ export function BroadcastScreenshot({
         sx={{ width: 'min(1280px, 100%)', maxHeight: '100%', overflow: 'auto' }}
       >
         <Stack spacing={1.5}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h3">{t('common.quizImage.question')}</Typography>
-            <Typography variant="h3" role="timer">
-              {open ? countdown.secondsLeft : t('common.quizImage.result')}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'minmax(0, 1fr)',
+                sm: 'minmax(120px, 1fr) minmax(0, 4fr) minmax(120px, 1fr)',
+              },
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <Typography
+              variant="h3"
+              textAlign="center"
+              sx={{ gridColumn: { xs: 1, sm: 2 }, minWidth: 0, overflowWrap: 'anywhere' }}
+            >
+              {state.text}
             </Typography>
-          </Stack>
+            <Typography
+              variant="h3"
+              role="timer"
+              aria-live="off"
+              aria-label={t('common.quizImage.timer')}
+              color={open && countdown.secondsLeft <= 10 ? 'error.light' : 'primary.light'}
+              sx={{
+                gridColumn: { xs: 1, sm: 3 },
+                justifySelf: { xs: 'center', sm: 'end' },
+                fontVariantNumeric: 'tabular-nums',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {clock}
+            </Typography>
+          </Box>
           <ImageFrame
             src={resolveBackendMediaUrl(state.image.imageUrl)}
             alt={t('common.quizImage.alt')}
@@ -42,15 +73,13 @@ export function BroadcastScreenshot({
             loading="eager"
             sizing="fill"
             fit="contain"
-            sx={{ height: { xs: '32vh', sm: 'min(58vh, 640px)' } }}
+            sx={{ height: { xs: '24vh', sm: 'min(58vh, 640px)' } }}
           />
-          {open ? (
-            <TaskProgress
-              variant="determinate"
-              value={countdown.progress}
-              aria-label={t('common.quizImage.timer')}
-            />
-          ) : null}
+          <TaskProgress
+            variant="determinate"
+            value={countdown.progress}
+            aria-label={t('common.quizImage.timer')}
+          />
           <Box
             sx={{
               display: 'grid',
@@ -61,18 +90,21 @@ export function BroadcastScreenshot({
             {state.options.map((option, index) => (
               <ItemCard
                 key={option.optionId}
-                leadingAccent={option.optionId === state.correctOptionId ? 'success' : false}
+                {...(option.optionId === state.correctOptionId
+                  ? { outcome: 'success' as const }
+                  : {})}
+                role="group"
+                aria-label={
+                  option.optionId === state.correctOptionId
+                    ? t('common.quizImage.correct')
+                    : undefined
+                }
               >
-                <Stack gap={0.75} alignItems="flex-start">
-                  <Stack direction="row" gap={1} alignItems="center">
-                    <Typography variant="h5">!{index + 1}</Typography>
-                    <Typography variant="h5" sx={{ overflowWrap: 'anywhere' }}>
-                      {quizOptionText(state.image, option.optionId, option.text, i18n.language)}
-                    </Typography>
-                  </Stack>
-                  {option.optionId === state.correctOptionId ? (
-                    <StatusBadge color="success" label={t('common.quizImage.correct')} />
-                  ) : null}
+                <Stack direction="row" gap={1} alignItems="center">
+                  <ChoiceMarker>{`!${index + 1}`}</ChoiceMarker>
+                  <Typography variant="h5" sx={{ overflowWrap: 'anywhere' }}>
+                    {quizOptionText(state.image, option.optionId, option.text, i18n.language)}
+                  </Typography>
                 </Stack>
               </ItemCard>
             ))}
