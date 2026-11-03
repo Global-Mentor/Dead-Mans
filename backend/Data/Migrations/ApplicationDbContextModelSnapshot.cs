@@ -2613,6 +2613,14 @@ namespace backend.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("text")
+                        .HasColumnName("format");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -2626,12 +2634,14 @@ namespace backend.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_question_categories");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Format", "Name")
                         .IsUnique()
-                        .HasDatabaseName("ix_question_categories_name");
+                        .HasDatabaseName("ix_question_categories_format_name");
 
                     b.ToTable("question_categories", null, t =>
                         {
+                            t.HasCheckConstraint("ck_question_categories_format", "format IN ('text', 'screenshot')");
+
                             t.HasCheckConstraint("ck_question_categories_name_not_blank", "length(trim(name)) > 0");
 
                             t.HasCheckConstraint("ck_question_categories_timestamps", "updated_at_utc >= created_at_utc");

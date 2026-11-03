@@ -34,37 +34,40 @@ public sealed class GameQuestionService : IGameQuestionService
     }
 
     public Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.GetCategoriesAsync(cancellationToken);
+        return _repository.GetCategoriesAsync(format, cancellationToken);
     }
 
     public Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
-        return _repository.EnsureFallbackCategoryAsync(cancellationToken);
+        return _repository.EnsureFallbackCategoryAsync(format, cancellationToken);
     }
 
     public async Task<CreateGameQuestionCategoryResult> CreateCategoryAsync(
         string categoryName,
+        string format = "text",
         CancellationToken cancellationToken = default
     )
     {
         var normalizedName = (categoryName ?? string.Empty).Trim();
-        if (normalizedName.Length is 0 or > GameQuestionValidator.MaxCategoryLength)
+        if (normalizedName.Length is 0 or > GameQuestionValidator.MaxCategoryLength || format is not ("text" or "screenshot"))
         {
             return new CreateGameQuestionCategoryResult(CreateGameQuestionCategoryOutcome.InvalidRequest);
         }
 
-        var existing = await _repository.GetCategoryAsync(normalizedName, cancellationToken);
+        var existing = await _repository.GetCategoryAsync(normalizedName, format, cancellationToken);
         if (existing is not null)
         {
             return new CreateGameQuestionCategoryResult(CreateGameQuestionCategoryOutcome.Existing, existing);
         }
 
-        var created = await _repository.CreateCategoryAsync(normalizedName, cancellationToken);
+        var created = await _repository.CreateCategoryAsync(normalizedName, format, cancellationToken);
         return new CreateGameQuestionCategoryResult(CreateGameQuestionCategoryOutcome.Created, created);
     }
 
@@ -124,7 +127,7 @@ public sealed class GameQuestionService : IGameQuestionService
             return new CreateGameQuestionResult(CreateGameQuestionOutcome.InvalidRequest);
         }
 
-        if (!await _repository.CategoryExistsAsync(normalized.CategoryId, cancellationToken))
+        if (!await _repository.CategoryMatchesQuestionAsync(normalized.CategoryId, null, cancellationToken))
         {
             return new CreateGameQuestionResult(CreateGameQuestionOutcome.CategoryNotFound);
         }
@@ -150,7 +153,7 @@ public sealed class GameQuestionService : IGameQuestionService
             return new UpdateGameQuestionResult(UpdateGameQuestionOutcome.InvalidRequest);
         }
 
-        if (!await _repository.CategoryExistsAsync(normalized.CategoryId, cancellationToken))
+        if (!await _repository.CategoryMatchesQuestionAsync(normalized.CategoryId, questionId, cancellationToken))
         {
             return new UpdateGameQuestionResult(UpdateGameQuestionOutcome.CategoryNotFound);
         }

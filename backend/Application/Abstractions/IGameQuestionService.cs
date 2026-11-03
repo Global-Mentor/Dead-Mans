@@ -78,15 +78,18 @@ public interface IGameQuestionService
     );
 
     Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 
     Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 
     Task<CreateGameQuestionCategoryResult> CreateCategoryAsync(
         string categoryName,
+        string format = "text",
         CancellationToken cancellationToken = default
     );
 

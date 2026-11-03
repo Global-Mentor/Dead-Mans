@@ -5705,20 +5705,31 @@ export interface operations {
     };
     getGameQuestionCategories: {
         parameters: {
-            query?: never;
+            query?: {
+                format?: "text" | "screenshot";
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Global question categories */
+            /** @description Independent categories for the selected quiz format */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["GameQuestionCategoryItemDto"][];
+                };
+            };
+            /** @description Invalid format */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not authenticated */
@@ -5743,7 +5754,9 @@ export interface operations {
     };
     createGameQuestionCategory: {
         parameters: {
-            query?: never;
+            query?: {
+                format?: "text" | "screenshot";
+            };
             header?: never;
             path?: never;
             cookie?: never;

@@ -28,7 +28,7 @@ public sealed partial class GameQuestionController
         CancellationToken cancellationToken
     )
     {
-        var categories = await _gameQuestionService.GetCategoriesAsync(cancellationToken);
+        var categories = await _gameQuestionService.GetCategoriesAsync(cancellationToken: cancellationToken);
         var content = BuildImportTemplate(categories, locale);
         return File(
             Encoding.UTF8.GetBytes(content),
@@ -93,9 +93,9 @@ public sealed partial class GameQuestionController
         }
 
         var fallbackCategory = await _gameQuestionService.EnsureFallbackCategoryAsync(
-            cancellationToken
+            cancellationToken: cancellationToken
         );
-        var categories = await _gameQuestionService.GetCategoriesAsync(cancellationToken);
+        var categories = await _gameQuestionService.GetCategoriesAsync(cancellationToken: cancellationToken);
         var knownCategoryIds = categories
             .Select(category => category.Id)
             .Append(fallbackCategory.Id)

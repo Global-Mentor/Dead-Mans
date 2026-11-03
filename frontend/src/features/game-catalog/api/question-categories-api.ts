@@ -17,22 +17,30 @@ const questionCategoriesApiClient =
 
 export const questionCategoryQueryKey = ['gameQuestionCategories'] as const
 
-function fetchQuestionCategories(): Promise<GameQuestionCategoryItem[]> {
-  return unwrapOpenApiData(questionCategoriesApiClient.GET('/game/questions/categories'))
+function fetchQuestionCategories(
+  format: 'text' | 'screenshot',
+): Promise<GameQuestionCategoryItem[]> {
+  return unwrapOpenApiData(
+    questionCategoriesApiClient.GET('/game/questions/categories', {
+      params: { query: { format } },
+    }),
+  )
 }
 
-export function questionCategoryQueryOptions() {
+export function questionCategoryQueryOptions(format: 'text' | 'screenshot') {
   return queryOptions({
-    queryKey: questionCategoryQueryKey,
-    queryFn: fetchQuestionCategories,
+    queryKey: [...questionCategoryQueryKey, format],
+    queryFn: () => fetchQuestionCategories(format),
   })
 }
 
 export function createQuestionCategory(
   request: CreateGameQuestionCategoryRequest,
+  format: 'text' | 'screenshot',
 ): Promise<GameQuestionCategoryItem> {
   return unwrapOpenApiData(
     questionCategoriesApiClient.POST('/game/questions/categories', {
+      params: { query: { format } },
       body: request,
     }),
   )

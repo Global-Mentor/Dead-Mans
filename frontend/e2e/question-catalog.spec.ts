@@ -10,6 +10,91 @@ import type {
 test.use({ reducedMotion: 'reduce' })
 
 for (const width of [390, 768, 1440]) {
+  test(`empty screenshot catalogue uploads with its independent fallback at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await mockCatalog(page)
+    state.items = []
+    const screenshotFallback = {
+      id: 'screenshot-system',
+      name: 'БЕЗ КАТЕГОРИИ',
+      questionCount: 0,
+      isProtected: true,
+    }
+    let releaseCategories: () => void = () => {}
+    const ready = new Promise<void>((resolve) => {
+      releaseCategories = resolve
+    })
+    await page.route('**/api/game/questions/categories?*', async (route) => {
+      const format = new URL(route.request().url()).searchParams.get('format')
+      if (format === 'screenshot') {
+        await ready
+        return route.fulfill({ json: [screenshotFallback] })
+      }
+      return route.fulfill({ json: categories })
+    })
+    await page.route('**/api/game/questions/hunt-maps', (route) =>
+      route.fulfill({
+        json: [
+          {
+            id: 'map',
+            code: 'bayou',
+            names: screenshotQuestion.image!.mapNames,
+            locations: [
+              {
+                id: 'location',
+                code: 'winery',
+                names: screenshotQuestion.image!.optionNames['location-0'],
+              },
+            ],
+          },
+        ],
+      }),
+    )
+    let uploaded = ''
+    await page.route('**/api/game/questions/screenshots', async (route) => {
+      uploaded = route.request().postDataBuffer()!.toString()
+      await route.fulfill({ status: 201, json: { questionId: 'uploaded' } })
+    })
+    await page.goto('/panel/catalog-screenshots')
+    const upload = page.getByRole('button', { name: 'Загрузить скриншоты', exact: true })
+    await expect(upload).toBeDisabled()
+    releaseCategories()
+    await expect(upload).toBeEnabled()
+    await upload.click()
+    const dialog = page.getByRole('dialog', { name: 'Загрузить скриншоты', exact: true })
+    const category = dialog.getByRole('combobox', { name: /^Категория/ })
+    await expect(category).toHaveText(/БЕЗ КАТЕГОРИИ/i)
+    await category.click()
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await page.getByRole('option').click()
+    await dialog.getByRole('combobox', { name: /^Карта/ }).click()
+    await page.getByRole('option').first().click()
+    await dialog.getByRole('combobox', { name: /^Локация/ }).click()
+    await page.getByRole('option').first().click()
+    await dialog
+      .getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+      .fill('Где находится эта башня?')
+    await dialog.locator('input[type=file]').setInputFiles({
+      name: 'first.png',
+      mimeType: 'image/png',
+      buffer: await readFile('public/brand/share-card.png'),
+    })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: info.outputPath('empty-screenshot-upload.png'),
+      animations: 'disabled',
+    })
+    await dialog
+      .getByRole('button', { name: 'Загрузить / повторить оставшиеся', exact: true })
+      .click()
+    await expect.poll(() => uploaded).toContain('screenshot-system')
+    expect(uploaded).not.toContain('name="categoryId"\r\n\r\nsystem')
+  })
+}
+
+for (const width of [390, 768, 1440]) {
   test(`screenshot batch retries only failed files with their original identity at ${width}px`, async ({
     page,
   }, info) => {

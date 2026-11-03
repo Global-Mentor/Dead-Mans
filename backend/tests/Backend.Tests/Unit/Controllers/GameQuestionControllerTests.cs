@@ -72,13 +72,13 @@ public sealed class GameQuestionControllerTests
         public Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(Guid? categoryId, string? search, bool includeDisabled, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(CancellationToken cancellationToken = default) =>
+        public Task<IReadOnlyList<GameQuestionCategoryItem>> GetCategoriesAsync(string format = "text", CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(CancellationToken cancellationToken = default) =>
+        public Task<GameQuestionCategoryItem> EnsureFallbackCategoryAsync(string format = "text", CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<CreateGameQuestionCategoryResult> CreateCategoryAsync(string categoryName, CancellationToken cancellationToken = default) =>
+        public Task<CreateGameQuestionCategoryResult> CreateCategoryAsync(string categoryName, string format = "text", CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
         public Task<DeleteGameQuestionCategoryResult> DeleteCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default) =>

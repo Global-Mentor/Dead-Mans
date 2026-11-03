@@ -164,6 +164,7 @@ public sealed partial class DbGameQuestionRepository
     private static bool IsProtectedCategory(Guid categoryId, string categoryName)
     {
         return categoryId == QuestionCatalogDefaults.UncategorizedCategoryId
+            || categoryId == QuestionCatalogDefaults.UncategorizedScreenshotCategoryId
             || string.Equals(
                 categoryName,
                 QuestionCatalogDefaults.UncategorizedCategoryName,

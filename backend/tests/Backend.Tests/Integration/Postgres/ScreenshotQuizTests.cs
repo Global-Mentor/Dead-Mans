@@ -29,7 +29,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
 
     private async Task<UploadQuizScreenshotInput> InputAsync(ApplicationDbContext db)
     {
-        var category = new QuestionCategory { Id = Guid.NewGuid(), Name = Guid.NewGuid().ToString("N"), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
+        var category = new QuestionCategory { Format = "screenshot", Id = Guid.NewGuid(), Name = Guid.NewGuid().ToString("N"), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
         db.QuestionCategories.Add(category);
         await db.SaveChangesAsync();
         var locationId = await db.HuntLocations.OrderBy(x => x.Id).Select(x => x.Id).FirstAsync();
@@ -40,6 +40,183 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
     {
         using var content = new MemoryStream(Png);
         return await service.UploadAsync(input, content, "image/png", Png.Length);
+    }
+
+    [Fact]
+    public async Task CategoryFormatsProtectUploadsAssignmentsAndArchivedReparenting()
+    {
+        await using var db = database.CreateDbContext();
+        var repository = new DbGameQuestionRepository(db, TimeProvider.System);
+        var input = await InputAsync(db);
+        var textCategory = await repository.CreateCategoryAsync(Guid.NewGuid().ToString("N"));
+        Assert.Equal(UploadQuizScreenshotOutcome.InvalidSelection,
+            (await UploadAsync(Service(db), input with { CategoryId = textCategory.Id })).Outcome);
+        var uploaded = await UploadAsync(Service(db), input);
+        Assert.True(await repository.CategoryMatchesQuestionAsync(input.CategoryId, uploaded.QuestionId));
+        Assert.False(await repository.CategoryMatchesQuestionAsync(textCategory.Id, uploaded.QuestionId));
+        Assert.False(await repository.CategoryMatchesQuestionAsync(input.CategoryId, null));
+        var text = (await repository.CreateQuestionAsync(new(null, textCategory.Id, "Text question",
+            [new("Yes", true), new("No", false)], 1, true, 0)))!;
+        Assert.True(await repository.SetCategoryEnabledAsync(textCategory.Id, false));
+        Assert.True(await db.QuestionDefinitions.AsNoTracking().Where(x => x.Id == uploaded.QuestionId).Select(x => x.IsEnabled).SingleAsync());
+        Assert.True(await repository.SetCategoryEnabledAsync(textCategory.Id, true));
+        Assert.True(await repository.SetCategoryEnabledAsync(input.CategoryId, false));
+        Assert.True(await db.QuestionDefinitions.AsNoTracking().Where(x => x.Id == text.QuestionId).Select(x => x.IsEnabled).SingleAsync());
+        var assignment = await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE question_definitions SET category_id = {textCategory.Id} WHERE id = {uploaded.QuestionId}
+            """));
+        Assert.Equal("ck_question_definitions_category_format", assignment.ConstraintName);
+        var formatChange = await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE question_categories SET format = 'text' WHERE id = {input.CategoryId}
+            """));
+        Assert.Equal("ck_question_categories_format_immutable", formatChange.ConstraintName);
+        Assert.True(await repository.SoftDeleteQuestionAsync(uploaded.QuestionId!.Value));
+        await using var deleteDb = database.CreateDbContext();
+        Assert.Equal(backend.Application.Abstractions.DeleteGameQuestionCategoryOutcome.Deleted,
+            await new DbGameQuestionRepository(deleteDb, TimeProvider.System).DeleteCategoryAsync(input.CategoryId));
+        Assert.Equal(QuestionCatalogDefaults.UncategorizedScreenshotCategoryId,
+            await db.QuestionDefinitions.Where(x => x.Id == uploaded.QuestionId).Select(x => x.CategoryId).SingleAsync());
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task MigrationSeparatesAnExistingMixedCategoryWithoutChangingQuestionsOrImages(bool uncategorized, bool archived)
+    {
+        await using var source = database.CreateDbContext();
+        var input = await InputAsync(source);
+        var repository = new DbGameQuestionRepository(source, TimeProvider.System);
+        if (uncategorized)
+            input = input with { CategoryId = (await repository.EnsureFallbackCategoryAsync("screenshot")).Id };
+        var originalCategoryId = uncategorized ? QuestionCatalogDefaults.UncategorizedCategoryId : input.CategoryId;
+        var uploaded = await UploadAsync(Service(source), input);
+        if (archived) Assert.True(await repository.SoftDeleteQuestionAsync(uploaded.QuestionId!.Value));
+        var fallback = await repository.EnsureFallbackCategoryAsync();
+        var text = (await repository.CreateQuestionAsync(new(null, fallback.Id, "Text in mixed category",
+            [new("Yes", true), new("No", false)], 1, true, 0)))!;
+        var imageBefore = await source.QuestionDefinitions.AsNoTracking()
+            .Where(x => x.Id == uploaded.QuestionId).Select(x => x.ImageSnapshotJson).SingleAsync();
+
+        // Replay real persisted records into the preceding schema, where both formats shared a category.
+        var targetDatabase = new PostgresTestDatabase();
+        await targetDatabase.InitializeAsync();
+        try
+        {
+            await using var target = targetDatabase.CreateDbContext();
+            await target.GetService<IMigrator>().MigrateAsync("20261102195810_HardenScreenshotOptionIntegrity");
+            await using var sourceConnection = new Npgsql.NpgsqlConnection(database.ConnectionString);
+            await sourceConnection.OpenAsync();
+            await using var targetConnection = new Npgsql.NpgsqlConnection(targetDatabase.ConnectionString);
+            await targetConnection.OpenAsync();
+            await using (var transaction = await targetConnection.BeginTransactionAsync())
+            {
+                (string Table, string Predicate)[] tables = [
+                    ("question_categories", "id = @category"),
+                    ("media_assets", "id IN (SELECT media_asset_id FROM question_screenshots WHERE question_id = @screenshot)"),
+                    ("question_definitions", "id IN (@screenshot, @text)"),
+                    ("question_options", "question_id IN (@screenshot, @text)"),
+                    ("question_screenshots", "question_id = @screenshot")
+                ];
+                foreach (var (table, predicate) in tables)
+                {
+                    await using var read = new Npgsql.NpgsqlCommand($"SELECT row_to_json(row)::text FROM {table} row WHERE {predicate}", sourceConnection);
+                    read.Parameters.AddWithValue("category", input.CategoryId);
+                    read.Parameters.AddWithValue("screenshot", uploaded.QuestionId!.Value);
+                    read.Parameters.AddWithValue("text", text.QuestionId);
+                    await using var rows = await read.ExecuteReaderAsync();
+                    while (await rows.ReadAsync())
+                    {
+                        var record = System.Text.Json.Nodes.JsonNode.Parse(rows.GetString(0))!;
+                        if (table == "question_categories") record["id"] = originalCategoryId.ToString();
+                        if (table == "question_definitions") record["category_id"] = originalCategoryId.ToString();
+                        await using var write = new Npgsql.NpgsqlCommand(
+                            $"INSERT INTO {table} SELECT * FROM jsonb_populate_record(NULL::{table}, @record::jsonb)", targetConnection, transaction);
+                        write.Parameters.AddWithValue("record", record.ToJsonString());
+                        await write.ExecuteNonQueryAsync();
+                    }
+                }
+                await transaction.CommitAsync();
+            }
+            Guid? publishedGameId = null;
+            string? publishedSnapshot = null;
+            if (!archived)
+            {
+                var now = DateTime.UtcNow;
+                var game = new Game { Id = Guid.NewGuid(), Title = "Migration history", CreatedAtUtc = now };
+                var board = new GameBoard
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = game.Id,
+                    Rows = 1,
+                    Cols = 1,
+                    RowLabels = ["A"],
+                    ColLabels = ["1"],
+                    Version = 1,
+                    CreatedAtUtc = now
+                };
+                target.AddRange(board,
+                    new BoardCell
+                    {
+                        Id = Guid.NewGuid(),
+                        BoardId = board.Id,
+                        RowIndex = 0,
+                        ColIndex = 0,
+                        State = BoardCellState.Closed,
+                        CellType = BoardCellPersistence.DefaultCellType,
+                        Cost = 0
+                    },
+                    new GameTeamSlot { Id = Guid.NewGuid(), GameId = game.Id, SlotIndex = 1, SlotType = TeamSlotTypeValue.Public, CreatedAtUtc = now });
+                var question = await source.QuestionDefinitions.Include(x => x.Options).SingleAsync(x => x.Id == uploaded.QuestionId);
+                var categoryName = await source.QuestionCategories.Where(x => x.Id == input.CategoryId).Select(x => x.Name).SingleAsync();
+                target.AddRange(game, new GameEnabledQuestion
+                {
+                    GameId = game.Id,
+                    QuestionId = question.Id,
+                    EnabledAtUtc = now,
+                    QuestionRevisionSnapshot = question.Revision,
+                    QuestionCodeSnapshot = question.ExternalCode,
+                    CategoryNameSnapshot = categoryName,
+                    QuestionTextSnapshot = question.Text,
+                    ImageSnapshotJson = question.ImageSnapshotJson,
+                    OptionIdsSnapshot = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Id).ToArray(),
+                    OptionTextsSnapshot = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(),
+                    CorrectOptionIdSnapshot = question.Options.Single(x => x.IsCorrect).Id,
+                    RewardSnapshot = question.Reward,
+                    SnapshotAtUtc = now
+                });
+                await target.SaveChangesAsync();
+                game.Status = GameStatusValue.Ready;
+                game.ReadyAtUtc = now;
+                await target.SaveChangesAsync();
+                publishedGameId = game.Id;
+                publishedSnapshot = await target.Database.SqlQuery<string>($"""
+                    SELECT row_to_json(snapshot)::text AS "Value" FROM game_enabled_questions snapshot WHERE game_id = {game.Id}
+                    """).SingleAsync();
+            }
+            await target.Database.MigrateAsync();
+            var screenshot = await target.QuestionDefinitions.AsNoTracking().Include(x => x.CategoryDefinition)
+                .SingleAsync(x => x.Id == uploaded.QuestionId);
+            Assert.NotEqual(originalCategoryId, screenshot.CategoryId);
+            Assert.Equal("screenshot", screenshot.CategoryDefinition!.Format);
+            Assert.Equal(archived, screenshot.IsDeleted);
+            Assert.Equal(imageBefore, screenshot.ImageSnapshotJson);
+            Assert.Equal(originalCategoryId, await target.QuestionDefinitions.Where(x => x.Id == text.QuestionId).Select(x => x.CategoryId).SingleAsync());
+            Assert.Equal(6, await target.QuestionOptions.CountAsync(x => x.QuestionId == uploaded.QuestionId));
+            Assert.Equal(2, await target.QuestionOptions.CountAsync(x => x.QuestionId == text.QuestionId));
+            Assert.Equal(2, await target.QuestionCategories.CountAsync(x => x.Name == screenshot.CategoryDefinition!.Name));
+            if (publishedGameId.HasValue)
+            {
+                Assert.Equal(publishedSnapshot, await target.Database.SqlQuery<string>($"""
+                    SELECT row_to_json(snapshot)::text AS "Value" FROM game_enabled_questions snapshot WHERE game_id = {publishedGameId.Value}
+                    """).SingleAsync());
+            }
+        }
+        finally
+        {
+            await targetDatabase.DisposeAsync();
+        }
     }
 
     [Fact]
@@ -84,7 +261,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         Assert.Equal("ck_screenshot_options_complete_set", added.ConstraintName);
 
         var textQuestion = await new DbGameQuestionRepository(db, TimeProvider.System).CreateQuestionAsync(
-            new(null, input.CategoryId, "Text question", [new("Correct", true), new("Wrong", false), new("Extra", false)], 1, true, 0));
+            new(null, (await new DbGameQuestionRepository(db, TimeProvider.System).EnsureFallbackCategoryAsync()).Id, "Text question", [new("Correct", true), new("Wrong", false), new("Extra", false)], 1, true, 0));
         var optionId = textQuestion!.Options.Single(x => x.Text == "Extra").OptionId;
         var moved = await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"""
             UPDATE question_options SET question_id = {uploaded.QuestionId}, sort_order = 6 WHERE id = {optionId}
