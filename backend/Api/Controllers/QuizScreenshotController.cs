@@ -30,14 +30,14 @@ public sealed class QuizScreenshotController(IQuizScreenshotService service) : C
     [RequestSizeLimit(ImageUploadLimits.MaxUploadBytes + 65536)]
     public async Task<IActionResult> Upload([FromForm] Guid requestId, [FromForm] Guid locationId,
         [FromForm] Guid categoryId, [FromForm] int reward, [FromForm] int priority,
-        [FromForm] bool isEnabled, IFormFile? file, CancellationToken cancellationToken)
+        [FromForm] bool isEnabled, [FromForm] string text, IFormFile? file, CancellationToken cancellationToken)
     {
         if (file is null || file.Length <= 0 || file.Length > ImageUploadLimits.MaxUploadBytes)
             return this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest,
                 AppMessages.ErrorCodes.GameQuestionInvalidScreenshot);
         await using var content = file.OpenReadStream();
         var result = await service.UploadAsync(new UploadQuizScreenshotInput(requestId, locationId, categoryId,
-            reward, priority, isEnabled), content, file.ContentType, file.Length, cancellationToken);
+            reward, priority, isEnabled, text), content, file.ContentType, file.Length, cancellationToken);
         return result.Outcome switch
         {
             UploadQuizScreenshotOutcome.Created or UploadQuizScreenshotOutcome.Existing when result.QuestionId is { } id =>

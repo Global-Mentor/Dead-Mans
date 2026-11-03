@@ -16,12 +16,13 @@ public sealed class QuizScreenshotService(IQuizScreenshotRepository repository) 
         string contentType, long length, CancellationToken cancellationToken = default)
     {
         if (input.RequestId == Guid.Empty || input.LocationId == Guid.Empty || input.CategoryId == Guid.Empty
-            || input.Reward < 0)
+            || input.Reward < 0 || !GameQuestionValidator.TryNormalizeText(input.Text, out var text))
             return new(UploadQuizScreenshotOutcome.InvalidSelection);
         if (!content.CanSeek || content.Length != length
             || !ImageUploadValidator.IsAllowedUpload(contentType, length, out var mimeType)
             || !ImageUploadValidator.HasMatchingFileSignature(content, mimeType))
             return new(UploadQuizScreenshotOutcome.InvalidFile);
+        input = input with { Text = text };
         content.Position = 0;
         var hash = await SHA256.HashDataAsync(content, cancellationToken);
         content.Position = 0;

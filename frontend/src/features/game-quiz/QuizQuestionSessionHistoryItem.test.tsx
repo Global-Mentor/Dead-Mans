@@ -127,3 +127,18 @@ describe('quiz submission history', () => {
     )
   })
 })
+
+it('renders the saved screenshot prompt rather than a template', () => {
+  const names = { en: 'Location', ru: 'Локация', uk: 'Локація', pl: 'Lokacja' }
+  renderWithAppProviders(
+    <QuizQuestionSessionHistoryItem
+      questionSession={{
+        ...session,
+        questionText: 'Where is this tower?',
+        image: { imageUrl: '/test.png', mapNames: names, optionNames: { right: names } },
+      }}
+      currentUserId={null}
+    />,
+  )
+  expect(screen.getByText('Where is this tower?')).toBeInTheDocument()
+})

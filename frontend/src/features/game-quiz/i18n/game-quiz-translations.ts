@@ -1,5 +1,14 @@
 const translations = {
   en: {
+    screenshotPicker: {
+      searchLabel: 'Search screenshots',
+      searchPlaceholder: 'Enter a map, location or screenshot code',
+      startError: 'Could not start this screenshot. Your selection is saved. Try again.',
+      results: '{{count}} screenshots found',
+      loadError: 'Could not load screenshots. Please try again.',
+      empty: 'No screenshots are available for this game.',
+      emptyFiltered: 'No screenshots match these filters.',
+    },
     historyFormat: 'Question format',
     allFormats: 'All formats',
     textQuestions: 'Text questions',
@@ -148,6 +157,15 @@ const translations = {
       'Ask the next available question or select one manually. Questions are grouped by category. Wait for the open question to finish; launching is unavailable during modifier ordering.',
   },
   ru: {
+    screenshotPicker: {
+      searchLabel: 'Поиск скриншотов',
+      searchPlaceholder: 'Введите карту, локацию или код скриншота',
+      startError: 'Не удалось запустить скриншот. Выбор сохранён. Попробуйте ещё раз.',
+      results: 'Найдено скриншотов: {{count}}',
+      loadError: 'Не удалось загрузить скриншоты. Попробуйте ещё раз.',
+      empty: 'Для этой игры нет доступных скриншотов.',
+      emptyFiltered: 'По выбранным условиям скриншотов нет.',
+    },
     historyFormat: 'Формат вопросов',
     allFormats: 'Все форматы',
     textQuestions: 'Текстовые вопросы',
@@ -297,6 +315,15 @@ const translations = {
       'Запустите следующий доступный вопрос или выберите конкретный. Вопросы сгруппированы по категориям. Дождитесь завершения открытого вопроса; во время выбора модификаторов запуск недоступен.',
   },
   uk: {
+    screenshotPicker: {
+      searchLabel: 'Пошук знімків',
+      searchPlaceholder: 'Введіть мапу, локацію або код знімка',
+      startError: 'Не вдалося запустити знімок. Вибір збережено. Спробуйте ще раз.',
+      results: 'Знайдено знімків: {{count}}',
+      loadError: 'Не вдалося завантажити знімки. Спробуйте ще раз.',
+      empty: 'Для цієї гри немає доступних знімків.',
+      emptyFiltered: 'За вибраними умовами знімків немає.',
+    },
     historyFormat: 'Формат запитань',
     allFormats: 'Усі формати',
     textQuestions: 'Текстові запитання',
@@ -449,6 +476,15 @@ const translations = {
       'Запустіть наступне доступне питання або оберіть конкретне. Питання згруповано за категоріями. Дочекайтеся завершення відкритого питання; під час вибору модифікаторів запуск недоступний.',
   },
   pl: {
+    screenshotPicker: {
+      searchLabel: 'Szukaj zrzutów',
+      searchPlaceholder: 'Wpisz mapę, lokację lub kod zrzutu',
+      startError: 'Nie udało się uruchomić zrzutu. Wybór został zachowany. Spróbuj ponownie.',
+      results: 'Znaleziono zrzutów: {{count}}',
+      loadError: 'Nie udało się wczytać zrzutów. Spróbuj ponownie.',
+      empty: 'Brak dostępnych zrzutów w tej grze.',
+      emptyFiltered: 'Brak zrzutów pasujących do filtrów.',
+    },
     historyFormat: 'Format pytań',
     allFormats: 'Wszystkie formaty',
     textQuestions: 'Pytania tekstowe',

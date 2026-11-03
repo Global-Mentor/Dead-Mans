@@ -26,9 +26,7 @@ export function GameSetupQuestionPreview({
       {question ? (
         <Stack spacing={2}>
           {question.image ? <QuizScreenshotImage image={question.image} /> : null}
-          <Typography sx={{ overflowWrap: 'anywhere' }}>
-            {question.image ? t('common.quizImage.question') : question.text}
-          </Typography>
+          <Typography sx={{ overflowWrap: 'anywhere' }}>{question.text}</Typography>
           <Stack direction="row" gap={1} flexWrap="wrap">
             <StatusBadge label={question.categoryName} />
             <StatusBadge label={t('gameSetup.questions.reward', { count: question.reward })} />

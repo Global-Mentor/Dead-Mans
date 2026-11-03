@@ -34,9 +34,10 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [requestId, locationId, categoryId, reward, priority, isEnabled, file]
+              required: [requestId, locationId, categoryId, text, reward, priority, isEnabled, file]
               properties:
                 requestId: { type: string, format: uuid }
+                text: { type: string, minLength: 1, maxLength: 2000 }
                 locationId: { type: string, format: uuid }
                 categoryId: { type: string, format: uuid }
                 reward: { type: integer, minimum: 0 }

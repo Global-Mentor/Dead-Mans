@@ -186,10 +186,7 @@ function QuizTimelineQuestion({
   const { t } = useTranslation()
   const pinned = current != null || latest
   const [expanded, setExpanded] = useState(false)
-  const title =
-    current?.image || questionSession?.image
-      ? t('common.quizImage.question')
-      : (current?.text ?? questionSession?.questionText ?? '')
+  const title = current?.text ?? questionSession?.questionText ?? ''
   const correctAnswers =
     questionSession?.submissions.filter((answer) => answer.isCorrect).length ?? 0
   const reward = current?.reward ?? questionSession?.reward

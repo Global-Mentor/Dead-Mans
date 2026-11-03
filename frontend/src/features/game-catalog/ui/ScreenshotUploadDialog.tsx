@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import type { GameQuestionCategoryItem } from '../../../shared/api/contracts/index.ts'
 import { z } from '../../../shared/validation/zod.ts'
-import { huntName } from '../../../shared/game-ui/index.ts'
+import { huntName, huntMapName } from '../../../shared/game-ui/index.ts'
 import {
   AppButton,
   AppDialog,
@@ -23,7 +23,10 @@ import {
 import { huntMapsQueryOptions } from '../api/quiz-screenshots-api.ts'
 import { useScreenshotUpload } from '../use-screenshot-upload.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
-import { createQuestionMetadataSchema } from '../model/question-form-schema.ts'
+import {
+  createQuestionMetadataSchema,
+  createQuestionTextSchema,
+} from '../model/question-form-schema.ts'
 
 export function ScreenshotUploadDialog({
   categories,
@@ -45,10 +48,12 @@ export function ScreenshotUploadDialog({
     .extend({
       mapId: z.string().min(1, required),
       locationId: z.string().min(1, required),
+      text: createQuestionTextSchema({ required, tooLong: t('gameCatalog.validation.tooLong') }),
     })
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
+      text: '',
       mapId: '',
       locationId: '',
       categoryId: categories[0]?.id ?? '',
@@ -58,9 +63,14 @@ export function ScreenshotUploadDialog({
   const mapId = useWatch({ control: form.control, name: 'mapId' })
   const map = maps.data?.find((item) => item.id === mapId)
   const pending = upload.rows.filter((row) => row.status !== 'done').length
-  const close = useDirtyClose({ dirty: pending > 0, busy: upload.busy, onClose })
+  const close = useDirtyClose({
+    dirty: pending > 0 || (!upload.locked && form.formState.isDirty),
+    busy: upload.busy,
+    onClose,
+  })
   const submit = form.handleSubmit((values) =>
     upload.upload({
+      text: values.text,
       locationId: values.locationId,
       categoryId: values.categoryId,
       reward: Number(values.reward),
@@ -117,7 +127,7 @@ export function ScreenshotUploadDialog({
                 helperText={fieldState.error?.message}
                 options={(maps.data ?? []).map((item) => ({
                   value: item.id,
-                  label: huntName(item.names, i18n.language),
+                  label: huntMapName(item.names, i18n.language),
                 }))}
                 onChange={(value) => {
                   field.onChange(value)
@@ -166,6 +176,15 @@ export function ScreenshotUploadDialog({
             disabled={upload.locked}
             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
           />
+          <ControlledFormTextField
+            control={form.control}
+            name="text"
+            label={t('gameCatalog.screenshots.question')}
+            helperText={t('gameCatalog.screenshots.questionHelp')}
+            disabled={upload.locked}
+            multiline
+            minRows={2}
+          />
           <FilePickerInput
             ref={picker}
             multiple
@@ -199,6 +218,7 @@ export function ScreenshotUploadDialog({
               <ItemCard key={row.id}>
                 <Stack spacing={1}>
                   <ImageFrame
+                    loading="lazy"
                     src={row.preview}
                     alt={row.file.name}
                     loadingLabel={t('common.quizImage.loading')}

@@ -1,4 +1,8 @@
-import { QuizScreenshotImage, huntName } from '../../shared/game-ui/index.ts'
+import {
+  QuizScreenshotImage,
+  huntMapName,
+  quizImageSearchTerms,
+} from '../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -67,7 +71,11 @@ export function QuizQuestionPickerDialog({
           (normalizedQuery === '' ||
             normalizeSearch(
               question.image
-                ? `${huntName(question.image.mapNames, i18n.resolvedLanguage ?? 'en')} ${question.questionCode}`
+                ? [
+                    question.text,
+                    question.questionCode,
+                    ...quizImageSearchTerms(question.image, i18n.resolvedLanguage ?? 'en'),
+                  ].join(' ')
                 : question.text,
             ).includes(normalizedQuery)),
       )
@@ -140,8 +148,14 @@ export function QuizQuestionPickerDialog({
             inputRef={searchRef}
             fullWidth
             size="small"
-            label={t('gameQuiz.questionSearchLabel')}
-            placeholder={t('gameQuiz.questionSearchPlaceholder')}
+            label={t(
+              screenshot ? 'gameQuiz.screenshotPicker.searchLabel' : 'gameQuiz.questionSearchLabel',
+            )}
+            placeholder={t(
+              screenshot
+                ? 'gameQuiz.screenshotPicker.searchPlaceholder'
+                : 'gameQuiz.questionSearchPlaceholder',
+            )}
             slotProps={{ inputLabel: { shrink: true } }}
             value={query}
             disabled={pending}
@@ -171,11 +185,16 @@ export function QuizQuestionPickerDialog({
         </Stack>
 
         {submitFailed ? (
-          <InlineNotice severity="error">{t('gameQuiz.questionStartError')}</InlineNotice>
+          <InlineNotice severity="error">
+            {t(screenshot ? 'gameQuiz.screenshotPicker.startError' : 'gameQuiz.questionStartError')}
+          </InlineNotice>
         ) : null}
         {!loading && !error ? (
           <Typography variant="caption" color="text.secondary" aria-live="polite">
-            {t('gameQuiz.questionPickerResults', { count: visibleQuestions.length })}
+            {t(
+              screenshot ? 'gameQuiz.screenshotPicker.results' : 'gameQuiz.questionPickerResults',
+              { count: visibleQuestions.length },
+            )}
           </Typography>
         ) : null}
 
@@ -194,7 +213,7 @@ export function QuizQuestionPickerDialog({
               ) : undefined
             }
           >
-            {t('gameQuiz.questionsLoadError')}
+            {t(screenshot ? 'gameQuiz.screenshotPicker.loadError' : 'gameQuiz.questionsLoadError')}
           </InlineNotice>
         ) : (
           <Stack
@@ -218,8 +237,12 @@ export function QuizQuestionPickerDialog({
               >
                 {t(
                   questions.length === 0
-                    ? 'gameQuiz.noQuestionsAvailable'
-                    : 'gameQuiz.noQuestionsMatched',
+                    ? screenshot
+                      ? 'gameQuiz.screenshotPicker.empty'
+                      : 'gameQuiz.noQuestionsAvailable'
+                    : screenshot
+                      ? 'gameQuiz.screenshotPicker.emptyFiltered'
+                      : 'gameQuiz.noQuestionsMatched',
                 )}
               </Typography>
             ) : (
@@ -254,7 +277,7 @@ export function QuizQuestionPickerDialog({
                       />
                       <Typography component="span" variant="body1" fontWeight={700}>
                         {question.image
-                          ? `${huntName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+                          ? `${huntMapName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
                           : question.text}
                       </Typography>
                     </Stack>

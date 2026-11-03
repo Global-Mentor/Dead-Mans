@@ -1,4 +1,4 @@
-import { QuizScreenshotImage, huntName, quizOptionText } from '../../../shared/game-ui/index.ts'
+import { QuizScreenshotImage, huntMapName, quizOptionText } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,7 @@ import { ListPanel, PageStatePanel, SelectionRow, StatusBadge } from '../../../s
 function screenshotTitle(question: GameQuestionCatalogItem, language: string) {
   const correct = question.options.find((option) => option.isCorrect)
   return question.image && correct
-    ? `${huntName(question.image.mapNames, language)} · ${quizOptionText(question.image, correct.optionId, correct.text, language)}`
+    ? `${huntMapName(question.image.mapNames, language)} · ${quizOptionText(question.image, correct.optionId, correct.text, language)}`
     : question.text
 }
 
@@ -68,49 +68,65 @@ export function QuestionCatalogList({
               density="compact"
               aria-label={
                 question.image
-                  ? `${screenshotTitle(question, i18n.language)} · ${question.questionCode}`
+                  ? `${question.text} · ${screenshotTitle(question, i18n.language)} · ${question.questionCode}`
                   : question.text
               }
               aria-describedby={prefix + '-' + question.questionId}
               onClick={() => onSelect(question)}
             >
-              <Stack gap={0.75} sx={{ minWidth: 0, width: '100%' }}>
-                {question.image ? <QuizScreenshotImage image={question.image} thumbnail /> : null}
-                <Typography component="span" variant="body1" fontWeight={700}>
-                  {question.image ? screenshotTitle(question, i18n.language) : question.text}
-                </Typography>
-                <Stack
-                  component="span"
-                  id={prefix + '-' + question.questionId}
-                  direction="row"
-                  gap={0.75}
-                  alignItems="center"
-                  flexWrap="wrap"
-                >
-                  <StatusBadge density="tight" variant="outlined" label={question.categoryName} />
-                  <StatusBadge
-                    density="tight"
-                    variant="outlined"
-                    color="warning"
-                    label={t('gameCatalog.questions.rewardMeta', {
-                      reward: number(question.reward),
-                    })}
-                  />
-                  {!question.isEnabled ? (
-                    <StatusBadge
-                      density="tight"
-                      color="error"
-                      label={t('gameCatalog.questions.catalog.disabled')}
-                    />
+              <Stack
+                direction="row"
+                gap={1.25}
+                alignItems="center"
+                sx={{ minWidth: 0, width: '100%' }}
+              >
+                <Stack gap={0.75} sx={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere' }}>
+                  <Typography component="span" variant="body1" fontWeight={700}>
+                    {question.text}
+                  </Typography>
+                  {question.image ? (
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      {screenshotTitle(question, i18n.language)}
+                    </Typography>
                   ) : null}
-                  {question.twitchCompatible === false ? (
+                  <Stack
+                    component="span"
+                    id={prefix + '-' + question.questionId}
+                    direction="row"
+                    gap={0.75}
+                    alignItems="center"
+                    flexWrap="wrap"
+                  >
+                    <StatusBadge density="tight" variant="outlined" label={question.categoryName} />
                     <StatusBadge
                       density="tight"
+                      variant="outlined"
                       color="warning"
-                      label={t('gameCatalog.questions.twitchIncompatibleBadge')}
+                      label={t('gameCatalog.questions.rewardMeta', {
+                        reward: number(question.reward),
+                      })}
                     />
-                  ) : null}
+                    {!question.isEnabled ? (
+                      <StatusBadge
+                        density="tight"
+                        color="error"
+                        label={t('gameCatalog.questions.catalog.disabled')}
+                      />
+                    ) : null}
+                    {question.twitchCompatible === false ? (
+                      <StatusBadge
+                        density="tight"
+                        color="warning"
+                        label={t('gameCatalog.questions.twitchIncompatibleBadge')}
+                      />
+                    ) : null}
+                  </Stack>
                 </Stack>
+                {question.image ? (
+                  <Box sx={{ width: { xs: 96, sm: 128 }, flexShrink: 0 }}>
+                    <QuizScreenshotImage image={question.image} thumbnail />
+                  </Box>
+                ) : null}
               </Stack>
             </SelectionRow>
           </Box>

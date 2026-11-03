@@ -24,3 +24,13 @@ export function quizImageSearchTerms(image: Image | null | undefined, language: 
       )
     : []
 }
+
+/** Map resources contain mixed display casing; preserve spelling without all-caps headings. */
+export function huntMapName(names: components['schemas']['LocalizedHuntNames'], language: string) {
+  const name = huntName(names, language)
+  return name === name.toLocaleUpperCase(language)
+    ? name
+        .toLocaleLowerCase(language)
+        .replace(/(^|[\s-])\p{L}/gu, (word) => word.toLocaleUpperCase(language))
+    : name
+}

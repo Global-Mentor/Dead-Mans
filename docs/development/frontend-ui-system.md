@@ -265,6 +265,13 @@ During open registration, the board's game-status value is a short localized reg
 
 ## Quiz workspace
 
+Screenshot catalogue rows place the prompt and metadata on the left and a fixed-width,
+lazily loaded thumbnail on the right, including at mobile widths. Upload accepts one
+or more images with a required shared prompt; the screenshot editor can change that
+prompt while preserving the image and location options. Prompt rendering uses the
+saved question text across the site, OBS and history. Map headings use ordinary
+casing for all-uppercase game resources without changing stored spellings.
+
 `ChoiceMarker` owns the square answer marker shared by `SelectionAction` and the
 screenshot broadcast. OBS uses the same marker size and appearance as the site
 for `!1`...`!6`. The prompt is centered across the whole panel, independently of

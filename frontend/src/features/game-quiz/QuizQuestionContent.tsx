@@ -58,7 +58,7 @@ export function QuizQuestionContent({
         ...(embedded ? { py: 1, whiteSpace: 'pre-wrap' } : {}),
       }}
     >
-      {state.image ? t('common.quizImage.question') : state.text}
+      {state.text}
     </Typography>
   )
 

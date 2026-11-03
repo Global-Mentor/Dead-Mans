@@ -10,6 +10,7 @@ export const huntMapsQueryOptions = {
 }
 
 export interface ScreenshotUploadSettings {
+  text: string
   locationId: string
   categoryId: string
   reward: number

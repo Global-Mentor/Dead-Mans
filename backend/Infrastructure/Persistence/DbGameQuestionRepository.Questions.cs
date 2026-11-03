@@ -157,9 +157,9 @@ public sealed partial class DbGameQuestionRepository
             return null;
         }
 
-        if (entity.ImageSnapshotJson is not null && (input.Text != entity.Text
-            || !input.Options.SequenceEqual(entity.Options.OrderBy(x => x.SortOrder)
-                .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect)))))
+        if (entity.ImageSnapshotJson is not null
+            && !input.Options.SequenceEqual(entity.Options.OrderBy(x => x.SortOrder)
+                .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect))))
             return null;
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;

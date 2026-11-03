@@ -33,7 +33,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         db.QuestionCategories.Add(category);
         await db.SaveChangesAsync();
         var locationId = await db.HuntLocations.OrderBy(x => x.Id).Select(x => x.Id).FirstAsync();
-        return new(Guid.NewGuid(), locationId, category.Id, 7, 0, true);
+        return new(Guid.NewGuid(), locationId, category.Id, 7, 0, true, "Where was this taken?");
     }
 
     private static async Task<UploadQuizScreenshotResult> UploadAsync(QuizScreenshotService service, UploadQuizScreenshotInput input)
@@ -54,9 +54,10 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         var originalImage = question.ImageSnapshotJson;
         var repository = new DbGameQuestionRepository(db, TimeProvider.System);
         var updated = await repository.UpdateQuestionAsync(question.Id,
-            new(input.CategoryId, question.Text, options, 42, true, 5));
+            new(input.CategoryId, "Which compound is behind the tower?", options, 42, true, 5));
         Assert.NotNull(updated);
         Assert.Equal(42, updated.Reward);
+        Assert.Equal("Which compound is behind the tower?", updated.Text);
         Assert.Equal(ids, updated.Options.OrderBy(x => x.SortOrder).Select(x => x.OptionId));
         Assert.Equal(originalImage, question.ImageSnapshotJson);
         var changed = options.Select((option, index) => index == 0 ? option with { Text = "Changed answer" } : option).ToArray();
@@ -262,6 +263,9 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         await db.SaveChangesAsync();
         game.Status = GameStatusValue.Active; game.StartedAtUtc = now;
         await db.SaveChangesAsync();
+        await new DbGameQuestionRepository(db, TimeProvider.System).UpdateQuestionAsync(question.Id,
+            new(input.CategoryId, "New catalog text after publication", question.Options.OrderBy(x => x.SortOrder)
+                .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect)).ToArray(), 7, true, 0));
         var repository = new DbGameQuizRepository(db, new Clock(now.AddSeconds(1)));
         Assert.Equal(2, (await repository.GetAvailableQuizQuestionsAsync()).Count);
         Assert.All(await repository.GetAvailableQuizQuestionsAsync(), item => Assert.NotNull(item.Image));
@@ -274,7 +278,8 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         Assert.Equal(TimeSpan.FromSeconds(25), asked.ClosesAtUtc - asked.AskedAtUtc);
         var correct = question.Options.Single(x => x.IsCorrect).Id;
         var state = await repository.GetCurrentQuizStateAsync(user.Id);
-        Assert.True(state!.PresentationVisible);
+        Assert.Equal(input.Text, state!.Text);
+        Assert.True(state.PresentationVisible);
         Assert.Null(state.CorrectOptionId);
         Assert.Null(await repository.HideScreenshotAsync(asked.QuestionSessionId));
         Assert.True(await GameQuizActivity.BlocksModifiersAsync(db, game.Id, now.AddSeconds(2), default));

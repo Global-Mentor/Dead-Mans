@@ -109,6 +109,12 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     () => catalogQuery.data?.filter((question) => Boolean(question.image) === screenshots),
     [catalogQuery.data, screenshots],
   )
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const question of questions ?? [])
+      counts.set(question.categoryId, (counts.get(question.categoryId) ?? 0) + 1)
+    return counts
+  }, [questions])
   const locale = i18n.resolvedLanguage ?? 'en'
   const visible = useMemo(
     () =>
@@ -125,7 +131,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     [questions, search, selectedCategoryId, status, sort, locale],
   )
   const selected =
-    questions?.find((question) => question.questionId === selectedId) ?? visible[0] ?? null
+    visible.find((question) => question.questionId === selectedId) ?? visible[0] ?? null
   const hasFilters =
     search.trim().length > 0 ||
     selectedCategoryId !== null ||
@@ -255,7 +261,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
       />
 
       <CatalogWorkspace
-        toolsLabel={t('gameCatalog.questions.menuTitle')}
+        toolsLabel={t(`${copy}.menuTitle`)}
         tools={
           <Box sx={{ minWidth: 0 }}>
             <QuestionCatalogMenu
@@ -278,7 +284,10 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
                   screenshots={screenshots}
                   search={search}
                   onSearchChange={setSearch}
-                  categories={categories}
+                  categories={categories.map((category) => ({
+                    ...category,
+                    questionCount: categoryCounts.get(category.id) ?? 0,
+                  }))}
                   categoryId={selectedCategoryId}
                   onCategoryChange={setSelectedCategoryId}
                   status={status}

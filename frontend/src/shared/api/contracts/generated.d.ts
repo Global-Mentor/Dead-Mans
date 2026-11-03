@@ -3853,6 +3853,7 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: uuid */
                     requestId: string;
+                    text: string;
                     /** Format: uuid */
                     locationId: string;
                     /** Format: uuid */

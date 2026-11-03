@@ -67,6 +67,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         var question = await db.QuestionDefinitions.AsNoTracking().Include(x => x.Options).SingleAsync();
         Assert.Equal(created!.QuestionId, question.Id.ToString());
         Assert.Equal(7, question.Reward);
+        Assert.Equal("Which compound is behind the tower?", question.Text);
         Assert.Equal(-2, question.Priority);
         Assert.True(question.IsEnabled);
         Assert.Equal(6, question.Options.Count);
@@ -74,13 +75,20 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
 
         using var conflict = Content(requestId, locationId, category.Id, reward: "8");
         Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsync("/api/game/questions/screenshots", conflict)).StatusCode);
+        using var textConflict = Content(requestId, locationId, category.Id, text: "A different question?");
+        Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsync("/api/game/questions/screenshots", textConflict)).StatusCode);
+        foreach (var text in new[] { "   ", "invalid\0text", new string('x', 2001) })
+        {
+            using var invalidText = Content(Guid.NewGuid(), locationId, category.Id, text: text);
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/game/questions/screenshots", invalidText)).StatusCode);
+        }
         using var invalid = Content(Guid.NewGuid(), locationId, category.Id, bytes: "invalid image"u8.ToArray());
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/game/questions/screenshots", invalid)).StatusCode);
         Assert.Equal(1, await db.QuestionDefinitions.CountAsync());
     }
 
     private static MultipartFormDataContent Content(Guid requestId, Guid locationId, Guid categoryId,
-        string reward = "7", byte[]? bytes = null)
+        string reward = "7", byte[]? bytes = null, string text = "  Which compound is behind the tower?  ")
     {
         var content = new MultipartFormDataContent
         {
@@ -88,6 +96,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
             { new StringContent(locationId.ToString()), "locationId" },
             { new StringContent(categoryId.ToString()), "categoryId" },
             { new StringContent(reward), "reward" },
+            { new StringContent(text), "text" },
             { new StringContent("-2"), "priority" },
             { new StringContent("true"), "isEnabled" }
         };

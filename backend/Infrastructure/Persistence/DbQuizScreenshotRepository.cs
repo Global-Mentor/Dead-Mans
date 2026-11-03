@@ -84,7 +84,7 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
             Id = questionId,
             ExternalCode = $"s_{questionId:N}",
             CategoryId = input.CategoryId,
-            Text = "Какая локация изображена на скриншоте?",
+            Text = input.Text,
             Reward = input.Reward,
             Priority = input.Priority,
             IsEnabled = input.IsEnabled,

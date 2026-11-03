@@ -98,7 +98,7 @@ export function QuestionCatalogDetails({
         contentEmphasis="strong"
       >
         <Typography component="h3" variant="body2" textAlign="center">
-          {question.image ? t('common.quizImage.question') : question.text}
+          {question.text}
         </Typography>
       </RoundBriefingPanel>
       {question.image ? <QuizScreenshotImage image={question.image} /> : null}

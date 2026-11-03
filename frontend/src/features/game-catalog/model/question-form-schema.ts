@@ -14,6 +14,12 @@ interface QuestionFormSchemaMessages {
   correctAnswer: string
 }
 
+export function createQuestionTextSchema(
+  messages: Pick<QuestionFormSchemaMessages, 'required' | 'tooLong'>,
+) {
+  return z.string().trim().min(1, messages.required).max(2000, messages.tooLong)
+}
+
 export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
   const answerValueSchema = z
     .string()
@@ -21,7 +27,7 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
     .pipe(z.string().min(1, messages.required).max(500, messages.tooLong))
 
   return createQuestionMetadataSchema(messages).extend({
-    text: z.string().trim().min(1, messages.required).max(2000, messages.tooLong),
+    text: createQuestionTextSchema(messages),
     options: z
       .array(z.object({ text: answerValueSchema, isCorrect: z.boolean() }))
       .min(minQuestionAnswers, messages.required)

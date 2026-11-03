@@ -19,7 +19,10 @@ import {
   InlineNotice,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
-import { createQuestionMetadataSchema } from '../model/question-form-schema.ts'
+import {
+  createQuestionMetadataSchema,
+  createQuestionTextSchema,
+} from '../model/question-form-schema.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 
 export function ScreenshotEditDialog({
@@ -41,9 +44,15 @@ export function ScreenshotEditDialog({
       createQuestionMetadataSchema({
         required: t('gameCatalog.validation.required'),
         number: t('gameCatalog.validation.number'),
+      }).extend({
+        text: createQuestionTextSchema({
+          required: t('gameCatalog.validation.required'),
+          tooLong: t('gameCatalog.validation.tooLong'),
+        }),
       }),
     ),
     defaultValues: {
+      text: question.text,
       categoryId: question.categoryId,
       reward: String(question.reward),
       priority: String(question.priority ?? 0),
@@ -58,7 +67,6 @@ export function ScreenshotEditDialog({
         ...values,
         reward: Number(values.reward),
         priority: Number(values.priority),
-        text: question.text,
         options: question.options.map((option) => ({
           text: option.text,
           isCorrect: option.isCorrect,
@@ -92,6 +100,15 @@ export function ScreenshotEditDialog({
           onSubmit={(event) => void submit(event)}
         >
           {question.image ? <QuizScreenshotImage image={question.image} /> : null}
+          <ControlledFormTextField
+            control={form.control}
+            name="text"
+            label={t('gameCatalog.screenshots.question')}
+            helperText={t('gameCatalog.screenshots.questionHelp')}
+            disabled={busy}
+            multiline
+            minRows={2}
+          />
           <Controller
             control={form.control}
             name="categoryId"

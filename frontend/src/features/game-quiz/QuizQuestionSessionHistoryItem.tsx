@@ -76,7 +76,7 @@ export function QuizQuestionSessionHistoryItem({
         </Stack>
         {showQuestionText ? (
           <Typography variant="body1" fontWeight={700} sx={{ lineHeight: 1.35 }}>
-            {questionSession.image ? t('common.quizImage.question') : questionSession.questionText}
+            {questionSession.questionText}
           </Typography>
         ) : null}
         {questionSession.image ? <QuizScreenshotImage image={questionSession.image} /> : null}

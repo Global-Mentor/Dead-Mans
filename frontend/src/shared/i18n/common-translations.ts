@@ -2,7 +2,6 @@ const translations = {
   en: {
     quizImage: {
       alt: 'Location screenshot',
-      question: 'Which location is shown?',
       loading: 'Loading image',
       error: 'Image unavailable',
       enlarge: 'Enlarge screenshot',
@@ -128,7 +127,6 @@ const translations = {
   ru: {
     quizImage: {
       alt: 'Скриншот локации',
-      question: 'Какая локация изображена?',
       loading: 'Загрузка изображения',
       error: 'Изображение недоступно',
       enlarge: 'Увеличить скриншот',
@@ -257,7 +255,6 @@ const translations = {
   uk: {
     quizImage: {
       alt: 'Знімок локації',
-      question: 'Яку локацію зображено?',
       loading: 'Завантаження зображення',
       error: 'Зображення недоступне',
       enlarge: 'Збільшити знімок',
@@ -386,7 +383,6 @@ const translations = {
   pl: {
     quizImage: {
       alt: 'Zrzut ekranu lokacji',
-      question: 'Jaka lokacja jest na zdjęciu?',
       loading: 'Ładowanie obrazu',
       error: 'Obraz niedostępny',
       enlarge: 'Powiększ zrzut ekranu',

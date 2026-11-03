@@ -21,7 +21,7 @@ for (const width of [390, 768, 1440]) {
           {
             id: 'map',
             code: 'cemetery',
-            names: screenshotQuestion.image!.mapNames,
+            names: { ...screenshotQuestion.image!.mapNames, ru: 'БОЛОТО СТИЛЛУОТЕР' },
             locations: [
               {
                 id: 'location',
@@ -34,9 +34,11 @@ for (const width of [390, 768, 1440]) {
       }),
     )
     const requests: string[] = []
+    const texts: string[] = []
     let release: () => void = () => {}
     await page.route('**/api/game/questions/screenshots', async (route) => {
       const body = route.request().postDataBuffer()!.toString()
+      texts.push(body.match(/name="text"\r\n\r\n([^\r]+)/)![1]!)
       requests.push(body.match(/name="requestId"\r\n\r\n([^\r]+)/)![1]!)
       if (requests.length === 1)
         await new Promise<void>((resolve) => {
@@ -55,6 +57,8 @@ for (const width of [390, 768, 1440]) {
     await page.getByRole('option', { name: 'Болото Стиллуотер', exact: true }).click()
     await dialog.getByRole('combobox', { name: /^Локация/ }).click()
     await page.getByRole('option', { name: 'Винный завод', exact: true }).click()
+    const question = dialog.getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    await question.fill('Где находится эта башня?')
     const png = await readFile('public/brand/share-card.png')
     await dialog.locator('input[type=file]').setInputFiles([
       { name: 'first.png', mimeType: 'image/png', buffer: png },
@@ -70,6 +74,7 @@ for (const width of [390, 768, 1440]) {
       'aria-disabled',
       'true',
     )
+    await expect(question).toBeDisabled()
     release()
     await expect(dialog.getByText('Загружено 1 из 2', { exact: true })).toBeVisible()
     await expect(dialog.getByText('Ошибка', { exact: true })).toBeVisible()
@@ -83,6 +88,7 @@ for (const width of [390, 768, 1440]) {
       .click()
     await expect(dialog.getByText('Загружено 2 из 2', { exact: true })).toBeVisible()
     expect(requests).toHaveLength(3)
+    expect(texts).toEqual(Array(3).fill('Где находится эта башня?'))
     expect(requests[0]).not.toBe(requests[1])
     expect(requests[1]).toBe(requests[2])
     await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
@@ -126,7 +132,7 @@ const catalog: GameQuestionCatalogItem[] = Array.from({ length: 24 }, (_, index)
 test('large screenshot catalogue loads offscreen images only when approached', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   const state = await mockCatalog(page)
-  state.items = Array.from({ length: 80 }, (_, index) => ({
+  state.items = Array.from({ length: 100 }, (_, index) => ({
     ...catalog[0]!,
     questionId: `image-${index}`,
     questionCode: `image-${index}`,
@@ -147,11 +153,11 @@ test('large screenshot catalogue loads offscreen images only when approached', a
   const list = page.getByTestId('question-catalog-list')
   // Loading images are hidden from the accessibility tree until ImageFrame has loaded them.
   const images = list.locator('img[alt="Скриншот локации"]')
-  await expect(images).toHaveCount(80)
+  await expect(images).toHaveCount(100)
   await expect
     .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBe(1920)
-  expect(loaded.size).toBeLessThan(80)
+  expect(loaded.size).toBeLessThan(100)
   const initiallyLoaded = loaded.size
   await images.last().scrollIntoViewIfNeeded()
   await expect
@@ -314,6 +320,9 @@ for (const width of [390, 768, 1440]) {
     await page.goto('/panel/catalog-screenshots')
     const list = page.getByTestId('question-catalog-list')
     await expect(list.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    const preview = await list.getByRole('img').boundingBox()
+    const title = await list.getByText(state.items[0]!.text, { exact: true }).boundingBox()
+    expect(preview!.x).toBeGreaterThanOrEqual(title!.x + title!.width)
     await page.screenshot({ path: info.outputPath('screenshot-catalog.png') })
     if (width < 1200) await list.getByRole('button').click()
     await page
@@ -359,6 +368,9 @@ test('screenshot metadata can be edited without replacing its six answer options
   await expect(editor.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
   await editor.getByRole('textbox', { name: 'Награда', exact: true }).fill('42')
   await editor.getByRole('textbox', { name: 'Приоритет', exact: true }).fill('-5')
+  await editor
+    .getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    .fill('Какая локация за мельницей?')
   await editor.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(editor).toHaveCount(0)
   await page.reload()
@@ -373,7 +385,7 @@ test('screenshot metadata can be edited without replacing its six answer options
   expect(state.saves).toHaveLength(1)
   expect(state.saves[0]!.reward).toBe(42)
   expect(state.saves[0]!.priority).toBe(-5)
-  expect(state.saves[0]!.text).toBe(visual.text)
+  expect(state.saves[0]!.text).toBe('Какая локация за мельницей?')
   expect(state.saves[0]!.options).toEqual(
     visual.options.map(({ text, isCorrect }) => ({ text, isCorrect })),
   )

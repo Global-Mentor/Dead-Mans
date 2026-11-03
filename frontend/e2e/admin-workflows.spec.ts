@@ -1,3 +1,4 @@
+import { screenshotQuestion } from './support/screenshot-fixture.ts'
 import { expect, test, type Page } from '@playwright/test'
 import { expectPanelPageInsets } from './layout-assertions.ts'
 import { recordDensity } from './density-metrics.ts'
@@ -1095,3 +1096,21 @@ for (const [width, limit] of [
     })
   })
 }
+
+test('catalog category counts stay scoped to text questions and screenshots', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const server = await mockAdmin(page)
+  for (const index of [1, 2])
+    Object.assign(server.questions[index]!, { image: screenshotQuestion.image })
+  for (const [route, count] of [
+    ['catalog-screenshots', 2],
+    ['catalog-questions', 10],
+  ] as const) {
+    await page.goto(`/panel/${route}`)
+    await page.getByRole('combobox', { name: /^Categories / }).click()
+    await expect(
+      page.getByRole('option', { name: `Geography (${count})`, exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+  }
+})

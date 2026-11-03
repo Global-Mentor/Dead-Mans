@@ -1,7 +1,10 @@
 const translations = {
   en: {
     screenshots: {
+      question: 'Image question',
+      questionHelp: 'The same question will be used for every image in this upload.',
       catalogTitle: 'Screenshot catalog',
+      menuTitle: 'Screenshot tools',
       all: 'All screenshots',
       sortCategory: 'Category and location',
       list: 'Screenshots',
@@ -16,10 +19,10 @@ const translations = {
       deleteConfirm:
         'Delete this screenshot from the catalog? Completed games retain their history.',
       title: 'Upload screenshots',
-      help: 'Choose a map and location once, then select images. Each file creates a separate question with six locations. JPEG, PNG, WebP or GIF, up to 5 MiB each.',
+      help: 'Choose a map and location, enter a question, then select one or more images. Each image gets six location options. JPEG, PNG, WebP or GIF, up to 5 MB per image.',
       map: 'Map',
       location: 'Location',
-      choose: 'Choose images',
+      choose: 'Choose one or more images',
       upload: 'Upload / retry remaining',
       loadError: 'Could not load locations.',
       progress: 'Uploaded {{done}} of {{total}}',
@@ -528,7 +531,10 @@ const translations = {
   },
   ru: {
     screenshots: {
+      question: 'Вопрос для изображения',
+      questionHelp: 'Этот вопрос будет добавлен ко всем изображениям в этой загрузке.',
       catalogTitle: 'Каталог скриншотов',
+      menuTitle: 'Управление скриншотами',
       all: 'Все скриншоты',
       sortCategory: 'Категория и локация',
       list: 'Скриншоты',
@@ -542,10 +548,10 @@ const translations = {
       deleteTitle: 'Удалить скриншот',
       deleteConfirm: 'Удалить скриншот из каталога? История завершённых игр сохранится.',
       title: 'Загрузить скриншоты',
-      help: 'Выберите карту и локацию, затем добавьте изображения. Каждый файл создаёт отдельный вопрос с шестью локациями. JPEG, PNG, WebP или GIF, до 5 МиБ каждый.',
+      help: 'Выберите карту и локацию, введите вопрос и добавьте одно или несколько изображений. Для каждого будет шесть вариантов локаций. JPEG, PNG, WebP или GIF, до 5 MB на изображение.',
       map: 'Карта',
       location: 'Локация',
-      choose: 'Выбрать изображения',
+      choose: 'Выбрать одно или несколько изображений',
       upload: 'Загрузить / повторить оставшиеся',
       loadError: 'Не удалось загрузить локации.',
       progress: 'Загружено {{done}} из {{total}}',
@@ -1060,7 +1066,10 @@ const translations = {
   },
   uk: {
     screenshots: {
+      question: 'Запитання до зображення',
+      questionHelp: 'Це запитання буде додано до всіх зображень у цьому завантаженні.',
       catalogTitle: 'Каталог знімків екрана',
+      menuTitle: 'Керування знімками екрана',
       all: 'Усі знімки екрана',
       sortCategory: 'Категорія та локація',
       list: 'Знімки екрана',
@@ -1074,10 +1083,10 @@ const translations = {
       deleteTitle: 'Видалити знімок екрана',
       deleteConfirm: 'Видалити знімок екрана з каталогу? Історія завершених ігор збережеться.',
       title: 'Завантажити знімки',
-      help: 'Виберіть карту й локацію, потім додайте зображення. Кожен файл створює окреме запитання із шістьма локаціями. JPEG, PNG, WebP або GIF, до 5 МіБ кожен.',
+      help: 'Виберіть мапу й локацію, введіть запитання та додайте одне або кілька зображень. Для кожного буде шість варіантів локацій. JPEG, PNG, WebP або GIF, до 5 MB на зображення.',
       map: 'Карта',
       location: 'Локація',
-      choose: 'Вибрати зображення',
+      choose: 'Вибрати одне або кілька зображень',
       upload: 'Завантажити / повторити решту',
       loadError: 'Не вдалося завантажити локації.',
       progress: 'Завантажено {{done}} із {{total}}',
@@ -1589,7 +1598,10 @@ const translations = {
   },
   pl: {
     screenshots: {
+      question: 'Pytanie do obrazu',
+      questionHelp: 'To samo pytanie zostanie dodane do wszystkich obrazów w tej partii.',
       catalogTitle: 'Katalog zrzutów ekranu',
+      menuTitle: 'Zarządzanie zrzutami ekranu',
       all: 'Wszystkie zrzuty ekranu',
       sortCategory: 'Kategoria i lokalizacja',
       list: 'Zrzuty ekranu',
@@ -1604,10 +1616,10 @@ const translations = {
       deleteConfirm:
         'Usunąć zrzut ekranu z katalogu? Historia zakończonych gier zostanie zachowana.',
       title: 'Prześlij zrzuty ekranu',
-      help: 'Wybierz mapę i lokację, a następnie obrazy. Każdy plik tworzy osobne pytanie z sześcioma lokacjami. JPEG, PNG, WebP lub GIF, do 5 MiB na plik.',
+      help: 'Wybierz mapę i lokację, wpisz pytanie, a następnie wybierz co najmniej jeden obraz. Każdy otrzyma sześć lokacji do wyboru. JPEG, PNG, WebP lub GIF, do 5 MB na obraz.',
       map: 'Mapa',
       location: 'Lokacja',
-      choose: 'Wybierz obrazy',
+      choose: 'Wybierz jeden lub więcej obrazów',
       upload: 'Prześlij / ponów pozostałe',
       loadError: 'Nie udało się wczytać lokacji.',
       progress: 'Przesłano {{done}} z {{total}}',
