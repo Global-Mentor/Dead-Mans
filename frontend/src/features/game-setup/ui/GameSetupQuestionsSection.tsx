@@ -19,7 +19,7 @@ interface GameSetupQuestionsSectionProps {
   draft: GameSetupDraftState
   onToggle: (questionId: string, enabled: boolean) => void
   onBulkSetEnabled: (questionIds: readonly string[], enabled: boolean) => void
-  onScreenshotDurationChange: (seconds: number) => void
+  format?: 'text' | 'screenshot'
   onDurationChange: (seconds: number) => void
   onDurationCommit: () => void
   isSaving: boolean
@@ -31,7 +31,7 @@ export function GameSetupQuestionsSection({
   onToggle,
   onBulkSetEnabled,
   onDurationChange,
-  onScreenshotDurationChange,
+  format = 'text',
   onDurationCommit,
   isSaving,
   actions,
@@ -45,10 +45,17 @@ export function GameSetupQuestionsSection({
     catalogQuery,
     categories,
     filteredQuestions,
-  } = useGameSetupQuestionsCatalog()
+  } = useGameSetupQuestionsCatalog(format)
   const [selection, setSelection] = useState('all')
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const copy = format === 'screenshot' ? 'gameSetup.screenshots' : 'gameSetup.questions'
   const enabledIds = new Set(draft.enabledQuestionIds)
+  const selectedCount = (catalogQuery.data ?? []).filter(
+    (question) =>
+      question.isEnabled &&
+      enabledIds.has(question.questionId) &&
+      Boolean(question.image) === (format === 'screenshot'),
+  ).length
   const visibleQuestions = filteredQuestions.filter(
     (question) =>
       question.isEnabled &&
@@ -80,11 +87,11 @@ export function GameSetupQuestionsSection({
       >
         <SectionHeader
           headingLevel="h1"
-          title={t('gameSetup.questions.title')}
+          title={t(`${copy}.title`)}
           actions={
             <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
               <Typography variant="body2" color="text.secondary">
-                {t('gameSetup.questions.enabledCount', { count: draft.enabledQuestionIds.length })}
+                {t(`${copy}.enabledCount`, { count: selectedCount })}
               </Typography>
               {actions}
             </Stack>
@@ -95,21 +102,23 @@ export function GameSetupQuestionsSection({
             <FormTextField
               density="compact"
               value={search}
-              label={t('gameSetup.questions.searchLabel')}
+              label={t(`${copy}.searchLabel`)}
               onChange={(event) => setSearch(event.target.value)}
               sx={{ flex: 1 }}
             />
             <GameSetupQuestionDuration
-              value={draft.quizAnswerDurationSeconds}
+              label={
+                format === 'screenshot'
+                  ? t('gameSetup.screenshotAnswerDuration')
+                  : t('gameSetup.questions.answerDuration')
+              }
+              value={
+                format === 'screenshot'
+                  ? draft.screenshotAnswerDurationSeconds
+                  : draft.quizAnswerDurationSeconds
+              }
               disabled={isSaving}
               onChange={onDurationChange}
-              onCommit={onDurationCommit}
-            />
-            <GameSetupQuestionDuration
-              label={t('gameSetup.screenshotAnswerDuration')}
-              value={draft.screenshotAnswerDurationSeconds}
-              disabled={isSaving}
-              onChange={onScreenshotDurationChange}
               onCommit={onDurationCommit}
             />
           </Stack>
@@ -136,7 +145,7 @@ export function GameSetupQuestionsSection({
                 value={selection}
                 onChange={setSelection}
                 options={[
-                  { value: 'all', label: t('gameSetup.questions.selectionAll') },
+                  { value: 'all', label: t(`${copy}.selectionAll`) },
                   { value: 'selected', label: t('gameSetup.questions.selectionSelected') },
                   { value: 'unselected', label: t('gameSetup.questions.selectionUnselected') },
                 ]}
@@ -175,7 +184,7 @@ export function GameSetupQuestionsSection({
       </Box>
       <Box
         role="region"
-        aria-label={t('gameSetup.questions.title')}
+        aria-label={t(`${copy}.title`)}
         tabIndex={0}
         sx={{
           flex: '1 1 0%',
@@ -194,11 +203,9 @@ export function GameSetupQuestionsSection({
           isError={catalogQuery.isError}
           hasData={catalogQuery.data != null}
           isEmpty={visibleQuestions.length === 0}
-          loadingMessage={t('gameSetup.questions.loading')}
-          errorMessage={t('gameSetup.questions.error')}
-          emptyMessage={t(
-            hasFilters ? 'gameSetup.questions.emptyFiltered' : 'gameSetup.questions.empty',
-          )}
+          loadingMessage={t(`${copy}.loading`)}
+          errorMessage={t(`${copy}.error`)}
+          emptyMessage={t(hasFilters ? `${copy}.emptyFiltered` : `${copy}.empty`)}
           retryAction={
             <AppButton tone="secondary" onClick={() => void catalogQuery.refetch()}>
               {t('gameSetup.registration.retry')}

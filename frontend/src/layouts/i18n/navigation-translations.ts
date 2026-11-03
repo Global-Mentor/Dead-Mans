@@ -100,6 +100,9 @@ const translations = {
       adminQuestions: {
         label: 'Questions for the game',
       },
+      adminScreenshots: {
+        label: 'Screenshots for the game',
+      },
       catalogModifiers: {
         label: 'Modifier catalog',
       },
@@ -214,6 +217,9 @@ const translations = {
       },
       adminQuestions: {
         label: 'Вопросы для игры',
+      },
+      adminScreenshots: {
+        label: 'Скриншоты для игры',
       },
       catalogModifiers: {
         label: 'Каталог модификаторов',
@@ -330,6 +336,9 @@ const translations = {
       adminQuestions: {
         label: 'Питання для гри',
       },
+      adminScreenshots: {
+        label: 'Знімки для гри',
+      },
       catalogModifiers: {
         label: 'Каталог модифікаторів',
       },
@@ -444,6 +453,9 @@ const translations = {
       },
       adminQuestions: {
         label: 'Pytania do gry',
+      },
+      adminScreenshots: {
+        label: 'Zrzuty ekranu do gry',
       },
       catalogModifiers: {
         label: 'Katalog modyfikatorów',

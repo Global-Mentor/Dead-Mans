@@ -59,7 +59,6 @@ function renderQuestions(enabledQuestionIds: string[] = []) {
       onToggle={onToggle}
       onBulkSetEnabled={onBulkSetEnabled}
       onDurationChange={vi.fn()}
-      onScreenshotDurationChange={vi.fn()}
       onDurationCommit={vi.fn()}
     />,
   )

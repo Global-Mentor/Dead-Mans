@@ -9,6 +9,7 @@ import {
   gameSetupRoute,
   adminModifiersRoute,
   adminQuestionsRoute,
+  adminScreenshotsRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
   modifierHistoryRoute,
@@ -64,6 +65,7 @@ function MainLayoutContent() {
   const boundedWorkspace = [
     adminModifiersRoute.fullPath,
     adminQuestionsRoute.fullPath,
+    adminScreenshotsRoute.fullPath,
     gameSetupRoute.fullPath,
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,

@@ -15,7 +15,9 @@ export function GameSetupQuestionPreview({
   return (
     <AppDialog
       open={question !== null}
-      title={t('gameSetup.questions.previewTitle')}
+      title={t(
+        question?.image ? 'gameSetup.screenshots.previewTitle' : 'gameSetup.questions.previewTitle',
+      )}
       onClose={onClose}
       actions={
         <AppButton tone="secondary" onClick={onClose}>

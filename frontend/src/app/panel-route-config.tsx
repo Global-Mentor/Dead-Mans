@@ -106,6 +106,11 @@ const panelPages = {
     'AdminGameQuestionsPage',
     [translations.gameSetup, translations.gameCatalog],
   ),
+  'admin-screenshots': lazyPanelPage(
+    () => import('../features/game-setup/AdminGameQuestionsPage.tsx'),
+    'AdminGameScreenshotsPage',
+    [translations.gameSetup, translations.gameCatalog],
+  ),
   'catalog-modifiers': lazyPanelPage(
     () => import('../features/game-catalog/CatalogModifiersPage.tsx'),
     'CatalogModifiersPage',
@@ -146,6 +151,7 @@ const gameSetupRealtimeSync = lazyPanelPage(
 const panelSyncComponents = {
   'game-setup': gameSetupRealtimeSync,
   'admin-questions': gameSetupRealtimeSync,
+  'admin-screenshots': gameSetupRealtimeSync,
   'admin-modifiers': gameSetupRealtimeSync,
 } as const satisfies Partial<Record<(typeof panelRoutes)[number]['id'], ComponentType>>
 

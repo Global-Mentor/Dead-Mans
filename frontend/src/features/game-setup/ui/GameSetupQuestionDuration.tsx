@@ -18,6 +18,7 @@ export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit,
   const valid = /^\d+$/.test(text) && seconds >= 5 && seconds <= 3600
   return (
     <FormTextField
+      density="compact"
       label={label ?? t('gameSetup.questions.answerDuration')}
       value={text}
       disabled={disabled}

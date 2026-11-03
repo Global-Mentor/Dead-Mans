@@ -1,4 +1,4 @@
-import { QuizScreenshotImage, huntName } from '../../../shared/game-ui/index.ts'
+import { QuizScreenshotImage, huntMapName, quizOptionText } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -23,8 +23,13 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
   onPreview: (questionId: string) => void
 }) {
   const { t, i18n } = useTranslation()
+  const correct = question.image ? question.options.find((option) => option.isCorrect) : null
+  const location =
+    question.image && correct
+      ? `${huntMapName(question.image.mapNames, i18n.language)} · ${quizOptionText(question.image, correct.optionId, correct.text, i18n.language)}`
+      : null
   const label = question.image
-    ? `${huntName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+    ? `${question.text} · ${location} · ${question.questionCode}`
     : question.text
   return (
     <ItemCard component="li" density="flush" sx={{ minWidth: 0, listStyle: 'none' }}>
@@ -40,10 +45,18 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
           }
           label={
             <Stack sx={{ textAlign: 'left' }}>
-              {question.image ? <QuizScreenshotImage image={question.image} thumbnail /> : null}
               <Typography variant="body2" sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>
-                {label}
+                {question.text}
               </Typography>
+              {location ? (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ overflowWrap: 'anywhere' }}
+                >
+                  {location}
+                </Typography>
+              ) : null}
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -57,6 +70,11 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
             </Stack>
           }
         />
+        {question.image ? (
+          <Box sx={{ width: { xs: 80, sm: 128 }, flexShrink: 0 }}>
+            <QuizScreenshotImage image={question.image} thumbnail />
+          </Box>
+        ) : null}
         <HelpTooltip title={t('gameSetup.questions.preview')}>
           <ActionIcon
             aria-label={t('gameSetup.questions.preview')}

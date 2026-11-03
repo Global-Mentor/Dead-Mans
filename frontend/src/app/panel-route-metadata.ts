@@ -132,6 +132,14 @@ export const panelRoutes = definePanelRouteDefinitions([
     adminSection: 'current-game',
   }),
   createPanelRouteDefinition({
+    id: 'admin-screenshots',
+    path: 'admin-screenshots',
+    labelKey: 'navigation.items.adminScreenshots.label',
+    allowedRoles: ['admin', 'superadmin'],
+    group: 'admin',
+    adminSection: 'current-game',
+  }),
+  createPanelRouteDefinition({
     id: 'catalog-modifiers',
     path: 'catalog-modifiers',
     labelKey: 'navigation.items.catalogModifiers.label',
@@ -218,6 +226,7 @@ export const gameQuizRoute = requirePanelRoute('game-quiz')
 export const gameSetupRoute = requirePanelRoute('game-setup')
 export const adminModifiersRoute = requirePanelRoute('admin-modifiers')
 export const adminQuestionsRoute = requirePanelRoute('admin-questions')
+export const adminScreenshotsRoute = requirePanelRoute('admin-screenshots')
 export const catalogModifiersRoute = requirePanelRoute('catalog-modifiers')
 export const catalogQuestionsRoute = requirePanelRoute('catalog-questions')
 export const catalogScreenshotsRoute = requirePanelRoute('catalog-screenshots')

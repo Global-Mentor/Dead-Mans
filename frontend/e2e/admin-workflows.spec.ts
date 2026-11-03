@@ -614,7 +614,8 @@ for (const width of [390, 768, 1440]) {
         const rect = element.closest('.MuiFormControl-root')!.getBoundingClientRect()
         return { left: rect.left }
       })
-      const durationRight = await screenshotDuration.evaluate(
+      await expect(screenshotDuration).toHaveCount(0)
+      const durationRight = await duration.evaluate(
         (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().right,
       )
       const rows = await panel.getByRole('listitem').evaluateAll((elements) =>
@@ -707,14 +708,9 @@ for (const width of [390, 768, 1440]) {
       await expect(details).toBeFocused()
       expect(server.writes()).toBe(3)
       expect(server.screenshotDuration()).toBe(60)
-      await screenshotDuration.fill('75')
-      await screenshotDuration.press('Enter')
-      await expect.poll(server.screenshotDuration).toBe(75)
-      expect(server.duration()).toBe(90)
-      await expect.poll(server.writes).toBe(4)
       await page.reload()
       await expect(duration).toHaveValue('90')
-      await expect(screenshotDuration).toHaveValue('75')
+      await expect(screenshotDuration).toHaveCount(0)
       expect(errors).toEqual([])
     },
   )
@@ -789,7 +785,7 @@ test('board readiness shows the saved question duration', async ({ page }, info)
   await duration.press('Tab')
   await expect.poll(server.duration).toBe(90)
   await page.goto('/panel/game-setup')
-  await expect(page.getByText('Answer time', { exact: true })).toBeVisible()
+  await expect(page.getByText('Question time', { exact: true })).toBeVisible()
   await expect(page.getByText('90 s', { exact: true })).toBeVisible()
   await page.screenshot({
     path: info.outputPath('board-question-duration.png'),
@@ -1086,7 +1082,7 @@ for (const [width, limit] of [
     await expect(metric).toContainText(limit === null ? 'Без ограничений' : String(limit))
     const answer = page
       .locator('dl')
-      .filter({ has: page.getByText('Время на ответ', { exact: true }) })
+      .filter({ has: page.getByText('Время на вопрос', { exact: true }) })
     await metric.scrollIntoViewIfNeeded()
     expect((await metric.boundingBox())!.y).toBeGreaterThan((await answer.boundingBox())!.y)
     await expect(metric.locator('button, input')).toHaveCount(0)
@@ -1094,6 +1090,88 @@ for (const [width, limit] of [
       path: `../.tmp/agent-work/team-limit/setup-summary-${width}.png`,
       animations: 'disabled',
     })
+  })
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`separate screenshot setup preserves question selections and timers at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const server = await mockAdmin(page)
+    for (const index of [1, 2])
+      Object.assign(server.questions[index]!, {
+        image: screenshotQuestion.image,
+        questionCode: `shot-${index}`,
+      })
+    await page.goto('/panel/admin-screenshots')
+    const panel = page.getByRole('region', { name: 'Screenshots for the game', exact: true })
+    const duration = page.getByRole('textbox', {
+      name: 'Screenshot answer time, seconds',
+      exact: true,
+    })
+    const screenshotSearch = page.getByRole('textbox', {
+      name: 'Search screenshots, maps and locations',
+      exact: true,
+    })
+    await expect(duration).toBeVisible()
+    expect((await duration.boundingBox())!.height).toBe(
+      (await screenshotSearch.boundingBox())!.height,
+    )
+    await expect(panel.getByRole('checkbox')).toHaveCount(2)
+    await expect(panel.getByRole('img', { name: 'Location screenshot', exact: true })).toHaveCount(
+      2,
+    )
+    await expect(
+      page.getByRole('textbox', { name: 'Answer time (seconds)', exact: true }),
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Enable visible', exact: true }).click()
+    await expect.poll(server.questionIds).toEqual(['question-0', 'question-1', 'question-2'])
+    await duration.fill('75')
+    await duration.press('Enter')
+    await expect.poll(server.screenshotDuration).toBe(75)
+    expect(server.duration()).toBe(60)
+    await page.reload()
+    await expect(duration).toHaveValue('75')
+    await expect(panel.getByRole('checkbox').first()).toBeChecked()
+    await panel.getByRole('checkbox').first().uncheck()
+    await expect.poll(server.questionIds).toEqual(['question-0', 'question-2'])
+    const row = panel.getByRole('listitem').first()
+    const description = await row
+      .getByText(server.questions[1]!.text, { exact: true })
+      .boundingBox()
+    const preview = row.getByRole('img')
+    await expect(preview).toHaveAttribute('loading', 'lazy')
+    expect((await preview.boundingBox())!.x).toBeGreaterThan(description!.x + description!.width)
+    await page.screenshot({ path: info.outputPath('screenshot-setup.png') })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await panel.getByRole('button', { name: 'View answers', exact: true }).first().click()
+    await expect(
+      page.getByRole('dialog', { name: 'Screenshot and answers', exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    await page.goto('/panel/admin-questions')
+    const text = page.getByRole('region', { name: 'Question selection', exact: true })
+    await expect(text.getByRole('checkbox')).toHaveCount(10)
+    await expect(text.getByRole('img')).toHaveCount(0)
+    await expect(duration).toHaveCount(0)
+    const textDuration = page.getByRole('textbox', { name: 'Answer time (seconds)', exact: true })
+    await expect(textDuration).toBeVisible()
+    expect((await textDuration.boundingBox())!.height).toBe(
+      (await page
+        .getByRole('textbox', { name: 'Search questions and answers', exact: true })
+        .boundingBox())!.height,
+    )
+    await textDuration.fill('90')
+    await textDuration.press('Enter')
+    await expect.poll(server.duration).toBe(90)
+    await page.getByRole('button', { name: 'Disable visible', exact: true }).click()
+    await expect.poll(server.questionIds).toEqual(['question-2'])
+    expect(server.screenshotDuration()).toBe(75)
+    await page.goto('/panel/admin-screenshots')
+    await expect(panel.getByRole('checkbox').nth(1)).toBeChecked()
+    await expect(duration).toHaveValue('75')
+    await expect(page.getByText('Selected: 1', { exact: true })).toBeVisible()
   })
 }
 
@@ -1114,3 +1192,48 @@ test('catalog category counts stay scoped to text questions and screenshots', as
     await page.keyboard.press('Escape')
   }
 })
+
+for (const width of [390, 1440]) {
+  test(`screenshot setup lazily loads a hundred image previews at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const server = await mockAdmin(page)
+    const template = server.questions[0]!
+    server.questions.splice(
+      0,
+      server.questions.length,
+      ...Array.from({ length: 100 }, (_, index) => ({
+        ...template,
+        questionId: `question-${index}`,
+        questionCode: `shot-${index}`,
+        text: `Image question ${index + 1}`,
+        image: {
+          ...screenshotQuestion.image!,
+          imageUrl: `http://localhost:5180/setup-images/${index}.svg`,
+        },
+      })),
+    )
+    const loaded = new Set<string>()
+    await page.route('**/setup-images/*.svg', (route) => {
+      loaded.add(route.request().url())
+      return route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" fill="#526558"/></svg>',
+      })
+    })
+    await page.goto('/panel/admin-screenshots')
+    const images = page
+      .getByRole('region', { name: 'Screenshots for the game', exact: true })
+      .locator('img')
+    await expect(images).toHaveCount(100)
+    await expect
+      .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBe(1920)
+    expect(loaded.size).toBeLessThan(100)
+    const initial = loaded.size
+    await images.last().scrollIntoViewIfNeeded()
+    await expect
+      .poll(() => images.last().evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBe(1920)
+    expect(loaded.size).toBeGreaterThan(initial)
+  })
+}

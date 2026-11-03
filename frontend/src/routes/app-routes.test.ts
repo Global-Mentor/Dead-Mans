@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   adminModifiersRoute,
   adminQuestionsRoute,
+  adminScreenshotsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
   gameApplicationRoute,
@@ -54,6 +55,7 @@ describe('panel route helpers', () => {
       gameSetupRoute,
       adminModifiersRoute,
       adminQuestionsRoute,
+      adminScreenshotsRoute,
       catalogModifiersRoute,
       catalogQuestionsRoute,
       getPanelRouteByPath('/panel/catalog-screenshots'),
@@ -96,6 +98,7 @@ describe('panel route helpers', () => {
       gameSetupRoute,
       adminModifiersRoute,
       adminQuestionsRoute,
+      adminScreenshotsRoute,
       catalogModifiersRoute,
       catalogQuestionsRoute,
       getPanelRouteByPath('/panel/catalog-screenshots'),

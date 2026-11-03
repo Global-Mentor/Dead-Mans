@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { gameQuestionCatalogQueryOptions } from '../game-questions/index.ts'
 import { quizImageSearchTerms } from '../../shared/game-ui/index.ts'
 
-export function useGameSetupQuestionsCatalog() {
+export function useGameSetupQuestionsCatalog(format: 'text' | 'screenshot' = 'text') {
   const { i18n } = useTranslation()
   const locale = i18n.resolvedLanguage
   const [search, setSearch] = useState('')
@@ -13,8 +13,11 @@ export function useGameSetupQuestionsCatalog() {
     gameQuestionCatalogQueryOptions({ search: '', includeDisabled: false }),
   )
   const questions = useMemo(
-    () => (catalogQuery.data ?? []).filter((question) => question.isEnabled),
-    [catalogQuery.data],
+    () =>
+      (catalogQuery.data ?? []).filter(
+        (question) => question.isEnabled && Boolean(question.image) === (format === 'screenshot'),
+      ),
+    [catalogQuery.data, format],
   )
   const categories = useMemo(
     () =>

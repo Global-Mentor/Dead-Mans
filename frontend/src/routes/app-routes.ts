@@ -3,6 +3,7 @@ import type { AuthRole } from '../shared/api/contracts/index.ts'
 export {
   adminModifiersRoute,
   adminQuestionsRoute,
+  adminScreenshotsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
   catalogScreenshotsRoute,
