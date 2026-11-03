@@ -1238,11 +1238,35 @@ for (const width of [390, 1440]) {
   })
 }
 
-for (const width of [390, 768, 1440]) {
+for (const locale of ['en', 'ru', 'uk', 'pl']) {
+  test(`screenshot setup header keeps translated actions inside the mobile panel in ${locale}`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const server = await mockAdmin(page, ['viewer', 'admin'], locale)
+    Object.assign(server.questions[1]!, { image: screenshotQuestion.image })
+    await page.goto('/panel/admin-screenshots')
+    await expect(page.getByRole('checkbox')).toHaveCount(1)
+    const heading = page.getByRole('heading', { level: 1 })
+    await expect(heading).toBeVisible()
+    const overflow = await heading.evaluate((element) => {
+      const header = element.closest('header')!
+      const bounds = header.getBoundingClientRect()
+      return Array.from(header.querySelectorAll('button')).some((button) => {
+        const rect = button.getBoundingClientRect()
+        return rect.left < bounds.left - 1 || rect.right > bounds.right + 1
+      })
+    })
+    expect(overflow).toBe(false)
+    await page.screenshot({ path: info.outputPath('localized-screenshot-header.png') })
+  })
+}
+
+for (const width of [390, 768, 1440, 1536, 1920]) {
   test(`screenshot setup map and location filters scope bulk selection at ${width}px`, async ({
     page,
   }, info) => {
-    await page.setViewportSize({ width, height: 900 })
+    await page.setViewportSize({ width, height: width >= 1536 ? 1080 : 900 })
     const server = await mockAdmin(page)
     Object.assign(
       server.questions[1]!,
@@ -1266,6 +1290,25 @@ for (const width of [390, 768, 1440]) {
     const map = page.getByRole('combobox', { name: /^Map / })
     const location = page.getByRole('combobox', { name: /^Location / })
     await expect(rows).toHaveCount(4)
+    if (width >= 1536) {
+      const fields = [
+        page.getByRole('textbox', { name: 'Search screenshots, maps and locations', exact: true }),
+        map,
+        location,
+        page.getByRole('combobox', { name: /^Categories/ }),
+        page.getByRole('combobox', { name: /^Selection/ }),
+        page.getByRole('textbox', { name: 'Screenshot answer time, seconds', exact: true }),
+      ]
+      const positions = await Promise.all(
+        fields.map((field) =>
+          field.evaluate(
+            (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().top,
+          ),
+        ),
+      )
+      expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2)
+      expect((await panel.boundingBox())!.y).toBeLessThan(220)
+    }
     await expect(location).toHaveAttribute('aria-disabled', 'true')
     await map.click()
     await page.getByRole('option', { name: 'Stillwater Bayou', exact: true }).click()

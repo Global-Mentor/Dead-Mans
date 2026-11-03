@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FormTextField } from '../../../shared/ui/index.ts'
 
 interface Props {
+  fullWidth?: boolean
   label?: string
   value: number
   disabled: boolean
@@ -10,7 +11,14 @@ interface Props {
   onCommit: () => void
 }
 
-export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit, label }: Props) {
+export function GameSetupQuestionDuration({
+  value,
+  disabled,
+  onChange,
+  onCommit,
+  label,
+  fullWidth = false,
+}: Props) {
   const { t } = useTranslation()
   const [input, setInput] = useState<string | null>(null)
   const text = input ?? String(value)
@@ -25,7 +33,7 @@ export function GameSetupQuestionDuration({ value, disabled, onChange, onCommit,
       slotProps={{ htmlInput: { inputMode: 'numeric' } }}
       error={!valid}
       helperText={!valid ? t('gameSetup.questions.durationError') : undefined}
-      sx={{ width: { xs: '100%', sm: 230 }, flexShrink: 0 }}
+      sx={{ width: fullWidth ? '100%' : { xs: '100%', sm: 230 }, flexShrink: 0 }}
       onChange={(event) => setInput(event.target.value)}
       onKeyDown={(event) => {
         if (event.key === 'Enter') event.currentTarget.querySelector('input')?.blur()

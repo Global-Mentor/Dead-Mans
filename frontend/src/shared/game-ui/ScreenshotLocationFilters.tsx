@@ -1,4 +1,3 @@
-import { Box } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { FormSelect } from '../ui/index.ts'
 
@@ -21,7 +20,7 @@ export function ScreenshotLocationFilters({
 }: ScreenshotLocationFiltersProps) {
   const { t } = useTranslation()
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+    <>
       <FormSelect
         density="compact"
         label={t('common.quizImage.map')}
@@ -43,6 +42,6 @@ export function ScreenshotLocationFilters({
         ]}
         onChange={(value) => onLocationChange(value === '__all__' ? null : value)}
       />
-    </Box>
+    </>
   )
 }

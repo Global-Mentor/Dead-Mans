@@ -1000,11 +1000,11 @@ test('failed JSON import leaves the catalog intact and the same file can be retr
   await expect(page.getByTestId('question-catalog-list').getByRole('button')).toHaveCount(24)
 })
 
-for (const width of [390, 768, 1440]) {
+for (const width of [390, 768, 1440, 1536, 1920]) {
   test(`screenshot catalogue filters by map then assigned location at ${width}px`, async ({
     page,
   }, info) => {
-    await page.setViewportSize({ width, height: 900 })
+    await page.setViewportSize({ width, height: width >= 1536 ? 1080 : 900 })
     const state = await mockCatalog(page)
     state.items = [
       {
@@ -1029,6 +1029,25 @@ for (const width of [390, 768, 1440]) {
     const map = page.getByRole('combobox', { name: /^Карта / })
     const location = page.getByRole('combobox', { name: /^Локация / })
     await expect(rows).toHaveCount(4)
+    if (width >= 1536) {
+      const fields = [
+        page.getByRole('textbox', { name: 'Поиск скриншотов', exact: true }),
+        map,
+        location,
+        page.getByRole('combobox', { name: /^Категории/ }),
+        page.getByRole('combobox', { name: /^Доступность/ }),
+        page.getByRole('combobox', { name: /^Сортировка/ }),
+      ]
+      const positions = await Promise.all(
+        fields.map((field) =>
+          field.evaluate(
+            (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().top,
+          ),
+        ),
+      )
+      expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2)
+      expect((await page.getByTestId('question-catalog-list').boundingBox())!.y).toBeLessThan(230)
+    }
     await expect(location).toHaveAttribute('aria-disabled', 'true')
     await map.click()
     await page.getByRole('option', { name: 'Stillwater Bayou', exact: true }).click()

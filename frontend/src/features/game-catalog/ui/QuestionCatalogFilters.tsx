@@ -51,21 +51,46 @@ export function QuestionCatalogFilters({
     Number(locationFilters.locationId !== null)
   const number = (value: number) => new Intl.NumberFormat(i18n.resolvedLanguage).format(value)
   return (
-    <Box sx={{ display: 'grid', gap: 1.25, mt: 1.5 }}>
-      <FormTextField
-        density="compact"
-        label={t(
-          screenshots ? 'gameCatalog.screenshots.search' : 'gameCatalog.questions.searchLabel',
-        )}
-        value={search}
-        placeholder={t(
-          screenshots
-            ? 'gameCatalog.screenshots.searchHint'
-            : 'gameCatalog.questions.catalog.searchHint',
-        )}
-        onChange={(event) => onSearchChange(event.target.value)}
-      />
-      {screenshots ? <ScreenshotLocationFilters {...locationFilters} /> : null}
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 1.25,
+        mt: 1.5,
+        gridTemplateColumns: screenshots
+          ? { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 1.1fr) minmax(0, 1fr)' }
+          : 'minmax(0, 1fr)',
+        alignItems: 'start',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.25,
+          minWidth: 0,
+          gridTemplateColumns: screenshots
+            ? {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.1fr)',
+              }
+            : 'minmax(0, 1fr)',
+        }}
+      >
+        <FormTextField
+          sx={{ gridColumn: screenshots ? { xs: '1 / -1', sm: 'auto' } : undefined }}
+          density="compact"
+          label={t(
+            screenshots ? 'gameCatalog.screenshots.search' : 'gameCatalog.questions.searchLabel',
+          )}
+          value={search}
+          placeholder={t(
+            screenshots
+              ? 'gameCatalog.screenshots.searchHint'
+              : 'gameCatalog.questions.catalog.searchHint',
+          )}
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+        {screenshots ? <ScreenshotLocationFilters {...locationFilters} /> : null}
+      </Box>
       <NativeDisclosure
         summary={t('gameCatalog.questions.catalog.filters', { count })}
         pinned={expanded}

@@ -70,6 +70,90 @@ export function GameSetupQuestionsSection({
     activeCategory !== 'all' ||
     selection !== 'all' ||
     (format === 'screenshot' && geography.activeCount > 0)
+  const searchField = (
+    <FormTextField
+      density="compact"
+      value={search}
+      label={t(`${copy}.searchLabel`)}
+      onChange={(event) => setSearch(event.target.value)}
+      sx={{
+        flex: 1,
+        gridColumn: format === 'screenshot' ? { xs: '1 / -1', sm: 'auto' } : undefined,
+      }}
+    />
+  )
+  const durationField = (
+    <GameSetupQuestionDuration
+      fullWidth={format === 'screenshot'}
+      label={
+        format === 'screenshot'
+          ? t('gameSetup.screenshotAnswerDuration')
+          : t('gameSetup.questions.answerDuration')
+      }
+      value={
+        format === 'screenshot'
+          ? draft.screenshotAnswerDurationSeconds
+          : draft.quizAnswerDurationSeconds
+      }
+      disabled={isSaving}
+      onChange={onDurationChange}
+      onCommit={onDurationCommit}
+    />
+  )
+  const categoryFilters = (
+    <>
+      <FormSelect
+        density="compact"
+        label={t('common.entities.categories')}
+        value={activeCategory}
+        onChange={setActiveCategory}
+        options={[{ value: 'all', label: t('common.filters.allCategories') }, ...categories]}
+        sx={{ flex: 1, minWidth: 0 }}
+      />
+      <FormSelect
+        density="compact"
+        label={t('gameSetup.questions.selectionLabel')}
+        value={selection}
+        onChange={setSelection}
+        options={[
+          { value: 'all', label: t(`${copy}.selectionAll`) },
+          { value: 'selected', label: t('gameSetup.questions.selectionSelected') },
+          { value: 'unselected', label: t('gameSetup.questions.selectionUnselected') },
+        ]}
+        sx={{ flex: 1, minWidth: 0 }}
+      />
+    </>
+  )
+  const bulkActions = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: 1,
+        flexShrink: 0,
+        ...(format === 'screenshot' ? { width: { xs: '100%', sm: 'auto' }, minWidth: 0 } : {}),
+      }}
+    >
+      <AppButton
+        size="small"
+        tone="secondary"
+        framePlacement="inset"
+        disabled={isSaving || !visibleIds.some((id) => !enabledIds.has(id))}
+        onClick={() => onBulkSetEnabled(visibleIds, true)}
+      >
+        {t('gameSetup.questions.enableVisible')}
+      </AppButton>
+      <AppButton
+        size="small"
+        tone="danger"
+        framePlacement="inset"
+        disabled={isSaving || !visibleIds.some((id) => enabledIds.has(id))}
+        onClick={() => onBulkSetEnabled(visibleIds, false)}
+      >
+        {t('gameSetup.questions.disableVisible')}
+      </AppButton>
+    </Box>
+  )
   return (
     <SectionCard
       sx={{
@@ -95,99 +179,61 @@ export function GameSetupQuestionsSection({
           headingLevel="h1"
           title={t(`${copy}.title`)}
           actions={
-            <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
+            <Stack
+              direction="row"
+              gap={1.5}
+              flexWrap="wrap"
+              alignItems="center"
+              sx={{ minWidth: 0, maxWidth: '100%' }}
+            >
               <Typography variant="body2" color="text.secondary">
                 {t(`${copy}.enabledCount`, { count: selectedCount })}
               </Typography>
               {actions}
+              {format === 'screenshot' ? bulkActions : null}
             </Stack>
           }
         />
-        <Stack spacing={1} sx={{ mt: 1, p: 0.5 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} alignItems="flex-start">
-            <FormTextField
-              density="compact"
-              value={search}
-              label={t(`${copy}.searchLabel`)}
-              onChange={(event) => setSearch(event.target.value)}
-              sx={{ flex: 1 }}
-            />
-            <GameSetupQuestionDuration
-              label={
-                format === 'screenshot'
-                  ? t('gameSetup.screenshotAnswerDuration')
-                  : t('gameSetup.questions.answerDuration')
-              }
-              value={
-                format === 'screenshot'
-                  ? draft.screenshotAnswerDurationSeconds
-                  : draft.quizAnswerDurationSeconds
-              }
-              disabled={isSaving}
-              onChange={onDurationChange}
-              onCommit={onDurationCommit}
-            />
-          </Stack>
-          {format === 'screenshot' ? <ScreenshotLocationFilters {...geography.controls} /> : null}
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            gap={1.5}
-            alignItems={{ xs: 'stretch', md: 'center' }}
+        {format === 'screenshot' ? (
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 1,
+              mt: 1,
+              p: 0.5,
+              alignItems: 'start',
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                xl: 'minmax(220px, 1.3fr) minmax(140px, 1fr) minmax(160px, 1.1fr) minmax(140px, 1fr) minmax(140px, 1fr) 230px',
+              },
+            }}
           >
-            <Stack direction="row" gap={1} sx={{ flex: 1, minWidth: 0 }}>
-              <FormSelect
-                density="compact"
-                label={t('common.entities.categories')}
-                value={activeCategory}
-                onChange={setActiveCategory}
-                options={[
-                  { value: 'all', label: t('common.filters.allCategories') },
-                  ...categories,
-                ]}
-                sx={{ flex: 1, minWidth: 0 }}
-              />
-              <FormSelect
-                density="compact"
-                label={t('gameSetup.questions.selectionLabel')}
-                value={selection}
-                onChange={setSelection}
-                options={[
-                  { value: 'all', label: t(`${copy}.selectionAll`) },
-                  { value: 'selected', label: t('gameSetup.questions.selectionSelected') },
-                  { value: 'unselected', label: t('gameSetup.questions.selectionUnselected') },
-                ]}
-                sx={{ flex: 1, minWidth: 0 }}
-              />
-            </Stack>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                gap: 1,
-                flexShrink: 0,
-              }}
-            >
-              <AppButton
-                size="small"
-                tone="secondary"
-                framePlacement="inset"
-                disabled={isSaving || !visibleIds.some((id) => !enabledIds.has(id))}
-                onClick={() => onBulkSetEnabled(visibleIds, true)}
-              >
-                {t('gameSetup.questions.enableVisible')}
-              </AppButton>
-              <AppButton
-                size="small"
-                tone="danger"
-                framePlacement="inset"
-                disabled={isSaving || !visibleIds.some((id) => enabledIds.has(id))}
-                onClick={() => onBulkSetEnabled(visibleIds, false)}
-              >
-                {t('gameSetup.questions.disableVisible')}
-              </AppButton>
+            {searchField}
+            <ScreenshotLocationFilters {...geography.controls} />
+            {categoryFilters}
+            <Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+              {durationField}
             </Box>
+          </Box>
+        ) : (
+          <Stack spacing={1} sx={{ mt: 1, p: 0.5 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} alignItems="flex-start">
+              {searchField}
+              {durationField}
+            </Stack>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              gap={1.5}
+              alignItems={{ xs: 'stretch', md: 'center' }}
+            >
+              <Stack direction="row" gap={1} sx={{ flex: 1, minWidth: 0 }}>
+                {categoryFilters}
+              </Stack>
+              {bulkActions}
+            </Stack>
           </Stack>
-        </Stack>
+        )}
       </Box>
       <Box
         role="region"

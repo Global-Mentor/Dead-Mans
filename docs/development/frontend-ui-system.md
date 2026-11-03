@@ -282,6 +282,15 @@ minutes and seconds, using the same typography height as the prompt, without
 a visible label or enclosing panel. It highlights its final ten seconds and
 remains visible at `00:00` alongside the revealed answer until the screenshot is hidden.
 The progress track also remains at zero, preserving the image and answer positions.
+Screenshot catalogue and screenshot game-setup headers arrange their filters in a single
+row at 1536px and wider, retaining standard compact control typography and heights.
+Search, map and dependent location lead the row; catalogue category, availability,
+sorting and reset follow. Screenshot setup places category, selection and answer time
+in the same row, with bulk selection actions beside the heading and save state.
+Narrower layouts wrap into balanced rows; catalogue secondary filters remain collapsible
+on phones. The map/location field pair leaves placement to each page. Text-question
+pages retain their existing layout.
+
 Question and screenshot setup use matching compact search and duration fields.
 
 - After a game finishes, the team queue page shows a neutral page state explaining that the game has ended and there is no active queue. It does not query the finished game queue or show a retry action; genuine loading failures for an active or ready game retain their error and retry behavior. The team queue page uses shared briefing headers and two equal sections from 600px, stacking them on phones. Both waiting and played teams appear in ascending numeric queue-slot order; search preserves that order and the authoritative slot numbers. Played cards show authoritative final scores, distinguishing zero from a missing completed round. Only the personal team uses the shared rust selected surface, paired with the continuous corner frame whether waiting, playing or played. The active team uses an explicit playing badge and the shared continuous bright corner frame; its background stays neutral unless it is the personal team. Queue slot badges occupy the upper-left corner; player names have leading diamonds. Team cards fill the available list width. Names and participants are centered, with the shared ornamental divider below the name. Scores, membership and playing badges occupy the upper-right corner beside the top-aligned centered name, and play-order badges are omitted. Section headings are centered. The queue route fills the available viewport at every width and height, including the navigation and management-petal space. Both sections share the remaining height and retain separate keyboard-accessible list scrolling; the page itself does not scroll. The lists reserve no empty gutters on both sides. Search matches team and participant names; filtered counts show matching and total teams, while clearing restores input focus. Same-game refresh errors retain the search and cards; a new game resets the search. Search uses a descriptive text label without a leading magnifier; the SVG clear glyph retains the shared field adornment and accessible 44px action.
