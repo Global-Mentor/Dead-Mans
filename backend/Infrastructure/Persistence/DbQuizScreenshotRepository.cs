@@ -54,6 +54,9 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
         if (locales.Any(locale => !map.Names.ContainsKey(locale)
             || locations.Any(location => !location.Names.ContainsKey(locale))))
             return new(UploadQuizScreenshotOutcome.InvalidSelection);
+        if (!TwitchQuizMessageFormatter.FormatForValidation(input.Text,
+                locations.Select(location => location.Names["ru"]).ToArray(), 3600, input.Reward).IsCompatible)
+            return new(UploadQuizScreenshotOutcome.InvalidSelection);
 
         var now = clock.GetUtcNow().UtcDateTime;
         var questionId = Guid.NewGuid();

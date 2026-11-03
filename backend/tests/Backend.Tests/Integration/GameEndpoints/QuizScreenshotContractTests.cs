@@ -81,7 +81,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsync("/api/game/questions/screenshots", conflict)).StatusCode);
         using var textConflict = Content(requestId, locationId, category.Id, text: "A different question?");
         Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsync("/api/game/questions/screenshots", textConflict)).StatusCode);
-        foreach (var text in new[] { "   ", "invalid\0text", new string('x', 2001) })
+        foreach (var text in new[] { "   ", "invalid\0text", new string('x', 500), new string('x', 2001) })
         {
             using var invalidText = Content(Guid.NewGuid(), locationId, category.Id, text: text);
             Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/game/questions/screenshots", invalidText)).StatusCode);

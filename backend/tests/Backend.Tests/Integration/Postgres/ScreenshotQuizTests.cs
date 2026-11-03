@@ -114,7 +114,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
     }
 
     [Fact]
-    public async Task InvalidBytesAndUnknownLocation_DoNotCreateAssets()
+    public async Task InvalidBytesLocationOrTwitchMessage_DoNotCreateAssets()
     {
         await using var db = database.CreateDbContext();
         var input = await InputAsync(db);
@@ -123,7 +123,10 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
             (await Service(db).UploadAsync(input, invalid, "image/png", invalid.Length)).Outcome);
         Assert.Equal(UploadQuizScreenshotOutcome.InvalidSelection,
             (await UploadAsync(Service(db), input with { LocationId = Guid.NewGuid() })).Outcome);
+        Assert.Equal(UploadQuizScreenshotOutcome.InvalidSelection,
+            (await UploadAsync(Service(db), input with { Text = new string('x', 500) })).Outcome);
         Assert.Empty(_storage.ListObjectKeys("quiz"));
+        Assert.False(await db.QuestionDefinitions.AnyAsync(x => x.CategoryId == input.CategoryId));
     }
 
     [Fact]
