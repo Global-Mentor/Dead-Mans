@@ -2,6 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace backend.Api.Contracts;
 
+public sealed record GameQuizImageDto(string ImageUrl, IReadOnlyDictionary<string, string> MapNames,
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> OptionNames);
+
 public sealed record GameQuestionOptionDto(string OptionId, string Text, bool IsCorrect, int SortOrder);
 public sealed record GameQuestionOptionInputDto(string? Text, bool IsCorrect);
 
@@ -35,7 +38,12 @@ public sealed record GameQuestionCatalogItemDto(
     DateTime? LastAskedAtUtc,
     bool TwitchCompatible,
     string? TwitchCompatibilityErrorCode
-);
+)
+{
+    public string? ScreenshotMapId { get; init; }
+    public string? ScreenshotLocationId { get; init; }
+    public GameQuizImageDto? Image { get; init; }
+}
 
 public sealed record GameQuestionCategoryItemDto(string Id, string Name, int QuestionCount, bool IsProtected);
 public sealed record SetGameQuestionEnabledRequestDto(bool IsEnabled);
@@ -104,7 +112,10 @@ public sealed record AvailableGameQuizQuestionDto(
     string QuestionCode,
     string CategoryName,
     string Text
-);
+)
+{
+    public GameQuizImageDto? Image { get; init; }
+}
 
 public sealed record AskedQuizQuestionDto(
     string QuestionSessionId,
@@ -118,7 +129,10 @@ public sealed record AskedQuizQuestionDto(
     int Reward,
     DateTime AskedAtUtc,
     DateTime ClosesAtUtc
-);
+)
+{
+    public GameQuizImageDto? Image { get; init; }
+}
 
 public sealed record SubmitGameQuizAnswerRequestDto(string? OptionId);
 
@@ -154,7 +168,11 @@ public sealed record CurrentGameQuizStateDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MyAwardedPoints,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? TotalSubmissions,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GameQuizOptionResultDto[]? OptionResults
-);
+)
+{
+    public bool PresentationVisible { get; init; }
+    public GameQuizImageDto? Image { get; init; }
+}
 
 
 public sealed record ManualQuizAwardRequestDto(

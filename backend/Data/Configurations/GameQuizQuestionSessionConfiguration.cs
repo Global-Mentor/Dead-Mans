@@ -9,6 +9,7 @@ public class GameQuizQuestionSessionConfiguration : IEntityTypeConfiguration<Gam
 {
     public void Configure(EntityTypeBuilder<GameQuizQuestionSession> builder)
     {
+        builder.Property(x => x.ImageSnapshotJson).HasColumnType("jsonb");
         builder.ToTable(
             "game_quiz_question_sessions",
             tableBuilder =>

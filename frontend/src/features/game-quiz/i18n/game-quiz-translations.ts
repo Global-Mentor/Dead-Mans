@@ -1,5 +1,22 @@
 const translations = {
   en: {
+    screenshotPicker: {
+      searchLabel: 'Search screenshots',
+      searchPlaceholder: 'Enter a map, location or screenshot code',
+      startError: 'Could not start this screenshot. Your selection is saved. Try again.',
+      results: '{{count}} screenshots found',
+      loadError: 'Could not load screenshots. Please try again.',
+      empty: 'No screenshots are available for this game.',
+      emptyFiltered: 'No screenshots match these filters.',
+    },
+    historyFormat: 'Question format',
+    allFormats: 'All formats',
+    textQuestions: 'Text questions',
+    screenshots: 'Screenshots',
+    nextScreenshot: 'Next screenshot',
+    specificScreenshot: 'Choose screenshot',
+    hideScreenshot: 'Hide screenshot',
+    screenshotRetained: 'The result stays on screen. Hide it before starting modifier ordering.',
     correctAnswerHeading: 'Correct answer:',
     adjustmentReasonHeading: 'Reason:',
     manualAwardFor: 'Manual award for {{player}}',
@@ -15,8 +32,6 @@ const translations = {
     questionStartError: 'Could not start this question. Your selection is saved. Try again.',
     personalStatsTitle: 'Your quiz statistics',
     correctAnswersLabel: 'Correct answers',
-    incorrectAnswersLabel: 'Incorrect answers',
-    questionsAskedLabel: 'Questions asked',
     rankBy: 'Rank players by',
     refreshError:
       'Could not refresh quiz data. Showing the last available state. Refresh before continuing.',
@@ -95,6 +110,21 @@ const translations = {
     resultWrong: 'That answer was not correct.',
     status: { open: 'Open', closed: 'Closed', skipped: 'Skipped' },
     twitch: {
+      connectionErrors: {
+        subscription_limit:
+          'Twitch has reached the subscription limit for this channel and bot. Remove obsolete connections for this application; keep the current channel connection.',
+        rate_limited:
+          'Twitch temporarily limited connection requests. Automatic retry will resume after the waiting period.',
+        authorization_required:
+          'Twitch rejected authorization. Reconnect the bot and channel accounts and grant the requested permissions.',
+        webhook_unreachable:
+          'Twitch cannot confirm the callback address. Check the tunnel and webhook availability.',
+        invalid_configuration:
+          'Twitch rejected the connection settings. Check the application and callback configuration.',
+        unavailable:
+          'Twitch is temporarily unavailable or the connection timed out. Automatic recovery will retry.',
+      },
+      automaticRetry: 'Next automatic attempt: {{time}}.',
       deliveryError:
         'A Twitch operation failed. Check the connection and delivery status before retrying.',
       title: 'Twitch bot status',
@@ -127,6 +157,24 @@ const translations = {
       'Ask the next available question or select one manually. Questions are grouped by category. Wait for the open question to finish; launching is unavailable during modifier ordering.',
   },
   ru: {
+    screenshotPicker: {
+      searchLabel: 'Поиск скриншотов',
+      searchPlaceholder: 'Введите карту, локацию или код скриншота',
+      startError: 'Не удалось запустить скриншот. Выбор сохранён. Попробуйте ещё раз.',
+      results: 'Найдено скриншотов: {{count}}',
+      loadError: 'Не удалось загрузить скриншоты. Попробуйте ещё раз.',
+      empty: 'Для этой игры нет доступных скриншотов.',
+      emptyFiltered: 'По выбранным условиям скриншотов нет.',
+    },
+    historyFormat: 'Формат вопросов',
+    allFormats: 'Все форматы',
+    textQuestions: 'Текстовые вопросы',
+    screenshots: 'Скриншоты',
+    nextScreenshot: 'Следующий скриншот',
+    specificScreenshot: 'Выбрать скриншот',
+    hideScreenshot: 'Скрыть скриншот',
+    screenshotRetained:
+      'Результат остаётся на экране. Перед заказом модификаторов скройте скриншот.',
     correctAnswerHeading: 'Правильный ответ:',
     adjustmentReasonHeading: 'Причина:',
     manualAwardFor: 'Ручное начисление для {{player}}',
@@ -142,8 +190,6 @@ const translations = {
     questionStartError: 'Не удалось запустить вопрос. Выбор сохранён. Попробуйте ещё раз.',
     personalStatsTitle: 'Ваша статистика викторины',
     correctAnswersLabel: 'Верных ответов',
-    incorrectAnswersLabel: 'Неверных ответов',
-    questionsAskedLabel: 'Всего вопросов',
     rankBy: 'Рейтинг игроков по',
     refreshError:
       'Не удалось обновить данные викторины. Показано последнее доступное состояние. Обновите данные, чтобы продолжить.',
@@ -222,6 +268,21 @@ const translations = {
     resultWrong: 'Ответ неверный.',
     status: { open: 'Открыт', closed: 'Закрыт', skipped: 'Пропущен' },
     twitch: {
+      connectionErrors: {
+        subscription_limit:
+          'Достигнут лимит подписок Twitch для этого канала и бота. Удалите устаревшие подключения этого приложения, сохранив рабочее подключение канала.',
+        rate_limited:
+          'Twitch временно ограничил запросы на подключение. Автоматическая попытка повторится после паузы.',
+        authorization_required:
+          'Twitch отклонил авторизацию. Подключите заново аккаунты бота и канала и предоставьте запрошенные разрешения.',
+        webhook_unreachable:
+          'Twitch не может подтвердить адрес обратного вызова. Проверьте доступность туннеля и вебхука.',
+        invalid_configuration:
+          'Twitch отклонил настройки подключения. Проверьте настройки приложения и адрес обратного вызова.',
+        unavailable:
+          'Twitch временно недоступен или время ожидания истекло. Подключение восстановится автоматически.',
+      },
+      automaticRetry: 'Следующая автоматическая попытка: {{time}}.',
       deliveryError:
         'Не удалось выполнить действие в Twitch. Проверьте подключение и состояние доставки перед повторной попыткой.',
       title: 'Статус Twitch-бота',
@@ -254,6 +315,24 @@ const translations = {
       'Запустите следующий доступный вопрос или выберите конкретный. Вопросы сгруппированы по категориям. Дождитесь завершения открытого вопроса; во время выбора модификаторов запуск недоступен.',
   },
   uk: {
+    screenshotPicker: {
+      searchLabel: 'Пошук знімків',
+      searchPlaceholder: 'Введіть мапу, локацію або код знімка',
+      startError: 'Не вдалося запустити знімок. Вибір збережено. Спробуйте ще раз.',
+      results: 'Знайдено знімків: {{count}}',
+      loadError: 'Не вдалося завантажити знімки. Спробуйте ще раз.',
+      empty: 'Для цієї гри немає доступних знімків.',
+      emptyFiltered: 'За вибраними умовами знімків немає.',
+    },
+    historyFormat: 'Формат запитань',
+    allFormats: 'Усі формати',
+    textQuestions: 'Текстові запитання',
+    screenshots: 'Знімки екрана',
+    nextScreenshot: 'Наступний знімок',
+    specificScreenshot: 'Вибрати знімок',
+    hideScreenshot: 'Приховати знімок',
+    screenshotRetained:
+      'Результат залишається на екрані. Перед замовленням модифікаторів приховайте знімок.',
     correctAnswerHeading: 'Правильна відповідь:',
     adjustmentReasonHeading: 'Причина:',
     manualAwardFor: 'Ручне нарахування для {{player}}',
@@ -269,8 +348,6 @@ const translations = {
     questionStartError: 'Не вдалося запустити запитання. Вибір збережено. Спробуйте ще раз.',
     personalStatsTitle: 'Ваша статистика вікторини',
     correctAnswersLabel: 'Правильних відповідей',
-    incorrectAnswersLabel: 'Неправильних відповідей',
-    questionsAskedLabel: 'Усього запитань',
     rankBy: 'Рейтинг гравців за',
     refreshError:
       'Не вдалося оновити дані вікторини. Показано останній доступний стан. Оновіть дані, щоб продовжити.',
@@ -352,6 +429,21 @@ const translations = {
     resultWrong: 'Відповідь неправильна.',
     status: { open: 'Відкрито', closed: 'Закрито', skipped: 'Пропущено' },
     twitch: {
+      connectionErrors: {
+        subscription_limit:
+          'Досягнуто ліміт підписок Twitch для цього каналу й бота. Видаліть застарілі підключення застосунку, зберігши робоче підключення каналу.',
+        rate_limited:
+          'Twitch тимчасово обмежив запити на підключення. Автоматична спроба повториться після паузи.',
+        authorization_required:
+          'Twitch відхилив авторизацію. Заново підключіть акаунти бота й каналу та надайте запитані дозволи.',
+        webhook_unreachable:
+          'Twitch не може підтвердити адресу зворотного виклику. Перевірте доступність тунелю та вебхука.',
+        invalid_configuration:
+          'Twitch відхилив налаштування підключення. Перевірте застосунок та адресу зворотного виклику.',
+        unavailable:
+          'Twitch тимчасово недоступний або час очікування минув. Підключення відновлюватиметься автоматично.',
+      },
+      automaticRetry: 'Наступна автоматична спроба: {{time}}.',
       deliveryError:
         'Не вдалося виконати дію у Twitch. Перевірте підключення та стан доставки перед повторною спробою.',
       title: 'Статус Twitch-бота',
@@ -384,6 +476,24 @@ const translations = {
       'Запустіть наступне доступне питання або оберіть конкретне. Питання згруповано за категоріями. Дочекайтеся завершення відкритого питання; під час вибору модифікаторів запуск недоступний.',
   },
   pl: {
+    screenshotPicker: {
+      searchLabel: 'Szukaj zrzutów',
+      searchPlaceholder: 'Wpisz mapę, lokację lub kod zrzutu',
+      startError: 'Nie udało się uruchomić zrzutu. Wybór został zachowany. Spróbuj ponownie.',
+      results: 'Znaleziono zrzutów: {{count}}',
+      loadError: 'Nie udało się wczytać zrzutów. Spróbuj ponownie.',
+      empty: 'Brak dostępnych zrzutów w tej grze.',
+      emptyFiltered: 'Brak zrzutów pasujących do filtrów.',
+    },
+    historyFormat: 'Format pytań',
+    allFormats: 'Wszystkie formaty',
+    textQuestions: 'Pytania tekstowe',
+    screenshots: 'Zrzuty ekranu',
+    nextScreenshot: 'Następny zrzut',
+    specificScreenshot: 'Wybierz zrzut',
+    hideScreenshot: 'Ukryj zrzut',
+    screenshotRetained:
+      'Wynik pozostaje na ekranie. Ukryj go przed rozpoczęciem zamawiania modyfikatorów.',
     correctAnswerHeading: 'Poprawna odpowiedź:',
     adjustmentReasonHeading: 'Powód:',
     manualAwardFor: 'Ręczne przyznanie dla {{player}}',
@@ -400,8 +510,6 @@ const translations = {
       'Nie udało się uruchomić pytania. Wybór został zachowany. Spróbuj ponownie.',
     personalStatsTitle: 'Twoje statystyki quizu',
     correctAnswersLabel: 'Poprawne odpowiedzi',
-    incorrectAnswersLabel: 'Błędne odpowiedzi',
-    questionsAskedLabel: 'Zadane pytania',
     rankBy: 'Ranking graczy według',
     refreshError:
       'Nie udało się odświeżyć danych quizu. Wyświetlany jest ostatni dostępny stan. Odśwież dane, aby kontynuować.',
@@ -480,6 +588,21 @@ const translations = {
     resultWrong: 'Ta odpowiedź jest błędna.',
     status: { open: 'Otwarte', closed: 'Zamknięte', skipped: 'Pominięte' },
     twitch: {
+      connectionErrors: {
+        subscription_limit:
+          'Osiągnięto limit subskrypcji Twitch dla tego kanału i bota. Usuń nieaktualne połączenia aplikacji, zachowując działające połączenie kanału.',
+        rate_limited:
+          'Twitch tymczasowo ograniczył żądania połączenia. Automatyczna próba zostanie ponowiona po przerwie.',
+        authorization_required:
+          'Twitch odrzucił autoryzację. Połącz ponownie konta bota i kanału oraz udziel wymaganych uprawnień.',
+        webhook_unreachable:
+          'Twitch nie może potwierdzić adresu zwrotnego. Sprawdź dostępność tunelu i webhooka.',
+        invalid_configuration:
+          'Twitch odrzucił ustawienia połączenia. Sprawdź konfigurację aplikacji i adresu zwrotnego.',
+        unavailable:
+          'Twitch jest chwilowo niedostępny lub upłynął czas oczekiwania. Połączenie zostanie automatycznie ponowione.',
+      },
+      automaticRetry: 'Następna automatyczna próba: {{time}}.',
       deliveryError:
         'Operacja Twitch nie powiodła się. Przed ponowieniem sprawdź połączenie i stan dostawy.',
       title: 'Status bota Twitch',

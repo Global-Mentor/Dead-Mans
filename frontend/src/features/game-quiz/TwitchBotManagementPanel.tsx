@@ -14,7 +14,7 @@ import {
 import { gameQuizQueryKeys, twitchBotStatusQueryOptions } from './api/game-quiz-queries.ts'
 
 export function TwitchBotManagementPanel() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const canAdmin = user?.roles.some((role) => role === 'admin' || role === 'superadmin') ?? false
@@ -91,6 +91,16 @@ export function TwitchBotManagementPanel() {
           />
         ) : null}
       </AsyncSection>
+      {twitch.data?.eventSubErrorCode && !twitch.data.eventSubConnected ? (
+        <InlineNotice severity="error">
+          {t(`gameQuiz.twitch.connectionErrors.${twitch.data.eventSubErrorCode}`, {
+            defaultValue: t('gameQuiz.twitch.connectError'),
+          })}
+          {twitch.data.eventSubRetryAtUtc
+            ? ` ${t('gameQuiz.twitch.automaticRetry', { time: new Date(twitch.data.eventSubRetryAtUtc).toLocaleTimeString(i18n.resolvedLanguage) })}`
+            : ''}
+        </InlineNotice>
+      ) : null}
       {connect.isError && !twitch.data?.eventSubConnected ? (
         <InlineNotice severity="error">{t('gameQuiz.twitch.connectError')}</InlineNotice>
       ) : null}
@@ -98,6 +108,7 @@ export function TwitchBotManagementPanel() {
       twitch.data?.enabled &&
       twitch.data.botConnected &&
       twitch.data.broadcasterConnected &&
+      !twitch.data.eventSubErrorCode &&
       !twitch.data.eventSubConnected ? (
         <InlineNotice severity="info">{t('gameQuiz.twitch.verifying')}</InlineNotice>
       ) : null}

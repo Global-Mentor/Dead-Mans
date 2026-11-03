@@ -1,3 +1,4 @@
+import { QuizScreenshotImage, quizOptionText } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/index.ts'
@@ -100,6 +101,7 @@ export function QuestionCatalogDetails({
           {question.text}
         </Typography>
       </RoundBriefingPanel>
+      {question.image ? <QuizScreenshotImage image={question.image} /> : null}
       <Typography component="h2" variant="h6" textAlign="center">
         {t('gameCatalog.questions.fields.answers')}
       </Typography>
@@ -145,7 +147,7 @@ export function QuestionCatalogDetails({
                   ) : null}
                 </Stack>
                 <Typography variant="body2" textAlign="center">
-                  {option.text}
+                  {quizOptionText(question.image, option.optionId, option.text, i18n.language)}
                 </Typography>
               </Stack>
             </ItemCard>

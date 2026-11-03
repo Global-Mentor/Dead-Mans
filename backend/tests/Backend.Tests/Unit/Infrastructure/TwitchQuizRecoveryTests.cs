@@ -15,6 +15,64 @@ namespace Backend.Tests.Unit.Infrastructure;
 
 public sealed class TwitchQuizRecoveryTests : IClassFixture<TestWebApplicationFactory>
 {
+    [Fact]
+    public async Task ScreenshotPublicationUsesOwnDuration_AndOpensTheSameFrozenImage()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var (db, service) = Resolve(scope, connected: true);
+        var game = new Game
+        {
+            Id = Guid.NewGuid(),
+            Title = "Quiz",
+            Status = GameStatusValue.Active,
+            CreatedAtUtc = DateTime.UtcNow,
+            QuizAnswerDurationSeconds = 60,
+            ScreenshotAnswerDurationSeconds = 25
+        };
+        var question = new QuestionDefinition { Id = Guid.NewGuid(), ExternalCode = "image", Text = "Location?", IsEnabled = true };
+        var ids = Enumerable.Range(0, 6).Select(_ => Guid.NewGuid()).ToArray();
+        IReadOnlyDictionary<string, string> names = new Dictionary<string, string> { ["ru"] = "Локация", ["en"] = "Location", ["pl"] = "Lokacja", ["uk"] = "Локація" };
+        var image = new backend.Domain.Questions.QuizImageSnapshot(Guid.NewGuid(), "quiz/screenshots/test.png", names,
+            ids.ToDictionary(id => id, _ => names)).ToJson();
+        db.AddRange(game, question, new GameEnabledQuestion
+        {
+            GameId = game.Id,
+            QuestionId = question.Id,
+            QuestionDefinition = question,
+            QuestionCodeSnapshot = "image",
+            CategoryNameSnapshot = "Locations",
+            QuestionTextSnapshot = "Location?",
+            ImageSnapshotJson = image,
+            OptionIdsSnapshot = ids,
+            OptionTextsSnapshot = Enumerable.Range(1, 6).Select(i => $"Location {i}").ToArray(),
+            CorrectOptionIdSnapshot = ids[0],
+            RewardSnapshot = 7,
+        });
+        await db.SaveChangesAsync();
+        Assert.Equal(PrepareTwitchQuizQuestionOutcome.NoAvailableQuestions,
+            (await service.PrepareQuestionAsync(null)).Outcome);
+        Assert.Equal(PrepareTwitchQuizQuestionOutcome.Prepared,
+            (await service.PrepareQuestionAsync(null, screenshot: true)).Outcome);
+        var publication = Assert.Single(db.TwitchQuizPublications);
+        Assert.Equal(25, publication.DurationSeconds);
+        Assert.Contains("25", publication.OptionsMessage);
+        Assert.DoesNotContain("60", publication.OptionsMessage);
+        Assert.Equal(image, publication.ImageSnapshotJson);
+        Assert.True(await backend.Infrastructure.Persistence.GameQuizActivity.BlocksModifiersAsync(db, game.Id, DateTime.UtcNow, default));
+        publication.QuestionDeliveryStatus = TwitchQuizDeliveryStatuses.Sent;
+        publication.OptionsDeliveryStatus = TwitchQuizDeliveryStatuses.Sent;
+        await db.SaveChangesAsync();
+        await service.ProcessNextAsync(default);
+        var session = Assert.Single(db.GameQuizQuestionSessions);
+        Assert.Equal(image, session.ImageSnapshotJson);
+        Assert.Equal(TimeSpan.FromSeconds(25), session.ClosesAtUtc - session.AskedAtUtc);
+        Assert.Equal(publication.OptionIdsSnapshot, session.OptionIdsSnapshot);
+        Assert.Equal(publication.OptionTextsSnapshot, session.OptionTextsSnapshot);
+        for (var index = 0; index < session.OptionTextsSnapshot.Length; index++)
+            Assert.Contains($"!{index + 1} [{session.OptionTextsSnapshot[index]}]", publication.OptionsMessage);
+        Assert.Equal(session.Id, Assert.Single(db.Set<GameQuizPresentation>()).QuestionSessionId);
+    }
+
     private readonly TestWebApplicationFactory _factory;
 
     public TwitchQuizRecoveryTests(TestWebApplicationFactory factory)
@@ -163,15 +221,24 @@ public sealed class TwitchQuizRecoveryTests : IClassFixture<TestWebApplicationFa
         return row;
     }
 
-    private static (ApplicationDbContext Db, TwitchBotService Service) Resolve(IServiceScope scope)
+    private static (ApplicationDbContext Db, TwitchBotService Service) Resolve(IServiceScope scope, bool connected = false)
     {
         var services = scope.ServiceProvider;
         var db = services.GetRequiredService<ApplicationDbContext>();
+        var health = new TwitchEventSubHealth();
+        if (connected)
+        {
+            health.SetConnected(true);
+            db.AddRange(
+                new TwitchBotConnection { Role = "bot", TwitchUserId = "", Scopes = TwitchBotOptions.BotScopes },
+                new TwitchBotConnection { Role = "broadcaster", TwitchUserId = "", Scopes = TwitchBotOptions.BroadcasterScopes });
+            db.SaveChanges();
+        }
         // Enable only this service instance; the factory's background worker remains disabled.
         var service = new TwitchBotService(db, Options.Create(new TwitchBotOptions { Enabled = true }),
             services.GetRequiredService<TwitchBotApiClient>(), services.GetRequiredService<IGameQuizService>(),
             services.GetRequiredService<IGameBoardEventsPublisher>(), services.GetRequiredService<IDataProtectionProvider>(),
-            new TwitchEventSubHealth(), TimeProvider.System);
+            health, TimeProvider.System);
         return (db, service);
     }
 }

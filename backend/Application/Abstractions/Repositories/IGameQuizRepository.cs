@@ -39,6 +39,8 @@ public sealed record AskQuizQuestionRepositoryResult(
 
 public interface IGameQuizRepository
 {
+    Task<Guid?> HideScreenshotAsync(Guid sessionId, CancellationToken cancellationToken = default);
+
     Task<Guid?> GetActiveGameIdAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<AvailableGameQuizQuestion>> GetAvailableQuizQuestionsAsync(

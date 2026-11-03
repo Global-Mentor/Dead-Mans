@@ -1,6 +1,6 @@
-namespace backend.Application.Features.GameSetup;
+namespace backend.Application.Media;
 
-public static class GameSetupCellMediaLimits
+public static class ImageUploadLimits
 {
     public const long MaxUploadBytes = 5 * 1024 * 1024;
 

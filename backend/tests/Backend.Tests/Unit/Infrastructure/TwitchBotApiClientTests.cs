@@ -140,7 +140,27 @@ public sealed class TwitchBotApiClientTests
             Assert.Equal(HttpMethod.Get, request.Method);
             return Task.FromResult(Json(new { message = "Unavailable" }, HttpStatusCode.ServiceUnavailable));
         };
-        await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
+        var error = await Assert.ThrowsAsync<TwitchEventSubConnectionException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
+        Assert.Equal("unavailable", error.Code);
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("{\"data\":[],\"pagination\":{\"cursor\":\"repeated\"}}")]
+    public async Task Subscription_InvalidListDoesNotCreateSubscription(string payload)
+    {
+        using var fixture = new Fixture();
+        await fixture.ConnectAsync();
+        fixture.Handler.Handle = request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/oauth2/token") return Task.FromResult(Token());
+            if (request.RequestUri.AbsolutePath == "/oauth2/validate") return Task.FromResult(ValidGrant(request));
+            Assert.Equal(HttpMethod.Get, request.Method);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) });
+        };
+        var error = await Assert.ThrowsAsync<TwitchEventSubConnectionException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
+        Assert.Equal("unavailable", error.Code);
     }
 
     [Fact]
@@ -171,6 +191,58 @@ public sealed class TwitchBotApiClientTests
         };
         await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
         Assert.All(await fixture.Db.TwitchBotConnections.ToArrayAsync(), x => Assert.Null(x.RevokedAtUtc));
+    }
+
+    [Theory]
+    [InlineData(429, "maximum subscriptions with type and condition exceeded", "subscription_limit")]
+    [InlineData(429, "Too Many Requests", "rate_limited")]
+    [InlineData(403, "Forbidden", "authorization_required")]
+    [InlineData(400, "callback verification failed", "webhook_unreachable")]
+    public async Task Subscription_ClassifiesExpectedFailure(int status, string message, string code)
+    {
+        using var fixture = new Fixture();
+        await fixture.ConnectAsync();
+        fixture.Handler.Handle = request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/oauth2/token") return Task.FromResult(Token());
+            if (request.RequestUri.AbsolutePath == "/oauth2/validate") return Task.FromResult(ValidGrant(request));
+            if (request.Method == HttpMethod.Get) return Task.FromResult(Json(new { data = Array.Empty<object>() }));
+            var response = Json(new { message }, (HttpStatusCode)status);
+            response.Headers.RetryAfter = new(TimeSpan.FromSeconds(120));
+            return Task.FromResult(response);
+        };
+        var error = await Assert.ThrowsAsync<TwitchEventSubConnectionException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
+        Assert.Equal(code, error.Code);
+        Assert.Equal(TimeSpan.FromSeconds(120), error.RetryAfter);
+    }
+
+    [Fact]
+    public async Task Subscription_RecoveryOnlyRemovesFailedExactCallback()
+    {
+        using var fixture = new Fixture();
+        await fixture.ConnectAsync();
+        var deleted = new List<string>();
+        fixture.Handler.Handle = request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/oauth2/token") return Task.FromResult(Token());
+            if (request.RequestUri.AbsolutePath == "/oauth2/validate") return Task.FromResult(ValidGrant(request));
+            if (request.Method == HttpMethod.Delete)
+            {
+                deleted.Add(request.RequestUri.Query);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+            }
+            Assert.Equal(HttpMethod.Get, request.Method);
+            return Task.FromResult(Json(new
+            {
+                data = new[] {
+                new { id = "local", type = "channel.chat.message", status = "webhook_callback_verification_failed", condition = new { broadcaster_user_id = "200001", user_id = "100001" }, transport = new { callback = "https://example.test/webhook" } },
+                new { id = "other", type = "channel.chat.message", status = "enabled", condition = new { broadcaster_user_id = "200001", user_id = "100001" }, transport = new { callback = "https://other.test/webhook" } }
+            }
+            }));
+        };
+        var error = await Assert.ThrowsAsync<TwitchEventSubConnectionException>(() => fixture.Client.EnsureEventSubSubscriptionAsync(default));
+        Assert.Equal("webhook_unreachable", error.Code);
+        Assert.Equal(["?id=local"], deleted);
     }
 
     private static HttpResponseMessage ValidGrant(HttpRequestMessage request)

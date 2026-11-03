@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
-import type { GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
+import { screenshotQuestion } from './support/screenshot-fixture.ts'
+import type { CurrentGameQuizState, GameBoardSnapshot } from '../src/shared/api/contracts/index.ts'
 import { realtimeHubs } from '../src/shared/realtime/generated.ts'
 import { expectTeamPresentation } from './team-presentation-assertions.ts'
 import { TEAM_NAME_MAX_LENGTH } from '../src/features/game-registration/model/team-name.ts'
@@ -2357,39 +2358,173 @@ test('quiz drawer wraps long answers and blocks them at the local deadline', asy
   await expect(question.locator('[data-quiz-result]')).toHaveCount(0)
 })
 
-test('quiz petal disappears after the question closes', async ({ page }) => {
-  let status = 'open'
+async function mockQuizDrawer(page: Page, screenshot = true) {
   let sendEvent: ((message: string) => void) | undefined
-  await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
+  let isOrderingOpen = false
+  const writes = await mockGame(page, 'active', 'viewer', 'Ночные странники', (send) => {
     sendEvent = send
   })
   await page.route('**/api/game/rounds/active', (route) =>
     route.fulfill({ json: { ...activeRoundFixture, status: 'in_progress' } }),
   )
-  await page.route('**/api/game/quiz/current', (route) =>
+  await page.route('**/api/game/modifiers/state', (route) =>
     route.fulfill({
       json: {
-        questionSessionId: 'quiz-expiring',
         gameId: board.gameId,
-        askOrder: 1,
-        questionId: 'question-expiring',
-        questionCode: 'Q-4',
-        categoryName: 'Охота',
-        text: 'Куда идти?',
-        options: [{ optionId: 'one', text: 'К берегу', displayOrder: 1 }],
-        status,
-        askedAtUtc: new Date().toISOString(),
-        closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+        availableQuizPoints: 10,
+        earnedQuizPoints: 10,
+        spentQuizPoints: 0,
+        isOrderingOpen,
+        activeModifiers: [],
+        availableModifiers: [],
       },
     }),
   )
+  let state: CurrentGameQuizState = {
+    ...screenshotQuestion,
+    gameId: board.gameId,
+    image: screenshot ? (screenshotQuestion.image ?? null) : null,
+    askedAtUtc: new Date().toISOString(),
+    closesAtUtc: new Date(Date.now() + 60_000).toISOString(),
+    mySelectedOptionId: 'location-0',
+  }
+  await page.route('**/api/game/quiz/current', (route) => route.fulfill({ json: state }))
+  return {
+    writes,
+    setOrdering: async (open: boolean) => {
+      await expect.poll(() => Boolean(sendEvent)).toBe(true)
+      const response = page.waitForResponse('**/api/game/modifiers/state')
+      isOrderingOpen = open
+      sendEvent?.(
+        JSON.stringify({
+          type: 1,
+          target: realtimeHubs.gameBoard.events.modifierAvailabilityChanged,
+          arguments: [{}],
+        }) + '\u001e',
+      )
+      await (await response).finished()
+    },
+    update: async (patch: Partial<CurrentGameQuizState>) => {
+      await expect.poll(() => Boolean(sendEvent)).toBe(true)
+      const response = page.waitForResponse('**/api/game/quiz/current')
+      state = { ...state, ...patch }
+      sendEvent?.(
+        JSON.stringify({
+          type: 1,
+          target: realtimeHubs.gameBoard.events.quizStateChanged,
+          arguments: [{}],
+        }) + '\u001e',
+      )
+      await (await response).finished()
+      await page.clock.runFor(50)
+    },
+  }
+}
+
+for (const [route, screenshot, width] of [
+  ['game-round', true, 390],
+  ['game-round', true, 768],
+  ['game-round', true, 1440],
+  ['game-round', false, 1440],
+  ['game-board', false, 1440],
+  ['game-modifiers', true, 1440],
+] as const) {
+  test(`quiz drawer retains ${screenshot ? 'screenshot' : 'text'} results for 15 seconds on ${route} at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.clock.install()
+    const server = await mockQuizDrawer(page, screenshot)
+    await page.goto(`/panel/${route}`)
+    await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toBeVisible()
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
+    await server.update({
+      status: 'closed',
+      correctOptionId: 'location-0',
+      myIsCorrect: true,
+      myAwardedPoints: 7,
+    })
+    const result = page.getByRole('dialog', { name: 'Результат вопроса' })
+    await expect(result).toBeVisible()
+    await expect(result.locator('[data-quiz-result="correct"]')).toContainText('Винный завод')
+    await expect(result.locator('[data-quiz-result="correct"]')).toBeDisabled()
+    if (screenshot)
+      await expect(result.getByRole('img', { name: 'Скриншот локации' })).toBeVisible()
+    await result.screenshot({ path: info.outputPath('quiz-result.png'), animations: 'disabled' })
+    await page.clock.fastForward(10_000)
+    await server.update({ reward: 8 })
+    await expect(result).toBeVisible()
+    await page.clock.fastForward(4_000)
+    await expect(result).toBeVisible()
+    await page.clock.fastForward(1_100)
+    await expect(result).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
+    await page.clock.resume()
+    await page.reload()
+    await expect(
+      page.getByTestId(
+        route === 'game-round'
+          ? 'current-round-screen'
+          : route === 'game-board'
+            ? 'game-board-surface'
+            : 'game-modifiers-page',
+      ),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('dialog', { name: /Текущий вопрос|Результат вопроса/ }),
+    ).toHaveCount(0)
+    expect(server.writes).toEqual([])
+  })
+}
+
+test('quiz result can be dismissed and its old timer cannot close a new question', async ({
+  page,
+}) => {
+  await page.clock.install()
+  const server = await mockQuizDrawer(page)
   await page.goto('/panel/game-round')
   await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toBeVisible()
-  await expect.poll(() => Boolean(sendEvent)).toBe(true)
-  status = 'closed'
-  sendEvent?.(JSON.stringify({ type: 1, target: 'quizStateChanged', arguments: [{}] }) + '\u001e')
+  await server.update({ status: 'closed', correctOptionId: 'location-0' })
+  const result = page.getByRole('dialog', { name: 'Результат вопроса' })
+  await expect(result).toBeVisible()
+  await result.getByRole('button', { name: 'Закрыть вопрос' }).click()
+  await expect(result).not.toBeVisible()
+  await page.getByRole('button', { name: 'Открыть вопрос' }).click()
+  await expect(result).toBeVisible()
+  await page.clock.fastForward(5_000)
+  await server.update({
+    questionSessionId: 'next-screenshot',
+    status: 'open',
+    correctOptionId: null,
+  })
+  const next = page.getByRole('dialog', { name: 'Текущий вопрос' })
+  await expect(next).toBeVisible()
+  await page.clock.fastForward(11_000)
+  await expect(next).toBeVisible()
+  await server.update({ status: 'skipped' })
+  await expect(next).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
-  await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toHaveCount(0)
+  expect(server.writes).toEqual([])
+})
+
+test('modifier ordering hides the quiz result without restarting its display interval', async ({
+  page,
+}) => {
+  await page.clock.install()
+  const server = await mockQuizDrawer(page)
+  await page.goto('/panel/game-modifiers')
+  await expect(page.getByRole('dialog', { name: 'Текущий вопрос' })).toBeVisible()
+  await server.update({ status: 'closed', correctOptionId: 'location-0' })
+  const result = page.getByRole('dialog', { name: 'Результат вопроса' })
+  await expect(result).toBeVisible()
+  await server.setOrdering(true)
+  await expect(result).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
+  await page.clock.fastForward(16_000)
+  await server.setOrdering(false)
+  await expect(result).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть вопрос' })).toHaveCount(0)
+  expect(server.writes).toEqual([])
 })
 
 test('moderator can answer the round question and the accepted choice survives a failed refresh', async ({

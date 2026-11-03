@@ -8,6 +8,80 @@ info:
 servers:
   - url: /api
 paths:
+  /game/questions/hunt-maps:
+    get:
+      operationId: getHuntMaps
+      security: [{ cookieAuth: [] }]
+      description: Enabled maps and locations with exact game names. Admin only.
+      responses:
+        "200":
+          description: Location catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/HuntMapItemDto' }
+        "401": { description: Authentication required }
+        "403": { description: Admin required }
+  /game/questions/screenshots:
+    post:
+      operationId: uploadQuizScreenshot
+      security: [{ cookieAuth: [] }]
+      description: Upload one image and create a six-option location question. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [requestId, locationId, categoryId, text, reward, priority, isEnabled, file]
+              properties:
+                requestId: { type: string, format: uuid }
+                text: { type: string, minLength: 1, maxLength: 2000 }
+                locationId: { type: string, format: uuid }
+                categoryId: { type: string, format: uuid }
+                reward: { type: integer, minimum: 0 }
+                priority: { type: integer }
+                isEnabled: { type: boolean }
+                file: { type: string, format: binary, description: "JPEG, PNG, GIF or WebP; up to 5 MiB." }
+      responses:
+        "200":
+          description: Created or previously created question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UploadQuizScreenshotResponseDto' }
+        "400":
+          description: Invalid file or selection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "401": { description: Authentication required }
+        "403": { description: Admin required }
+        "409":
+          description: Request identifier was used for different content
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "413": { description: File exceeds upload limit }
+  /game/quiz/question-sessions/{questionSessionId}/hide:
+    post:
+      operationId: hideQuizScreenshot
+      security: [{ cookieAuth: [] }]
+      description: Hide a completed screenshot and restore the underlying overlay. Repeating a successful hide is safe. A stale session cannot hide a newer one. Moderator or admin only.
+      parameters:
+        - in: path
+          name: questionSessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Screenshot hidden }
+        "401": { description: Authentication required }
+        "403": { description: Moderator or admin required }
+        "409":
+          description: Question is open, unavailable or superseded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /overlay/test:
     get:
       operationId: getGameOverlayTestState
@@ -138,7 +212,7 @@ paths:
   /overlay/snapshot:
     get:
       operationId: getGameOverlaySnapshot
-      description: Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user IDs, questions or management data. Responses are not cacheable.
+      description: Consistent, read-only broadcast frame for the current active game. No session required. No hidden card content, user identities or management data. An explicitly presented screenshot includes public options and reveals its answer only after settlement. Responses are not cacheable.
       security:
         - overlayKey: []
       parameters:
@@ -1878,6 +1952,10 @@ paths:
           description: Missing moderator/admin role
   /game/quiz/questions/ask-next:
     post:
+      parameters:
+        - in: query
+          name: format
+          schema: { type: string, enum: [text, screenshot], default: text }
       operationId: askNextGameQuizQuestion
       security:
         - cookieAuth: []
@@ -4663,6 +4741,46 @@ components:
       in: cookie
       name: dm_auth
   schemas:
+    LocalizedHuntNames:
+      type: object
+      required: [en, ru, uk, pl]
+      properties:
+        en: { type: string }
+        ru: { type: string }
+        uk: { type: string }
+        pl: { type: string }
+    HuntLocationItemDto:
+      type: object
+      required: [id, code, names]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        names: { $ref: '#/components/schemas/LocalizedHuntNames' }
+    HuntMapItemDto:
+      type: object
+      required: [id, code, names, locations]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        names: { $ref: '#/components/schemas/LocalizedHuntNames' }
+        locations:
+          type: array
+          items: { $ref: '#/components/schemas/HuntLocationItemDto' }
+    GameQuizImageDto:
+      type: object
+      required: [imageUrl, mapNames, optionNames]
+      description: Frozen image and localized names for every option. Contains no correct-answer information.
+      properties:
+        imageUrl: { type: string }
+        mapNames: { $ref: '#/components/schemas/LocalizedHuntNames' }
+        optionNames:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/LocalizedHuntNames' }
+    UploadQuizScreenshotResponseDto:
+      type: object
+      required: [questionId]
+      properties:
+        questionId: { type: string, format: uuid }
     GameOverlaySavedKeyDto:
       type: object
       required: [key]
@@ -4687,6 +4805,10 @@ components:
       type: object
       required: [displayName, points, attempts, correctAnswers]
       properties:
+        textStatistics:
+          $ref: '#/components/schemas/GameQuizFormatStatisticsDto'
+        screenshotStatistics:
+          $ref: '#/components/schemas/GameQuizFormatStatisticsDto'
         displayName: { type: string }
         points: { type: integer }
         attempts: { type: integer, minimum: 0 }
@@ -4874,6 +4996,10 @@ components:
       type: object
       required: [gameId, phase, team, board, round]
       properties:
+        quizQuestion:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/CurrentGameQuizStateDto' }]
         leaderboardPage: { type: integer, minimum: 0, default: 0, description: Operator-selected zero-based page of six entries. }
         quizLeaderboard:
           type: array
@@ -4893,7 +5019,7 @@ components:
         phase:
           type: string
           description: Test mode replaces all game content with the static brand preview; it does not change the round phase.
-          enum: [leaderboard, quiz_leaderboard, test, idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
+          enum: [screenshot, leaderboard, quiz_leaderboard, test, idle, select_card, card_opened, awaiting_modifiers, preparing, preparation_completed, in_progress, reviewing_results, showing_results, completed]
         team:
           type: object
           nullable: true
@@ -4989,6 +5115,7 @@ components:
       type: object
       required: [expectedVersion, title, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
       properties:
+        screenshotAnswerDurationSeconds: { type: integer, minimum: 5, maximum: 3600, default: 60 }
         expectedVersion:
           type: integer
           minimum: 1
@@ -5038,6 +5165,7 @@ components:
       required:
         [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds, teamLimit]
       properties:
+        screenshotAnswerDurationSeconds: { type: integer, minimum: 5, maximum: 3600, default: 60 }
         teamLimit:
           type: integer
           nullable: true
@@ -6596,6 +6724,20 @@ components:
         - correctPercentage
         - twitchCompatible
       properties:
+        screenshotMapId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Stable map identity for screenshot catalogue filters; null for text questions.
+        screenshotLocationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The screenshot's assigned correct location, not a distractor option.
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionId:
           type: string
           format: uuid
@@ -6696,6 +6838,11 @@ components:
         botConnected: { type: boolean }
         broadcasterConnected: { type: boolean }
         eventSubConnected: { type: boolean }
+        eventSubErrorCode:
+          type: string
+          nullable: true
+          enum: [subscription_limit, rate_limited, authorization_required, webhook_unreachable, invalid_configuration, unavailable]
+        eventSubRetryAtUtc: { type: string, format: date-time, nullable: true }
         accessRevoked: { type: boolean }
         botUserId: { type: string, nullable: true }
         broadcasterUserId: { type: string, nullable: true }
@@ -6945,6 +7092,10 @@ components:
         - askedAtUtc
         - closesAtUtc
       properties:
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionSessionId:
           type: string
           format: uuid
@@ -6994,6 +7145,10 @@ components:
       type: object
       required: [questionId, questionCode, categoryName, text]
       properties:
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionId:
           type: string
           format: uuid
@@ -7050,6 +7205,11 @@ components:
       type: object
       required: [questionSessionId, gameId, askOrder, questionId, questionCode, categoryName, text, options, status, askedAtUtc, closesAtUtc]
       properties:
+        presentationVisible: { type: boolean, default: false }
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionSessionId:
           type: string
           format: uuid
@@ -7221,7 +7381,7 @@ components:
           format: uuid
         changeKind:
           type: string
-          enum: [question_asked, question_closed, manual_adjustment_applied]
+          enum: [question_asked, question_closed, manual_adjustment_applied, presentation_hidden]
         occurredAtUtc:
           type: string
           format: date-time
@@ -7246,6 +7406,10 @@ components:
         - isCorrect
         - awardedPoints
       properties:
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionSessionId:
           type: string
           format: uuid
@@ -7445,11 +7609,27 @@ components:
           type: string
           format: date-time
           nullable: true
+    GameQuizFormatStatisticsDto:
+      type: object
+      required: [attempts, correctAnswers, points]
+      description: Closed-answer statistics for one question format. Manual adjustments and spending remain in the shared totals.
+      properties:
+        attempts: { type: integer }
+        correctAnswers: { type: integer }
+        points: { type: integer }
     GameHistoryQuizPlayerSummaryDto:
       type: object
       required:
         [userId, displayName, points, spentPoints, availablePoints, attempts, correctAnswers]
       properties:
+        textStatistics:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizFormatStatisticsDto' }]
+        screenshotStatistics:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizFormatStatisticsDto' }]
         userId:
           type: string
           format: uuid
@@ -7838,6 +8018,10 @@ components:
       type: object
       required: [questionSessionId, questionId, questionCode, questionText, categoryName, reward, status, askedAtUtc, options, submissions]
       properties:
+        image:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
         questionSessionId:
           type: string
           format: uuid
@@ -8800,6 +8984,9 @@ components:
             - resolution.count_exceeds_activation_limit
             - resolution.per_activation_required
             - game_question.invalid_request
+            - game_question.invalid_screenshot
+            - game_question.screenshot_upload_conflict
+            - game_quiz.presentation_busy
             - game_question.duplicate_code
             - game_question.not_found
             - game_question.category_not_found

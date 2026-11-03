@@ -112,6 +112,7 @@ describe('GameSetupPage', () => {
           enabledModifierIds: [],
           enabledQuestionIds: [],
           quizAnswerDurationSeconds: 60,
+          screenshotAnswerDurationSeconds: 60,
           teamLimit: 10,
         },
         draft: {
@@ -122,6 +123,7 @@ describe('GameSetupPage', () => {
           enabledModifierIds: [],
           enabledQuestionIds: [],
           quizAnswerDurationSeconds: 60,
+          screenshotAnswerDurationSeconds: 60,
         },
         updateDraft,
         commitDraft,

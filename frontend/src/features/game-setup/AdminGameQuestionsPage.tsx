@@ -7,7 +7,20 @@ import { GameSetupSyncActions } from './ui/GameSetupSyncActions.tsx'
 import { useGameSetupPage } from './use-game-setup-page.ts'
 
 export function AdminGameQuestionsPage() {
+  return <GameQuizContentSetupPage format="text" />
+}
+
+export function AdminGameScreenshotsPage() {
+  return <GameQuizContentSetupPage format="screenshot" />
+}
+
+function GameQuizContentSetupPage({ format }: { format: 'text' | 'screenshot' }) {
   const { t } = useTranslation()
+  const title = t(
+    format === 'screenshot'
+      ? 'navigation.items.adminScreenshots.label'
+      : 'navigation.items.adminQuestions.label',
+  )
   const {
     draft,
     snapshot,
@@ -27,6 +40,7 @@ export function AdminGameQuestionsPage() {
     toggleQuestion,
     setQuestionsEnabled,
     setQuizAnswerDuration,
+    setScreenshotAnswerDuration,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -34,12 +48,7 @@ export function AdminGameQuestionsPage() {
 
   if (isLoading) {
     return (
-      <PageStatePanel
-        variant="page"
-        title={t('navigation.items.adminQuestions.label')}
-        message={t('gameSetup.loading')}
-        showSpinner
-      />
+      <PageStatePanel variant="page" title={title} message={t('gameSetup.loading')} showSpinner />
     )
   }
 
@@ -47,7 +56,7 @@ export function AdminGameQuestionsPage() {
     return (
       <PageStatePanel
         variant="page"
-        title={t('navigation.items.adminQuestions.label')}
+        title={title}
         message={t('gameSetup.errorLoading')}
         tone="error"
         actions={
@@ -62,7 +71,7 @@ export function AdminGameQuestionsPage() {
   if (!draft) {
     return (
       <GameSetupEmptyState
-        title={t('navigation.items.adminQuestions.label')}
+        title={title}
         draftRemovedNotice={draftRemovedNotice}
         onDismissDraftRemovedNotice={dismissDraftRemovedNotice}
       />
@@ -82,12 +91,15 @@ export function AdminGameQuestionsPage() {
       }}
     >
       <GameSetupQuestionsSection
-        key={snapshot?.gameId}
+        key={`${snapshot?.gameId}-${format}`}
+        format={format}
         draft={draft}
         isSaving={isSaving}
         onToggle={toggleQuestion}
         onBulkSetEnabled={setQuestionsEnabled}
-        onDurationChange={setQuizAnswerDuration}
+        onDurationChange={
+          format === 'screenshot' ? setScreenshotAnswerDuration : setQuizAnswerDuration
+        }
         onDurationCommit={commitDraft}
         actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />

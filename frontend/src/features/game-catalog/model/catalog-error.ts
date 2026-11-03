@@ -20,6 +20,8 @@ const codeToKey: Record<string, Extract<ParseKeys, `gameCatalog.errors.${string}
   'game_question.duplicate_code': 'gameCatalog.errors.duplicateCode',
   'game_question.not_found': 'gameCatalog.errors.notFound',
   'game_question.invalid_request': 'gameCatalog.errors.invalidRequest',
+  'game_question.invalid_screenshot': 'gameCatalog.errors.invalidScreenshot',
+  'game_question.screenshot_upload_conflict': 'gameCatalog.errors.screenshotUploadConflict',
   'game_question.category_not_found': 'gameCatalog.errors.categoryNotFound',
   'game_question.category_not_empty': 'gameCatalog.errors.categoryNotEmpty',
   'game_question.category_protected': 'gameCatalog.errors.categoryProtected',

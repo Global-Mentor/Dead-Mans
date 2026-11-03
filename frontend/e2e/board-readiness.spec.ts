@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { screenshotQuestion } from './support/screenshot-fixture.ts'
 
 async function setupBoard(page: Page, missingMedia = false, currentGame = false) {
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
@@ -97,6 +98,47 @@ async function setupBoard(page: Page, missingMedia = false, currentGame = false)
 }
 
 for (const width of [390, 768, 1440]) {
+  test(`readiness counts only selected screenshots at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 950 })
+    const server = await setupBoard(page)
+    let selected = ['text-1', 'image-1', 'image-2']
+    await page.route('**/api/game/setup', (route) =>
+      route.fulfill({
+        json: { ...server.board(), enabledQuestionIds: selected },
+      }),
+    )
+    await page.route('**/api/game/questions/catalog*', (route) =>
+      route.fulfill({
+        json: ['text-1', 'image-1', 'image-2', 'unselected-image'].map((questionId) => ({
+          questionId,
+          questionCode: questionId,
+          categoryId: 'locations',
+          categoryName: 'Локации',
+          text: 'Какая локация изображена?',
+          options: [],
+          reward: 10,
+          priority: 0,
+          isEnabled: true,
+          image: questionId === 'text-1' ? null : screenshotQuestion.image,
+        })),
+      }),
+    )
+    await page.goto('/panel/game-setup')
+    const screenshots = page.getByRole('group', { name: 'Скриншоты', exact: true })
+    const questions = page.getByRole('group', { name: 'Вопросы', exact: true })
+    await expect(screenshots.locator('dd')).toHaveText('2')
+    await expect(questions.locator('dd')).toHaveText('1')
+    await screenshots.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: info.outputPath('setup-screenshot-count.png') })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    )
+    selected = ['text-1']
+    await page.reload()
+    await expect(screenshots.locator('dd')).toHaveText('0')
+    await expect(questions.locator('dd')).toHaveText('1')
+  })
+
   test(`conflicting save preserves local draft until explicit reload at ${width}px`, async ({
     page,
   }, info) => {
@@ -180,12 +222,12 @@ for (const width of [390, 768, 1440]) {
     await expect(confirm).toBeDisabled()
     await dialog.getByRole('checkbox', { name: /без модификаторов/ }).check()
     await expect(confirm).toBeDisabled()
-    await dialog.getByRole('checkbox', { name: /без вопросов/ }).check()
+    await dialog.getByRole('checkbox', { name: /без викторины/ }).check()
     await expect(confirm).toBeEnabled()
     await page.screenshot({ path: info.outputPath('consents.png'), fullPage: false })
     await confirm.click()
     await expect(dialog.getByText(/Черновик изменился после проверки/)).toBeVisible()
-    await expect(dialog.getByRole('checkbox', { name: /без вопросов/ })).toBeChecked()
+    await expect(dialog.getByRole('checkbox', { name: /без викторины/ })).toBeChecked()
     expect(server.publications).toEqual([
       {
         gameId: 'draft-1',

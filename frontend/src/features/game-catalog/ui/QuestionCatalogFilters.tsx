@@ -1,3 +1,7 @@
+import {
+  ScreenshotLocationFilters,
+  type ScreenshotLocationFiltersProps,
+} from '../../../shared/game-ui/index.ts'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +10,8 @@ import { AppButton, FormSelect, FormTextField, NativeDisclosure } from '../../..
 import type { QuestionCatalogSort, QuestionCatalogStatus } from '../model/question-catalog.ts'
 
 export function QuestionCatalogFilters({
+  screenshots = false,
+  locationFilters,
   search,
   onSearchChange,
   categories,
@@ -19,6 +25,8 @@ export function QuestionCatalogFilters({
   hasFilters,
   onReset,
 }: {
+  screenshots?: boolean
+  locationFilters: ScreenshotLocationFiltersProps
   search: string
   onSearchChange: (value: string) => void
   categories: readonly GameQuestionCategoryItem[]
@@ -36,17 +44,53 @@ export function QuestionCatalogFilters({
   const theme = useTheme()
   const expanded = useMediaQuery(theme.breakpoints.up('sm'))
   const [open, setOpen] = useState(false)
-  const count = Number(categoryId !== null) + Number(status !== 'all')
+  const count =
+    Number(categoryId !== null) +
+    Number(status !== 'all') +
+    Number(locationFilters.mapId !== null) +
+    Number(locationFilters.locationId !== null)
   const number = (value: number) => new Intl.NumberFormat(i18n.resolvedLanguage).format(value)
   return (
-    <Box sx={{ display: 'grid', gap: 1.25, mt: 1.5 }}>
-      <FormTextField
-        density="compact"
-        label={t('gameCatalog.questions.searchLabel')}
-        value={search}
-        placeholder={t('gameCatalog.questions.catalog.searchHint')}
-        onChange={(event) => onSearchChange(event.target.value)}
-      />
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 1.25,
+        mt: 1.5,
+        gridTemplateColumns: screenshots
+          ? { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 1.1fr) minmax(0, 1fr)' }
+          : 'minmax(0, 1fr)',
+        alignItems: 'start',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.25,
+          minWidth: 0,
+          gridTemplateColumns: screenshots
+            ? {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.1fr)',
+              }
+            : 'minmax(0, 1fr)',
+        }}
+      >
+        <FormTextField
+          sx={{ gridColumn: screenshots ? { xs: '1 / -1', sm: 'auto' } : undefined }}
+          density="compact"
+          label={t(
+            screenshots ? 'gameCatalog.screenshots.search' : 'gameCatalog.questions.searchLabel',
+          )}
+          value={search}
+          placeholder={t(
+            screenshots
+              ? 'gameCatalog.screenshots.searchHint'
+              : 'gameCatalog.questions.catalog.searchHint',
+          )}
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+        {screenshots ? <ScreenshotLocationFilters {...locationFilters} /> : null}
+      </Box>
       <NativeDisclosure
         summary={t('gameCatalog.questions.catalog.filters', { count })}
         pinned={expanded}
@@ -87,7 +131,10 @@ export function QuestionCatalogFilters({
             value={status}
             onChange={onStatusChange}
             options={[
-              { value: 'all', label: t('gameCatalog.workspace.all') },
+              {
+                value: 'all',
+                label: t(screenshots ? 'gameCatalog.screenshots.all' : 'gameCatalog.workspace.all'),
+              },
               { value: 'enabled', label: t('gameCatalog.workspace.enabled') },
               { value: 'disabled', label: t('gameCatalog.questions.catalog.disabled') },
             ]}
@@ -98,7 +145,14 @@ export function QuestionCatalogFilters({
             value={sort}
             onChange={onSortChange}
             options={[
-              { value: 'category', label: t('gameCatalog.questions.catalog.sortCategory') },
+              {
+                value: 'category',
+                label: t(
+                  screenshots
+                    ? 'gameCatalog.screenshots.sortCategory'
+                    : 'gameCatalog.questions.catalog.sortCategory',
+                ),
+              },
               { value: 'rewardAsc', label: t('gameCatalog.questions.catalog.sortReward') },
               { value: 'rewardDesc', label: t('gameCatalog.questions.catalog.sortRewardDesc') },
               { value: 'priorityAsc', label: t('gameCatalog.questions.catalog.sortPriorityAsc') },

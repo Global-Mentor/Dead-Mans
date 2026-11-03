@@ -554,6 +554,7 @@ describe('PanelNavigation', () => {
       'Команды',
       'Модификаторы для игры',
       'Вопросы для игры',
+      'Скриншоты для игры',
       'Каталог модификаторов',
       'Каталог вопросов',
     ]) {
@@ -627,6 +628,10 @@ describe('PanelNavigation', () => {
       'true',
     )
     expect(screen.getByRole('menuitem', { name: 'Вопросы для игры' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    expect(screen.getByRole('menuitem', { name: 'Скриншоты для игры' })).toHaveAttribute(
       'aria-disabled',
       'true',
     )

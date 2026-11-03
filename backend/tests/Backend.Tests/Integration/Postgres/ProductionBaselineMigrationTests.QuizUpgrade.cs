@@ -172,7 +172,7 @@ public sealed partial class ProductionBaselineMigrationTests
             var exception = await Assert.ThrowsAsync<PostgresException>(() =>
                 db.GetService<IMigrator>().MigrateAsync(BeforeMultipleChoice));
             Assert.Contains("Restore a pre-upgrade backup", exception.Message, StringComparison.Ordinal);
-            Assert.Equal(question.Id, (await db.QuestionDefinitions.AsNoTracking().SingleAsync()).Id);
+            Assert.Equal(question.Id, await db.QuestionDefinitions.AsNoTracking().Select(row => row.Id).SingleAsync());
             Assert.Equal(2, await db.QuestionOptions.CountAsync());
         });
     }

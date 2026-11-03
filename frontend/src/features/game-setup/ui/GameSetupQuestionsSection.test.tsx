@@ -53,6 +53,7 @@ function renderQuestions(enabledQuestionIds: string[] = []) {
         enabledModifierIds: [],
         enabledQuestionIds,
         quizAnswerDurationSeconds: 60,
+        screenshotAnswerDurationSeconds: 60,
       }}
       isSaving={false}
       onToggle={onToggle}

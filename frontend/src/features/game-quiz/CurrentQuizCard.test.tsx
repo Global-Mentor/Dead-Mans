@@ -5,7 +5,7 @@ import type { CurrentGameQuizState } from '../../shared/api/contracts/index.ts'
 import { API_ERROR_CODES } from '../../shared/api/errors/api-error-codes.ts'
 import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { renderWithAppProviders } from '../../test/render-with-app-providers.tsx'
-import { QuizLaunchControls } from './QuizLaunchControls.tsx'
+import { QuizLaunchControls, QuizLaunchStatus } from './QuizLaunchControls.tsx'
 import { CurrentQuizCard } from './CurrentQuizCard.tsx'
 import { QuizQuestionPickerDialog } from './QuizQuestionPickerDialog.tsx'
 
@@ -53,13 +53,42 @@ function renderCard(state: CurrentGameQuizState | null, overrides: Partial<TestP
   renderWithAppProviders(
     <>
       <CurrentQuizCard {...props} error={props.canManage ? null : props.error} />
-      {props.canManage ? <QuizLaunchControls {...props} /> : null}
+      {props.canManage ? (
+        <>
+          <QuizLaunchStatus
+            open={state?.status === 'open'}
+            modifierOrderingActive={props.modifierOrderingActive ?? false}
+            error={props.error}
+          />
+          <QuizLaunchControls {...props} />
+        </>
+      ) : null}
     </>,
   )
   return props
 }
 
 describe('Quiz cards and launch controls', () => {
+  it.each([false, true])(
+    'keeps Twitch numbering and answer IDs in server order (embedded: %s)',
+    (embedded) => {
+      const options = [
+        { optionId: 'z-option', text: 'Slaughterhouse', displayOrder: 0 },
+        { optionId: 'a-option', text: 'Catfish Grove', displayOrder: 1 },
+      ]
+      const props = renderCard({ ...baseState, options }, { embedded })
+      options.forEach((option, index) => {
+        const button = screen.getByRole('button', { name: option.text, exact: true })
+        expect(button).toHaveTextContent(`!${index + 1}`)
+        fireEvent.click(button)
+        expect(props.onSubmit).toHaveBeenLastCalledWith(
+          baseState.questionSessionId,
+          option.optionId,
+        )
+      })
+    },
+  )
+
   it('allows closing the picker when a phase change blocks launching a question', () => {
     const close = vi.fn()
     renderWithAppProviders(

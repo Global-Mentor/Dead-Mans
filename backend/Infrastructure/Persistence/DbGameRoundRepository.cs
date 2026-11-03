@@ -263,12 +263,7 @@ public sealed partial class DbGameRoundRepository : IGameRoundRepository
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        if (await _dbContext.GameQuizQuestionSessions.AsNoTracking().AnyAsync(
-                session => session.GameId == gameId.Value
-                    && session.Status == GameQuizQuestionSessionStatusValue.Open
-                    && session.ClosesAtUtc > now,
-                cancellationToken
-            ))
+        if (await GameQuizActivity.BlocksModifiersAsync(_dbContext, gameId.Value, now, cancellationToken))
         {
             return new TransitionGameRoundResult(TransitionGameRoundOutcome.InvalidState, null);
         }

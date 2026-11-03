@@ -1,3 +1,4 @@
+using backend.Application.Media;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -259,7 +260,7 @@ public sealed class GameSetupCellMediaContractTests : IClassFixture<TestWebAppli
         var (_, cellId) = await SeedDraftWithSingleCellAsync();
         using var adminClient = CreateAuthenticatedClient([AuthRoleCodes.Admin]);
         using var content = CreateUploadContent(
-            new byte[GameSetupCellMediaLimits.MaxUploadBytes + 1],
+            new byte[ImageUploadLimits.MaxUploadBytes + 1],
             "image/png",
             "oversized.png"
         );

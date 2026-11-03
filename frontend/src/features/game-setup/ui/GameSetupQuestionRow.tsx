@@ -1,3 +1,4 @@
+import { QuizScreenshotImage, huntMapName, quizOptionText } from '../../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +22,15 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
   onToggle: (questionId: string, enabled: boolean) => void
   onPreview: (questionId: string) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const correct = question.image ? question.options.find((option) => option.isCorrect) : null
+  const location =
+    question.image && correct
+      ? `${huntMapName(question.image.mapNames, i18n.language)} · ${quizOptionText(question.image, correct.optionId, correct.text, i18n.language)}`
+      : null
+  const label = question.image
+    ? `${question.text} · ${location} · ${question.questionCode}`
+    : question.text
   return (
     <ItemCard component="li" density="flush" sx={{ minWidth: 0, listStyle: 'none' }}>
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ px: 0.5, py: 0.5 }}>
@@ -29,7 +38,7 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
           sx={{ m: 0, minWidth: 0, flex: 1, alignItems: 'center' }}
           control={
             <FormCheckbox
-              inputProps={{ 'aria-label': question.text }}
+              inputProps={{ 'aria-label': label }}
               checked={selected}
               onChange={(event) => onToggle(question.questionId, event.target.checked)}
             />
@@ -39,6 +48,15 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
               <Typography variant="body2" sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>
                 {question.text}
               </Typography>
+              {location ? (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ overflowWrap: 'anywhere' }}
+                >
+                  {location}
+                </Typography>
+              ) : null}
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -52,6 +70,11 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
             </Stack>
           }
         />
+        {question.image ? (
+          <Box sx={{ width: { xs: 80, sm: 128 }, flexShrink: 0 }}>
+            <QuizScreenshotImage image={question.image} thumbnail />
+          </Box>
+        ) : null}
         <HelpTooltip title={t('gameSetup.questions.preview')}>
           <ActionIcon
             aria-label={t('gameSetup.questions.preview')}

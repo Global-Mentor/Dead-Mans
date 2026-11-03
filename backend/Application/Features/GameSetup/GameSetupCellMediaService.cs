@@ -1,9 +1,11 @@
+using backend.Application.Media;
 using backend.Application.Abstractions;
 using backend.Application.Abstractions.Realtime;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Configuration;
 using backend.Application.Contracts;
 using backend.Application.Realtime;
+using backend.Domain.Persistence;
 using backend.Messaging;
 using Microsoft.Extensions.Options;
 
@@ -43,12 +45,12 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
         CancellationToken cancellationToken = default
     )
     {
-        if (!GameSetupCellMediaValidator.IsAllowedUpload(contentType, contentLength, out var normalizedMimeType))
+        if (!ImageUploadValidator.IsAllowedUpload(contentType, contentLength, out var normalizedMimeType))
         {
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.InvalidFile);
         }
 
-        if (!GameSetupCellMediaValidator.HasMatchingFileSignature(content, normalizedMimeType))
+        if (!ImageUploadValidator.HasMatchingFileSignature(content, normalizedMimeType))
         {
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.InvalidFile);
         }
@@ -64,7 +66,7 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.CellNotFound);
         }
 
-        var extension = GameSetupCellMediaValidator.ResolveExtension(normalizedMimeType);
+        var extension = ImageUploadValidator.ResolveExtension(normalizedMimeType);
         if (extension.Length == 0)
         {
             return new UploadDraftGameSetupCellMediaResult(UploadDraftGameSetupCellMediaOutcome.InvalidFile);
@@ -72,9 +74,12 @@ public sealed class GameSetupCellMediaService : IGameSetupCellMediaService
 
         var existingMedia = await _cellMediaRepository.GetCellMediaAsync(cellId, cancellationToken);
         var mediaAssetId = Guid.NewGuid();
-        var objectKey = GameSetupCellMediaValidator.BuildObjectKey(
-            _storageSettings,
-            draftCell,
+        var objectKey = GameMediaObjectKeyFormat.BuildCardImageKey(
+            _storageSettings.GamesPrefix,
+            draftCell.GameId,
+            _storageSettings.CardsGroup,
+            draftCell.RowIndex,
+            draftCell.ColIndex,
             mediaAssetId,
             extension
         );

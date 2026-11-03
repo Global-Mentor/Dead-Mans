@@ -100,12 +100,16 @@ const translations = {
       adminQuestions: {
         label: 'Questions for the game',
       },
+      adminScreenshots: {
+        label: 'Screenshots for the game',
+      },
       catalogModifiers: {
         label: 'Modifier catalog',
       },
       catalogQuestions: {
         label: 'Question catalog',
       },
+      catalogScreenshots: { label: 'Screenshot catalog' },
       roleAdministration: {
         label: 'User roles',
       },
@@ -214,12 +218,16 @@ const translations = {
       adminQuestions: {
         label: 'Вопросы для игры',
       },
+      adminScreenshots: {
+        label: 'Скриншоты для игры',
+      },
       catalogModifiers: {
         label: 'Каталог модификаторов',
       },
       catalogQuestions: {
         label: 'Каталог вопросов',
       },
+      catalogScreenshots: { label: 'Каталог скриншотов' },
       roleAdministration: {
         label: 'Роли пользователей',
       },
@@ -328,12 +336,16 @@ const translations = {
       adminQuestions: {
         label: 'Питання для гри',
       },
+      adminScreenshots: {
+        label: 'Знімки для гри',
+      },
       catalogModifiers: {
         label: 'Каталог модифікаторів',
       },
       catalogQuestions: {
         label: 'Каталог питань',
       },
+      catalogScreenshots: { label: 'Каталог знімків екрана' },
       roleAdministration: {
         label: 'Ролі користувачів',
       },
@@ -442,12 +454,16 @@ const translations = {
       adminQuestions: {
         label: 'Pytania do gry',
       },
+      adminScreenshots: {
+        label: 'Zrzuty ekranu do gry',
+      },
       catalogModifiers: {
         label: 'Katalog modyfikatorów',
       },
       catalogQuestions: {
         label: 'Katalog pytań',
       },
+      catalogScreenshots: { label: 'Katalog zrzutów ekranu' },
       roleAdministration: {
         label: 'Role użytkowników',
       },

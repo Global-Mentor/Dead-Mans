@@ -112,6 +112,7 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
                             x.SelectedOptionTextSnapshot,
                             x.CapturedByUserId
                         )
+                        { Image = backend.Domain.Questions.QuizImageSnapshot.FromJson(x.QuestionSession.ImageSnapshotJson) }
                     }
             )
             .ToArrayAsync(cancellationToken);

@@ -446,6 +446,9 @@ public static class AppMessages
         public const string ModifierResolutionPerActivationRequired =
             "resolution.per_activation_required";
         public const string GameQuestionInvalidRequest = "game_question.invalid_request";
+        public const string GameQuestionInvalidScreenshot = "game_question.invalid_screenshot";
+        public const string GameQuestionScreenshotUploadConflict = "game_question.screenshot_upload_conflict";
+        public const string GameQuizPresentationBusy = "game_quiz.presentation_busy";
         public const string GameQuestionDuplicateCode = "game_question.duplicate_code";
         public const string GameQuestionNotFound = "game_question.not_found";
         public const string GameQuestionCategoryNotFound = "game_question.category_not_found";

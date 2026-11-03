@@ -33,7 +33,7 @@ public sealed partial class GameQuestionController
             includeDisabled,
             cancellationToken
         );
-        return Ok(catalog.Select(x => x.ToDto()).ToArray());
+        return Ok(catalog.Select(x => x.ToDto(_mediaBaseUrl)).ToArray());
     }
 
     [HttpGet("categories")]

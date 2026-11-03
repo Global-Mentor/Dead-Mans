@@ -27,7 +27,7 @@ public sealed class GameOverlayService(IGameOverlayRepository repository,
     public async Task<GameOverlaySnapshot> ReadAsync(string key, CancellationToken cancellationToken)
     {
         var frame = await repository.ReadAsync(cancellationToken);
-        if (frame.Leaderboard is not null || frame.QuizLeaderboard is not null) return frame;
+        if (frame.QuizQuestion is not null || frame.Leaderboard is not null || frame.QuizLeaderboard is not null) return frame;
         return await repository.IsTestEnabledAsync(Hash(key), cancellationToken)
             ? new GameOverlaySnapshot(null, "test", null, null)
             : frame;

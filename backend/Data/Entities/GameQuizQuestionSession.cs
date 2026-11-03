@@ -3,6 +3,8 @@ namespace backend.Data.Entities;
 
 public class GameQuizQuestionSession
 {
+    public string? ImageSnapshotJson { get; set; }
+
     public Guid Id { get; set; }
 
     public Guid GameId { get; set; }

@@ -1,10 +1,7 @@
-using backend.Application.Abstractions.Repositories;
-using backend.Application.Configuration;
-using backend.Domain.Persistence;
 
-namespace backend.Application.Features.GameSetup;
+namespace backend.Application.Media;
 
-internal static class GameSetupCellMediaValidator
+public static class ImageUploadValidator
 {
     private const int MaximumSignatureLength = 12;
     private static ReadOnlySpan<byte> JpegSignature => [0xff, 0xd8, 0xff];
@@ -14,13 +11,13 @@ internal static class GameSetupCellMediaValidator
     public static bool IsAllowedUpload(string? contentType, long length, out string normalizedMimeType)
     {
         normalizedMimeType = string.Empty;
-        if (length <= 0 || length > GameSetupCellMediaLimits.MaxUploadBytes)
+        if (length <= 0 || length > ImageUploadLimits.MaxUploadBytes)
         {
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(contentType)
-            || !GameSetupCellMediaLimits.AllowedMimeTypes.Contains(contentType.Trim()))
+            || !ImageUploadLimits.AllowedMimeTypes.Contains(contentType.Trim()))
         {
             return false;
         }
@@ -70,24 +67,6 @@ internal static class GameSetupCellMediaValidator
                 && availableHeader[8..12].SequenceEqual("WEBP"u8),
             _ => false,
         };
-    }
-
-    public static string BuildObjectKey(
-        MediaStorageSettings storageSettings,
-        GameSetupDraftCellRef draftCell,
-        Guid mediaAssetId,
-        string extension
-    )
-    {
-        return GameMediaObjectKeyFormat.BuildCardImageKey(
-            storageSettings.GamesPrefix,
-            draftCell.GameId,
-            storageSettings.CardsGroup,
-            draftCell.RowIndex,
-            draftCell.ColIndex,
-            mediaAssetId,
-            extension
-        );
     }
 
     public static string ResolveExtension(string mimeType)

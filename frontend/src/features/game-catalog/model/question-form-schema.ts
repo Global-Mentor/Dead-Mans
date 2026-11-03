@@ -14,15 +14,20 @@ interface QuestionFormSchemaMessages {
   correctAnswer: string
 }
 
+export function createQuestionTextSchema(
+  messages: Pick<QuestionFormSchemaMessages, 'required' | 'tooLong'>,
+) {
+  return z.string().trim().min(1, messages.required).max(2000, messages.tooLong)
+}
+
 export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
   const answerValueSchema = z
     .string()
     .transform(trimQuestionAnswer)
     .pipe(z.string().min(1, messages.required).max(500, messages.tooLong))
 
-  return z.object({
-    categoryId: z.string().trim().min(1, messages.required),
-    text: z.string().trim().min(1, messages.required).max(2000, messages.tooLong),
+  return createQuestionMetadataSchema(messages).extend({
+    text: createQuestionTextSchema(messages),
     options: z
       .array(z.object({ text: answerValueSchema, isCorrect: z.boolean() }))
       .min(minQuestionAnswers, messages.required)
@@ -51,6 +56,14 @@ export function createQuestionFormSchema(messages: QuestionFormSchemaMessages) {
           context.addIssue({ code: z.ZodIssueCode.custom, message: messages.correctAnswer })
         }
       }),
+  })
+}
+
+export function createQuestionMetadataSchema(
+  messages: Pick<QuestionFormSchemaMessages, 'required' | 'number'>,
+) {
+  return z.object({
+    categoryId: z.string().trim().min(1, messages.required),
     reward: z
       .string()
       .regex(/^\d+$/, messages.number)

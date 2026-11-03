@@ -1,3 +1,4 @@
+using backend.Application.Media;
 using backend.Application.Abstractions;
 using backend.Application.Features.GameSetup;
 using backend.Controllers;
@@ -13,7 +14,7 @@ public sealed class GameSetupCellMediaControllerTests
     {
         var service = new TrackingGameSetupCellMediaService();
         var controller = CreateController(service);
-        var file = CreateFile(GameSetupCellMediaLimits.MaxUploadBytes + 1);
+        var file = CreateFile(ImageUploadLimits.MaxUploadBytes + 1);
 
         var result = await controller.Upload(Guid.NewGuid(), file, CancellationToken.None);
 

@@ -158,6 +158,7 @@ public sealed partial class DbGameLifecyclePersistence : IGameLifecyclePersisten
             enabledQuestion.QuestionCodeSnapshot = question.ExternalCode;
             enabledQuestion.CategoryNameSnapshot = question.CategoryDefinition?.Name ?? string.Empty;
             enabledQuestion.QuestionTextSnapshot = question.Text;
+            enabledQuestion.ImageSnapshotJson = question.ImageSnapshotJson;
             var options = question.Options.OrderBy(option => option.SortOrder).ToArray();
             enabledQuestion.OptionIdsSnapshot = options
                 .Select(option => option.Id)

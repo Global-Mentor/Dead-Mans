@@ -132,6 +132,10 @@ export function useGameSetupPage() {
     })
   }
 
+  const setScreenshotAnswerDuration = (seconds: number) => {
+    updateDraft((current) => ({ ...current, screenshotAnswerDurationSeconds: seconds }))
+  }
+
   const setQuizAnswerDuration = (seconds: number) => {
     updateDraft((current) => ({
       ...current,
@@ -162,6 +166,7 @@ export function useGameSetupPage() {
     toggleQuestion,
     setQuestionsEnabled,
     setQuizAnswerDuration,
+    setScreenshotAnswerDuration,
     isCreating: draft.isCreating,
     isResetting: draft.isResetting,
     isSaving: save.isSaving,

@@ -14,6 +14,7 @@ import { gameSetupDraftQueryOptions } from '../features/game-setup/index.ts'
 import {
   adminModifiersRoute,
   adminQuestionsRoute,
+  adminScreenshotsRoute,
   hasAccessToPanelRoute,
   panelRoutes,
   type PanelAdminSection,
@@ -36,7 +37,11 @@ const adminSections: ReadonlyArray<{
   { id: 'system', labelKey: 'navigation.adminSections.system' },
 ]
 
-const draftDependentRouteIds = new Set([adminModifiersRoute.id, adminQuestionsRoute.id])
+const draftDependentRouteIds = new Set([
+  adminModifiersRoute.id,
+  adminQuestionsRoute.id,
+  adminScreenshotsRoute.id,
+])
 
 const sectionIconPaths: Record<PanelAdminSection, string> = {
   'current-game': 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',

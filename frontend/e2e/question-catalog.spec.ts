@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
+import { screenshotQuestion, screenshotLocationFixture } from './support/screenshot-fixture.ts'
 import type {
   CreateGameQuestionRequest,
   GameQuestionCatalogItem,
@@ -7,6 +8,93 @@ import type {
 } from '../src/shared/api/contracts/index.ts'
 
 test.use({ reducedMotion: 'reduce' })
+
+for (const width of [390, 768, 1440]) {
+  test(`screenshot batch retries only failed files with their original identity at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockCatalog(page)
+    await page.route('**/api/game/questions/hunt-maps', (route) =>
+      route.fulfill({
+        json: [
+          {
+            id: 'map',
+            code: 'cemetery',
+            names: { ...screenshotQuestion.image!.mapNames, ru: 'БОЛОТО СТИЛЛУОТЕР' },
+            locations: [
+              {
+                id: 'location',
+                code: 'winery',
+                names: screenshotQuestion.image!.optionNames['location-0'],
+              },
+            ],
+          },
+        ],
+      }),
+    )
+    const requests: string[] = []
+    const texts: string[] = []
+    let release: () => void = () => {}
+    await page.route('**/api/game/questions/screenshots', async (route) => {
+      const body = route.request().postDataBuffer()!.toString()
+      texts.push(body.match(/name="text"\r\n\r\n([^\r]+)/)![1]!)
+      requests.push(body.match(/name="requestId"\r\n\r\n([^\r]+)/)![1]!)
+      if (requests.length === 1)
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      await route.fulfill(
+        requests.length === 2
+          ? { status: 503, json: { code: 'server_error' } }
+          : { status: 201, json: { questionId: requests.at(-1) } },
+      )
+    })
+    await page.goto('/panel/catalog-screenshots')
+    await page.getByRole('button', { name: 'Загрузить скриншоты', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Загрузить скриншоты', exact: true })
+    await dialog.getByRole('combobox', { name: /^Карта/ }).click()
+    await page.getByRole('option', { name: 'Болото Стиллуотер', exact: true }).click()
+    await dialog.getByRole('combobox', { name: /^Локация/ }).click()
+    await page.getByRole('option', { name: 'Винный завод', exact: true }).click()
+    const question = dialog.getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    await question.fill('Где находится эта башня?')
+    const png = await readFile('public/brand/share-card.png')
+    await dialog.locator('input[type=file]').setInputFiles([
+      { name: 'first.png', mimeType: 'image/png', buffer: png },
+      { name: 'second.png', mimeType: 'image/png', buffer: png },
+    ])
+    await expect(dialog.getByRole('img', { name: 'first.png', exact: true })).toBeVisible()
+    await dialog
+      .getByRole('button', { name: 'Загрузить / повторить оставшиеся', exact: true })
+      .click()
+    await expect.poll(() => requests.length).toBe(1)
+    await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true })).toBeDisabled()
+    await expect(dialog.getByRole('combobox', { name: /^Локация/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    await expect(question).toBeDisabled()
+    release()
+    await expect(dialog.getByText('Загружено 1 из 2', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('Ошибка', { exact: true })).toBeVisible()
+    expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
+    await dialog.screenshot({
+      path: info.outputPath('screenshot-upload-retry.png'),
+      animations: 'disabled',
+    })
+    await dialog
+      .getByRole('button', { name: 'Загрузить / повторить оставшиеся', exact: true })
+      .click()
+    await expect(dialog.getByText('Загружено 2 из 2', { exact: true })).toBeVisible()
+    expect(requests).toHaveLength(3)
+    expect(texts).toEqual(Array(3).fill('Где находится эта башня?'))
+    expect(requests[0]).not.toBe(requests[1])
+    expect(requests[1]).toBe(requests[2])
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+  })
+}
 
 const categories: GameQuestionCategoryItem[] = [
   { id: 'geo', name: 'География', questionCount: 12, isProtected: false },
@@ -40,6 +128,43 @@ const catalog: GameQuestionCatalogItem[] = Array.from({ length: 24 }, (_, index)
     { optionId: 'd-' + index, text: 'Вроцлав', isCorrect: false, sortOrder: 3 },
   ],
 }))
+
+test('large screenshot catalogue loads offscreen images only when approached', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const state = await mockCatalog(page)
+  state.items = Array.from({ length: 100 }, (_, index) => ({
+    ...catalog[0]!,
+    questionId: `image-${index}`,
+    questionCode: `image-${index}`,
+    image: {
+      ...screenshotQuestion.image!,
+      imageUrl: `http://localhost:5180/review-images/${index}.svg`,
+    },
+  }))
+  const loaded = new Set<string>()
+  await page.route('**/review-images/*.svg', (route) => {
+    loaded.add(route.request().url())
+    return route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" fill="#526558"/></svg>',
+    })
+  })
+  await page.goto('/panel/catalog-screenshots')
+  const list = page.getByTestId('question-catalog-list')
+  // Loading images are hidden from the accessibility tree until ImageFrame has loaded them.
+  const images = list.locator('img[alt="Скриншот локации"]')
+  await expect(images).toHaveCount(100)
+  await expect
+    .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBe(1920)
+  expect(loaded.size).toBeLessThan(100)
+  const initiallyLoaded = loaded.size
+  await images.last().scrollIntoViewIfNeeded()
+  await expect
+    .poll(() => images.last().evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBe(1920)
+  expect(loaded.size).toBeGreaterThan(initiallyLoaded)
+})
 
 async function mockCatalog(page: Page, language = 'ru') {
   await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), language)
@@ -174,6 +299,97 @@ async function mockCatalog(page: Page, language = 'ru') {
   )
   return state
 }
+
+for (const width of [390, 768, 1440]) {
+  test(`populated screenshot catalog and dedicated editor at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await mockCatalog(page)
+    state.items = [
+      {
+        ...catalog[0]!,
+        image: screenshotQuestion.image,
+        options: screenshotQuestion.options.map((option, index) => ({
+          ...option,
+          isCorrect: index === 0,
+          sortOrder: index,
+        })),
+      },
+    ]
+    await page.goto('/panel/catalog-screenshots')
+    const list = page.getByTestId('question-catalog-list')
+    await expect(list.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    const preview = await list.getByRole('img').boundingBox()
+    const title = await list.getByText(state.items[0]!.text, { exact: true }).boundingBox()
+    expect(preview!.x).toBeGreaterThanOrEqual(title!.x + title!.width)
+    await page.screenshot({ path: info.outputPath('screenshot-catalog.png') })
+    if (width < 1200) await list.getByRole('button').click()
+    await page
+      .getByTestId('question-catalog-details')
+      .getByRole('button', { name: 'Изменить', exact: true })
+      .click()
+    const editor = page.getByRole('dialog', { name: 'Изменить скриншот', exact: true })
+    await expect(editor.getByRole('textbox', { name: 'Награда', exact: true })).toBeVisible()
+    await expect(editor.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: info.outputPath('screenshot-editor.png') })
+  })
+}
+
+test('screenshot metadata can be edited without replacing its six answer options', async ({
+  page,
+}) => {
+  const state = await mockCatalog(page)
+  const visual: GameQuestionCatalogItem = {
+    ...catalog[0]!,
+    image: screenshotQuestion.image,
+    text: screenshotQuestion.text,
+    questionCode: 'screen',
+    options: screenshotQuestion.options.map((option, index) => ({
+      optionId: option.optionId,
+      text: option.text,
+      isCorrect: index === 0,
+      sortOrder: index,
+    })),
+  }
+  state.items = [visual, catalog[1]!]
+  await page.goto('/panel/catalog-screenshots')
+  await expect(page.getByRole('heading', { name: 'Каталог скриншотов', exact: true })).toBeVisible()
+  await expect(
+    page.getByTestId('question-catalog-list').getByText(catalog[1]!.text, { exact: true }),
+  ).toHaveCount(0)
+  await page.getByTestId('question-catalog-list').getByRole('button').click()
+  await page
+    .getByTestId('question-catalog-details')
+    .getByRole('button', { name: 'Изменить', exact: true })
+    .click()
+  const editor = page.getByRole('dialog', { name: 'Изменить скриншот' })
+  await expect(editor.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await editor.getByRole('textbox', { name: 'Награда', exact: true }).fill('42')
+  await editor.getByRole('textbox', { name: 'Приоритет', exact: true }).fill('-5')
+  await editor
+    .getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    .fill('Какая локация за мельницей?')
+  await editor.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText('Награда: 42', { exact: true })).toBeVisible()
+  await page.goto('/panel/catalog-questions')
+  await expect(
+    page.getByTestId('question-catalog-list').getByText(catalog[1]!.text, { exact: true }),
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Загрузить скриншоты', exact: true })).toHaveCount(
+    0,
+  )
+  expect(state.saves).toHaveLength(1)
+  expect(state.saves[0]!.reward).toBe(42)
+  expect(state.saves[0]!.priority).toBe(-5)
+  expect(state.saves[0]!.text).toBe('Какая локация за мельницей?')
+  expect(state.saves[0]!.options).toEqual(
+    visual.options.map(({ text, isCorrect }) => ({ text, isCorrect })),
+  )
+})
 
 for (const viewport of [
   { width: 1440, height: 1000 },
@@ -783,3 +999,77 @@ test('failed JSON import leaves the catalog intact and the same file can be retr
   await expect(page.getByRole('button', { name: 'Развернуть импорт из JSON' })).toBeEnabled()
   await expect(page.getByTestId('question-catalog-list').getByRole('button')).toHaveCount(24)
 })
+
+for (const width of [390, 768, 1440, 1536, 1920]) {
+  test(`screenshot catalogue filters by map then assigned location at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: width >= 1536 ? 1080 : 900 })
+    const state = await mockCatalog(page)
+    state.items = [
+      {
+        ...catalog[0]!,
+        ...screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+      },
+      {
+        ...catalog[1]!,
+        ...screenshotLocationFixture('bayou', 'port', 'Stillwater Bayou', 'Port Reeker'),
+      },
+      {
+        ...catalog[2]!,
+        ...screenshotLocationFixture('bayou', 'slaughter', 'Stillwater Bayou', 'Slaughterhouse'),
+      },
+      {
+        ...catalog[3]!,
+        ...screenshotLocationFixture('lawson', 'iron', 'Lawson Delta', 'Iron Works'),
+      },
+    ]
+    await page.goto('/panel/catalog-screenshots')
+    const rows = page.getByTestId('question-catalog-list').getByRole('listitem')
+    const map = page.getByRole('combobox', { name: /^Карта / })
+    const location = page.getByRole('combobox', { name: /^Локация / })
+    await expect(rows).toHaveCount(4)
+    if (width >= 1536) {
+      const fields = [
+        page.getByRole('textbox', { name: 'Поиск скриншотов', exact: true }),
+        map,
+        location,
+        page.getByRole('combobox', { name: /^Категории/ }),
+        page.getByRole('combobox', { name: /^Доступность/ }),
+        page.getByRole('combobox', { name: /^Сортировка/ }),
+      ]
+      const positions = await Promise.all(
+        fields.map((field) =>
+          field.evaluate(
+            (element) => element.closest('.MuiFormControl-root')!.getBoundingClientRect().top,
+          ),
+        ),
+      )
+      expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2)
+      expect((await page.getByTestId('question-catalog-list').boundingBox())!.y).toBeLessThan(230)
+    }
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await map.click()
+    await page.getByRole('option', { name: 'Stillwater Bayou', exact: true }).click()
+    await expect(rows).toHaveCount(3)
+    await location.click()
+    await expect(page.getByRole('option', { name: 'Darrow Livestock', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('option', { name: 'Iron Works', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Port Reeker', exact: true }).click()
+    await expect(rows).toHaveCount(2)
+    await page.screenshot({ path: info.outputPath('catalog-location-filter.png') })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await map.click()
+    await page.getByRole('option', { name: 'Lawson Delta', exact: true }).click()
+    await expect(location).toContainText('Все локации')
+    await expect(rows).toHaveCount(1)
+    await expect(rows).toContainText('Iron Works')
+    await location.click()
+    await page.getByRole('option', { name: 'Iron Works', exact: true }).click()
+    if (width < 600) await page.getByTestId('question-catalog-filters').getByRole('button').click()
+    await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).click()
+    await expect(map).toContainText('Все карты')
+    await expect(location).toHaveAttribute('aria-disabled', 'true')
+    await expect(rows).toHaveCount(4)
+  })
+}

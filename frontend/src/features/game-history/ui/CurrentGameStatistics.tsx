@@ -26,17 +26,17 @@ type MetricValue = readonly [
 export function CurrentGameStatistics({
   game,
   boardLabels,
-  activeQuestionId = null,
+  activeQuestion = null,
   children,
 }: {
   game: components['schemas']['GameHistoryGameDetailsDto']
   boardLabels: GameHistoryBoardLabels | undefined
-  activeQuestionId?: string | null
+  activeQuestion?: Parameters<typeof buildGameStatistics>[1]
   children: ReactNode
 }) {
   const { t, i18n } = useTranslation()
-  const stats = buildGameStatistics(game, activeQuestionId)
-  const format = ([, value, unit]: MetricValue) => {
+  const stats = buildGameStatistics(game, activeQuestion)
+  const format = (value: MetricValue[1], unit?: MetricValue[2]) => {
     if (value === null) return t('gameHistory.notAvailable')
     if (typeof value === 'string') return value
     const number = value.toLocaleString(i18n.resolvedLanguage, { maximumFractionDigits: 1 })
@@ -51,7 +51,7 @@ export function CurrentGameStatistics({
       density="compact"
       emphasis="label"
       label={t(`gameHistory.statistics.${item[0]}`)}
-      value={format(item)}
+      value={format(item[1], item[2])}
       {...(item[3] ? { help: t(`gameHistory.statistics.${item[3]}`) } : {})}
     />
   )
@@ -172,6 +172,54 @@ export function CurrentGameStatistics({
             }
           >
             {pairedColumns(quizColumns)}
+            <RoundBriefingDivider sx={{ my: 1.5 }} />
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' },
+                gap: 3,
+              }}
+            >
+              {(['text', 'screenshot'] as const).map((formatName) => {
+                const summary = stats.quiz.formats[formatName]
+                const values = [
+                  ['asked', summary.asked],
+                  ['participants', summary.players],
+                  ['correct', summary.correct],
+                  ['incorrect', summary.incorrect],
+                  ['accuracy', summary.accuracy],
+                  ['earned', summary.earned],
+                ] as const
+                return (
+                  <Box
+                    component="section"
+                    key={formatName}
+                    aria-label={t(
+                      `common.quizStandings.${formatName === 'text' ? 'text' : 'screenshots'}`,
+                    )}
+                    sx={{ minWidth: 0 }}
+                  >
+                    <Typography component="h4" variant="body1" fontWeight={700} textAlign="center">
+                      {t(`common.quizStandings.${formatName === 'text' ? 'text' : 'screenshots'}`)}
+                    </Typography>
+                    {values.map(([key, value]) => (
+                      <Metric
+                        key={key}
+                        appearance="row"
+                        density="compact"
+                        emphasis="label"
+                        label={t(`common.quizStatistics.${key}`)}
+                        value={format(
+                          value,
+                          key === 'accuracy' ? 'percent' : key === 'earned' ? 'points' : null,
+                        )}
+                        {...(key === 'asked' ? { help: t('common.quizStatistics.askedHelp') } : {})}
+                      />
+                    ))}
+                  </Box>
+                )
+              })}
+            </Box>
           </RoundBriefingPanel>
           <RoundBriefingPanel
             component="section"
@@ -254,11 +302,7 @@ export function CurrentGameStatistics({
                         sx={{ m: 0, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}
                         data-testid="record-value"
                       >
-                        {format(
-                          kind === 'score'
-                            ? ['record_score', record?.value ?? null, 'points']
-                            : ['record_score', record?.value ?? null],
-                        )}
+                        {format(record?.value ?? null, kind === 'score' ? 'points' : null)}
                       </Typography>
                     </DetailBlock>
                   </Box>

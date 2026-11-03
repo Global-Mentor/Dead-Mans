@@ -1,4 +1,5 @@
 import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/index.ts'
+import { quizImageSearchTerms } from '../../../shared/game-ui/index.ts'
 
 export type QuestionCatalogStatus = 'all' | 'enabled' | 'disabled'
 export type QuestionCatalogSort =
@@ -27,6 +28,7 @@ export function filterCatalogQuestions(
             question.text,
             question.categoryName,
             question.questionCode,
+            ...quizImageSearchTerms(question.image, locale),
             ...question.options.map((option) => option.text),
           ].some((value) => value?.toLocaleLowerCase(locale).includes(query))),
     )

@@ -7,7 +7,7 @@ public interface ITwitchBotService
     bool IsEnabled { get; }
     Task<TwitchBotStatus> GetStatusAsync(CancellationToken cancellationToken = default);
     Task<bool> EnsureSubscriptionAsync(CancellationToken cancellationToken = default);
-    Task<PrepareTwitchQuizQuestionResult> PrepareQuestionAsync(Guid? questionId, CancellationToken cancellationToken = default);
+    Task<PrepareTwitchQuizQuestionResult> PrepareQuestionAsync(Guid? questionId, bool screenshot = false, CancellationToken cancellationToken = default);
     Task<TwitchQuizPublicationState?> RetryPublicationAsync(Guid publicationId, CancellationToken cancellationToken = default);
     Task<TwitchQuizPublicationState?> CancelPublicationAsync(Guid publicationId, CancellationToken cancellationToken = default);
     Task<TwitchQuizPublicationState?> SkipOutcomeAsync(Guid publicationId, CancellationToken cancellationToken = default);

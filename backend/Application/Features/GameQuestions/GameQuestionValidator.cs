@@ -18,15 +18,10 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
-        if (input.Text?.Contains('\0') == true)
-        {
-            return false;
-        }
-        var text = TwitchQuizMessageFormatter.Normalize(input.Text ?? string.Empty);
+        if (!TryNormalizeText(input.Text, out var text)) return false;
         var externalCode = (input.ExternalCode ?? string.Empty).Trim();
         if (!TryNormalizeOptions(input.Options, out var options)
             || input.CategoryId == Guid.Empty
-            || text.Length is 0 or > MaxTextLength
             || input.Reward < 0
             || externalCode.Length > MaxExternalCodeLength
             || externalCode.Contains('\0')
@@ -51,14 +46,9 @@ internal static class GameQuestionValidator
     )
     {
         normalized = input;
-        if (input.Text?.Contains('\0') == true)
-        {
-            return false;
-        }
-        var text = TwitchQuizMessageFormatter.Normalize(input.Text ?? string.Empty);
+        if (!TryNormalizeText(input.Text, out var text)) return false;
         if (!TryNormalizeOptions(input.Options, out var options)
             || input.CategoryId == Guid.Empty
-            || text.Length is 0 or > MaxTextLength
             || input.Reward < 0
             || !TwitchQuizMessageFormatter.FormatForValidation(
                 text, options.Select(x => x.Text).ToArray(), 3600, input.Reward).IsCompatible)
@@ -68,6 +58,12 @@ internal static class GameQuestionValidator
 
         normalized = input with { Text = text, Options = options };
         return true;
+    }
+
+    public static bool TryNormalizeText(string? input, out string text)
+    {
+        text = TwitchQuizMessageFormatter.Normalize(input ?? string.Empty);
+        return input?.Contains('\0') != true && text.Length is > 0 and <= MaxTextLength;
     }
 
     private static bool TryNormalizeOptions(

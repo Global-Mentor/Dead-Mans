@@ -61,7 +61,7 @@ public sealed partial class GameQuestionController
         return result.Outcome switch
         {
             CreateGameQuestionOutcome.Created when result.Question is not null =>
-                CreatedAtAction(nameof(GetCatalog), null, result.Question.ToDto()),
+                CreatedAtAction(nameof(GetCatalog), null, result.Question.ToDto(_mediaBaseUrl)),
             CreateGameQuestionOutcome.CategoryNotFound => this.NotFoundError(
                 AppMessages.Client.GameQuestionCategoryNotFound,
                 AppMessages.ErrorCodes.GameQuestionCategoryNotFound
@@ -106,7 +106,7 @@ public sealed partial class GameQuestionController
         return result.Outcome switch
         {
             UpdateGameQuestionOutcome.Updated when result.Question is not null =>
-                Ok(result.Question.ToDto()),
+                Ok(result.Question.ToDto(_mediaBaseUrl)),
             UpdateGameQuestionOutcome.CategoryNotFound => this.NotFoundError(
                 AppMessages.Client.GameQuestionCategoryNotFound,
                 AppMessages.ErrorCodes.GameQuestionCategoryNotFound

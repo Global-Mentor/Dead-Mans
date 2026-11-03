@@ -375,7 +375,7 @@ export function GameModifiersPage() {
               gameId={snapshot.gameId}
               side="left"
               showForManagers
-              suspended={actions.isConfirming}
+              suspended={actions.isConfirming || state?.isOrderingOpen === true}
             />
           ) : null}
         </PageShell>

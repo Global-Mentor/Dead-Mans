@@ -45,6 +45,52 @@ const session = {
 }
 
 describe('quiz submission history', () => {
+  it('preserves numbered answer order in history without moving the correct answer first', () => {
+    renderWithAppProviders(
+      <QuizQuestionSessionHistoryItem
+        questionSession={{
+          ...session,
+          options: [
+            { optionId: 'wrong', text: 'London', displayOrder: 0 },
+            { optionId: 'right', text: 'Paris', displayOrder: 1 },
+          ],
+        }}
+        currentUserId="bob"
+        showOptions
+      />,
+    )
+    expect(screen.getByRole('button', { name: /London/ })).toHaveTextContent('!1')
+    expect(screen.getByRole('button', { name: /Paris/ })).toHaveTextContent('!2')
+  })
+
+  it.each(['en', 'ru', 'uk', 'pl'] as const)(
+    'localizes every participant screenshot answer in %s',
+    async (locale) => {
+      await i18n.changeLanguage(locale)
+      const names = {
+        en: 'Port Reeker',
+        ru: 'Порт-Рикер',
+        uk: 'Порт-Рікер',
+        pl: 'Port Reeker',
+      }
+      const view = renderWithAppProviders(
+        <QuizQuestionSessionHistoryItem
+          questionSession={{
+            ...session,
+            image: { imageUrl: '/test.png', mapNames: names, optionNames: { right: names } },
+            submissions: [session.submissions[1]!],
+          }}
+          currentUserId={null}
+          resultsOnly
+        />,
+      )
+      const result = view.container.querySelector('[data-answer-result]')
+      expect(result).toHaveTextContent(`Alice: ${names[locale]}`)
+      expect(result).not.toHaveTextContent('Paris')
+      await i18n.changeLanguage('en')
+    },
+  )
+
   it('preserves each participant and the personal result after the next question starts', () => {
     const view = renderWithAppProviders(
       <QuizQuestionSessionHistoryItem questionSession={session} currentUserId="alice" />,
@@ -80,4 +126,19 @@ describe('quiz submission history', () => {
       i18n.t('gameQuiz.resultCorrect', { points: 5 }),
     )
   })
+})
+
+it('renders the saved screenshot prompt rather than a template', () => {
+  const names = { en: 'Location', ru: 'Локация', uk: 'Локація', pl: 'Lokacja' }
+  renderWithAppProviders(
+    <QuizQuestionSessionHistoryItem
+      questionSession={{
+        ...session,
+        questionText: 'Where is this tower?',
+        image: { imageUrl: '/test.png', mapNames: names, optionNames: { right: names } },
+      }}
+      currentUserId={null}
+    />,
+  )
+  expect(screen.getByText('Where is this tower?')).toBeInTheDocument()
 })

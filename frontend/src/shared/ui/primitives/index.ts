@@ -36,3 +36,5 @@ export * from './fields/FormNumberField.tsx'
 export * from './fields/ControlledFormNumberField.tsx'
 export * from './media/ImageFrame.tsx'
 export * from './status/LockIcon.tsx'
+
+export { ChoiceMarker } from './selects/ChoiceMarker.tsx'

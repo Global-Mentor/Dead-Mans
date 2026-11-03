@@ -20,6 +20,14 @@ dotnet tool restore
 dotnet tool run dotnet-ef migrations has-pending-model-changes --project backend/backend.csproj --startup-project backend/backend.csproj --no-build
 ```
 
+При создании миграции target project - `backend.Data`, где находятся DbContext и
+миграции; startup project - web host. Сначала соберите выбранную конфигурацию:
+
+```bash
+dotnet build backend/backend.slnx --configuration Release
+dotnet tool run dotnet-ef migrations add MigrationName --project backend/backend.Data.csproj --startup-project backend/backend.csproj --configuration Release --no-build --output-dir Data/Migrations --namespace backend.Data.Migrations
+```
+
 ## First-Time Setup
 
 ### Windows (bat wrappers in repo root)

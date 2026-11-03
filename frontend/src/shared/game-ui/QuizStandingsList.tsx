@@ -8,11 +8,13 @@ export function QuizStandingsList({
   compact = true,
   currentUserId,
   rankOffset = 0,
+  valueMode = 'earned',
 }: {
   entries: readonly QuizStanding[]
   compact?: boolean
   currentUserId?: string
   rankOffset?: number
+  valueMode?: 'earned' | 'available'
 }) {
   const { t } = useTranslation()
   if (!entries.length) {
@@ -27,24 +29,25 @@ export function QuizStandingsList({
       density={compact ? 'compact' : 'default'}
       alignment={compact ? 'center' : 'default'}
       highlightAppearance="selected"
-      {...(compact ? { detailLabel: t('common.quizStandings.answers') } : {})}
+      detailLabels={[t('common.quizStandings.text'), t('common.quizStandings.screenshots')]}
       label={t('common.quizStandings.title')}
       rankLabel={t('common.teamStandings.rank')}
       nameLabel={t('common.entities.player')}
-      valueLabel={t('common.quizStandings.earned')}
+      valueLabel={t(`common.quizStandings.${valueMode}`)}
       rowTestId="quiz-leaderboard-row"
       entries={entries.map((entry, index) => ({
         id: entry.userId ?? String(index + rankOffset),
         rank: index + rankOffset + 1,
         highlighted: Boolean(compact && currentUserId && entry.userId === currentUserId),
         name: entry.displayName,
-        value: t('common.quizStandings.points', { points: entry.points }),
-        detail: t(
-          compact ? 'common.quizStandings.answerRatio' : 'common.quizStandings.answerStats',
-          {
-            attempts: entry.attempts,
-            correct: entry.correctAnswers,
-          },
+        value: t('common.quizStandings.points', {
+          points: valueMode === 'available' ? (entry.availablePoints ?? 0) : entry.points,
+        }),
+        details: [entry.textStatistics, entry.screenshotStatistics].map((statistics) =>
+          t('common.quizStandings.answerRatio', {
+            correct: statistics?.correctAnswers ?? 0,
+            attempts: statistics?.attempts ?? 0,
+          }),
         ),
       }))}
     />

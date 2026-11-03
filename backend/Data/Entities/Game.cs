@@ -30,6 +30,8 @@ public class Game
 
     public int? TeamLimit { get; set; } = 10;
 
+    public int ScreenshotAnswerDurationSeconds { get; set; } = 60;
+
     public int QuizAnswerDurationSeconds { get; set; } = 60;
 
     public Guid? ActiveTeamId { get; set; }

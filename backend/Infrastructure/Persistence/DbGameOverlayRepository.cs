@@ -92,6 +92,18 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
         {
             return new GameOverlaySnapshot(null, "idle", null, null);
         }
+        var visualSession = await db.Set<GameQuizPresentation>().AsNoTracking().Where(x => x.GameId == game.Id)
+            .Select(x => x.QuestionSession).SingleOrDefaultAsync(cancellationToken);
+        if (visualSession is not null)
+        {
+            var counts = visualSession.Status == GameQuizQuestionSessionStatusValue.Closed
+                ? await db.GameQuizSubmissions.AsNoTracking().Where(x => x.QuestionSessionId == visualSession.Id)
+                    .GroupBy(x => x.SelectedOptionId).Select(g => new { Id = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.Id, x => x.Count, cancellationToken)
+                : new Dictionary<Guid, int>();
+            return new GameOverlaySnapshot(game.Id.ToString(), "screenshot", null, null,
+                QuizQuestion: DbGameQuizRepository.MapCurrentState(visualSession, null, counts) with { PresentationVisible = true });
+        }
         if (game.OverlayLeaderboardEnabled && game.OverlayLeaderboardKind == "quiz")
         {
             var quiz = await ReadQuizLeaderboardAsync(game.Id, cancellationToken);

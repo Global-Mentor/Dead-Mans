@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using backend.Application.Contracts;
+using backend.Domain.Questions;
 using backend.Data.Entities;
 using backend.Domain.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -87,7 +88,7 @@ public sealed partial class DbGameQuestionRepository
         return $"q_{Guid.NewGuid():N}"[..10];
     }
 
-    private static Expression<Func<QuestionDefinition, CatalogItemRow>>
+    private Expression<Func<QuestionDefinition, CatalogItemRow>>
         ToCatalogItemSelector()
     {
         return x =>
@@ -117,7 +118,12 @@ public sealed partial class DbGameQuestionRepository
                 x.AskedInQuizQuestionSessions
                     .OrderByDescending(session => session.AskedAtUtc)
                     .Select(session => (DateTime?)session.AskedAtUtc)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                x.ImageSnapshotJson,
+                _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
+                    .Select(screenshot => (Guid?)screenshot.Location.MapId).FirstOrDefault(),
+                _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
+                    .Select(screenshot => (Guid?)screenshot.LocationId).FirstOrDefault()
             );
     }
 
@@ -134,7 +140,10 @@ public sealed partial class DbGameQuestionRepository
         int AskedTotalCount,
         int SubmissionTotalCount,
         int CorrectSubmissionTotalCount,
-        DateTime? LastAskedAtUtc
+        DateTime? LastAskedAtUtc,
+        string? ImageSnapshotJson,
+        Guid? ScreenshotMapId,
+        Guid? ScreenshotLocationId
     )
     {
         public GameQuestionCatalogItem ToCatalogItem() => new(
@@ -143,7 +152,8 @@ public sealed partial class DbGameQuestionRepository
             CorrectSubmissionTotalCount,
             SubmissionTotalCount == 0 ? 0m : 100m * CorrectSubmissionTotalCount / SubmissionTotalCount,
             LastAskedAtUtc
-        );
+        )
+        { Image = QuizImageSnapshot.FromJson(ImageSnapshotJson), ScreenshotMapId = ScreenshotMapId, ScreenshotLocationId = ScreenshotLocationId };
     }
 
     private static string NormalizeFilter(string? value)

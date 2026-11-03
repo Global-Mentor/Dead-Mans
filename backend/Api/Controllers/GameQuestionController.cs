@@ -1,3 +1,5 @@
+using backend.Application.Configuration;
+using Microsoft.Extensions.Options;
 using backend.Api.Contracts;
 using backend.Api.Http;
 using backend.Api.Mapping;
@@ -27,8 +29,11 @@ public sealed partial class GameQuestionController : ControllerBase
 
     private readonly IGameQuestionService _gameQuestionService;
 
-    public GameQuestionController(IGameQuestionService gameQuestionService)
+    private readonly string _mediaBaseUrl;
+
+    public GameQuestionController(IGameQuestionService gameQuestionService, IOptions<MediaStorageSettings> media)
     {
         _gameQuestionService = gameQuestionService;
+        _mediaBaseUrl = media.Value.PublicBaseUrl;
     }
 }

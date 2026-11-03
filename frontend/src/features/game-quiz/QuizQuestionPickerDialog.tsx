@@ -1,3 +1,8 @@
+import {
+  QuizScreenshotImage,
+  huntMapName,
+  quizImageSearchTerms,
+} from '../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +20,7 @@ import {
 type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
 type Props = {
+  screenshot?: boolean
   open: boolean
   questions: readonly AvailableQuestion[]
   launchDisabled: boolean
@@ -29,6 +35,7 @@ type Props = {
 const allCategories = '__all__'
 
 export function QuizQuestionPickerDialog({
+  screenshot = false,
   open,
   questions,
   launchDisabled,
@@ -61,7 +68,16 @@ export function QuizQuestionPickerDialog({
       .filter(
         (question) =>
           (category === allCategories || question.categoryName === category) &&
-          (normalizedQuery === '' || normalizeSearch(question.text).includes(normalizedQuery)),
+          (normalizedQuery === '' ||
+            normalizeSearch(
+              question.image
+                ? [
+                    question.text,
+                    question.questionCode,
+                    ...quizImageSearchTerms(question.image, i18n.resolvedLanguage ?? 'en'),
+                  ].join(' ')
+                : question.text,
+            ).includes(normalizedQuery)),
       )
       .sort(
         (left, right) =>
@@ -105,7 +121,7 @@ export function QuizQuestionPickerDialog({
       height="viewport"
       contentDensity="compact"
       slotProps={{ transition: { onEntered: () => searchRef.current?.focus() } }}
-      title={t('gameQuiz.questionPickerTitle')}
+      title={t(screenshot ? 'gameQuiz.specificScreenshot' : 'gameQuiz.questionPickerTitle')}
       actions={
         <>
           <AppButton tone="danger" onClick={close} disabled={pending}>
@@ -132,8 +148,14 @@ export function QuizQuestionPickerDialog({
             inputRef={searchRef}
             fullWidth
             size="small"
-            label={t('gameQuiz.questionSearchLabel')}
-            placeholder={t('gameQuiz.questionSearchPlaceholder')}
+            label={t(
+              screenshot ? 'gameQuiz.screenshotPicker.searchLabel' : 'gameQuiz.questionSearchLabel',
+            )}
+            placeholder={t(
+              screenshot
+                ? 'gameQuiz.screenshotPicker.searchPlaceholder'
+                : 'gameQuiz.questionSearchPlaceholder',
+            )}
             slotProps={{ inputLabel: { shrink: true } }}
             value={query}
             disabled={pending}
@@ -163,11 +185,16 @@ export function QuizQuestionPickerDialog({
         </Stack>
 
         {submitFailed ? (
-          <InlineNotice severity="error">{t('gameQuiz.questionStartError')}</InlineNotice>
+          <InlineNotice severity="error">
+            {t(screenshot ? 'gameQuiz.screenshotPicker.startError' : 'gameQuiz.questionStartError')}
+          </InlineNotice>
         ) : null}
         {!loading && !error ? (
           <Typography variant="caption" color="text.secondary" aria-live="polite">
-            {t('gameQuiz.questionPickerResults', { count: visibleQuestions.length })}
+            {t(
+              screenshot ? 'gameQuiz.screenshotPicker.results' : 'gameQuiz.questionPickerResults',
+              { count: visibleQuestions.length },
+            )}
           </Typography>
         ) : null}
 
@@ -186,7 +213,7 @@ export function QuizQuestionPickerDialog({
               ) : undefined
             }
           >
-            {t('gameQuiz.questionsLoadError')}
+            {t(screenshot ? 'gameQuiz.screenshotPicker.loadError' : 'gameQuiz.questionsLoadError')}
           </InlineNotice>
         ) : (
           <Stack
@@ -210,8 +237,12 @@ export function QuizQuestionPickerDialog({
               >
                 {t(
                   questions.length === 0
-                    ? 'gameQuiz.noQuestionsAvailable'
-                    : 'gameQuiz.noQuestionsMatched',
+                    ? screenshot
+                      ? 'gameQuiz.screenshotPicker.empty'
+                      : 'gameQuiz.noQuestionsAvailable'
+                    : screenshot
+                      ? 'gameQuiz.screenshotPicker.emptyFiltered'
+                      : 'gameQuiz.noQuestionsMatched',
                 )}
               </Typography>
             ) : (
@@ -235,6 +266,9 @@ export function QuizQuestionPickerDialog({
                       spacing={0.75}
                       sx={{ minWidth: 0, flex: 1, alignItems: 'flex-start' }}
                     >
+                      {question.image ? (
+                        <QuizScreenshotImage image={question.image} thumbnail />
+                      ) : null}
                       <StatusBadge
                         component="span"
                         density="compact"
@@ -242,7 +276,9 @@ export function QuizQuestionPickerDialog({
                         label={question.categoryName}
                       />
                       <Typography component="span" variant="body1" fontWeight={700}>
-                        {question.text}
+                        {question.image
+                          ? `${huntMapName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+                          : question.text}
                       </Typography>
                     </Stack>
                   </SelectionRow>

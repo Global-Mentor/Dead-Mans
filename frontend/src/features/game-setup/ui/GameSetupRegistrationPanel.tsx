@@ -1,5 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameSetupSnapshot } from '../../../shared/api/contracts/index.ts'
@@ -15,8 +15,13 @@ import {
   InlineNotice,
   Metric,
 } from '../../../shared/ui/index.ts'
-import { adminModifiersRoute, adminQuestionsRoute } from '../../../routes/app-routes.ts'
+import {
+  adminModifiersRoute,
+  adminQuestionsRoute,
+  adminScreenshotsRoute,
+} from '../../../routes/app-routes.ts'
 import { useOpenGameRegistration } from '../use-open-game-registration.ts'
+import { gameQuestionCatalogQueryOptions } from '../../game-questions/index.ts'
 
 interface Props {
   snapshot: GameSetupSnapshot
@@ -53,6 +58,14 @@ function RegistrationPanelContent({
   const missingMedia = snapshot.cells.filter((cell) => !cell.media?.length).length
   const missingModifiers = snapshot.enabledModifierIds.length === 0
   const missingQuestions = snapshot.enabledQuestionIds.length === 0
+  const catalog = useQuery({
+    ...gameQuestionCatalogQueryOptions({ search: '', includeDisabled: false }),
+    enabled: !missingQuestions,
+  })
+  const selectedIds = new Set(snapshot.enabledQuestionIds)
+  const selectedQuestions = catalog.data?.filter((question) => selectedIds.has(question.questionId))
+  const countsAvailable = missingQuestions || selectedQuestions?.length === selectedIds.size
+  const screenshotCount = selectedQuestions?.filter((question) => question.image).length ?? 0
   const hasRequiredMedia = snapshot.cells.length > 0 && missingMedia === 0
   const acknowledged =
     (!missingModifiers || allowWithoutModifiers) && (!missingQuestions || allowWithoutQuestions)
@@ -132,7 +145,17 @@ function RegistrationPanelContent({
           appearance="row"
           density="compact"
           label={t('gameSetup.registration.questionsLabel')}
-          value={snapshot.enabledQuestionIds.length}
+          value={
+            countsAvailable
+              ? selectedIds.size - screenshotCount
+              : t('gameSetup.registration.countUnavailable')
+          }
+        />
+        <Metric
+          appearance="row"
+          density="compact"
+          label={t('common.quizStandings.screenshots')}
+          value={countsAvailable ? screenshotCount : t('gameSetup.registration.countUnavailable')}
         />
         <Metric
           appearance="row"
@@ -145,16 +168,27 @@ function RegistrationPanelContent({
         <Metric
           appearance="row"
           density="compact"
+          label={t('gameSetup.registration.screenshotDuration')}
+          value={t('gameSetup.registration.durationSeconds', {
+            count: snapshot.screenshotAnswerDurationSeconds,
+          })}
+        />
+        <Metric
+          appearance="row"
+          density="compact"
           label={t('gameSetup.registration.teamLimit')}
           value={snapshot.teamLimit ?? t('gameSetup.registration.unlimitedTeams')}
         />
       </Stack>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" gap={1} flexWrap="wrap">
         <AppLinkButton tone="secondary" to={adminModifiersRoute.fullPath} disabled={isOpening}>
           {t('gameSetup.registration.modifiersLabel')}
         </AppLinkButton>
         <AppLinkButton tone="secondary" to={adminQuestionsRoute.fullPath} disabled={isOpening}>
           {t('gameSetup.registration.questionsLabel')}
+        </AppLinkButton>
+        <AppLinkButton tone="secondary" to={adminScreenshotsRoute.fullPath} disabled={isOpening}>
+          {t('common.quizStandings.screenshots')}
         </AppLinkButton>
       </Stack>
       <HelpTooltip title={disabledReason} describeChild>

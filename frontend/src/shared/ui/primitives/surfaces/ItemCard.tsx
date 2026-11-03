@@ -1,3 +1,4 @@
+import { huntPalette } from '../../../theme/hunt-palette.ts'
 import { cornerFrameSx } from '../../../theme/corner-frame-sx.ts'
 import type { ComponentProps } from 'react'
 import { mergeSx } from '../../../theme/merge-sx.ts'
@@ -6,6 +7,7 @@ import { SectionCard } from './SectionCard.tsx'
 
 export function ItemCard({
   emphasis = 'none',
+  outcome,
   density = 'standard',
   tone = 'default',
   leadingAccent = false,
@@ -15,6 +17,7 @@ export function ItemCard({
   ...props
 }: Omit<ComponentProps<typeof SectionCard>, 'surface'> & {
   emphasis?: 'none' | 'available' | 'selected'
+  outcome?: 'success' | 'error'
   density?: 'standard' | 'compact' | 'flush'
   tone?: 'default' | 'alternate'
   leadingAccent?: boolean | 'success' | 'error'
@@ -30,6 +33,17 @@ export function ItemCard({
         density === 'flush' ? { p: 0 } : density === 'compact' ? { px: 1.25, py: 0.75 } : null,
         frame === 'corner'
           ? (theme) => ({ ...cornerFrameSx(theme, 'strong'), borderImage: 'none' })
+          : null,
+        outcome
+          ? (theme) => {
+              const color =
+                outcome === 'success' ? huntPalette.fernBright : theme.palette.error.light
+              return {
+                borderColor: color,
+                borderImage: 'none',
+                boxShadow: `inset 0 0 0 2px ${color}`,
+              }
+            }
           : null,
         leadingAccent
           ? {

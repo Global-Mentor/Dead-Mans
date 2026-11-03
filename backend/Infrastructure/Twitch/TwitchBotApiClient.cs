@@ -160,6 +160,7 @@ internal sealed class TwitchBotApiClient
         var appToken = await GetApplicationTokenAsync(cancellationToken);
         string? cursor = null;
         var pending = false;
+        var failed = new List<EventSubItem>();
         do
         {
             var url = $"{_options.ApiBaseUrl.TrimEnd('/')}/helix/eventsub/subscriptions?type=channel.chat.message";
@@ -170,22 +171,38 @@ internal sealed class TwitchBotApiClient
             using var listResponse = await _httpClient.SendAsync(listRequest, cancellationToken);
             if (listResponse.StatusCode == HttpStatusCode.Unauthorized)
                 await _appTokens.InvalidateAsync(appToken, cancellationToken);
-            listResponse.EnsureSuccessStatusCode();
-            var existing = await listResponse.Content.ReadFromJsonAsync<EventSubListResponse>(cancellationToken)
-                ?? throw new InvalidOperationException("Twitch subscription list is empty.");
-            var matching = existing.Data?.Where(x =>
+            await EnsureEventSubSuccessAsync(listResponse, cancellationToken);
+            var existing = await listResponse.Content.ReadFromJsonAsync<EventSubListResponse>(cancellationToken);
+            if (existing?.Data is null)
+                throw new TwitchEventSubConnectionException("unavailable", HttpStatusCode.BadGateway);
+            var matching = existing.Data.Where(x =>
                     x.Type == "channel.chat.message"
                     && x.Condition?.BroadcasterUserId == _options.ExpectedBroadcasterUserId
                     && x.Condition?.UserId == _options.ExpectedBotUserId
-                    && x.Transport?.Callback == _options.WebhookCallbackUrl).ToArray() ?? [];
+                    && x.Transport?.Callback == _options.WebhookCallbackUrl).ToArray();
             if (matching.Any(x => x.Status == "enabled")) return true;
             pending |= matching.Any(x => x.Status == "webhook_callback_verification_pending");
+            failed.AddRange(matching.Where(x => x.Status is "webhook_callback_verification_failed" or "notification_failures_exceeded"));
             var nextCursor = existing.Pagination?.Cursor;
             if (!string.IsNullOrEmpty(nextCursor) && nextCursor == cursor)
-                throw new InvalidOperationException("Twitch repeated the subscription page cursor.");
+                throw new TwitchEventSubConnectionException("unavailable", HttpStatusCode.BadGateway);
             cursor = nextCursor;
         } while (!string.IsNullOrEmpty(cursor));
         if (pending) return false;
+        if (failed.Count > 0)
+        {
+            // Only failed subscriptions at this exact callback belong to this runtime.
+            foreach (var item in failed.Where(x => !string.IsNullOrWhiteSpace(x.Id)))
+            {
+                using var remove = new HttpRequestMessage(HttpMethod.Delete,
+                    $"{_options.ApiBaseUrl.TrimEnd('/')}/helix/eventsub/subscriptions?id={Uri.EscapeDataString(item.Id!)}");
+                remove.Headers.Authorization = new AuthenticationHeaderValue("Bearer", appToken);
+                remove.Headers.Add("Client-Id", _options.ClientId);
+                using var removed = await _httpClient.SendAsync(remove, cancellationToken);
+                if (removed.StatusCode != HttpStatusCode.NotFound) await EnsureEventSubSuccessAsync(removed, cancellationToken);
+            }
+            throw new TwitchEventSubConnectionException("webhook_unreachable", HttpStatusCode.BadGateway);
+        }
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.ApiBaseUrl.TrimEnd('/')}/helix/eventsub/subscriptions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", appToken);
         request.Headers.Add("Client-Id", _options.ClientId);
@@ -207,8 +224,32 @@ internal sealed class TwitchBotApiClient
         });
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Conflict)
-            response.EnsureSuccessStatusCode();
+            await EnsureEventSubSuccessAsync(response, cancellationToken);
         return false;
+    }
+
+    private async Task EnsureEventSubSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode) return;
+        var message = await ReadTwitchErrorAsync(response, cancellationToken);
+        var code = response.StatusCode switch
+        {
+            HttpStatusCode.TooManyRequests when message?.Contains("maximum subscriptions", StringComparison.OrdinalIgnoreCase) == true => "subscription_limit",
+            HttpStatusCode.TooManyRequests => "rate_limited",
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "authorization_required",
+            HttpStatusCode.BadRequest when message?.Contains("callback", StringComparison.OrdinalIgnoreCase) == true => "webhook_unreachable",
+            HttpStatusCode.BadRequest => "invalid_configuration",
+            _ => "unavailable"
+        };
+        var retryAfter = response.Headers.RetryAfter?.Delta;
+        if (response.Headers.RetryAfter?.Date is { } date) retryAfter = date - _clock.GetUtcNow();
+        if (response.Headers.TryGetValues("Ratelimit-Reset", out var resets)
+            && long.TryParse(resets.FirstOrDefault(), out var reset) && reset is >= 0 and <= 253402300799)
+        {
+            var delay = DateTimeOffset.FromUnixTimeSeconds(reset) - _clock.GetUtcNow();
+            if (delay > (retryAfter ?? TimeSpan.Zero)) retryAfter = delay;
+        }
+        throw new TwitchEventSubConnectionException(code, response.StatusCode, retryAfter);
     }
 
     private async Task<(TwitchBotConnection Row, string AccessToken)?> GetValidConnectionAsync(string role, CancellationToken cancellationToken)
@@ -362,6 +403,7 @@ internal sealed class TwitchBotApiClient
     private sealed class EventSubPagination { [JsonPropertyName("cursor")] public string? Cursor { get; set; } }
     private sealed class EventSubItem
     {
+        [JsonPropertyName("id")] public string? Id { get; set; }
         [JsonPropertyName("type")] public string? Type { get; set; }
         [JsonPropertyName("status")] public string? Status { get; set; }
         [JsonPropertyName("condition")] public EventSubCondition? Condition { get; set; }

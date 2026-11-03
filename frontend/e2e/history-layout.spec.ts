@@ -172,6 +172,8 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
                   availablePoints: 15,
                   attempts: 4,
                   correctAnswers: 3,
+                  textStatistics: { attempts: 3, correctAnswers: 2, points: 15 },
+                  screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 10 },
                   lastActivityAtUtc: date,
                 },
                 {
@@ -182,6 +184,8 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
                   availablePoints: 10,
                   attempts: 3,
                   correctAnswers: 1,
+                  textStatistics: { attempts: 1, correctAnswers: 0, points: 0 },
+                  screenshotStatistics: { attempts: 2, correctAnswers: 1, points: 10 },
                   lastActivityAtUtc: date,
                 },
               ],
@@ -641,7 +645,13 @@ test('archived statistics show only the completed game summary', async ({ page }
   await expect(stats.getByRole('group', { name: 'Сыгравших команд', exact: true })).toContainText(
     '1',
   )
-  await expect(stats.getByRole('group')).toHaveCount(16)
+  await expect(stats.getByRole('group')).toHaveCount(28)
+  await expect(
+    stats.getByRole('region', { name: 'Вопросы', exact: true }).locator('dd'),
+  ).toHaveText(['0', '2', '2', '2', '50%', '15 очк.'])
+  await expect(
+    stats.getByRole('region', { name: 'Скриншоты', exact: true }).locator('dd'),
+  ).toHaveText(['0', '2', '2', '1', '66,7%', '20 очк.'])
   await expect(stats.getByRole('region', { name: 'Время игры', exact: true })).toHaveCount(0)
   await assertBounded(page, 1440, 900)
   await page.screenshot({

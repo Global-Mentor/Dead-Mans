@@ -15,7 +15,10 @@ public sealed record UserGameQuestionAnswerHistoryItemDto(
     int AwardedPoints,
     string? SubmittedAnswer,
     string? AnsweredByUserId
-);
+)
+{
+    public GameQuizImageDto? Image { get; init; }
+}
 
 public sealed record UserGameQuizManualAwardHistoryItemDto(
     string AwardId,
@@ -73,6 +76,8 @@ public sealed record GameHistoryPlayerSummaryDto(
     DateTime? LastActivityAtUtc
 );
 
+public sealed record GameQuizFormatStatisticsDto(int Attempts, int CorrectAnswers, int Points);
+
 public sealed record GameHistoryQuizPlayerSummaryDto(
     string UserId,
     string DisplayName,
@@ -82,7 +87,11 @@ public sealed record GameHistoryQuizPlayerSummaryDto(
     int Attempts,
     int CorrectAnswers,
     DateTime? LastActivityAtUtc
-);
+)
+{
+    public GameQuizFormatStatisticsDto? TextStatistics { get; init; }
+    public GameQuizFormatStatisticsDto? ScreenshotStatistics { get; init; }
+}
 
 public sealed record GameHistoryModifierActivationItemDto(
     string ActivationId,
@@ -220,7 +229,10 @@ public sealed record GameHistoryQuizQuestionSessionItemDto(
     string? CorrectOptionId,
     IReadOnlyList<GameQuizOptionDto> Options,
     IReadOnlyList<GameHistoryQuizSubmissionItemDto> Submissions
-);
+)
+{
+    public GameQuizImageDto? Image { get; init; }
+}
 
 public sealed record GameHistoryQuizManualAwardItemDto(
     string AwardId,

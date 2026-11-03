@@ -1,3 +1,4 @@
+using backend.Domain.Questions;
 using backend.Api.Contracts;
 using backend.Application.Abstractions.Auth;
 using backend.Application.Contracts;
@@ -7,6 +8,10 @@ namespace backend.Api.Mapping;
 
 public static partial class ApiContractMapper
 {
+    public static GameQuizImageDto ToDto(this QuizImageSnapshot image, string mediaBaseUrl) => new(
+        $"{mediaBaseUrl.TrimEnd('/')}/{image.MediaPath}", image.MapNames,
+        image.OptionNames.OrderBy(x => x.Key).ToDictionary(x => x.Key.ToString(), x => x.Value));
+
     public static CreateGameQuestionInput ToInput(
         this CreateGameQuestionRequestDto request,
         Guid categoryId
@@ -82,7 +87,7 @@ public static partial class ApiContractMapper
     private static GameQuestionOptionInput MapQuestionOptionInput(GameQuestionOptionInputDto? option) =>
         new(option?.Text ?? string.Empty, option?.IsCorrect ?? false);
 
-    public static GameQuestionCatalogItemDto ToDto(this GameQuestionCatalogItem item)
+    public static GameQuestionCatalogItemDto ToDto(this GameQuestionCatalogItem item, string mediaBaseUrl)
     {
         return new GameQuestionCatalogItemDto(
             item.QuestionId.ToString(),
@@ -106,10 +111,11 @@ public static partial class ApiContractMapper
             item.LastAskedAtUtc,
             item.TwitchPreview.IsCompatible,
             item.TwitchPreview.ErrorCode
-        );
+        )
+        { Image = item.Image?.ToDto(mediaBaseUrl), ScreenshotMapId = item.ScreenshotMapId?.ToString(), ScreenshotLocationId = item.ScreenshotLocationId?.ToString() };
     }
 
-    public static AskedQuizQuestionDto ToDto(this AskedQuizQuestion question)
+    public static AskedQuizQuestionDto ToDto(this AskedQuizQuestion question, string mediaBaseUrl)
     {
         return new AskedQuizQuestionDto(
             question.QuestionSessionId.ToString(),
@@ -127,7 +133,8 @@ public static partial class ApiContractMapper
             question.Reward,
             question.AskedAtUtc,
             question.ClosesAtUtc
-        );
+        )
+        { Image = question.Image?.ToDto(mediaBaseUrl) };
     }
 
     public static GameQuestionCategoryItemDto ToDto(this GameQuestionCategoryItem item)
@@ -177,14 +184,15 @@ public static partial class ApiContractMapper
         receipt.IsExisting
     );
 
-    public static AvailableGameQuizQuestionDto ToDto(this AvailableGameQuizQuestion question) => new(
+    public static AvailableGameQuizQuestionDto ToDto(this AvailableGameQuizQuestion question, string mediaBaseUrl) => new(
         question.QuestionId.ToString(),
         question.QuestionCode,
         question.CategoryName,
         question.Text
-    );
+    )
+    { Image = question.Image?.ToDto(mediaBaseUrl) };
 
-    public static CurrentGameQuizStateDto ToDto(this CurrentGameQuizState state) => new(
+    public static CurrentGameQuizStateDto ToDto(this CurrentGameQuizState state, string mediaBaseUrl) => new(
         state.QuestionSessionId.ToString(),
         state.GameId.ToString(),
         state.AskOrder,
@@ -213,7 +221,8 @@ public static partial class ApiContractMapper
             result.AnswerCount,
             result.Percentage
         )).ToArray()
-    );
+    )
+    { Image = state.Image?.ToDto(mediaBaseUrl), PresentationVisible = state.PresentationVisible };
 
     public static ManualQuizAwardSummaryDto ToDto(this ManualQuizAwardSummary award)
     {

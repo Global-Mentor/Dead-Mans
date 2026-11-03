@@ -110,6 +110,8 @@ describe('game statistics', () => {
       availablePoints: 15,
       attempts: 4,
       correctAnswers: 3,
+      textStatistics: { attempts: 3, correctAnswers: 2, points: 10 },
+      screenshotStatistics: { attempts: 1, correctAnswers: 1, points: 15 },
     }
     data.quiz.playerStats = [player, { ...player, userId: 'two', displayName: 'Two' }]
     data.quiz.totalPoints = 40
@@ -126,7 +128,7 @@ describe('game statistics', () => {
       status: 'closed' as const,
     }
     data.quiz.questionSessions = [
-      question,
+      { ...question, image: { imageUrl: '/screenshot.png', mapNames: {}, optionNames: {} } },
       { ...question, questionSessionId: 'skipped', status: 'skipped' },
     ]
     data.quiz.manualAwards = [
@@ -148,9 +150,29 @@ describe('game statistics', () => {
       incorrect: 2,
       accuracy: 75,
       earned: 40,
+      formats: {
+        text: {
+          asked: 1,
+          players: 2,
+          attempts: 6,
+          correct: 4,
+          incorrect: 2,
+          accuracy: (4 / 6) * 100,
+          earned: 20,
+        },
+        screenshot: {
+          asked: 1,
+          players: 2,
+          attempts: 2,
+          correct: 2,
+          incorrect: 0,
+          accuracy: 100,
+          earned: 30,
+        },
+      },
     })
-    expect(buildGameStatistics(data, 'current').quiz.questions).toBe(3)
-    expect(buildGameStatistics(data, 'closed').quiz.questions).toBe(2)
+    expect(buildGameStatistics(data, { questionSessionId: 'current' }).quiz.questions).toBe(3)
+    expect(buildGameStatistics(data, { questionSessionId: 'closed' }).quiz.questions).toBe(2)
   })
 })
 

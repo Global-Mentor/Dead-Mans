@@ -9,6 +9,7 @@ import {
   gameSetupRoute,
   adminModifiersRoute,
   adminQuestionsRoute,
+  adminScreenshotsRoute,
   gameLeaderboardRoute,
   gameHistoryRoute,
   modifierHistoryRoute,
@@ -19,6 +20,7 @@ import {
   teamRegistrationsRoute,
   catalogModifiersRoute,
   catalogQuestionsRoute,
+  catalogScreenshotsRoute,
 } from '../routes/app-routes.ts'
 import { hasPanelCapability } from '../shared/auth/panel-capabilities.ts'
 import { ModifierCatalogRealtimeSync } from '../features/modifier-history/ModifierCatalogRealtimeSync.tsx'
@@ -38,6 +40,7 @@ const GameAdminToolsHost = lazyPanelPage(
     translations.gameQuiz,
     translations.gameHistory,
     translations.gameRegistration,
+    translations.gameApplication,
   ],
 )
 const GameBoardQuizRealtimeSync = lazyPanelPage(
@@ -62,6 +65,7 @@ function MainLayoutContent() {
   const boundedWorkspace = [
     adminModifiersRoute.fullPath,
     adminQuestionsRoute.fullPath,
+    adminScreenshotsRoute.fullPath,
     gameSetupRoute.fullPath,
     gameTeamQueueRoute.fullPath,
     gameLeaderboardRoute.fullPath,
@@ -71,6 +75,7 @@ function MainLayoutContent() {
     teamRegistrationsRoute.fullPath,
     catalogModifiersRoute.fullPath,
     catalogQuestionsRoute.fullPath,
+    catalogScreenshotsRoute.fullPath,
   ].includes(pathname)
   const hasManagementPanel =
     !isAdministration &&

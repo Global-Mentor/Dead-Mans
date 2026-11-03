@@ -1,5 +1,6 @@
 import {
   createApiClient,
+  ensureOpenApiSuccess,
   unwrapOpenApiData,
   unwrapOpenApiDataOrNullOnNoContent,
 } from '../../../shared/api/client/openApiClient.ts'
@@ -16,6 +17,7 @@ import type { paths } from '../../../shared/api/contracts/generated'
 type QuizPaths = Pick<
   paths,
   | '/game/quiz/current'
+  | '/game/quiz/question-sessions/{questionSessionId}/hide'
   | '/game/quiz/questions/available'
   | '/game/quiz/questions/ask-next'
   | '/game/quiz/questions/{questionId}/ask'
@@ -54,8 +56,18 @@ export function submitGameQuizAnswer(
   )
 }
 
-export function askNextGameQuizQuestion() {
-  return unwrapOpenApiData(client.POST('/game/quiz/questions/ask-next'))
+export function askNextGameQuizQuestion(format: 'text' | 'screenshot' = 'text') {
+  return unwrapOpenApiData(
+    client.POST('/game/quiz/questions/ask-next', { params: { query: { format } } }),
+  )
+}
+
+export function hideGameQuizScreenshot(questionSessionId: string) {
+  return ensureOpenApiSuccess(
+    client.POST('/game/quiz/question-sessions/{questionSessionId}/hide', {
+      params: { path: { questionSessionId } },
+    }),
+  )
 }
 
 export function askSpecificGameQuizQuestion(questionId: string) {

@@ -1,3 +1,5 @@
+using backend.Application.Configuration;
+using Microsoft.Extensions.Options;
 using backend.Api.Contracts;
 using backend.Api.Auth;
 using backend.Api.Http;
@@ -13,7 +15,7 @@ namespace backend.Controllers;
 [Authorize]
 [Route("api/overlay")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class GameOverlayController(IGameOverlayService service) : ControllerBase
+public sealed class GameOverlayController(IGameOverlayService service, IOptions<MediaStorageSettings> media) : ControllerBase
 {
     [HttpGet("key")]
     [Authorize(Roles = AuthRoleCodes.ModeratorOrAdmin)]
@@ -97,7 +99,11 @@ public sealed class GameOverlayController(IGameOverlayService service) : Control
             snapshot.Leaderboard?.Select(team => new GameOverlayLeaderboardEntryDto(team.Rank, team.Name,
                 team.SlotIndex, team.Players, team.RoundsPlayed, team.TotalKills, team.TotalBounties, team.FinalScore)).ToArray(), snapshot.LeaderboardPage,
             snapshot.QuizLeaderboard?.Select(player => new GameOverlayQuizLeaderboardEntryDto(
-                player.DisplayName, player.Points, player.Attempts, player.CorrectAnswers)).ToArray()));
+                player.DisplayName, player.Points, player.Attempts, player.CorrectAnswers)
+            {
+                TextStatistics = new(player.TextStatistics.Attempts, player.TextStatistics.CorrectAnswers, player.TextStatistics.Points),
+                ScreenshotStatistics = new(player.ScreenshotStatistics.Attempts, player.ScreenshotStatistics.CorrectAnswers, player.ScreenshotStatistics.Points)
+            }).ToArray(), snapshot.QuizQuestion?.ToDto(media.Value.PublicBaseUrl)));
     }
 
     [HttpGet("test")]

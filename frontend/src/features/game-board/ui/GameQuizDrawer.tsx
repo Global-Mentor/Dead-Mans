@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CurrentGameQuizState } from '../../../shared/api/contracts/index.ts'
 import { useAuth } from '../../../shared/auth/use-auth.ts'
 import { hasPanelCapability } from '../../../shared/auth/panel-capabilities.ts'
 import { AppButton, InlineNotice, PanelTrigger, SidePanel } from '../../../shared/ui/index.ts'
-import { currentGameQuizQueryOptions } from '../../game-quiz/api/game-quiz-queries.ts'
-import { PlayerQuizCard } from '../../game-quiz/PlayerQuizCard.tsx'
+import { currentGameQuizQueryOptions, PlayerQuizCard } from '../../game-quiz/index.ts'
+
+const RESULT_DISPLAY_MS = 15_000
 
 export function GameQuizDrawer({
   gameId,
@@ -31,7 +32,7 @@ export function GameQuizDrawer({
   const quiz = quizQuery.data?.gameId === gameId ? quizQuery.data : null
   const retry = () => void quizQuery.refetch()
   if (!canView) return null
-  if (!quiz || quiz.status !== 'open')
+  if (!quiz || (quiz.status !== 'open' && quiz.status !== 'closed'))
     return quizQuery.isError && !suspended ? (
       <InlineNotice
         severity="warning"
@@ -72,6 +73,13 @@ function QuizSessionDrawer({
   const { t } = useTranslation()
   const id = useId()
   const [requestedOpen, setRequestedOpen] = useState(true)
+  const [resultVisible, setResultVisible] = useState(quiz.status === 'open')
+  useEffect(() => {
+    if (quiz.status !== 'closed' || !resultVisible) return
+    const timeout = window.setTimeout(() => setResultVisible(false), RESULT_DISPLAY_MS)
+    return () => window.clearTimeout(timeout)
+  }, [quiz.status, resultVisible])
+  if (quiz.status !== 'open' && !resultVisible) return null
   const open = !suspended && requestedOpen
   return (
     <>
@@ -90,7 +98,7 @@ function QuizSessionDrawer({
         id={id}
         open={open}
         onClose={() => setRequestedOpen(false)}
-        title={t('gameQuiz.currentTitle')}
+        title={t(quiz.status === 'closed' ? 'gameQuiz.resultTitle' : 'gameQuiz.currentTitle')}
         closeLabel={t('gameBoard.currentRoundScreen.closeQuiz')}
         side={side}
         width={560}

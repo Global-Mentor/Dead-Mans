@@ -1,3 +1,5 @@
+using backend.Application.Configuration;
+using Microsoft.Extensions.Options;
 using backend.Api.Contracts;
 using backend.Api.Http;
 using backend.Api.Mapping;
@@ -16,9 +18,12 @@ public sealed class GameHistoryController : ControllerBase
 {
     private readonly IGameHistoryService _historyService;
 
-    public GameHistoryController(IGameHistoryService historyService)
+    private readonly string _mediaBaseUrl;
+
+    public GameHistoryController(IGameHistoryService historyService, IOptions<MediaStorageSettings> media)
     {
         _historyService = historyService;
+        _mediaBaseUrl = media.Value.PublicBaseUrl;
     }
 
     [HttpGet("leaderboard")]
@@ -54,7 +59,7 @@ public sealed class GameHistoryController : ControllerBase
             );
         }
 
-        return Ok(details.ToDto());
+        return Ok(details.ToDto(_mediaBaseUrl));
     }
 
     [HttpGet("users/{userId:guid}")]
@@ -81,6 +86,6 @@ public sealed class GameHistoryController : ControllerBase
         }
 
         var history = await _historyService.GetUserGameHistoryAsync(userId, cancellationToken);
-        return Ok(history.Select(x => x.ToDto()).ToArray());
+        return Ok(history.Select(x => x.ToDto(_mediaBaseUrl)).ToArray());
     }
 }

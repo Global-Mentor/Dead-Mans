@@ -8,6 +8,7 @@ public class QuestionDefinitionConfiguration : IEntityTypeConfiguration<Question
 {
     public void Configure(EntityTypeBuilder<QuestionDefinition> builder)
     {
+        builder.Property(x => x.ImageSnapshotJson).HasColumnType("jsonb");
         builder.ToTable(
             "question_definitions",
             tableBuilder =>
