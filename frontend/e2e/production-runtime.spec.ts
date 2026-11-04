@@ -290,7 +290,15 @@ test('catalog answer editing preserves variants and validates duplicates under p
     const path = new URL(request.url()).pathname
     if (path === '/api/game/questions/categories') {
       await route.fulfill({
-        json: [{ id: categoryId, name: 'Geography', questionCount: 1, isProtected: false }],
+        json: [
+          {
+            id: categoryId,
+            name: 'Geography',
+            questionCount: 1,
+            isLocationCategory: false,
+            isProtected: false,
+          },
+        ],
       })
     } else if (path === '/api/game/questions/catalog') {
       await route.fulfill({ json: [question] })

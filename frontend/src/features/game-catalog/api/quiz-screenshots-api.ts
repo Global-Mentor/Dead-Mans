@@ -9,14 +9,9 @@ export const huntMapsQueryOptions = {
   staleTime: 5 * 60 * 1000,
 }
 
-export interface ScreenshotUploadSettings {
-  text: string
-  locationId: string
-  categoryId: string
-  reward: number
-  priority: number
-  isEnabled: boolean
-}
+type ScreenshotUploadBody =
+  paths['/game/questions/screenshots']['post']['requestBody']['content']['multipart/form-data']
+export type ScreenshotUploadSettings = Omit<ScreenshotUploadBody, 'requestId' | 'file'>
 
 export function uploadQuizScreenshot(
   requestId: string,
@@ -29,7 +24,7 @@ export function uploadQuizScreenshot(
       bodySerializer: () => {
         const body = new FormData()
         Object.entries({ requestId, ...settings }).forEach(([key, value]) =>
-          body.append(key, String(value)),
+          body.append(key, key === 'options' ? JSON.stringify(value) : String(value)),
         )
         body.append('file', file)
         return body

@@ -272,6 +272,12 @@ public sealed partial class DbGameQuestionRepository
         var screenshot = questionId.HasValue && await _dbContext.QuestionDefinitions
             .AnyAsync(x => x.Id == questionId && x.ImageSnapshotJson != null, cancellationToken);
         var format = screenshot ? "screenshot" : "text";
+        if (screenshot)
+        {
+            var location = await _dbContext.Set<QuestionScreenshot>()
+                .AnyAsync(x => x.QuestionId == questionId && x.LocationId != null, cancellationToken);
+            if (location != (categoryId == QuestionCatalogDefaults.LocationScreenshotCategoryId)) return false;
+        }
         return await _dbContext.QuestionCategories.AsNoTracking()
             .AnyAsync(x => x.Id == categoryId && x.Format == format, cancellationToken);
     }

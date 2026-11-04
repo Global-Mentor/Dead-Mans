@@ -267,7 +267,9 @@ export function QuizQuestionPickerDialog({
                       sx={{ minWidth: 0, flex: 1, alignItems: 'flex-start' }}
                     >
                       {question.image ? (
-                        <QuizScreenshotImage image={question.image} thumbnail />
+                        <Box component="span" sx={{ width: 120, maxWidth: '100%' }}>
+                          <QuizScreenshotImage image={question.image} thumbnail />
+                        </Box>
                       ) : null}
                       <StatusBadge
                         component="span"
@@ -277,7 +279,12 @@ export function QuizQuestionPickerDialog({
                       />
                       <Typography component="span" variant="body1" fontWeight={700}>
                         {question.image
-                          ? `${huntMapName(question.image.mapNames, i18n.language)} · ${question.questionCode}`
+                          ? [
+                              huntMapName(question.image.mapNames, i18n.language) || question.text,
+                              question.questionCode,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
                           : question.text}
                       </Typography>
                     </Stack>

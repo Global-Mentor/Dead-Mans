@@ -20,7 +20,7 @@ using backend.Api.Mapping;
 
 namespace Backend.Tests.Integration.Postgres;
 
-public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassFixture<PostgresTestDatabase>
+public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) : IClassFixture<PostgresTestDatabase>
 {
     private static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jQ1sAAAAASUVORK5CYII=");
     private readonly InMemoryObjectStorage _storage = new();
@@ -29,11 +29,8 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
 
     private async Task<UploadQuizScreenshotInput> InputAsync(ApplicationDbContext db)
     {
-        var category = new QuestionCategory { Format = "screenshot", Id = Guid.NewGuid(), Name = Guid.NewGuid().ToString("N"), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
-        db.QuestionCategories.Add(category);
-        await db.SaveChangesAsync();
         var locationId = await db.HuntLocations.OrderBy(x => x.Id).Select(x => x.Id).FirstAsync();
-        return new(Guid.NewGuid(), locationId, category.Id, 7, 0, true, "Where was this taken?");
+        return new(Guid.NewGuid(), locationId, QuestionCatalogDefaults.LocationScreenshotCategoryId, 7, 0, true, "Where was this taken?");
     }
 
     private static async Task<UploadQuizScreenshotResult> UploadAsync(QuizScreenshotService service, UploadQuizScreenshotInput input)
@@ -47,7 +44,8 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
     {
         await using var db = database.CreateDbContext();
         var repository = new DbGameQuestionRepository(db, TimeProvider.System);
-        var input = await InputAsync(db);
+        var category = await repository.CreateCategoryAsync(Guid.NewGuid().ToString("N"), "screenshot");
+        var input = new UploadQuizScreenshotInput(Guid.NewGuid(), null, category.Id, 7, 0, true, "What is shown?", [new("Yes", true), new("No", false)]);
         var textCategory = await repository.CreateCategoryAsync(Guid.NewGuid().ToString("N"));
         Assert.Equal(UploadQuizScreenshotOutcome.InvalidSelection,
             (await UploadAsync(Service(db), input with { CategoryId = textCategory.Id })).Outcome);
@@ -88,9 +86,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         await using var source = database.CreateDbContext();
         var input = await InputAsync(source);
         var repository = new DbGameQuestionRepository(source, TimeProvider.System);
-        if (uncategorized)
-            input = input with { CategoryId = (await repository.EnsureFallbackCategoryAsync("screenshot")).Id };
-        var originalCategoryId = uncategorized ? QuestionCatalogDefaults.UncategorizedCategoryId : input.CategoryId;
+        var originalCategoryId = uncategorized ? QuestionCatalogDefaults.UncategorizedCategoryId : Guid.NewGuid();
         var uploaded = await UploadAsync(Service(source), input);
         if (archived) Assert.True(await repository.SoftDeleteQuestionAsync(uploaded.QuestionId!.Value));
         var fallback = await repository.EnsureFallbackCategoryAsync();
@@ -129,7 +125,11 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
                     while (await rows.ReadAsync())
                     {
                         var record = System.Text.Json.Nodes.JsonNode.Parse(rows.GetString(0))!;
-                        if (table == "question_categories") record["id"] = originalCategoryId.ToString();
+                        if (table == "question_categories")
+                        {
+                            record["id"] = originalCategoryId.ToString();
+                            record["name"] = uncategorized ? QuestionCatalogDefaults.UncategorizedCategoryName : "Локации";
+                        }
                         if (table == "question_definitions") record["category_id"] = originalCategoryId.ToString();
                         await using var write = new Npgsql.NpgsqlCommand(
                             $"INSERT INTO {table} SELECT * FROM jsonb_populate_record(NULL::{table}, @record::jsonb)", targetConnection, transaction);
@@ -169,7 +169,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
                     },
                     new GameTeamSlot { Id = Guid.NewGuid(), GameId = game.Id, SlotIndex = 1, SlotType = TeamSlotTypeValue.Public, CreatedAtUtc = now });
                 var question = await source.QuestionDefinitions.Include(x => x.Options).SingleAsync(x => x.Id == uploaded.QuestionId);
-                var categoryName = await source.QuestionCategories.Where(x => x.Id == input.CategoryId).Select(x => x.Name).SingleAsync();
+                var categoryName = await target.QuestionCategories.Where(x => x.Id == originalCategoryId).Select(x => x.Name).SingleAsync();
                 target.AddRange(game, new GameEnabledQuestion
                 {
                     GameId = game.Id,
@@ -195,7 +195,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
                     SELECT row_to_json(snapshot)::text AS "Value" FROM game_enabled_questions snapshot WHERE game_id = {game.Id}
                     """).SingleAsync();
             }
-            await target.Database.MigrateAsync();
+            await target.GetService<IMigrator>().MigrateAsync("20261103201543_SeparateScreenshotCategories");
             var screenshot = await target.QuestionDefinitions.AsNoTracking().Include(x => x.CategoryDefinition)
                 .SingleAsync(x => x.Id == uploaded.QuestionId);
             Assert.NotEqual(originalCategoryId, screenshot.CategoryId);
@@ -206,6 +206,14 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
             Assert.Equal(6, await target.QuestionOptions.CountAsync(x => x.QuestionId == uploaded.QuestionId));
             Assert.Equal(2, await target.QuestionOptions.CountAsync(x => x.QuestionId == text.QuestionId));
             Assert.Equal(2, await target.QuestionCategories.CountAsync(x => x.Name == screenshot.CategoryDefinition!.Name));
+            await target.Database.MigrateAsync();
+            var consolidated = await target.QuestionDefinitions.AsNoTracking().SingleAsync(x => x.Id == uploaded.QuestionId);
+            Assert.Equal(QuestionCatalogDefaults.LocationScreenshotCategoryId, consolidated.CategoryId);
+            Assert.Equal(imageBefore, consolidated.ImageSnapshotJson);
+            Assert.Equal(archived, consolidated.IsDeleted);
+            Assert.Equal(originalCategoryId, await target.QuestionDefinitions.Where(x => x.Id == text.QuestionId).Select(x => x.CategoryId).SingleAsync());
+            Assert.Equal(6, await target.QuestionOptions.CountAsync(x => x.QuestionId == uploaded.QuestionId));
+            Assert.Equal(1, await target.QuestionCategories.CountAsync(x => x.Format == "screenshot" && x.Name == "Локации"));
             if (publishedGameId.HasValue)
             {
                 Assert.Equal(publishedSnapshot, await target.Database.SqlQuery<string>($"""
@@ -230,7 +238,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         var ids = question.Options.OrderBy(x => x.SortOrder).Select(x => x.Id).ToArray();
         var originalImage = question.ImageSnapshotJson;
         var repository = new DbGameQuestionRepository(db, TimeProvider.System);
-        var catalogItem = Assert.Single(await repository.GetCatalogAsync(input.CategoryId, null, true));
+        var catalogItem = (await repository.GetCatalogAsync(input.CategoryId, null, true)).Single(item => item.QuestionId == question.Id);
         Assert.Equal(input.LocationId, catalogItem.ScreenshotLocationId);
         Assert.Equal(await db.HuntLocations.Where(x => x.Id == input.LocationId).Select(x => x.MapId).SingleAsync(), catalogItem.ScreenshotMapId);
         var updated = await repository.UpdateQuestionAsync(question.Id,
@@ -280,7 +288,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         {
             var exception = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
                 db.GetService<IMigrator>().MigrateAsync("20261102173557_AddHuntLocationCatalog"));
-            Assert.Contains("Cannot downgrade a populated screenshot catalogue", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("Cannot downgrade consolidated screenshot categories", exception.Message, StringComparison.Ordinal);
             Assert.True(await db.Set<QuestionScreenshot>().AnyAsync(x => x.QuestionId == uploaded.QuestionId));
         }
         finally
@@ -303,7 +311,7 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         Assert.Equal(UploadQuizScreenshotOutcome.InvalidSelection,
             (await UploadAsync(Service(db), input with { Text = new string('x', 500) })).Outcome);
         Assert.Empty(_storage.ListObjectKeys("quiz"));
-        Assert.False(await db.QuestionDefinitions.AnyAsync(x => x.CategoryId == input.CategoryId));
+        Assert.False(await db.Set<QuestionScreenshot>().AnyAsync(x => x.UploadRequestId == input.RequestId));
     }
 
     [Fact]
@@ -340,11 +348,21 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         Assert.Single(_storage.ListObjectKeys("quiz"));
     }
 
-    [Fact]
-    public async Task ScreenshotUsesSharedSubmissionAndRewards_AndStaysUntilExplicitHide()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ScreenshotUsesSharedSubmissionAndRewards_AndStaysUntilExplicitHide(bool manual)
+    {
+        var isolated = new PostgresTestDatabase();
+        await isolated.InitializeAsync();
+        try { await AssertScreenshotGameAsync(isolated, manual); }
+        finally { await isolated.DisposeAsync(); }
+    }
+
+    private async Task AssertScreenshotGameAsync(PostgresTestDatabase database, bool manual)
     {
         await using var db = database.CreateDbContext();
-        var input = await InputAsync(db);
+        var input = manual ? await ManualInputAsync(db) : await InputAsync(db);
         var upload = await UploadAsync(Service(db), input);
         var question = await db.QuestionDefinitions.Include(x => x.Options).SingleAsync(x => x.Id == upload.QuestionId);
         var secondUpload = await UploadAsync(Service(db), input with { RequestId = Guid.NewGuid(), Priority = -1 });
@@ -364,8 +382,8 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         var user = new User
         {
             Id = Guid.NewGuid(),
-            TwitchUserId = "screenshot-player",
-            Login = "screenshot-player",
+            TwitchUserId = Guid.NewGuid().ToString("N"),
+            Login = Guid.NewGuid().ToString("N"),
             DisplayName = "Player",
             IsActive = true,
             CreatedAtUtc = now,
@@ -446,8 +464,9 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         await db.SaveChangesAsync();
         game.Status = GameStatusValue.Active; game.StartedAtUtc = now;
         await db.SaveChangesAsync();
+        var correct = question.Options.Single(x => x.IsCorrect).Id;
         await new DbGameQuestionRepository(db, TimeProvider.System).UpdateQuestionAsync(question.Id,
-            new(input.CategoryId, "New catalog text after publication", question.Options.OrderBy(x => x.SortOrder)
+            new(input.CategoryId, "New catalog text after publication", manual ? [new("Changed", true), new("Different", false)] : question.Options.OrderBy(x => x.SortOrder)
                 .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect)).ToArray(), 7, true, 0));
         var repository = new DbGameQuizRepository(db, new Clock(now.AddSeconds(1)));
         Assert.Equal(2, (await repository.GetAvailableQuizQuestionsAsync()).Count);
@@ -459,7 +478,6 @@ public sealed class ScreenshotQuizTests(PostgresTestDatabase database) : IClassF
         Assert.NotNull(asked.Image);
         Assert.StartsWith("https://media.test/quiz/quiz/screenshots/", asked.Image.ToDto(Storage.PublicBaseUrl).ImageUrl, StringComparison.Ordinal);
         Assert.Equal(TimeSpan.FromSeconds(25), asked.ClosesAtUtc - asked.AskedAtUtc);
-        var correct = question.Options.Single(x => x.IsCorrect).Id;
         var state = await repository.GetCurrentQuizStateAsync(user.Id);
         Assert.Equal(input.Text, state!.Text);
         Assert.True(state.PresentationVisible);

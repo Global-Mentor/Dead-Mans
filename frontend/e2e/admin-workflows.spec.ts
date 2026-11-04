@@ -147,6 +147,7 @@ async function mockAdmin(
               id: 'geography',
               name: 'Geography',
               questionCount: questions.length,
+              isLocationCategory: false,
               isProtected: false,
             },
           ],
@@ -1119,9 +1120,7 @@ for (const width of [390, 768, 1440]) {
       (await screenshotSearch.boundingBox())!.height,
     )
     await expect(panel.getByRole('checkbox')).toHaveCount(2)
-    await expect(panel.getByRole('img', { name: 'Location screenshot', exact: true })).toHaveCount(
-      2,
-    )
+    await expect(panel.getByRole('img', { name: 'Screenshot', exact: true })).toHaveCount(2)
     await expect(
       page.getByRole('textbox', { name: 'Answer time (seconds)', exact: true }),
     ).toHaveCount(0)

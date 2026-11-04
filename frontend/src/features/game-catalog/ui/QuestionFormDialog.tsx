@@ -22,6 +22,7 @@ import {
   FieldWithHelp,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
+import { QuizScreenshotImage } from '../../../shared/game-ui/index.ts'
 import { QuestionAnswerFields } from './QuestionAnswerFields.tsx'
 import { QuestionTwitchPreview } from './QuestionTwitchPreview.tsx'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
@@ -121,9 +122,11 @@ function QuestionFormDialogBody({
         contentDensity="compact"
         onClose={close.requestClose}
         title={
-          mode === 'create'
-            ? t('gameCatalog.questions.createTitle')
-            : t('gameCatalog.questions.editTitle')
+          initial?.image
+            ? t('gameCatalog.screenshots.edit')
+            : mode === 'create'
+              ? t('gameCatalog.questions.createTitle')
+              : t('gameCatalog.questions.editTitle')
         }
         actions={
           <>
@@ -172,6 +175,7 @@ function QuestionFormDialogBody({
               sx={{ gridArea: 'content' }}
             >
               <Stack gap={1.5}>
+                {initial?.image ? <QuizScreenshotImage image={initial.image} /> : null}
                 <Controller
                   control={control}
                   name="categoryId"

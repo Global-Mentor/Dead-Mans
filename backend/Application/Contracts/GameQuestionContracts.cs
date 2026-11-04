@@ -31,7 +31,10 @@ public sealed record GameQuestionCatalogItem(
         Text, Options.OrderBy(x => x.SortOrder).Select(x => x.Text).ToArray(), 3600, Reward);
 }
 
-public sealed record GameQuestionCategoryItem(Guid Id, string Name, int QuestionCount, bool IsProtected);
+public sealed record GameQuestionCategoryItem(Guid Id, string Name, int QuestionCount, bool IsProtected)
+{
+    public bool IsLocationCategory => Id == QuestionCatalogDefaults.LocationScreenshotCategoryId;
+}
 
 public sealed record CreateGameQuestionInput(
     string? ExternalCode,

@@ -32,7 +32,7 @@ for (const width of [390, 768, 1440]) {
       return route.fulfill({ status: 204 })
     })
     await page.goto('/panel/game-quiz')
-    await expect(page.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Винный завод', exact: true })).toBeEnabled()
     await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
     await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
@@ -62,6 +62,45 @@ const longAnswer =
   'Подробный ответ с несколькими условиями, который должен оставаться полностью доступным даже на узком экране. '.repeat(
     3,
   )
+
+test('manual screenshot picker shows the prompt and preview without a map', async ({
+  page,
+}, info) => {
+  await mockQuiz(page)
+  const prompt = 'Какой предмет показан на изображении?'
+  await page.route('**/api/game/quiz/questions/available', (route) =>
+    route.fulfill({
+      json: [
+        {
+          questionId: 'manual-screenshot',
+          questionCode: 'screen-manual',
+          categoryName: 'Предметы',
+          text: prompt,
+          image: { ...screenshotQuestion.image!, mapNames: {}, optionNames: {} },
+        },
+      ],
+    }),
+  )
+  await page.goto('/panel/game-quiz')
+  await page.getByRole('button', { name: 'Управление игрой', exact: true }).click()
+  await page.getByRole('tab', { name: 'Управление викториной', exact: true }).click()
+  await page.getByRole('button', { name: 'Выбрать скриншот', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Выбрать скриншот', exact: true })
+  const choice = dialog.getByRole('button', { name: new RegExp(prompt) })
+  await expect(choice).toBeVisible()
+  await expect(choice.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
+  await choice.click()
+  await expect(choice).toHaveAttribute('aria-pressed', 'true')
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(choice.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await dialog.screenshot({ path: info.outputPath(`manual-picker-${width}.png`) })
+  }
+})
+
 const questions = [
   {
     questionId: 'science',
@@ -684,11 +723,11 @@ test('screenshot history filters by format while the leaderboard keeps shared po
     '12 очк.',
   ])
   const history = page.getByTestId('quiz-history-scroll')
-  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await expect(history.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
   await page.getByRole('combobox', { name: /^Формат вопросов/ }).click()
   await page.getByRole('option', { name: 'Скриншоты', exact: true }).click()
   await expect(history.getByText('Обычный вопрос из истории')).toHaveCount(0)
-  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await expect(history.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
   await page.screenshot({
     path: info.outputPath('screenshot-history-statistics.png'),
     animations: 'disabled',
@@ -696,7 +735,7 @@ test('screenshot history filters by format while the leaderboard keeps shared po
   await page.getByRole('combobox', { name: /^Формат вопросов/ }).click()
   await page.getByRole('option', { name: 'Текстовые вопросы', exact: true }).click()
   await expect(history.getByText('Обычный вопрос из истории')).toBeVisible()
-  await expect(history.getByRole('img', { name: 'Скриншот локации', exact: true })).toHaveCount(0)
+  await expect(history.getByRole('img', { name: 'Скриншот', exact: true })).toHaveCount(0)
 })
 
 test('quiz launch is unavailable while modifiers are being ordered', async ({ page }) => {

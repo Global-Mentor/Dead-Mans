@@ -45,7 +45,10 @@ public sealed record GameQuestionCatalogItemDto(
     public GameQuizImageDto? Image { get; init; }
 }
 
-public sealed record GameQuestionCategoryItemDto(string Id, string Name, int QuestionCount, bool IsProtected);
+public sealed record GameQuestionCategoryItemDto(string Id, string Name, int QuestionCount, bool IsProtected)
+{
+    public bool IsLocationCategory { get; init; }
+}
 public sealed record SetGameQuestionEnabledRequestDto(bool IsEnabled);
 public sealed record SetGameQuestionCategoryEnabledRequestDto(bool IsEnabled);
 

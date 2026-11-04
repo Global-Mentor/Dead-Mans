@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { gameQuestionQueryKeys } from '../game-questions/index.ts'
 import { uploadQuizScreenshot, type ScreenshotUploadSettings } from './api/quiz-screenshots-api.ts'
+import { questionCategoryQueryOptions } from './api/question-categories-api.ts'
 
 export interface ScreenshotUploadRow {
   id: string
@@ -71,7 +72,12 @@ export function useScreenshotUpload() {
           )
         }
       }
-      await queryClient.invalidateQueries({ queryKey: gameQuestionQueryKeys.all })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: gameQuestionQueryKeys.all }),
+        queryClient.invalidateQueries({
+          queryKey: questionCategoryQueryOptions('screenshot').queryKey,
+        }),
+      ])
     } finally {
       running.current = false
       setBusy(false)

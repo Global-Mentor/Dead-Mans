@@ -5,7 +5,13 @@ import type { GameQuestionCatalogItem } from '../../../shared/api/contracts/inde
 import { renderWithAppProviders } from '../../../test/render-with-app-providers.tsx'
 import { QuestionFormDialog } from './QuestionFormDialog.tsx'
 
-const category = { id: 'category', name: 'Geography', questionCount: 0, isProtected: false }
+const category = {
+  id: 'category',
+  name: 'Geography',
+  questionCount: 0,
+  isLocationCategory: false,
+  isProtected: false,
+}
 
 function renderForm(initial?: GameQuestionCatalogItem, isBusy = false) {
   const onSubmit = vi.fn().mockResolvedValue(undefined)

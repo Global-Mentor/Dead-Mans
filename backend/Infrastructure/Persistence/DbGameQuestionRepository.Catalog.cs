@@ -121,7 +121,7 @@ public sealed partial class DbGameQuestionRepository
                     .FirstOrDefault(),
                 x.ImageSnapshotJson,
                 _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
-                    .Select(screenshot => (Guid?)screenshot.Location.MapId).FirstOrDefault(),
+                    .Select(screenshot => screenshot.Location == null ? (Guid?)null : screenshot.Location.MapId).FirstOrDefault(),
                 _dbContext.Set<QuestionScreenshot>().Where(screenshot => screenshot.QuestionId == x.Id)
                     .Select(screenshot => (Guid?)screenshot.LocationId).FirstOrDefault()
             );
@@ -165,6 +165,7 @@ public sealed partial class DbGameQuestionRepository
     {
         return categoryId == QuestionCatalogDefaults.UncategorizedCategoryId
             || categoryId == QuestionCatalogDefaults.UncategorizedScreenshotCategoryId
+            || categoryId == QuestionCatalogDefaults.LocationScreenshotCategoryId
             || string.Equals(
                 categoryName,
                 QuestionCatalogDefaults.UncategorizedCategoryName,
