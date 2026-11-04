@@ -41,21 +41,34 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
                 ? new(UploadQuizScreenshotOutcome.Existing, previous.QuestionId)
                 : new(UploadQuizScreenshotOutcome.RequestConflict);
 
-        var maps = await GetMapsAsync(cancellationToken);
-        var map = maps.SingleOrDefault(x => x.Locations.Any(location => location.Id == input.LocationId));
-        if (map is null || map.Locations.Count < 6
-            || !await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId && x.Format == "screenshot", cancellationToken))
+        if (!await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId && x.Format == "screenshot", cancellationToken))
             return new(UploadQuizScreenshotOutcome.InvalidSelection);
-        var correct = map.Locations.Single(x => x.Id == input.LocationId);
-        var distractors = map.Locations.Where(x => x.Id != correct.Id).ToArray();
-        Random.Shared.Shuffle(distractors);
-        var locations = new[] { correct }.Concat(distractors.Take(5)).ToArray();
-        string[] locales = ["en", "ru", "uk", "pl"];
-        if (locales.Any(locale => !map.Names.ContainsKey(locale)
-            || locations.Any(location => !location.Names.ContainsKey(locale))))
-            return new(UploadQuizScreenshotOutcome.InvalidSelection);
+        HuntMapItem? map = null;
+        HuntLocationItem[] locations = [];
+        IReadOnlyList<GameQuestionOptionInput> choices;
+        if (input.CategoryId == QuestionCatalogDefaults.LocationScreenshotCategoryId)
+        {
+            var maps = await GetMapsAsync(cancellationToken);
+            map = maps.SingleOrDefault(x => x.Locations.Any(location => location.Id == input.LocationId));
+            if (map is null || map.Locations.Count < 6 || input.Options is not null)
+                return new(UploadQuizScreenshotOutcome.InvalidSelection);
+            var correct = map.Locations.Single(x => x.Id == input.LocationId);
+            var distractors = map.Locations.Where(x => x.Id != correct.Id).ToArray();
+            Random.Shared.Shuffle(distractors);
+            locations = new[] { correct }.Concat(distractors.Take(5)).ToArray();
+            string[] locales = ["en", "ru", "uk", "pl"];
+            if (locales.Any(locale => !map.Names.ContainsKey(locale)
+                || locations.Any(location => !location.Names.ContainsKey(locale))))
+                return new(UploadQuizScreenshotOutcome.InvalidSelection);
+            choices = locations.Select(location => new GameQuestionOptionInput(location.Names["ru"], location.Id == correct.Id)).ToArray();
+        }
+        else
+        {
+            if (input.LocationId is not null || input.Options is null) return new(UploadQuizScreenshotOutcome.InvalidSelection);
+            choices = input.Options;
+        }
         if (!TwitchQuizMessageFormatter.FormatForValidation(input.Text,
-                locations.Select(location => location.Names["ru"]).ToArray(), 3600, input.Reward).IsCompatible)
+                choices.Select(choice => choice.Text).ToArray(), 3600, input.Reward).IsCompatible)
             return new(UploadQuizScreenshotOutcome.InvalidSelection);
 
         var now = clock.GetUtcNow().UtcDateTime;
@@ -70,18 +83,20 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
             SizeBytes = length,
             CreatedAtUtc = now
         };
-        var options = locations.Select((location, index) => new QuestionOption
+        var options = choices.Select((choice, index) => new QuestionOption
         {
             Id = Guid.NewGuid(),
             QuestionId = questionId,
-            Text = location.Names["ru"],
-            NormalizedText = QuestionAnswerNormalizer.Normalize(location.Names["ru"]),
-            IsCorrect = location.Id == correct.Id,
+            Text = choice.Text,
+            NormalizedText = QuestionAnswerNormalizer.Normalize(choice.Text),
+            IsCorrect = choice.IsCorrect,
             SortOrder = index,
             CreatedAtUtc = now
         }).ToArray();
-        var image = new QuizImageSnapshot(mediaId, $"{asset.Bucket}/{asset.ObjectKey}", map.Names,
-            options.Select((option, index) => (option.Id, locations[index].Names)).ToDictionary(x => x.Id, x => x.Names));
+        var image = new QuizImageSnapshot(mediaId, $"{asset.Bucket}/{asset.ObjectKey}",
+            map?.Names ?? new Dictionary<string, string>(),
+            map is null ? new Dictionary<Guid, IReadOnlyDictionary<string, string>>()
+                : options.Select((option, index) => (option.Id, locations[index].Names)).ToDictionary(x => x.Id, x => x.Names));
         var question = new QuestionDefinition
         {
             Id = questionId,
@@ -94,7 +109,7 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
             Revision = 1,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
-            Options = options,
+            Options = options.ToList(),
             ImageSnapshotJson = image.ToJson()
         };
         // Use opaque, unique storage keys. A retry never overwrites another question's object.
@@ -104,7 +119,7 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
         db.Set<QuestionScreenshot>().Add(new QuestionScreenshot
         {
             QuestionId = questionId,
-            LocationId = correct.Id,
+            LocationId = input.LocationId,
             MediaAssetId = mediaId,
             UploadRequestId = input.RequestId,
             UploadFingerprint = fingerprint

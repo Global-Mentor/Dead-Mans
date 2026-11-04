@@ -121,7 +121,13 @@ export function QuestionCatalogFilters({
               { value: '__all__', label: t('common.filters.allCategories') },
               ...categories.map((category) => ({
                 value: category.id,
-                label: category.name + ' (' + number(category.questionCount) + ')',
+                label:
+                  (category.isLocationCategory
+                    ? t('gameCatalog.screenshots.locationCategory')
+                    : category.name) +
+                  ' (' +
+                  number(category.questionCount) +
+                  ')',
               })),
             ]}
           />

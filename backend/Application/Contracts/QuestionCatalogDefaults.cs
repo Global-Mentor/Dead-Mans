@@ -9,4 +9,7 @@ public static class QuestionCatalogDefaults
         Guid.Parse("00000000-0000-0000-0000-000000000002");
 
     public const string UncategorizedCategoryName = "БЕЗ КАТЕГОРИИ";
+
+    public static readonly Guid LocationScreenshotCategoryId =
+        Guid.Parse("00000000-0000-0000-0000-000000000003");
 }

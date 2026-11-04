@@ -2,9 +2,9 @@ import type { components } from '../api/contracts/generated'
 
 type Image = components['schemas']['GameQuizImageDto']
 
-export function huntName(names: components['schemas']['LocalizedHuntNames'], language: string) {
+export function huntName(names: Readonly<Record<string, string>>, language: string) {
   const locale = language.split('-')[0]
-  return locale === 'ru' || locale === 'uk' || locale === 'pl' ? names[locale] : names.en
+  return names[locale ?? 'en'] ?? names.en ?? ''
 }
 
 export function quizOptionText(
@@ -26,7 +26,7 @@ export function quizImageSearchTerms(image: Image | null | undefined, language: 
 }
 
 /** Map resources contain mixed display casing; preserve spelling without all-caps headings. */
-export function huntMapName(names: components['schemas']['LocalizedHuntNames'], language: string) {
+export function huntMapName(names: Readonly<Record<string, string>>, language: string) {
   const name = huntName(names, language)
   return name === name.toLocaleUpperCase(language)
     ? name

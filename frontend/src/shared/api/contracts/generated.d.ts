@@ -30,7 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Upload one image and create a six-option location question. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only. */
+        /** @description Upload one image. The system location category requires locationId and generates six answers; other screenshot categories require two to ten manual options with exactly one correct answer and no locationId. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only. */
         post: operations["uploadQuizScreenshot"];
         delete?: never;
         options?: never;
@@ -1875,10 +1875,12 @@ export interface components {
             names: components["schemas"]["LocalizedHuntNames"];
             locations: components["schemas"]["HuntLocationItemDto"][];
         };
-        /** @description Frozen image and localized names for every option. Contains no correct-answer information. */
+        /** @description Frozen image and optional location translations. Manual screenshot questions have empty mapNames and optionNames and use the ordinary option texts. Contains no correct-answer information. */
         GameQuizImageDto: {
             imageUrl: string;
-            mapNames: components["schemas"]["LocalizedHuntNames"];
+            mapNames: {
+                [key: string]: string;
+            };
             optionNames: {
                 [key: string]: components["schemas"]["LocalizedHuntNames"];
             };
@@ -2876,8 +2878,10 @@ export interface components {
             id: string;
             name: string;
             questionCount: number;
-            /** @description True for the system fallback category that cannot be renamed or deleted. */
+            /** @description True for system categories that cannot be renamed or deleted. */
             isProtected: boolean;
+            /** @description Selects map/location fields and automatic answers for screenshot uploads. Other screenshot categories use manual answers. */
+            isLocationCategory: boolean;
         };
         ImportGameQuestionsResultDto: {
             importedCount: number;
@@ -3865,7 +3869,8 @@ export interface operations {
                     requestId: string;
                     text: string;
                     /** Format: uuid */
-                    locationId: string;
+                    locationId?: string;
+                    options?: components["schemas"]["GameQuestionOptionInputDto"][];
                     /** Format: uuid */
                     categoryId: string;
                     reward: number;

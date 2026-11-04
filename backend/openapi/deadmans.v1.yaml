@@ -27,23 +27,30 @@ paths:
     post:
       operationId: uploadQuizScreenshot
       security: [{ cookieAuth: [] }]
-      description: Upload one image and create a six-option location question. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only.
+      description: Upload one image. The system location category requires locationId and generates six answers; other screenshot categories require two to ten manual options with exactly one correct answer and no locationId. Batch uploads use one idempotent request per file. Identical requestId retries return the original question; different content conflicts. Admin only.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [requestId, locationId, categoryId, text, reward, priority, isEnabled, file]
+              required: [requestId, categoryId, text, reward, priority, isEnabled, file]
               properties:
                 requestId: { type: string, format: uuid }
                 text: { type: string, minLength: 1, maxLength: 2000 }
                 locationId: { type: string, format: uuid }
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 10
+                  items: { $ref: '#/components/schemas/GameQuestionOptionInputDto' }
                 categoryId: { type: string, format: uuid }
                 reward: { type: integer, minimum: 0 }
                 priority: { type: integer }
                 isEnabled: { type: boolean }
                 file: { type: string, format: binary, description: "JPEG, PNG, GIF or WebP; up to 5 MiB." }
+            encoding:
+              options: { contentType: application/json }
       responses:
         "200":
           description: Created or previously created question
@@ -4791,10 +4798,12 @@ components:
     GameQuizImageDto:
       type: object
       required: [imageUrl, mapNames, optionNames]
-      description: Frozen image and localized names for every option. Contains no correct-answer information.
+      description: Frozen image and optional location translations. Manual screenshot questions have empty mapNames and optionNames and use the ordinary option texts. Contains no correct-answer information.
       properties:
         imageUrl: { type: string }
-        mapNames: { $ref: '#/components/schemas/LocalizedHuntNames' }
+        mapNames:
+          type: object
+          additionalProperties: { type: string }
         optionNames:
           type: object
           additionalProperties: { $ref: '#/components/schemas/LocalizedHuntNames' }
@@ -6893,7 +6902,7 @@ components:
         errorCode: { type: string, nullable: true }
     GameQuestionCategoryItemDto:
       type: object
-      required: [id, name, questionCount, isProtected]
+      required: [id, name, questionCount, isProtected, isLocationCategory]
       properties:
         id:
           type: string
@@ -6905,7 +6914,10 @@ components:
           minimum: 0
         isProtected:
           type: boolean
-          description: True for the system fallback category that cannot be renamed or deleted.
+          description: True for system categories that cannot be renamed or deleted.
+        isLocationCategory:
+          type: boolean
+          description: Selects map/location fields and automatic answers for screenshot uploads. Other screenshot categories use manual answers.
     ImportGameQuestionsResultDto:
       type: object
       required: [importedCount, skippedQuestions]

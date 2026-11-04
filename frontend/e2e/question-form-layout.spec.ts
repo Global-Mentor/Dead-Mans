@@ -33,7 +33,15 @@ async function mockLocalUi(page: Page) {
         })
       if (path === '/api/game/questions/categories')
         return route.fulfill({
-          json: [{ id: 'category', name: 'География', questionCount: 0, isProtected: false }],
+          json: [
+            {
+              id: 'category',
+              name: 'География',
+              questionCount: 0,
+              isLocationCategory: false,
+              isProtected: false,
+            },
+          ],
         })
       if (path === '/api/game/questions/catalog') return route.fulfill({ json: [] })
       return route.fulfill({ status: 204 })

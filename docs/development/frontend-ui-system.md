@@ -267,8 +267,11 @@ During open registration, the board's game-status value is a short localized reg
 
 Screenshot catalogue and game-setup rows place the prompt and metadata on the left and a fixed-width,
 lazily loaded thumbnail on the right, including at mobile widths. Upload accepts one
-or more images with a required shared prompt; the screenshot editor can change that
-prompt while preserving the image and location options. Prompt rendering uses the
+or more images with a required shared prompt. Category comes first: the system
+Locations category selects a map and location, while other categories use the shared
+question answer editor. Manual answers can be edited; image and location options
+remain immutable. Published games retain their original answers. See the
+[screenshot catalogue contract](../architecture/screenshot-quiz.md). Prompt rendering uses the
 saved question text across the site, OBS and history. Map headings use ordinary
 casing for all-uppercase game resources without changing stored spellings.
 

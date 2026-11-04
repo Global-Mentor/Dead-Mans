@@ -5,7 +5,7 @@ export const maxQuestionReward = 2147483647
 export const maxQuestionAnswers = 10
 export const minQuestionAnswers = 2
 
-interface QuestionFormSchemaMessages {
+export interface QuestionFormSchemaMessages {
   required: string
   number: string
   tooLong: string

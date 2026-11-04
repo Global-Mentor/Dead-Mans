@@ -66,7 +66,7 @@ internal static class GameQuestionValidator
         return input?.Contains('\0') != true && text.Length is > 0 and <= MaxTextLength;
     }
 
-    private static bool TryNormalizeOptions(
+    public static bool TryNormalizeOptions(
         IReadOnlyList<GameQuestionOptionInput>? options,
         out IReadOnlyList<GameQuestionOptionInput> normalizedOptions
     )

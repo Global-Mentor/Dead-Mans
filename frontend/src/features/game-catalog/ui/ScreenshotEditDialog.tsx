@@ -23,21 +23,44 @@ import {
   createQuestionMetadataSchema,
   createQuestionTextSchema,
 } from '../model/question-form-schema.ts'
+import { QuestionFormDialog } from './QuestionFormDialog.tsx'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 
-export function ScreenshotEditDialog({
-  question,
-  categories,
-  isBusy,
-  onClose,
-  onSubmit,
-}: {
+interface ScreenshotEditDialogProps {
   question: GameQuestionCatalogItem
   categories: readonly GameQuestionCategoryItem[]
   isBusy: boolean
   onClose: () => void
   onSubmit: (request: CreateGameQuestionRequest) => Promise<unknown>
-}) {
+}
+
+export function ScreenshotEditDialog(props: ScreenshotEditDialogProps) {
+  const location = Boolean(props.question.screenshotLocationId)
+  const categories = props.categories.filter((category) => category.isLocationCategory === location)
+  return location ? (
+    <LocationScreenshotEditDialog {...props} categories={categories} />
+  ) : (
+    <QuestionFormDialog
+      open
+      mode="edit"
+      initial={props.question}
+      categories={categories}
+      isBusy={props.isBusy}
+      onClose={props.onClose}
+      onSubmit={async (request) => {
+        await props.onSubmit(request)
+      }}
+    />
+  )
+}
+
+function LocationScreenshotEditDialog({
+  question,
+  categories,
+  isBusy,
+  onClose,
+  onSubmit,
+}: ScreenshotEditDialogProps) {
   const { t } = useTranslation()
   const form = useForm({
     resolver: zodResolver(
@@ -121,7 +144,9 @@ export function ScreenshotEditDialog({
                 helperText={fieldState.error?.message}
                 options={categories.map((category) => ({
                   value: category.id,
-                  label: category.name,
+                  label: category.isLocationCategory
+                    ? t('gameCatalog.screenshots.locationCategory')
+                    : category.name,
                 }))}
               />
             )}

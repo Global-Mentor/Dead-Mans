@@ -20,6 +20,7 @@ for (const width of [390, 768, 1440]) {
       id: 'screenshot-system',
       name: 'БЕЗ КАТЕГОРИИ',
       questionCount: 0,
+      isLocationCategory: false,
       isProtected: true,
     }
     let releaseCategories: () => void = () => {}
@@ -69,10 +70,13 @@ for (const width of [390, 768, 1440]) {
     await category.click()
     await expect(page.getByRole('option')).toHaveCount(1)
     await page.getByRole('option').click()
-    await dialog.getByRole('combobox', { name: /^Карта/ }).click()
-    await page.getByRole('option').first().click()
-    await dialog.getByRole('combobox', { name: /^Локация/ }).click()
-    await page.getByRole('option').first().click()
+    await expect(dialog.getByRole('combobox', { name: /^Карта/ })).toHaveCount(0)
+    await dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true }).fill('Аптечка')
+    for (let index = 1; index <= 3; index++) {
+      await dialog
+        .getByRole('textbox', { name: `Неверный вариант ${index}`, exact: true })
+        .fill(`Предмет ${index}`)
+    }
     await dialog
       .getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
       .fill('Где находится эта башня?')
@@ -91,6 +95,9 @@ for (const width of [390, 768, 1440]) {
       .click()
     await expect.poll(() => uploaded).toContain('screenshot-system')
     expect(uploaded).not.toContain('name="categoryId"\r\n\r\nsystem')
+    expect(uploaded).not.toContain('name="locationId"')
+    expect(uploaded).toContain('name="options"')
+    expect(uploaded).toContain('Аптечка')
   })
 }
 
@@ -181,11 +188,43 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
+const locationCategory: GameQuestionCategoryItem = {
+  id: 'locations',
+  name: 'Локации',
+  questionCount: 0,
+  isProtected: true,
+  isLocationCategory: true,
+}
+
 const categories: GameQuestionCategoryItem[] = [
-  { id: 'geo', name: 'География', questionCount: 12, isProtected: false },
-  { id: 'science', name: 'Наука', questionCount: 12, isProtected: false },
-  { id: 'empty', name: 'Новая категория', questionCount: 0, isProtected: false },
-  { id: 'system', name: 'БЕЗ КАТЕГОРИИ', questionCount: 0, isProtected: true },
+  {
+    id: 'geo',
+    name: 'География',
+    questionCount: 12,
+    isLocationCategory: false,
+    isProtected: false,
+  },
+  {
+    id: 'science',
+    name: 'Наука',
+    questionCount: 12,
+    isLocationCategory: false,
+    isProtected: false,
+  },
+  {
+    id: 'empty',
+    name: 'Новая категория',
+    questionCount: 0,
+    isLocationCategory: false,
+    isProtected: false,
+  },
+  {
+    id: 'system',
+    name: 'БЕЗ КАТЕГОРИИ',
+    questionCount: 0,
+    isLocationCategory: false,
+    isProtected: true,
+  },
 ]
 const catalog: GameQuestionCatalogItem[] = Array.from({ length: 24 }, (_, index) => ({
   questionId: 'question-' + index,
@@ -237,7 +276,7 @@ test('large screenshot catalogue loads offscreen images only when approached', a
   await page.goto('/panel/catalog-screenshots')
   const list = page.getByTestId('question-catalog-list')
   // Loading images are hidden from the accessibility tree until ImageFrame has loaded them.
-  const images = list.locator('img[alt="Скриншот локации"]')
+  const images = list.locator('img[alt="Скриншот"]')
   await expect(images).toHaveCount(100)
   await expect
     .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
@@ -295,12 +334,18 @@ async function mockCatalog(page: Page, language = 'ru') {
           },
         })
       if (path === '/api/game/questions/categories' && method === 'GET')
-        return route.fulfill({ json: state.categories })
+        return route.fulfill({
+          json:
+            new URL(route.request().url()).searchParams.get('format') === 'screenshot'
+              ? [locationCategory, ...state.categories]
+              : state.categories,
+        })
       if (path === '/api/game/questions/categories' && method === 'POST') {
         const category = {
           id: 'created-category',
           name: route.request().postDataJSON().name,
           questionCount: 0,
+          isLocationCategory: false,
           isProtected: false,
         }
         state.categories.push(category)
@@ -395,6 +440,9 @@ for (const width of [390, 768, 1440]) {
       {
         ...catalog[0]!,
         image: screenshotQuestion.image,
+        categoryId: 'locations',
+        screenshotLocationId: 'location',
+        screenshotMapId: 'map',
         options: screenshotQuestion.options.map((option, index) => ({
           ...option,
           isCorrect: index === 0,
@@ -404,7 +452,7 @@ for (const width of [390, 768, 1440]) {
     ]
     await page.goto('/panel/catalog-screenshots')
     const list = page.getByTestId('question-catalog-list')
-    await expect(list.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    await expect(list.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
     const preview = await list.getByRole('img').boundingBox()
     const title = await list.getByText(state.items[0]!.text, { exact: true }).boundingBox()
     expect(preview!.x).toBeGreaterThanOrEqual(title!.x + title!.width)
@@ -416,7 +464,7 @@ for (const width of [390, 768, 1440]) {
       .click()
     const editor = page.getByRole('dialog', { name: 'Изменить скриншот', exact: true })
     await expect(editor.getByRole('textbox', { name: 'Награда', exact: true })).toBeVisible()
-    await expect(editor.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+    await expect(editor.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: info.outputPath('screenshot-editor.png') })
   })
@@ -429,6 +477,9 @@ test('screenshot metadata can be edited without replacing its six answer options
   const visual: GameQuestionCatalogItem = {
     ...catalog[0]!,
     image: screenshotQuestion.image,
+    categoryId: 'locations',
+    screenshotLocationId: 'location',
+    screenshotMapId: 'map',
     text: screenshotQuestion.text,
     questionCode: 'screen',
     options: screenshotQuestion.options.map((option, index) => ({
@@ -450,7 +501,7 @@ test('screenshot metadata can be edited without replacing its six answer options
     .getByRole('button', { name: 'Изменить', exact: true })
     .click()
   const editor = page.getByRole('dialog', { name: 'Изменить скриншот' })
-  await expect(editor.getByRole('img', { name: 'Скриншот локации', exact: true })).toBeVisible()
+  await expect(editor.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
   await editor.getByRole('textbox', { name: 'Награда', exact: true }).fill('42')
   await editor.getByRole('textbox', { name: 'Приоритет', exact: true }).fill('-5')
   await editor
@@ -1158,3 +1209,121 @@ for (const width of [390, 768, 1440, 1536, 1920]) {
     await expect(rows).toHaveCount(4)
   })
 }
+
+test('screenshot category switches answer mode and preserves manual answers across batch retries', async ({
+  page,
+}) => {
+  await mockCatalog(page)
+  let categoryReads = 0
+  await page.route('**/api/game/questions/categories?*', (route) => {
+    categoryReads++
+    return route.fulfill({ json: [locationCategory, ...categories] })
+  })
+  await page.route('**/api/game/questions/hunt-maps', (route) =>
+    route.fulfill({ status: 503, json: { code: 'server_error' } }),
+  )
+  const bodies: string[] = []
+  await page.route('**/api/game/questions/screenshots', async (route) => {
+    bodies.push(route.request().postDataBuffer()!.toString())
+    await route.fulfill(
+      bodies.length === 2
+        ? { status: 503, json: { code: 'server_error' } }
+        : { json: { questionId: 'uploaded' } },
+    )
+  })
+  await page.goto('/panel/catalog-screenshots')
+  await page.getByRole('button', { name: 'Загрузить скриншоты', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Загрузить скриншоты', exact: true })
+  const category = dialog.getByRole('combobox', { name: /^Категория/ })
+  await expect(category).toHaveText('Локации')
+  await expect(dialog.getByText('Не удалось загрузить локации.')).toBeVisible()
+  await category.click()
+  await page.getByRole('option', { name: 'Наука', exact: true }).click()
+  await expect(dialog.getByRole('combobox', { name: /^Карта/ })).toHaveCount(0)
+  await dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true }).fill('Аптечка')
+  for (let i = 1; i <= 3; i++)
+    await dialog
+      .getByRole('textbox', { name: `Неверный вариант ${i}`, exact: true })
+      .fill(`Предмет ${i}`)
+  await category.click()
+  await page.getByRole('option', { name: 'Локации', exact: true }).click()
+  await expect(dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true })).toHaveCount(
+    0,
+  )
+  await category.click()
+  await page.getByRole('option', { name: 'Наука', exact: true }).click()
+  await expect(dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true })).toHaveValue(
+    'Аптечка',
+  )
+  await dialog
+    .getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    .fill('Что за предмет?')
+  const buffer = await readFile('public/brand/share-card.png')
+  await dialog.locator('input[type=file]').setInputFiles([
+    { name: 'first.png', mimeType: 'image/png', buffer },
+    { name: 'second.png', mimeType: 'image/png', buffer },
+  ])
+  const upload = dialog.getByRole('button', {
+    name: 'Загрузить / повторить оставшиеся',
+    exact: true,
+  })
+  await upload.click()
+  await expect(dialog.getByText('Загружено 1 из 2', { exact: true })).toBeVisible()
+  await expect(category).toHaveAttribute('aria-disabled', 'true')
+  await expect(
+    dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true }),
+  ).toBeDisabled()
+  await upload.click()
+  await expect(dialog.getByText('Загружено 2 из 2', { exact: true })).toBeVisible()
+  expect(bodies).toHaveLength(3)
+  const answers = bodies.map((body) => body.match(/name="options"\r\n\r\n([^\r]+)/)![1])
+  expect(new Set(answers).size).toBe(1)
+  expect(JSON.parse(answers[0]!)).toEqual([
+    { text: 'Аптечка', isCorrect: true },
+    ...[1, 2, 3].map((i) => ({ text: `Предмет ${i}`, isCorrect: false })),
+  ])
+  expect(bodies.every((body) => !body.includes('name="locationId"'))).toBe(true)
+  const ids = bodies.map((body) => body.match(/name="requestId"\r\n\r\n([^\r]+)/)![1])
+  expect(ids[1]).toBe(ids[2])
+  expect(ids[0]).not.toBe(ids[1])
+  await expect.poll(() => categoryReads).toBeGreaterThanOrEqual(3)
+})
+
+test('manual screenshot editor saves answer changes and retains its image after reload', async ({
+  page,
+}) => {
+  const state = await mockCatalog(page)
+  const visual = {
+    ...catalog[0]!,
+    image: { ...screenshotQuestion.image!, mapNames: {}, optionNames: {} },
+  }
+  state.items = [visual]
+  await page.goto('/panel/catalog-screenshots')
+  await page.getByRole('combobox', { name: /^Категории/ }).click()
+  await expect(page.getByRole('option', { name: 'Локации (0)', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(
+    page.getByTestId('question-catalog-list').getByText(visual.text, { exact: true }),
+  ).toHaveCount(1)
+  await page.getByTestId('question-catalog-list').getByRole('button').click()
+  await page
+    .getByTestId('question-catalog-details')
+    .getByRole('button', { name: 'Изменить', exact: true })
+    .click()
+  const editor = page.getByRole('dialog', { name: 'Изменить скриншот', exact: true })
+  await expect(editor.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
+  await editor.getByRole('textbox', { name: 'Правильный ответ', exact: true }).fill('Новый ответ')
+  await editor.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .last()
+    .getByRole('button', { name: 'Сохранить', exact: true })
+    .click()
+  await expect(editor).toHaveCount(0)
+  expect(state.saves[0]?.options[0]).toEqual({ text: 'Новый ответ', isCorrect: true })
+  expect(state.items[0]?.image).toEqual(visual.image)
+  await page.reload()
+  await expect(
+    page.getByTestId('question-catalog-details').getByText('Новый ответ', { exact: true }),
+  ).toBeVisible()
+})

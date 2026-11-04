@@ -25,10 +25,10 @@ export const GameSetupQuestionRow = memo(function GameSetupQuestionRow({
   const { t, i18n } = useTranslation()
   const correct = question.image ? question.options.find((option) => option.isCorrect) : null
   const location =
-    question.image && correct
+    question.image && question.screenshotLocationId && correct
       ? `${huntMapName(question.image.mapNames, i18n.language)} · ${quizOptionText(question.image, correct.optionId, correct.text, i18n.language)}`
       : null
-  const label = question.image
+  const label = location
     ? `${question.text} · ${location} · ${question.questionCode}`
     : question.text
   return (

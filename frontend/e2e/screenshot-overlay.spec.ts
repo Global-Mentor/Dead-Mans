@@ -25,7 +25,7 @@ for (const width of [390, 768, 1440, 1920]) {
     await page.route('**/api/overlay/snapshot', (route) => route.fulfill({ json: state }))
     const notify = await connectOverlayEvents(page)
     await page.goto(`/overlay?lng=ru#key=${key}`)
-    const image = page.getByRole('img', { name: 'Скриншот локации', exact: true })
+    const image = page.getByRole('img', { name: 'Скриншот', exact: true })
     await expect(image).toBeVisible()
     await expect
       .poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth))
@@ -99,3 +99,41 @@ test('screenshot overlay reports missing media without losing answer options', a
   await expect(page.getByText('Изображение недоступно', { exact: true })).toBeVisible()
   await expect(page.getByText('!6', { exact: true })).toBeVisible()
 })
+
+for (const count of [2, 10]) {
+  test(`manual screenshot overlay renders ${count} ordinary answers without location translations`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 1920, height: 1080 })
+    await page.clock.install({ time: new Date('2026-11-02T12:00:00Z') })
+    await page.route('**/api/overlay/snapshot', (route) =>
+      route.fulfill({
+        json: {
+          ...snapshot,
+          phase: 'screenshot',
+          quizQuestion: {
+            ...screenshotQuestion,
+            categoryName: 'Предметы',
+            text: 'Какой предмет показан на изображении?',
+            image: { ...screenshotQuestion.image!, mapNames: {}, optionNames: {} },
+            options: Array.from({ length: count }, (_, index) => ({
+              optionId: `item-${index}`,
+              text: `Предмет охотника: вариант ${index + 1}`,
+              displayOrder: index,
+            })),
+          },
+        },
+      }),
+    )
+    await connectOverlayEvents(page)
+    await page.goto(`/overlay?lng=ru#key=${key}`)
+    await expect(page.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
+    await expect(
+      page.getByText(`Предмет охотника: вариант ${count}`, { exact: true }),
+    ).toBeVisible()
+    const last = await page.getByText(`!${count}`, { exact: true }).boundingBox()
+    expect(last!.y + last!.height).toBeLessThan(1080 - 24)
+    await settleOverlay(page)
+    await page.screenshot({ path: info.outputPath(`manual-screenshot-${count}.png`) })
+  })
+}

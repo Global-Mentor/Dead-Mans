@@ -1,6 +1,7 @@
 const translations = {
   en: {
     screenshots: {
+      locationCategory: 'Locations',
       question: 'Image question',
       questionHelp: 'The same question will be used for every image in this upload.',
       catalogTitle: 'Screenshot catalog',
@@ -19,7 +20,7 @@ const translations = {
       deleteConfirm:
         'Delete this screenshot from the catalog? Completed games retain their history.',
       title: 'Upload screenshots',
-      help: 'Choose a map and location, enter a question, then select one or more images. Each image gets six location options. JPEG, PNG, WebP or GIF, up to 5 MB per image.',
+      help: 'Choose a category first. Locations use a map and location with six automatic answers; other categories use your own answers. The question and answers apply to every selected image. JPEG, PNG, WebP or GIF, up to 5 MB per image.',
       map: 'Map',
       location: 'Location',
       choose: 'Choose one or more images',
@@ -531,6 +532,7 @@ const translations = {
   },
   ru: {
     screenshots: {
+      locationCategory: 'Локации',
       question: 'Вопрос для изображения',
       questionHelp: 'Этот вопрос будет добавлен ко всем изображениям в этой загрузке.',
       catalogTitle: 'Каталог скриншотов',
@@ -548,7 +550,7 @@ const translations = {
       deleteTitle: 'Удалить скриншот',
       deleteConfirm: 'Удалить скриншот из каталога? История завершённых игр сохранится.',
       title: 'Загрузить скриншоты',
-      help: 'Выберите карту и локацию, введите вопрос и добавьте одно или несколько изображений. Для каждого будет шесть вариантов локаций. JPEG, PNG, WebP или GIF, до 5 MB на изображение.',
+      help: 'Сначала выберите категорию. Для локаций укажите карту и локацию: шесть вариантов создадутся автоматически. В остальных категориях введите ответы вручную. Вопрос и ответы общие для всех выбранных изображений. JPEG, PNG, WebP или GIF, до 5 MB на изображение.',
       map: 'Карта',
       location: 'Локация',
       choose: 'Выбрать одно или несколько изображений',
@@ -1066,6 +1068,7 @@ const translations = {
   },
   uk: {
     screenshots: {
+      locationCategory: 'Локації',
       question: 'Запитання до зображення',
       questionHelp: 'Це запитання буде додано до всіх зображень у цьому завантаженні.',
       catalogTitle: 'Каталог знімків екрана',
@@ -1083,7 +1086,7 @@ const translations = {
       deleteTitle: 'Видалити знімок екрана',
       deleteConfirm: 'Видалити знімок екрана з каталогу? Історія завершених ігор збережеться.',
       title: 'Завантажити знімки',
-      help: 'Виберіть мапу й локацію, введіть запитання та додайте одне або кілька зображень. Для кожного буде шість варіантів локацій. JPEG, PNG, WebP або GIF, до 5 MB на зображення.',
+      help: 'Спочатку виберіть категорію. Для локацій вкажіть мапу й локацію: шість відповідей створяться автоматично. В інших категоріях введіть відповіді вручну. Запитання й відповіді спільні для всіх вибраних зображень. JPEG, PNG, WebP або GIF, до 5 MB на зображення.',
       map: 'Карта',
       location: 'Локація',
       choose: 'Вибрати одне або кілька зображень',
@@ -1598,6 +1601,7 @@ const translations = {
   },
   pl: {
     screenshots: {
+      locationCategory: 'Lokacje',
       question: 'Pytanie do obrazu',
       questionHelp: 'To samo pytanie zostanie dodane do wszystkich obrazów w tej partii.',
       catalogTitle: 'Katalog zrzutów ekranu',
@@ -1616,7 +1620,7 @@ const translations = {
       deleteConfirm:
         'Usunąć zrzut ekranu z katalogu? Historia zakończonych gier zostanie zachowana.',
       title: 'Prześlij zrzuty ekranu',
-      help: 'Wybierz mapę i lokację, wpisz pytanie, a następnie wybierz co najmniej jeden obraz. Każdy otrzyma sześć lokacji do wyboru. JPEG, PNG, WebP lub GIF, do 5 MB na obraz.',
+      help: 'Najpierw wybierz kategorię. Dla lokacji wybierz mapę i lokację: sześć odpowiedzi powstanie automatycznie. W pozostałych kategoriach wpisz własne odpowiedzi. Pytanie i odpowiedzi dotyczą wszystkich wybranych obrazów. JPEG, PNG, WebP lub GIF, do 5 MB na obraz.',
       map: 'Mapa',
       location: 'Lokacja',
       choose: 'Wybierz jeden lub więcej obrazów',

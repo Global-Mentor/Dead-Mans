@@ -2823,7 +2823,7 @@ namespace backend.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("question_id");
 
-                    b.Property<Guid>("LocationId")
+                    b.Property<Guid?>("LocationId")
                         .HasColumnType("uuid")
                         .HasColumnName("location_id");
 
@@ -4209,7 +4209,6 @@ namespace backend.Data.Migrations
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_question_screenshots_hunt_locations_location_id");
 
                     b.HasOne("backend.Data.Entities.MediaAsset", "MediaAsset")

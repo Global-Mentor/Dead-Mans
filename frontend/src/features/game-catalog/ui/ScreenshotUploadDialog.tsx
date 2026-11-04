@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Box, Stack, Typography } from '@mui/material'
 import { useRef } from 'react'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import type { GameQuestionCategoryItem } from '../../../shared/api/contracts/index.ts'
-import { z } from '../../../shared/validation/zod.ts'
 import { huntName, huntMapName } from '../../../shared/game-ui/index.ts'
 import {
   AppButton,
@@ -23,10 +22,8 @@ import {
 import { huntMapsQueryOptions } from '../api/quiz-screenshots-api.ts'
 import { useScreenshotUpload } from '../use-screenshot-upload.ts'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
-import {
-  createQuestionMetadataSchema,
-  createQuestionTextSchema,
-} from '../model/question-form-schema.ts'
+import { createScreenshotFormSchema } from '../model/screenshot-form-schema.ts'
+import { QuestionAnswerFields } from './QuestionAnswerFields.tsx'
 
 export function ScreenshotUploadDialog({
   categories,
@@ -36,20 +33,21 @@ export function ScreenshotUploadDialog({
   onClose: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const maps = useQuery(huntMapsQueryOptions)
   const upload = useScreenshotUpload()
   const picker = useRef<HTMLInputElement>(null)
   const required = t('gameCatalog.validation.required')
-  const schema = createQuestionMetadataSchema({
-    required,
-    number: t('gameCatalog.validation.number'),
-  })
-    .pick({ categoryId: true, reward: true })
-    .extend({
-      mapId: z.string().min(1, required),
-      locationId: z.string().min(1, required),
-      text: createQuestionTextSchema({ required, tooLong: t('gameCatalog.validation.tooLong') }),
-    })
+  const locationCategory = categories.find((category) => category.isLocationCategory)
+  const schema = createScreenshotFormSchema(
+    {
+      required,
+      number: t('gameCatalog.validation.number'),
+      tooLong: t('gameCatalog.validation.tooLong'),
+      maxAnswers: t('gameCatalog.validation.answerLimit'),
+      duplicateAnswers: t('gameCatalog.validation.duplicateAnswers'),
+      correctAnswer: t('gameCatalog.validation.correctAnswer'),
+    },
+    locationCategory?.id,
+  )
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -57,10 +55,19 @@ export function ScreenshotUploadDialog({
       mapId: '',
       locationId: '',
       categoryId:
-        categories.find((category) => category.isProtected)?.id ?? categories[0]?.id ?? '',
+        locationCategory?.id ??
+        categories.find((category) => category.isProtected)?.id ??
+        categories[0]?.id ??
+        '',
       reward: '1',
+      priority: '0',
+      isEnabled: true,
+      options: Array.from({ length: 4 }, (_, index) => ({ text: '', isCorrect: index === 0 })),
     },
   })
+  const categoryId = useWatch({ control: form.control, name: 'categoryId' })
+  const isLocation = Boolean(locationCategory && categoryId === locationCategory.id)
+  const maps = useQuery({ ...huntMapsQueryOptions, enabled: isLocation })
   const mapId = useWatch({ control: form.control, name: 'mapId' })
   const map = maps.data?.find((item) => item.id === mapId)
   const pending = upload.rows.filter((row) => row.status !== 'done').length
@@ -72,7 +79,7 @@ export function ScreenshotUploadDialog({
   const submit = form.handleSubmit((values) =>
     upload.upload({
       text: values.text,
-      locationId: values.locationId,
+      ...(isLocation ? { locationId: values.locationId } : { options: values.options }),
       categoryId: values.categoryId,
       reward: Number(values.reward),
       priority: 0,
@@ -95,7 +102,7 @@ export function ScreenshotUploadDialog({
             <AppButton
               tone="primary"
               loading={upload.busy}
-              disabled={!pending || maps.isError || !map}
+              disabled={!pending || (isLocation && (maps.isError || !map))}
               onClick={() => void submit()}
             >
               {t('gameCatalog.screenshots.upload')}
@@ -104,7 +111,7 @@ export function ScreenshotUploadDialog({
         }
       >
         <Stack spacing={1.5}>
-          {maps.isError ? (
+          {isLocation && maps.isError ? (
             <InlineNotice
               severity="error"
               action={
@@ -118,45 +125,6 @@ export function ScreenshotUploadDialog({
           ) : null}
           <Controller
             control={form.control}
-            name="mapId"
-            render={({ field, fieldState }) => (
-              <FormSelect
-                label={t('gameCatalog.screenshots.map')}
-                value={field.value}
-                disabled={upload.locked || maps.isPending}
-                error={Boolean(fieldState.error)}
-                helperText={fieldState.error?.message}
-                options={(maps.data ?? []).map((item) => ({
-                  value: item.id,
-                  label: huntMapName(item.names, i18n.language),
-                }))}
-                onChange={(value) => {
-                  field.onChange(value)
-                  form.setValue('locationId', '')
-                }}
-              />
-            )}
-          />
-          <Controller
-            control={form.control}
-            name="locationId"
-            render={({ field, fieldState }) => (
-              <FormSelect
-                label={t('gameCatalog.screenshots.location')}
-                value={field.value}
-                disabled={upload.locked || !map}
-                error={Boolean(fieldState.error)}
-                helperText={fieldState.error?.message}
-                options={(map?.locations ?? []).map((item) => ({
-                  value: item.id,
-                  label: huntName(item.names, i18n.language),
-                }))}
-                onChange={field.onChange}
-              />
-            )}
-          />
-          <Controller
-            control={form.control}
             name="categoryId"
             render={({ field, fieldState }) => (
               <FormSelect
@@ -165,11 +133,59 @@ export function ScreenshotUploadDialog({
                 disabled={upload.locked}
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
-                options={categories.map((item) => ({ value: item.id, label: item.name }))}
+                options={categories.map((item) => ({
+                  value: item.id,
+                  label: item.isLocationCategory
+                    ? t('gameCatalog.screenshots.locationCategory')
+                    : item.name,
+                }))}
                 onChange={field.onChange}
               />
             )}
           />
+          {isLocation ? (
+            <>
+              <Controller
+                control={form.control}
+                name="mapId"
+                render={({ field, fieldState }) => (
+                  <FormSelect
+                    label={t('gameCatalog.screenshots.map')}
+                    value={field.value}
+                    disabled={upload.locked || maps.isPending}
+                    error={Boolean(fieldState.error)}
+                    helperText={fieldState.error?.message}
+                    options={(maps.data ?? []).map((item) => ({
+                      value: item.id,
+                      label: huntMapName(item.names, i18n.language),
+                    }))}
+                    onChange={(value) => {
+                      field.onChange(value)
+                      form.setValue('locationId', '')
+                    }}
+                  />
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="locationId"
+                render={({ field, fieldState }) => (
+                  <FormSelect
+                    label={t('gameCatalog.screenshots.location')}
+                    value={field.value}
+                    disabled={upload.locked || !map}
+                    error={Boolean(fieldState.error)}
+                    helperText={fieldState.error?.message}
+                    options={(map?.locations ?? []).map((item) => ({
+                      value: item.id,
+                      label: huntName(item.names, i18n.language),
+                    }))}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </>
+          ) : null}
           <ControlledFormTextField
             control={form.control}
             name="reward"
@@ -186,6 +202,11 @@ export function ScreenshotUploadDialog({
             multiline
             minRows={2}
           />
+          {!isLocation ? (
+            <FormProvider {...form}>
+              <QuestionAnswerFields busy={upload.locked} />
+            </FormProvider>
+          ) : null}
           <FilePickerInput
             ref={picker}
             multiple

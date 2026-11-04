@@ -144,7 +144,8 @@ public static partial class ApiContractMapper
             item.Name,
             item.QuestionCount,
             item.IsProtected
-        );
+        )
+        { IsLocationCategory = item.IsLocationCategory };
     }
 
     public static ImportGameQuestionSkippedItemDto ToDto(this ImportGameQuestionSkippedItem item)

@@ -2,7 +2,7 @@ const translations = {
   en: {
     screenshotPicker: {
       searchLabel: 'Search screenshots',
-      searchPlaceholder: 'Enter a map, location or screenshot code',
+      searchPlaceholder: 'Enter a question, map, location or screenshot code',
       startError: 'Could not start this screenshot. Your selection is saved. Try again.',
       results: '{{count}} screenshots found',
       loadError: 'Could not load screenshots. Please try again.',
@@ -159,7 +159,7 @@ const translations = {
   ru: {
     screenshotPicker: {
       searchLabel: 'Поиск скриншотов',
-      searchPlaceholder: 'Введите карту, локацию или код скриншота',
+      searchPlaceholder: 'Введите вопрос, карту, локацию или код скриншота',
       startError: 'Не удалось запустить скриншот. Выбор сохранён. Попробуйте ещё раз.',
       results: 'Найдено скриншотов: {{count}}',
       loadError: 'Не удалось загрузить скриншоты. Попробуйте ещё раз.',
@@ -317,7 +317,7 @@ const translations = {
   uk: {
     screenshotPicker: {
       searchLabel: 'Пошук знімків',
-      searchPlaceholder: 'Введіть мапу, локацію або код знімка',
+      searchPlaceholder: 'Введіть запитання, мапу, локацію або код знімка',
       startError: 'Не вдалося запустити знімок. Вибір збережено. Спробуйте ще раз.',
       results: 'Знайдено знімків: {{count}}',
       loadError: 'Не вдалося завантажити знімки. Спробуйте ще раз.',
@@ -478,7 +478,7 @@ const translations = {
   pl: {
     screenshotPicker: {
       searchLabel: 'Szukaj zrzutów',
-      searchPlaceholder: 'Wpisz mapę, lokację lub kod zrzutu',
+      searchPlaceholder: 'Wpisz pytanie, mapę, lokację lub kod zrzutu',
       startError: 'Nie udało się uruchomić zrzutu. Wybór został zachowany. Spróbuj ponownie.',
       results: 'Znaleziono zrzutów: {{count}}',
       loadError: 'Nie udało się wczytać zrzutów. Spróbuj ponownie.',

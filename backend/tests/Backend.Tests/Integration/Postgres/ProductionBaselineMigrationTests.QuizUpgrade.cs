@@ -37,8 +37,8 @@ public sealed partial class ProductionBaselineMigrationTests
             Assert.Single(await db.UserRoleAuditEvents.ToArrayAsync());
             Assert.Single(await db.MediaAssets.ToArrayAsync());
             Assert.Equal("Legacy", (await db.QuestionCategories.SingleAsync(x => x.Format == "text")).Name);
-            Assert.Equal(QuestionCatalogDefaults.UncategorizedScreenshotCategoryId,
-                (await db.QuestionCategories.SingleAsync(x => x.Format == "screenshot")).Id);
+            Assert.Equal(new[] { QuestionCatalogDefaults.UncategorizedScreenshotCategoryId, QuestionCatalogDefaults.LocationScreenshotCategoryId }.Order(),
+                await db.QuestionCategories.Where(x => x.Format == "screenshot").OrderBy(x => x.Id).Select(x => x.Id).ToArrayAsync());
             Assert.Equal(16, await db.ModifierDefinitions.CountAsync());
             Assert.Equal(16, await db.ModifierDefinitionVersions.CountAsync());
             Assert.Empty(await db.Games.ToArrayAsync());

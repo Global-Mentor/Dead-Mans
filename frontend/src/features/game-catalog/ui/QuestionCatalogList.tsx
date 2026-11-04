@@ -7,9 +7,9 @@ import { ListPanel, PageStatePanel, SelectionRow, StatusBadge } from '../../../s
 
 function screenshotTitle(question: GameQuestionCatalogItem, language: string) {
   const correct = question.options.find((option) => option.isCorrect)
-  return question.image && correct
+  return question.image && question.screenshotLocationId && correct
     ? `${huntMapName(question.image.mapNames, language)} · ${quizOptionText(question.image, correct.optionId, correct.text, language)}`
-    : question.text
+    : null
 }
 
 export function QuestionCatalogList({
@@ -68,7 +68,9 @@ export function QuestionCatalogList({
               density="compact"
               aria-label={
                 question.image
-                  ? `${question.text} · ${screenshotTitle(question, i18n.language)} · ${question.questionCode}`
+                  ? [question.text, screenshotTitle(question, i18n.language), question.questionCode]
+                      .filter(Boolean)
+                      .join(' · ')
                   : question.text
               }
               aria-describedby={prefix + '-' + question.questionId}
@@ -84,7 +86,7 @@ export function QuestionCatalogList({
                   <Typography component="span" variant="body1" fontWeight={700}>
                     {question.text}
                   </Typography>
-                  {question.image ? (
+                  {question.image && question.screenshotLocationId ? (
                     <Typography component="span" variant="body2" color="text.secondary">
                       {screenshotTitle(question, i18n.language)}
                     </Typography>

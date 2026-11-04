@@ -157,7 +157,9 @@ public sealed partial class DbGameQuestionRepository
             return null;
         }
 
-        if (entity.ImageSnapshotJson is not null
+        var locationScreenshot = await _dbContext.Set<QuestionScreenshot>()
+            .AnyAsync(x => x.QuestionId == questionId && x.LocationId != null, cancellationToken);
+        if (locationScreenshot
             && !input.Options.SequenceEqual(entity.Options.OrderBy(x => x.SortOrder)
                 .Select(x => new GameQuestionOptionInput(x.Text, x.IsCorrect))))
             return null;
@@ -171,7 +173,7 @@ public sealed partial class DbGameQuestionRepository
         entity.Revision += 1;
         entity.UpdatedAtUtc = now;
 
-        if (entity.ImageSnapshotJson is null)
+        if (!locationScreenshot)
         {
             var existingOptions = entity.Options.ToList();
             var nextOptions = BuildOptions(entity.Id, input.Options, now);
