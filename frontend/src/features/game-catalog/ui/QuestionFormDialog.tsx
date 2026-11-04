@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Box, Stack, SvgIcon, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import type {
   CreateGameQuestionRequest,
@@ -9,7 +9,6 @@ import type {
   GameQuestionCategoryItem,
 } from '../../../shared/api/contracts/index.ts'
 import {
-  ActionIcon,
   AppButton,
   AppDialog,
   ChoiceLabel,
@@ -18,21 +17,16 @@ import {
   ConfirmDialog,
   FormSelect,
   FormSwitch,
-  HelpTooltip,
   InlineNotice,
   FormSection,
   FieldWithHelp,
   useDirtyClose,
 } from '../../../shared/ui/index.ts'
+import { QuestionAnswerFields } from './QuestionAnswerFields.tsx'
 import { QuestionTwitchPreview } from './QuestionTwitchPreview.tsx'
 import { resolveCatalogErrorMessage } from '../model/catalog-error.ts'
 import { toDefaultValues, toRequest } from '../model/question-form-values.ts'
-import {
-  createQuestionFormSchema,
-  maxQuestionAnswers,
-  minQuestionAnswers,
-  type QuestionFormValues,
-} from '../model/question-form-schema.ts'
+import { createQuestionFormSchema, type QuestionFormValues } from '../model/question-form-schema.ts'
 
 const questionFormId = 'catalog-question-form'
 
@@ -66,11 +60,11 @@ function QuestionFormDialogBody({
     correctAnswer: t('gameCatalog.validation.correctAnswer'),
   })
 
-  const { control, handleSubmit, setError, setValue, setFocus, formState } =
-    useForm<QuestionFormValues>({
-      defaultValues: toDefaultValues(initial, categories, defaultCategoryId),
-      resolver: zodResolver(schema),
-    })
+  const form = useForm<QuestionFormValues>({
+    defaultValues: toDefaultValues(initial, categories, defaultCategoryId),
+    resolver: zodResolver(schema),
+  })
+  const { control, handleSubmit, setError, setValue, formState } = form
   const [pendingValues, setPendingValues] = useState<QuestionFormValues | null>(null)
   const [saving, setSaving] = useState(false)
   const busy = isBusy || formState.isSubmitting || saving
@@ -83,10 +77,6 @@ function QuestionFormDialogBody({
     () => (watchedOptions ?? []).map((option) => option.text),
     [watchedOptions],
   )
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'options',
-  })
 
   useEffect(() => {
     const firstCategory = categories[0]
@@ -96,15 +86,11 @@ function QuestionFormDialogBody({
   }, [categories, categoryValue, setValue])
 
   const hasCategories = categories.length > 0
-  const canAddAnswer = fields.length < maxQuestionAnswers
 
   const categoryOptions = categories.map((category) => ({
     value: category.id,
     label: category.name,
   }))
-
-  const optionsRootError =
-    formState.errors.options?.root?.message ?? formState.errors.options?.message
 
   const save = async (values: QuestionFormValues) => {
     setSaving(true)
@@ -158,11 +144,6 @@ function QuestionFormDialogBody({
         {formState.errors.root ? (
           <InlineNotice severity="error" sx={{ mb: 2 }}>
             {formState.errors.root.message}
-          </InlineNotice>
-        ) : null}
-        {optionsRootError ? (
-          <InlineNotice severity="error" sx={{ mb: 2 }}>
-            {optionsRootError}
           </InlineNotice>
         ) : null}
         {!hasCategories ? (
@@ -220,121 +201,11 @@ function QuestionFormDialogBody({
                 />
               </Stack>
             </FormSection>
-            <FormSection
-              textAlign="center"
-              headingSize="small"
-              title={t('gameCatalog.questions.fields.answers')}
-              description={t('gameCatalog.questions.fields.answersHint')}
-              sx={{ gridArea: 'answers' }}
-            >
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr)',
-                  gap: 1.5,
-                }}
-              >
-                <Box sx={{ pr: 6 }}>
-                  <ControlledFormTextField
-                    control={control}
-                    name="options.0.text"
-                    required
-                    label={t('gameCatalog.questions.fields.correctAnswer')}
-                    placeholder={t('gameCatalog.questions.fields.correctAnswerPlaceholder')}
-                    disabled={busy}
-                  />
-                </Box>
-                {fields.slice(1).map((field, alternativeIndex) => {
-                  const index = alternativeIndex + 1
-                  const removeLabel = t('gameCatalog.questions.fields.removeAnswer', {
-                    number: index,
-                  })
-                  return (
-                    <Stack
-                      key={field.id}
-                      direction="row"
-                      spacing={0.5}
-                      alignItems="flex-start"
-                      sx={{ minWidth: 0 }}
-                    >
-                      <ControlledFormTextField
-                        control={control}
-                        name={`options.${index}.text`}
-                        label={t('gameCatalog.questions.fields.answerAlternative', {
-                          number: index,
-                        })}
-                        disabled={busy}
-                      />
-                      <HelpTooltip title={removeLabel}>
-                        <span>
-                          <ActionIcon
-                            aria-label={removeLabel}
-                            size="small"
-                            disabled={busy || fields.length <= minQuestionAnswers}
-                            onClick={() => {
-                              remove(index)
-                              requestAnimationFrame(() =>
-                                setFocus(`options.${Math.min(index, fields.length - 2)}.text`),
-                              )
-                            }}
-                          >
-                            <SvgIcon fontSize="small">
-                              <path
-                                d="m6 6 12 12M6 18 18 6"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.8"
-                                strokeLinecap="round"
-                              />
-                            </SvgIcon>
-                          </ActionIcon>
-                        </span>
-                      </HelpTooltip>
-                    </Stack>
-                  )
-                })}
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  spacing={1}
-                  sx={{ gridColumn: '1 / -1' }}
-                >
-                  <AppButton
-                    tone="secondary"
-                    size="small"
-                    type="button"
-                    startIcon={
-                      <SvgIcon fontSize="small">
-                        <path
-                          d="M12 5v14M5 12h14"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                        />
-                      </SvgIcon>
-                    }
-                    disabled={busy || !canAddAnswer}
-                    onClick={() =>
-                      append(
-                        { text: '', isCorrect: false },
-                        { focusName: `options.${fields.length}.text` },
-                      )
-                    }
-                    sx={{ flexShrink: 0 }}
-                  >
-                    {t('gameCatalog.questions.fields.addAnswer')}
-                  </AppButton>
-                  <Typography variant="caption" color="text.secondary" aria-live="polite">
-                    {t('gameCatalog.questions.fields.answerCount', {
-                      count: fields.length,
-                      max: maxQuestionAnswers,
-                    })}
-                  </Typography>
-                </Stack>
-              </Box>
-            </FormSection>
+            <Box sx={{ gridArea: 'answers' }}>
+              <FormProvider {...form}>
+                <QuestionAnswerFields busy={busy} />
+              </FormProvider>
+            </Box>
             <FormSection
               textAlign="center"
               headingSize="small"
