@@ -9,6 +9,8 @@ public sealed record QuizImageSnapshot(
     IReadOnlyDictionary<string, string> MapNames,
     IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> OptionNames)
 {
+    public string? ThumbnailPath { get; init; }
+
     public string ToJson() => JsonSerializer.Serialize(this);
 
     public static QuizImageSnapshot? FromJson(string? json) => json is null ? null

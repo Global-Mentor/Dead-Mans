@@ -1327,3 +1327,73 @@ test('manual screenshot editor saves answer changes and retains its image after 
     page.getByTestId('question-catalog-details').getByText('Новый ответ', { exact: true }),
   ).toBeVisible()
 })
+
+for (const preflight of [false, true]) {
+  test(`rejected screenshot ${preflight ? 'preflight' : 'batch'} permits correcting the question without choosing files again`, async ({
+    page,
+  }) => {
+    await mockCatalog(page)
+    await page.route('**/api/game/questions/categories?*', (route) =>
+      route.fulfill({
+        json: [
+          {
+            id: 'manual-category',
+            name: 'Предметы',
+            questionCount: 0,
+            isProtected: false,
+            isLocationCategory: false,
+          },
+        ],
+      }),
+    )
+    const requests: string[] = []
+    let validations = 0
+    await page.route('**/api/game/questions/screenshots/validate', (route) => {
+      validations += 1
+      return preflight && validations === 1
+        ? route.fulfill({ status: 400, json: { code: 'twitch_quiz.question_message_too_long' } })
+        : route.fulfill({ status: 204 })
+    })
+    await page.route('**/api/game/questions/screenshots', (route) => {
+      requests.push(route.request().postDataBuffer()!.toString())
+      return !preflight && requests.length === 1
+        ? route.fulfill({ status: 400, json: { code: 'twitch_quiz.question_message_too_long' } })
+        : route.fulfill({ json: { questionId: 'created' } })
+    })
+    await page.goto('/panel/catalog-screenshots')
+    await page.getByRole('button', { name: 'Загрузить скриншоты', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Загрузить скриншоты', exact: true })
+    await dialog.getByRole('textbox', { name: 'Правильный ответ', exact: true }).fill('Аптечка')
+    for (let i = 1; i <= 3; i++)
+      await dialog
+        .getByRole('textbox', { name: `Неверный вариант ${i}`, exact: true })
+        .fill(`Предмет ${i}`)
+    const question = dialog.getByRole('textbox', { name: 'Вопрос для изображения', exact: true })
+    await question.fill('x'.repeat(500))
+    await dialog.locator('input[type=file]').setInputFiles({
+      name: 'image.png',
+      mimeType: 'image/png',
+      buffer: await readFile('public/brand/share-card.png'),
+    })
+    const submit = dialog.getByRole('button', {
+      name: 'Загрузить / повторить оставшиеся',
+      exact: true,
+    })
+    await submit.click()
+    await expect(
+      dialog.getByText(
+        'Вопрос нельзя использовать в чат-викторине, пока готовые сообщения не уложатся в 500 символов.',
+        { exact: true },
+      ),
+    ).toBeVisible()
+    expect(requests).toHaveLength(preflight ? 0 : 1)
+    await expect(question).toBeEnabled()
+    await question.fill('Какой предмет изображён?')
+    await submit.click()
+    await expect(dialog.getByText('Загружено 1 из 1', { exact: true })).toBeVisible()
+    expect(requests.at(-1)).toContain('Какой предмет изображён?')
+    expect(validations).toBe(2)
+    const ids = requests.map((body) => body.match(/name="requestId"\r\n\r\n([^\r]+)/)![1])
+    if (!preflight) expect(ids[1]).not.toBe(ids[0])
+  })
+}

@@ -50,7 +50,8 @@ const translations = {
       no: 'No',
     },
     errors: {
-      invalidScreenshot: 'Select a JPEG, PNG, WebP or GIF image no larger than 5 MiB.',
+      invalidScreenshot:
+        'Select a valid static JPEG, PNG, WebP or GIF: up to 5 MiB, 8192 pixels per side and 40 megapixels.',
       screenshotUploadConflict: 'This upload was already submitted with different settings.',
       duplicateCode: 'This code is already used by another entry.',
       notFound: 'The entry was not found. It may have been removed.',
@@ -585,7 +586,8 @@ const translations = {
       no: 'Нет',
     },
     errors: {
-      invalidScreenshot: 'Выберите JPEG, PNG, WebP или GIF размером до 5 МиБ.',
+      invalidScreenshot:
+        'Выберите исправный статичный JPEG, PNG, WebP или GIF: до 5 МиБ, 8192 пикселей по стороне и 40 мегапикселей.',
       screenshotUploadConflict: 'Эта загрузка уже отправлена с другими параметрами.',
       duplicateCode: 'Такой код уже используется другой записью.',
       notFound: 'Запись не найдена. Возможно, она была удалена.',
@@ -1121,7 +1123,8 @@ const translations = {
       no: 'Ні',
     },
     errors: {
-      invalidScreenshot: 'Виберіть JPEG, PNG, WebP або GIF розміром до 5 МіБ.',
+      invalidScreenshot:
+        'Виберіть справний статичний JPEG, PNG, WebP або GIF: до 5 МіБ, 8192 пікселів на сторону й 40 мегапікселів.',
       screenshotUploadConflict: 'Це завантаження вже надіслано з іншими параметрами.',
       duplicateCode: 'Цей код вже використовується іншим записом.',
       notFound: 'Запис не знайдено. Можливо, його було видалено.',
@@ -1650,7 +1653,8 @@ const translations = {
       no: 'Nie',
     },
     errors: {
-      invalidScreenshot: 'Wybierz JPEG, PNG, WebP lub GIF o rozmiarze do 5 MiB.',
+      invalidScreenshot:
+        'Wybierz prawidłowy statyczny JPEG, PNG, WebP lub GIF: do 5 MiB, 8192 pikseli na bok i 40 megapikseli.',
       screenshotUploadConflict: 'Ten plik został już przesłany z innymi ustawieniami.',
       duplicateCode: 'Ten kod jest już używany przez inny wpis.',
       notFound: 'Nie znaleziono wpisu. Mógł zostać usunięty.',

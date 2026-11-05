@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { ApiError } from '../../shared/api/errors/ApiError.ts'
 import { useQueryClient } from '@tanstack/react-query'
 import { gameQuestionQueryKeys } from '../game-questions/index.ts'
-import { uploadQuizScreenshot, type ScreenshotUploadSettings } from './api/quiz-screenshots-api.ts'
+import {
+  uploadQuizScreenshot,
+  validateQuizScreenshot,
+  type ScreenshotUploadSettings,
+} from './api/quiz-screenshots-api.ts'
 import { questionCategoryQueryOptions } from './api/question-categories-api.ts'
 
 export interface ScreenshotUploadRow {
@@ -18,6 +23,7 @@ export function useScreenshotUpload() {
   const [busy, setBusy] = useState(false)
   const [locked, setLocked] = useState(false)
   const running = useRef(false)
+  const uncertain = useRef(false)
   const settings = useRef<ScreenshotUploadSettings | null>(null)
   const urls = useRef(new Set<string>())
   useEffect(() => {
@@ -51,8 +57,18 @@ export function useScreenshotUpload() {
     running.current = true
     setBusy(true)
     setLocked(true)
-    settings.current ??= input
+    let allRejected = !uncertain.current && rows.every((row) => row.status !== 'done')
     try {
+      if (!settings.current) {
+        try {
+          await validateQuizScreenshot(input)
+        } catch (error) {
+          setRows((current) => current.map((row) => ({ ...row, status: 'error', error })))
+          setLocked(false)
+          return
+        }
+        settings.current = input
+      }
       for (const row of rows.filter((item) => item.status !== 'done')) {
         setRows((current) =>
           current.map((item) =>
@@ -61,16 +77,40 @@ export function useScreenshotUpload() {
         )
         try {
           await uploadQuizScreenshot(row.id, row.file, settings.current)
+          allRejected = false
           setRows((current) =>
             current.map((item) => (item.id === row.id ? { ...item, status: 'done' } : item)),
           )
         } catch (error) {
+          const code =
+            error instanceof ApiError && error.details && typeof error.details === 'object'
+              ? Reflect.get(error.details, 'code')
+              : null
+          const rejected =
+            error instanceof ApiError &&
+            error.status === 400 &&
+            [
+              'game_question.invalid_request',
+              'game_question.invalid_screenshot',
+              'twitch_quiz.question_message_too_long',
+              'twitch_quiz.options_message_too_long',
+              'twitch_quiz.result_message_too_long',
+            ].includes(String(code))
+          if (!rejected) {
+            allRejected = false
+            uncertain.current = true
+          }
           setRows((current) =>
             current.map((item) =>
               item.id === row.id ? { ...item, status: 'error', error } : item,
             ),
           )
         }
+      }
+      if (allRejected) {
+        settings.current = null
+        setLocked(false)
+        setRows((current) => current.map((row) => ({ ...row, id: crypto.randomUUID() })))
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: gameQuestionQueryKeys.all }),

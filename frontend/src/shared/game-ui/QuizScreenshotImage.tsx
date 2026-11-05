@@ -20,7 +20,9 @@ export function QuizScreenshotImage({
   const [open, setOpen] = useState(false)
   const picture = (expanded: boolean) => (
     <ImageFrame
-      src={resolveBackendMediaUrl(image.imageUrl)}
+      src={resolveBackendMediaUrl(
+        thumbnail && !expanded ? (image.thumbnailUrl ?? image.imageUrl) : image.imageUrl,
+      )}
       alt={t('common.quizImage.alt')}
       loadingLabel={t('common.quizImage.loading')}
       errorLabel={t('common.quizImage.error')}

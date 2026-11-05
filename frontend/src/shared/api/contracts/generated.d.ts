@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/game/questions/screenshots/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Validate screenshot metadata and Twitch limits before transmitting files. Read-only, admin only. Upload always revalidates authoritative state. */
+        post: operations["validateQuizScreenshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/questions/hunt-maps": {
         parameters: {
             query?: never;
@@ -1878,6 +1895,8 @@ export interface components {
         /** @description Frozen image and optional location translations. Manual screenshot questions have empty mapNames and optionNames and use the ordinary option texts. Contains no correct-answer information. */
         GameQuizImageDto: {
             imageUrl: string;
+            /** @description Compact preview; older snapshots fall back to imageUrl. */
+            thumbnailUrl?: string | null;
             mapNames: {
                 [key: string]: string;
             };
@@ -3823,6 +3842,61 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    validateQuizScreenshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    categoryId: string;
+                    /** Format: uuid */
+                    locationId?: string;
+                    text: string;
+                    reward: number;
+                    priority: number;
+                    isEnabled: boolean;
+                    options?: components["schemas"]["GameQuestionOptionInputDto"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Valid metadata */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid metadata or Twitch message length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getHuntMaps: {
         parameters: {
             query?: never;
@@ -3880,7 +3954,7 @@ export interface operations {
                     isEnabled: boolean;
                     /**
                      * Format: binary
-                     * @description JPEG, PNG, GIF or WebP; up to 5 MiB.
+                     * @description Static JPEG, PNG, GIF or WebP; up to 5 MiB, 8192 pixels per side and 40 megapixels. Fully decoded before storage.
                      */
                     file: string;
                 };

@@ -25,6 +25,8 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         using var upload = Content(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         Assert.Equal(expected, (await client.GetAsync("/api/game/questions/hunt-maps")).StatusCode);
         Assert.Equal(expected, (await client.PostAsync("/api/game/questions/screenshots", upload)).StatusCode);
+        Assert.Equal(expected, (await client.PostAsJsonAsync("/api/game/questions/screenshots/validate",
+            new { categoryId = Guid.NewGuid(), text = "Question", reward = 1, priority = 0, isEnabled = true })).StatusCode);
         var hideStatus = (await client.PostAsync($"/api/game/quiz/question-sessions/{Guid.NewGuid()}/hide", null)).StatusCode;
         Assert.Equal(role == AuthRoleCodes.Moderator ? HttpStatusCode.Conflict : expected, hideStatus);
     }
@@ -69,6 +71,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         Assert.Equal(created!.QuestionId, question.Id.ToString());
         var catalog = await client.GetFromJsonAsync<GameQuestionCatalogItemDto[]>("/api/game/questions/catalog");
         var item = Assert.Single(catalog!);
+        Assert.Contains("/quiz/thumbnails/", item.Image!.ThumbnailUrl, StringComparison.Ordinal);
         Assert.Equal(map.Id.ToString(), item.ScreenshotMapId);
         Assert.Equal(locationId.ToString(), item.ScreenshotLocationId);
         Assert.Equal(7, question.Reward);
@@ -90,6 +93,31 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         using var invalid = Content(Guid.NewGuid(), locationId, category.Id, bytes: "invalid image"u8.ToArray());
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/game/questions/screenshots", invalid)).StatusCode);
         Assert.Equal(1, await db.QuestionDefinitions.CountAsync());
+    }
+
+    [Fact]
+    public async Task MetadataPreflightChecksTwitchLimitsWithoutCreatingQuestions()
+    {
+        factory.ResetDatabase();
+        using var authenticated = TestAuthClientFactory.CreateFactory(factory, [AuthRoleCodes.Admin]);
+        using var client = authenticated.CreateClient();
+        var categories = await client.GetFromJsonAsync<GameQuestionCategoryItemDto[]>("/api/game/questions/categories?format=screenshot");
+        var category = Assert.Single(categories!);
+        var request = new ValidateQuizScreenshotRequestDto(Guid.Parse(category.Id), null, "What is shown?", 1, 0, true,
+            [new("Medkit", true), new("Knife", false)]);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsJsonAsync("/api/game/questions/screenshots/validate", request)).StatusCode);
+        using var rejected = await client.PostAsJsonAsync("/api/game/questions/screenshots/validate", request with { Text = new string('x', 500) });
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Contains("twitch_quiz.question_message_too_long", await rejected.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        using var scope = authenticated.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Empty(await db.QuestionDefinitions.ToArrayAsync());
+        Assert.Empty(await db.MediaAssets.ToArrayAsync());
+        using var signature = Content(Guid.NewGuid(), null, Guid.Parse(category.Id), bytes: [137, 80, 78, 71, 13, 10, 26, 10],
+            options: """[{"text":"Medkit","isCorrect":true},{"text":"Knife","isCorrect":false}]""");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/game/questions/screenshots", signature)).StatusCode);
+        Assert.Empty(await db.QuestionDefinitions.ToArrayAsync());
     }
 
     [Fact]
@@ -139,7 +167,7 @@ public sealed class QuizScreenshotContractTests(TestWebApplicationFactory factor
         };
         if (locationId.HasValue) content.Add(new StringContent(locationId.Value.ToString()), "locationId");
         if (options is not null) content.Add(new StringContent(options), "options");
-        var image = new ByteArrayContent(bytes ?? Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jQ1sAAAAASUVORK5CYII="));
+        var image = new ByteArrayContent(bytes ?? Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="));
         image.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         content.Add(image, "file", "screenshot.png");
         return content;

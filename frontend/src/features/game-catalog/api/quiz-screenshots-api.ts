@@ -1,8 +1,19 @@
-import { createApiClient, unwrapOpenApiData } from '../../../shared/api/client/openApiClient.ts'
+import {
+  createApiClient,
+  ensureOpenApiSuccess,
+  unwrapOpenApiData,
+} from '../../../shared/api/client/openApiClient.ts'
 import type { paths } from '../../../shared/api/contracts/generated'
 
 const client =
-  createApiClient<Pick<paths, '/game/questions/hunt-maps' | '/game/questions/screenshots'>>()
+  createApiClient<
+    Pick<
+      paths,
+      | '/game/questions/hunt-maps'
+      | '/game/questions/screenshots'
+      | '/game/questions/screenshots/validate'
+    >
+  >()
 export const huntMapsQueryOptions = {
   queryKey: ['hunt-maps'],
   queryFn: () => unwrapOpenApiData(client.GET('/game/questions/hunt-maps')),
@@ -12,6 +23,12 @@ export const huntMapsQueryOptions = {
 type ScreenshotUploadBody =
   paths['/game/questions/screenshots']['post']['requestBody']['content']['multipart/form-data']
 export type ScreenshotUploadSettings = Omit<ScreenshotUploadBody, 'requestId' | 'file'>
+
+export function validateQuizScreenshot(settings: ScreenshotUploadSettings) {
+  return ensureOpenApiSuccess(
+    client.POST('/game/questions/screenshots/validate', { body: settings }),
+  )
+}
 
 export function uploadQuizScreenshot(
   requestId: string,

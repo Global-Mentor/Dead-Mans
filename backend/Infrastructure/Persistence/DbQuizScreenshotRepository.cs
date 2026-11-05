@@ -7,6 +7,8 @@ using backend.Data;
 using backend.Data.Entities;
 using backend.Domain.Questions;
 using backend.Domain.Persistence;
+using backend.Infrastructure.Storage;
+using backend.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -26,6 +28,51 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
                 location.Translations.ToDictionary(x => x.Locale, x => x.Name))).ToArray())).ToArray();
     }
 
+    public async Task<string?> ValidateAsync(UploadQuizScreenshotInput input, CancellationToken cancellationToken = default) =>
+        (await PrepareAsync(input, false, cancellationToken)).Error;
+
+    private sealed record PreparedScreenshot(HuntMapItem? Map, HuntLocationItem[] Locations,
+        IReadOnlyList<GameQuestionOptionInput> Choices, string? Error);
+
+    private async Task<PreparedScreenshot> PrepareAsync(UploadQuizScreenshotInput input, bool randomize,
+        CancellationToken cancellationToken)
+    {
+        if (!await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId && x.Format == "screenshot", cancellationToken))
+            return new(null, [], [], AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+        HuntMapItem? map = null;
+        HuntLocationItem[] locations = [];
+        IReadOnlyList<GameQuestionOptionInput> choices;
+        if (input.CategoryId == QuestionCatalogDefaults.LocationScreenshotCategoryId)
+        {
+            var maps = await GetMapsAsync(cancellationToken);
+            map = maps.SingleOrDefault(x => x.Locations.Any(location => location.Id == input.LocationId));
+            if (map is null || map.Locations.Count < 6 || input.Options is not null)
+                return new(null, [], [], AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+            var correct = map.Locations.Single(x => x.Id == input.LocationId);
+            var distractors = map.Locations.Where(x => x.Id != correct.Id).ToArray();
+            if (randomize) Random.Shared.Shuffle(distractors);
+            else distractors = distractors.OrderByDescending(location =>
+                TwitchQuizMessageFormatter.Normalize(location.Names.GetValueOrDefault("ru", string.Empty)).EnumerateRunes().Count()).ToArray();
+            locations = new[] { correct }.Concat(distractors.Take(5)).ToArray();
+            string[] locales = ["en", "ru", "uk", "pl"];
+            if (locales.Any(locale => !map.Names.ContainsKey(locale)
+                || locations.Any(location => !location.Names.ContainsKey(locale))))
+                return new(null, [], [], AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+            choices = locations.Select(location => new GameQuestionOptionInput(location.Names["ru"], location.Id == correct.Id)).ToArray();
+        }
+        else
+        {
+            if (input.LocationId is not null || input.Options is null) return new(null, [], [], AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+            choices = input.Options;
+        }
+        var preview = TwitchQuizMessageFormatter.FormatForValidation(input.Text,
+            choices.Select(choice => choice.Text).ToArray(), 3600, input.Reward);
+        if (!preview.IsCompatible)
+            return new(null, [], [], preview.ErrorCode);
+
+        return new(map, locations, choices, null);
+    }
+
     public async Task<UploadQuizScreenshotResult> CreateAsync(UploadQuizScreenshotInput input, Stream content,
         string contentType, long length, string fingerprint, CancellationToken cancellationToken = default)
     {
@@ -41,35 +88,13 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
                 ? new(UploadQuizScreenshotOutcome.Existing, previous.QuestionId)
                 : new(UploadQuizScreenshotOutcome.RequestConflict);
 
-        if (!await db.QuestionCategories.AnyAsync(x => x.Id == input.CategoryId && x.Format == "screenshot", cancellationToken))
-            return new(UploadQuizScreenshotOutcome.InvalidSelection);
-        HuntMapItem? map = null;
-        HuntLocationItem[] locations = [];
-        IReadOnlyList<GameQuestionOptionInput> choices;
-        if (input.CategoryId == QuestionCatalogDefaults.LocationScreenshotCategoryId)
-        {
-            var maps = await GetMapsAsync(cancellationToken);
-            map = maps.SingleOrDefault(x => x.Locations.Any(location => location.Id == input.LocationId));
-            if (map is null || map.Locations.Count < 6 || input.Options is not null)
-                return new(UploadQuizScreenshotOutcome.InvalidSelection);
-            var correct = map.Locations.Single(x => x.Id == input.LocationId);
-            var distractors = map.Locations.Where(x => x.Id != correct.Id).ToArray();
-            Random.Shared.Shuffle(distractors);
-            locations = new[] { correct }.Concat(distractors.Take(5)).ToArray();
-            string[] locales = ["en", "ru", "uk", "pl"];
-            if (locales.Any(locale => !map.Names.ContainsKey(locale)
-                || locations.Any(location => !location.Names.ContainsKey(locale))))
-                return new(UploadQuizScreenshotOutcome.InvalidSelection);
-            choices = locations.Select(location => new GameQuestionOptionInput(location.Names["ru"], location.Id == correct.Id)).ToArray();
-        }
-        else
-        {
-            if (input.LocationId is not null || input.Options is null) return new(UploadQuizScreenshotOutcome.InvalidSelection);
-            choices = input.Options;
-        }
-        if (!TwitchQuizMessageFormatter.FormatForValidation(input.Text,
-                choices.Select(choice => choice.Text).ToArray(), 3600, input.Reward).IsCompatible)
-            return new(UploadQuizScreenshotOutcome.InvalidSelection);
+        var prepared = await PrepareAsync(input, true, cancellationToken);
+        if (prepared.Error is not null)
+            return new(UploadQuizScreenshotOutcome.InvalidSelection, ErrorCode: prepared.Error);
+        var (map, locations, choices, _) = prepared;
+
+        var thumbnail = QuizScreenshotImageProcessor.CreateThumbnail(content, contentType);
+        if (thumbnail is null) return new(UploadQuizScreenshotOutcome.InvalidFile);
 
         var now = clock.GetUtcNow().UtcDateTime;
         var questionId = Guid.NewGuid();
@@ -96,7 +121,8 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
         var image = new QuizImageSnapshot(mediaId, $"{asset.Bucket}/{asset.ObjectKey}",
             map?.Names ?? new Dictionary<string, string>(),
             map is null ? new Dictionary<Guid, IReadOnlyDictionary<string, string>>()
-                : options.Select((option, index) => (option.Id, locations[index].Names)).ToDictionary(x => x.Id, x => x.Names));
+                : options.Select((option, index) => (option.Id, locations[index].Names)).ToDictionary(x => x.Id, x => x.Names))
+        { ThumbnailPath = $"{asset.Bucket}/quiz/thumbnails/{mediaId:N}.webp" };
         var question = new QuestionDefinition
         {
             Id = questionId,
@@ -112,8 +138,6 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
             Options = options.ToList(),
             ImageSnapshotJson = image.ToJson()
         };
-        // Use opaque, unique storage keys. A retry never overwrites another question's object.
-        await storage.PutObjectAsync(asset.Bucket, asset.ObjectKey, content, contentType, cancellationToken);
         db.MediaAssets.Add(asset);
         db.QuestionDefinitions.Add(question);
         db.Set<QuestionScreenshot>().Add(new QuestionScreenshot
@@ -126,6 +150,12 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
         });
         try
         {
+            // A failed PUT may still have persisted the object remotely. Clean both unique keys
+            // on any failure before commit, including a lost response from object storage.
+            await storage.PutObjectAsync(asset.Bucket, asset.ObjectKey, content, contentType, cancellationToken);
+            await using var thumbnailStream = new MemoryStream(thumbnail, false);
+            await storage.PutObjectAsync(asset.Bucket, $"quiz/thumbnails/{mediaId:N}.webp", thumbnailStream,
+                "image/webp", cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
         catch
@@ -135,6 +165,11 @@ public sealed class DbQuizScreenshotRepository(ApplicationDbContext db, IObjectS
             catch (Exception cleanupError)
             {
                 logger.LogError(cleanupError, "Failed to remove uncommitted quiz screenshot asset {AssetId}.", mediaId);
+            }
+            try { await storage.DeleteObjectAsync(asset.Bucket, $"quiz/thumbnails/{mediaId:N}.webp", CancellationToken.None); }
+            catch (Exception cleanupError)
+            {
+                logger.LogError(cleanupError, "Failed to remove uncommitted quiz screenshot thumbnail {AssetId}.", mediaId);
             }
             throw;
         }

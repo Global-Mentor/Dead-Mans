@@ -22,7 +22,7 @@ namespace Backend.Tests.Integration.Postgres;
 
 public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) : IClassFixture<PostgresTestDatabase>
 {
-    private static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jQ1sAAAAASUVORK5CYII=");
+    private static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=");
     private readonly InMemoryObjectStorage _storage = new();
     private static readonly MediaStorageSettings Storage = new() { PublicBaseUrl = "https://media.test", BucketName = "quiz", GamesPrefix = "games", CardsGroup = "cards" };
     private QuizScreenshotService Service(ApplicationDbContext db) => new(new DbQuizScreenshotRepository(db, _storage, Options.Create(Storage), TimeProvider.System, NullLogger<DbQuizScreenshotRepository>.Instance));
@@ -323,7 +323,7 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
             await Assert.ThrowsAsync<InvalidOperationException>(() => UploadAsync(Service(failing), input));
         Assert.Empty(_storage.ListObjectKeys("quiz"));
         Assert.Equal(UploadQuizScreenshotOutcome.Created, (await UploadAsync(Service(db), input)).Outcome);
-        Assert.Single(_storage.ListObjectKeys("quiz"));
+        AssertStoredImagePair();
     }
 
     [Fact]
@@ -336,7 +336,7 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
         Assert.Single(outcomes.Select(x => x.QuestionId).Distinct());
         Assert.Contains(outcomes, x => x.Outcome == UploadQuizScreenshotOutcome.Created);
         Assert.Contains(outcomes, x => x.Outcome == UploadQuizScreenshotOutcome.Existing);
-        Assert.Single(_storage.ListObjectKeys("quiz"));
+        AssertStoredImagePair();
         var question = await firstDb.QuestionDefinitions.AsNoTracking().Include(x => x.Options).SingleAsync(x => x.Id == outcomes[0].QuestionId);
         var image = backend.Domain.Questions.QuizImageSnapshot.FromJson(question.ImageSnapshotJson)!;
         Assert.Equal(6, question.Options.Count);
@@ -345,7 +345,15 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
         Assert.All(image.OptionNames.Values, names => Assert.Equal(["en", "pl", "ru", "uk"], names.Keys.Order()));
         Assert.Equal(UploadQuizScreenshotOutcome.RequestConflict,
             (await UploadAsync(Service(secondDb), input with { Reward = 8 })).Outcome);
-        Assert.Single(_storage.ListObjectKeys("quiz"));
+        AssertStoredImagePair();
+    }
+
+    private void AssertStoredImagePair()
+    {
+        Assert.Equal(2, _storage.ListObjectKeys("quiz").Count);
+        var original = Assert.Single(_storage.ListObjectKeys("quiz", "quiz/screenshots/"));
+        var thumbnail = Assert.Single(_storage.ListObjectKeys("quiz", "quiz/thumbnails/"));
+        Assert.Equal(Path.GetFileNameWithoutExtension(original), Path.GetFileNameWithoutExtension(thumbnail));
     }
 
     [Theory]

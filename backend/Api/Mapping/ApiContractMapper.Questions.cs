@@ -10,7 +10,8 @@ public static partial class ApiContractMapper
 {
     public static GameQuizImageDto ToDto(this QuizImageSnapshot image, string mediaBaseUrl) => new(
         $"{mediaBaseUrl.TrimEnd('/')}/{image.MediaPath}", image.MapNames,
-        image.OptionNames.OrderBy(x => x.Key).ToDictionary(x => x.Key.ToString(), x => x.Value));
+        image.OptionNames.OrderBy(x => x.Key).ToDictionary(x => x.Key.ToString(), x => x.Value))
+    { ThumbnailUrl = image.ThumbnailPath is { } path ? $"{mediaBaseUrl.TrimEnd('/')}/{path}" : null };
 
     public static CreateGameQuestionInput ToInput(
         this CreateGameQuestionRequestDto request,

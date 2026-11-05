@@ -3,7 +3,10 @@ using System.Text.Json.Serialization;
 namespace backend.Api.Contracts;
 
 public sealed record GameQuizImageDto(string ImageUrl, IReadOnlyDictionary<string, string> MapNames,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> OptionNames);
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> OptionNames)
+{
+    public string? ThumbnailUrl { get; init; }
+}
 
 public sealed record GameQuestionOptionDto(string OptionId, string Text, bool IsCorrect, int SortOrder);
 public sealed record GameQuestionOptionInputDto(string? Text, bool IsCorrect);

@@ -8,6 +8,39 @@ info:
 servers:
   - url: /api
 paths:
+  /game/questions/screenshots/validate:
+    post:
+      operationId: validateQuizScreenshot
+      security: [{ cookieAuth: [] }]
+      description: Validate screenshot metadata and Twitch limits before transmitting files. Read-only, admin only. Upload always revalidates authoritative state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, text, reward, priority, isEnabled]
+              properties:
+                categoryId: { type: string, format: uuid }
+                locationId: { type: string, format: uuid }
+                text: { type: string, minLength: 1, maxLength: 2000 }
+                reward: { type: integer, minimum: 0 }
+                priority: { type: integer }
+                isEnabled: { type: boolean }
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 10
+                  items: { $ref: '#/components/schemas/GameQuestionOptionInputDto' }
+      responses:
+        "204": { description: Valid metadata }
+        "400":
+          description: Invalid metadata or Twitch message length
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "401": { description: Authentication required }
+        "403": { description: Admin required }
   /game/questions/hunt-maps:
     get:
       operationId: getHuntMaps
@@ -48,7 +81,7 @@ paths:
                 reward: { type: integer, minimum: 0 }
                 priority: { type: integer }
                 isEnabled: { type: boolean }
-                file: { type: string, format: binary, description: "JPEG, PNG, GIF or WebP; up to 5 MiB." }
+                file: { type: string, format: binary, description: "Static JPEG, PNG, GIF or WebP; up to 5 MiB, 8192 pixels per side and 40 megapixels. Fully decoded before storage." }
             encoding:
               options: { contentType: application/json }
       responses:
@@ -4801,6 +4834,7 @@ components:
       description: Frozen image and optional location translations. Manual screenshot questions have empty mapNames and optionNames and use the ordinary option texts. Contains no correct-answer information.
       properties:
         imageUrl: { type: string }
+        thumbnailUrl: { type: string, nullable: true, description: "Compact preview; older snapshots fall back to imageUrl." }
         mapNames:
           type: object
           additionalProperties: { type: string }

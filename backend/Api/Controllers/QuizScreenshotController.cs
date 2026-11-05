@@ -16,6 +16,18 @@ namespace backend.Controllers;
 [Authorize(Roles = AuthRoleCodes.Admin)]
 public sealed class QuizScreenshotController(IQuizScreenshotService service) : ControllerBase
 {
+    [HttpPost("screenshots/validate")]
+    public async Task<IActionResult> Validate([FromBody] ValidateQuizScreenshotRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var error = await service.ValidateAsync(new UploadQuizScreenshotInput(Guid.Empty, request.LocationId,
+            request.CategoryId, request.Reward, request.Priority, request.IsEnabled, request.Text ?? string.Empty,
+            request.Options?.Select(choice => new GameQuestionOptionInput(choice?.Text ?? string.Empty,
+                choice?.IsCorrect ?? false)).ToArray()), cancellationToken);
+        return error is null ? NoContent()
+            : this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest, error);
+    }
+
     [HttpGet("hunt-maps")]
     public async Task<IActionResult> GetMaps(CancellationToken cancellationToken)
     {
@@ -67,7 +79,7 @@ public sealed class QuizScreenshotController(IQuizScreenshotService service) : C
             UploadQuizScreenshotOutcome.InvalidFile => this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest,
                 AppMessages.ErrorCodes.GameQuestionInvalidScreenshot),
             _ => this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest,
-                AppMessages.ErrorCodes.GameQuestionInvalidRequest)
+                result.ErrorCode ?? AppMessages.ErrorCodes.GameQuestionInvalidRequest)
         };
     }
 }

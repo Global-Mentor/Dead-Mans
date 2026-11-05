@@ -9,7 +9,10 @@ function extractCode(error: unknown): string | undefined {
   return undefined
 }
 
-const codeToKey: Record<string, Extract<ParseKeys, `gameCatalog.errors.${string}`>> = {
+const codeToKey: Record<string, Extract<ParseKeys, `gameCatalog.${string}`>> = {
+  'twitch_quiz.question_message_too_long': 'gameCatalog.questions.twitchTooLong',
+  'twitch_quiz.options_message_too_long': 'gameCatalog.questions.twitchTooLong',
+  'twitch_quiz.result_message_too_long': 'gameCatalog.questions.twitchTooLong',
   game_modifier_not_found: 'gameCatalog.errors.notFound',
   game_modifier_revision_stale: 'gameCatalog.errors.revisionStale',
   game_modifier_content_locked: 'gameCatalog.errors.contentLocked',
