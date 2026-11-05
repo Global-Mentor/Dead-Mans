@@ -19,7 +19,15 @@ export const currentGameQuizQueryOptions = (gameId: string) =>
     refetchOnWindowFocus: 'always',
     refetchInterval: (query) => {
       const state = query.state.data
-      return state?.status === 'open' && Date.now() >= Date.parse(state.closesAtUtc) ? 1000 : false
+      if (state?.status !== 'open') return false
+      const serverTime = state.serverNowUtc ? Date.parse(state.serverNowUtc) : NaN
+      const serverNow = Number.isFinite(serverTime)
+        ? serverTime +
+          Math.max(0, performance.now() - (state.receivedAtMonotonicMs ?? performance.now()))
+        : Date.now()
+      // Schedule a deadline refresh even when no quiz component is mounted. After a failed
+      // refresh, keep polling the expired snapshot until the authoritative result arrives.
+      return Math.max(1000, Date.parse(state.closesAtUtc) - serverNow)
     },
     queryFn: async () => {
       const state = await fetchCurrentGameQuizState()

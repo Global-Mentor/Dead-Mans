@@ -10,8 +10,10 @@ const deadline = () => {}
 
 export function BroadcastScreenshot({
   state,
+  receivedAtMonotonicMs,
 }: {
   state: components['schemas']['CurrentGameQuizStateDto']
+  receivedAtMonotonicMs?: number
 }) {
   const { t, i18n } = useTranslation()
   const open = state.status === 'open'
@@ -19,6 +21,8 @@ export function BroadcastScreenshot({
     open ? state.askedAtUtc : null,
     open ? state.closesAtUtc : null,
     deadline,
+    state.serverNowUtc,
+    receivedAtMonotonicMs,
   )
   const clock = `${Math.floor(countdown.secondsLeft / 60)
     .toString()

@@ -40,8 +40,9 @@ export function fetchAvailableGameQuizQuestions(): Promise<AvailableGameQuizQues
   return unwrapOpenApiData(client.GET('/game/quiz/questions/available'))
 }
 
-export function fetchCurrentGameQuizState(): Promise<CurrentGameQuizState | null> {
-  return unwrapOpenApiDataOrNullOnNoContent(client.GET('/game/quiz/current'))
+export async function fetchCurrentGameQuizState(): Promise<CurrentGameQuizState | null> {
+  const state = await unwrapOpenApiDataOrNullOnNoContent(client.GET('/game/quiz/current'))
+  return state ? { ...state, receivedAtMonotonicMs: performance.now() } : null
 }
 
 export function submitGameQuizAnswer(

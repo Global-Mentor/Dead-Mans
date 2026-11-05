@@ -35,6 +35,7 @@ public sealed partial class DbGameQuizRepository
             : new Dictionary<Guid, int>();
         return MapCurrentState(session, own, counts) with
         {
+            ServerNowUtc = _timeProvider.GetUtcNow().UtcDateTime,
             PresentationVisible = await _dbContext.Set<GameQuizPresentation>().AnyAsync(
                 x => x.GameId == session.GameId && x.QuestionSessionId == session.Id, cancellationToken)
         };

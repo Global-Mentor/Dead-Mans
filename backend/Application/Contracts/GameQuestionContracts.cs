@@ -180,6 +180,7 @@ public sealed record CurrentGameQuizState(
     IReadOnlyList<GameQuizOptionResult>? OptionResults
 )
 {
+    public DateTime? ServerNowUtc { get; init; }
     public bool PresentationVisible { get; init; }
     public QuizImageSnapshot? Image { get; init; }
 }

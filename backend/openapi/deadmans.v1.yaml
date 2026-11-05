@@ -7239,6 +7239,7 @@ components:
       type: object
       required: [questionSessionId, gameId, askOrder, questionId, questionCode, categoryName, text, options, status, askedAtUtc, closesAtUtc]
       properties:
+        serverNowUtc: { type: string, format: date-time, nullable: true }
         presentationVisible: { type: boolean, default: false }
         image:
           type: object

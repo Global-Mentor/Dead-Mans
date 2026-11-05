@@ -223,7 +223,7 @@ public static partial class ApiContractMapper
             result.Percentage
         )).ToArray()
     )
-    { Image = state.Image?.ToDto(mediaBaseUrl), PresentationVisible = state.PresentationVisible };
+    { Image = state.Image?.ToDto(mediaBaseUrl), PresentationVisible = state.PresentationVisible, ServerNowUtc = state.ServerNowUtc };
 
     public static ManualQuizAwardSummaryDto ToDto(this ManualQuizAwardSummary award)
     {

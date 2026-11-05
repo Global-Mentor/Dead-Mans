@@ -1888,3 +1888,38 @@ for (const width of [390, 768, 1440]) {
     await stats.screenshot({ path: info.outputPath('personal-format-statistics.png') })
   })
 }
+
+for (const skewMinutes of [-120, 120]) {
+  test(`server quiz clock permits answers with ${skewMinutes} minutes of client skew`, async ({
+    page,
+  }) => {
+    await mockQuiz(page)
+    const serverNow = new Date('2026-11-05T12:00:00Z')
+    await page.clock.install({ time: new Date(serverNow.getTime() + skewMinutes * 60_000) })
+    await page.route('**/auth/me', (route) =>
+      route.fulfill({
+        json: {
+          userId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
+          displayName: 'Игрок',
+          roles: ['viewer'],
+        },
+      }),
+    )
+    await page.route('**/api/game/quiz/current', (route) =>
+      route.fulfill({
+        json: {
+          ...screenshotQuestion,
+          serverNowUtc: serverNow.toISOString(),
+          askedAtUtc: serverNow.toISOString(),
+          closesAtUtc: new Date(serverNow.getTime() + 60_000).toISOString(),
+        },
+      }),
+    )
+    await page.goto('/panel/game-quiz')
+    await expect(page.getByRole('timer')).toHaveText('01:00')
+    await expect(page.getByRole('button', { name: 'Винный завод', exact: true })).toBeEnabled()
+    await page.clock.fastForward(30_000)
+    await expect(page.getByRole('timer')).toHaveText('00:30')
+    await expect(page.getByRole('button', { name: 'Винный завод', exact: true })).toBeEnabled()
+  })
+}

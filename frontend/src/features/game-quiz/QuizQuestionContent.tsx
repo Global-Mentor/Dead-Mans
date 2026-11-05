@@ -43,6 +43,8 @@ export function QuizQuestionContent({
     isOpen ? state.askedAtUtc : null,
     isOpen ? state.closesAtUtc : null,
     onDeadline,
+    state.serverNowUtc,
+    state.receivedAtMonotonicMs,
   )
   const clock = `${Math.floor(countdown.secondsLeft / 60)
     .toString()

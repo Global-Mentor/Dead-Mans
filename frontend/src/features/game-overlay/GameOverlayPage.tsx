@@ -39,7 +39,9 @@ function OverlaySession({ overlayKey }: { overlayKey: string }) {
     <OverlayFrame
       frame={state?.snapshot}
       receivedAtMonotonicMs={
-        state?.snapshot.phase === 'in_progress' ? state.receivedAtMonotonicMs : 0
+        state?.snapshot.phase === 'in_progress' || state?.snapshot.phase === 'screenshot'
+          ? state.receivedAtMonotonicMs
+          : 0
       }
     />
   )
@@ -78,6 +80,7 @@ const OverlayFrame = memo(function OverlayFrame({
           <BroadcastBackdrop visible />
           <BroadcastScreenshot
             key={frame.quizQuestion.questionSessionId}
+            receivedAtMonotonicMs={receivedAtMonotonicMs}
             state={frame.quizQuestion}
           />
         </>

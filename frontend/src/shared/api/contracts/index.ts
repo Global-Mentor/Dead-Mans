@@ -45,7 +45,10 @@ export type CreateGameQuestionRequest = components['schemas']['CreateGameQuestio
 export type CreateGameQuestionCategoryRequest =
   components['schemas']['CreateGameQuestionCategoryRequestDto']
 export type UpdateGameQuestionRequest = components['schemas']['UpdateGameQuestionRequestDto']
-export type CurrentGameQuizState = components['schemas']['CurrentGameQuizStateDto']
+export type CurrentGameQuizState = components['schemas']['CurrentGameQuizStateDto'] & {
+  /** Client receipt time, retained with cached data across component remounts. */
+  receivedAtMonotonicMs?: number
+}
 export type AvailableGameQuizQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 export type GameQuizSubmissionReceipt = components['schemas']['GameQuizSubmissionReceiptDto']
 export type TwitchBotStatus = components['schemas']['TwitchBotStatusDto']

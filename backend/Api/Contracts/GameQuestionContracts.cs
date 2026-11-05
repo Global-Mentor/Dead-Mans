@@ -173,6 +173,7 @@ public sealed record CurrentGameQuizStateDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GameQuizOptionResultDto[]? OptionResults
 )
 {
+    public DateTime? ServerNowUtc { get; init; }
     public bool PresentationVisible { get; init; }
     public GameQuizImageDto? Image { get; init; }
 }

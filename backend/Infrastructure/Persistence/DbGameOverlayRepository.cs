@@ -102,7 +102,7 @@ public sealed partial class DbGameOverlayRepository(ApplicationDbContext db, IOp
                     .ToDictionaryAsync(x => x.Id, x => x.Count, cancellationToken)
                 : new Dictionary<Guid, int>();
             return new GameOverlaySnapshot(game.Id.ToString(), "screenshot", null, null,
-                QuizQuestion: DbGameQuizRepository.MapCurrentState(visualSession, null, counts) with { PresentationVisible = true });
+                QuizQuestion: DbGameQuizRepository.MapCurrentState(visualSession, null, counts) with { PresentationVisible = true, ServerNowUtc = timeProvider.GetUtcNow().UtcDateTime });
         }
         if (game.OverlayLeaderboardEnabled && game.OverlayLeaderboardKind == "quiz")
         {

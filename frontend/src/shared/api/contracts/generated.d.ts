@@ -3023,6 +3023,8 @@ export interface components {
             percentage: number;
         };
         CurrentGameQuizStateDto: {
+            /** Format: date-time */
+            serverNowUtc?: string | null;
             /** @default false */
             presentationVisible: boolean;
             image?: components["schemas"]["GameQuizImageDto"] | null;
