@@ -84,6 +84,10 @@ dotnet run --project backend.csproj
 
 Политика удаления/архивации данных: [`docs/architecture/data-retention.md`](../docs/architecture/data-retention.md).
 
+Диагностика отсутствующих и не связанных с БД скриншотов без изменения данных:
+[`ReconcileQuizStorage`](tools/ReconcileQuizStorage/README.md). Проверка учитывает
+архивные вопросы, опубликованные игры, историю сессий и публикации Twitch.
+
 Game setup (admin draft):
 
 - `GET/POST/PUT/DELETE /api/game/setup` - черновик и пакетное сохранение текстовых полей.

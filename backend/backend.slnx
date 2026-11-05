@@ -6,4 +6,5 @@
   <Project Path="backend.Infrastructure.csproj" />
   <Project Path="backend.csproj" />
   <Project Path="tests/Backend.Tests/Backend.Tests.csproj" />
+  <Project Path="tools/ReconcileQuizStorage/ReconcileQuizStorage.csproj" />
 </Solution>
