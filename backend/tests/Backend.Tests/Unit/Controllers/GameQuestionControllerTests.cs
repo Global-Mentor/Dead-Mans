@@ -67,6 +67,9 @@ public sealed class GameQuestionControllerTests
 
     private sealed class TrackingGameQuestionService : IGameQuestionService
     {
+        public Task<GameQuestionCatalogPage> GetCatalogPageAsync(GameQuestionCatalogFilter filter, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public bool ImportQuestionsCalled { get; private set; }
 
         public Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(Guid? categoryId, string? search, bool includeDisabled, CancellationToken cancellationToken = default) =>

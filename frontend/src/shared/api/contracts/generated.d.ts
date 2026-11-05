@@ -579,6 +579,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/game/questions/catalog/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGameQuestionCatalogPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/questions/categories": {
         parameters: {
             query?: never;
@@ -2792,6 +2808,13 @@ export interface components {
             text: string;
             isCorrect: boolean;
             sortOrder: number;
+        };
+        GameQuestionCatalogPageDto: {
+            items: components["schemas"]["GameQuestionCatalogItemDto"][];
+            totalCount: number;
+            page: number;
+            pageSize: number;
+            maps: components["schemas"]["HuntMapItemDto"][];
         };
         GameQuestionCatalogItemDto: {
             /**
@@ -5769,6 +5792,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GameQuestionCatalogItemDto"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing admin role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getGameQuestionCatalogPage: {
+        parameters: {
+            query?: {
+                format?: "text" | "screenshot";
+                categoryId?: string;
+                search?: string;
+                status?: "all" | "enabled" | "disabled";
+                sort?: "category" | "rewardAsc" | "rewardDesc" | "priorityAsc" | "priorityDesc" | "leastAsked";
+                mapId?: string;
+                locationId?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded catalog page with complete geography facets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameQuestionCatalogPageDto"];
+                };
+            };
+            /** @description Invalid filters or page bounds */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not authenticated */

@@ -30,6 +30,7 @@ const translations = {
       status: { ready: 'Ready', uploading: 'Uploading', done: 'Uploaded', error: 'Failed' },
     },
     workspace: {
+      page: 'Page {{page}} of {{total}}',
       preview: 'Preview',
       previewItem: 'Preview: {{name}}',
       results: 'Shown: {{count}} of {{total}}',
@@ -566,6 +567,7 @@ const translations = {
       },
     },
     workspace: {
+      page: 'Страница {{page}} из {{total}}',
       preview: 'Предпросмотр',
       previewItem: 'Предпросмотр: {{name}}',
       results: 'Показано: {{count}} из {{total}}',
@@ -1103,6 +1105,7 @@ const translations = {
       },
     },
     workspace: {
+      page: 'Сторінка {{page}} з {{total}}',
       preview: 'Попередній перегляд',
       previewItem: 'Перегляд: {{name}}',
       results: 'Показано: {{count}} із {{total}}',
@@ -1633,6 +1636,7 @@ const translations = {
       status: { ready: 'Gotowy', uploading: 'Przesyłanie', done: 'Przesłano', error: 'Błąd' },
     },
     workspace: {
+      page: 'Strona {{page}} z {{total}}',
       preview: 'Podgląd',
       previewItem: 'Podgląd: {{name}}',
       results: 'Wyświetlono: {{count}} z {{total}}',

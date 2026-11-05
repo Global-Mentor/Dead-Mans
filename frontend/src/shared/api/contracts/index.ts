@@ -37,6 +37,7 @@ export type CancelGameModifierActivationRequest =
   components['schemas']['CancelGameModifierActivationRequestDto']
 
 export type GameQuestionCatalogItem = components['schemas']['GameQuestionCatalogItemDto']
+export type GameQuestionCatalogPage = components['schemas']['GameQuestionCatalogPageDto']
 export type GameQuestionCategoryItem = components['schemas']['GameQuestionCategoryItemDto']
 export type ImportGameQuestionsResult = components['schemas']['ImportGameQuestionsResultDto']
 export type ImportGameQuestionSkippedItem =

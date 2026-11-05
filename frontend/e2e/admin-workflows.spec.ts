@@ -1,3 +1,4 @@
+import { catalogPageFixture } from './support/catalog-page-fixture.ts'
 import { screenshotQuestion, screenshotLocationFixture } from './support/screenshot-fixture.ts'
 import { expect, test, type Page } from '@playwright/test'
 import { expectPanelPageInsets } from './layout-assertions.ts'
@@ -147,12 +148,18 @@ async function mockAdmin(
             {
               id: 'geography',
               name: 'Geography',
-              questionCount: questions.length,
+              questionCount: questions.filter(
+                (question) =>
+                  ('image' in question && question.image != null) ===
+                  (new URL(route.request().url()).searchParams.get('format') === 'screenshot'),
+              ).length,
               isLocationCategory: false,
               isProtected: false,
             },
           ],
         })
+      if (path === '/api/game/questions/catalog/page')
+        return route.fulfill({ json: catalogPageFixture(questions, route.request().url()) })
       if (path === '/api/game/questions/catalog') return route.fulfill({ json: questions })
       if (path === '/api/game/modifiers/catalog') return route.fulfill({ json: modifiers })
       if (route.request().method() !== 'GET' && !path.includes('/negotiate'))

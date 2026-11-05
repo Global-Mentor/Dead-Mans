@@ -1,13 +1,7 @@
-import { useScreenshotLocationFilters } from '../game-questions/index.ts'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameQuestionCatalogItem } from '../../shared/api/contracts/index.ts'
-import {
-  filterCatalogQuestions,
-  type QuestionCatalogSort,
-  type QuestionCatalogStatus,
-} from './model/question-catalog.ts'
 import { QuestionCatalogDetails } from './ui/QuestionCatalogDetails.tsx'
 import { QuestionCatalogFilters } from './ui/QuestionCatalogFilters.tsx'
 import { QuestionImportFeedback, type ImportReportState } from './ui/QuestionImportFeedback.tsx'
@@ -31,6 +25,7 @@ import { useCatalogFeedback } from './use-catalog-feedback.ts'
 import { ScreenshotUploadDialog } from './ui/ScreenshotUploadDialog.tsx'
 import { useCatalogQuestions } from './use-catalog-questions.ts'
 import { ScreenshotEditDialog } from './ui/ScreenshotEditDialog.tsx'
+import { useCatalogQuestionSelection } from './use-catalog-question-selection.ts'
 
 export function CatalogQuestionsPage() {
   return <QuizCatalogPage format="text" />
@@ -46,17 +41,24 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
   const copy = screenshots ? 'gameCatalog.screenshots' : 'gameCatalog.questions'
   const theme = useTheme()
   const wide = useMediaQuery(theme.breakpoints.up('lg'))
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [status, setStatus] = useState<QuestionCatalogStatus>('all')
-  const [sort, setSort] = useState<QuestionCatalogSort>('category')
   const {
+    status,
+    setStatus,
+    sort,
+    setSort,
+    setPage,
+    resetFilters,
+    hasFilters,
+    locationFilters,
     search,
     setSearch,
     selectedCategoryId,
     setSelectedCategoryId,
     catalogQuery,
+    viewKey,
+    returnToLoadedView,
     categoriesQuery,
     dialog,
     openCreate,
@@ -90,6 +92,10 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
   } = useCatalogFeedback(t)
   const [importReport, setImportReport] = useState<ImportReportState | null>(null)
   const importInputRef = useRef<HTMLInputElement | null>(null)
+  const questions = catalogQuery.data?.items
+  const visible = questions ?? []
+  const selection = useCatalogQuestionSelection(visible, viewKey)
+  const selected = selection.selected
 
   const resetPageFeedback = () => {
     resetFeedback()
@@ -100,47 +106,14 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
     resetPageFeedback()
     try {
       await confirmDelete()
+      selection.clear()
       setPreviewOpen(false)
     } catch (error) {
       showResolvedError(error)
     }
   }
 
-  const questions = useMemo(
-    () => catalogQuery.data?.filter((question) => Boolean(question.image) === screenshots),
-    [catalogQuery.data, screenshots],
-  )
-  const geography = useScreenshotLocationFilters(questions)
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const question of questions ?? [])
-      counts.set(question.categoryId, (counts.get(question.categoryId) ?? 0) + 1)
-    return counts
-  }, [questions])
-  const locale = i18n.resolvedLanguage ?? 'en'
-  const visible = useMemo(
-    () =>
-      filterCatalogQuestions(
-        geography.filteredQuestions,
-        {
-          search,
-          categoryId: selectedCategoryId,
-          status,
-          sort,
-        },
-        locale,
-      ),
-    [geography.filteredQuestions, search, selectedCategoryId, status, sort, locale],
-  )
-  const selected =
-    visible.find((question) => question.questionId === selectedId) ?? visible[0] ?? null
-  const hasFilters =
-    search.trim().length > 0 ||
-    selectedCategoryId !== null ||
-    status !== 'all' ||
-    sort !== 'category' ||
-    geography.activeCount > 0
-  const isEmptyCatalog = questions?.length === 0 && !hasFilters && !catalogQuery.isError
+  const isEmptyCatalog = catalogQuery.data?.totalCount === 0 && !hasFilters && !catalogQuery.isError
   const showCatalogState =
     isEmptyCatalog || (questions == null && (catalogQuery.isLoading || catalogQuery.isError))
   const catalogState = showCatalogState
@@ -157,16 +130,14 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
         retry: () => void catalogQuery.refetch(),
       }
     : null
-  const resetFilters = () => {
-    setSearch('')
-    setSelectedCategoryId(null)
-    setStatus('all')
-    setSort('category')
-    geography.reset()
-  }
   const selectQuestion = (question: GameQuestionCatalogItem) => {
-    setSelectedId(question.questionId)
+    selection.select(question)
     setPreviewOpen(true)
+  }
+  const saveQuestion: typeof submitQuestion = async (request) => {
+    const saved = await submitQuestion(request)
+    selectQuestion(saved)
+    return saved
   }
   const details = selected ? (
     <QuestionCatalogDetails
@@ -286,13 +257,10 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
               {!showCatalogState ? (
                 <QuestionCatalogFilters
                   screenshots={screenshots}
-                  locationFilters={geography.controls}
+                  locationFilters={locationFilters}
                   search={search}
                   onSearchChange={setSearch}
-                  categories={categories.map((category) => ({
-                    ...category,
-                    questionCount: categoryCounts.get(category.id) ?? 0,
-                  }))}
+                  categories={categories}
                   categoryId={selectedCategoryId}
                   onCategoryChange={setSelectedCategoryId}
                   status={status}
@@ -314,7 +282,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
             isLoading={catalogQuery.isLoading}
             isError={catalogQuery.isError}
             hasData={catalogQuery.data != null}
-            isEmpty={(questions?.length ?? 0) === 0}
+            isEmpty={false}
             loadingMessage={t(`${copy}.loading`)}
             errorMessage={t(`${copy}.error`)}
             emptyMessage={t(`${copy}.empty`)}
@@ -337,7 +305,11 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
               <QuestionCatalogList
                 screenshots={screenshots}
                 questions={visible}
-                totalCount={questions?.length ?? 0}
+                totalCount={catalogQuery.data?.totalCount ?? 0}
+                page={catalogQuery.data?.page ?? 1}
+                pageSize={catalogQuery.data?.pageSize ?? 40}
+                onPageChange={setPage}
+                {...(returnToLoadedView ? { onReturnToLoadedView: returnToLoadedView } : {})}
                 selectedId={wide ? (selected?.questionId ?? null) : null}
                 onSelect={selectQuestion}
               />
@@ -395,7 +367,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
           categories={categories}
           isBusy={isSaving}
           onClose={closeDialog}
-          onSubmit={submitQuestion}
+          onSubmit={saveQuestion}
         />
       ) : !screenshots ? (
         <QuestionFormDialog
@@ -407,9 +379,7 @@ function QuizCatalogPage({ format }: { format: 'text' | 'screenshot' }) {
           isBusy={isSaving}
           onClose={closeDialog}
           onSubmit={async (request) => {
-            const saved = await submitQuestion(request)
-            setSelectedId(saved.questionId)
-            setPreviewOpen(true)
+            await saveQuestion(request)
           }}
         />
       ) : null}

@@ -5,6 +5,9 @@ namespace backend.Application.Abstractions.Repositories;
 
 public interface IGameQuestionRepository
 {
+    Task<GameQuestionCatalogPage> GetCatalogPageAsync(
+        GameQuestionCatalogFilter filter, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(
         Guid? categoryId,
         string? search,

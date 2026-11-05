@@ -1,3 +1,4 @@
+import { catalogPageFixture } from './support/catalog-page-fixture.ts'
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
 import { screenshotQuestion, screenshotLocationFixture } from './support/screenshot-fixture.ts'
@@ -253,41 +254,120 @@ const catalog: GameQuestionCatalogItem[] = Array.from({ length: 24 }, (_, index)
   ],
 }))
 
-test('large screenshot catalogue loads offscreen images only when approached', async ({ page }) => {
+for (const width of [390, 1440]) {
+  test(`large screenshot catalogue pages results and loads offscreen images only when approached at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await mockCatalog(page)
+    state.items = Array.from({ length: 100 }, (_, index) => ({
+      ...catalog[0]!,
+      questionId: `image-${index}`,
+      questionCode: `image-${index}`,
+      image: {
+        ...screenshotQuestion.image!,
+        imageUrl: `http://localhost:5180/review-images/${index}.svg`,
+      },
+    }))
+    const loaded = new Set<string>()
+    await page.route('**/review-images/*.svg', (route) => {
+      loaded.add(route.request().url())
+      return route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" fill="#526558"/></svg>',
+      })
+    })
+    await page.goto('/panel/catalog-screenshots')
+    const list = page.getByTestId('question-catalog-list')
+    // Loading images are hidden from the accessibility tree until ImageFrame has loaded them.
+    const images = list.locator('img[alt="Скриншот"]')
+    await expect(images).toHaveCount(40)
+    await expect(list.getByText('Страница 1 из 3')).toBeVisible()
+    await expect
+      .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBe(1920)
+    expect(loaded.size).toBeLessThan(100)
+    await page.screenshot({
+      path: info.outputPath(`paged-catalog-${width}.png`),
+      animations: 'disabled',
+    })
+    const initiallyLoaded = loaded.size
+    await images.last().scrollIntoViewIfNeeded()
+    await expect
+      .poll(() => images.last().evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBe(1920)
+    expect(loaded.size).toBeGreaterThan(initiallyLoaded)
+    await list.getByRole('button', { name: 'Далее', exact: true }).click()
+    await expect(list.getByText('Страница 2 из 3')).toBeVisible()
+    await expect(images).toHaveCount(40)
+    await list.getByRole('button', { name: 'Далее', exact: true }).click()
+    await expect(list.getByText('Страница 3 из 3')).toBeVisible()
+    await expect(images).toHaveCount(20)
+    await expect(list.getByRole('button', { name: 'Далее', exact: true })).toBeDisabled()
+    await page.getByRole('textbox', { name: 'Поиск скриншотов' }).fill('image-99')
+    await expect(images).toHaveCount(1)
+    await expect(list.getByRole('button', { name: /image-99/ })).toBeVisible()
+  })
+}
+
+test('deleting the final row of a page keeps earlier pages reachable after a failed refresh', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   const state = await mockCatalog(page)
-  state.items = Array.from({ length: 100 }, (_, index) => ({
+  state.items = Array.from({ length: 41 }, (_, index) => ({
     ...catalog[0]!,
-    questionId: `image-${index}`,
-    questionCode: `image-${index}`,
-    image: {
-      ...screenshotQuestion.image!,
-      imageUrl: `http://localhost:5180/review-images/${index}.svg`,
-    },
+    questionId: `paged-${index}`,
+    questionCode: `paged-${index}`,
+    text: `Question ${String(index).padStart(2, '0')}`,
   }))
-  const loaded = new Set<string>()
-  await page.route('**/review-images/*.svg', (route) => {
-    loaded.add(route.request().url())
-    return route.fulfill({
-      contentType: 'image/svg+xml',
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" fill="#526558"/></svg>',
-    })
-  })
-  await page.goto('/panel/catalog-screenshots')
+  await page.goto('/panel/catalog-questions')
   const list = page.getByTestId('question-catalog-list')
-  // Loading images are hidden from the accessibility tree until ImageFrame has loaded them.
-  const images = list.locator('img[alt="Скриншот"]')
-  await expect(images).toHaveCount(100)
-  await expect
-    .poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
-    .toBe(1920)
-  expect(loaded.size).toBeLessThan(100)
-  const initiallyLoaded = loaded.size
-  await images.last().scrollIntoViewIfNeeded()
-  await expect
-    .poll(() => images.last().evaluate((image: HTMLImageElement) => image.naturalWidth))
-    .toBe(1920)
-  expect(loaded.size).toBeGreaterThan(initiallyLoaded)
+  await list.getByRole('button', { name: 'Далее', exact: true }).click()
+  await expect(list.getByRole('button', { name: 'Question 40', exact: true })).toBeVisible()
+  await page
+    .getByTestId('question-catalog-details')
+    .getByRole('button', { name: 'Удалить', exact: true })
+    .click()
+  state.failCatalog = true
+  await page
+    .getByRole('dialog', { name: 'Удалить вопрос' })
+    .getByRole('button', { name: 'Удалить', exact: true })
+    .click()
+  await expect(list.getByRole('button', { name: 'Question 40', exact: true })).toHaveCount(0)
+  await expect(list.getByRole('button', { name: 'Назад', exact: true })).toBeEnabled()
+  await list.getByRole('button', { name: 'Назад', exact: true }).click()
+  await expect(list.getByRole('button', { name: 'Question 00', exact: true })).toBeVisible()
+})
+
+test('failed page and filter requests retain loaded rows and allow returning to the cached view', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const state = await mockCatalog(page)
+  state.items = Array.from({ length: 50 }, (_, index) => ({
+    ...catalog[0]!,
+    questionId: `existing-${index}`,
+    text: `Question ${String(index).padStart(2, '0')}`,
+  }))
+  await page.goto('/panel/catalog-questions')
+  const list = page.getByTestId('question-catalog-list')
+  await expect(list.getByText('Страница 1 из 2')).toBeVisible()
+  state.failCatalog = true
+  await list.getByRole('button', { name: 'Далее', exact: true }).click()
+  const error = page.getByText('Не удалось загрузить каталог вопросов.', { exact: true })
+  await expect(error).toBeVisible()
+  await expect(list.getByRole('button', { name: 'Question 00', exact: true })).toBeVisible()
+  await expect(list.getByText('Страница 1 из 2')).toBeVisible()
+  await list.getByRole('button', { name: 'Назад', exact: true }).click()
+  await expect(list.getByRole('button', { name: 'Назад', exact: true })).toBeDisabled()
+  const search = page.getByRole('textbox', { name: 'Поиск вопросов', exact: true })
+  await search.fill('Unavailable filter')
+  await expect(error).toBeVisible()
+  await expect(list.getByRole('button', { name: 'Question 00', exact: true })).toBeVisible()
+  await list.getByRole('button', { name: 'Назад', exact: true }).click()
+  await expect(search).toHaveValue('')
+  await expect(list.getByRole('button', { name: 'Question 00', exact: true })).toBeVisible()
 })
 
 async function mockCatalog(page: Page, language = 'ru') {
@@ -360,6 +440,10 @@ async function mockCatalog(page: Page, language = 'ru') {
         state.categories = state.categories.filter((item) => !path.endsWith('/' + item.id))
         return route.fulfill({ status: 204 })
       }
+      if (path === '/api/game/questions/catalog/page')
+        return state.failCatalog
+          ? route.fulfill({ status: 500 })
+          : route.fulfill({ json: catalogPageFixture(state.items, route.request().url()) })
       if (path === '/api/game/questions/catalog')
         return state.failCatalog
           ? route.fulfill({ status: 500 })
@@ -620,7 +704,7 @@ test('filters intersect, searches include answers, reset restores every filter a
   await editor.getByRole('button', { name: 'Отмена', exact: true }).click()
   await page.getByRole('textbox', { name: 'Поиск вопросов' }).fill('нет такого вопроса')
   await expect(list.getByRole('button')).toHaveCount(0)
-  await expect(list.getByText('Показано: 0 из 24')).toBeVisible()
+  await expect(list.getByText('Показано: 0 из 0')).toBeVisible()
   await expect(page.getByText('По этим фильтрам вопросов не найдено.')).toHaveCount(0)
   await page.getByRole('button', { name: 'Сбросить фильтры', exact: true }).last().click()
   await expect(list.getByRole('button')).toHaveCount(24)
@@ -905,6 +989,48 @@ test('creation requires confirmation and cancelling keeps the new question draft
   await expect(editor).toBeHidden()
   expect(state.saves).toHaveLength(1)
 })
+
+for (const width of [390, 1440]) {
+  test(`creating a question outside the current page keeps its own details at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await mockCatalog(page)
+    state.items = Array.from({ length: 50 }, (_, index) => ({
+      ...catalog[0]!,
+      questionId: `existing-${index}`,
+      questionCode: `existing-${index}`,
+      text: `Question ${String(index).padStart(2, '0')}`,
+    }))
+    await page.goto('/panel/catalog-questions')
+    const list = page.getByTestId('question-catalog-list')
+    await expect(list.getByText('Страница 1 из 2')).toBeVisible()
+    await page.getByRole('button', { name: 'Добавить вопрос', exact: true }).click()
+    const editor = page.getByRole('dialog', { name: 'Новый вопрос', exact: true })
+    const text = 'ZZZ new question outside the first page'
+    await editor.getByLabel(/^Вопрос\s*\*?$/).fill(text)
+    await editor.getByLabel(/^Правильный ответ\s*\*?$/).fill('Correct')
+    for (const number of [1, 2, 3])
+      await editor
+        .getByRole('textbox', { name: `Неверный вариант ${number}`, exact: true })
+        .fill(`Wrong ${number}`)
+    await editor.getByRole('button', { name: 'Сохранить', exact: true }).click()
+    await page
+      .getByRole('dialog', { name: 'Добавить вопрос', exact: true })
+      .getByRole('button', { name: 'Сохранить', exact: true })
+      .click()
+    await expect(editor).toBeHidden()
+    await expect(list.getByRole('button', { name: text, exact: true })).toHaveCount(0)
+    const details = page.getByTestId('question-catalog-details')
+    await expect(details.getByText(text, { exact: true })).toBeVisible()
+    await details.getByRole('button', { name: 'Изменить', exact: true }).click()
+    await expect(
+      page
+        .getByRole('dialog', { name: 'Редактирование вопроса', exact: true })
+        .getByLabel(/^Вопрос\s*\*?$/),
+    ).toHaveValue(text)
+  })
+}
 
 test('import menu opens below the right edge of its trigger', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 })

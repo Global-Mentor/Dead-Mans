@@ -23,6 +23,10 @@ public sealed class GameQuestionService : IGameQuestionService
         _logger = logger;
     }
 
+    public Task<GameQuestionCatalogPage> GetCatalogPageAsync(
+        GameQuestionCatalogFilter filter, CancellationToken cancellationToken = default)
+        => _repository.GetCatalogPageAsync(filter, cancellationToken);
+
     public Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(
         Guid? categoryId,
         string? search,

@@ -15,6 +15,32 @@ namespace backend.Controllers;
 
 public sealed partial class GameQuestionController
 {
+    [HttpGet("catalog/page")]
+    [Authorize(Roles = AuthRoleCodes.Admin)]
+    [ProducesResponseType(typeof(GameQuestionCatalogPageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetCatalogPage(
+        [FromQuery] string format = "text", [FromQuery] Guid? categoryId = null,
+        [FromQuery] string? search = null, [FromQuery] string status = "all",
+        [FromQuery] string sort = "category", [FromQuery] Guid? mapId = null,
+        [FromQuery] Guid? locationId = null, [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 40, CancellationToken cancellationToken = default)
+    {
+        if (format is not ("text" or "screenshot") || status is not ("all" or "enabled" or "disabled")
+            || sort is not ("category" or "rewardAsc" or "rewardDesc" or "priorityAsc" or "priorityDesc" or "leastAsked")
+            || page < 1 || page > 1_000_000 || pageSize is < 1 or > 100 || search?.Length > 200)
+            return this.BadRequestError(AppMessages.Client.GameQuestionInvalidRequest, AppMessages.ErrorCodes.GameQuestionInvalidRequest);
+
+        var result = await _gameQuestionService.GetCatalogPageAsync(
+            new(format, categoryId, search, status, sort, mapId, locationId, page, pageSize), cancellationToken);
+        return Ok(new GameQuestionCatalogPageDto(
+            result.Items.Select(x => x.ToDto(_mediaBaseUrl)).ToArray(), result.TotalCount, result.Page, result.PageSize,
+            result.Maps.Select(map => new HuntMapItemDto(map.Id.ToString(), map.Code, map.Names,
+                map.Locations.Select(location => new HuntLocationItemDto(location.Id.ToString(), location.Code, location.Names)).ToArray())).ToArray()));
+    }
+
     [HttpGet("catalog")]
     [Authorize(Roles = AuthRoleCodes.Admin)]
     [ProducesResponseType(typeof(IReadOnlyList<GameQuestionCatalogItemDto>), StatusCodes.Status200OK)]

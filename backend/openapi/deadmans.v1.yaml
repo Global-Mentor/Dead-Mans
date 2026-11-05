@@ -1342,6 +1342,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /game/questions/catalog/page:
+    get:
+      operationId: getGameQuestionCatalogPage
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [text, screenshot], default: text }
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, enabled, disabled], default: all }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [category, rewardAsc, rewardDesc, priorityAsc, priorityDesc, leastAsked], default: category }
+        - name: mapId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: locationId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 40 }
+      responses:
+        '200':
+          description: Bounded catalog page with complete geography facets
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GameQuestionCatalogPageDto' }
+        '400':
+          description: Invalid filters or page bounds
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '403':
+          description: Missing admin role
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /game/questions/categories:
     get:
       operationId: getGameQuestionCategories
@@ -6773,6 +6827,20 @@ components:
         sortOrder:
           type: integer
           minimum: 0
+    GameQuestionCatalogPageDto:
+      type: object
+      additionalProperties: false
+      required: [items, totalCount, page, pageSize, maps]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/GameQuestionCatalogItemDto' }
+        totalCount: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+        maps:
+          type: array
+          items: { $ref: '#/components/schemas/HuntMapItemDto' }
     GameQuestionCatalogItemDto:
       type: object
       required:

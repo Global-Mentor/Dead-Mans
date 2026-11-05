@@ -70,6 +70,9 @@ public sealed record ImportGameQuestionsResult(
 
 public interface IGameQuestionService
 {
+    Task<GameQuestionCatalogPage> GetCatalogPageAsync(
+        GameQuestionCatalogFilter filter, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<GameQuestionCatalogItem>> GetCatalogAsync(
         Guid? categoryId,
         string? search,

@@ -5,11 +5,11 @@ import type {
   CreateGameQuestionRequest,
   GameQuestionCategoryItem,
   GameQuestionCatalogItem,
+  GameQuestionCatalogPage,
 } from '../../shared/api/contracts/index.ts'
 import {
   createGameQuestionMutationOptions,
   deleteGameQuestionMutationOptions,
-  gameQuestionCatalogQueryOptions,
   gameQuestionQueryKeys,
   updateGameQuestionMutationOptions,
 } from '../game-questions/index.ts'
@@ -21,6 +21,7 @@ import {
   updateQuestionCategory,
 } from './api/question-categories-api.ts'
 import { downloadQuestionImportTemplate, importQuestionsFile } from './api/question-import-api.ts'
+import { useCatalogPage } from './use-catalog-page.ts'
 
 type QuestionDialogState =
   { mode: 'create'; question: undefined } | { mode: 'edit'; question: GameQuestionCatalogItem }
@@ -28,9 +29,7 @@ type QuestionDialogState =
 export function useCatalogQuestions(format: 'text' | 'screenshot') {
   const queryClient = useQueryClient()
   const categoryQueryKey = questionCategoryQueryOptions(format).queryKey
-  const [search, setSearch] = useState('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const catalogQuery = useQuery(gameQuestionCatalogQueryOptions())
+  const page = useCatalogPage(format)
   const categoriesQuery = useQuery(questionCategoryQueryOptions(format))
   const createMutation = useMutation(createGameQuestionMutationOptions(queryClient))
   const updateMutation = useMutation(updateGameQuestionMutationOptions(queryClient))
@@ -59,13 +58,27 @@ export function useCatalogQuestions(format: 'text' | 'screenshot') {
         categories?.map((item) => (item.id === category.id ? category : item)),
       )
       queryClient.setQueriesData<GameQuestionCatalogItem[]>(
-        { queryKey: gameQuestionQueryKeys.all },
+        { queryKey: gameQuestionQueryKeys.catalogs },
         (questions) =>
           questions?.map((question) =>
             question.categoryId === category.id
               ? { ...question, categoryName: category.name }
               : question,
           ),
+      )
+      queryClient.setQueriesData<GameQuestionCatalogPage>(
+        { queryKey: gameQuestionQueryKeys.pages },
+        (page) =>
+          page
+            ? {
+                ...page,
+                items: page.items.map((question) =>
+                  question.categoryId === category.id
+                    ? { ...question, categoryName: category.name }
+                    : question,
+                ),
+              }
+            : page,
       )
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: questionCategoryQueryKey }),
@@ -125,7 +138,7 @@ export function useCatalogQuestions(format: 'text' | 'screenshot') {
   ) => {
     if (action === 'delete') {
       await deleteCategoryMutation.mutateAsync(categoryId)
-      if (selectedCategoryId === categoryId) setSelectedCategoryId(null)
+      if (page.selectedCategoryId === categoryId) page.setSelectedCategoryId(null)
     } else if (action === 'edit') {
       await updateCategoryMutation.mutateAsync({ categoryId, request: { name } })
     } else {
@@ -145,11 +158,7 @@ export function useCatalogQuestions(format: 'text' | 'screenshot') {
   }
 
   return {
-    search,
-    setSearch,
-    selectedCategoryId,
-    setSelectedCategoryId,
-    catalogQuery,
+    ...page,
     categoriesQuery,
     dialog,
     openCreate,

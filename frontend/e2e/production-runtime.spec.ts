@@ -1,3 +1,4 @@
+import { catalogPageFixture } from './support/catalog-page-fixture.ts'
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { expect, test, type Page, type Route, type WebSocketRoute } from '@playwright/test'
@@ -300,6 +301,8 @@ test('catalog answer editing preserves variants and validates duplicates under p
           },
         ],
       })
+    } else if (path === '/api/game/questions/catalog/page') {
+      await route.fulfill({ json: catalogPageFixture([question], request.url()) })
     } else if (path === '/api/game/questions/catalog') {
       await route.fulfill({ json: [question] })
     } else if (path === `/api/game/questions/${questionId}` && request.method() === 'PUT') {

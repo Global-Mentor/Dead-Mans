@@ -82,6 +82,7 @@ export function QuestionCatalogFilters({
             screenshots ? 'gameCatalog.screenshots.search' : 'gameCatalog.questions.searchLabel',
           )}
           value={search}
+          slotProps={{ htmlInput: { maxLength: 200 } }}
           placeholder={t(
             screenshots
               ? 'gameCatalog.screenshots.searchHint'

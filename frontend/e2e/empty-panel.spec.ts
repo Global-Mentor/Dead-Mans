@@ -44,6 +44,10 @@ async function mockEmptyDatabase(page: Page, owner = true, locale = 'ru') {
         })
       if (url.pathname === '/api/game/modifiers/history')
         return route.fulfill({ json: { items: [], nextCursor: null } })
+      if (url.pathname === '/api/game/questions/catalog/page')
+        return route.fulfill({
+          json: { items: [], totalCount: 0, page: 1, pageSize: 40, maps: [] },
+        })
       if (url.pathname.endsWith('/integrations/twitch/status'))
         return route.fulfill({ json: { enabled: false } })
       if (
@@ -174,10 +178,14 @@ for (const width of [390, 1440]) {
     })
     let failed = true
     await page.route(
-      (url) => url.pathname === '/api/game/questions/catalog',
+      (url) => url.pathname === '/api/game/questions/catalog/page',
       async (route) => {
         await loading
-        await route.fulfill(failed ? { status: 503 } : { json: [] })
+        await route.fulfill(
+          failed
+            ? { status: 503 }
+            : { json: { items: [], totalCount: 0, page: 1, pageSize: 40, maps: [] } },
+        )
       },
     )
     await page.goto('/panel/catalog-questions')

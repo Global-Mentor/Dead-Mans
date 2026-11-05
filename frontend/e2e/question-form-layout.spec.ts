@@ -1,3 +1,4 @@
+import { catalogPageFixture } from './support/catalog-page-fixture.ts'
 import { expect, test, type Page } from '@playwright/test'
 
 async function mockLocalUi(page: Page) {
@@ -43,6 +44,8 @@ async function mockLocalUi(page: Page) {
             },
           ],
         })
+      if (path === '/api/game/questions/catalog/page')
+        return route.fulfill({ json: catalogPageFixture([], route.request().url()) })
       if (path === '/api/game/questions/catalog') return route.fulfill({ json: [] })
       return route.fulfill({ status: 204 })
     },

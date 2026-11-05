@@ -2,6 +2,7 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query'
 import type {
   CreateGameQuestionRequest,
   GameQuestionCatalogItem,
+  GameQuestionCatalogPage,
   UpdateGameQuestionRequest,
 } from '../../../shared/api/contracts/index.ts'
 import { createGameQuestion, deleteGameQuestion, updateGameQuestion } from './game-questions-api.ts'
@@ -12,6 +13,18 @@ function invalidateGameQuestions(queryClient: QueryClient) {
 }
 
 function cacheSavedQuestion(queryClient: QueryClient, question: GameQuestionCatalogItem) {
+  queryClient.setQueriesData<GameQuestionCatalogPage>(
+    { queryKey: gameQuestionQueryKeys.pages },
+    (page) =>
+      page
+        ? {
+            ...page,
+            items: page.items.map((item) =>
+              item.questionId === question.questionId ? question : item,
+            ),
+          }
+        : page,
+  )
   queryClient.setQueryData<GameQuestionCatalogItem[]>(
     gameQuestionCatalogQueryOptions().queryKey,
     (questions) => [
@@ -51,8 +64,21 @@ export function deleteGameQuestionMutationOptions(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: (questionId: string) => deleteGameQuestion(questionId),
     onSuccess: async (_, questionId) => {
+      queryClient.setQueriesData<GameQuestionCatalogPage>(
+        { queryKey: gameQuestionQueryKeys.pages },
+        (page) =>
+          page
+            ? {
+                ...page,
+                items: page.items.filter((item) => item.questionId !== questionId),
+                totalCount:
+                  page.totalCount -
+                  Number(page.items.some((item) => item.questionId === questionId)),
+              }
+            : page,
+      )
       queryClient.setQueriesData<GameQuestionCatalogItem[]>(
-        { queryKey: gameQuestionQueryKeys.all },
+        { queryKey: gameQuestionQueryKeys.catalogs },
         (questions) => questions?.filter((question) => question.questionId !== questionId),
       )
       await invalidateGameQuestions(queryClient)

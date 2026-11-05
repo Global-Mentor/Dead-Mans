@@ -3,6 +3,8 @@ import { fetchGameQuestionCatalog, type GameQuestionCatalogFilters } from './gam
 
 export const gameQuestionQueryKeys = {
   all: ['gameQuestions'] as const,
+  catalogs: ['gameQuestions', 'catalog'] as const,
+  pages: ['gameQuestions', 'pages'] as const,
   catalog: (filters: GameQuestionCatalogFilters) =>
     [...gameQuestionQueryKeys.all, 'catalog', filters] as const,
 }
