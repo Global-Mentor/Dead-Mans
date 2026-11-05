@@ -66,7 +66,8 @@ public static partial class ApiContractMapper
                 .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
                 .ToArray(),
             request.QuizAnswerDurationSeconds,
-            request.ScreenshotAnswerDurationSeconds
+            request.ScreenshotAnswerDurationSeconds,
+            request.AvoidConsecutiveScreenshotLocations
         );
     }
 
@@ -87,7 +88,8 @@ public static partial class ApiContractMapper
             snapshot.EnabledQuestionIds.ToArray(),
             snapshot.QuizAnswerDurationSeconds,
             snapshot.TeamLimit,
-            snapshot.ScreenshotAnswerDurationSeconds
+            snapshot.ScreenshotAnswerDurationSeconds,
+            snapshot.AvoidConsecutiveScreenshotLocations
         );
     }
 

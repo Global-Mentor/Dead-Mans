@@ -5181,6 +5181,7 @@ components:
       required: [expectedVersion, title, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds]
       properties:
         screenshotAnswerDurationSeconds: { type: integer, minimum: 5, maximum: 3600, default: 60 }
+        avoidConsecutiveScreenshotLocations: { type: boolean, default: false }
         expectedVersion:
           type: integer
           minimum: 1
@@ -5231,6 +5232,7 @@ components:
         [gameId, title, status, version, rows, cols, rowLabels, colLabels, cells, enabledModifierIds, enabledQuestionIds, quizAnswerDurationSeconds, teamLimit]
       properties:
         screenshotAnswerDurationSeconds: { type: integer, minimum: 5, maximum: 3600, default: 60 }
+        avoidConsecutiveScreenshotLocations: { type: boolean, default: false }
         teamLimit:
           type: integer
           nullable: true
@@ -7213,6 +7215,10 @@ components:
       type: object
       required: [questionId, questionCode, categoryName, text]
       properties:
+        recommended: { type: boolean, default: false }
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/GameQuizOptionDto' }
         image:
           type: object
           nullable: true

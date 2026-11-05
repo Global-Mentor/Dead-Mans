@@ -102,6 +102,8 @@ public sealed record AvailableGameQuizQuestion(
 )
 {
     public QuizImageSnapshot? Image { get; init; }
+    public IReadOnlyList<GameQuizOption> Options { get; init; } = Array.Empty<GameQuizOption>();
+    public bool Recommended { get; init; }
 }
 
 public sealed record AskedQuizQuestion(

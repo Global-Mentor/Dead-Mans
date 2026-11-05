@@ -16,6 +16,8 @@ interface ImageFrameProps {
   decorative?: boolean
   loading?: 'lazy' | 'eager'
   reveal?: 'instant' | 'fade'
+  onReady?: () => void
+  onError?: () => void
   sx?: SxProps<Theme>
 }
 
@@ -34,6 +36,8 @@ function ImageFrameContent({
   loading,
   reveal = 'instant',
   sx,
+  onReady,
+  onError,
 }: ImageFrameProps) {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 
@@ -79,8 +83,14 @@ function ImageFrameContent({
         alt={decorative ? '' : alt}
         loading={loading}
         decoding="async"
-        onLoad={() => setStatus('loaded')}
-        onError={() => setStatus('error')}
+        onLoad={() => {
+          setStatus('loaded')
+          onReady?.()
+        }}
+        onError={() => {
+          setStatus('error')
+          onError?.()
+        }}
         sx={{
           gridArea: '1 / 1',
           display: 'block',

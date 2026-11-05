@@ -13,7 +13,8 @@ public sealed record UpdateGameSetupRequestDto(
     IReadOnlyList<string>? EnabledModifierIds = null,
     IReadOnlyList<string>? EnabledQuestionIds = null,
     int QuizAnswerDurationSeconds = 60,
-    int ScreenshotAnswerDurationSeconds = 60
+    int ScreenshotAnswerDurationSeconds = 60,
+    bool AvoidConsecutiveScreenshotLocations = false
 );
 
 public sealed record GameSetupSnapshotDto(
@@ -31,5 +32,6 @@ public sealed record GameSetupSnapshotDto(
     IReadOnlyList<string> EnabledQuestionIds,
     int QuizAnswerDurationSeconds = 60,
     int? TeamLimit = 10,
-    int ScreenshotAnswerDurationSeconds = 60
+    int ScreenshotAnswerDurationSeconds = 60,
+    bool AvoidConsecutiveScreenshotLocations = false
 );

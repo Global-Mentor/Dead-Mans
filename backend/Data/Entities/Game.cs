@@ -32,6 +32,8 @@ public class Game
 
     public int ScreenshotAnswerDurationSeconds { get; set; } = 60;
 
+    public bool AvoidConsecutiveScreenshotLocations { get; set; }
+
     public int QuizAnswerDurationSeconds { get; set; } = 60;
 
     public Guid? ActiveTeamId { get; set; }

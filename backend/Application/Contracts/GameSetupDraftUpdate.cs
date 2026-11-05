@@ -11,5 +11,6 @@ public sealed record GameSetupDraftUpdate(
     IReadOnlyList<Guid> EnabledModifierIds,
     IReadOnlyList<Guid> EnabledQuestionIds,
     int QuizAnswerDurationSeconds = 60,
-    int ScreenshotAnswerDurationSeconds = 60
+    int ScreenshotAnswerDurationSeconds = 60,
+    bool AvoidConsecutiveScreenshotLocations = false
 );

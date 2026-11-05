@@ -110,7 +110,7 @@ public sealed partial class DbGameSetupRepository
             .ToArrayAsync(cancellationToken);
         var settings = await _dbContext.Games.AsNoTracking()
             .Where(x => x.Id == board.GameId)
-            .Select(x => new { x.QuizAnswerDurationSeconds, x.TeamLimit, x.ScreenshotAnswerDurationSeconds })
+            .Select(x => new { x.QuizAnswerDurationSeconds, x.TeamLimit, x.ScreenshotAnswerDurationSeconds, x.AvoidConsecutiveScreenshotLocations })
             .SingleAsync(cancellationToken);
 
         return new GameBoardSnapshot(
@@ -130,7 +130,8 @@ public sealed partial class DbGameSetupRepository
             enabledQuestionIds,
             settings.QuizAnswerDurationSeconds,
             settings.TeamLimit,
-            settings.ScreenshotAnswerDurationSeconds
+            settings.ScreenshotAnswerDurationSeconds,
+            settings.AvoidConsecutiveScreenshotLocations
         );
     }
 

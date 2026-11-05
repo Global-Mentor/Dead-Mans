@@ -4,6 +4,7 @@ import {
   quizImageSearchTerms,
 } from '../../shared/game-ui/index.ts'
 import { Box, Stack, Typography } from '@mui/material'
+import { QuizLaunchPreview } from './QuizLaunchPreview.tsx'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { components } from '../../shared/api/contracts/generated'
@@ -21,6 +22,7 @@ type AvailableQuestion = components['schemas']['AvailableGameQuizQuestionDto']
 
 type Props = {
   screenshot?: boolean
+  initialSelectedId?: string | null
   open: boolean
   questions: readonly AvailableQuestion[]
   launchDisabled: boolean
@@ -36,6 +38,7 @@ const allCategories = '__all__'
 
 export function QuizQuestionPickerDialog({
   screenshot = false,
+  initialSelectedId = null,
   open,
   questions,
   launchDisabled,
@@ -49,7 +52,11 @@ export function QuizQuestionPickerDialog({
   const { t, i18n } = useTranslation()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(allCategories)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId)
+  const [readyPreview, setReadyPreview] = useState<{ key: string | null; ready: boolean }>({
+    key: null,
+    ready: false,
+  })
   const [submitting, setSubmitting] = useState(false)
   const [submitFailed, setSubmitFailed] = useState(false)
   const submittingRef = useRef(false)
@@ -95,9 +102,24 @@ export function QuizQuestionPickerDialog({
     onClose()
   }
   const selectedQuestion = visibleQuestions.find((question) => question.questionId === selectedId)
+  const previewKey =
+    !loading && !error && selectedQuestion?.image
+      ? `${selectedQuestion.questionId}:${selectedQuestion.image.imageUrl}`
+      : null
+  if (readyPreview.key !== previewKey) setReadyPreview({ key: previewKey, ready: false })
+  const mediaReady =
+    !selectedQuestion?.image || (readyPreview.key === previewKey && readyPreview.ready)
   const pending = submitting
   const startSelected = async () => {
-    if (!selectedQuestion || launchDisabled || pending || submittingRef.current || loading || error)
+    if (
+      !selectedQuestion ||
+      !mediaReady ||
+      launchDisabled ||
+      pending ||
+      submittingRef.current ||
+      loading ||
+      error
+    )
       return
     submittingRef.current = true
     setSubmitting(true)
@@ -129,7 +151,9 @@ export function QuizQuestionPickerDialog({
           </AppButton>
           <AppButton
             loading={submitting}
-            disabled={launchDisabled || pending || loading || error || !selectedQuestion}
+            disabled={
+              launchDisabled || pending || loading || error || !selectedQuestion || !mediaReady
+            }
             onClick={() => void startSelected()}
           >
             {t('gameQuiz.startSelected')}
@@ -215,6 +239,24 @@ export function QuizQuestionPickerDialog({
           >
             {t(screenshot ? 'gameQuiz.screenshotPicker.loadError' : 'gameQuiz.questionsLoadError')}
           </InlineNotice>
+        ) : selectedQuestion?.image ? (
+          <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
+            <AppButton
+              tone="ghost"
+              disabled={pending}
+              onClick={() => {
+                setSelectedId(null)
+              }}
+            >
+              {t('gameQuiz.backToQuestions')}
+            </AppButton>
+            <QuizLaunchPreview
+              key={previewKey}
+              question={selectedQuestion}
+              onReady={() => setReadyPreview({ key: previewKey, ready: true })}
+              onError={() => setReadyPreview({ key: previewKey, ready: false })}
+            />
+          </Stack>
         ) : (
           <Stack
             component="ul"

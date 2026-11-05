@@ -6,6 +6,8 @@ import {
   AppButton,
   AsyncSection,
   FormSelect,
+  FormCheckbox,
+  ChoiceLabel,
   FormTextField,
   SectionCard,
   SectionHeader,
@@ -23,6 +25,7 @@ interface GameSetupQuestionsSectionProps {
   format?: 'text' | 'screenshot'
   onDurationChange: (seconds: number) => void
   onDurationCommit: () => void
+  onAvoidConsecutiveLocationsChange?: (enabled: boolean) => void
   isSaving: boolean
   actions?: ReactNode
 }
@@ -34,6 +37,7 @@ export function GameSetupQuestionsSection({
   onDurationChange,
   format = 'text',
   onDurationCommit,
+  onAvoidConsecutiveLocationsChange,
   isSaving,
   actions,
 }: GameSetupQuestionsSectionProps) {
@@ -190,6 +194,18 @@ export function GameSetupQuestionsSection({
                 {t(`${copy}.enabledCount`, { count: selectedCount })}
               </Typography>
               {actions}
+              {format === 'screenshot' && onAvoidConsecutiveLocationsChange ? (
+                <ChoiceLabel
+                  label={t('gameSetup.avoidConsecutiveScreenshotLocations')}
+                  control={
+                    <FormCheckbox
+                      checked={draft.avoidConsecutiveScreenshotLocations ?? false}
+                      disabled={isSaving}
+                      onChange={(_, checked) => onAvoidConsecutiveLocationsChange(checked)}
+                    />
+                  }
+                />
+              ) : null}
               {format === 'screenshot' ? bulkActions : null}
             </Stack>
           }

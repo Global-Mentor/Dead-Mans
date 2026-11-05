@@ -55,9 +55,21 @@ describe('game setup draft', () => {
       enabledQuestionIds: [],
       quizAnswerDurationSeconds: 60,
       screenshotAnswerDurationSeconds: 60,
+      avoidConsecutiveScreenshotLocations: false,
     })
     expect(draft.rowLabels).not.toBe(snapshot.rowLabels)
     expect(draft.enabledModifierIds).not.toBe(snapshot.enabledModifierIds)
+  })
+
+  it('keeps the location-spacing preference through editing and saving', () => {
+    const saved = createDraft()
+    const updated = { ...saved, avoidConsecutiveScreenshotLocations: true }
+    expect(isGameSetupDraftDirty(saved, updated)).toBe(true)
+    expect(buildUpdateGameSetupRequest(updated, 4).avoidConsecutiveScreenshotLocations).toBe(true)
+    expect(
+      createDraftFromSnapshot({ ...snapshot, avoidConsecutiveScreenshotLocations: true })
+        .avoidConsecutiveScreenshotLocations,
+    ).toBe(true)
   })
 
   it('finds, updates, and creates cells without mutating the draft', () => {
@@ -153,6 +165,7 @@ describe('game setup draft', () => {
       enabledQuestionIds: [],
       quizAnswerDurationSeconds: 60,
       screenshotAnswerDurationSeconds: 60,
+      avoidConsecutiveScreenshotLocations: false,
     })
   })
 })

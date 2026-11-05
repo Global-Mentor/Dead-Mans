@@ -1,5 +1,8 @@
 const translations = {
   en: {
+    previewBeforeStart:
+      'The timer starts after confirmation. Check that the image is visible. Answers will be shuffled at launch.',
+    backToQuestions: 'Back to screenshots',
     screenshotPicker: {
       searchLabel: 'Search screenshots',
       searchPlaceholder: 'Enter a question, map, location or screenshot code',
@@ -157,6 +160,9 @@ const translations = {
       'Ask the next available question or select one manually. Questions are grouped by category. Wait for the open question to finish; launching is unavailable during modifier ordering.',
   },
   ru: {
+    previewBeforeStart:
+      'Таймер начнётся после подтверждения. Убедитесь, что изображение видно. Порядок ответов изменится при запуске.',
+    backToQuestions: 'К списку скриншотов',
     screenshotPicker: {
       searchLabel: 'Поиск скриншотов',
       searchPlaceholder: 'Введите вопрос, карту, локацию или код скриншота',
@@ -315,6 +321,9 @@ const translations = {
       'Запустите следующий доступный вопрос или выберите конкретный. Вопросы сгруппированы по категориям. Дождитесь завершения открытого вопроса; во время выбора модификаторов запуск недоступен.',
   },
   uk: {
+    previewBeforeStart:
+      'Таймер почнеться після підтвердження. Переконайтеся, що зображення видно. Порядок відповідей зміниться під час запуску.',
+    backToQuestions: 'До списку знімків',
     screenshotPicker: {
       searchLabel: 'Пошук знімків',
       searchPlaceholder: 'Введіть запитання, мапу, локацію або код знімка',
@@ -476,6 +485,9 @@ const translations = {
       'Запустіть наступне доступне питання або оберіть конкретне. Питання згруповано за категоріями. Дочекайтеся завершення відкритого питання; під час вибору модифікаторів запуск недоступний.',
   },
   pl: {
+    previewBeforeStart:
+      'Czas zacznie biec po potwierdzeniu. Sprawdź, czy obraz jest widoczny. Odpowiedzi zostaną przetasowane przy starcie.',
+    backToQuestions: 'Powrót do zrzutów',
     screenshotPicker: {
       searchLabel: 'Szukaj zrzutów',
       searchPlaceholder: 'Wpisz pytanie, mapę, lokację lub kod zrzutu',

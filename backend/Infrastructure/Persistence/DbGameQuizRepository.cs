@@ -1,4 +1,5 @@
 using backend.Domain.Questions;
+using backend.Infrastructure.Twitch;
 using backend.Application.Abstractions.Repositories;
 using backend.Application.Contracts;
 using backend.Data;
@@ -37,7 +38,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
             return Array.Empty<AvailableGameQuizQuestion>();
         }
 
-        return await _dbContext.GameEnabledQuestions
+        var candidates = await _dbContext.GameEnabledQuestions
             .AsNoTracking()
             .Where(enabled =>
                 enabled.GameId == gameId.Value
@@ -47,14 +48,30 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
                     session.GameId == gameId.Value && session.QuestionId == enabled.QuestionId))
             .OrderByDescending(enabled => enabled.PrioritySnapshot)
             .ThenBy(enabled => enabled.QuestionCodeSnapshot)
-            .Select(enabled => new AvailableGameQuizQuestion(
-                enabled.QuestionId,
-                enabled.QuestionCodeSnapshot,
-                enabled.CategoryNameSnapshot,
-                enabled.QuestionTextSnapshot
-            )
-            { Image = QuizImageSnapshot.FromJson(enabled.ImageSnapshotJson) })
             .ToArrayAsync(cancellationToken);
+        var game = await _dbContext.Games.AsNoTracking().SingleAsync(x => x.Id == gameId.Value, cancellationToken);
+        var recommendations = new HashSet<Guid>();
+        foreach (var screenshot in new[] { false, true })
+        {
+            var compatible = candidates.Where(x => (x.ImageSnapshotJson != null) == screenshot
+                && TwitchQuizMessageFormatter.FormatForValidation(x.QuestionTextSnapshot, x.OptionTextsSnapshot,
+                    screenshot ? game.ScreenshotAnswerDurationSeconds : game.QuizAnswerDurationSeconds, x.RewardSnapshot).IsCompatible).ToArray();
+            if (compatible.Length > 0)
+                recommendations.Add((await QuizQuestionPreparation.SelectAsync(_dbContext, gameId.Value, compatible,
+                    game.AvoidConsecutiveScreenshotLocations, cancellationToken)).QuestionId);
+        }
+        return candidates.Select(question =>
+        {
+            var prepared = QuizQuestionPreparation.Prepare(question);
+            return new AvailableGameQuizQuestion(question.QuestionId, question.QuestionCodeSnapshot,
+                question.CategoryNameSnapshot, question.QuestionTextSnapshot)
+            {
+                Image = QuizImageSnapshot.FromJson(question.ImageSnapshotJson),
+                Options = prepared.OptionIdsSnapshot.Zip(prepared.OptionTextsSnapshot,
+                    (id, text) => new GameQuizOption(id, text, 0)).ToArray(),
+                Recommended = recommendations.Contains(question.QuestionId)
+            };
+        }).ToArray();
     }
 
     public async Task<AskQuizQuestionRepositoryResult> AskQuizQuestionAsync(
@@ -79,7 +96,7 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
 
         var answerDurationSeconds = await _dbContext.Games.AsNoTracking()
             .Where(x => x.Id == gameId && x.Status == GameStatusValue.Active && !x.IsDeleted)
-            .Select(x => new { x.QuizAnswerDurationSeconds, x.ScreenshotAnswerDurationSeconds })
+            .Select(x => new { x.QuizAnswerDurationSeconds, x.ScreenshotAnswerDurationSeconds, x.AvoidConsecutiveScreenshotLocations })
             .FirstOrDefaultAsync(cancellationToken);
         if (answerDurationSeconds is null)
         {
@@ -123,12 +140,6 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
                     : (enabledQuestion.ImageSnapshotJson != null) == delivery.Screenshot)
                 && !_dbContext.GameQuizQuestionSessions.Any(session =>
                     session.GameId == gameId && session.QuestionId == enabledQuestion.QuestionId))
-            .Select(enabledQuestion => new
-            {
-                EnabledQuestion = enabledQuestion,
-                AskedTotalCount = _dbContext.GameQuizQuestionSessions.Count(session =>
-                    session.QuestionId == enabledQuestion.QuestionId)
-            })
             .ToArrayAsync(cancellationToken);
         if (candidates.Length == 0)
         {
@@ -136,20 +147,15 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         }
 
         var selectedQuestion = questionId.HasValue
-            ? candidates[0].EnabledQuestion
-            : SelectAutomaticCandidate(candidates.Select(x => (
-                x.EnabledQuestion,
-                x.AskedTotalCount
-            )).ToArray());
+            ? candidates[0]
+            : await QuizQuestionPreparation.SelectAsync(_dbContext, gameId, candidates,
+                answerDurationSeconds.AvoidConsecutiveScreenshotLocations, cancellationToken);
         var nextAskOrder =
             (await _dbContext.GameQuizQuestionSessions
                 .Where(x => x.GameId == gameId)
                 .MaxAsync(x => (int?)x.AskOrder, cancellationToken) ?? 0) + 1;
 
-        var shuffled = selectedQuestion.OptionIdsSnapshot
-            .Zip(selectedQuestion.OptionTextsSnapshot, (id, text) => (Id: id, Text: text))
-            .ToArray();
-        Random.Shared.Shuffle(shuffled);
+        var prepared = QuizQuestionPreparation.Prepare(selectedQuestion);
 
         var manualDelivery = delivery as ManualGameQuizQuestionDelivery;
         var twitchDelivery = delivery as TwitchGameQuizQuestionDelivery;
@@ -157,22 +163,22 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         {
             Id = Guid.NewGuid(),
             GameId = gameId,
-            QuestionId = selectedQuestion.QuestionId,
+            QuestionId = prepared.QuestionId,
             AskOrder = nextAskOrder,
             AskedAtUtc = now,
-            ClosesAtUtc = now.AddSeconds(selectedQuestion.ImageSnapshotJson is null
+            ClosesAtUtc = now.AddSeconds(prepared.ImageSnapshotJson is null
                 ? answerDurationSeconds.QuizAnswerDurationSeconds : answerDurationSeconds.ScreenshotAnswerDurationSeconds),
             AskedByUserId = manualDelivery?.AskedByUserId,
             Status = GameQuizQuestionSessionStatusValue.Open,
-            QuestionRevisionSnapshot = selectedQuestion.QuestionRevisionSnapshot,
-            QuestionCodeSnapshot = selectedQuestion.QuestionCodeSnapshot,
-            CategoryNameSnapshot = selectedQuestion.CategoryNameSnapshot,
-            QuestionTextSnapshot = selectedQuestion.QuestionTextSnapshot,
-            ImageSnapshotJson = selectedQuestion.ImageSnapshotJson,
-            OptionIdsSnapshot = shuffled.Select(x => x.Id).ToArray(),
-            OptionTextsSnapshot = shuffled.Select(x => x.Text).ToArray(),
-            CorrectOptionIdSnapshot = selectedQuestion.CorrectOptionIdSnapshot,
-            RewardSnapshot = selectedQuestion.RewardSnapshot,
+            QuestionRevisionSnapshot = prepared.QuestionRevisionSnapshot,
+            QuestionCodeSnapshot = prepared.QuestionCodeSnapshot,
+            CategoryNameSnapshot = prepared.CategoryNameSnapshot,
+            QuestionTextSnapshot = prepared.QuestionTextSnapshot,
+            ImageSnapshotJson = prepared.ImageSnapshotJson,
+            OptionIdsSnapshot = prepared.OptionIdsSnapshot,
+            OptionTextsSnapshot = prepared.OptionTextsSnapshot,
+            CorrectOptionIdSnapshot = prepared.CorrectOptionIdSnapshot,
+            RewardSnapshot = prepared.RewardSnapshot,
             DeliveryKind = twitchDelivery is null
                 ? GameQuizDeliveryKindValue.Manual
                 : GameQuizDeliveryKindValue.Twitch,
@@ -205,12 +211,5 @@ public sealed partial class DbGameQuizRepository : IGameQuizRepository
         session.ClosesAtUtc
     )
     { Image = QuizImageSnapshot.FromJson(session.ImageSnapshotJson) };
-
-    private static GameEnabledQuestion SelectAutomaticCandidate(
-        IReadOnlyList<(GameEnabledQuestion Question, int AskedTotalCount)> candidates
-    )
-    {
-        return QuizQuestionSelection.Select(candidates, x => x.AskedTotalCount, x => x.Question.PrioritySnapshot).Question;
-    }
 
 }

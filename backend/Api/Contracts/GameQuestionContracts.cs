@@ -121,6 +121,8 @@ public sealed record AvailableGameQuizQuestionDto(
 )
 {
     public GameQuizImageDto? Image { get; init; }
+    public IReadOnlyList<GameQuizOptionDto> Options { get; init; } = Array.Empty<GameQuizOptionDto>();
+    public bool Recommended { get; init; }
 }
 
 public sealed record AskedQuizQuestionDto(

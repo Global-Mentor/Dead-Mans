@@ -26,6 +26,7 @@ export interface GameSetupDraftState {
   enabledQuestionIds: string[]
   quizAnswerDurationSeconds: number
   screenshotAnswerDurationSeconds: number
+  avoidConsecutiveScreenshotLocations?: boolean
 }
 
 export function createDraftFromSnapshot(snapshot: GameSetupSnapshot): GameSetupDraftState {
@@ -44,6 +45,7 @@ export function createDraftFromSnapshot(snapshot: GameSetupSnapshot): GameSetupD
     enabledQuestionIds: [...snapshot.enabledQuestionIds],
     quizAnswerDurationSeconds: snapshot.quizAnswerDurationSeconds,
     screenshotAnswerDurationSeconds: snapshot.screenshotAnswerDurationSeconds ?? 60,
+    avoidConsecutiveScreenshotLocations: snapshot.avoidConsecutiveScreenshotLocations ?? false,
   }
 }
 
@@ -95,6 +97,8 @@ export function isGameSetupDraftDirty(
   }
 
   if (
+    Boolean(saved.avoidConsecutiveScreenshotLocations) !==
+      Boolean(current.avoidConsecutiveScreenshotLocations) ||
     saved.quizAnswerDurationSeconds !== current.quizAnswerDurationSeconds ||
     saved.screenshotAnswerDurationSeconds !== current.screenshotAnswerDurationSeconds
   ) {
@@ -175,6 +179,7 @@ function normalizeGameSetupDraftForSave(draft: GameSetupDraftState): GameSetupDr
 
   return {
     title: draft.title.trim(),
+    avoidConsecutiveScreenshotLocations: draft.avoidConsecutiveScreenshotLocations ?? false,
     rowLabels,
     colLabels,
     cells: rebuildGameSetupCells(rowLabels, colLabels, draft.cells),
@@ -222,5 +227,6 @@ export function buildUpdateGameSetupRequest(
     enabledQuestionIds: normalized.enabledQuestionIds,
     quizAnswerDurationSeconds: normalized.quizAnswerDurationSeconds,
     screenshotAnswerDurationSeconds: normalized.screenshotAnswerDurationSeconds,
+    avoidConsecutiveScreenshotLocations: normalized.avoidConsecutiveScreenshotLocations ?? false,
   }
 }

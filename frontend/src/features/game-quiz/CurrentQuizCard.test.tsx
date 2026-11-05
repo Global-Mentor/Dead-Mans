@@ -69,6 +69,83 @@ function renderCard(state: CurrentGameQuizState | null, overrides: Partial<TestP
 }
 
 describe('Quiz cards and launch controls', () => {
+  it('previews the server recommendation and waits for the full image before starting', async () => {
+    const question = {
+      questionId: 'shot',
+      questionCode: 'shot',
+      categoryName: 'Locations',
+      text: 'Where?',
+      recommended: true,
+      image: { imageUrl: '/shot.png', mapNames: {}, optionNames: {} },
+      options: [{ optionId: 'one', text: 'First location', displayOrder: 0 }],
+    }
+    const props = renderCard(null, { canManage: true, screenshot: true, questions: [question] })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.nextScreenshot') }))
+    const start = screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') })
+    expect(start).toBeDisabled()
+    expect(props.onAskNext).not.toHaveBeenCalled()
+    expect(screen.getByText('First location')).toBeInTheDocument()
+    const image = screen.getByAltText(i18n.t('common.quizImage.alt'))
+    fireEvent.error(image)
+    expect(start).toBeDisabled()
+    fireEvent.load(image)
+    expect(start).toBeEnabled()
+    fireEvent.click(start)
+    await waitFor(() => expect(props.onAskSpecific).toHaveBeenCalledWith('shot'))
+  })
+
+  it.each(['refresh-error', 'filter', 'back'] as const)(
+    'waits for a new full-image load when the same preview returns after %s',
+    (transition) => {
+      const question = {
+        questionId: 'shot',
+        questionCode: 'shot',
+        categoryName: 'Locations',
+        text: 'Where?',
+        image: { imageUrl: '/shot.png', mapNames: {}, optionNames: {} },
+      }
+      const props = {
+        open: true,
+        screenshot: true,
+        initialSelectedId: 'shot',
+        questions: [question],
+        launchDisabled: false,
+        onClose: vi.fn(),
+        onSelect: vi.fn(),
+      }
+      const { rerender } = renderWithAppProviders(<QuizQuestionPickerDialog {...props} />)
+      const start = () => screen.getByRole('button', { name: i18n.t('gameQuiz.startSelected') })
+      const firstImage = screen.getByAltText(i18n.t('common.quizImage.alt'))
+      fireEvent.load(firstImage)
+      expect(start()).toBeEnabled()
+      if (transition === 'refresh-error') {
+        rerender(<QuizQuestionPickerDialog {...props} error />)
+        expect(start()).toBeDisabled()
+        rerender(<QuizQuestionPickerDialog {...props} />)
+      } else {
+        if (transition === 'filter') {
+          fireEvent.change(
+            screen.getByRole('textbox', { name: i18n.t('gameQuiz.screenshotPicker.searchLabel') }),
+            { target: { value: 'Where' } },
+          )
+        } else {
+          fireEvent.click(screen.getByRole('button', { name: i18n.t('gameQuiz.backToQuestions') }))
+        }
+        fireEvent.click(screen.getByRole('button', { name: /Where/ }))
+      }
+      const newImage = screen.getByAltText(i18n.t('common.quizImage.alt'))
+      expect(newImage).not.toBe(firstImage)
+      expect(start()).toBeDisabled()
+      fireEvent.load(newImage)
+      expect(start()).toBeEnabled()
+    },
+  )
+
+  it('waits for the first recommendation before offering the next screenshot', () => {
+    renderCard(null, { canManage: true, screenshot: true, questionsLoading: true })
+    expect(screen.getByRole('button', { name: i18n.t('gameQuiz.nextScreenshot') })).toBeDisabled()
+  })
+
   it.each([false, true])(
     'keeps Twitch numbering and answer IDs in server order (embedded: %s)',
     (embedded) => {

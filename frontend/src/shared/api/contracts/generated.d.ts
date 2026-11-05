@@ -2092,6 +2092,8 @@ export interface components {
         UpdateGameSetupRequestDto: {
             /** @default 60 */
             screenshotAnswerDurationSeconds: number;
+            /** @default false */
+            avoidConsecutiveScreenshotLocations: boolean;
             /** @description Board version the client last loaded; save fails with 409 when the draft changed elsewhere */
             expectedVersion: number;
             title: string;
@@ -2106,6 +2108,8 @@ export interface components {
         GameSetupSnapshotDto: {
             /** @default 60 */
             screenshotAnswerDurationSeconds: number;
+            /** @default false */
+            avoidConsecutiveScreenshotLocations: boolean;
             readonly teamLimit: number | null;
             gameId: string;
             title: string;
@@ -3010,6 +3014,9 @@ export interface components {
             displayOrder: number;
         };
         AvailableGameQuizQuestionDto: {
+            /** @default false */
+            recommended: boolean;
+            options?: components["schemas"]["GameQuizOptionDto"][];
             image?: components["schemas"]["GameQuizImageDto"] | null;
             /** Format: uuid */
             questionId: string;

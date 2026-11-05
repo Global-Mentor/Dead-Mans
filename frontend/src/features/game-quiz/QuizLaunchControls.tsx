@@ -76,14 +76,28 @@ export function QuizLaunchControls({
 }) {
   const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [initialSelectedId, setInitialSelectedId] = useState<string | null>(null)
   const isOpen = state?.status === 'open'
   return (
     <>
       <Stack spacing={1}>
         <AppButton
           loading={isLaunching}
-          disabled={isOpen || isStarting || modifierOrderingActive}
-          onClick={onAskNext}
+          disabled={
+            isOpen || isStarting || modifierOrderingActive || (screenshot && questionsLoading)
+          }
+          onClick={() => {
+            if (!screenshot) {
+              onAskNext()
+              return
+            }
+            setInitialSelectedId(
+              questions.find(
+                (question) => question.recommended && question.questionId !== state?.questionId,
+              )?.questionId ?? null,
+            )
+            setPickerOpen(true)
+          }}
         >
           <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
             <Box component="span" tabIndex={0}>
@@ -94,7 +108,10 @@ export function QuizLaunchControls({
         <AppButton
           tone="secondary"
           disabled={isOpen || isStarting || modifierOrderingActive}
-          onClick={() => setPickerOpen(true)}
+          onClick={() => {
+            setInitialSelectedId(null)
+            setPickerOpen(true)
+          }}
         >
           <HelpTooltip placement="left" describeChild title={t('gameQuiz.managementHelp')}>
             <Box component="span" tabIndex={0}>
@@ -104,6 +121,8 @@ export function QuizLaunchControls({
         </AppButton>
       </Stack>
       <QuizQuestionPickerDialog
+        key={`${pickerOpen}-${initialSelectedId}`}
+        initialSelectedId={initialSelectedId}
         screenshot={screenshot}
         open={pickerOpen}
         questions={questions.filter((question) => question.questionId !== state?.questionId)}

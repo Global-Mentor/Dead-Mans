@@ -192,7 +192,11 @@ public static partial class ApiContractMapper
         question.CategoryName,
         question.Text
     )
-    { Image = question.Image?.ToDto(mediaBaseUrl) };
+    {
+        Image = question.Image?.ToDto(mediaBaseUrl),
+        Options = question.Options.Select(x => new GameQuizOptionDto(x.OptionId.ToString(), x.Text, x.DisplayOrder)).ToArray(),
+        Recommended = question.Recommended
+    };
 
     public static CurrentGameQuizStateDto ToDto(this CurrentGameQuizState state, string mediaBaseUrl) => new(
         state.QuestionSessionId.ToString(),

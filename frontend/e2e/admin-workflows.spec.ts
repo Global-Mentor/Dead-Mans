@@ -84,6 +84,7 @@ async function mockAdmin(
     enabledQuestionIds: ['question-0'],
     quizAnswerDurationSeconds: 60,
     screenshotAnswerDurationSeconds: 60,
+    avoidConsecutiveScreenshotLocations: false,
     teamLimit,
   }
   let writes = 0
@@ -165,6 +166,7 @@ async function mockAdmin(
     questionIds: () => setup.enabledQuestionIds,
     duration: () => setup.quizAnswerDurationSeconds,
     screenshotDuration: () => setup.screenshotAnswerDurationSeconds,
+    avoidConsecutiveLocations: () => setup.avoidConsecutiveScreenshotLocations,
     writes: () => writes,
     enabledIds: () => setup.enabledModifierIds,
     refuseSave: (value: boolean) => {
@@ -1130,8 +1132,15 @@ for (const width of [390, 768, 1440]) {
     await duration.press('Enter')
     await expect.poll(server.screenshotDuration).toBe(75)
     expect(server.duration()).toBe(60)
+    const spacing = page.getByRole('checkbox', {
+      name: 'Prefer a different location for the next automatic screenshot',
+      exact: true,
+    })
+    await spacing.check()
+    await expect.poll(server.avoidConsecutiveLocations).toBe(true)
     await page.reload()
     await expect(duration).toHaveValue('75')
+    await expect(spacing).toBeChecked()
     await expect(panel.getByRole('checkbox').first()).toBeChecked()
     await panel.getByRole('checkbox').first().uncheck()
     await expect.poll(server.questionIds).toEqual(['question-0', 'question-2'])
@@ -1170,6 +1179,7 @@ for (const width of [390, 768, 1440]) {
     await page.goto('/panel/admin-screenshots')
     await expect(panel.getByRole('checkbox').nth(1)).toBeChecked()
     await expect(duration).toHaveValue('75')
+    await expect(spacing).toBeChecked()
     await expect(page.getByText('Selected: 1', { exact: true })).toBeVisible()
   })
 }
@@ -1245,9 +1255,13 @@ for (const locale of ['en', 'ru', 'uk', 'pl']) {
     const server = await mockAdmin(page, ['viewer', 'admin'], locale)
     Object.assign(server.questions[1]!, { image: screenshotQuestion.image })
     await page.goto('/panel/admin-screenshots')
-    await expect(page.getByRole('checkbox')).toHaveCount(1)
     const heading = page.getByRole('heading', { level: 1 })
     await expect(heading).toBeVisible()
+    await expect(
+      page
+        .getByRole('region', { name: await heading.innerText(), exact: true })
+        .getByRole('checkbox'),
+    ).toHaveCount(1)
     const overflow = await heading.evaluate((element) => {
       const header = element.closest('header')!
       const bounds = header.getBoundingClientRect()

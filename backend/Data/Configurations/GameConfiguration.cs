@@ -57,6 +57,7 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
         );
 
         builder.Property(x => x.ScreenshotAnswerDurationSeconds).HasDefaultValue(60);
+        builder.Property(x => x.AvoidConsecutiveScreenshotLocations).HasDefaultValue(false);
         builder.ToTable(table => table.HasCheckConstraint("ck_games_screenshot_answer_duration", "screenshot_answer_duration_seconds BETWEEN 5 AND 3600"));
         builder.HasKey(x => x.Id);
 

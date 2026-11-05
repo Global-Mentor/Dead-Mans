@@ -145,6 +145,11 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
             {
                 var now = DateTime.UtcNow;
                 var game = new Game { Id = Guid.NewGuid(), Title = "Migration history", CreatedAtUtc = now };
+                // Seed the historical schema without asking the current EF model for newer columns.
+                await target.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO games (id, title, status, created_at_utc)
+                    VALUES ({game.Id}, {game.Title}, 'draft', {now})
+                    """);
                 var board = new GameBoard
                 {
                     Id = Guid.NewGuid(),
@@ -170,7 +175,7 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
                     new GameTeamSlot { Id = Guid.NewGuid(), GameId = game.Id, SlotIndex = 1, SlotType = TeamSlotTypeValue.Public, CreatedAtUtc = now });
                 var question = await source.QuestionDefinitions.Include(x => x.Options).SingleAsync(x => x.Id == uploaded.QuestionId);
                 var categoryName = await target.QuestionCategories.Where(x => x.Id == originalCategoryId).Select(x => x.Name).SingleAsync();
-                target.AddRange(game, new GameEnabledQuestion
+                target.Add(new GameEnabledQuestion
                 {
                     GameId = game.Id,
                     QuestionId = question.Id,
@@ -187,9 +192,9 @@ public sealed partial class ScreenshotQuizTests(PostgresTestDatabase database) :
                     SnapshotAtUtc = now
                 });
                 await target.SaveChangesAsync();
-                game.Status = GameStatusValue.Ready;
-                game.ReadyAtUtc = now;
-                await target.SaveChangesAsync();
+                await target.Database.ExecuteSqlInterpolatedAsync($"""
+                    UPDATE games SET status = 'ready', ready_at_utc = {now} WHERE id = {game.Id}
+                    """);
                 publishedGameId = game.Id;
                 publishedSnapshot = await target.Database.SqlQuery<string>($"""
                     SELECT row_to_json(snapshot)::text AS "Value" FROM game_enabled_questions snapshot WHERE game_id = {game.Id}

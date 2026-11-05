@@ -147,6 +147,12 @@ namespace backend.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("active_team_id");
 
+                    b.Property<bool>("AvoidConsecutiveScreenshotLocations")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("avoid_consecutive_screenshot_locations");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");

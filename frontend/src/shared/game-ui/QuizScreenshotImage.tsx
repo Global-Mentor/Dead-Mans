@@ -11,10 +11,14 @@ export function QuizScreenshotImage({
   image,
   zoom = true,
   thumbnail = false,
+  onReady,
+  onError,
 }: {
   image: Image
   zoom?: boolean
   thumbnail?: boolean
+  onReady?: () => void
+  onError?: () => void
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -23,6 +27,8 @@ export function QuizScreenshotImage({
       src={resolveBackendMediaUrl(
         thumbnail && !expanded ? (image.thumbnailUrl ?? image.imageUrl) : image.imageUrl,
       )}
+      {...(!expanded && onReady ? { onReady } : {})}
+      {...(!expanded && onError ? { onError } : {})}
       alt={t('common.quizImage.alt')}
       loadingLabel={t('common.quizImage.loading')}
       errorLabel={t('common.quizImage.error')}

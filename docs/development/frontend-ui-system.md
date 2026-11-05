@@ -265,6 +265,9 @@ During open registration, the board's game-status value is a short localized reg
 
 ## Quiz workspace
 
+Before launching a screenshot, staff see its full image, prompt and unnumbered answer options in the picker. The automatic action previews the server recommendation; confirmation starts that exact question after the image has loaded. The server rechecks availability at launch, and live answer order is shuffled independently. Failed image loads keep confirmation disabled. `ImageFrame` exposes optional `onReady` and `onError` callbacks for consumers that depend on media readiness without importing domain state into the control.
+
+
 Screenshot catalogue and game-setup rows place the prompt and metadata on the left and a fixed-width,
 lazily loaded thumbnail on the right, including at mobile widths. Upload accepts one
 or more images with a required shared prompt. Category comes first: the system

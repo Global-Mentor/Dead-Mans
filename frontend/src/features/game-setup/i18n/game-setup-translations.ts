@@ -12,6 +12,8 @@ const translations = {
       previewTitle: 'Screenshot and answers',
     },
     screenshotAnswerDuration: 'Screenshot answer time, seconds',
+    avoidConsecutiveScreenshotLocations:
+      'Prefer a different location for the next automatic screenshot',
     registration: {
       screenshotDuration: 'Screenshot time',
       countUnavailable: '-',
@@ -204,6 +206,8 @@ const translations = {
       previewTitle: 'Скриншот и ответы',
     },
     screenshotAnswerDuration: 'Время ответа на скриншот, сек.',
+    avoidConsecutiveScreenshotLocations:
+      'При автоматическом выборе чередовать локации, если есть другие',
     registration: {
       screenshotDuration: 'Время на скриншот',
       countUnavailable: '-',
@@ -397,6 +401,7 @@ const translations = {
       previewTitle: 'Знімок і відповіді',
     },
     screenshotAnswerDuration: 'Час відповіді на знімок, с',
+    avoidConsecutiveScreenshotLocations: 'За автоматичного вибору чергувати локації, якщо є інші',
     registration: {
       screenshotDuration: 'Час на знімок',
       countUnavailable: '-',
@@ -590,6 +595,8 @@ const translations = {
       previewTitle: 'Zrzut i odpowiedzi',
     },
     screenshotAnswerDuration: 'Czas odpowiedzi na zrzut, sekundy',
+    avoidConsecutiveScreenshotLocations:
+      'Przy automatycznym wyborze zmieniaj lokację, jeśli są inne',
     registration: {
       screenshotDuration: 'Czas na zrzut',
       countUnavailable: '-',

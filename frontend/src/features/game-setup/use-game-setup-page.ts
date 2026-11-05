@@ -167,6 +167,11 @@ export function useGameSetupPage() {
     setQuestionsEnabled,
     setQuizAnswerDuration,
     setScreenshotAnswerDuration,
+    setAvoidConsecutiveScreenshotLocations: (enabled: boolean) =>
+      updateDraftAndSave((current) => ({
+        ...current,
+        avoidConsecutiveScreenshotLocations: enabled,
+      })),
     isCreating: draft.isCreating,
     isResetting: draft.isResetting,
     isSaving: save.isSaving,

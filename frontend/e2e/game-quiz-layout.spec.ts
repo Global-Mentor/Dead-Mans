@@ -90,15 +90,74 @@ test('manual screenshot picker shows the prompt and preview without a map', asyn
   await expect(choice).toBeVisible()
   await expect(choice.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
   await choice.click()
-  await expect(choice).toHaveAttribute('aria-pressed', 'true')
+  await expect(dialog.getByRole('heading', { name: prompt, exact: true })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Запустить выбранный' })).toBeEnabled()
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    await expect(choice.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
+    await expect(dialog.getByRole('img', { name: 'Скриншот', exact: true })).toBeVisible()
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
       true,
     )
     await dialog.screenshot({ path: info.outputPath(`manual-picker-${width}.png`) })
   }
+})
+
+test('automatic screenshot preview waits for its full image before starting the recommended question', async ({
+  page,
+}, info) => {
+  await mockQuiz(page)
+  let releaseImage = () => {}
+  const imageReady = new Promise<void>((resolve) => {
+    releaseImage = resolve
+  })
+  await page.route('**/images/game-guide/board-ru.png?launch-preview', async (route) => {
+    await imageReady
+    await route.continue()
+  })
+  let starts = 0
+  await page.route('**/api/game/quiz/questions/recommended-shot/ask', (route) => {
+    starts++
+    return route.fulfill({ json: {} })
+  })
+  await page.route('**/api/game/quiz/questions/available', (route) =>
+    route.fulfill({
+      json: [
+        {
+          questionId: 'recommended-shot',
+          questionCode: 'screen-next',
+          categoryName: 'Локации',
+          text: screenshotQuestion.text,
+          options: screenshotQuestion.options,
+          recommended: true,
+          image: {
+            ...screenshotQuestion.image!,
+            imageUrl: 'http://localhost:5180/images/game-guide/board-ru.png?launch-preview',
+          },
+        },
+      ],
+    }),
+  )
+  await page.goto('/panel/game-quiz')
+  await openQuizManagement(page)
+  await page.getByRole('button', { name: 'Следующий скриншот', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Выбрать скриншот', exact: true })
+  const start = dialog.getByRole('button', { name: 'Запустить выбранный', exact: true })
+  await expect(
+    dialog.getByRole('heading', { name: screenshotQuestion.text, exact: true }),
+  ).toBeVisible()
+  await expect(start).toBeDisabled()
+  expect(starts).toBe(0)
+  releaseImage()
+  await expect(start).toBeEnabled()
+  await expect(dialog.getByText('Винный завод', { exact: true })).toBeVisible()
+  await dialog.screenshot({ path: info.outputPath('automatic-preview.png') })
+  const lastAnswer = dialog.getByText('Железнодорожная станция', { exact: true })
+  await lastAnswer.scrollIntoViewIfNeeded()
+  await expect(lastAnswer).toBeInViewport()
+  await dialog.screenshot({ path: info.outputPath('automatic-preview-answers.png') })
+  await start.click()
+  await expect(dialog).toHaveCount(0)
+  expect(starts).toBe(1)
 })
 
 const questions = [

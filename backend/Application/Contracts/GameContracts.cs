@@ -33,7 +33,8 @@ public sealed record GameBoardSnapshot(
     IReadOnlyList<string> EnabledQuestionIds,
     int QuizAnswerDurationSeconds = 60,
     int? TeamLimit = 10,
-    int ScreenshotAnswerDurationSeconds = 60
+    int ScreenshotAnswerDurationSeconds = 60,
+    bool AvoidConsecutiveScreenshotLocations = false
 );
 
 public sealed record GameTeamQueueParticipant(Guid UserId, string DisplayName);

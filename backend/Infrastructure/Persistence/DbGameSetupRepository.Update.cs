@@ -250,6 +250,7 @@ public sealed partial class DbGameSetupRepository
             draftGame.Title = update.Title;
             draftGame.QuizAnswerDurationSeconds = update.QuizAnswerDurationSeconds;
             draftGame.ScreenshotAnswerDurationSeconds = update.ScreenshotAnswerDurationSeconds;
+            draftGame.AvoidConsecutiveScreenshotLocations = update.AvoidConsecutiveScreenshotLocations;
             board.Rows = rowCount;
             board.Cols = colCount;
             board.RowLabels = update.RowLabels.ToArray();

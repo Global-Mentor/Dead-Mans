@@ -144,7 +144,8 @@ public sealed class GameSetupService : IGameSetupService
             normalizedEnabledModifierIds,
             normalizedEnabledQuestionIds,
             update.QuizAnswerDurationSeconds,
-            update.ScreenshotAnswerDurationSeconds
+            update.ScreenshotAnswerDurationSeconds,
+            update.AvoidConsecutiveScreenshotLocations
         );
 
         var saveResult = await _repository.UpdateDraftSetupAsync(normalizedUpdate, cancellationToken);

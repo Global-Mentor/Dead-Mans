@@ -41,6 +41,7 @@ function GameQuizContentSetupPage({ format }: { format: 'text' | 'screenshot' })
     setQuestionsEnabled,
     setQuizAnswerDuration,
     setScreenshotAnswerDuration,
+    setAvoidConsecutiveScreenshotLocations,
     dismissRemoteChangeNotice,
     dismissDraftRemovedNotice,
     dismissCellMediaError,
@@ -101,6 +102,7 @@ function GameQuizContentSetupPage({ format }: { format: 'text' | 'screenshot' })
           format === 'screenshot' ? setScreenshotAnswerDuration : setQuizAnswerDuration
         }
         onDurationCommit={commitDraft}
+        onAvoidConsecutiveLocationsChange={setAvoidConsecutiveScreenshotLocations}
         actions={<GameSetupSyncActions syncStatus={syncStatus} isDirty={isDirty} />}
       />
 

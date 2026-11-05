@@ -131,23 +131,16 @@ internal sealed class TwitchBotService : ITwitchBotService
         }
         else
         {
-            var candidateIds = compatibleCandidates.Select(x => x.QuestionId).ToArray();
-            var usage = await _db.GameQuizQuestionSessions.AsNoTracking()
-                .Where(x => candidateIds.Contains(x.QuestionId))
-                .GroupBy(x => x.QuestionId)
-                .Select(group => new { QuestionId = group.Key, Count = group.Count() })
-                .ToDictionaryAsync(x => x.QuestionId, x => x.Count, cancellationToken);
-            selected = QuizQuestionSelection.Select(compatibleCandidates,
-                x => usage.GetValueOrDefault(x.QuestionId), x => x.PrioritySnapshot);
+            selected = await QuizQuestionPreparation.SelectAsync(_db, game.Id, compatibleCandidates,
+                game.AvoidConsecutiveScreenshotLocations, cancellationToken);
         }
         var duration = selected.ImageSnapshotJson is null ? game.QuizAnswerDurationSeconds : game.ScreenshotAnswerDurationSeconds;
-        var shuffled = selected.OptionIdsSnapshot.Zip(selected.OptionTextsSnapshot, (id, text) => (id, text)).ToArray();
-        Random.Shared.Shuffle(shuffled);
+        var prepared = QuizQuestionPreparation.Prepare(selected);
         var askOrder = Math.Max(
             await _db.GameQuizQuestionSessions.Where(x => x.GameId == game.Id).MaxAsync(x => (int?)x.AskOrder, cancellationToken) ?? 0,
             await _db.TwitchQuizPublications.Where(x => x.GameId == game.Id).MaxAsync(x => (int?)x.AskOrder, cancellationToken) ?? 0) + 1;
         var validation = TwitchQuizMessageFormatter.FormatForValidation(
-            selected.QuestionTextSnapshot, shuffled.Select(x => x.text).ToArray(), duration, selected.RewardSnapshot);
+            prepared.QuestionTextSnapshot, prepared.OptionTextsSnapshot, duration, prepared.RewardSnapshot);
         if (!validation.IsCompatible)
             return new(PrepareTwitchQuizQuestionOutcome.IncompatibleQuestion, ErrorCode: validation.ErrorCode);
         var now = _clock.GetUtcNow().UtcDateTime;
@@ -155,20 +148,20 @@ internal sealed class TwitchBotService : ITwitchBotService
         {
             Id = Guid.NewGuid(),
             GameId = game.Id,
-            QuestionId = selected.QuestionId,
+            QuestionId = prepared.QuestionId,
             AskOrder = askOrder,
             DurationSeconds = duration,
-            QuestionRevisionSnapshot = selected.QuestionRevisionSnapshot,
-            QuestionCodeSnapshot = selected.QuestionCodeSnapshot,
-            CategoryNameSnapshot = selected.CategoryNameSnapshot,
-            QuestionTextSnapshot = selected.QuestionTextSnapshot,
-            ImageSnapshotJson = selected.ImageSnapshotJson,
-            OptionIdsSnapshot = shuffled.Select(x => x.id).ToArray(),
-            OptionTextsSnapshot = shuffled.Select(x => x.text).ToArray(),
-            CorrectOptionIdSnapshot = selected.CorrectOptionIdSnapshot,
-            RewardSnapshot = selected.RewardSnapshot,
-            QuestionMessage = TwitchQuizMessageFormatter.FormatQuestion(askOrder, selected.QuestionTextSnapshot),
-            OptionsMessage = TwitchQuizMessageFormatter.FormatOptions(shuffled.Select(x => x.text).ToArray(), duration),
+            QuestionRevisionSnapshot = prepared.QuestionRevisionSnapshot,
+            QuestionCodeSnapshot = prepared.QuestionCodeSnapshot,
+            CategoryNameSnapshot = prepared.CategoryNameSnapshot,
+            QuestionTextSnapshot = prepared.QuestionTextSnapshot,
+            ImageSnapshotJson = prepared.ImageSnapshotJson,
+            OptionIdsSnapshot = prepared.OptionIdsSnapshot,
+            OptionTextsSnapshot = prepared.OptionTextsSnapshot,
+            CorrectOptionIdSnapshot = prepared.CorrectOptionIdSnapshot,
+            RewardSnapshot = prepared.RewardSnapshot,
+            QuestionMessage = TwitchQuizMessageFormatter.FormatQuestion(askOrder, prepared.QuestionTextSnapshot),
+            OptionsMessage = TwitchQuizMessageFormatter.FormatOptions(prepared.OptionTextsSnapshot, duration),
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
