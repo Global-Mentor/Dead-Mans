@@ -73,6 +73,8 @@ pwsh backend/scripts/setup-local.ps1
 
 ### Full stack from repo root
 
+После обновления кода с миграциями проверьте не только совпадение EF-модели, но и применённые миграции в локальной БД. `has-pending-model-changes` сравнивает код со snapshot и не подтверждает состояние работающей базы. Проверьте целевое подключение и список через `dotnet tool run dotnet-ef migrations list --project backend/backend.csproj --startup-project backend/backend.csproj`, затем примените просмотренные недостающие миграции командой `dotnet tool run dotnet-ef database update --project backend/backend.csproj --startup-project backend/backend.csproj`. Для обычного обновления схемы не запускайте `setup-local` или сброс данных.
+
 ```bash
 npm install
 npm run dev
