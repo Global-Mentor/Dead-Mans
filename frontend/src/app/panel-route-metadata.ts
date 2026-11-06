@@ -194,6 +194,13 @@ export const panelRoutes = definePanelRouteDefinitions([
     group: 'profile',
   }),
   createPanelRouteDefinition({
+    id: 'profile',
+    path: 'profile',
+    labelKey: 'navigation.items.profile.label',
+    allowedRoles: authenticatedPanelRoles,
+    group: 'profile',
+  }),
+  createPanelRouteDefinition({
     id: 'settings',
     path: 'settings',
     labelKey: 'navigation.items.settings.label',
@@ -233,4 +240,5 @@ export const catalogScreenshotsRoute = requirePanelRoute('catalog-screenshots')
 export const teamRegistrationsRoute = requirePanelRoute('team-registrations')
 export const roleAdministrationRoute = requirePanelRoute('role-administration')
 
+export const profileRoute = requirePanelRoute('profile')
 export const settingsRoute = requirePanelRoute('settings')

@@ -23,6 +23,7 @@ export {
   roleAdministrationRoute,
   teamRegistrationsRoute,
   settingsRoute,
+  profileRoute,
   type PanelAdminSection,
   type PanelRouteDefinition,
 } from '../app/panel-route-metadata.ts'

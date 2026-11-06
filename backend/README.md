@@ -55,6 +55,11 @@ Guardrails:
 - `GET /api/game/history/users/{userId}` (self or moderator/admin): grouped user activity history by game (modifier activations + answered quiz questions)
 - `POST /api/game/lifecycle/open-registration`, `/start`, `GET /api/game/lifecycle/games/{gameId}/finish-preview`, `POST /api/game/lifecycle/games/{gameId}/finish`, `DELETE /api/game/lifecycle/games/{gameId}` (admin lifecycle, immutable final result + non-draft archive workflow)
 - `GET /auth/me`, `POST /auth/logout`, Twitch login/callback
+- `GET /api/profile/me`, `/api/profile/me/games`, `/api/profile/me/answers` - the authenticated user's
+  profile, statistics and paginated history; no target-user parameter is accepted.
+
+Participation, historical facts and extension boundaries are documented in
+[User profile](../docs/architecture/user-profile.md).
 
 Quiz application ports keep question-session state independent from HTTP or Twitch transport.
 Every active authenticated user can submit one option per question session. Correctness is revealed

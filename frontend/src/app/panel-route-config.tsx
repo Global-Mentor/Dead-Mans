@@ -16,6 +16,11 @@ const panelPages = {
     'GameGuidePage',
     [translations.gameGuide],
   ),
+  profile: lazyPanelPage(
+    () => import('../features/user-profile/UserProfilePage.tsx'),
+    'UserProfilePage',
+    [translations.userProfile],
+  ),
   settings: lazyPanelPage(
     () => import('../features/user-settings/UserSettingsPage.tsx'),
     'UserSettingsPage',

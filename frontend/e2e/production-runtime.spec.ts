@@ -1,4 +1,5 @@
 import { catalogPageFixture } from './support/catalog-page-fixture.ts'
+import { profileFixture, profileGames, profilePage } from './support/profile-fixture.ts'
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { expect, test, type Page, type Route, type WebSocketRoute } from '@playwright/test'
@@ -60,6 +61,43 @@ async function serveProductionApp(page: Page, api: (route: Route) => Promise<voi
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem('i18nextLng', 'en'))
+})
+
+test('private profile loads built chunks and Twitch avatar under production CSP', async ({
+  page,
+}) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await serveProductionApp(page, async (route) => {
+    const url = new URL(route.request().url())
+    if (url.pathname === '/api/profile/me')
+      await route.fulfill({
+        json: { ...profileFixture, userId: 'abf3680b-ac92-43ce-8c4f-c542f806e520' },
+      })
+    else if (url.pathname === '/api/profile/me/games')
+      await route.fulfill({ json: profilePage(profileGames, url.href) })
+    else await route.fulfill({ status: 204 })
+  })
+  await page.route(profileFixture.profileImageUrl!, async (route) =>
+    route.fulfill({ body: await readFile('public/favicon-32.png'), contentType: 'image/png' }),
+  )
+  await page.goto(`${origin}/panel/profile`)
+  await expect(page.getByRole('heading', { name: 'My profile', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Statistics', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect(page.getByRole('region', { name: 'Key statistics', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Answers and records', exact: true })).toBeVisible()
+  const avatar = page.getByRole('img', { name: 'Profile image of Bayou Hunter' })
+  await expect
+    .poll(() => avatar.evaluate((element: HTMLImageElement) => element.naturalWidth))
+    .toBeGreaterThan(0)
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click()
+  await expect(
+    page.getByRole('img', { name: 'Monthly activity · Answers', exact: true }),
+  ).toBeVisible()
+  expect(errors).toEqual([])
 })
 
 test('public guide loads built chunks anonymously under the production CSP', async ({ page }) => {

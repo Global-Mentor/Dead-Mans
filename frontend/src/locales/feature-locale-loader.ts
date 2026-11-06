@@ -62,6 +62,10 @@ export const featureTranslationBundles = {
     key: 'gameGuide',
     load: () => import('../features/game-guide/i18n/game-guide-translations.ts'),
   },
+  userProfile: {
+    key: 'userProfile',
+    load: () => import('../features/user-profile/i18n/user-profile-translations.ts'),
+  },
   userSettings: {
     key: 'userSettings',
     load: () => import('../features/user-settings/i18n/user-settings-translations.ts'),

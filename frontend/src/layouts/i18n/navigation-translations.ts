@@ -65,6 +65,7 @@ const translations = {
     },
     items: {
       gameGuide: { label: 'How to play' },
+      profile: { label: 'My profile' },
       settings: { label: 'Settings' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -183,6 +184,7 @@ const translations = {
     },
     items: {
       gameGuide: { label: 'Как играть' },
+      profile: { label: 'Мой профиль' },
       settings: { label: 'Настройки' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -301,6 +303,7 @@ const translations = {
     },
     items: {
       gameGuide: { label: 'Як грати' },
+      profile: { label: 'Мій профіль' },
       settings: { label: 'Налаштування' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {
@@ -419,6 +422,7 @@ const translations = {
     },
     items: {
       gameGuide: { label: 'Jak grać' },
+      profile: { label: 'Mój profil' },
       settings: { label: 'Ustawienia' },
       gameOverlay: { label: 'OBS' },
       gameHistory: {

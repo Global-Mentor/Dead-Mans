@@ -514,6 +514,7 @@ describe('PanelNavigation', () => {
     expect(
       within(profileMenu).getByRole('combobox', { name: 'Язык интерфейса' }),
     ).toBeInTheDocument()
+    expect(within(profileMenu).getByRole('button', { name: 'Мой профиль' })).toBeInTheDocument()
     expect(within(profileMenu).getByRole('button', { name: 'Выйти' })).toBeInTheDocument()
     expect(within(profileMenu).queryByText('Настройка доски')).not.toBeInTheDocument()
     expect(within(profileMenu).queryByText('Команды')).not.toBeInTheDocument()
