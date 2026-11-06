@@ -254,7 +254,12 @@ public sealed record GameHistoryMainGameSection(
     IReadOnlyList<GameHistoryTeamLeaderboardEntry> TeamStats,
     IReadOnlyList<GameHistoryModifierActivationItem> ModifierActivations,
     IReadOnlyList<GameHistoryRoundItem> Rounds
-);
+)
+{
+    public IReadOnlyList<GameHistoryTeamMember> TeamMembers { get; init; } = [];
+}
+
+public sealed record GameHistoryTeamMember(Guid TeamId, Guid UserId);
 
 public sealed record GameHistoryQuizSection(
     int TotalPoints,

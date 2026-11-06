@@ -466,6 +466,14 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             .ToArray();
 
         var finalResult = await LoadFinalResultAsync(gameId, teamIds.ToHashSet(), cancellationToken);
+        var teamStats = BuildTeamLeaderboard(mainRounds);
+        var resultTeamIds = game.Status != GameStatusValue.Finished ? []
+            : finalResult?.Teams.Select(team => team.TeamId).ToArray() ?? teamStats.Select(team => team.TeamId).ToArray();
+        var teamMembers = resultTeamIds.Length == 0 ? [] : await _dbContext.GameTeamMembers.AsNoTracking()
+            .Where(member => member.GameId == gameId && member.LeftAtUtc == null && resultTeamIds.Contains(member.TeamId))
+            .OrderBy(member => member.TeamId).ThenBy(member => member.UserId)
+            .Select(member => new GameHistoryTeamMember(member.TeamId, member.UserId))
+            .ToArrayAsync(cancellationToken);
 
         return new GameHistoryGameDetails(
             game.GameId,
@@ -476,10 +484,11 @@ public sealed partial class DbGameHistoryRepository : IGameHistoryRepository
             game.FinishedAtUtc,
             new GameHistoryMainGameSection(
                 mainPlayerStats,
-                BuildTeamLeaderboard(mainRounds),
+                teamStats,
                 mainModifierActivations,
                 mainRounds
-            ),
+            )
+            { TeamMembers = teamMembers },
             new GameHistoryQuizSection(
                 SaturatingInt32.From(quizPlayerStats.Sum(x => (long)x.Points)),
                 quizPlayerStats,

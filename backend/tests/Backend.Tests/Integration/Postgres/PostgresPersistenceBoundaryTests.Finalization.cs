@@ -152,6 +152,9 @@ public sealed partial class PostgresPersistenceBoundaryTests
         Assert.Equal(0, result.RoundsPlayed);
         Assert.Null(result.FinalScore);
         Assert.Null(result.Placement);
+        var member = Assert.Single(details.MainGame.TeamMembers);
+        Assert.Equal(seeded.TeamId, member.TeamId);
+        Assert.Equal(await db.GameTeamMembers.Where(x => x.TeamId == seeded.TeamId).Select(x => x.UserId).SingleAsync(), member.UserId);
     }
 
     [Theory]
@@ -224,6 +227,11 @@ public sealed partial class PostgresPersistenceBoundaryTests
         var details = await history.GetGameDetailsAsync(seeded.GameId);
         Assert.NotNull(details?.FinalResult);
         Assert.Equal(hasCompletedRound ? 1 : 0, details.FinalResult.Teams.Count);
+        Assert.Equal(hasCompletedRound ? 1 : 0, details.MainGame.TeamMembers.Count);
+        if (hasCompletedRound)
+        {
+            Assert.Equal(seeded.TeamId, Assert.Single(details.MainGame.TeamMembers).TeamId);
+        }
 
         if (!hasCompletedRound)
         {

@@ -8298,6 +8298,12 @@ components:
         lastFinishedAtUtc:
           type: string
           format: date-time
+    GameHistoryTeamMemberDto:
+      type: object
+      required: [teamId, userId]
+      properties:
+        teamId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
     GameHistoryMainGameSectionDto:
       type: object
       required:
@@ -8305,7 +8311,13 @@ components:
         - teamStats
         - modifierActivations
         - rounds
+        - teamMembers
       properties:
+        teamMembers:
+          type: array
+          description: Persisted active roster identities for teams in finished-game results. Uses saved final-result teams, or the recorded-round leaderboard for legacy games without a final result. Used to select the user's team before falling back to historical round participants. Empty for unfinished games.
+          items:
+            $ref: '#/components/schemas/GameHistoryTeamMemberDto'
         playerStats:
           type: array
           items:

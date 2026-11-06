@@ -119,7 +119,11 @@ public static partial class ApiContractMapper
             item.TeamStats.Select(ToDto).ToArray(),
             item.ModifierActivations.Select(ToDto).ToArray(),
             item.Rounds.Select(ToDto).ToArray()
-        );
+        )
+        {
+            TeamMembers = item.TeamMembers.Select(member => new GameHistoryTeamMemberDto(
+                member.TeamId.ToString(), member.UserId.ToString())).ToArray()
+        };
     }
 
     public static GameHistoryQuizSectionDto ToDto(this GameHistoryQuizSection item, string mediaBaseUrl)

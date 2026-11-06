@@ -3466,7 +3466,15 @@ export interface components {
             /** Format: date-time */
             lastFinishedAtUtc: string;
         };
+        GameHistoryTeamMemberDto: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            userId: string;
+        };
         GameHistoryMainGameSectionDto: {
+            /** @description Persisted active roster identities for teams in finished-game results. Uses saved final-result teams, or the recorded-round leaderboard for legacy games without a final result. Used to select the user's team before falling back to historical round participants. Empty for unfinished games. */
+            teamMembers: components["schemas"]["GameHistoryTeamMemberDto"][];
             playerStats: components["schemas"]["GameHistoryPlayerSummaryDto"][];
             teamStats: components["schemas"]["GameHistoryTeamLeaderboardEntryDto"][];
             modifierActivations: components["schemas"]["GameHistoryModifierActivationItemDto"][];

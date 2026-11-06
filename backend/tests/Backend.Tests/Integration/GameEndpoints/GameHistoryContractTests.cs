@@ -74,6 +74,63 @@ public sealed class GameHistoryContractTests : IClassFixture<TestWebApplicationF
             round.ScoreDetails.CalculationLines.Where(x => x.ModifierId is not null).Select(x => x.PointsDelta));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetGameDetails_FinalRosterUsesStableIdsAndExcludesDepartedAndUnlistedTeams(bool hasFinalResult)
+    {
+        var seeded = await SeedHistoryAsync();
+        Guid teamId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var round = await db.GameRounds.FirstAsync(x => x.GameId == seeded.GameId);
+            teamId = round.TeamId;
+            db.GameRoundParticipants.RemoveRange(db.GameRoundParticipants.Where(x => x.RoundId == round.Id));
+            var unlistedTeamId = Guid.NewGuid();
+            db.GameTeams.AddRange(new GameTeam { Id = teamId, GameId = seeded.GameId },
+                new GameTeam { Id = unlistedTeamId, GameId = seeded.GameId });
+            if (hasFinalResult)
+                db.GameFinalizations.Add(new GameFinalization
+                {
+                    GameId = seeded.GameId,
+                    FinishedByUserId = seeded.AlphaId,
+                    FinishedAtUtc = DateTime.UtcNow,
+                    TeamResults = [new GameTeamFinalResult { GameId = seeded.GameId, TeamId = teamId,
+                        ParticipantNamesSnapshot = ["Old display name"] }]
+                });
+            db.GameTeamMembers.AddRange(
+                new GameTeamMember { Id = Guid.NewGuid(), GameId = seeded.GameId, TeamId = teamId, UserId = seeded.AlphaId },
+                new GameTeamMember
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = seeded.GameId,
+                    TeamId = teamId,
+                    UserId = Guid.NewGuid(),
+                    LeftAtUtc = DateTime.UtcNow
+                },
+                new GameTeamMember { Id = Guid.NewGuid(), GameId = seeded.GameId, TeamId = unlistedTeamId, UserId = Guid.NewGuid() },
+                new GameTeamMember { Id = Guid.NewGuid(), GameId = Guid.NewGuid(), TeamId = teamId, UserId = Guid.NewGuid() });
+            (await db.Users.SingleAsync(x => x.Id == seeded.AlphaId)).DisplayName = "Renamed player";
+            await db.SaveChangesAsync();
+        }
+
+        using var client = TestAuthClientFactory.CreateClient(_factory, [AuthRoleCodes.Viewer]);
+        var details = await client.GetFromJsonAsync<GameHistoryGameDetailsDto>($"/api/game/history/games/{seeded.GameId}");
+        Assert.NotNull(details);
+        var member = Assert.Single(details.MainGame.TeamMembers);
+        Assert.Equal(teamId.ToString(), member.TeamId);
+        Assert.Equal(seeded.AlphaId.ToString(), member.UserId);
+        Assert.Empty(details.MainGame.Rounds.Single(round => round.TeamId == teamId.ToString()).Participants);
+        if (hasFinalResult)
+            Assert.Equal("Old display name", Assert.Single(Assert.Single(details.FinalResult!.Teams).ParticipantNames));
+        else
+        {
+            Assert.Null(details.FinalResult);
+            Assert.Contains(details.MainGame.TeamStats, team => team.TeamId == teamId.ToString());
+        }
+    }
+
     [Fact]
     public async Task GetGameDetails_WhenAnonymous_ReturnsUnauthorized()
     {

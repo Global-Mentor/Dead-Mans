@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ContentTabsSelection } from '../../../shared/ui/index.ts'
 import type { components } from '../../../shared/api/contracts/generated'
+import { useAuth } from '../../../shared/auth/use-auth.ts'
 import { RoundBriefingPanel } from '../../../shared/game-ui/index.ts'
 import {
   AppButton,
@@ -18,6 +19,7 @@ import { CurrentGameStatistics } from './CurrentGameStatistics.tsx'
 import { CurrentGameModifierResults } from './CurrentGameModifierResults.tsx'
 import { GameTeamResults } from './GameTeamResults.tsx'
 import { buildLeaderboardResults } from '../model/leaderboard-results.ts'
+import { resolveHistoryTeamSelection } from '../model/game-history-team-selection.ts'
 import { HistoryModifierActivations } from './HistoryModifierActivations.tsx'
 import { QuizLeaderboard } from './QuizLeaderboard.tsx'
 
@@ -27,6 +29,7 @@ type Round = components['schemas']['GameHistoryRoundItemDto']
 export function GameDetailsPanel({
   tabs,
   selectedTeamId,
+  focusOwnTeam = false,
   onSelectTeam,
   game,
   onPreviewCard,
@@ -34,17 +37,28 @@ export function GameDetailsPanel({
 }: {
   tabs: ContentTabsSelection
   selectedTeamId: string | null
+  focusOwnTeam?: boolean
   onSelectTeam: (teamId: string) => void
   onViewBoard: () => void
   game: Game | null
   onPreviewCard: (round: Round) => void
 }) {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
   const [commentOpen, setCommentOpen] = useState(false)
   const compact = useMediaQuery('(max-width: 999px)')
   if (!game) return null
   const publicNote = game.finalResult?.publicNote?.trim() || null
   const teams = sortTeamLeaderboardEntries(game.mainGame.teamStats)
+  const results = buildLeaderboardResults(teams, game.finalResult)
+  const resolvedTeamId = resolveHistoryTeamSelection({
+    teamIds: results.map((team) => team.teamId),
+    rounds: game.mainGame.rounds,
+    teamMembers: game.mainGame.teamMembers,
+    requestedTeamId: selectedTeamId,
+    userId: user?.id,
+    focusOwnTeam,
+  })
   const cancelled = game.mainGame.rounds.filter((round) => round.status === 'cancelled')
   return (
     <Stack gap={1} sx={{ flex: 1, minHeight: 0, overflowWrap: 'anywhere' }}>
@@ -126,10 +140,10 @@ export function GameDetailsPanel({
             label: t('gameHistory.gameTab'),
             content: (
               <GameTeamResults
-                selectedTeamId={selectedTeamId}
+                selectedTeamId={resolvedTeamId}
                 onSelectTeam={onSelectTeam}
                 boardLabels={game.board ?? undefined}
-                results={buildLeaderboardResults(teams, game.finalResult)}
+                results={results}
                 onPreviewCard={onPreviewCard}
               />
             ),

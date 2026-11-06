@@ -335,7 +335,13 @@ async function mockQuiz(page: Page, roundPhase?: string, extraPlayers = 0) {
             modifierSnapshots: [],
             modifierSnapshotStatus: 'complete',
             finalResult: null,
-            mainGame: { teamStats: [], playerStats: [], rounds: [], modifierActivations: [] },
+            mainGame: {
+              teamMembers: [],
+              teamStats: [],
+              playerStats: [],
+              rounds: [],
+              modifierActivations: [],
+            },
             quiz: {
               totalPoints: 150,
               manualAwards: [],

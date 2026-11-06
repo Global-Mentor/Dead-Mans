@@ -50,6 +50,7 @@ export function GameHistoryPage({
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       next.set('teamId', teamId)
+      next.delete('focus')
       return next
     })
   const requestedGameId = searchParams.get('gameId')
@@ -338,6 +339,7 @@ export function GameHistoryPage({
                         const next = new URLSearchParams(current)
                         next.set('gameId', gameId)
                         next.delete('teamId')
+                        next.delete('focus')
                         next.delete('view')
                         return next
                       })
@@ -368,6 +370,7 @@ export function GameHistoryPage({
                 <GameDetailsPanel
                   tabs={urlTabSelection(searchParams, setSearchParams, 'teams')}
                   selectedTeamId={searchParams.get('teamId')}
+                  focusOwnTeam={searchParams.get('focus') === 'me'}
                   onSelectTeam={selectTeam}
                   game={selectedGameDetailsQuery.data ?? null}
                   onPreviewCard={setPreviewRound}

@@ -96,7 +96,11 @@ function savedBoard(game: (typeof games)[number]) {
   }
 }
 
-async function mockHistory(page: Page, publicNote = 'Спасибо всем участникам!') {
+async function mockHistory(
+  page: Page,
+  publicNote = 'Спасибо всем участникам!',
+  ownTeam: 'round' | 'roster' | null = null,
+) {
   await page.addInitScript(() => localStorage.setItem('i18nextLng', 'ru'))
   await page.route('**/history-test-card.svg', (route) =>
     route.fulfill({
@@ -144,9 +148,31 @@ async function mockHistory(page: Page, publicNote = 'Спасибо всем у�
             ...game,
             board: savedBoard(game),
             mainGame: {
+              teamMembers:
+                ownTeam === 'roster'
+                  ? [{ teamId: 'team-1', userId: 'c592262f-8e49-466d-a4fc-2de69ba46771' }]
+                  : [],
               teamStats: [],
               playerStats: [],
-              rounds: [archiveRound],
+              rounds:
+                ownTeam === 'round'
+                  ? [
+                      archiveRound,
+                      {
+                        ...archiveRound,
+                        roundId: 'own-round',
+                        teamId: 'team-1',
+                        teamSlotIndex: 2,
+                        participants: [
+                          {
+                            userId: 'c592262f-8e49-466d-a4fc-2de69ba46771',
+                            displayName: 'Старое имя',
+                            createdAtUtc: date,
+                          },
+                        ],
+                      },
+                    ]
+                  : [archiveRound],
               modifierActivations:
                 game.gameId === 'game-0'
                   ? ['consumed', 'cancelled'].map((status, index) => ({
@@ -822,4 +848,37 @@ for (const width of [390, 768, 1440]) {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   })
+}
+
+for (const ownTeam of ['round', 'roster'] as const) {
+  for (const width of [390, 1440]) {
+    test(`profile focus selects own ${ownTeam} team and preserves manual choice at ${width}px`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 900 })
+      await mockHistory(page, '', ownTeam)
+      await page.goto('/panel/game-history?gameId=game-0&focus=me')
+      const ownRow = page.getByRole('row', { name: 'Команда с длинным названием 2', exact: true })
+      const firstRow = page.getByRole('row', { name: 'Команда с длинным названием 1', exact: true })
+      await expect(ownRow).toHaveAttribute('aria-selected', 'true')
+      await expect(firstRow).toHaveAttribute('aria-selected', 'false')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await page.reload()
+      await expect(ownRow).toHaveAttribute('aria-selected', 'true')
+      await page.screenshot({
+        path: info.outputPath(`profile-focus-${ownTeam}-${width}.png`),
+        animations: 'disabled',
+      })
+      await firstRow.click()
+      await expect(page).toHaveURL(/teamId=team-0/)
+      expect(new URL(page.url()).searchParams.has('focus')).toBe(false)
+      if (width < 1000)
+        await page.getByRole('button', { name: 'Закрыть', exact: true }).last().click()
+      await expect(firstRow).toHaveAttribute('aria-selected', 'true')
+      await page.reload()
+      await expect(firstRow).toHaveAttribute('aria-selected', 'true')
+      await page.goto('/panel/game-history?gameId=game-0&focus=me&teamId=team-0')
+      await expect(firstRow).toHaveAttribute('aria-selected', 'true')
+    })
+  }
 }

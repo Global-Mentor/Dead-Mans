@@ -54,7 +54,7 @@ function game(rounds: Round[] = []): Game {
     gameTitle: 'Game',
     gameStatus: 'active',
     createdAtUtc: '2026-10-01T10:00:00Z',
-    mainGame: { rounds, teamStats: [], playerStats: [], modifierActivations: [] },
+    mainGame: { teamMembers: [], rounds, teamStats: [], playerStats: [], modifierActivations: [] },
     quiz: { totalPoints: 0, playerStats: [], questionSessions: [], manualAwards: [] },
     modifierSnapshotStatus: 'complete',
     modifierSnapshots: [],

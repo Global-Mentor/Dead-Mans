@@ -455,7 +455,7 @@ async function mockGame(
           },
         })
       if (path === '/api/game/history/games/board-layout')
-        return route.fulfill({ json: { mainGame: { rounds: [] } } })
+        return route.fulfill({ json: { mainGame: { teamMembers: [], rounds: [] } } })
       if (path === '/api/game/modifiers/admin/activations') return route.fulfill({ json: [] })
       if (path.includes('manual-quiz') || path.includes('/players'))
         return route.fulfill({ json: [] })
@@ -4381,6 +4381,7 @@ for (const width of [390, 768, 1440]) {
       route.fulfill({
         json: {
           mainGame: {
+            teamMembers: [],
             rounds: [
               {
                 roundId: 'played-round',
@@ -4496,6 +4497,7 @@ for (const width of [390, 768, 1440]) {
       route.fulfill({
         json: {
           mainGame: {
+            teamMembers: [],
             rounds: [
               {
                 roundId: 'played-round',

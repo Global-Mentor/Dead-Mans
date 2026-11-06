@@ -358,6 +358,7 @@ async function mockLeaderboard(
             startedAtUtc: '2026-09-21T10:01:00Z',
             finishedAtUtc: null,
             mainGame: {
+              teamMembers: [],
               playerStats: [],
               teamStats: selectedTeams,
               modifierActivations: withModifiers

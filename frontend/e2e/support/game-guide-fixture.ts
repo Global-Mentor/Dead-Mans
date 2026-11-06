@@ -136,7 +136,7 @@ export async function mockGuideGame(
         return route.fulfill({ json: registration })
       }
       if (path === '/api/game/history/games/guide-game')
-        return route.fulfill({ json: { mainGame: { rounds: [] } } })
+        return route.fulfill({ json: { mainGame: { teamMembers: [], rounds: [] } } })
       return route.fulfill({ status: 204 })
     },
   )
