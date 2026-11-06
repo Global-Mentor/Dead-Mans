@@ -122,6 +122,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameBoardRepository, DbGameBoardRepository>();
         services.AddScoped<IGameRoundRepository, DbGameRoundRepository>();
         services.AddScoped<IGameHistoryRepository, DbGameHistoryRepository>();
+        services.AddScoped<IUserProfileReader, DbUserProfileReader>();
         services.AddScoped<IGameSetupRepository, DbGameSetupRepository>();
         services.AddScoped<IGameSetupCellMediaRepository, DbGameSetupCellMediaRepository>();
         services.AddScoped<IGameModifierRepository, DbGameModifierRepository>();

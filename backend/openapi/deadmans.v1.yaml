@@ -8,6 +8,84 @@ info:
 servers:
   - url: /api
 paths:
+  /profile/me:
+    get:
+      operationId: getMyProfile
+      security: [{ cookieAuth: [] }]
+      description: Own profile and statistics from visible games and closed quiz sessions.
+      responses:
+        '200':
+          description: Own profile data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfileDto' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /profile/me/games:
+    get:
+      operationId: getMyProfileGames
+      security: [{ cookieAuth: [] }]
+      description: Own non-draft, non-deleted games, filtered by participation. Player participation requires current team membership or a round participant snapshot; quiz participation requires a personal answer in a closed question session. A game can belong to both groups. Modifier use and manual points alone do not establish either participation.
+      parameters:
+        - name: participation
+          in: query
+          schema: { type: string, enum: [player, quiz], default: player }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Own profile data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfileGamesPageDto' }
+        '400':
+          description: Invalid page or filter parameters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /profile/me/answers:
+    get:
+      operationId: getMyProfileAnswers
+      security: [{ cookieAuth: [] }]
+      description: Own submitted answers from closed sessions only, using immutable question and selected-answer snapshots. Active sessions and deleted games are excluded.
+      parameters:
+        - name: gameId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Own profile data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfileAnswersPageDto' }
+        '400':
+          description: Invalid page or filter parameters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /game/questions/screenshots/validate:
     post:
       operationId: validateQuizScreenshot
@@ -4857,6 +4935,209 @@ components:
       in: cookie
       name: dm_auth
   schemas:
+    UserProfileDto:
+      type: object
+      additionalProperties: false
+      required: [userId, login, displayName, profileImageUrl, playerGameCount, quizGameCount, answerCount, correctAnswerCount, statistics]
+      properties:
+        userId: { type: string, format: uuid }
+        login: { type: string }
+        displayName: { type: string }
+        profileImageUrl: { type: string, nullable: true }
+        playerGameCount: { type: integer, minimum: 0 }
+        quizGameCount: { type: integer, minimum: 0 }
+        answerCount: { type: integer, minimum: 0 }
+        correctAnswerCount: { type: integer, minimum: 0 }
+        statistics: { $ref: '#/components/schemas/UserProfileStatisticsDto' }
+    UserProfileStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [finishedPlayerGameCount, completedRoundCount, awardedQuizPoints, games, quiz, points, modifiers, activity]
+      properties:
+        finishedPlayerGameCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        completedRoundCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        awardedQuizPoints: { type: integer, minimum: 0, maximum: 2147483647 }
+        games: { $ref: '#/components/schemas/UserProfileGameStatisticsDto' }
+        quiz: { $ref: '#/components/schemas/UserProfileQuizStatisticsDto' }
+        points: { $ref: '#/components/schemas/UserProfilePointStatisticsDto' }
+        modifiers: { $ref: '#/components/schemas/UserProfileModifierStatisticsDto' }
+        activity: { $ref: '#/components/schemas/UserProfileActivityStatisticsDto' }
+    UserProfileGameStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [playedGameCount, rankedGameCount, winCount, podiumCount, bestPlacement, teamCount, teammateCount, totalRoundScore, bestRoundScore, teamKills, teamBounties, averageRoundScore]
+      properties:
+        playedGameCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        rankedGameCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        winCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        podiumCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        bestPlacement: { type: integer, minimum: 0, maximum: 2147483647, nullable: true }
+        teamCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        teammateCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        totalRoundScore: { type: integer, minimum: -2147483648, maximum: 2147483647 }
+        bestRoundScore: { type: integer, minimum: -2147483648, maximum: 2147483647, nullable: true }
+        teamKills: { type: integer, minimum: 0, maximum: 2147483647 }
+        teamBounties: { type: integer, minimum: 0, maximum: 2147483647 }
+        averageRoundScore: { type: number, format: double }
+    UserProfileQuizStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [answerCount, correctAnswerCount, incorrectAnswerCount, text, screenshot, longestCorrectStreak, maxCorrectAnswersPerGame, maxPointsPerGame, categories, averageAnswerPoints]
+      properties:
+        answerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        correctAnswerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        incorrectAnswerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        text: { $ref: '#/components/schemas/UserProfileQuizFormatStatisticsDto' }
+        screenshot: { $ref: '#/components/schemas/UserProfileQuizFormatStatisticsDto' }
+        longestCorrectStreak: { type: integer, minimum: 0, maximum: 2147483647 }
+        maxCorrectAnswersPerGame: { type: integer, minimum: 0, maximum: 2147483647 }
+        maxPointsPerGame: { type: integer, minimum: 0, maximum: 2147483647 }
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileQuizCategoryStatisticsDto' }
+        averageAnswerPoints: { type: number, format: double }
+    UserProfileQuizFormatStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [answerCount, correctAnswerCount, points]
+      properties:
+        answerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        correctAnswerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        points: { type: integer, minimum: 0, maximum: 2147483647 }
+    UserProfileQuizCategoryStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [name, answerCount, correctAnswerCount, points]
+      properties:
+        name: { type: string }
+        answerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        correctAnswerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        points: { type: integer, minimum: 0, maximum: 2147483647 }
+    UserProfilePointStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [manualAwarded, manualDeducted, spent, refunded, netSpent, averagePaidOrderCost]
+      properties:
+        manualAwarded: { type: integer, minimum: 0, maximum: 2147483647 }
+        manualDeducted: { type: integer, minimum: 0, maximum: 2147483647 }
+        spent: { type: integer, minimum: 0, maximum: 2147483647 }
+        refunded: { type: integer, minimum: 0, maximum: 2147483647 }
+        netSpent: { type: integer, minimum: 0, maximum: 2147483647 }
+        averagePaidOrderCost: { type: number, format: double }
+    UserProfileModifierStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [orderedCount, paidCount, freeCount, appliedCount, cancelledCount, pendingCount, uniqueCount, gameCount, roundCount, mostUsed, categories, outcomes]
+      properties:
+        orderedCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        paidCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        freeCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        appliedCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        cancelledCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        pendingCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        uniqueCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        gameCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        roundCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        mostUsed:
+          allOf: [{ $ref: '#/components/schemas/UserProfileModifierCountDto' }]
+          type: object
+          nullable: true
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileModifierCountDto' }
+        outcomes:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileModifierOutcomeCountDto' }
+    UserProfileModifierCountDto:
+      type: object
+      additionalProperties: false
+      required: [name, count]
+      properties:
+        name: { type: string }
+        count: { type: integer, minimum: 0, maximum: 2147483647 }
+    UserProfileModifierOutcomeCountDto:
+      type: object
+      additionalProperties: false
+      required: [outcome, count]
+      properties:
+        outcome: { type: string }
+        count: { type: integer, minimum: 0, maximum: 2147483647 }
+    UserProfileActivityStatisticsDto:
+      type: object
+      additionalProperties: false
+      required: [firstActivityAtUtc, lastActivityAtUtc, activeDayCount, months]
+      properties:
+        firstActivityAtUtc: { type: string, format: date-time, nullable: true }
+        lastActivityAtUtc: { type: string, format: date-time, nullable: true }
+        activeDayCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        months:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileActivityMonthDto' }
+    UserProfileActivityMonthDto:
+      type: object
+      additionalProperties: false
+      required: [month, gameCount, roundCount, answerCount, modifierCount]
+      properties:
+        month: { type: string }
+        gameCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        roundCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        answerCount: { type: integer, minimum: 0, maximum: 2147483647 }
+        modifierCount: { type: integer, minimum: 0, maximum: 2147483647 }
+    UserProfileGameDto:
+      type: object
+      additionalProperties: false
+      required: [gameId, title, status, startedAtUtc, finishedAtUtc, completedRoundCount, answerCount, correctAnswerCount]
+      properties:
+        gameId: { type: string, format: uuid }
+        title: { type: string }
+        status: { type: string, enum: [ready, active, finished] }
+        startedAtUtc: { type: string, format: date-time, nullable: true }
+        finishedAtUtc: { type: string, format: date-time, nullable: true }
+        completedRoundCount: { type: integer, minimum: 0, description: Completed rounds containing the current user in the participant snapshot. }
+        answerCount: { type: integer, minimum: 0 }
+        correctAnswerCount: { type: integer, minimum: 0 }
+    UserProfileAnswerDto:
+      type: object
+      additionalProperties: false
+      required: [questionSessionId, questionId, gameId, gameTitle, questionText, categoryName, selectedOptionId, selectedOptionText, isCorrect, awardedPoints, submittedAtUtc, image]
+      properties:
+        questionSessionId: { type: string, format: uuid }
+        questionId: { type: string, format: uuid }
+        gameId: { type: string, format: uuid }
+        gameTitle: { type: string }
+        questionText: { type: string }
+        categoryName: { type: string }
+        selectedOptionId: { type: string, format: uuid }
+        selectedOptionText: { type: string }
+        isCorrect: { type: boolean }
+        awardedPoints: { type: integer }
+        submittedAtUtc: { type: string, format: date-time }
+        image:
+          allOf: [{ $ref: '#/components/schemas/GameQuizImageDto' }]
+          type: object
+          nullable: true
+    UserProfileGamesPageDto:
+      type: object
+      additionalProperties: false
+      required: [items, totalCount, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileGameDto' }
+        totalCount: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+    UserProfileAnswersPageDto:
+      type: object
+      additionalProperties: false
+      required: [items, totalCount, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/UserProfileAnswerDto' }
+        totalCount: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
     LocalizedHuntNames:
       type: object
       required: [en, ru, uk, pl]

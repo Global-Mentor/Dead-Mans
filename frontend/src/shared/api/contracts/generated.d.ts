@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/profile/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Own profile and statistics from visible games and closed quiz sessions. */
+        get: operations["getMyProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/me/games": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Own non-draft, non-deleted games, filtered by participation. Player participation requires current team membership or a round participant snapshot; quiz participation requires a personal answer in a closed question session. A game can belong to both groups. Modifier use and manual points alone do not establish either participation. */
+        get: operations["getMyProfileGames"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/me/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Own submitted answers from closed sessions only, using immutable question and selected-answer snapshots. Active sessions and deleted games are excluded. */
+        get: operations["getMyProfileAnswers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/game/questions/screenshots/validate": {
         parameters: {
             query?: never;
@@ -1889,6 +1940,159 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        UserProfileDto: {
+            /** Format: uuid */
+            userId: string;
+            login: string;
+            displayName: string;
+            profileImageUrl: string | null;
+            playerGameCount: number;
+            quizGameCount: number;
+            answerCount: number;
+            correctAnswerCount: number;
+            statistics: components["schemas"]["UserProfileStatisticsDto"];
+        };
+        UserProfileStatisticsDto: {
+            finishedPlayerGameCount: number;
+            completedRoundCount: number;
+            awardedQuizPoints: number;
+            games: components["schemas"]["UserProfileGameStatisticsDto"];
+            quiz: components["schemas"]["UserProfileQuizStatisticsDto"];
+            points: components["schemas"]["UserProfilePointStatisticsDto"];
+            modifiers: components["schemas"]["UserProfileModifierStatisticsDto"];
+            activity: components["schemas"]["UserProfileActivityStatisticsDto"];
+        };
+        UserProfileGameStatisticsDto: {
+            playedGameCount: number;
+            rankedGameCount: number;
+            winCount: number;
+            podiumCount: number;
+            bestPlacement: number | null;
+            teamCount: number;
+            teammateCount: number;
+            totalRoundScore: number;
+            bestRoundScore: number | null;
+            teamKills: number;
+            teamBounties: number;
+            /** Format: double */
+            averageRoundScore: number;
+        };
+        UserProfileQuizStatisticsDto: {
+            answerCount: number;
+            correctAnswerCount: number;
+            incorrectAnswerCount: number;
+            text: components["schemas"]["UserProfileQuizFormatStatisticsDto"];
+            screenshot: components["schemas"]["UserProfileQuizFormatStatisticsDto"];
+            longestCorrectStreak: number;
+            maxCorrectAnswersPerGame: number;
+            maxPointsPerGame: number;
+            categories: components["schemas"]["UserProfileQuizCategoryStatisticsDto"][];
+            /** Format: double */
+            averageAnswerPoints: number;
+        };
+        UserProfileQuizFormatStatisticsDto: {
+            answerCount: number;
+            correctAnswerCount: number;
+            points: number;
+        };
+        UserProfileQuizCategoryStatisticsDto: {
+            name: string;
+            answerCount: number;
+            correctAnswerCount: number;
+            points: number;
+        };
+        UserProfilePointStatisticsDto: {
+            manualAwarded: number;
+            manualDeducted: number;
+            spent: number;
+            refunded: number;
+            netSpent: number;
+            /** Format: double */
+            averagePaidOrderCost: number;
+        };
+        UserProfileModifierStatisticsDto: {
+            orderedCount: number;
+            paidCount: number;
+            freeCount: number;
+            appliedCount: number;
+            cancelledCount: number;
+            pendingCount: number;
+            uniqueCount: number;
+            gameCount: number;
+            roundCount: number;
+            mostUsed: components["schemas"]["UserProfileModifierCountDto"] | null;
+            categories: components["schemas"]["UserProfileModifierCountDto"][];
+            outcomes: components["schemas"]["UserProfileModifierOutcomeCountDto"][];
+        };
+        UserProfileModifierCountDto: {
+            name: string;
+            count: number;
+        };
+        UserProfileModifierOutcomeCountDto: {
+            outcome: string;
+            count: number;
+        };
+        UserProfileActivityStatisticsDto: {
+            /** Format: date-time */
+            firstActivityAtUtc: string | null;
+            /** Format: date-time */
+            lastActivityAtUtc: string | null;
+            activeDayCount: number;
+            months: components["schemas"]["UserProfileActivityMonthDto"][];
+        };
+        UserProfileActivityMonthDto: {
+            month: string;
+            gameCount: number;
+            roundCount: number;
+            answerCount: number;
+            modifierCount: number;
+        };
+        UserProfileGameDto: {
+            /** Format: uuid */
+            gameId: string;
+            title: string;
+            /** @enum {string} */
+            status: "ready" | "active" | "finished";
+            /** Format: date-time */
+            startedAtUtc: string | null;
+            /** Format: date-time */
+            finishedAtUtc: string | null;
+            /** @description Completed rounds containing the current user in the participant snapshot. */
+            completedRoundCount: number;
+            answerCount: number;
+            correctAnswerCount: number;
+        };
+        UserProfileAnswerDto: {
+            /** Format: uuid */
+            questionSessionId: string;
+            /** Format: uuid */
+            questionId: string;
+            /** Format: uuid */
+            gameId: string;
+            gameTitle: string;
+            questionText: string;
+            categoryName: string;
+            /** Format: uuid */
+            selectedOptionId: string;
+            selectedOptionText: string;
+            isCorrect: boolean;
+            awardedPoints: number;
+            /** Format: date-time */
+            submittedAtUtc: string;
+            image: components["schemas"]["GameQuizImageDto"] | null;
+        };
+        UserProfileGamesPageDto: {
+            items: components["schemas"]["UserProfileGameDto"][];
+            totalCount: number;
+            page: number;
+            pageSize: number;
+        };
+        UserProfileAnswersPageDto: {
+            items: components["schemas"]["UserProfileAnswerDto"][];
+            totalCount: number;
+            page: number;
+            pageSize: number;
+        };
         LocalizedHuntNames: {
             en: string;
             ru: string;
@@ -3880,6 +4084,119 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Own profile data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileDto"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMyProfileGames: {
+        parameters: {
+            query?: {
+                participation?: "player" | "quiz";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Own profile data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileGamesPageDto"];
+                };
+            };
+            /** @description Invalid page or filter parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMyProfileAnswers: {
+        parameters: {
+            query?: {
+                gameId?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Own profile data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileAnswersPageDto"];
+                };
+            };
+            /** @description Invalid page or filter parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     validateQuizScreenshot: {
         parameters: {
             query?: never;
